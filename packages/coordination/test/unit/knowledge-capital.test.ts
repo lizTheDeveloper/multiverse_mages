@@ -166,7 +166,7 @@ interface World {
   readonly bare: Academy;
   readonly mages: readonly Handle[];
   report(): WorldStepReport;
-  advance(ticks?: number): void;
+  advance(ticks?: number): Promise<void>;
   totals(): { researchCompleted: number; grimoiresScribed: number };
   instancesMade(): number;
 }
@@ -230,12 +230,27 @@ function universe(options: WorldOptions): World {
     bare,
     mages,
     report: () => simulation.lastReport() as WorldStepReport,
-    advance: (ticks = 1) => {
+    // `async`, and the `await` is the point rather than an accident of style.
+    //
+    // A vitest worker talks to its runner over an RPC channel, and a runner that
+    // has not heard from a worker in a while treats it as dead —
+    // `[vitest-worker]: Timeout calling "onTaskUpdate"`, which fails the run
+    // while reporting every test as passed. Sixty ticks of real simulation is a
+    // long synchronous block, this file now runs **four** such universes for the
+    // §6a null arm, and CI saw exactly that error with 4,617 of 4,617 tests
+    // green.
+    //
+    // Once a world year, which is the cadence `assembled-run-values.test.ts` and
+    // `runLongReference` both use, and for the reason they state: it changes no
+    // number, because the simulation between yields is unchanged and entirely
+    // synchronous.
+    advance: async (ticks = 1) => {
       for (let tick = 0; tick < ticks; tick += 1) {
         current = step(current, [], source);
         const report = simulation.lastReport() as WorldStepReport;
         summed.researchCompleted += report.researchCompleted;
         summed.grimoiresScribed += report.grimoiresScribed;
+        if (tick % 12 === 11) await new Promise<void>((resolve) => setImmediate(resolve));
       }
     },
     totals: () => ({ ...summed }),
@@ -318,11 +333,11 @@ describe('a deep library makes the mages who work in it faster (vision §6a)', (
    * brake 4, it is untuned on both sides, and it is 0.5.0's to price — not
    * something to hide by picking a fourth measure.
    */
-  it('separates a deep shelf from a bare one by more than the fixture separates itself', () => {
+  it('separates a deep shelf from a bare one by more than the fixture separates itself', async () => {
     const scholarly = universe({ affiliation: 'scholarly' });
-    scholarly.advance(TICKS);
+    await scholarly.advance(TICKS);
     const unaided = universe({ affiliation: 'bare' });
-    unaided.advance(TICKS);
+    await unaided.advance(TICKS);
 
     // Both universes must still be doing research, or "more" would be a claim
     // about a universe that does nothing.
@@ -333,16 +348,16 @@ describe('a deep library makes the mages who work in it faster (vision §6a)', (
     // separates the two universes that is not library depth separates them here
     // too, and the claim is that depth adds something on top of it.
     const nullScholarly = universe({ affiliation: 'scholarly', shelf: 0 });
-    nullScholarly.advance(TICKS);
+    await nullScholarly.advance(TICKS);
     const nullBare = universe({ affiliation: 'bare', shelf: 0 });
-    nullBare.advance(TICKS);
+    await nullBare.advance(TICKS);
 
     const treated = scholarly.instancesMade() - unaided.instancesMade();
     const untreated = nullScholarly.instancesMade() - nullBare.instancesMade();
     expect(treated).toBeGreaterThan(untreated);
   }, TIMEOUT_MS);
 
-  it('adds nothing to any rate while the shelves are bare', () => {
+  it('adds nothing to any rate while the shelves are bare', async () => {
     // The other control, and the one that matters for every committed baseline
     // taken before this change: an empty library must contribute exactly
     // nothing and cost exactly nothing, so a universe that has written no books
@@ -354,19 +369,19 @@ describe('a deep library makes the mages who work in it faster (vision §6a)', (
     // academy the mages start at moves the `affiliate` goal, which has nothing
     // to do with §6a and predates it.
     const world = universe({ affiliation: 'scholarly', shelf: 0 });
-    world.advance();
+    await world.advance();
     const first = world.report();
     expect(first.capital).not.toHaveLength(0);
     expect(first.capital.every((entry) => entry.effectiveContribution === 0)).toBe(true);
     expect(first.libraryUpkeepOwed).toBe(0);
   }, TIMEOUT_MS);
 
-  it('closes the loop: a universe that started with nothing shelved is contributing by year five', () => {
+  it('closes the loop: a universe that started with nothing shelved is contributing by year five', async () => {
     // The other half of §6a, and the half that makes it a *loop* rather than a
     // bonus: the same universe, given no endowment at all, writes books, shelves
     // them, and the shelf it built is worth something to the mages who built it.
     const world = universe({ affiliation: 'scholarly', shelf: 0 });
-    world.advance(TICKS);
+    await world.advance(TICKS);
     const total = world
       .report()
       .capital.reduce((sum, entry) => sum + entry.effectiveContribution, 0);
@@ -376,24 +391,24 @@ describe('a deep library makes the mages who work in it faster (vision §6a)', (
 });
 
 describe('libraries cost materials to keep (brake 4)', () => {
-  it('charges upkeep in proportion to the instances on the shelf', () => {
+  it('charges upkeep in proportion to the instances on the shelf', async () => {
     const deep = universe({ affiliation: 'scholarly' });
-    deep.advance();
+    await deep.advance();
     const shallow = universe({ affiliation: 'scholarly', shelf: 4 });
-    shallow.advance();
+    await shallow.advance();
 
     expect(deep.report().libraryUpkeepOwed).toBe(DEEP_SHELF * LIBRARY_UPKEEP_PER_INSTANCE);
     expect(shallow.report().libraryUpkeepOwed).toBe(4 * LIBRARY_UPKEEP_PER_INSTANCE);
   });
 
-  it('charges a duplicate its keep and pays it nothing back', () => {
+  it('charges a duplicate its keep and pays it nothing back', async () => {
     // The asymmetry the whole brake is: benefit is concave in *distinct nodes*
     // and cost is linear in *instances*, so a shelf of ten copies of one book is
     // ten shelves' upkeep and one book's worth of capital.
     const hoard = universe({ affiliation: 'scholarly', shelf: 4, copies: 10 });
-    hoard.advance();
+    await hoard.advance();
     const lean = universe({ affiliation: 'scholarly', shelf: 4, copies: 1 });
-    lean.advance();
+    await lean.advance();
 
     const contribution = (world: World): number =>
       world.report().capital.reduce((sum, entry) => sum + entry.effectiveContribution, 0);
@@ -401,15 +416,15 @@ describe('libraries cost materials to keep (brake 4)', () => {
     expect(contribution(hoard)).toBe(contribution(lean));
   });
 
-  it('leaves the shelved universe with less material at the end of the tick', () => {
+  it('leaves the shelved universe with less material at the end of the tick', async () => {
     const deep = universe({ affiliation: 'scholarly' });
-    deep.advance();
+    await deep.advance();
     const empty = universe({ affiliation: 'scholarly', shelf: 0 });
-    empty.advance();
+    await empty.advance();
     expect(deep.report().materialsRemaining).toBeLessThan(empty.report().materialsRemaining);
   });
 
-  it('degrades a library it cannot keep rather than driving the stock negative', () => {
+  it('degrades a library it cannot keep rather than driving the stock negative', async () => {
     // A shelf far past what this universe's laborers can supply in a month, and
     // an empty storeroom to start. The `universities` spec: *"the shortfall MUST
     // degrade libraries deterministically rather than driving materials
@@ -422,7 +437,7 @@ describe('libraries cost materials to keep (brake 4)', () => {
     // zeroing food or stone here would starve or halt construction instead of
     // exercising brake 4 at all.
     componentOf(world.state, MATERIAL_STOCK).set(stock.handle, 'vellum', 0);
-    world.advance();
+    await world.advance();
 
     const report = world.report();
     expect(report.materialsRemaining).toBeGreaterThanOrEqual(0);
@@ -430,7 +445,7 @@ describe('libraries cost materials to keep (brake 4)', () => {
     expect(report.libraryInstancesDegraded).toBeGreaterThan(0);
   });
 
-  it('sheds duplicates before it sheds the only copy of anything', () => {
+  it('sheds duplicates before it sheds the only copy of anything', async () => {
     // The brake is a cost on hoarding, not a randomised loss of the archive.
     // `libraryDependence` is the metric that would otherwise be moved by it.
     const world = universe({ affiliation: 'scholarly', shelf: 64, copies: 400 });
@@ -438,7 +453,7 @@ describe('libraries cost materials to keep (brake 4)', () => {
     // Vellum, for the same reason as the case above: it is the kind library
     // upkeep is paid from.
     componentOf(world.state, MATERIAL_STOCK).set(stock.handle, 'vellum', 0);
-    world.advance();
+    await world.advance();
 
     const report = world.report();
     expect(report.libraryInstancesDegraded).toBeGreaterThan(0);
@@ -454,9 +469,9 @@ describe('libraries cost materials to keep (brake 4)', () => {
 });
 
 describe('the per-tick capital emission §7 needs is there from the first tick', () => {
-  it('reports one entry per completed university, including the bare one', () => {
+  it('reports one entry per completed university, including the bare one', async () => {
     const world = universe({ affiliation: 'scholarly' });
-    world.advance();
+    await world.advance();
 
     const capital = world.report().capital;
     expect(capital).toHaveLength(2);
@@ -470,20 +485,20 @@ describe('the per-tick capital emission §7 needs is there from the first tick',
     expect(contributions[1]).toBeGreaterThan(0);
   });
 
-  it('is a number that moves with depth, which is the whole of `capitalSnowball`', () => {
+  it('is a number that moves with depth, which is the whole of `capitalSnowball`', async () => {
     const total = (world: World): number =>
       world.report().capital.reduce((sum, entry) => sum + entry.effectiveContribution, 0);
 
     const deep = universe({ affiliation: 'scholarly', shelf: DEEP_SHELF });
-    deep.advance();
+    await deep.advance();
     const shallow = universe({ affiliation: 'scholarly', shelf: 8 });
-    shallow.advance();
+    await shallow.advance();
     expect(total(deep)).toBeGreaterThan(total(shallow));
   });
 });
 
 describe('an interdicted shelf is worth nothing and costs the same', () => {
-  it('drops a forbidden cell out of depth while leaving its books standing', () => {
+  it('drops a forbidden cell out of depth while leaving its books standing', async () => {
     // `permits` is an AND over the two axis masks, so a universe with no
     // permitted technique permits no cell and every shelved node is dormant.
     // `rules-magic`'s `library-depth.ts`: *"A library full of interdicted books
@@ -493,7 +508,7 @@ describe('an interdicted shelf is worth nothing and costs the same', () => {
     const world = universe({ affiliation: 'scholarly' });
     const stock = collectRecords(world.state, UNIVERSE)[0] as { handle: EntityHandle };
     componentOf(world.state, UNIVERSE).set(stock.handle, 'permittedTechniques', 0);
-    world.advance();
+    await world.advance();
 
     const report = world.report();
     expect(report.capital.every((entry) => entry.effectiveContribution === 0)).toBe(true);
