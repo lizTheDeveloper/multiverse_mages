@@ -1229,17 +1229,14 @@
       "packages/content/data/node.json"
     ],
     "ok": false,
-    "registrationCount": 15,
+    "registrationCount": 17,
     "unconsumed": [
       "research-rate",
       "scribe-rate",
       "teach-rate"
     ],
     "starved": [],
-    "exclusions": [
-      "fertility",
-      "lifespan"
-    ],
+    "exclusions": [],
     "rows": [
       {
         "id": "area-denial",
@@ -1333,11 +1330,11 @@
         "stacking": "additive-into-multiplier",
         "cap": 3072,
         "capKind": "fp",
-        "status": "non-node",
+        "status": "node-driven",
         "consumers": [
-          "rules-world/economy/carrying-capacity (species.fertility)"
+          "coordination/knowledge-vitality.vitalityBonuses"
         ],
-        "excluded": true,
+        "excluded": false,
         "effectCount": 5,
         "nodeCount": 5,
         "enabledEffectCount": 0,
@@ -1367,11 +1364,11 @@
         "stacking": "additive",
         "cap": 512,
         "capKind": "fraction-of-species-base",
-        "status": "non-node",
+        "status": "node-driven",
         "consumers": [
-          "coordination/god/effects.lifespanEffectsFor (blessing + curse constants)"
+          "coordination/knowledge-vitality.vitalityBonuses"
         ],
-        "excluded": true,
+        "excluded": false,
         "effectCount": 17,
         "nodeCount": 17,
         "enabledEffectCount": 0,
@@ -2544,7 +2541,7 @@
     ],
     "ok": false,
     "findingCount": 125,
-    "examinedSymbolCount": 855,
+    "examinedSymbolCount": 860,
     "examinedPackages": [
       "content",
       "coordination",
@@ -2556,7 +2553,7 @@
       "sim-core",
       "state"
     ],
-    "productionFileCount": 309,
+    "productionFileCount": 310,
     "orphanPackages": [],
     "unreached": [
       {
