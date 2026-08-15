@@ -80,6 +80,15 @@ The brief supplied six controls. Five reconcile; two of the supplied figures are
 | `teach-rate`: lessons +0.1–3.1% | **not reproduced — and the measurement here is stronger.** Byte-identical at zero *and* at ×100 amplification, on three seeds at 600 ticks. The mechanism is known: `content-set.ts` registers `teach-rate` as a *non-node* consumer fed by blessing constants, so no authored node magnitude can move it at any width |
 | soldier detachments 0.000 per raid | **not measured directly.** The cause is measured: the `soldier` occupation holds **0 people at all 2,400 ticks**, because `world-step.ts` passes `standingSoldierTarget: NO_STANDING_ARMY` — a hardcoded zero, by citation |
 
+### The horizon is not the reason
+
+Every byte-identical row was re-run at **2,400 ticks** — the sweeps' own horizon, and eight times the
+240 the six-of-seven control was taken at. All nine stayed byte-identical in both directions:
+`lifespan`, `research-rate`, `teach-rate`, `scribe-rate`, `fertility` and `build-rate` at zero and at
+×100, and the three bonus channels at zero. **"Never fires" and "has not fired yet" are separated
+here by measurement, not by assumption** (`tools/w204/out/matrix-2400.json`, one seed; the 600-tick
+matrix carries three).
+
 ## The table
 
 Ranked by how load-bearing the mechanism is *supposed* to be. "fires" and "magnitude" are counts
