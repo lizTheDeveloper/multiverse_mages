@@ -109,8 +109,10 @@ The short version, because the obvious "cleanup" here is a security regression:
 - **GitHub Actions** (`.github/workflows/ci.yml`) is free and unmetered — this repo is public — and
   runs in a sandbox holding no credentials. It is the **only** gate that safely sees fork PRs.
 - **The self-hosted runner** (`scripts/ci-check.sh`, status context `ci/hetzner-lint`) runs on
-  `cto-tycoon-hel1` in a process holding Coolify, Neon, GitHub and Matrix tokens. It therefore
-  **refuses fork PRs outright**, and must keep doing so.
+  `multiverse-games-hel1` (SSH alias `games`) in a process holding Coolify, Neon, GitHub and Matrix
+  tokens. It therefore **refuses fork PRs outright**, and must keep doing so. It moved off
+  `cto-tycoon-hel1` on 2026-08-13; the status context keeps the old name because branch protection
+  requires that exact string.
 
 Neither can do the other's job. Do not delete the Actions workflow to "move CI off GitHub", and do
 not relax the fork guard to make a fork PR go green. `scripts/ci-check.sh` must stay equivalent to
@@ -225,6 +227,104 @@ running four strategies showed the engagement branch is evaluated **zero** times
 resolve inside one world step and nothing asks the agent. And a contrast claim of "about four
 percent of luminance" measured 1.01:1. Both were confident, both were wrong, and both cost one
 command to check.
+
+## A checker that answers about the wrong input is worse than no checker
+
+Five instances of one shape turned up in a single night, none of which threw, all of which reported
+confidently:
+
+- **An aggregator that globs a directory finds *any* run's output, not *this* run's.**
+  `search-strategies.mjs` folded every `.ndjson` under `<out>/records`, so a second invocation ate the
+  first one's records — at a different `--ticks`. The archive was well-formed, every number plausible,
+  and the only symptom was a denominator that did not match the flag. Two analysers had the same bug
+  in miniature, taking a run file by `readdir` order with `.find()`.
+- **An aggregator that locates input by *shape* rather than by *name* eventually finds the wrong
+  input.** W99 committed its records as CSV; `w99-analyse.mjs` reads `.runs.ndjson`. A before/after
+  comparison would have found nothing historical and silently compared the new run against itself.
+- **`awk '{print $2}'` on `gh pr checks` output.** The columns are tab-separated and the first
+  contains spaces, so `Verify (pinned Node)` splits into three fields and `$2` is `(pinned`. A merge
+  poller ran ten minutes reporting nothing green while both checks were green.
+- **jq's `//` on an empty string.** A running job's `conclusion` is `""`, not `null`, and `//` only
+  falls through on `null` and `false`. A watcher printed `not-started` for twenty consecutive polls
+  while the run was in progress.
+- **A CI gate that reads the newest run instead of the run for `origin/main`.** "Main is green" was a
+  statement about whichever commit happened to be newest.
+
+So: **when a check reports the negative case, confirm the check works before believing it.** Give it a
+positive control — an input it must accept — and prefer a third exit for *"the probe is broken"* over
+folding that into *"the answer is no"*. `scripts/w117-gate-check.sh` does this: `0` open, `42` shut,
+`1` broken probe.
+
+## A clean `git diff` over a stale `dist` is not a clean tree
+
+`bin/` entry points and the harness workers import from **`dist`**, not from source. So restoring a
+source file makes `git diff` come back clean while **every one of those entry points is still running
+the old build.**
+
+That cost a full re-measurement: after an ablated source file was restored, `git diff` was clean, and a
+`ui/session.json` recording plus an audit pass were both taken against the stale build. It was caught
+only because `verify:nosweeps` runs `tsc --build`, after which the UI test disagreed with the file that
+had just been committed.
+
+**`git diff --quiet` is a statement about source, not about the build.** After restoring or swapping
+any file that a `bin/` script or a worker reads through `dist` — and `git show <ref>:<path> > <path>`
+is exactly that manoeuvre — **rebuild before measuring**:
+
+    npx tsc --build
+
+Same family as the `node_modules` note above, from the other direction: there, an unbuilt worktree
+reports the whole repository broken; here, a stale build reports a measurement that is quietly about
+different code.
+
+## `cd <dir> || exit 1`, in every multi-command block
+
+A `cd` that fails **does not stop the block that follows it**. The rest runs in whatever directory the
+shell was already in — and in this repository that is the **shared checkout**, which is frequently on
+someone else's branch.
+
+That has now cost twice. The first time, five plan commits landed in a 1,224-line variant of
+`campaign-plan.md` on `plan-w18`. The second, a decision brief was committed and pushed to `plan-w18`
+because the worktree it was meant for had been removed by an earlier cleanup — a cleanup that was
+correct on its own terms, and which still set the trap.
+
+**Knowing the rule did not prevent either.** The failure is mechanical, not inattention, so the fix
+has to be mechanical too:
+
+    cd .claude/worktrees/<name> || exit 1
+
+Every *script* in this campaign already had that guard; the **inline** blocks did not, and that is
+exactly where it bit both times. And treat any worktree cleanup as invalidating every path a later
+command might assume.
+
+If you do land a commit on the wrong branch: **reverting is usually right and force-pushing is not.**
+Reverting a *merge* commit is the exception — it poisons future merges of the same content for
+whoever owns the branch, so a stray merge is better left in place than reverted.
+
+## A background loop outlives the reasoning that started it
+
+An auto-merger built earlier in a session was still running an hour after the same session wrote down
+a prohibition against exactly that, and merged a PR out from under a gated chain. Nothing in the
+tooling connects a rule to a running process.
+
+**Before starting any background loop, `pgrep` for the previous one. When you write down a
+prohibition, immediately check whether the prohibited thing is currently running.**
+
+And **never build an unattended "both required checks green → merge" drainer.** Two PRs can each be
+green and produce a red `main`, because "require branches to be up to date before merging" is off — a
+green check is a statement about the base it ran on. If you must merge unattended, merge **serially**
+and confirm `Verify` is green on `main` **at its own head** — matching `headSha` to `origin/main` —
+between merges.
+
+## A document is not a ref for the CI that runs it, either
+
+`CLAUDE.md`'s rule that a document is not a ref for the code it describes extends to infrastructure.
+`docs/devops/ci-and-deploy.md` asserted *"`main` runs never cancel each other. They serialise"* as one
+of three load-bearing properties. It is false — `cancel-in-progress: false` protects a *running* job,
+while GitHub keeps only one *pending* run per group — and three of `main`'s last eight runs never
+started. The claim that failed was the one whose stated purpose was preserving the release record.
+
+**Re-verify a documented infrastructure claim against the platform before relying on it**, exactly as
+you would a documented measurement against the tree.
 
 ## Conventions
 

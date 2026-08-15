@@ -1,0 +1,244 @@
+{
+  "spec": {
+    "name": "life-stages",
+    "axes": [
+      "stage",
+      "staffSize",
+      "speciesMix"
+    ],
+    "ticks": 120,
+    "capacity": 40,
+    "stride": 3
+  },
+  "digest": {
+    "runs": 336,
+    "crossSize": 1008,
+    "stride": 3,
+    "columns": {
+      "adds.demand.0": {
+        "min": 0,
+        "max": 0,
+        "sum": 0,
+        "distinct": 1,
+        "minAt": "stage=early staffSize=0 speciesMix=human",
+        "maxAt": "stage=early staffSize=0 speciesMix=human"
+      },
+      "adds.demand.1": {
+        "min": 0,
+        "max": 0,
+        "sum": 0,
+        "distinct": 1,
+        "minAt": "stage=early staffSize=0 speciesMix=human",
+        "maxAt": "stage=early staffSize=0 speciesMix=human"
+      },
+      "adds.demand.2": {
+        "min": 40,
+        "max": 40,
+        "sum": 13440,
+        "distinct": 1,
+        "minAt": "stage=early staffSize=0 speciesMix=human",
+        "maxAt": "stage=early staffSize=0 speciesMix=human"
+      },
+      "adds.demand.3": {
+        "min": 0,
+        "max": 0,
+        "sum": 0,
+        "distinct": 1,
+        "minAt": "stage=early staffSize=0 speciesMix=human",
+        "maxAt": "stage=early staffSize=0 speciesMix=human"
+      },
+      "adds.demand.4": {
+        "min": 0,
+        "max": 0,
+        "sum": 0,
+        "distinct": 1,
+        "minAt": "stage=early staffSize=0 speciesMix=human",
+        "maxAt": "stage=early staffSize=0 speciesMix=human"
+      },
+      "adds.instancesDegraded": {
+        "min": 0,
+        "max": 0,
+        "sum": 0,
+        "distinct": 1,
+        "minAt": "stage=early staffSize=0 speciesMix=human",
+        "maxAt": "stage=early staffSize=0 speciesMix=human"
+      },
+      "adds.scribeMonthsFinal": {
+        "min": 240,
+        "max": 96659,
+        "sum": 7541248,
+        "distinct": 142,
+        "minAt": "stage=early staffSize=2 speciesMix=orc",
+        "maxAt": "stage=late staffSize=0 speciesMix=human+elf+dwarf+gnome"
+      },
+      "adds.scribeMonthsTotal": {
+        "min": 26640,
+        "max": 11599080,
+        "sum": 903923360,
+        "distinct": 160,
+        "minAt": "stage=early staffSize=2 speciesMix=orc",
+        "maxAt": "stage=late staffSize=0 speciesMix=human+elf+dwarf+gnome"
+      },
+      "adds.seatsRefused": {
+        "min": 440,
+        "max": 440,
+        "sum": 147840,
+        "distinct": 1,
+        "minAt": "stage=early staffSize=0 speciesMix=human",
+        "maxAt": "stage=early staffSize=0 speciesMix=human"
+      },
+      "adds.shelfReplacementCost": {
+        "min": 0,
+        "max": 713728,
+        "sum": 101842944,
+        "distinct": 3,
+        "minAt": "stage=early staffSize=0 speciesMix=human",
+        "maxAt": "stage=late staffSize=0 speciesMix=human"
+      },
+      "adds.stoneConsumed": {
+        "min": 0,
+        "max": 4096,
+        "sum": 250104,
+        "distinct": 37,
+        "minAt": "stage=mid staffSize=0 speciesMix=human",
+        "maxAt": "stage=early staffSize=0 speciesMix=draconic"
+      },
+      "adds.studentsAdmitted": {
+        "min": 40,
+        "max": 40,
+        "sum": 13440,
+        "distinct": 1,
+        "minAt": "stage=early staffSize=0 speciesMix=human",
+        "maxAt": "stage=early staffSize=0 speciesMix=human"
+      },
+      "adds.vellumShortfall": {
+        "min": 0,
+        "max": 0,
+        "sum": 0,
+        "distinct": 1,
+        "minAt": "stage=early staffSize=0 speciesMix=human",
+        "maxAt": "stage=early staffSize=0 speciesMix=human"
+      },
+      "adds.vellumUpkeepPaid": {
+        "min": 0,
+        "max": 38400,
+        "sum": 5376000,
+        "distinct": 3,
+        "minAt": "stage=early staffSize=0 speciesMix=human",
+        "maxAt": "stage=late staffSize=0 speciesMix=human"
+      },
+      "contains.buildProgress": {
+        "min": 1024,
+        "max": 1024,
+        "sum": 344064,
+        "distinct": 1,
+        "minAt": "stage=early staffSize=0 speciesMix=human",
+        "maxAt": "stage=early staffSize=0 speciesMix=human"
+      },
+      "contains.complete": {
+        "min": 1,
+        "max": 1,
+        "sum": 336,
+        "distinct": 1,
+        "minAt": "stage=early staffSize=0 speciesMix=human",
+        "maxAt": "stage=early staffSize=0 speciesMix=human"
+      },
+      "contains.completedOnTick": {
+        "min": 0,
+        "max": 26,
+        "sum": 738,
+        "distinct": 12,
+        "minAt": "stage=mid staffSize=0 speciesMix=human",
+        "maxAt": "stage=early staffSize=0 speciesMix=draconic"
+      },
+      "contains.designedCapacity": {
+        "min": 40,
+        "max": 40,
+        "sum": 13440,
+        "distinct": 1,
+        "minAt": "stage=early staffSize=0 speciesMix=human",
+        "maxAt": "stage=early staffSize=0 speciesMix=human"
+      },
+      "contains.distinctNodes": {
+        "min": 0,
+        "max": 160,
+        "sum": 22400,
+        "distinct": 3,
+        "minAt": "stage=early staffSize=0 speciesMix=human",
+        "maxAt": "stage=late staffSize=0 speciesMix=human"
+      },
+      "contains.dominantCell": {
+        "min": 0,
+        "max": 66,
+        "sum": 6362,
+        "distinct": 3,
+        "minAt": "stage=early staffSize=0 speciesMix=human",
+        "maxAt": "stage=early staffSize=1 speciesMix=elf"
+      },
+      "contains.effectiveCapacity": {
+        "min": 40,
+        "max": 40,
+        "sum": 13440,
+        "distinct": 1,
+        "minAt": "stage=early staffSize=0 speciesMix=human",
+        "maxAt": "stage=early staffSize=0 speciesMix=human"
+      },
+      "contains.grimoireCount": {
+        "min": 0,
+        "max": 0,
+        "sum": 0,
+        "distinct": 1,
+        "minAt": "stage=early staffSize=0 speciesMix=human",
+        "maxAt": "stage=early staffSize=0 speciesMix=human"
+      },
+      "contains.hosted": {
+        "min": 40,
+        "max": 40,
+        "sum": 13440,
+        "distinct": 1,
+        "minAt": "stage=early staffSize=0 speciesMix=human",
+        "maxAt": "stage=early staffSize=0 speciesMix=human"
+      },
+      "contains.instanceCount": {
+        "min": 0,
+        "max": 160,
+        "sum": 22400,
+        "distinct": 3,
+        "minAt": "stage=early staffSize=0 speciesMix=human",
+        "maxAt": "stage=late staffSize=0 speciesMix=human"
+      },
+      "contains.profileCells": {
+        "min": 0,
+        "max": 42,
+        "sum": 5762,
+        "distinct": 12,
+        "minAt": "stage=early staffSize=0 speciesMix=human",
+        "maxAt": "stage=late staffSize=16 speciesMix=dwarf"
+      },
+      "contains.residentMages": {
+        "min": 0,
+        "max": 16,
+        "sum": 1713,
+        "distinct": 6,
+        "minAt": "stage=early staffSize=0 speciesMix=human",
+        "maxAt": "stage=early staffSize=16 speciesMix=dwarf"
+      },
+      "contains.staffCohorts": {
+        "min": 1,
+        "max": 4,
+        "sum": 936,
+        "distinct": 4,
+        "minAt": "stage=early staffSize=0 speciesMix=human",
+        "maxAt": "stage=early staffSize=0 speciesMix=human+elf+dwarf+gnome"
+      },
+      "contains.staffHeadcount": {
+        "min": 40,
+        "max": 3200,
+        "sum": 324480,
+        "distinct": 11,
+        "minAt": "stage=early staffSize=0 speciesMix=human",
+        "maxAt": "stage=late staffSize=0 speciesMix=human+elf+dwarf+gnome"
+      }
+    }
+  }
+}

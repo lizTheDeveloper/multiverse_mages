@@ -69,7 +69,25 @@ const PERMANENT_IDS: Readonly<Record<string, number>> = {
   knowledgeTheft: 9,
   objectives: 10,
   terrain: 11,
+  // Appended by `w70/opening-square`. The first append since the balance
+  // baselines were committed, and the one that established what an append
+  // costs: the gate hashes this whole table into `provenance.rngRegistryHash`
+  // and refuses on it, so all three baselines invalidated by identity before a
+  // single measured number moved. See `docs/design/opening-square.md` §4.
+  openingSquare: 12,
 };
+
+/**
+ * The first id an append would take, computed rather than written down.
+ *
+ * The synthetic cases below exercise the *checker*, not the registry, and they
+ * used to spell this number `12`. That made every future append break three
+ * tests that have nothing to do with the appended subsystem — which is exactly
+ * what happened when stream 12 arrived, and is a false failure dressed as a
+ * registry violation. The registry's own pins are still literals, because
+ * those are the ones that must not be computed from the code under test.
+ */
+const NEXT_FREE_ID = Math.max(...Object.values(PERMANENT_IDS)) + 1;
 
 /**
  * How each registry key is recognised in the §6 table. Substrings rather than
@@ -88,6 +106,7 @@ const DOC_TEXT_BY_SUBSYSTEM: Readonly<Record<string, string>> = {
   knowledgeTheft: 'knowledge theft',
   objectives: 'objective and raid generation',
   terrain: 'terrain generation and combatant deployment',
+  openingSquare: 'the opening square',
 };
 
 /** The consequence sentence every failure from this file has to carry. */
@@ -232,12 +251,12 @@ describe('the RNG stream registry matches the normative table', () => {
 
 describe('the registry check rejects the changes that invalidate baselines', () => {
   it('rejects renumbering, naming the subsystem and both IDs', () => {
-    const renumbered = { ...PERMANENT_IDS, mortality: 12 };
+    const renumbered = { ...PERMANENT_IDS, mortality: NEXT_FREE_ID };
     const problems = registryProblems(renumbered);
 
     expect(problems).toHaveLength(1);
     expect(problems[0]).toContain('mortality');
-    expect(problems[0]).toContain('12');
+    expect(problems[0]).toContain(String(NEXT_FREE_ID));
     expect(problems[0]).toContain('2');
     expect(problems[0]).toContain('balance baseline');
     expect(problems[0]).toContain('append-only');
@@ -281,13 +300,15 @@ describe('the registry check rejects the changes that invalidate baselines', () 
     const problems = registryProblems(inserted);
 
     expect(problems.some((problem) => problem.includes('weather'))).toBe(true);
-    expect(problems.join('\n')).toContain('next unused ID is 12');
+    expect(problems.join('\n')).toContain(`next unused ID is ${String(NEXT_FREE_ID)}`);
   });
 
   it('accepts appending a subsystem with the next unused ID', () => {
     // The control. Every assertion above says the checker complained; if it
     // complained about everything, they would all pass and mean nothing.
-    expect(registryProblems({ ...PERMANENT_IDS, weather: 12 })).toEqual([]);
-    expect(registryProblems({ ...PERMANENT_IDS, weather: 12, tides: 13 })).toEqual([]);
+    expect(registryProblems({ ...PERMANENT_IDS, weather: NEXT_FREE_ID })).toEqual([]);
+    expect(
+      registryProblems({ ...PERMANENT_IDS, weather: NEXT_FREE_ID, tides: NEXT_FREE_ID + 1 }),
+    ).toEqual([]);
   });
 });
