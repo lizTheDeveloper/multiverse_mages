@@ -255,8 +255,14 @@ const TICKS = 60;
  * parallel. Raised from vitest's 5s default for the same reason
  * `reference-time-to-tier.test.ts` raises its own: a timeout under load is a
  * scheduling fact reported as a behaviour failure.
+ *
+ * **Raised again on W116, because one test in this file now runs four of those
+ * universes rather than two.** The §6a assertion gained a null arm — the same
+ * pair with nothing shelved — and that is not an optimisable cost: the whole
+ * point of the arm is that it is the identical fixture run again. Doubling the
+ * budget for a test whose work doubled is bookkeeping, not a loosened bound.
  */
-const TIMEOUT_MS = 120_000;
+const TIMEOUT_MS = 240_000;
 
 describe('a deep library makes the mages who work in it faster (vision §6a)', () => {
   /**

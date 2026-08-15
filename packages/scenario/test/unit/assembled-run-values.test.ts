@@ -51,7 +51,7 @@
  * the unit level for every mask the defect wears.
  */
 
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it } from 'vitest';
 
 import type { ComponentValueViolation } from '@mm/sim-core';
 import {
@@ -132,6 +132,32 @@ async function yieldToRunner(): Promise<void> {
     setImmediate(resolve);
   });
 }
+
+/**
+ * Removes any sentinel a previous test left behind.
+ *
+ * **`installValueSentinel` sets module-global state, and a `finally` does not
+ * run when vitest times a test out** — it abandons the promise and starts the
+ * next test with the sentinel still installed. The two long tests below each
+ * take up to 120 s of real simulation, so under load they are exactly the ones
+ * that time out, and the next test to run is
+ * `is genuinely off when nobody installs it`, whose entire subject is that no
+ * sentinel is installed.
+ *
+ * That is how it presented: `expect(valueSentinelInstalled()).toBe(false)`
+ * failing in a full-suite run and passing alone, which reads as a defect in the
+ * instrument and is a defect in the *cleanup* — one test's timeout reported as
+ * another test's failure, three files away from anything either of them is
+ * about.
+ *
+ * `afterEach` runs even for a timed-out test, so this is the hook that can
+ * actually hold the invariant. Unconditional rather than guarded: restoring
+ * "nothing installed" is the correct state for every test in this file, since
+ * each one installs its own.
+ */
+afterEach(() => {
+  installValueSentinel(undefined);
+});
 
 describe('an assembled universe writes no non-finite value into state', () => {
   it(
