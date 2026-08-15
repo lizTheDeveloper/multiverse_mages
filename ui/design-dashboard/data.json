@@ -3,7 +3,7 @@
     "generatedBy": "scripts/build-design-dashboard.mjs",
     "command": "npm run ui:dashboard",
     "pinnedBy": "packages/content/test/unit/design-dashboard-payload.test.ts",
-    "contentRevision": "d4e3047657b4fa8a1a74e1d52f9f5c86",
+    "contentRevision": "92d842243c6c7c9718a74c1c097f81d9",
     "contentCounts": {
       "techniques": 5,
       "forms": 14,
@@ -12,10 +12,10 @@
       "nodes": 300,
       "species": 6,
       "traditions": 3,
-      "primitives": 16,
+      "primitives": 17,
       "territories": 5,
       "godCosts": 16,
-      "godConstants": 72,
+      "godConstants": 73,
       "raidConstants": 46,
       "autonomyWeights": 38
     },
@@ -1231,6 +1231,7 @@
     "ok": false,
     "registrationCount": 15,
     "unconsumed": [
+      "practice-rate",
       "research-rate",
       "scribe-rate",
       "teach-rate"
@@ -1388,6 +1389,21 @@
         "consumers": [
           "coordination/god/interventions.portalPlan"
         ],
+        "excluded": false,
+        "effectCount": 2,
+        "nodeCount": 2,
+        "enabledEffectCount": 2,
+        "enabledNodeCount": 2
+      },
+      {
+        "id": "practice-rate",
+        "unit": "multiplier-on-practice-progress",
+        "scale": "world",
+        "stacking": "additive-into-multiplier",
+        "cap": 4096,
+        "capKind": "fp",
+        "status": "unconsumed",
+        "consumers": [],
         "excluded": false,
         "effectCount": 2,
         "nodeCount": 2,
@@ -2543,8 +2559,8 @@
       "scripts/check-reachability.mjs --json"
     ],
     "ok": false,
-    "findingCount": 125,
-    "examinedSymbolCount": 855,
+    "findingCount": 126,
+    "examinedSymbolCount": 863,
     "examinedPackages": [
       "content",
       "coordination",
@@ -2556,7 +2572,7 @@
       "sim-core",
       "state"
     ],
-    "productionFileCount": 309,
+    "productionFileCount": 310,
     "orphanPackages": [],
     "unreached": [
       {
@@ -2627,7 +2643,7 @@
       },
       {
         "file": "packages/coordination/src/universe-effects.ts",
-        "line": 365,
+        "line": 448,
         "name": "summedYield",
         "kind": "function"
       },
@@ -2705,8 +2721,14 @@
       },
       {
         "file": "packages/rules-magic/src/instances/outcomes.ts",
-        "line": 115,
+        "line": 130,
         "name": "describeRefusal",
+        "kind": "function"
+      },
+      {
+        "file": "packages/rules-magic/src/instances/practice.ts",
+        "line": 258,
+        "name": "isPractisable",
         "kind": "function"
       },
       {
@@ -3161,7 +3183,7 @@
       },
       {
         "file": "packages/state/src/enums.ts",
-        "line": 211,
+        "line": 226,
         "name": "OBJECTIVE_KIND_UNSPECIFIED",
         "kind": "const"
       },
@@ -3293,7 +3315,7 @@
         "id": "legacy-reference-tick",
         "field": "legacyReferenceTick",
         "file": "packages/coordination/src/god/constants.ts",
-        "line": 296
+        "line": 298
       }
     ],
     "constantsBehindDeadCode": [
