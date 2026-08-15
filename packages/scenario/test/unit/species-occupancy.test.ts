@@ -194,47 +194,39 @@ describe('twenty world years in', () => {
     // rule actually *changes* needs more than one university to see, and is
     // measured in `coordination/test/unit/university-staffing.test.ts` — not
     // here.
+    //
+    // **Re-recorded on `w185/cohort-source`, 2026-08-14.** W185 opened the
+    // occupation transfer valve, which had been welded shut by a per-cohort
+    // floor, and filled university seats from `idle` only. Both change *who is
+    // a student*, so both change who is promoted, so the mage population at
+    // twenty years is a different set of individuals — 56 living mages here
+    // against the old run's. One species reaches the ceiling instead of three,
+    // and orc falls furthest. The durable reading is unchanged and is the one
+    // this test's name states: the spread is neither flat nor a hegemony. The
+    // membership is a pin.
     expect(bySpecies('dwarf').occupiedCells).toBe(12);
-    expect(bySpecies('human').occupiedCells).toBe(12);
-    expect(bySpecies('orc').occupiedCells).toBe(12);
-    //
-    // **Re-measured again on `w190/scribing-fidelity`, 2026-08-14:
-    // `12/12/12/10/10/8` where the merge read `12/12/12/11/11/9`.** The three at
-    // the ceiling are unchanged and the three below it each lost exactly one
-    // cell, so the title still describes the shape. Two causes compose here too,
-    // and the second is the interesting one:
-    //
-    // 1. **Content grew.** `pn-the-wrong-true-name` interns at 227 in sort
-    //    order, so 74 node ids shift by one and every id-keyed comparison in
-    //    the run sees a different graph. A pure renumbering moves things in
-    //    both directions; here it moved one thing.
-    // 2. **`seek-teaching` can now be satisfied by the shelf.** A mage with no
-    //    living teacher and a readable book studies it instead of falling
-    //    through, which changes what she spends a month on and therefore where
-    //    she is standing twenty years later. That is the mechanic and not a
-    //    side effect — but note it is *small*: one species, one cell, over a
-    //    horizon where the reference universe completes one to three studies
-    //    (measured; see the PR). The shelf is a fallback, and the numbers say it
-    //    behaves like one.
     expect(bySpecies('draconic').occupiedCells).toBe(10);
     expect(bySpecies('elf').occupiedCells).toBe(10);
+    expect(bySpecies('human').occupiedCells).toBe(9);
     expect(bySpecies('gnome').occupiedCells).toBe(8);
+    expect(bySpecies('orc').occupiedCells).toBe(5);
   });
 
   it('measures a spread that is neither flat nor a hegemony', () => {
     const entry = collectSpeciesCellOccupancy(telemetryFor(sample));
     expect(entry.status).toBe('measured');
-    // 0.0729 at this horizon on `w190/scribing-fidelity` — was 0.0473 on the
-    // merge described above, 0.0729 before either of *those* changes, 0.0714 on
-    // `main` alone and 0.0645 on the branch alone. Pinned to four places: the
-    // point of the metric is that this number moves, and a test that only
+    // 0.1296 at this horizon, re-recorded on `w185/cohort-source`, 2026-08-14
+    // — was 0.0473 before W185, 0.0729 before the merge described above, 0.0714
+    // on `main` alone and 0.0645 on the branch alone. Pinned to four places:
+    // the point of the metric is that this number moves, and a test that only
     // asserted "greater than zero" would let it move to anything.
     //
-    // Landing back on 0.0729 is a coincidence of one species losing one cell,
-    // not a return to an earlier build. Nothing about this tree resembles the
-    // one that first produced that figure, and reading it as a revert would be
-    // the worst available inference.
-    expect((entry as { value: number }).value).toBeCloseTo(0.0729, 4);
+    // It roughly trebled, and that is the largest single move this row has
+    // recorded. It is a consequence of who becomes a mage rather than of magic:
+    // before W185 the labour market could not move anybody, so the student
+    // population — and therefore the promotion pool — was whatever the founding
+    // position happened to seed. It is now the one the demand model asks for.
+    expect((entry as { value: number }).value).toBeCloseTo(0.1296, 4);
     expect(entry).toMatchObject({ detail: { everySpeciesEqual: false, everySpeciesZero: false } });
   });
 
@@ -275,13 +267,11 @@ describe('twenty world years in', () => {
     const held = new Set(bySpecies('gnome').occupiedCellIds.map((id) => cellName.get(id)));
     const dwarfHeld = bySpecies('dwarf').occupiedCellIds.map((id) => cellName.get(id));
     //
-    // **And it moved again on `w190/scribing-fidelity`: `perdo-limen` is back,
-    // so gnome is now four cells short of dwarf rather than three.** Which is
-    // the third distinct membership this set has taken across three builds, and
-    // it settles the argument the paragraph above was already leaning towards —
-    // *this set is a pin, not a finding*. The durable reading remains "gnome is
-    // short, and disproportionately short in Perdo": three of the four are
-    // Perdo now, where two of three were before.
+    // **Re-recorded on `w185/cohort-source`, 2026-08-14**, and the paragraph
+    // above predicted this: the membership moved again, to four cells of which
+    // three are Perdo. The durable reading — "gnome is short, and
+    // disproportionately short in Perdo" — survived a second re-roll, which is
+    // more than the membership did.
     expect(dwarfHeld.filter((cell) => !held.has(cell)).sort()).toEqual([
       'perdo-limen',
       'perdo-mentem',
@@ -293,7 +283,12 @@ describe('twenty world years in', () => {
   it('has every occupied cell shared, so the concentration is not specialisation', () => {
     const entry = collectSpeciesCellOccupancy(telemetryFor(sample));
     expect(entry).toMatchObject({
-      detail: { cellsOccupiedByAnySpecies: 12, cellsWithASoleOccupant: 0 },
+      // Re-recorded on `w185/cohort-source`, 2026-08-14: two of the twelve now
+      // have a sole occupant, both of them dwarf's. The test's claim is weaker
+      // than it was — ten of twelve shared rather than twelve — and it is
+      // recorded here rather than softened, because "two cells are held by one
+      // species" is exactly what this row exists to surface.
+      detail: { cellsOccupiedByAnySpecies: 12, cellsWithASoleOccupant: 2 },
     });
   });
 

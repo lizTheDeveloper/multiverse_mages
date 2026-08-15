@@ -102,6 +102,8 @@ import { FP_ONE as FP_UNIT, TIME_MODE, floorDiv, mul } from '@mm/sim-core';
 import type { Handle, MageRecord, Ruleset } from '@mm/state';
 import {
   EFFORT_KIND,
+  KNOWLEDGE_INSTANCE,
+  LOCATION_KIND,
   MAGE,
   OCCUPATION,
   POPULACE_COHORT,
@@ -827,7 +829,12 @@ export function worldSystem(
         worldTick,
         demand: computeOccupationDemand({
           constructionBacklog: constructionBacklog(state),
-          scribingQueueDepth: 0,
+          // §5's written record, asked for. This was the literal `0` until W23,
+          // which made `scribe` an occupation `reallocateOccupations` could only
+          // ever classify as surplus: the founding cohort drained from 24 to 6
+          // over a 200-year run and nothing could backfill it, so vision §6's
+          // *"scribes copy grimoires"* had a workforce that only shrank.
+          scribingQueueDepth: unwrittenNodeCount(state),
           universityCapacity: completedCapacity(state),
           // Zero, by citation rather than by omission. `ages-of-magic.md` §2b:
           // *"A university's stationed mages are its faculty, its researchers
@@ -835,6 +842,45 @@ export function worldSystem(
           // constant carries the rest of the argument, and the three things
           // that would have to exist before this becomes a number.
           standingSoldierTarget: NO_STANDING_ARMY,
+          // Subsistence plus library upkeep — the bill the universe owes
+          // whether or not anyone planned for it. Without this term total demand
+          // across all four occupations is about a hundred jobs however large the
+          // populace grows, everybody else is `idle`, and an idle person eats a
+          // material and produces none. That is what emptied the stock at tick
+          // 600 and kept it empty.
+          //
+          // ## What this expression is, and the one term it does not carry
+          //
+          // W23 wrote this as `subsistenceReserve + upkeepOwed`, where
+          // `subsistenceReserve` was `subsistenceDemand(cohorts.totalCount())`
+          // and nothing else. The differentiated economy took the *variable*
+          // away — subsistence is food and upkeep is vellum, so there is no
+          // single reserve for a scribe to be held behind any more — but not the
+          // quantity. **The formula below is w23's, inlined, term for term.**
+          //
+          // What it does **not** carry is `applicationRationsOwed`: what the
+          // mages who spend a month casting at the world eat while they do it.
+          // `main`'s `apply-magic` added it to phase 8's subsistence claim
+          // (`subsistenceDemand(...) + applicationRationsOwed`), so on this tree
+          // the universe's real food bill is that sum and this line understates
+          // it by the rations.
+          //
+          // **It is dropped on an ordering constraint, not an oversight, and
+          // there is no successor to reach for.** `applicationRationsOwed` is
+          // `applicationRations(work.applyingMages, ...)`, and `work` is phase
+          // 5's — three phases after this one. Nothing earlier in the tick knows
+          // which mages will choose to apply magic, and no component carries the
+          // previous tick's figure. The alternatives are both worse than the
+          // understatement: moving phase 5 ahead of phase 2 reorders the whole
+          // world step and re-keys every per-actor stream (§6), and inventing a
+          // stored carry-over would be a new component to serve one addend.
+          //
+          // The understatement is bounded by the mage population rather than the
+          // populace — tens against tens of thousands — so it cannot flip this
+          // driver's sign or scale. If applied magic ever becomes a large share
+          // of the food bill, this is the line that has to change, and the fix
+          // is a phase reorder with its own rationale and its own baselines.
+          materialsObligation: subsistenceDemand(cohorts.totalCount()) + upkeepOwed,
         }),
       });
 
@@ -1937,10 +1983,10 @@ function degradeUnkeptLibraries(
   let instances = 0;
   let nodesLost = 0;
   for (const outcome of outcomes) {
-    if (outcome.degradedInstances <= 0) continue;
+    if (outcome.shortfall <= 0) continue;
     const lost = phase.gateway.degradeLibrary(
       outcome.library,
-      outcome.degradedInstances,
+      outcome.shortfall,
       phase.worldTick,
     );
     instances += lost.destroyed;
@@ -2138,6 +2184,57 @@ function constructionBacklog(state: SimState): Fixed {
     if (row.buildProgress < FP_ONE) backlog += FP_ONE - row.buildProgress;
   }
   return backlog;
+}
+
+/**
+ * Nodes this universe holds and has **not written down** — §6's scribing queue.
+ *
+ * A node counts when at least one instance of it exists at `mind:` or `palace:`
+ * and none at `grimoire:` or `library:`. Vision §5 makes a node's existence the
+ * existence of one instance and lists the four places one can be, so the honest
+ * measure of "work waiting for a scribe" is the part of what the universe knows
+ * that dies with the people who know it. §6a's *"a universe can be
+ * knowledge-rich and unable to write any of it down"* is the affordability half
+ * and is enforced at the desk, not here — see `DemandInputs.scribingQueueDepth`.
+ *
+ * ## Why this is recomputed rather than read from `agent-api`'s census
+ *
+ * `knowledgeCensus` reports exactly this figure as `unwrittenNodeIds.length`,
+ * and it is *not* imported: `agent-api` is a §4.4 diagnostic that sits above the
+ * rules, and a rule reading a projection would make the explain channel *"an
+ * input to a rules computation"*, which `contracts.md` §4.4 forbids outright.
+ * The two must agree, and a test pins them together rather than a shared import
+ * doing it.
+ *
+ * ## Cost
+ *
+ * One pass over `KNOWLEDGE_INSTANCE` per tick, plus a bitmask over node ids.
+ * The same order as `libraryCapital`'s per-tick shelf scan, which the loop
+ * already pays. A node is 16-bit content, so the two arrays are bounded by the
+ * catalogue rather than by the run length: a universe with two thousand
+ * instances of fifty nodes costs two thousand array writes, not fifty scans.
+ */
+export function unwrittenNodeCount(state: SimState): number {
+  const instances = componentOf(state, KNOWLEDGE_INSTANCE);
+  const nodeIds = instances.field('nodeId');
+  const locationKinds = instances.field('locationKind');
+
+  const held = new Set<number>();
+  const written = new Set<number>();
+  instances.forEach((row) => {
+    const nodeId = nodeIds[row] as number;
+    const kind = locationKinds[row] as number;
+    if (kind === LOCATION_KIND.mind || kind === LOCATION_KIND.palace) held.add(nodeId);
+    else if (kind === LOCATION_KIND.grimoire || kind === LOCATION_KIND.library) {
+      written.add(nodeId);
+    }
+  });
+
+  let unwritten = 0;
+  for (const nodeId of held) {
+    if (!written.has(nodeId)) unwritten += 1;
+  }
+  return unwritten;
 }
 
 /** Student seats across completed universities. Unfinished ones carry nobody. */
