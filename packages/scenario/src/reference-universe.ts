@@ -47,9 +47,24 @@
  *    out herself. Knowledge spreads *only* from the founding grants below, which
  *    is why they are granted at {@link MASTERY_MAX} and why granting more of
  *    them is a sweep factor rather than a constant.
- * 3. **Scribing needs a university.** `isFeasible` masks `scribe` when a mage's
- *    scribe throughput is zero, and throughput is zero for an unaffiliated mage.
- *    Hence the founding academy.
+ * 3. **Scribing needs a university, and the universe starts without one.** This
+ *    used to read *"hence the founding academy"*, and the academy is gone. The
+ *    mechanism is unchanged — `isFeasible` masks `scribe` when a mage's scribe
+ *    throughput is zero, and throughput is zero for an unaffiliated mage — so
+ *    **nothing is scribed until the god founds a university and something
+ *    finishes it.** That is now the first real decision of a run rather than a
+ *    line in this file, and it is the consequence the change was made for: a
+ *    starting position with an academy in it made `universityCount` permanently
+ *    non-zero, and every promotion in the strategy pool gated on
+ *    *"while `universityCount` is zero"* was gated on a condition this file
+ *    falsified before tick 0 existed. `permissive-breadth` carried exactly such
+ *    a gate and, by its own version history, *"completed no university in any
+ *    run of any sweep ever taken"*.
+ *
+ *    What it costs is stated rather than hidden: the opening years have no
+ *    library, no scriptorium and no student seats, so knowledge can only move
+ *    mage-to-mage by teaching until a university stands. `strategy-audit.ts`
+ *    measures how long that window is per strategy.
  *
  * ## Every invented number is here, and each says why
  *
@@ -65,13 +80,11 @@ import { RNG_STREAM, createState, rngFromRootSeed } from '@mm/sim-core';
 import type { Scenario, ScenarioConfig } from '@mm/agent-api';
 import {
   GRANT_BUDGET,
-  LIBRARY,
   MATERIAL_STOCK,
   LOCATION_KIND,
   MAGE,
   OCCUPATION,
   POPULACE_COHORT,
-  UNIVERSITY,
   attachRecord,
   createUniverse,
   defineWorldStateSchema,
@@ -127,16 +140,6 @@ const FP_ONE = 1024;
  * 3,000, which keeps the opening comparable across this change.
  */
 const STARTING_MATERIALS = 1000 * FP_ONE;
-
-/**
- * Student seats in the founding academy.
- *
- * Invented: `contracts.md` §1.4 gives a university a `capacity` and no content
- * field supplies one, because founding a university is god action 11 and the
- * god has not been given verbs yet. Sixty-four is comfortably above any founding
- * cohort this scenario seeds, so capacity is not the thing under test.
- */
-const ACADEMY_CAPACITY = 64;
 
 /** The edict budget a universe starts with (`contracts.md` §1.1). Unused: no god acts. */
 const STARTING_EDICT_BUDGET = 4;
@@ -596,27 +599,29 @@ export function buildReferenceState(input: {
     vellum: STARTING_MATERIALS,
   });
 
-  const library = state.entities.create();
-  attachRecord(state, LIBRARY, library, { foundedTick: 0 });
-  const university = state.entities.create();
-  attachRecord(state, UNIVERSITY, university, {
-    libraryId: library,
-    capacity: ACADEMY_CAPACITY,
-    // Complete at tick zero, and still the right call now that construction is
-    // built. The sentence that used to be here — *the construction mechanic that
-    // would finish it is not built* — was true when it was written and is not
-    // any more: laborers raise buildings from the world loop as of W29. What
-    // stands is the other half of the argument. An academy still under
-    // construction would carry no students and no scriptorium, so a universe
-    // founded on one would spend its first years unable to teach or write, and
-    // every knowledge measurement in the reference run would be measuring the
-    // opening delay instead of the mechanism.
-    //
-    // A universe therefore builds nothing at all unless the god funds a site.
-    // That is not a gap: it is what gives `fundUniversity` a marginal value it
-    // did not have when nothing could finish what it founded.
-    buildProgress: FP_ONE,
-  });
+  // **No university, and no library.** There was a founding academy here, complete
+  // at tick zero, and its removal is this scenario's whole change.
+  //
+  // The argument that used to stand in its place is preserved, because half of it
+  // is still true: an academy under construction carries no students and no
+  // scriptorium, so a universe founded on one spends its first years unable to
+  // teach institutionally or to write. That is real, and it is now the opening
+  // the game actually has rather than a cost the scenario paid on the god's
+  // behalf. What made the old answer wrong is the other half. `universityCount`
+  // could never be zero, so every strategy promotion in the pool conditioned on
+  // *"while `universityCount` is zero"* was conditioned on a falsehood this file
+  // wrote before the first tick — and `permissive-breadth`, the strategy whose
+  // stated role is to fund broadly, records in its own version history that it
+  // *"completed no university in any run of any sweep ever taken."*
+  //
+  // Founding is god action 11 with a target of `0`, priced at
+  // `found-university-cost` (fp 10240) against a favor pool that starts empty and
+  // regenerates from `favor-regen-base` (fp 1024/tick). So the first university is
+  // a decision a god makes around world-year one, laborers finish it from stone
+  // through `advanceUniversities`, and until then the universe has exactly what a
+  // universe with no institutions has: mages who can teach each other and nothing
+  // to write on. `strategy-audit.ts` measures which strategies make that decision
+  // and when.
 
   const { speciesOf, ids } = speciesTable(content.registry);
   // Zero means every species; see DEFAULT_FOUNDING_SPECIES_MASK. Refused rather
@@ -655,7 +660,12 @@ export function buildReferenceState(input: {
         state,
         MAGE,
         mage,
-        createMage(rng, mage, species, speciesId, -species.maturityMonths, university),
+        // No affiliation: `createMage` defaults `universityId` to 0, which
+        // `contracts.md` §0 spells *unaffiliated*, and there is no longer a
+        // university for a founder to belong to. Everything downstream already
+        // supports it — `outlook.ts` reads 0 as "no affiliation" and the
+        // `affiliate` goal is how a mage acquires one once a university exists.
+        createMage(rng, mage, species, speciesId, -species.maturityMonths),
       );
       founders.push(mage);
     }
