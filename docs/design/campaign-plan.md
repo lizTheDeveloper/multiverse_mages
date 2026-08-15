@@ -1167,7 +1167,13 @@ margin, and W9 separately measured **9.1–12.4M favor discarded per run** — t
 overflows.
 
 So every verb is priced, no price binds, permit-everything dominates, and every mechanic built
-inside that ceiling is a decision the winner never has to make. That is why the compositional graph,
+inside that ceiling is a decision the winner never has to make.
+
+> **⚠ Superseded in part by W175.** *"No price binds"* was measured on bots with **no value function** —
+> no pooled strategy reads cost, favor or affordability, and **price is not in the observation at all**.
+> The arithmetic here holds; the conclusion that pricing is the wrong lever does not, because the
+> instrument could not have detected a cost response. Do not cite this paragraph without W175.
+> `axis-price-sweep.md`'s title and summary carry the same unhedged claim. That is why the compositional graph,
 the cost curves, the rituals and the timing rule each measured a null against `permit-then-idle`.
 
 And the reason favor does not bind is upstream of favor again: **worship accrues passively.** W16
@@ -5279,7 +5285,6 @@ the god-constant count, the metric count, the baselines, and this.
 
 **The general rule, now earned five times: when both sides of a conflict assert a count or a hash, ask
 the tree.** Neither literal describes a tree holding both.
-<<<<<<< HEAD
 
 ### W94 addendum 2 — the baseline stack, and two things that only a whole-object assertion catches
 
@@ -5606,8 +5611,6 @@ commits have touched `packages/` since, and both point at scratchpad paths that 
 neither can be bisected. **This run committed its 1,000 records (380 KB) so that it can be**, and every
 table recomputes from the CSV without re-running anything. That is the difference between a
 measurement and an anecdote, and it is worth the 380 KB.
-=======
->>>>>>> origin/main
 
 ---
 
@@ -8384,3 +8387,3917 @@ loader invariant by redefining a term they share.**
 
 Everything else in the eleven is defensible on its own. **The combination is not a merge proposal, and
 the branch says so in its title.**
+
+## W168 — anti-requisites: the opposing term, and the first mechanic that costs the permissive strategy anything
+
+Branch `anti-requisites`, implemented and measured before I was told it existed. **This is the result
+the campaign has been asking for since W24**, and it is worth stating in the campaign's own terms.
+
+W24's rule was: **"without an opposing term, siting is a ranking rather than a decision."** F3 measured
+the strategy space as **one axis — permit more versus permit less** — with `permissive-breadth`
+strictly dominant. Five independent confirmations followed that the binding constraint was content
+exhaustion and *the absence of opposing terms*.
+
+**An anti-requisite is an opposing term, aimed at exactly the strategy that had none.**
+
+### What it measured — agency gate, 2400 ticks, `referenceNodesKnown`
+
+| strategy | baseline | current | delta |
+| --- | --: | --: | --: |
+| **`permissive-breadth`** | 75.25 | **45.00** | **−30.25 (−26.1 SE)** |
+| `portal-rush` | 46.13 | 46.13 | 0.00 |
+| `archivist` | 44.88 | 44.88 | 0.00 |
+| `uniform-random-legal` | 44.63 | 44.63 | 0.00 |
+| `passive-control` | 42.13 | 42.13 | 0.00 |
+| `worship-maximizer` | 41.50 | 41.50 | 0.00 |
+| `narrow-depth` | 7.63 | 7.63 | 0.00 |
+| `denial-warden` | 4.75 | 4.75 | 0.00 |
+
+**Seven of eight byte-identical. The eighth loses 40% of its knowledge.** The dominant strategy's lead
+over the passive control falls from **+33.1 nodes to +2.9** — **from one authored pair.**
+
+Both reference gates are byte-identical at every metric, and the branch says why rather than claiming
+generality: **both halves of the shipped pair are `creo`, and the v1 rectangle is
+`intellego · perdo · rego` × `mentem · terram · limen · nomen`, so the reference universe cannot reach
+either cell.** The mechanic is live and the reference run cannot see it — measured, not asserted.
+
+### Three design calls worth recording
+
+- **Authored on cells**, not nodes and not a named school region. The third was not close: **no
+  `school` entity exists anywhere in `content` or `state`**, so it would have invented a concept the
+  codebase has never had. And §4b speaks in schools — *"if you use light magic you can't also use dark
+  magic"* is a claim about bodies of magic.
+- **`resolution` is per-exclusion, not global** — `refused` is a wall, `destructive` succeeds and
+  destroys the excluded holdings. That follows §4b's *"every exclusion carries its reason"*: if the
+  reason varies, the consequence should.
+- **Enforcement sits on `createInstance`, not at the acquisition frontier.** Five things put a node in
+  a mage's head; four route through `CoordinatingKnowledgeGateway` and the fifth — **raid theft** —
+  calls `createInstance` directly. **A frontier check would have been launderable: steal the school you
+  are forbidden.** That is not an exotic edge case, it is a strategy, and a learned agent would find it
+  while a human reviewer read the filter and believed it.
+
+Only **held** locations are checked. A library is an institution, and a civilization keeping both books
+is what §4b says a civilization is *for*.
+
+### The meta-test that overruled the plan
+
+The intent was to ship the machinery with **zero** pairs so no baseline moved. **`schema-constraint-liveness`
+refused**: it proves each schema constraint by finding shipped content it applies to, mutating it, and
+asserting the load fails *for that reason*. **A schema nothing instantiates cannot be proven live, and
+an unproven constraint is exactly the decoration that file exists to catch.**
+
+The meta-test was right and the plan was wrong. That is the first time in this campaign a guard has
+overruled an agent's *design* rather than catching a defect.
+
+### And what it refuses to claim
+
+- **Not** that the space now has two axes — *"one axis with a cost on one end"*. Whether a different
+  strategy now wins is a tournament question and wants a round-robin, not this gate.
+- **Not** that −30.25 is the right magnitude. One pair, `destructive`, two cells, nine nodes,
+  `tuningStatus: "untuned"`. **A 40% loss may well be too harsh — the point is that the number to argue
+  over is now measured rather than hypothetical.**
+
+### How it relates to the pricing sweep now running
+
+Pricing attacks the same problem from the **cost** side; anti-requisites attacks it from the
+**content** side. Both are live. If pricing produces a smaller effect than one authored exclusion pair,
+**that is the more useful finding** and it would mean the lever was never the cost. The pricing agent
+has been told, and told not to abandon its measurement.
+
+The branch is **52 commits behind `main`** and conflicts on `interning.test.ts`.
+
+## W169 — no flat price binds the opening square, and the reason is arithmetic rather than tuning
+
+PR #159, the owner's *"price the permit verbs first"* decision executed. **The answer is negative and
+it is the useful kind**: not *"we picked the wrong number"* but *"a one-time toll is the wrong
+instrument."*
+
+### What the verbs cost today
+
+`god-cost.json`, read through `Fp` at 1/1024:
+
+| action | id | raw | favor |
+| --- | --: | --: | --: |
+| `permit-technique` | 1 | 8192 | **8** |
+| `forbid-technique` | 2 | 8192 | **8** |
+| `permit-form` | 3 | 4096 | **4** |
+| `forbid-form` | 4 | 4096 | **4** |
+
+All four `untuned`. **And flat.** `interventionCost` is `base × hysteresis / fp(1024) × tier`, with
+`tier` 1 for everything but a founding grant, so **nothing makes the second permit cost more than the
+first.** The one escalator, `hysteresisMultiplier`, keeps its counter **per axis bit** and decrements
+it every 60 ticks — it prices flipping *the same* technique twice, which is the portal-raid line it
+was built to close. **Permitting fourteen different forms costs base, fourteen times over.**
+
+Permit and forbid are equal by **enforced invariant** (`symmetric(1, 2, …)`), so any repricing moves
+all four together.
+
+### The sweep, and the finding
+
+384 runs: four strategies × **eight prices (1× to 16×)** × two openings × two starting cells × three
+replicates, paired within seed, plus a twelve-strategy pilot.
+
+**No price in the range binds**, and above 16× both verbs are already past the cap at every tier. The
+stated reason is the one worth keeping: **a one-time toll is arithmetically incapable of binding
+against a 70-favor ceiling on a 2400-tick horizon.** The god has more favour than the toll can ever
+consume, so the size of the toll is not the variable.
+
+This is what I asked for and did not expect to get: I briefed *"if the verbs are mispriced in a way a
+single number cannot fix — flat where it needs to scale — say that, it is a more useful finding than
+any value you could pick."* It is, and it is measured rather than argued.
+
+**And it converges with a direction already in this file.** The plan records the author's *"the switch
+prices stay roughly where they are"* and that repricing was superseded by **drains**. This supports
+that conclusion **with a harder reason than the drains argument had** — and the `axisPriceScale` factor
+it adds is exactly the control arm a recurring-upkeep proposal will need.
+
+### Two findings nobody was looking for
+
+- **`uniform-random-legal` cannot permit at all.** It submits actions 1–7 bare while `CANDIDATE_SLOTS`
+  covers only 8–14, so **its permit submissions are refused before any price is consulted.** Every
+  measurement that treated it as a permissive arm was measuring something else.
+- **The executor's content memo is now keyed on (tradition, price).** Keyed on tradition alone, a
+  worker serving two price arms would have served the second one the first one's content — and **every
+  number would have been plausible and wrong.** Caught before sweeping, not after.
+
+And it caught itself: reachability reported **131** findings with a helper it had added that nothing
+called, and **130** without. The helper is deleted, so the branch adds none. **An agent finding its own
+built-and-never-reached symbol, mid-task, is new.**
+
+### Where this leaves the two levers
+
+- **Cost side: a flat toll cannot work.** The next instrument is recurring — upkeep, not entry.
+- **Content side: anti-requisites already works** (W168), taking `permissive-breadth` from +33.1 nodes
+  over passive control to +2.9 from one authored pair.
+
+**So the opposing term the campaign wanted is a content term, not a price**, and the pricing sweep's
+value is that it closes the other door with a reason rather than leaving it open as an untried idea.
+
+## W170 — wartime forbidding, and a contract the code has not caught up with
+
+The owner's design:
+
+> *"When a raid starts, you focus on the raid, and you can turn things off or on during the raid. The
+> fiction is that everyone understands you sometimes have to turn off unmaking during a raid — so
+> nobody can unmake your walls, and the trash collectors can't unmake your trash. **Everyone's cool
+> with that as long as nobody dies.** But if you go doing it willy-nilly to get extra power, everyone's
+> going to be mad — once you have a big civilization that depends on your magic."*
+
+**Half of this is already specified, and the specified half is not implemented.**
+
+### What `contracts.md` §4.2 already says
+
+The paragraph reads *"Most actions are masked during engagement, and four are not"*, and records that
+the earlier *"every action except no-op is masked"* rule **was repealed** by `raid-engagement.md`:
+
+| action | during engagement |
+| --- | --- |
+| permit technique *(1)*, permit form *(3)* | **legal, and locks** |
+| forbid technique *(2)*, forbid form *(4)* | **legal for the defender only, and locks** |
+| edicts *(5, 6, 7)* | masked |
+| everything else | masked |
+
+**The lock is the mechanic**: a cell permitted mid-raid may not be forbidden again before the raid
+resolves, so *"every mid-raid change is a commitment under uncertainty rather than a reaction knob."*
+`raid-engagement.md` §1: *"Without the lock, mid-raid policy is a reaction knob and the correct play is
+to counter whatever you last saw."*
+
+### What `mask.ts` on `main` actually does
+
+```ts
+if (inEngagement(state)) {
+  return mask;          // [1, 0, 0, …] — no-op only
+}
+```
+
+Its docstring still quotes the **repealed** rule verbatim: *"Every action except no-op is masked during
+engagement."* **The contract was amended and the implementation was not.** That is the eleventh
+instance of this campaign's documentation-versus-code drift, and the first where the *document* is
+ahead.
+
+### And it has been invisible because nothing reaches it
+
+Two earlier findings explain why nobody noticed:
+
+- **The engagement branch is evaluated zero times.** Instrumented, four strategies: raids resolve
+  inside one world step and nothing asks the agent. An earlier claim that unmasking these four would
+  move every baseline was **measured and found false** for exactly this reason.
+- **`submit()` runs a whole world step synchronously** (W164), so a raid opens and resolves *between
+  two observations*. **A player cannot act during a raid today, at all.**
+
+So the design the owner is describing — *focus on the raid, toggle during it* — needs the raid to
+become interactive first. **That is the "raids are the RTS action game" half of the vision, and it does
+not exist.** The contract, the lock rule and the four legal actions are all waiting on it.
+
+### The genuinely new part: consent is conditional on outcome
+
+The mechanic the owner adds is **not** in the contract, and it is the interesting one:
+
+- **Wartime forbidding is tolerated.** Turning off unmaking during a raid is understood — the enemy
+  cannot unmake your walls, and the trash collectors going idle is an accepted cost.
+- **Tolerance is conditional: *as long as nobody dies*.** The same action is forgiven or resented
+  depending on how the raid ends. That makes it a bet, not a toggle, and it pairs exactly with the
+  lock — you commit under uncertainty and are judged on the outcome.
+- **Peacetime forbidding is resented**, and **the resentment scales with dependence.** *"Once you have
+  this big civilization that depends on your magic."*
+
+**This is the drain the owner asked for, in social form.** The macro-model ask (W-prev, PR #160) wanted
+consistent drains on favor; here the drain is *worship*, its rate is a function of *how much the
+economy leans on what you just switched off*, and it is **waived by winning**. That is a far better
+shape than a flat upkeep: it is a cost that only bites when you are careless, which is what makes it a
+lever a player learns rather than a tax they pay.
+
+It also closes the loop the campaign already has half-built and inert: **#63** measures daily-relevant
+magic at **+48.8%** worship against spectacle's **+23.0%**, so the game already knows how to price
+*usefulness*. **Resentment is that same term with the sign flipped**, and it needs the same content to
+exist — something worth casting at the bottom of the tree.
+
+### What this implies about ordering
+
+The parts stack, and the bottom two are already the campaign's blockers:
+
+1. Something worth casting daily (content — the `resource-yield`-routes-only-to-stone problem).
+2. A raid the player can act *inside* (multi-step engagement; the vision's RTS layer).
+3. The four actions actually unmasked, matching the contract.
+4. Conditional consent — tolerated in war, resented in peace, waived by winning, scaled by dependence.
+
+**Nothing above step 2 can be measured until step 2 exists**, and step 2 is the same missing piece as
+*"no raider ever comes home"* and *"the observation boundary cannot see an engagement."* Three separate
+findings, one cause.
+
+## W171 — correcting W170: the raid UI already lets a player act during a raid
+
+**W170 says "a player cannot act during a raid today, at all." That is wrong, and it is mine.** The
+owner corrected it and `ui/` on `main` confirms the correction.
+
+`ui/raid/index.html` implements mid-raid god action. Its own comments:
+
+- *"The ruleset MAY be changed during a raid, and every change LOCKS until…"*
+- *"the two-layer legality check, and `forbiddenCastsBlocked` as a counter"*
+- *"costs in `raid-constant.json` — forbid, permit, levy, ward, mend"*
+- the surface described as *"god-shaped: permit, forbid, and favor spent on a standing condition"*
+
+`ui/ruleset/` and `ui/ruleset-symmetry/` carry related surfaces. **The mechanic is not missing. It is
+designed, specified and prototyped.**
+
+### The accurate statement is a three-way split
+
+1. **Specified.** `contracts.md` §4.2 makes permit *(1)* and permit-form *(3)* legal during engagement,
+   forbid *(2)* and forbid-form *(4)* legal for the defender, **all four locking** until the raid
+   resolves. The old *"every action except no-op is masked"* rule was **repealed** by
+   `raid-engagement.md`.
+2. **Prototyped.** `ui/raid/` implements the interaction, the lock and the costs.
+3. **Not carried by `agent-api`.** `mask.ts` still early-returns `[1, 0, 0, …]` in engagement and its
+   docstring quotes the *repealed* rule; `submit()` runs a whole world step, so a session client
+   observes only between raids. And #152 found `ui/raid/` draws a **synthetic trace** rather than the
+   recorded session — **consistent with (3), because the session cannot supply one.**
+
+**So this is a wiring gap, not a missing mechanic** — a much smaller and better-defined item than W170
+described.
+
+### How I got it wrong, because the shape matters
+
+I had three code-level facts — `mask.ts` returns no-op-only in engagement, the engagement branch is
+evaluated zero times, `submit()` runs a whole step — and I generalised them into a **whole-system
+claim** without checking the UI layer. Each fact was true. The conclusion was not.
+
+**This is the same failure I have been cataloguing all day, in its purest form.** A checker that
+answers confidently about the wrong input; a document that is not a ref for the code; a grep that
+misses a verb reached by drawing. Here the "wrong input" was *the layer I happened to be reading*, and
+nothing in the three facts told me a fourth layer existed.
+
+That is now four of my briefs refuted by measurement or by the owner in one session — the ablation
+seam, the academic-primitive target, the combat primitives, and this. **In every case the correction
+came from someone looking at a layer I had not opened.** The rule I keep writing for agents applies to
+me at least as hard: *where the question is "does this happen", look, do not infer.*
+
+The sequencing agent has been told, since I gave it this claim as a dependency.
+
+## W172 — two of three rebased green, and a re-baseline coupling I created today
+
+#125 and #126 are resolved and green; #140 is mergeable and deliberately **not** green.
+
+### #125 — and its "deliberately red" blocker is simply gone
+
+Its `reference-time-to-tier.test.ts` conflict was resolved by taking **`main`'s side wholesale**, and
+not on arithmetic — **on a tripwire.** #143 installed a source-text check in
+`species-separation-spread.test.ts` that pins `RETIRED_ASSERTIONS` and the count of
+`.high).toBeLessThan(` sites in the sibling file. The branch's side re-adds two assertions retired at
+**7/12** and **11/12**, so keeping any of it **fails by construction.**
+
+That is the guard working exactly as designed, one day old, against a merge nobody anticipated when it
+was written.
+
+And the assertion #125 was being *held red on* — `expect(human.high).toBeLessThan(orc.low)` — **is
+simply gone**, deleted by #143 at 0/12. The blocker dissolved rather than being resolved.
+
+**The brief's explicit question was whether the merge changed the movement. It did not**: all seven
+agency rows reproduce §5 **delta-for-delta and SE-for-SE**. So the control that justified its
+re-baseline still holds after twenty-two commits of `main`.
+
+### #126 — the prediction confirmed, and an instruction correctly broken
+
+**109 of 109 rows at `delta 0.00000`** (9/9, 10/10, 90/90), with `baseline-invalid` on `contentHash`
+the only finding. The prediction written down before the rebase held exactly.
+
+**It regenerated the agency baseline against my explicit instruction not to — and flagged it rather
+than doing it quietly.** The reasoning is better than my instruction was: I forbade it because `main`'s
+copy was 17 rows stale, but **#72 landed as `672066f` and absorbed those rows**, so agency now
+reproduces at 90/90 and the re-record imports none of `main`'s numbers, only the stamp. Leaving it
+would have left a file the gate refuses to read.
+
+**That is how to break an instruction**: do it, say you did, give the reason the instruction no longer
+applies, and tell the owner the revert is two files.
+
+### #140 — three blockers, all judgements rather than merges
+
+Headline improved on its own: **`check:consumption` is now 10 → 0**, not 10 → 7, because #144 landed
+the combat half in between.
+
+1. **Three gates move on real behaviour** (+44.54, +29.13, +20.23 SE) and **no control can separate
+   movement from mechanic here — the movement *is* the mechanic.** Correctly refused as the owner's.
+2. `orc < elf` goes **inconclusive → refuted**; wants a 12-set re-measurement and a re-worded row.
+3. `ablation-reaches-the-world-loop` reads 300 vs 301 — **the same assertion the anti-requisites branch
+   trips at 300 vs 298**, so one fix serves both.
+
+### Two hazards, and the second is mine
+
+- **Two arm lines went blind again.** `referenceNodesGained@denial-warden` (MDE **289%**) and
+  `referenceNodesKnown@denial-warden` (**114%**) — *the same two that closed at w107* — **crossed back
+  on a pure re-roll.** Recorded in `BLIND_ARM_LINES`. A power threshold that a re-roll can cross in
+  either direction is not a property of the build.
+- **New tonight, and I introduced it.** `ui/design-dashboard/data.json` (#154) embeds each gate's
+  provenance and metric rows, so **every baseline re-record now also requires `npm run ui:dashboard`.**
+  It hit all three branches. I projected `fileSeal` and the reachability findings out of that payload's
+  pin today for exactly this reason and **did not follow the thought to the metric rows** — the same
+  omission twice in one file, and the second time it taxed three unrelated PRs.
+
+## W173 — the dwarf answer, and four numbers I gave the owner that do not survive it
+
+`tools/w134/upkeep.mjs`, 7 arms × 20 replicates on W116's seeds, refs `e2a15cf` before and `b02e115`
+after. **No rules-path change, no new draw, nothing written under `balance/`.** Positive control passed
+**three** ways — a `--control` assertion (200-instance library, stock 0 → 400 fp shortfall, 12
+degraded), per-arm first-fired ticks so a zero is readable, and the decomposition
+`scribed − degraded = final` closing exactly on all fourteen arm/tree pairs.
+
+### The answer: mechanism confirmed, explanation falsified
+
+**It is destruction, not a failure to write.** Dwarf production *rose* — **417.1 → 597.3** — while
+degradation rose four times as far, **174.6 → 545.5 (4.58 SE)**.
+
+**But `applyLibraryUpkeep` was not newly reached.** Before #134, dwarf already owed from **world tick
+2**, went unpayable on **118.8 ticks in 7 of 20 runs**, and lost 174.6 instances; all-six fired in
+17 of 20. What changed is the **rate** and the **crossing point** (dwarf 631 → 270). So H1's mechanism
+is right and **H1's stated explanation — "newly reached" — is wrong.**
+
+### Four things I told the owner that do not hold
+
+I reported these when the owner made the decision to accept #134, and three of them were mine to check:
+
+1. **"elf −43%, draconic −28%"** — **not significant.** Elf **1.12 SE**, draconic **0.33 SE**,
+   all-six **0.14 SE**. **Only dwarf clears `toleranceK = 3`, at 3.83 SE.** I quoted three regressions
+   where there is one.
+2. **"while its population doubles"** — **false.** Living mages **0.55 SE**, and the populace point
+   estimate *fell*. Run length checked as a non-confound at 0.62 SE.
+3. **H2's cause — `scribeAffinity`** — wrong. **The ceiling is vellum.** Gnome wrote **113** and kept
+   **75.7**; dwarf wrote **597** and kept **51.8**. Being the best scribe is not what punishes dwarf;
+   **writing more than the vellum can sustain is.**
+4. **And the framing lands in the owner's favour anyway, for a better reason than I gave.**
+   **What died was redundancy**: 545.5 destroyed instances cost dwarf **0.95 ± 0.62 nodes** leaving the
+   universe — down from 2.75 — and `nodesKnown` moves 1.09 SE. The library shrank; the knowledge did
+   not.
+
+### The defect, named not fixed, and it is upstream of upkeep
+
+Nothing is wrong in `applyLibraryUpkeep`. Two absences above it:
+
+- **The affordability reserve at `world-step.ts:688` is one tick deep.** A book owes 2 fp/tick
+  **forever** and nothing compares that to income. **91% of dwarf's production is destroyed; 658,842 fp
+  of vellum wasted.**
+- **The vellum source is not sized for its sink** — endowment 1,024,000 fp against lifetime production
+  24,170 fp, ledger closing to the unit.
+
+Both were **pre-registered** in `economy-flow-models.md` §6, ideas 2 and 4. A prediction written before
+the measurement and confirmed by it is the strongest thing in this file.
+
+### And #134 is red — nine failures, not a flake
+
+`npm run verify` on `b02e115`: **9 failures across 7 files, same count on two runs, and all seven files
+pass on `e2a15cf`.** The one that matters is `knowledge-capital.test.ts`: its four brake-4 assertions
+still pass, but **vision §6a — *"a deep library produces strictly more output over five years than a
+bare shelf"* — now fails at `expected 1025 > 1026`.**
+
+**The brake's mechanics are intact; the benefit it balances against is gone.** That is a vision-level
+claim failing, and the owner accepted this PR on my report, which did not mention it because I did not
+know. It should be re-decided with this on the table.
+
+*(The agent also shipped a counter that could only ever have returned zero —
+`report.shortKinds.length` on a `Record` — caught it, fixed it, and disclosed it unprompted. Third
+agent today to catch its own instrument before publishing.)*
+
+## W174 — the pricing result, finished: no price binds, and two instruments cannot see what they look like they measure
+
+PR #159, both required checks green, **nothing under `balance/` moved and nothing regenerated** — all
+three gates at delta `0.00000` on every row.
+
+### No price binds, and the ones that look like they do are a lockout
+
+**No price up to 7× moves `permissive-breadth` at all** — it opens the whole 5×14 grid from either
+opening, gap inside ±6. A one-time toll cannot bind a god who keeps spending: **2400 ticks of income is
+2,400–13,000 favor against a 96-favor grid.**
+
+**And the prices that appear to bind are not binding — they are outlasting a bot's 140-round permit
+window.** The axis masks say so directly: the narrow arm ends with `openTechniques` **frozen at its
+founding 1.0** while `openForms` climbs to 10–12. **That is a lockout, not a narrower square**, and
+without reading the masks it would have been reported as the price working.
+
+**A single number cannot fix it**, for a reason that is structural rather than a matter of range: a
+technique costs **twice** a form against a **common** 70-favor cap, so the two verbs land on opposite
+sides of the cliff. At 16×, `permissive-breadth` opens **all fourteen forms and cannot buy one
+technique** (1.0 × 14.0).
+
+### Stated in the direction that costs something
+
+One exclusion pair takes `permissive-breadth` **75.25 → 45.00** (−26.1 SE) with the other seven
+byte-identical. **No price up to 7× moves it at all.** The agent's own conclusion, and it is the right
+one to write down: **the lever was probably never the cost.**
+
+The distinction it draws is the useful part — **a toll is undirected**; at 8× and 16× it "works" by
+deleting a verb for everyone. **An exclusion is directed.** That is why one authored pair beats a
+sixteen-fold price rise.
+
+### Two instruments that cannot see what they appear to measure
+
+- **`illegalActionRate` cannot detect an unaffordable action.** 649,882 submissions, 3,143
+  rejections — **all** of them `permissive-breadth`'s slot exhaustion. **Arms where the god could
+  afford nothing recorded zero.** The mask filters first, so unaffordability is a *substitution*, not
+  a rejection. A metric named for illegality is blind to the most common way an action fails.
+- **`species-separation.mjs` cannot answer any god-action question.** `runLongReference` **submits no
+  actions, ever** — byte-identical at 1×, 8× and 16×.
+
+**The second one bounds every 9.9 finding in this campaign.** The refutations of #140's four-species
+chain and of #137, and the "three species in a chain, not four" result, were all taken **under passive
+play with no god acting at all.** They are sound as comparisons — like against like — but their scope
+is narrower than I have been stating it: **species do not differentiate *when nobody plays*.** Whether
+they differentiate under a god who acts is **still unmeasured**, and it is the same gap flagged earlier
+as *"separation under play, ~40 min/ref"*. I have quoted those results repeatedly without that
+qualifier.
+
+*(`SeedSetInput.options` landed mid-measurement so the instrument can now vary the opening square; it
+still cannot vary a price or submit an action.)*
+
+## W175 — W174's pricing result was measured on a bot that cannot see prices, and the reason is architectural
+
+Asked directly: *"That permissive breadth isn't taking the price into the value function?"* It is not, and
+it is worse than an oversight in one strategy.
+
+**No strategy in the pool reads cost, favor-affordability, price or budget.** `permissive-breadth` has no
+value function — it returns a static preference list and the harness takes the first *legal* entry, which
+its own comment says is `permitTechnique` on every round. The mask filters the unaffordable action, the
+next preference goes through, and the strategy never learns anything happened. So **unaffordability is a
+substitution, not a rejection**, which is also why `illegalActionRate` recorded zero on arms where the god
+could afford nothing.
+
+That re-reads W174 without contradicting its arithmetic:
+
+- **Survives.** 2400 ticks of income against a 96-favor grid is real regardless of who spends it, and a
+  technique costing twice a form against a common cap does put the two verbs on opposite sides of a cliff.
+- **Does not survive.** *"The lever was probably never the cost."* That rests on a measurement which could
+  not have detected a cost response. **Pricing is untested for any agent that optimises** — which is every
+  human player and the RL bridge. The lockout at 8× and 16× is exactly what a price-blind agent does: it
+  ignores a price until the price becomes a wall.
+- **Unaffected.** Anti-requisites, which works by removing what a mage can *hold*.
+
+### It is not a bug in the strategy: price is not in the observation
+
+`PreferenceInput` is `{ observation, mask, round, context }` and none of the four carries a cost table.
+`god-cost.json` prices sixteen actions and **no strategy can see any of them.** A strategy can read `favor`
+— the resources block encodes `saturate(record.favor)` — and cannot read what anything costs, so it cannot
+compute affordability even in principle.
+
+Nothing detected this for a year because **nothing enumerates what a player is entitled to observe.**
+`ObservationSlot` is `{ index, block, blockIndex, descriptor }` — how a channel is *scaled*, never what it
+*is*. 400 anonymous slots. `OBSERVATION_LAYOUT_DIGEST` hashes positions and normalization rules, so it
+catches a slot moving and **would not notice every slot being about the wrong thing.** A trait that was
+never encoded and one deliberately withheld are the same state, and there is nowhere to write down which.
+
+Design at `docs/design/observation-entitlement.md`, branch `w175/observation-entitlement`: an abstract
+reducer `project(state) → PlayerState` over the component registry, three gates in the existing
+`worldComponentsWithPosition` / `assertNoWorldPositions` idiom, classification three-way (**observable /
+aggregated / withheld**, because knowledge is 70×3 and mage tiers 6×8 — most of the vector is histograms
+over entities, so `MAGE.tier` is observable-in-aggregate and withheld-per-entity). Strategy acknowledgement
+lands at **block** granularity: 9×12 = 108 decisions a human reviews, against ~1200 bulk-generated
+`because` strings that reimplement the failure being fixed. Steps 0–3 move no baseline and leave the digest
+unchanged; step 4 edits `StrategyDefinition` and is **held** until the integration wave settles.
+
+**The experiment this does not gate:** an mc-harness strategy is scripted and in-process, so a price-aware
+strategy can import the cost table from `@mm/content` directly — no observation resize, no digest move.
+That answers the pricing question without waiting on any of the above.
+
+## W176 — main's own baselines are stale against main, and one gate is 2.30 SE from tripping
+
+From the #126 re-derivation, and the control that settles it: **all 109 current values are byte-identical
+between #126's merged tree and `origin/main`.** #126 moves zero numbers. The nonzero gate deltas —
+`balance-gate-v1` **1/9** and `balance-gate-horizon-v1` **0/10** — are **#125's**: it changed
+`world-step.ts` and re-recorded only the *agency* baseline. So two of main's three baselines are stale
+against main itself, and every delta measured against them attributes #125's drift to whatever change is
+being tested.
+
+⚠️ **`balance-gate-horizon-v1 / referencePeakPopulation` sits at 2.30 SE against a 3.00 SE tolerance on
+main today.** The next change that nudges population trips that gate **and will look like its own fault.**
+Anyone who lands a population change and sees horizon go red should check this row against `origin/main`
+before believing they caused it.
+
+Also from that pass: action 16 is legal on **0 ticks across all 14 pool strategies** at 60 and 240, first
+legal at world tick **276**, and at 600 `uniform-random-legal` submits it **4×** — a draw case grep misses.
+And `actionName(16)` returns `action-16`: `ACTION_NAMES` in `packages/scenario/src/strategy-audit.ts` still
+has sixteen entries.
+
+**Structural, from three red instances in a row:** the design-dashboard payload is committed, and
+`fileSeal`, the reachability findings, and now a merge conflict have each been fixed by projecting a field
+out of the equality. Three projections means **the shape is wrong, not the fields** — each one narrows what
+the pin proves while the guaranteed three-file merge conflict cost stays. Build the payload in CI and fail
+on a diff: same rot detection, no merge surface.
+
+
+## W177 — four of five harness branches were landed, not stale, and the proof is a byte-identical tree
+
+The harness/metrics cluster came back with a result worth the method: **four of five branches carry
+nothing `main` does not already have**, and that is *proven* — merging `origin/main` into each produces
+a tree byte-identical to `origin/main`, verified by diff rather than inferred from a squash-merge
+message. `combat-primitive-consumption` → #144. `w62/metrics-collector` → #67. `w59/gate-power` → #61
+plus the later re-recordings. `w56/combat-evaluator` → #145, whose premise was exactly right; its only
+unique executor lines were the blind-instrument placeholder #145 deleted. Three pushed current at 0
+behind; `w56` left alone by design. **All four are deletion candidates, not staleness.**
+
+`measure/assign-role-combatants` is the only branch with real content — a design doc and three `tmp-*`
+measurement harnesses, 577 lines — now current at 0 behind. `typecheck` exits 0, and the agent proved
+that check actually covers the test files by injecting a deliberate type error and confirming it was
+caught, because `scenario/tsconfig.json` only includes `src/**`. All four files collect clean under
+`vitest list`. Two harnesses did not finish: load average was **240–338** across the window and the
+vitest parent had accumulated 2.5 s of CPU in 22 minutes — **starved, not hung.**
+
+### The near-miss: YAML auto-merges into a duplicate key
+
+Git merged `.github/workflows/ci.yml` **with no conflict** and produced a *duplicate* `ascension:` job,
+because main already carried w59's 200-year-gate job verbatim, its 2026-08-13 `35m09s` measurement
+included. A duplicate mapping key is not a syntax error — no marker, no typecheck failure, no test —
+and it lands in the workflow that gates `main`. This is the `package-lock.json` class one level up and
+strictly worse, because the lock file at least fails loudly on `npm ci`. Rule added to `CLAUDE.md`:
+after any merge touching `.github/workflows/`, read the merged file; when your side is stale, take
+main's wholesale.
+
+**And no baselines were regenerated, which was correct rather than an omission** — main's agency and
+ascension baselines are the ones recorded against main's code, while w59's were 123 commits stale.
+Taking main's beats re-recording. `goldens:regen` was never run.
+
+## W178 — three auto-merges produced green trees stating things no build produces
+
+The integration wave's real finding is not any one branch. It is that **`git merge` reporting no
+conflict is not evidence the merged file is true**, and it happened three separate ways in one night.
+
+**1. Assertion literals merge to the intersection.** In `species-occupancy.test.ts` on #140, *only the
+comments conflicted.* The assertion literals merged cleanly into a set **no build produces**:
+
+| | merged literal | actually measured |
+|---|---|---|
+| orc | 12 | **11** |
+| draconic | 11 | **9** |
+| gnome missing vs dwarf | `[perdo-mentem, perdo-terram]` | `[perdo-limen, perdo-mentem, perdo-terram]` |
+
+Two independent deletions — #125 dropped `perdo-limen`, #140 dropped `rego-terram` — merged to their
+*intersection*, which is what a three-way merge is supposed to do with a list and is exactly wrong for
+a list of measurements. **An unexamined merge would have been green on invented numbers.** All pins
+are now read off a run of the merged tree: Gini 0.0625, two species at the ceiling rather than three.
+
+**2. YAML merges to a duplicate mapping key.** `.github/workflows/ci.yml` on `w59/gate-power` gained a
+*duplicate* `ascension:` job with no conflict marker, because main already carried it verbatim. Not a
+syntax error, so nothing fails — and it lands in the workflow that gates `main`.
+
+**3. A schema revision number merges to a collision.** `w37/raid-playable` wrote `mid-raid-change` as
+world-schema **revision 5**; main has since taken 5 (`material-stock`) and 6 (`grant-budget`). Nothing
+conflicts, and the result applies a raid repair to a save that only needed the materials split.
+Renumbered to 7 throughout.
+
+**The rule, generalised from the five earlier instances:** the campaign plan already says *"when both
+sides of a conflict assert a count or a hash, ask the tree."* The correction is that **the conflict is
+optional.** Any file where both sides edit measured literals, registry ordinals, or a mapping's keys
+must be re-derived from the merged tree whether or not git stopped to ask. `package-lock.json` is the
+gentle member of this family, because it at least fails loudly on `npm ci`.
+
+**And a fourth, new tonight and structural:** `ui/design-dashboard/data.json` embeds each gate's
+provenance, so **every baseline re-record now also requires `npm run ui:dashboard`**. That is a second
+committed artifact deriving from the first, and it hit all three branches in the stack. It is the same
+argument as W176's: the payload should be built in CI and diffed, not committed.
+
+### Where the raid actually stands, measured rather than read
+
+`w37/raid-playable` builds every verb, cost, phase boundary, lock and surcharge a playable raid needs
+— six verbs, three phases, asymmetric currencies, `RaidLock`, `applyRuleChange`, the `MID_RAID_CHANGE`
+component, `revertSurcharge` priced identically at the mask and at `coordination`'s resolver, ~690
+lines of tests — and **no caller can reach any of them.** `applyDirective` and `runPlanFor` are
+exported and called by nothing outside `rules-raid`'s own tests.
+
+Probed on the merged tree at the 2400-tick reference horizon:
+
+- **Raids still resolve inside one world step.** `runRaid` is `while (termination === undefined)
+  stepEngagement(raid)`, driven to completion from `raids.ts:437`. `stepEngagement` *is* exported, so
+  the substrate for a tick-at-a-time caller exists and has no caller.
+- **Zero combat attempts, on both paths.** `portal-rush` at seed 12345: 108 raids, **88,470
+  combatant-ticks, `bySource: {}`**. The discriminator matters — those were all outbound, so
+  `passive-control` (which never submits action 14, making all its raids rival-generated inbound) was
+  run too: 7 raids, **19,912 combatant-ticks, `bySource: {}`**. #145 fixed the *denominator*;
+  the numerator is still empty. Nothing puts a combat node in a combatant's hands, either direction.
+- **No raider comes home.** `withdraw-stability-margin` is unchanged at 409600 — the window opens
+  2,418–3,518 ticks into raids whose p50 length is **77** and max **149**. w37's new
+  `resolution-stability-margin` has the same units problem.
+- `mask.ts:121` still early-returns `[1,0,0,…]` during engagement, verbatim.
+
+**So the remaining work is one seam, and it is much smaller than the design implies:** unmask actions
+1–4 during engagement and route them to `applyDirective`. That closes the repealed-§4.2 hole and the
+`ui/raid` synthetic-trace hole together.
+
+## W179 — main's required checks are green; the run says `failure` because three non-required jobs fail
+
+**Correction, and it is the exact trap this document has a section about.** I read `gh run list`'s
+run-level conclusion for `main` — `failure` at `be446a6` and at the two commits before it — and said
+main's Verify was failing. It is not. **`Verify (pinned Node)` passed.** So did `Next Node major`. The
+run conclusion is `failure` because three jobs that are deliberately *not required to merge* fail:
+
+| job | result |
+|---|---|
+| `Verify (pinned Node)` — **required** | **success** |
+| `ci/hetzner-lint` — **required** | (separate runner) |
+| Primitive consumption (non-blocking) | FAIL |
+| Rules-path reachability (non-blocking) | FAIL — **125** findings |
+| Balance gate, two hundred world years (not required) | FAIL |
+
+A run-level conclusion answers *"did every job pass"*, and the question was *"is main mergeable and
+sound"*. Those differ by design here — the non-blocking jobs exist precisely so they can be red
+without stopping work. **Read the required contexts, never the run conclusion.**
+
+### And a second probe that would have reported the opposite of the truth
+
+`gh api repos/…/branches/main/protection` returns **404 Branch not protected**. That is not what it
+means. Protection is implemented as a **ruleset** (`20666431`, "main protection", `enforcement=active`),
+which the classic branch-protection endpoint does not see. The positive control settled it — the token
+reports `admin: true`, so 404 is not a scope failure — and the ruleset carries exactly what
+`CLAUDE.md` claims: rules `deletion`, `non_fast_forward`, `pull_request`, `required_status_checks`,
+with required contexts **`Verify (pinned Node)`** and **`ci/hetzner-lint`**. `CLAUDE.md` is accurate;
+the obvious way to check it is not. **Query the rulesets endpoint.**
+
+### What is actually failing, and it is W176 coming true
+
+`balance-gate-ascension-v1` FAILs on four rows:
+
+| row | delta | SE |
+|---|---|---|
+| `referencePeakPopulation@passive-control` | +398.0 | **6.41** |
+| `referenceKnowledgeInstances@worship-maximizer` | −193.1 | −5.61 |
+| `referenceLivingMages@worship-maximizer` | −5.50 | −4.07 |
+| `referenceKnowledgeInstances@passive-control` | +187.1 | 3.27 |
+
+W176 recorded `referencePeakPopulation` sitting 2.30 SE from a 3.00 tolerance and predicted the next
+population nudge would trip it and look like its own fault. It tripped. **And the arm that moved most
+is `passive-control`** — a strategy that submits nothing. A passive arm moving is not a strategy
+result; it is the *world* changing underneath a baseline that was not re-recorded. #125 changed
+`world-step.ts` and re-recorded only the agency baseline, so ascension is measuring #125's drift and
+attributing it to nothing.
+
+**The fix is a re-record of `balance-gate-ascension-v1` against main's current code, not an
+investigation.** Held tonight: load average is **298** across 24 sessions, and a 200-world-year gate
+under that is a measurement of the machine.
+
+### The consumption failure names three primitives, and they are the three that matter
+
+`research-rate`, `scribe-rate`, `teach-rate` — **no node-driven consumer.** Those three govern the
+entire discover → teach → record loop, which is the loop the whole design is about. Nothing in 300
+authored nodes moves any of them. That is Task 12's shape (*a lever exists and nothing drives it*) at
+the centre of the game rather than at its edges, and it belongs ahead of any further balance work,
+because a baseline over a loop whose three rates are inert is a baseline over a constant.
+
+## W180 — a mage cannot learn to research, teach or scribe better. 93 authored effects reach nothing
+
+Chasing the non-blocking consumption failure from W179 to its mechanism. Three corrections on the way,
+all mine, all the same shape: **a grep that matched prose, and a pathspec that matched nothing.**
+
+1. `git grep -l "$p" origin/main -- 'packages/*/src'` returned empty for all six spellings of the three
+   rates. That is the glob failing, not an answer — the positive control (`teachCost`, which certainly
+   exists) came back empty too. With `-- packages` it returns eight files per rate.
+2. I said `gatherEffects` has two production callers, `gateway.ts` and `universe-effects.ts`. **It has
+   one.** `gateway.ts` never imports it; its only mention is a doc comment at line 934 describing
+   *"three of `gatherEffects`' four gates"*. `git grep -l` on an identifier matches prose.
+3. The checker's own header comment says `gatherEffects` and `stackContributions` have *"zero
+   production callers"*. That was true when written and is not now.
+
+### The mechanism, measured from `node.json`
+
+300 nodes author **407 effects**. The single production consumer, `universe-effects.ts:330`, gates them
+twice — `ECONOMIC_PRIMITIVES = new Set(['resource-yield', 'build-rate'])` and
+`effect.target === 'universe'`:
+
+| primitive | effects | targets |
+|---|---|---|
+| `research-rate` | **55** | 45 `self`, 10 `universe` |
+| `scribe-rate` | **19** | 19 `self` |
+| `teach-rate` | **19** | 19 `single` |
+| `resource-yield` | 59 | 59 `universe` ✅ |
+| `build-rate` | 33 | 33 `universe` ✅ |
+
+**Neither gate admits any of the three.** `scribe-rate` and `teach-rate` fail on target alone —
+`self` and `single` are never gathered. `research-rate`'s ten `universe`-target effects pass the target
+gate and are dropped by the primitive gate. **93 authored effects are inert.**
+
+> **⚠ Corrected by W218.** `ECONOMIC_PRIMITIVES` is **`{resource-yield, build-rate, worship-yield}`** —
+> three, not the two written above — so `gatherEffects` drives **3 of 16** primitives rather than 2. The
+> finding about the three academic rates is unaffected; the count of what *is* admitted was wrong. The
+> surviving residue after #169 is `fertilityBonuses: []` (`world-step.ts:1849`) and
+> `scribeRateBonuses: []` (`:2017`).
+
+### What that means in the game, and it is not a small thing
+
+`world-step.ts`'s `MAGE_MONTHS_PER_TICK` docstring enumerates its own sources without noticing:
+
+> *"What scales it is every source of `research-rate`, `teach-rate` and `scribe-rate` there is, stacked
+> once into `(1 + Σ)` … — a blessing, an encouragement, and, since this change, the depth of the
+> library the mage works in."*
+
+A blessing and an encouragement are **god actions**. Library depth is **institutional state**. **Nothing
+a mage has learned appears in that list.** So a mage cannot learn to research faster, teach better, or
+scribe more accurately — the three rates the entire discover → teach → record loop runs on move only
+when the god intervenes or the building improves.
+
+Two consequences worth stating plainly:
+
+- **It bounds species differentiation (task 9.9) from above.** The obvious differentiator — this
+  species learns the things that make it better at learning — cannot express itself, because that
+  feedback edge does not exist. Three approaches and their combination failed against a loop with no
+  learning-to-learn term in it.
+- **It is why the god feels like the only actor.** Every scalar on mage productivity is a god lever or
+  a building. The academics are autonomous in *what* they study and not in *how well* they come to do
+  it.
+
+**Scope, stated so this is not over-quoted:** 93 effects on three primitives, verified. This is *not* a
+claim that 315 of 407 effects are unreachable overall — the checker reports only these three primitives
+lacking a consumer, so other primitives reach the simulation by paths that do not run through
+`universe-effects.ts` (combat's, confirmed live at 85,056 fp, is one). The unreachable-effect total is
+a separate measurement and has not been taken.
+
+**The fix is small and the decision is not.** Admitting `self`/`single` targets and the three rates to a
+consumer is a narrow change. Whether a node *should* make its holder better at the thing that found it
+is a design ruling — it is a compounding loop, and vision §2.3 prices research in mage-months on the
+assumption that a mage-month is a fixed unit.
+
+## W181 — universities are built and never staffed. `completeAffiliation` has no caller
+
+The founding-academy removal was not shipped, and the reason it could not be is the finding.
+
+**`completeAffiliation` has no production caller.** Measured over 200 world years on the shipped build:
+the affiliated-mage count runs **6 → 5 → 4 → 3 → 2 → 1**, monotonically falling, while **189 universities
+stand and 81 complete.** No mage born after tick 0 ever affiliates with anything. The six who begin
+affiliated die and are never replaced.
+
+**So the founding academy is not a starting position. It is life support.** Remove it and the reference
+universe deadlocks — passive control, the denominator every balance measurement is a difference from,
+freezes at world-year 80 with 11 mages, 0 research, 0 teaching. `referenceGrimoires` **90.47 → 0.000**
+(−54.01 SE at 60 ticks, −45.34 SE at 240), `referenceLibraryDepth` → **0.000**, `referenceLivingMages`
+−67.28 SE, 22 tests failing across 13 files including `reference-long-run`'s own tripwire *"no lesson
+taught in the whole second century."* Nodes known and population move *up* — mages who cannot scribe
+research instead, which is the shape of the whole defect in one row.
+
+### It also explains the `permissive-breadth` funding mystery, and the explanation is circular
+
+W-earlier recorded the strategy comment claiming `permissive-breadth` *"completed no university in any
+run of any sweep ever taken"*. That is now measured rather than asserted: on the shipped position it
+submits action 11 **four times in 600 ticks** and names slot 0 **zero** times — **and not from poverty.
+It could afford the founding price on 566 of 600 ticks.** The promotion written to fix it is gated on
+`universityCount === 0`, and **the founding academy falsifies that condition before tick 0.** The life
+support disabled the fix for the thing the life support was compensating for.
+
+### Two instrument notes worth keeping
+
+**The positive control earned its place, and caught a broken instrument.** It predicts a founding tick
+from content — favor 0, regen fp 1024/tick, price fp 10240 — rather than asserting non-zero. Measured:
+the ledger opens at tick 9 with 10,463, spends 10,240, one university standing. The first watcher built
+for this held the `SimState` that `Scenario.create` returned; since `step` clones, it reported **0
+universities founded on a run that founded 195.** A watcher that holds a pre-`step` handle answers about
+a world that stopped existing.
+
+**`ui/session.json`'s `snapshotHash` did not move** when `universitiesStanding` was added —
+it is a report field and nothing hashes it. Worth knowing before treating that hash as a
+behaviour seal.
+
+### This is the same shape as W180, and that is now a pattern, not a coincidence
+
+W180: the effect pipeline runs and nothing asks it for the three academic rates. W181: the affiliation
+function exists and nothing calls it. W178: `applyDirective` and `runPlanFor` exported, called by nothing
+outside their own tests. The reachability check reports **125 findings** and is non-blocking.
+
+**The mechanisms are built. The wiring is not.** That is the whole of the integration debt, and it is why
+baselines taken now describe a game that is mostly not running — a measurement over an inert subsystem
+is a measurement of a constant. Fixing callers outranks refining numbers until the count comes down.
+
+## W182 — two campaigns were building the same wire, and w24 is the piece w119 needed
+
+**A second campaign is running, and it is ahead of mine on the same ground.** Branches
+`campaign/signed-magnitudes`, `campaign/combined` and `campaign/breaker` already carry
+`packages/coordination/src/academic-effects.ts` — the node-driven consumer W180 said was missing —
+plus `libraryRateMultiplier` and the `self` / `single` / `universe` routing. I had launched an agent to
+build it; it was redirected to review and land instead. **Check the worktree list before commissioning
+work.** Fifty-odd worktrees exist and `git worktree list` sorted by last commit answers *"is someone
+already on this"* in one command.
+
+That campaign also **corrects W180's phrasing**: `research-rate` and `teach-rate` *were* consumed, via
+`coordination/god/effects`. What was missing is a **node-driven** consumer specifically, which is what
+`check:consumption` measures and what its failure text says. W180's headline holds — a mage could not
+learn to research, teach or scribe better — but "reach nothing" was looser than the evidence.
+
+### Its breaker found two bugs in the new wire, and one author decision
+
+- `academicRateBonuses` filtered `magnitude <= 0` rather than `=== 0`, silently dropping negative
+  magnitudes. Fixed at `4d836d2`.
+- **`universe-effects.ts` still guards `if (contribution.magnitude > 0)`** — the identical bug in the
+  sibling, untouched by that commit, so a negative `build-rate` is still swallowed.
+- **Author decision, not a defect:** `rules-world`'s `routeYieldByForm` clamps `Math.max(0, magnitude)`
+  before `resource-yield` reaches material routing, and `economy-kinds.test.ts` asserts negatives are
+  *"ignored rather than credited"*. That assertion predates signed magnitudes. Now that a node can
+  express a **cost**, a negative `resource-yield` is meaningful content colliding with a test written
+  when it was not.
+
+### w24 is the piece a start-with-no-university universe needs
+
+Checked rather than inferred: `coordination/src/god/interventions.ts:818` calls `siteUniversity` inside
+`fundPlan`'s `universityId === 0` branch — the god's found-a-university verb. `w24/university-siting`
+sites from `territoryHoldings` first and the **endowment** second, and its own comment names the W181
+case exactly: *"a university founded on the very first tick of a fresh universe is founded before the
+holdings materialize."* Without w24, that university **stands nowhere** — which the same comment says
+*"would make founding the one way to escape terrain entirely."*
+
+### Eight content/world branches current; three carry decisions, not merges
+
+`w27` and `w26` are **byte-identical to main** after merging it — superseded, deletion candidates.
+`w77`, `w78`, `w28` merged green. Three carry live decisions:
+
+- **`w20/compositional-content`: a direct invariant collision.** w20 gives four tier-1 Rego nodes
+  prerequisites for its track model; main's #82 asserts tier-1 ⟺ prerequisite-free. Also 7 failures
+  where w20's rule — *a `mode: 'control'` effect is a clamp, never a source* — means `rl-step-across`
+  (blink) and `rn-call-by-name` (summon) place nothing, which `castable-nodes`, `combat-knowledge` and
+  `raid-fidelity` all contradict. Either w20's fix or a content-authoring gap. **Not a merge decision.**
+- **`w24`** renumbered its migration 4→5 into 6→7 and moved `TERRITORY_HOLDING`/`UNIVERSITY_SITE` to the
+  end of `WORLD_COMPONENTS` — the union had left them where revision 5 would put them while their
+  migration said 7, which lines every older save against the wrong layouts. `WORLD_SCHEMA_VERSION` is 7.
+- **`w23` shipped two reconstructions, one in the rules path** — sent back to recover the real formula.
+  **See W183: that claim was wrong, and the real defect is elsewhere.**
+
+**And the best catch in the batch, worth generalising:** on `w78` the agent first took main's `5×`
+books-to-depth bound, then noticed both sides had widened the same ratio by different mechanisms cutting
+the same denominator. Measured on the merged tree: **164 books / 25 distinct nodes = 6.56** — failing
+main's `5×` *and* w78's `6×`. Set to `8×` from the measurement. **Neither side's literal was right, and
+taking either would have shipped green and wrong.** That is W178's rule paying out.
+
+**Four branches moved `contentRevision`** (`w77 ac4f330b`, `w20 f7dd8054`, `w24 158fa287`,
+`w28 6ba14f8f`), so all three gates will fail on all four with a digest mismatch. Expected — but
+**nobody has confirmed the failure is the digest rather than something worse**, and that confirmation is
+owed before any of them lands.
+
+## W183 — the reconstruction was faithful; the missing term is real and sits three phases away
+
+W182 recorded that `w23`'s merge dropped an `applicationRationsOwed` term from `materialsObligation`,
+calling it *"a number no side ever ran."* **That is wrong, and both the agent and I had it wrong.**
+
+Checked at w23's **pre-merge** tip `aa11835` — and the checking method is the finding, because
+`origin/w23` already carried the merge, so **the branch ref was not a usable source for what the branch
+said.** At that tip:
+
+```
+const subsistenceReserve = subsistenceDemand(cohorts.totalCount());
+materialsObligation: subsistenceReserve + upkeepOwed,
+```
+
+That is all it ever was. `applicationRationsOwed` **does not appear anywhere on w23's tip** — it is
+entirely main's, from `apply-magic`. So the inlined form is w23's formula term for term, not an
+approximation, and nothing was dropped relative to w23.
+
+### The concern was right; it just had the wrong target
+
+On the *merged* tree, phase 8 computes the food claim as
+`subsistenceDemand(…) + applicationRationsOwed`, while the phase 2 demand omits the rations. **The
+universe's stated bill and its actual claim disagree by that term.**
+
+And it cannot simply be added, which is why it is a decision rather than a fix:
+`applicationRationsOwed` is `applicationRations(work.applyingMages, …)`, and `work` is assigned at
+**phase 5, line 844** — three phases after the demand at **phase 2, line 801**. Nothing earlier knows
+which mages will choose to apply magic, and no component carries the previous tick's figure. Both
+remedies are larger than the defect: moving phase 5 ahead of phase 2 reorders the world step and re-keys
+every per-actor stream (§6), or a new component exists to carry one addend.
+
+So it is now **named in code as a decision**, with its bound — rations scale with the *mage* population,
+tens, against a populace of tens of thousands, so the omission cannot flip this driver's sign or scale —
+and with what would have to change if applied magic ever became a large share of the food bill.
+
+### A rule worth keeping: a relation survives what a literal cannot
+
+The same standard applied to two merges gave opposite outcomes, and the difference was the assertion's
+*shape*:
+
+- **`w78` asserted a literal.** Both sides had widened the books-to-depth bound for compounding reasons,
+  so the merged tree failed main's `5 ×` **and** w78's `6 ×` at a measured **6.56**, and the bound had to
+  be re-derived to `8 ×`.
+- **`w23` asserted a relation** — `libraryDepth === nodesKnown`, against the run's own value rather than
+  a constant. Books standing moved **3,350 → 2,746**, an 18% swing in the numerator, and **the claim did
+  not move at all.** 12/12 green, 51 of 51 distinct nodes shelved.
+
+**The literal was the fragile one.** Where a test can assert a relationship between two things the run
+produces, it should — that assertion survives every merge that moves both, and it is the merges that
+move both which W178 showed are the ones that auto-merge green and wrong.
+
+## W184 — the checklist exists: 108 traits, and 70 of them have never been decided
+
+PR #165 lands the observation-entitlement work W175 designed. The inventory is the deliverable, and its
+shape is the finding:
+
+| class | count |
+|---|--:|
+| OBSERVABLE | 12 |
+| AGGREGATED | 19 |
+| **WITHHELD** | **76** |
+| ambiguous | 1 |
+| **total** | **108** |
+
+**Seventy of the seventy-six withheld traits are `not-yet-decided`** — no artifact anywhere says whether
+a player should see them. That is the honest starting inventory, and it is the number that justifies the
+whole exercise: the previous state of the art was that nobody could have said whether it was 0 or 70.
+`hidden-from-opponent` is used **zero** times, because the observation is always of the agent's own
+universe; it goes live with `pvp-server`.
+
+### Three rows worth reading twice
+
+1. **`ever-known.nodeId` is withheld, so the rediscovery model is entirely invisible.** An agent cannot
+   distinguish a cell *never explored* from one *explored and forgotten* — **the two states with the most
+   different expected value in the whole knowledge model.** Rediscovery is 3× cheaper; nothing can act on
+   that.
+2. **`knowledge-instance.mastery` is withheld.** Decay, loss and teaching all move it, and no channel
+   carries it in any aggregate. An instance about to decay counts exactly as much as a mastered one.
+3. **`institutions` is 4 slots over 4 components, and `agent-api` never imports `LIBRARY` at all.**
+   `institutions[331]` is "library depth", computed from `knowledge-instance.locationKind` — so **how many
+   libraries exist is not observable**, while a quantity named after them is.
+
+### The proof obligations were met
+
+**Round-trip byte-identical across eleven states**, each chosen for a branch the encoder actually has —
+no universe entity, over-budget edicts, unnamed node, memory palace, a dead mage who knew a deep node, a
+missing `material-stock` row, more than twelve objectives with value ties, a combatant on a nonexistent
+side. **Mutation-tested**: dropping `palace` from the mage tier axis fails exactly one case, the palace
+one. `OBSERVATION_LAYOUT_DIGEST` **did not move** — `46182c35d829b205`, asserted against the value
+captured in the inventory *before* any code was written. `verify:nosweeps` green at 328 files / 4,560
+tests.
+
+### Four existing guards caught the change, and all four were right
+
+The best available evidence that this repo's gate idiom works. `schema-duplication` rejected a
+hand-rolled `PlayerRuleset` as *"step one of a second `permits()`"*, which forced consuming `@mm/state`'s
+`Ruleset` instead — a better design, because **bit expansion is an encoding concern**: it moved into
+`encodePlayerState`, and a strategy can now call `permits(player.ruleset, cellId)` directly. Two
+`float-boundary` ledgers and `arbitration-conformance` each required the new files be declared.
+
+**Known follow-up:** the inventory doc and `TRAIT_CLASSIFICATION` are two hand-authored copies of the same
+108 rows. Counts are pinned on both sides, so a *count* change is caught — but a single silently
+reclassified row would pass. Generating the doc from the table closes it, and until then this is the
+exact defect class the change exists to prevent, living inside the change itself.
+
+## W185 — scribe demand is zero in every shipped build, and the scribe cohort can only ever drain
+
+PR #166. Three fixes commissioned; the most valuable outcome was an implementation **deleted unbuilt**.
+
+**Fix 1 was not done, deliberately, and the collision check is why.** `w23/university-siting` already
+replaces the `scribingQueueDepth: 0` literal with `unwrittenNodeCount(state)`, amends the economy spec,
+and adds an agreement test. The agent deleted its own promotion rather than ship a second implementation
+— w23's reading, *nodes with no written copy anywhere* (vision §5), is better sourced than the lab's
+per-university one.
+
+**And it corrected my reading of w23.** I recorded w23's head commit — *"the university lab's demand
+obligation stays zero"* — as possibly pinning the queue at zero. It does not. That subject is about the
+**lab harness** answering w23's new fifth input `materialsObligation`; `unwritten-queue-agreement.test.ts`
+asserts the **opposite** of a zero queue. A commit subject is not a description of the diff.
+
+### The counterfactual, measured read-only on main
+
+`knowledgeCensus.unwrittenNodeIds.length` is exactly what w23 pins `unwrittenNodeCount()` to, so the
+comparison needed none of w23's code. Reference scenario, `cohortSize: 4`, `foundingNodes: 4`, 600 ticks:
+
+| seed | scribe cohort | soldiers | idle | scribe demand now | scribe demand under w23 |
+|---|---|---|---|--:|--:|
+| `0x00090001` | 23 → 14 | 0 throughout | 21 → 182 | **0 every tick** | 40 → 88 → 86 |
+| `20260811` | 23 → 16 | 0 throughout | 10 → 188 | **0 every tick** | 6 → 34 → 2 |
+
+**w23's fix is not correct-but-unobservable — it asks for 40–88 scribes where main asks for none.**
+
+**And a second defect fell out: the scribe cohort only ever drains.** Reallocation can classify `scribe`
+as *surplus* and never as *wanted*, so the cohort is a one-way valve — 23 → 14 while idle goes 21 → 182.
+**This is W181's shape again**: affiliated mages run 6→5→4→3→2→1, scribes run 23→14, and in both cases a
+population has a sink and no source. Two independent instances is a pattern in the reallocation model,
+not two bugs.
+
+### Fix 2 — there is no standing army, and saying so has a citation
+
+No sizing rule exists anywhere, and the one design text engaging the substance argues against one:
+`ages-of-magic.md` §2b, *"There is no separate military."* Cross-checked against `rules-raid`'s
+`combatants.ts`, which fields defenders from mage roles. So the literal is now `NO_STANDING_ARMY` with
+the citation — an honestly-labelled zero rather than an anonymous one.
+
+**With a trap recorded for whoever raises it:** `detachment-strength` is 100 and `portal.ts` deploys
+**per cohort**, so a universe-wide soldier target fragments across species and birth decades into cohorts
+of fewer than 100, fields **zero** detachments, and charges full subsistence for all of them. A future
+non-zero target is a bug unless deployment is fixed first.
+
+Also correcting `docs/design/vision-audit.md:355`, which calls soldiers `implemented-unreached`:
+`packages/scenario/src/raids.ts` is now the caller and runs an inbound arrival process, and **all three
+of that row's cited line numbers have rotted.**
+
+### Fix 3 — a drift guard whose positive control found the failure a length check misses
+
+`action-names-drift.test.ts`, four assertions. The load-bearing one checks names against `GOD_ACTION`
+**keys at their own ids**, because `ACTION_NAMES` is positional: a mid-list insertion with an appended
+name passes a length check while mislabelling every later row. Both modes confirmed by positive control
+(`GOD_ACTION` mutated then restored via `cp` — **no `git stash`** — tree verified clean):
+
+- 17th action appended → **2 of 4 fail**, naming id 16 and the index to fix
+- two ids renumbered, length unchanged → **1 of 4 fails**, and **a length check alone passes this**
+
+No baseline regenerated and no `ui:dashboard` run, correctly: `NO_STANDING_ARMY` is `0`, so nothing here
+changes behaviour. All four golden suites pass, including `replays scribe-demand.json to the same
+digest`. `verify:nosweeps` 4,530/4,530.
+
+## W186 — an ablation test's population equality never had power, and the runner was not stuck
+
+Two things from landing #161, one about a test and one about a probe. Both are the same lesson.
+
+### `expect(ablated.population).toBe(control.population)` was a tautology
+
+`ablation-reaches-the-world-loop` asserted an equality that **nothing could break.** Probed by ablating
+every primitive in turn at 240 ticks: **six of seven come back byte-identical to the control**, and only
+`resource-yield` moves anything at all — and it moves *knowledge* (−728) and *grimoires* (−726), **not
+people**. The harshest lever the harness has, substituting `0` for `FP_ONE` in
+`additive-into-multiplier` so the arm's yield is multiplied by zero, **costs 97% of its grimoires and
+leaves population at 297 against a control's 298**, living mages unchanged at 67. The equality held
+because population is nearly decoupled from `resource-yield` at that horizon. A two-mage knock-on is what
+broke it.
+
+Replaced with a **one-sided floor** at 95% of control, in its own `it`, and documented in the file as a
+**backstop rather than a discriminator** — with the probe table and the plain statement that nothing the
+test can currently do trips it. Kept rather than deleted because the yield→demography coupling is real at
+2,400 ticks, and a backstop that says so is honest where a green equality was not.
+
+**And the negative control caught a trap worth naming:** the first attempt to sever the forwarding sites
+**built with a type error, so `dist` never updated and the test "passed" against a stale build.** Every
+swap afterwards checked the build's exit code. A negative control that runs against yesterday's `dist`
+proves nothing and looks like proof.
+
+### The runner was queued, not stuck — and the fix would have made it worse
+
+The report concluded `ci/hetzner-lint` was **stuck**: untouched for an hour at *"Queued — another CI run
+in progress"* while the same runner posted `success` for #159 and re-queued others. The proposed remedy
+was a re-trigger via empty commit or close/reopen.
+
+Checked before acting, across five PRs at once: **#161 had flipped to *"Running CI checks…"* sixty
+seconds earlier.** The runner is serial and was working a queue. An empty commit would have re-queued
+#161 **behind everything else** — the remedy would have caused the symptom it was diagnosing.
+
+The agent was right to decline to force it, and right not to use `--admin`: that check is a documented
+security guard, not a formality. **A pending check is usually a queue.** Confirm a probe is broken before
+believing it, and prefer the reading that a slow serial system is busy.
+
+### Two self-corrections in the report, both worth keeping
+
+A **fabricated measurement** — *"population 56"* — was written into a test comment before the test was
+run, then caught and replaced with the measured 297. And a claimed mechanism, *"the horizons are shifted
+by one rung"*, does not survive the ladder (60/240/240/2400): the second error is two rungs. Recorded as
+two independent errors **with no mechanism claimed**, which is the right way to leave it.
+
+**The agency headline was never wrong** — checked against `balance-gate-agency.sweep.json`, its "240
+ticks, 64 runs" matches exactly. The mislabelling was confined to the byte-identity table.
+
+### The anti-requisites finding survived the merge unchanged in shape
+
+**71 of 90 rows at zero.** The 19 that moved are the 9 pooled aggregates plus all 10
+`@permissive-breadth` rows **and nothing else**. Headline **68.63 → 42.50, −20.80 SE**.
+
+One earlier claim of the pair's is now false and is corrected: the reference gates are no longer
+byte-identical on the merged tree. **Proved to be #125's rather than the pair's by stripping the
+`excludes` arrays and reproducing every reference value byte-identically** — which is the control that
+turns "probably not us" into "not us".
+
+## W187 — the academic wire works, `teach-rate` is inert, and neither branch alone is complete
+
+The review of the other campaign's rate wire. The measurement is unambiguous and two of the findings are
+worth more than it.
+
+### It works
+
+`rootSeed 20260811`, 200 runs (4 cells × 50 replicates), `passive-control`, 60 ticks:
+
+| metric | pre-wire `main` | `campaign/combined` | delta |
+|---|--:|--:|---|
+| `referenceNodesKnown` | 15.88 | **21.58** | +5.69 (**44.3 SE**) |
+| `referenceKnowledgeInstances` | 277.31 | **338.50** | +61.4 (**30.0 SE**) |
+| `referenceNodesGained` | 13.38 | 19.08 | +5.69 |
+| `referenceLivingMages` | 39.00 | 38.95 | flat |
+
+Paired ablation on the wired tree: control **21.770 ± 0.189** against `research-rate` neutralized
+**15.795 ± 0.163**, **z = −23.94**, n = 200 each. Correctly caveated: ablating `research-rate` also
+neutralizes the god's blessing constants and §6a's library contribution, so the ablated arm is **not** a
+reconstruction of pre-wire main — 15.795 ≈ 15.880 is suggestive, not evidence. The paired z is the claim.
+
+`check:consumption`: **FAIL** (15 registrations, 11 reachable, exclusions `{fertility, lifespan}`) →
+**PASS** (20 registrations, 16 reachable, exclusions empty).
+
+### `teach-rate` is wired, registered, green — and behaviourally inert
+
+Research completions **+28.8%**, nodesKnown **+58.6%**, grimoires **+31.2%**, and **lessons 3547 → 3550,
++0.1%**. The shipped test is literally named *"finds no completion-count gain for `teach-rate`, because a
+lesson already fits in a month."* Nineteen `single`-target effects reach a consumer and change nothing
+under v1 content.
+
+**So `check:consumption` cannot distinguish a live wire from one whose magnitude never binds.** That is
+**the checker's own failure class, one layer up** — it was built because `check:coverage` counted authored
+primitives and was compatible with the pipeline being connected to nothing; it now counts *connected*
+primitives and is compatible with the connection doing nothing. Worth writing at the checker rather than
+discovering a third time.
+
+### Neither branch alone is complete, and the merge hides the decision
+
+| | schema `minimum` | universe-effects | academic-effects | `kinds.ts` clamp |
+|---|---|---|---|---|
+| `w/knowledge-rate-wire` | 1 | `> 0` bug | `<= 0` bug | present |
+| `campaign/signed-magnitudes` | −1073741823 ✅ | `!== 0` ✅ | `=== 0` ✅ | **present** ✗ |
+| `campaign/combined` | **1** ✗ | `!== 0` ✅ | `=== 0` ✅ | **dropped** ✅ |
+| `campaign/breaker` | −1073741823 | `> 0` bug | `=== 0` ✅ | present |
+
+`combined`'s four guard fixes — and it found **four** sites, not the two the brief knew: `academic-effects
+:332`, `universe-effects:347` and `:358`, `economy/kinds.ts:173` — are **correct and inert**, because the
+schema still forbids authoring a negative. `signed-magnitudes` permits the content and silently drops it
+at `routeYieldByForm`.
+
+**And a trial merge produces three conflicts, none of them the one that matters.**
+`academic-effects.ts` and `universe-effects.ts` conflict **comment-only** (code lines identical both
+sides); the dashboard payload is generated. **`kinds.ts` does not conflict** — so a naive merge adopts
+`combined`'s clamp decision **without any reviewer seeing a choice was made.** W178's rule again, and this
+time the auto-merge hides a design ruling rather than a number.
+
+Commissioned as `w187/effects-union` with all three decisions pre-made: schema takes the negative bound;
+`routeYieldByForm` takes `combined`'s reading with its argument carried verbatim — *"a negative weight is
+a FORM claiming that producing food consumes stone … the sign now comes from the node; the mix stays a
+non-negative property of the form"*; and `primitive-consumption.test.ts` keeps a **synthetic** god-only
+registration rather than asserting the section is permanently empty, because post-merge every shipped
+primitive is node-driven and neither parent's file passes.
+
+### An interaction defect neither branch's CI could catch
+
+`ablation-reaches-the-world-loop` fails `expected 495 to be 494`. **Passes at `d11e09c` (rate wire alone).
+Passes at `3219c62` (vitality tip alone). Fails only on the merge.** It also sits against `5662934`'s
+claim that the vitality wire *"contributes zero on every tick"* under v1 content — either that is false,
+or the ±1 is the academic wire moving materials through scribing. **Undetermined, and assigned.** A
+one-unit population difference is exactly the size of thing that is waved away and turns out to be a real
+coupling — and note this is the same assertion W186 found had no power, so the fix must not be a
+loosening of the thing under review.
+
+### And the reviewer declined to re-record, correctly
+
+*"The tree that lands does not exist yet; a baseline taken on a verification tree measures a ref nobody
+will merge."* Same reason `ui:dashboard` was skipped. The re-record belongs on the union tree, and is
+commissioned there.
+
+Also of note: the `single` design fork was resolved **against** the brief I wrote. Shipped reading is
+*each participant's own nodes scale her own half of the lesson* (`world-step.ts:1737` teacher, `:1758`
+student), not "the professor's node scales what the student receives" — because it mirrors how the god's
+blessing and library depth already work. Better sourced than my instruction, and documented in place.
+
+## W188 — three rulings, and the third is a lead on task 9.9
+
+Three decisions were blocking merges. All three are made here so the branches can move.
+
+### 1. `roots-are-tier-one` stands. w20 retiers its four nodes.
+
+`w20/compositional-content` gives four tier-1 Rego nodes prerequisites for its track model; main's #82
+asserts tier-1 ⟺ prerequisite-free. **The invariant wins, and not on seniority — it is load-bearing.**
+Both `agent-api/src/candidates.ts:201` and `mask.ts:229` cite the test by name, and `mask.ts` says why in
+as many words: a content edit that broke it *"would put the mask and `grantPlan` back into disagreement."*
+The equivalence is pinned **in both directions** precisely so a content change cannot quietly reopen that
+hole.
+
+So a node with prerequisites is not a root, whatever a track model would like to call it. w20's four move
+to the tier their prerequisite depth implies. Its 7 other failures — where `mode: 'control'` means
+`rl-step-across` (blink) and `rn-call-by-name` (summon) place nothing — are a **separate** question about
+whether control effects can be sources, and are not settled here.
+
+### 2. `resource-yield` magnitude unclamps; the form's weights stay non-negative.
+
+Ruled in the `w187/effects-union` brief and repeated here so it is findable: drop the *magnitude* clamp in
+`routeYieldByForm`, keep the *weight* clamps, and carry the argument verbatim — *"a negative weight is a
+FORM claiming that producing food consumes stone — a claim about the material taxonomy, not about one
+working. The sign now comes from the node; the mix stays a non-negative property of the form."* Schema
+`minimum` takes the negative bound, because a schema that forbids negatives makes the four guard fixes
+dead code.
+
+### 3. w53's red occupancy tests: **do not re-pin yet — this is 9.9 evidence**
+
+`w53/practice` adds a tenth goal and leaves three `species-occupancy` assertions red, deliberately
+un-repinned. Checking the literals rather than the report:
+
+```
+expect(bySpecies('draconic').occupiedCells).toBe(11);   // w53 measures 10
+expect(spread).toBeCloseTo(0.0473, 4);                  // w53 measures 0.0729
+```
+
+and main's own comment carries the history: **`0.0473` now, `0.0645`, `0.0714` on main alone, and
+`0.0729` before either change.** So spread has been *falling* across recent changes, and adding a
+competing goal **puts it back to 0.0729 — a 54% increase over main's pinned value.**
+
+**Task 9.9 wants species to differentiate. Spread is the metric. Three approaches and their combination
+have failed to move it. A tenth goal competing for the month moves it 0.0473 → 0.0729.** Occupancy
+falling to 10 cells is the same fact from the other side: less uniform occupancy *is* more spread.
+
+That is the first thing in this campaign to move 9.9's metric in the wanted direction, and it was found by
+an agent declining to erase it. **Re-pinning now would have destroyed the finding**, which is exactly what
+main's own comment warns about — *"a pin, not a finding … the next agent to see it move should not read
+the movement as a defect."* The pin is right that movement is not a defect; it does not follow that
+movement is not information.
+
+**Ruling: leave the three red, and treat `practice` as a 9.9 candidate to be measured properly** —
+spread across seeds, with and without the tenth goal, at both horizons. Only re-pin once that measurement
+says whether the effect is the goal competing or the draw order shifting. This joins W180's finding (a
+mage cannot learn to learn, which bounds 9.9 from above) as the second structural lead on a task that has
+resisted three direct attempts.
+
+## W189 — 125 findings are 61 real ones, and two of my four motivating examples were not on `main`
+
+PR #167. The ratchet is built, and the triage is worth more than the ratchet.
+
+### Correcting myself first
+
+I justified this work with four instances of *"built but never called."* **Two of them are not on
+`origin/main` at all:**
+
+- **`gatherEffects` is reached**, at `universe-effects.ts:330`. W180 said so correctly and then I
+  restated it as an unreachability. It is not — the defect was that it reached no consumer *for the three
+  academic rates*, which is a different claim and the one W180 actually made.
+- **`applyDirective` and `runPlanFor` do not exist at `e2b89d8`.** They are on `w37/raid-playable`, which
+  is unmerged. W178's *"exported and called by nothing outside `rules-raid`'s own tests"* was true of that
+  branch and was never a statement about `main`.
+
+Only **`completeAffiliation`** is among the 125. The pattern is real; my count of it was not, and it was
+inflated by quoting branch facts as trunk facts — the exact error `CLAUDE.md` names as *"a finding about
+code is a finding about a ref."*
+
+### The triage: 125 → 61
+
+| integration debt | superseded | tooling-only | dead | false positive |
+|---:|---:|---:|---:|---:|
+| **61** | **14** | **27** | **23** | **0** |
+
+**The `superseded` category was not commissioned and is the most useful column** — an unreached *symbol*
+whose *capability* is live under another name. The agent's first draft filed all fourteen as disabled
+subsystems and was wrong: **species traits are read everywhere** (`traitValueOf` is merely the unused
+accessor), **all four tradition hook points have reached implementations**, and `RNG_STREAM.populace` is
+used directly twice. Each of those would have cost an investigation ending in *"it already works."*
+
+Zero false positives, which is the number that makes the remaining 61 worth acting on.
+
+**Named as load-bearing:** university staffing (9 — the only writer of `UNIVERSITY_STAFF` is itself
+unreached, which is W181's mechanism from the other side), ascension legacy (12, **including 8 content
+constants that look like knobs and turn nothing**), spell preparation (4), tradition store consequences
+(5), portal transfer (2), **`changeTradition` (3 — the action space advertises a move the rules never
+make)**, `applyWard`, library-level destruction (2), `replay`, snapshot loading (2), `rules-raid` (5).
+
+`changeTradition` deserves its own line: **the legality mask offers the god an action whose rules do
+nothing.** That is worse than a dead function — it is a lie told to every agent that reads the mask, and
+it is in the pool's action space.
+
+### The ratchet, with its controls
+
+`scripts/check-reachability-ratchet.mjs` diffs `--json` output against a 125-entry pinned baseline. Three
+exits — **0** held, **42** drifted, **1** probe broken — and every mode has a positive control that was
+actually run and reverted:
+
+- new finding (an uncalled export added) → **42**, named, *"125 pinned, 126 reported"*
+- a pinned finding disappearing (`completeAffiliation` given a reference) → **42**, and it caught **two**
+  disappearances, because `changeAffiliation` rose with it
+- category change → reported as `moved`, not as one-new-plus-one-resolved
+- **scan collapse** (pointed at a near-empty tree, so every pinned finding "vanishes") → **1**, not 42,
+  with the test asserting `not.toBe(42)`
+- unknown category upstream → **1**, rather than passing by being ignored
+- **and a real 28-file, 1,806-insertion merge of current `main` → 0**, so it does not false-positive on work
+
+Identity is `group:file:name`, **deliberately not the line** — line numbers rot, and a rotted line is the
+cheapest signal that a row has gone stale, not a reason to fail. Re-pin is `npm run reachability:pin`.
+
+### Three broken probes, all caught by implausibility rather than by failing
+
+In the agent's own analysis: a git pathspec missing a trailing glob reported **zero** test callers for all
+125; a `\bward\b` grep matched *toward* and *forward* — which `CLAUDE.md` warns about **by name**, and it
+still happened; and `ui/design-dashboard/data.json` embeds the findings verbatim, so it matches every
+symbol name being searched for. The triage doc now carries **its own arithmetic test**, which promptly
+caught a table summing to 46 under a sentence claiming 45.
+
+## W190 — the macro model says fix affiliation first, the raid axis is flat, and three of my claims were wrong
+
+PR #168. `tools/w189/` plus `docs/design/macro-university-model.md`. Steps in world years, floating point,
+imports nothing from `@mm/*`, reads `packages/content/data` directly. **A 200-year universe runs in ~1ms**,
+which is the whole point — it can be swept where the simulation cannot.
+
+**32 parameters, each provenance-tagged: 15 `content`, 3 `measured`, 2 `authored`, 1 `derived, **11
+`invented`**.** The invented ones are named, and the most load-bearing is `raidMageCasualtyFraction` =
+0.15, which stands in for an entire engagement because **there is no casualty constant in `rules-raid` at
+all.** Dwarf and gnome prevalence are unauthored, and the model **throws rather than guessing** — the right
+behaviour, and rarer than it should be.
+
+### The needs
+
+The reference universe is short **39.7 universities** — it needs 40.7 and has 1. Access **13.1%**. Scribes,
+professors and vellum are all met. **And nothing is ever fragile**: every node has ~235 holders, because
+every mage holds everything her depth permits.
+
+### The raid axis is completely flat, and that is a finding about the raid
+
+**0% → 55% annual raid probability gives identical results in all thirty sweep cells.** Three causes, and
+all three are structural rather than tuning: the 60-tick cooldown makes arrivals a renewal process capped
+at **0.167/yr**; raids consume **zero world ticks**; casualties run ~**0.15 deaths/yr against 239 mages**.
+The universities row is *structurally* raid-independent, so the load-bearing output is the **fragility**
+table — which raids can reach, and which is **0.00 everywhere**.
+
+**The economic axis is the only live one, and it makes the need worse**: 0.5× → 2.5× raises universities
+required from **28 to 55**.
+
+**The missing term is vision §4b's per-mage cap.** Fragility needs a cap of ≤12 nodes *and* raids ≥20%/yr.
+Today the cap is unbounded and the effective rate is 3.7%/yr.
+
+### Anti-requisites cannot bite the default opening — verified independently
+
+The model reports that anti-requisites cannot reach it, and checking `cell.json` directly on `672f93c`:
+**the only two `excludes` entries are `creo-ignem` and `creo-umbra`**, and `creo` is not among the default
+opening's techniques (`intellego · perdo · rego`).
+
+So W186's headline — `permissive-breadth` **68.63 → 42.50**, −20.80 SE — is a statement about **a god who
+has permitted `creo`**, and that is exactly why 71 of 90 rows were byte-identical: only arms that open the
+grid moved. The mechanism is right and lands; **the content that exercises it sits outside the position
+every other strategy plays.** Authoring an excluded pair *inside* the twelve is the cheap next step.
+
+### The answer to the question the model was built to ask
+
+**`completeAffiliation`. Fix it first.** Once wired, affiliation is the **only** toggle that moves
+retention — from zero nodes at risk to **all 284 fragile**. `scribingQueue` is second (903 books → 0).
+In the agent's phrase: *189 buildings and one teacher is not a university system.*
+
+And a self-correction inside that result worth keeping: the first commit reported all three toggles as
+"changes nothing" — because the model **never read them**. A no-op wearing a null result's clothes, caught
+in review. That is the same defect class as W187's `teach-rate`: an unbound wire and an absent wire report
+identically.
+
+### Three claims of mine, corrected
+
+1. **`economy-flow-models.md` §6 does not pre-register the affordability-reserve and vellum-sink defects.**
+   I have repeated this at least twice. Checked: **zero matches for either term anywhere in `docs/`**, and
+   the doc has no §6 of that shape — its sections are *"THE FIVE IDEAS, UP FRONT"*, 1.1–1.4, 4.1. The
+   pre-registration I kept citing does not exist.
+2. **`teach-rate` is inert for tiers 1–3 only.** Above tier 3 its 1.25× multiplier is live, and **every
+   measurement of it was taken below tier 4.** W187's "wired and behaviourally inert" is true of the
+   measured range and false as stated.
+3. **`npm run verify:nosweeps` exits 1 under contention**, on both the branch and the pre-merge tree —
+   vitest returns non-zero on an unhandled worker-RPC timeout even when every test passes. Several agents
+   reported that command green tonight by reading its summary line rather than its exit code. **Read the
+   exit code, and expect it to be polluted under load.**
+
+   **Settled since, by the re-run `CLAUDE.md` prescribes rather than by argument from the error's shape:**
+   `npx vitest run packages/scenario/test/unit/species-separation-spread.test.ts` alone gives 16/16 and
+   **exit 0**, and CI's `Verify (pinned Node)` passed on the merged tree in 10m55s. So the exit code was
+   contention and the tree is sound — but the lesson stands, because the only way to know that was to run
+   the control.
+
+   **And a fifth instance of the night's shape, inside the check for it:** grepping CI's job log for the
+   suspect file returned **empty**, which reads as *"CI never hit this problem."* The real reason was
+   `run … is still in progress; logs will be available when it is complete`. Caught only by putting a
+   positive control on the probe before believing its negative.
+
+## W191 — correcting W189's `changeTradition` line: there are two implementations and the god uses the other one
+
+W189 recorded, from the triage, that **`changeTradition` (3 findings) means "the action space advertises a
+move the rules never make"** and called it *"a lie told to every agent that reads the mask."* I passed that
+on without checking. **It is overstated, and the truth is more specific.**
+
+Checked on `672f93c`, with a positive control (`fundUniversity`, same probe):
+
+- `agent-api/src/actions.ts:72` defines `changeTradition: 13`, and it is in both the god-action list and
+  the parameterised list.
+- `coordination/src/god/interventions.ts:336` **does** dispatch it — `case ACTION.changeTradition: return
+  traditionPlan(state, universe, params[0], worldTick, deps);` — with a cost at `:912`.
+
+**So the action is wired and the mask is not lying.** What the ratchet actually pins is different and
+worth more:
+
+| pinned entry | category |
+|---|---|
+| `rules-magic/src/traditions/change.ts:changeTradition` | **unreached** |
+| `rules-magic/src/traditions/change.ts:RESOLUTION` | reachedOnlyByUnreached |
+
+**There are two implementations of changing a tradition, and the god's path does not use the rules-layer
+one.** `coordination` has its own `traditionPlan`; `rules-magic`'s `changeTradition`, and the `RESOLUTION`
+policy beside it, are never called. That is not a dead action — it is a **second implementation of a rule**,
+which `CLAUDE.md` names as how rules drift, and it is exactly the defect `schema-duplication` caught in the
+entitlement work (*"step one of a second `permits()`"*).
+
+### And the tradition hooks are thinner than reported
+
+Fourteen of the 125 pinned findings sit in `rules-magic/src/traditions/`:
+
+`acquire.ts:UNCHANGED_MULTIPLIER` · `cast.ts:isCastable` · `cast.ts:prepare` · `cost.ts:assertCostHook` ·
+`cost.ts:costSplit` · `cost.ts:preparationCost` · `hook-for.ts:hooksOfTradition` ·
+`portal.ts:populatePreparedSpells` · `portal.ts:releaseAbroad` · `store.ts:palaceLibraryDepth` ·
+`store.ts:perishesWithHolder` · plus the two above.
+
+This sits **against** the triage's own `superseded` claim that *"all four tradition hook points do have
+reached implementations."* Both can be true — a hook entry point can fire while most of the machinery
+behind it does not — but the two statements cannot both be quoted as a summary of tradition's health, and
+the second is the one that reads reassuringly. **Traditions are the one licensed exception to
+content-not-code in this project** (four extension points: acquire, store, cast, cost). Fourteen unreached
+symbols across all four of them is a finding about the exception.
+
+`perishesWithHolder` and `palaceLibraryDepth` are the two worth naming: a memory palace that does not
+perish with its holder, and a palace depth nothing reads, are both *knowledge-retention* mechanics — the
+same subsystem the macro model just identified as the one that matters (W190: affiliation moves retention
+from zero at risk to all 284 fragile, and nothing else moves it at all).
+
+## W192 — the 495/494 was never a coupling, and lifespan moves nothing. Fertility does.
+
+PR #169, the union of the two effect campaigns. Two results, and then the pattern they complete.
+
+### The interaction defect was not one, and the control is the reason we know
+
+W187 recorded `expected 495 to be 494` as an interaction defect *"neither branch's CI could have
+caught"* — passing at `d11e09c` (rate wire alone) and `3219c62` (vitality alone), failing only on the
+merge. **That reading was wrong**, and the instrument that overturned it is a column nobody had run:
+
+| seed | both wires off | academic only | vitality only | both |
+|---|--:|--:|--:|--:|
+| `0x12345678` | 0 | 0 | 0 | **+1** |
+| `0x00000001` | **−3** | **+1** | **−10** | **−5** |
+| four others | 0 | 0 | 0 | 0 |
+
+**The pre-campaign column is not all zeroes.** With neither wire installed — what `main` ships — seed
+`0x00000001` already finishes three people apart. So *"it passed before and fails now"* is a statement
+about **one seed**, not about a coupling. And the sign is not systematic: +1, −3, −5, −10.
+
+The channel is ordinary and predates both wires: `resource-yield` feeds `stock.food`; food is the only
+kind `carryingCapacity` reads; capacity sets `fertilityBrake`; `deliverBirths` is stochastic. Arms with
+different food histories take different draws. **What the wires changed is the level — 325 to 494 at
+this seed — which moved the test off a zero it had been sitting on by luck.**
+
+Replaced with a one-sided 95% floor. **PR #161 reached the same replacement independently, from a
+different failure, with the same constant and name** — seven primitives at one seed there, one primitive
+across six seeds here. Two agents converging on the same fix from opposite directions is the strongest
+evidence either of them produced.
+
+### Lifespan is wired, contributes 1,594 times, and moves nothing
+
+`5662934` recorded that the vitality wire *"contributes zero on every tick"*. Measured at seed
+`0x12345678` over 240 world ticks: **2,592 contributions — 998 `fertility` and 1,594 `lifespan`**, both
+`target: universe`. Population **494 with the wire against 325 without**.
+
+**And zeroing `lifespanUniverse` changes nothing.** All of the level is the `fertility` channel. So
+lifespan is the third member of the family that now has a name: **wired, registered, green, and
+behaviourally inert** — beside `teach-rate` and beside `check:consumption`'s own blind spot.
+
+The *"zero on every tick"* claim is not false; its **scope** is. It is true of the twelve enabled cells,
+which is what every balance gate plays, and false under `permissive-breadth`, which is what the ablation
+harness plays. The re-recorded agency baseline says it from the other side:
+**`referencePopulation@permissive-breadth` 218.125 → 328.875 (+24.74 SE)**, with `denial-warden`,
+`narrow-depth`, `portal-rush` and `worship-maximizer` **flat**.
+
+### The pattern, and it is an argument for widening the opening square
+
+Three independent mechanisms measured tonight, and **the default position cannot express any of them**:
+
+| mechanism | why v1 cannot see it |
+|---|---|
+| **anti-requisites** | its only authored pair is `creo-ignem ⊥ creo-umbra`; `creo` is outside `intellego · perdo · rego` |
+| **the vitality wire** | moves `permissive-breadth` by +24.74 SE and every other arm not at all |
+| **`teach-rate`** | its 1.25× multiplier is live only above tier 3; v1's 51 nodes sit below it |
+
+Each was found separately, by a different agent, chasing a different defect. **Twelve cells and 51 nodes
+is a position too narrow for the game's own mechanics to show up in** — which is what the owner's
+instruction to *"make the v1 space larger"* was already reaching for, now with three measurements behind
+it rather than an instinct.
+
+It also reframes every balance gate: they all play the twelve, so **they are systematically blind to the
+mechanics that only wider play reveals.** A green gate is a statement about a narrow position.
+
+## W193 — alliances still moves nothing with anti-requisites in the base, and the proof is which run was cited
+
+#126, brought current through `1e2651a` and re-recorded. **109 of 109 rows at `delta 0.00000`.**
+
+| gate | rows | at zero |
+|---|--:|--:|
+| `balance-gate-v1` | 9 | 9 |
+| `balance-gate-horizon-v1` | 10 | 10 |
+| `balance-gate-agency-v1` | 90 | 90 |
+
+And a number that had drifted in the retelling is repaired: **the old "90/90" was the agency gate alone**,
+90 of the 109. So this *restores* 109/109 rather than carrying a smaller figure forward. Every metric value
+is byte-identical to `main`'s; only `provenance.contentHash` moved.
+
+### The methodological point, now a rule in `CLAUDE.md`
+
+The agent cited the **pre-record** gate runs — the gate against the *old* baselines — and said why:
+**a gate run taken after re-recording compares the tree against numbers derived from that same tree and
+cannot fail.** It passes by construction and looks exactly like evidence. `supersededDeltas` carries the
+same information and is committed, so it stays quotable afterwards.
+
+Two neighbouring traps recorded with it:
+
+- **`regenerate.ts:214` replaces `notes` and defaults to empty.** Carrying the four prior entries forward
+  is an explicit act. A re-record that silently drops them is indistinguishable from one that never had
+  them.
+- The top-level `contentHash` is a **tamper seal over the file's own fields**, not a content revision —
+  `provenance.contentHash` is. I read the wrong one earlier in this campaign and reported a difference
+  that was circular.
+
+The zero-count grep also got a **positive control**: run against #161's own recording it finds that
+recording's 19 movers, so a zero from it means zero rather than a broken pattern.
+
+### Three findings from the merge
+
+- **The PR body claimed `balance-gate-ascension-v1` was re-recorded. It never was** — byte-identical to
+  `main`, still carrying w107's hash from #132. An earlier merge on the branch took main's side and nobody
+  updated the prose. **A PR body is not a ref either.**
+- `ACTION_NAMES` gained `'inviteScholar'` at index 16 — the real fix, since #166's drift guard is still
+  open. #164 rewrote most of `strategy-audit.ts` and git auto-merged the entry intact.
+- The `interning` revision's independence was **measured rather than asserted**: stripping `cell.json`'s
+  `excludes` reproduces the prior digest exactly, the schema is **not** in the digest preimage, and the
+  mirror probe is *refused* by the god-cost invariant because `GOD_ACTION_ID_MAX` moved to 16 — which is
+  the silently-free-god-action fix doing its job.
+
+`verify:nosweeps` exit 0, **331 files / 4,583 tests**, three gates PASS. The two non-blocking checks fail
+here and **also on `main`**.
+
+## W194 — the cohort valve is a floor that binds one way, and my brief named the wrong cause twice
+
+`w185/cohort-source`, pushed at `b5bf7b1c`. I gave the agent four candidate causes and asked it to name
+which with evidence. **It answered "none of them", and proved it.**
+
+### The real mechanism
+
+The transfer budget is `floorDiv(count * TRANSFER_RATE_PER_TICK, FP_ONE)` computed **per cohort**. Cohorts
+are keyed on **species × occupation × birth decade**, so nearly all of them sit below `1/rate` = 16 —
+**and every budget floors to zero.** `N` cohorts of `c` people yield `N·floor(c·r)`, which is zero whenever
+`c < 1/r`, where the control law asks for `floor(N·c·r)`. **The error is per-cohort, always downward, and
+grows with fragmentation.**
+
+My W185 entry said reallocation *"can classify `scribe` as surplus and never as wanted."* It cannot classify
+it as anything: **reallocation moved zero scribes in either direction on every tick.** Scribe is not drained
+as surplus — it is untouched.
+
+| occupation | mortality | retirement | **reallocation** | births+promotion |
+|---|---:|---:|---:|---:|
+| **scribe** | −11 | 0 | **0** | **0** |
+| student | −10 | 0 | +139 | −89 |
+
+**The discriminating control:** injecting `scribingQueueDepth = 22` produced a **byte-identical 600-tick
+run** while `unmetDemand[scribe]` accumulated **15,377 person-ticks**. So the want *was* computed, idle *did*
+hold 182 people, and demand *was* constant — which rules out the missing-source, asymmetric-comparison and
+ordering hypotheses in one measurement.
+
+**And this is the `detachment-strength` trap again** (W185: strength 100 with per-cohort deployment fields
+zero detachments). Two independent per-cohort thresholds, both defeated by fragmentation across species and
+birth decade. That is now a **pattern in the cohort model**, not two bugs: *any* threshold applied per
+cohort is applied to a population fragmented far below it.
+
+### The curves do not bend, and that is correct
+
+At `scribingQueueDepth: 0`, before and after are identical — 24 → 13 and 24 → 16 at the two seeds.
+**Necessarily so: no correct controller fills an occupation nothing asked for.** Three variants that *did*
+bend these curves bent them **down**, to 5 and to 0, and two killed three of five species.
+
+With demand injected at w23's measured range, the pair composes exactly as intended:
+
+| demand | before | after |
+|---|---|---|
+| 40 | 24 → 13 | 24 → **40**, met by tick 120 and held |
+| 88 | 24 → 13 | 24 → **60** and rising |
+| ramp 0→88 | 24 → 13 | 24 → **78**, tracking |
+
+**This is the producer/consumer point made concrete**: neither half moves a curve alone, and together they
+track. A pooled sweep of either half measures nothing — which is the second independent confirmation
+tonight, after `balance-gate-v1` passing at delta 0.00000 on all nine metrics with the scribing change in
+the tree.
+
+### A second change that is not optional
+
+`student` is now filled from `idle` only. **Without it, opening the valve turns the 64-seat university into
+a pump**: three of five species reach zero populace inside sixty years, scribes reach zero, mages go
+212 → 593, and both the `9.3 loses no species` and `9.5 teaching never dies` tripwires fire. With it every
+species survives (42 / 1,753 / 61 / 5,498 / 4,209 against a control of 44 / 1,578 / 105 / 5,385 / 4,828).
+
+### Two self-flagged violations, and one is a new hazard class
+
+The agent reported both against itself, which is why they are worth keeping:
+
+- It used **`pkill -f "regenerate-baseline.mjs"`** on this shared box, against `CLAUDE.md`'s rule. The
+  pattern was specific; another agent's regeneration could still have been caught.
+- **It rebuilt `dist` while a baseline regeneration was running, contaminating the agency baseline.**
+  Caught, reset, re-run cleanly. **This is the inverse of the documented stale-`dist` hazard** — not
+  *testing* against a stale build but *writing into a running measurement* — and the output was
+  well-formed, plausible and wrong with nothing to flag it. Now a rule in `CLAUDE.md`: a measurement run
+  is a lock on the tree it reads, and on a shared box your build can corrupt someone else's measurement in
+  a different worktree through the shared `dist`.
+
+## W195 — nobody ever read a book. The reading edge did not exist.
+
+PR #170, `w190/scribing-fidelity`. The telephone problem is built, and the finding that reshaped it is
+the largest single hole in the knowledge model.
+
+### Copy distance travels book → mind → book, and the middle edge was missing
+
+**Knowledge entered a mind by research, teaching and theft only.** A library was **research capital** — a
+multiplier on a rate — and never an instance anybody *opened*. So `packages/rules-magic/src/instances/
+study.ts` had to be written before fidelity could mean anything: without it the copy chain is one link
+long and **corruption has no site at which to be discovered**, because discovery is *a reader failing*.
+
+This is the night's pattern at its most on-the-nose. Every earlier instance was a function nothing
+called; this is **a verb the design assumed and the code never had.** The vision is built on mages who
+discover, teach, record and lose knowledge — and *reading* was not among the ways to get it.
+
+### The curve was calibrated, not chosen
+
+The plateau ends at `fp(2048)` — two generations — and the reason is structural rather than a tuning
+constant: a book written by a mind that never read a book is generation 1 (*"fresh from a living holder:
+full"*), and a copy of that book by way of a reader is generation 2 (*"one copy out: fine"*).
+
+**Measured rather than reasoned**, which is why the first attempt was wrong:
+
+| generations per copy | mētis by generation |
+|---|---|
+| two | 100% / 33% / **0%** — no "one copy out" at all |
+| **one** | 100% / **100%** / 67% / 33% / 0% |
+
+Mētis is the unit and episteme is a half-cost discount, which makes the shipped `knowledgeKind` split —
+271 episteme, 29 mētis — **load-bearing for the first time since it was authored.**
+
+### The dwarf fork, decided against the more expressive option and rightly
+
+The design doc left open whether dwarves get a **medium** (carving stone) or whether `scribeAffinity`
+reduces per-generation loss, and called the medium more expressive. The agent chose `scribeAffinity`,
+and the argument is better than the doc's: **a medium is only more expressive if something can *choose*
+it, and nothing can** — no god action, mage goal or raid intent names one — *"so it would be a species
+stat in a costume."* And the durable-object half already shipped as `GRIMOIRE.durability`, computed from
+the same input.
+
+Result: dwarves get **3 full mētis copies to humans' 2**, and survive to the 8th where humans die at the
+5th.
+
+### Corruption, and the griefing bounded by cost
+
+Two sources: ambient scribal error on **RNG stream 13** — its own id, so durability's stream-5 ordinals
+do not shift, which is the stream-splitting rule observed rather than quoted — and the
+`knowledge-corrupt` primitive at `perdo-nomen`, **per-instance**, priced at the cast price in vigor
+**spent on the attempt**, so grief is bounded by cost rather than by a damage cap.
+
+**Nothing is pushed onto `knowledgeMovements`: the victim's ledger balances until a reader fails.** That
+is the owner's *"you don't know that your library is corrupted until a magic user tries to read it"*,
+implemented as an accounting property rather than a flag. Curiosity is deterministic — **gnomes repair at
+every tier, dwarves at none** — and a novice's failure is `silent` outside tier 1, **so deep knowledge
+rots invisibly**.
+
+### Honest reachability, and another producer/consumer pair
+
+The chain closes in-world but **rarely: 1 and 3 studies over 1200 and 2400 ticks.** Two causes, and one
+of them is already being fixed elsewhere: teacher-first is by design, and **`scribingQueueDepth` is still
+hardcoded `0`** — the very literal `w23/populace-and-record` replaces. **So #170's reachability depends
+on w23 landing.** That is the third producer/consumer pair identified tonight.
+
+**And the corrupt intent fires zero times in every committed sweep, because no strategy arms a raider** —
+the test says so rather than leaving it to be discovered. The only above-noise in-world evidence is the
+20-year gate's `referenceNodesGained` and `referenceNodesKnown`, both **+0.365 at 2.10 SE**.
+
+## W196 — the per-cohort floor is a third instance, and three of four demand ports were dead
+
+Two findings from the reallocation work, the second of which reframes the first.
+
+### The fragmentation trap is live in `rules-raid`, not merely analogous
+
+I described the `detachment-strength` case in W185 as a *trap worth recording*. The agent went and checked
+rather than taking it on trust, and it is real. `packages/rules-raid/src/portal.ts:219-236`, verified
+verbatim on `origin/main`:
+
+```
+for (const cohort of eligibleCohorts(participant.world)) {
+  let remaining = cohort.record.count;
+  while (remaining >= tuning.detachmentStrength && sideHasRoom(roster, tuning)) {
+```
+
+**The `while` is inside the `for`.** `detachment-strength` is an authored **100**, so **a cohort of
+fewer than a hundred fields no detachment at all** — and cohorts are keyed species × occupation × birth
+decade, which is exactly the fragmentation that defeats it.
+
+It is invisible today only because `standingSoldierTarget: 0` holds `soldier` at zero for the whole
+reference run: **there is nobody to field, so nothing to notice.** Recorded as a non-fix. Whoever raises
+that target first will field zero detachments and pay full subsistence for the army that did not deploy.
+
+**That is three instances of one pattern**, which is what makes it a finding about the model rather than
+three bugs:
+
+| instance | per-cohort threshold | effect |
+|---|---|---|
+| scribe reallocation | `floorDiv(count × rate, FP_ONE)`, `1/rate` = 16 | every budget floors to zero — fixed on `w185` |
+| affiliated mages | capacity bounds, PR #134 | 6 → 5 → 4 → 3 → 2 → 1 over 200 years |
+| **soldier detachments** | `detachment-strength` = 100 | **zero detachments, latent** |
+
+**Any threshold applied per cohort is applied to a population shattered far below it.** That belongs in
+the cohort model's own documentation, not in three separate bug reports.
+
+### And three of the four occupation demand ports were dead
+
+`world-step.ts:797` passes four inputs to `computeOccupationDemand`, and I verified the call site:
+
+| port | value | status |
+|---|---|---|
+| `scribingQueueDepth` | literal **`0`** | dead — `w23` replaces it with `unwrittenNodeCount(state)` |
+| `standingSoldierTarget` | **`0`** | zero **by citation**, `ages-of-magic.md` §2b: *"There is no separate military."* Honest, and the detachment floor above means a non-zero value would not work anyway |
+| `constructionBacklog` | a real function at `world-step.ts:1936` | **0 at all 601 ticks** — since confirmed in W199 by an agent that ran it on the merged tree at a named ref, rather than carried from another branch |
+| `universityCapacity` | `completedCapacity(state)` | live, and it is the university pump — the only port with a pulse, and it drains other occupations into `student` |
+
+So the occupation system has **one live input, and that input is the pathological one.** That is the
+framing that makes the combined `w23` + `w185` PR read as deliberate scope rather than as half a fix: it
+is not "unhardcode a literal", it is "the demand side of the populace model was inert."
+
+### Method note worth keeping
+
+The agent wrote a **generator** for `balance/README.md`'s power table rather than hand-computing forty
+cells, *"since stale hand-arithmetic is how that table rotted before"* — and gave it a **positive
+control**: its branch's ascension baseline is still main's, and the generated 200-year column reproduces
+the committed README exactly across all ten rows. So the cells that changed are ones that moved rather
+than ones it miscomputed. That is the right shape for any table a human would otherwise retype.
+
+## W197 — the telephone problem, measured: the best scribe in the game cannot repair a book
+
+PR #170 complete. The design's sentence — *"information that is not perfectly preserved is completely lost
+after a certain number of generations"* — is now a measured curve.
+
+### Mētis surviving, by copy generation (tier 3, four seeds, identical across all four because nothing draws)
+
+| species | `scribeAffinity` | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 |
+|---|--:|--:|--:|--:|--:|--:|--:|--:|--:|
+| human / elf | 1024 | 100% | 100% | 66.7% | 33.4% | **0%** | 0% | 0% | 0% |
+| **dwarf** | 1792 | 100% | 100% | **100%** | 90.5% | 71.5% | 52.4% | 33.4% | **14.4%** |
+| gnome | 896 | 100% | 90.5% | 52.4% | 14.4% | **0%** | 0% | 0% | 0% |
+| draconic | 640 | 100% | 60.1% | 6.7% | **0%** | 0% | 0% | 0% | 0% |
+| orc | 384 | 100% | **33.4%** | 0% | 0% | 0% | 0% | 0% | 0% |
+
+**The plateau is structural rather than tuned.** Copy distance is *stored* as an additive fp quantity and
+the mētis fraction is a piecewise curve read off it — never a multiplier applied per copy — so a literal
+range of the input maps to the literal constant `FP_ONE` and **no choice of the other constants can erode
+it.** It ends at `fp(2048)`, two generations, because that is the design's own sentence as a number: a
+book from a mind that never read one is generation 1 (*"fresh from a living holder: full"*), a copy of it
+by way of a reader is generation 2 (*"one copy out: fine"*), and the third is the first worse than its
+parent.
+
+**And the width was measured, not chosen.** At two generations per copy the curve gives `100% / 33% / 0%`
+— full, then over the cliff, **with no "one copy out" at all.** Mētis is the unit and episteme the
+half-cost discount, not the reverse.
+
+### The species tragedy, and it is exactly inverted
+
+Recovery from a **corrupted** text, by a reader competent to diagnose it:
+
+| species | repairs at tiers |
+|---|---|
+| gnome | **1–6** |
+| human | 1–3 |
+| elf | 1–2 |
+| **dwarf, orc, draconic** | **none** |
+
+**The best scribe in the game cannot recover a damaged text at any depth.** Dwarves carry knowledge eight
+generations where humans lose it at five — and cannot repair a single corrupted page. That is the owner's
+*"you've got to go in with a bunch of curious gnomes"* falling out of the numbers rather than being
+asserted. And for a novice, every failure outside tier 1 is **`silent`**, so deep knowledge rots invisibly.
+
+### The dwarf fork, decided against the doc's own preference and rightly
+
+`scribing-fidelity.md` left open whether dwarves get a **medium** (carving stone) or whether
+`scribeAffinity` reduces per-generation loss, and called the medium more expressive. The agent chose
+`scribeAffinity`: **a medium is more expressive only if something can *choose* it, and nothing in the game
+can** — no god action, mage goal or raid intent names one — so a `medium` field would be set from the
+scribe's species everywhere and be *"a species stat in a costume."* And the durable-object half already
+shipped as `GRIMOIRE.durability` from the same input.
+
+### Corruption's bound is cost, not a damage cap
+
+`knowledge-corrupt` at `perdo-nomen` tier 4, one node (`pn-the-wrong-true-name`), **per instance, never
+per grimoire**, priced at the cast price in vigor **spent on the attempt rather than on the success**. So
+a well-funded warband ruins a whole shelf and that is the design; **raising the price monotonically lowers
+the count**, which is what distinguishes N separate actions from one volume-wide sweep. Two saboteurs in a
+tick can both pay and one gets nothing — now a written decision rather than an accident of phase ordering.
+
+### Two late catches, both of shapes this document already catalogues
+
+- **`loss-shock-recovery` asserted a per-species guarantee the cull does not make.** It takes every *k*th
+  mage from a **global** ordering, so orc arrives at `preShock: 2, killed: 0` — two mages on the wrong
+  parity. A test believing a global operation was per-species.
+- **The agent's own first power-table rewriter matched by row *shape* and silently rewrote 27 rows across
+  four different tables** in `balance/README.md`. The committed tool locates the table by heading and by
+  the `| runs |` row that ends it. This is `CLAUDE.md`'s *"an aggregator that locates input by shape rather
+  than by name eventually finds the wrong input"*, committed by an agent who had read that rule.
+
+## W198 — the raid seam is closed: a god acts mid-raid, and 87% of raiders come home
+
+PR #171. Both halves of the seam W178 identified as *"one seam, much smaller than the design implies"* —
+and the estimate held.
+
+### What was built
+
+- **Unmasked** `agent-api/src/mask.ts` actions **1–4 for the defender only**, in a phase that admits a
+  change, behind a new `ENGAGEMENT_ACTIONS` allow-list that keeps everything else masked **by default**.
+  **Phase arrives as data** (`EngagementStance`) because §5 forbids `agent-api` → `rules-raid` — the
+  dependency rule respected rather than worked around. No stance supplied → no-op only, so every existing
+  caller is unchanged.
+- **Routes to `applyDirective`** through a new `scenario/src/raid-directives.ts`, `scenario` being the only
+  package permitted to see both sides.
+- **Built the caller** the brief anticipated: `runRaidWithPolicy` is `runRaid`'s loop with the gap open,
+  and with no policy it is behaviourally identical.
+
+### The measurements
+
+**Does a god action mid-raid change a raid? Yes.** Four seeds, all four moved: 3 directives applied,
+18,432 favor paid per seed, **nodes looted 12→0, 17→0, 9→1, 23→0.**
+
+**Withdrawal, the hole W178 called "no raider comes home":**
+
+| | before | after |
+|---|--:|--:|
+| raiders withdrawing | **0.0%** (0 of 169, 97 raids) | **87.0%** (859 of 987, 208 raids) |
+| nodes looted | 32 | **246** |
+
+`withdraw-after-ticks = 56`, chosen by sweep where wins are nearest even (101 vs 107) *and* loot peaks —
+not by picking a number that made the rule fire.
+
+**Combat attempts: still zero, and honestly reported.** Better, it is now *pinned*: the ablation control
+moved from by-seed to **by-primitive**, so "six of seven move nothing" becomes an assertion that **fails
+when someone closes that gap** rather than a fact someone has to remember.
+
+### Three findings, and the first is a design trap
+
+1. **The `ctx.actions` design fails silently.** The world-scale resolver consumes the submission first,
+   draining every technique bit by tick 100 — so the same action offered mid-raid is then *correctly*
+   judged `not-a-change` and refused. **The agent's first implementation did exactly this and every
+   directive was silently refused.** An action that is legal, submitted, accepted and then correctly
+   determined to be a no-op is indistinguishable from one that worked.
+2. **Two latent defects surfaced only once raiders tried to leave**: terrain could roll impassable
+   **under the portal**, and unreachable-portal raids ran to collapse — a **3,199-tick tail against a p50
+   of 65**. Both were unreachable while nobody withdrew.
+3. **A fixture bug that flattered the result**: `warband.ts` keyed briefs on bare handles, so one roster
+   overwrote the other and it reported 173 alive / 58 withdrawn out of 180 — **115 mages who "survived
+   being stranded."**
+
+### And it complied with the standing rule, with a fact worth keeping
+
+It killed its running regeneration and **reverted** the baselines and UI artifacts it had committed, so
+gates go red on `provenance.contentHash` and `ui-recording.test.ts` is knowingly red.
+
+**But before reverting it had run all four gates, and every metric was within tolerance — largest move
+1.24 SE.** So the red is provenance, not regression: **closing the raid seam does not move balance.**
+That is exactly the kind of fact the "stop re-recording" rule risks losing, and it is worth having in
+writing before someone re-derives it in a week.
+
+## W199 — the scribing loop runs for the first time, and neither half alone does anything
+
+PR #172, carrying `w23/populace-and-record` and `w185/cohort-source` as **one** change, which is what the
+owner's producer/consumer instruction was for.
+
+### Neither half works alone. That was the whole question, and it is answered unambiguously.
+
+Merged tree, seeds `0x00090001` / `0x000900ff`, 600 ticks, three arms each rebuilt with one half removed
+and the build's exit code checked every time:
+
+| arm | scribe cohort, t=0 → 600 |
+|---|---|
+| `w185` only (the valve) | 24 → **9** / 24 → 16 — *it shrinks* |
+| `w23` only (the demand) | 24 → **14** / 24 → 24 |
+| **both** | 24 → **46** / 24 → **54** (peak) → 33 |
+
+**And the sharpest result is the one that shows the subsystem working**, at seed `0x000900ff`: both single
+halves leave the unwritten queue sitting at 44 → 38/35, while **the pair drains it 40 → 18 → 0** and takes
+library instances **24 → 180**. Books get written. That is the first time the scribing loop has closed.
+
+**The demand was there the whole time.** Measured on `main`: 30–88 unwritten nodes at every tick, and the
+literal `0` discarded all of it.
+
+**An honest counter-reading, reported rather than spun:** at seed 1 the pair peaks higher (582 vs 514) and
+finishes *lower* at 600 (186 vs 320).
+
+### Third independent confirmation that pooled sweeps cannot see this work
+
+Cited **pre-record**, on the `w23`-only tree, and flagged in a blockquote in the PR so nobody reads PASS as
+describing the PR: `balance-gate-v1` **0 of 9 rows moved**, `horizon` **0 of 10**, `agency` **4 of 90 at a
+maximum of 0.39 SE** against a 3 SE tolerance.
+
+**A change that takes an occupation's demand from 0 to 88 is invisible to all three pooled gates.** After
+`balance-gate-v1` at delta 0.00000 with the scribing change in the tree, and the raid seam moving no metric
+by more than 1.24 SE, that is three separate confirmations in one night. The instruction to stop
+sweep-per-change is now the best-evidenced process decision of the campaign.
+
+### Two corrections it made against itself
+
+- The brief's premise was wrong: *"expect the three baselines to conflict."* They did not — **`w23` never
+  touched `balance/`**; only `main` did, so they merged clean. The real conflicts were `demand.ts`,
+  `world-step.ts` and `data.json`, resolved by keeping both sides (`NO_STANDING_ARMY` **and**
+  `materialsObligation` at the call site).
+- It re-measured `constructionBacklog` itself rather than carrying W196's figure from another branch —
+  **0 at all 601 ticks**, at a named ref. W196's caveat is upgraded accordingly. *"Fixed by measuring
+  rather than hedging"* is the right response to being caught overreaching.
+
+It also **killed a 45-minute ascension gate mid-run** when the no-baselines rule landed, rather than let it
+measure a tree nobody ships. `verify:nosweeps` 4,634/4,636, with both reds classified rather than patched:
+a **third** `snapshotHash` on `ui-recording` (stale fixture, layout digest unchanged), and `god-loop` at
+**95,466 ms under load 220 against 8,492 ms alone at load 93** — the box, proven rather than asserted.
+
+## W200 — the memory palace is not a retention mechanism, verified with a working control
+
+Chasing W191's two named traditions findings, because W190 established that **retention is the only thing
+that moves the shape of a university system** — affiliation takes it from zero nodes at risk to all 284
+fragile, and nothing else moves it at all.
+
+`packages/rules-magic/src/traditions/store.ts` defines **`perishesWithHolder`** and
+**`palaceLibraryDepth`**. Both have **zero call sites** outside `rules-magic`.
+
+**The control matters here, because my first probe was broken.** I tried `hooksFor|traditionOf` as a
+positive control and it returned nothing, which would have made the negative meaningless — a probe that
+finds nothing finds nothing. The working control is `decayHeldKnowledge`, imported at
+`world-step.ts:125`:
+
+| symbol | call sites outside `rules-magic` |
+|---|--:|
+| `decayHeldKnowledge` (control) | **1** |
+| `perishesWithHolder` | **0** |
+| `palaceLibraryDepth` | **0** |
+
+So a memory palace **does not perish with its holder**, and **its depth is read by nothing**. Whichever
+way that resolves at runtime — knowledge in a palace never dying, or never counting — **the palace is not
+a retention mechanism**, which is the one thing it exists to be.
+
+Both are already pinned in the ratchet baseline, among the **14 of 125 findings that sit in
+`rules-magic/src/traditions/`** — the four hook points that are this project's single licensed exception
+to content-not-code. Left for the magic auditor (`w194/audit-magic`) to place in context rather than
+fixed here, since it has that package in its corpus and a fix commissioned now would collide with its
+report.
+
+## W201 — the loot shelf reads the content flag, not the ruleset, and that is why #137 collapses
+
+The magic audit (PR #174, `docs/design/audit-magic.md`): **42 rows — 30 ABSENT, 6 SUPERSEDED, 5 PARTIAL,
+1 BUILT.** Its worst row explains a result that had been sitting unexplained for a day.
+
+### Verified verbatim at `origin/main`
+
+`packages/scenario/src/rival-universe.ts:367`:
+
+```js
+const v1Cells = new Set(
+  content.registry.cells.filter((entry) => entry.record.v1 === true).map((entry) => entry.record.id),
+);
+const foreign = content.registry.nodes
+  .filter((entry) => !v1Cells.has(entry.record.cell))
+  ...
+if (foreign.length === 0) return;
+```
+
+**The selector is the `v1` flag in *content*.** `raid-constant.json`'s own gloss describes something else
+entirely: *"Books a rival shelves from cells **this universe's own ruleset** forbids… A god researches
+only what they permit but may take what another permitted, so **this is what makes the other 249
+reachable at all**."*
+
+And twelve lines further down the same function **writes both ruleset masks** — every technique, every
+form — with a comment explaining that a rival permitting only what this universe permits *"would have
+nothing worth the trip."* **It writes the ruleset and then does not read it.** The two have agreed only
+by coincidence, for exactly as long as the set of `v1`-flagged cells has equalled the opening square.
+
+### Why this explains #137
+
+`w115/enable-all-cells` flags all seventy. Then `v1Cells` is all seventy, `foreign` is **empty**, and the
+function **returns early** — so **no foreign book is ever shelved, and the sole path by which the other
+249 nodes become reachable is closed.**
+
+That is a complete mechanism for #137's measured collapse, which had been recorded as an unexplained
+result: **every species ~20× slower to tier 3, human censored in 51 of 72 runs, two whole seed sets never
+reaching tier 3 at all.** It was never evidence that a wide grid is bad. It is evidence that widening the
+grid silently disables knowledge import, because the import is keyed on the wrong field.
+
+**So #137 should be re-measured after this is fixed, not judged on the numbers it has.** And the
+opening-width sweep now running (`w192/opening-width`) is measuring across exactly the axis this bug
+distorts — it must be told.
+
+### The ratchet's blind spot, stated precisely
+
+Only **7 of the 42 rows** name a mechanism pinned in `scripts/reachability-baseline.json`. **The other 35
+are invisible to it by construction**: the ratchet finds unreached *symbols*, so it cannot see
+
+- a hardcoded literal where an input belongs — `fertilityBonuses: []` at `world-step.ts:1849` and
+  **`scribeRateBonuses: []` at `:2017`**, both still literals;
+- a missing `permits()` inside a function that *is* reached;
+- **a live function reading the wrong field** — the row above;
+- unauthored content.
+
+**Six of the ten worst rows would survive a green ratchet untouched.** The ratchet is worth having and it
+is not a substitute for reading. Worth writing at the ratchet itself.
+
+### Two more from the same audit
+
+- **`magic-projection` §7.5/§7.5a are stale**, and `metis-from-use-results.md` §9 **already says so on
+  `main`** — naming four docs, `scripts/check-primitive-consumption.mjs`, and a source header as carrying
+  the same stale claim. The `vision-audit.md` pattern repeating: a correction exists and the wrong version
+  is the one people read. Real findings survive inside the stale doc, above.
+- **The mētis-from-use ruling was decided against a tree that had no applied-work verb.** Its gating
+  measurement is #50 (08-13); `applyMagic` landed as #127 (08-14), confirmed from `git log`. **That
+  decision should be revisited on a tree that has the verb**, rather than treated as settled.
+
+And the auditor flagged that **two of its own absence probes came back non-zero and were corrected before
+publishing** — one of which made the finding stronger. That is the discipline working.
+
+## W202 — anti-requisites reach v1, and the sweep rule needs a distinction I did not draw
+
+PR #176. The pair is **`perdo-nomen` ⊥ `rego-nomen`, `destructive`**, both cells inside the twelve, and
+it is grounded entirely in shipped `node.json` prose rather than invented for the mechanic:
+
+- *Call by Name* — *"say a thing's name in the imperative and **have it arrive**"*
+- *The Bound Servant* — *"a name **it cannot refuse**"*
+- *Shed the Use-Name* — *"**colleagues still recognise the face**"*
+
+So the content already says a name is the thing's own handle **and** that it is detachable. The
+contradiction holds at **tier 1**, which is where a whole-cell exclusion first fires.
+
+**Three other in-rectangle pairs were rejected on the content**, which is the part that makes the chosen
+one credible: `perdo-limen`/`rego-limen` share the classical label `abjuration` — the content already
+calls them one school; `perdo-terram`/`rego-terram` *agree* that a structure is an argument; and
+`perdo-mentem`/`rego-mentem` has real moral weight but only at tiers 3–4.
+
+**And a genuine content finding: no `refused` pair exists in the opening square at all.** Every
+prohibition in the twelve cells' prose runs through a god's *edict* or an institution — never a mage
+declining. Authoring one would have meant inventing it, and the agent said so instead.
+
+### It reaches v1, and the census says so with a count
+
+Before the pair, **1,585 of 3,772 living minds — 42% — co-held both cells.** After, **0.**
+
+That census had to run *first*, because §4b is per-mage and a universe-level null has two incompatible
+readings. **Sharpest result: `perdo-nomen` is emptied entirely** — at year twenty no living mage holds any
+node from it, and the per-species occupancy ceiling drops 12 → 11. §4b argues a civilization holds what a
+mage cannot; **this one does not, because one side of a `destructive` pair is systematically learned
+second.**
+
+### The agent contradicted my premise with data, and it is right
+
+I withdrew its sweep on the grounds that a pooled sweep cannot see this kind of work — three separate
+confirmations, all of them **subsystem wiring**. For **this** change the sweep saw it plainly:
+`balance-gate-horizon-v1` moved `referenceNodesKnown` **40.705 → 36.570, −23.82 SE**, and three of the
+four previously byte-identical arms moved past 3 SE. **Attribution was a control rather than an
+argument**: stripping the two `excludes` arrays reproduces the old baseline at `delta 0.00000` on all ten
+rows.
+
+**So the rule needs a distinction I did not draw.** *Wiring* an inert subsystem is invisible to pooled
+gates — demand 0 → 88 moved 4 of 90 rows at 0.39 SE, and the raid seam moved nothing beyond 1.24 SE.
+*Content* changes are exactly what those gates were built to see. The owner's instruction stands for the
+integration work it was aimed at; it should not be generalised to content.
+
+The agent complied anyway and reverted everything byte-identical to base, which was the right call under
+an ambiguous directive — and then said the numbers were in the doc *"if the distinction matters later."*
+It does.
+
+### Two tests left red on purpose, and one is a design question
+
+Matching #161's precedent: **9.8** — library depth at year 200 is **24 distinct nodes against 43**; and
+**9.5** — scribing stops while teaching runs away by an order of magnitude. The proposed reading, which
+wants confirming rather than believing: **a `destructive` pair between two cells mages both want is a
+teaching treadmill.** If that holds it is an argument for **`refused` over `destructive`** here — and that
+is the author's call, not an agent's.
+
+## W203 — nothing raises mastery. A mage can never teach what she discovered.
+
+Three audits landed (PRs #174, #175, #177). This is the finding that outranks every other in the campaign,
+and it was already written down in **five separate source files**.
+
+### Verified verbatim at `origin/main`
+
+- `rules-magic/src/instances/constants.ts:50` — `DEFAULT_INITIAL_MASTERY = 256`
+- `rules-magic/src/instances/constants.ts:63` — `DEFAULT_TEACH_THRESHOLD = 512`
+- `setMastery` has **exactly one rules-path caller**, `instances/decay.ts:213`, **and it only ever lowers.**
+
+So a node a mage researches herself starts at **256**, can only decline, and needs **512** to be
+teachable. **The interval is empty.** No researched node is ever teachable by the mage who found it. The
+only knowledge that ever crosses the threshold is what a god grants directly — `grant-mastery = 1024` —
+and that constant's own gloss states the defect outright: *"A grant at the research default would sit
+below the teach threshold and never leave the founder's head."*
+
+**And the codebase says so in five places** — `knowledge-census.ts:257`, `god/interventions.ts:594`,
+`mc-harness/metrics-telemetry.ts:279`, `scenario/species-versatility.ts:45`, `state/components.ts:477`.
+Every one of them documents the hole accurately while working around it. **This is not an unknown defect.
+It is a known one that nobody has been able to see the consequences of**, because the consequences look
+like other subsystems failing.
+
+### It is the missing cause behind half this campaign
+
+| symptom recorded earlier | explained by |
+|---|---|
+| `teach-rate` wired and inert, lessons +0.1% | almost nothing is teachable, so a teaching multiplier has nothing to multiply |
+| the founding academy is *life support* (W181) | it is the **only source of teachable knowledge in the world** |
+| a mage cannot learn to research/teach/scribe better (W180) | the wire is real, but the knowledge to teach never reaches a second head |
+| library depth compounding "switches itself off" (§6a) | the loop's input is knowledge that cannot propagate |
+| graduation ignores curriculum (W-earlier) | there is no curriculum to complete |
+
+**The knowledge economy does not compound because knowledge cannot leave the head that found it.**
+Everything downstream of that has been measured as a separate defect.
+
+### Two more from the same batch, both structural
+
+**§9's balance gates gate nothing §9 is about.** All 199 metric entries across the four committed
+baselines are `reference*` scenario vital signs — **the non-`reference*` set is empty**, and no test or
+script asserts a §7 threshold. What the baselines *do* carry is a `metricDefinitionVersions` block, so
+**the gate refuses on provenance drift and never on a number.** That makes §11's MINOR-parity rule —
+*even MINOR = baselines committed and green* — arranged to pass while certifying nothing. `capitalSnowball`
+sits at **0.380 against the 0.35 its sibling is held to**, in `balance/README.md:587` rather than in a gate.
+
+**§2.9's unread-constant guard reports on the wrong input.** `content/src/god.ts:280` checks membership of
+a hardcoded array, not reachability — so seven `legacy-*` constants sit unread and **the guard cannot go
+red.** Alongside §8a's eight authored god constants whose only reader is the unreached `legacyGrant`:
+**knobs a content author can turn that move nothing anywhere.**
+
+### And the audit documents are themselves rotting
+
+- **`vision-audit.md` §8 has rotted at the root** — *"`rules-raid` is an orphan package"* is false, which
+  invalidates twelve table rows, three further sections, and its ranked gap #1.
+- **`:585` and gap #9 still assert *"2 distinct nodes across 1,308 books"* in the present tense** — the
+  exact figure `CLAUDE.md` records as costing two agents an investigation each. It was retracted at `:351`
+  **and at neither of the other two occurrences.**
+- **`reachability-triage.md` has two wrong rows at this ref**, both reporting a live capability as a dead
+  subsystem, both from searching the wrong package: `applyWard` is superseded by `CastArbiter.applyWardOnce`
+  (`raid.ts:514`), `replay` by `replayAndLocate` (`regen-goldens.mjs:142`). Its counts should read **44 not
+  46**, and **16 not 14**. Wiring either would duplicate a live path — the exact failure that document
+  exists to prevent.
+- `hard-magic.md`'s *"library depth must feed research rate — genuinely unimplemented"* is stale; it is
+  built. Stale in the safe direction, but it points a reader at finished work while the real defect sits
+  one layer down in its input.
+
+**The caveat that matters most:** `vision-audit.md` was re-verified **selectively**. A row not named above
+**has not been cleared — it has not been checked.**
+
+## W204 — the fix for the per-cohort floor is already in the tree, argued, at one of four sites
+
+The world audit (PR #178): **47 rows — 14 BUILT, 4 PARTIAL, 21 ABSENT, 8 SUPERSEDED** — with the honest
+note that six of the fourteen BUILT are *"the document's diagnosis of a missing mechanism is confirmed"*,
+so the count is not a health score.
+
+### The repair exists, and it is documented better than anything I could have written
+
+`packages/rules-world/src/mages/promotion.ts`, verbatim at `origin/main`:
+
+> *"So the count is arithmetic: `floor(count × mageAptitude / fp(1024))`, **plus one more if a single draw
+> on stream 1 falls below the fixed-point remainder.** The expected value is preserved exactly, and the
+> draw count is `O(cohorts)` rather than `O(people)`."*
+>
+> *"**Why the remainder draw is not optional.** Plain integer truncation is simpler and needs no draw at
+> all. It is also silently biased to zero for exactly the species the vision cares about distinguishing: a
+> small cohort at a low aptitude truncates to no mages, every time, forever. **A species can be rare by
+> design; it may not be rare because of a floor.**"*
+
+That last sentence is the entire pattern, stated at one of the two sites that got it right —
+`promotion.ts` and `carrying-capacity.ts` both take the unconditional remainder draw. **Three other sites
+have exactly the bug it exists to prevent**, and now four instances are known:
+
+| site | threshold | state |
+|---|---|---|
+| `promotion.ts` (`mageAptitude`) | remainder draw | **correct** — recorded as a deliberate negative by the auditor |
+| `carrying-capacity.ts` | remainder draw | **correct** |
+| scribe reallocation | `floorDiv(count × rate, FP_ONE)`, `1/rate` = 16 | fixed on PR #172 |
+| `portal.ts:219` detachments | `detachment-strength` = 100 | **latent**, invisible only because `standingSoldierTarget: 0` |
+| `capital.ts:322` library upkeep degradation | — | **newly found, unfixed** |
+
+So this stops being a discovery problem and becomes a mechanical one: **apply the pattern the tree already
+argues for, at the three sites that lack it.** The determinism cost is known and bounded — one draw per
+cohort, on its own stream.
+
+### Nothing counts the consumption failure, by design and with a documented exit
+
+`.github/workflows/ci.yml:172`, verbatim:
+
+> *"`check:consumption` is deliberately NOT here. It is expected to be red until the effect pipeline is
+> wired, so it runs in its own non-blocking job at the bottom of this file. See that job for the condition
+> under which it moves back into this one."*
+
+Honest, and it has a stated re-entry condition — which is better than the reachability check had. But the
+consequence is that **93 authored effects on the three rate primitives sat unconsumed with nothing
+counting the number.** Those three primitives are what `ages-of-magic`'s college thesis is entirely made
+of. The check carries its own positive control: eleven other primitives pass.
+
+**It also corrects a misreading of mine.** I recorded `teach-rate`'s +0.1% as a cost-threshold effect —
+*"a lesson already fits in a month."* The auditor's reading is that it moves so little **because only a
+god blessing can move it at all**, which is W203's mastery hole seen from a third side.
+
+### A new content finding: vellum has no magical source
+
+**No universe on `main` can produce vellum by magic.** `nomen` is the only vellum-yielding form, at **one
+effect in 300 nodes**, and it is not in v1 — while **library upkeep and scribing both spend it.** That is
+the missing half of W17's dwarf diagnosis, which named *"a vellum source not sized for its sink"* without
+being able to say the source did not exist.
+
+### And two more cross-reference sources have rotted
+
+- **`reachability-triage.md` §2** says nothing in `scenario` opens a portal. Raids fire; `raids.ts` is the
+  caller. (Its `applyWard` and `replay` rows were already found wrong by the contracts audit.)
+- **`invariants.md`** records INV-29/30 as *"To be defined"* while the metrics registry defines both.
+
+That is now **five documents** found asserting stale claims in the present tense in one night —
+`vision-audit.md`, `magic-projection.md`, `reachability-triage.md`, `invariants.md`, `hard-magic.md`.
+`docs/` is not a ref, and the corollary is sharper than the rule: **the freshest-looking document is
+usually the one that has rotted, because it is the one people keep citing.**
+
+## W205 — it was never the width, and three of my recorded findings were wrong
+
+PR #173. 168 runs across 14 squares, 12 → 70 cells. **Recommendation: keep the twelve.** And the sweep
+refuted the premise I commissioned it on.
+
+### Two of my three motivating mechanisms do not bind
+
+| my claim (W192) | measured |
+|---|---|
+| *"`teach-rate`'s multiplier is live only above tier 3; v1's 51 nodes sit below it"* | **False.** The twelve hold **11 tier-4 and 2 tier-5 nodes**, reach mean deepest tier **3.89**, and carry **5 of the grid's 19 `teach-rate` sources**. `teach-rate` is live at width twelve. |
+| *"the 1.25× multiplier"* | **Mis-identified.** It is `LIBRARY_CONTRIBUTION`'s fp-256 knot at **24 shelved nodes** — not a tier gate at all. |
+
+And the knot exposes a different variable entirely: the twelve reach **49.0 shelved nodes** under the
+scenario's default founding position against **7.3** under `LONG_RUN_OPTIONS` — **same square, same
+seeds.** *"It's a founding-position question."* Anti-requisites were the only sound argument for widening,
+and W202 closed that by authoring a pair inside the twelve.
+
+### The frontier is two curves, and neither is "cells"
+
+1. **Slowdown tracks reachable *nodes*, not cells** — 1.00× at 51, 0.97× at 67, 1.87× at 75, 4.45× at 101,
+   13.03× at 170, **17.40× at 223**. Knee at **~75 nodes**.
+2. **Censoring is a step function caused by one `destructive` anti-requisite.** Ten arms with no live pair
+   censor **1.4–4.2%** with no trend; four arms with one censor **18.1–75.0%**. **No overlap.** Ablated:
+   the whole grid goes **75.0% → 13.9%** on removing a single form.
+
+**So #137's collapse is roughly four-fifths an anti-requisite effect, not dilution** — and that is measured
+by ablation, which outranks W201's derivation from reading the loot selector. **Both may contribute; the
+ablation is the stronger evidence and W201 should be read as a second, unquantified cause rather than
+*the* cause.**
+
+### If widening anyway
+
+**`{creo, intellego, perdo, rego} × {limen, mentem, nomen, terram}`** — 16 cells, 67 nodes, **0.97×**
+time-to-tier, **4.2%** censoring. *"The only free widening, and the only one that's a sentence rather than
+an alphabetical prefix."*
+
+### My instrument-blindness concern was answered by a control, not an argument
+
+I warned that the four flat arms not moving might mean the instrument was blind. **All four moved, at
+6.1–10.0 SE** — and `passive-control` and `worship-maximizer` moved **down** (−21 and −24 shelved nodes).
+The known positive control, `permissive-breadth`, also moved (+2.7 SE). *"A flat result with a flat control
+would have meant blindness; that's the discriminator, and it didn't trigger."*
+
+### W188's task-9.9 lead was noise, and I should not have recorded it as a lead
+
+**`species-occupancy`'s pinned `0.0473` is one seed from a distribution whose mean is `0.117`.** The
+history I quoted as a trend — 0.0729 → 0.0714 → 0.0645 → 0.0473 — **is a walk inside one seed's noise
+band.** So W188's *"a tenth goal moves spread 54%"* is not a 9.9 lead; it is a seed. **Criterion 3 cannot
+see the opening square at all** — every square within ~1 SE.
+
+That leaves **W180's finding as the only surviving structural lead on 9.9**: a mage cannot learn to learn.
+And W203 now says why that could not have worked anyway — nothing she discovers is ever teachable.
+
+### Two more results worth keeping
+
+- **The founding-grant hypothesis is refuted with the sign backwards:** forcing v1's grant onto a wide
+  square makes censoring *worse*, 18.1 → 44.4% and 75.0 → 93.1%.
+- **W202's pair should land** — swapped in as data and probe-confirmed, censoring goes 2.8% → 6.9%, with
+  five of six species arriving at *exactly* the same tick and the entire cost falling on draconic (2 → 5
+  censored). Two orders of magnitude cheaper than the `creo` pair. **And a warning for its reviewer: two
+  pairs with the same `destructive` resolution cost 4.1 and 15.3 points, with nothing in the content
+  predicting which.**
+
+## W206 — the audit, totalled: 170 rows, 91 absent, and the ratchet can see about a sixth of it
+
+All five audits landed — PRs **#174 magic, #175 vision, #177 contracts, #178 world, #180 agent/interface**
+— across 50 design documents.
+
+| slice | rows | BUILT | PARTIAL | ABSENT | SUPERSEDED |
+|---|--:|--:|--:|--:|--:|
+| magic | 42 | 1 | 5 | **30** | 6 |
+| vision | 20 | 2* | 5 | **12** | 1 |
+| contracts | 31 | 8 | 5 | **15** | 3 |
+| world | 47 | 14 | 4 | **21** | 8 |
+| agent/interface | 30 | 6 | 7 | **13** | 4 |
+| **total** | **170** | 31 | 26 | **91** | 22 |
+
+\* both "BUILT-but-wrong". And the world auditor noted that six of its fourteen BUILT are *"the document's
+diagnosis of a missing mechanism is confirmed"* — **so the BUILT column is not a health score, and two of
+five auditors said so unprompted.**
+
+### The meta-finding: the ratchet cannot see most of this, and now we know why
+
+Cross-references, where the auditors reported them: **7 of 42** (magic), **13 of 31** (contracts), **2 of
+47** (world), **2 of 30** (agent/interface). Roughly **a sixth** of the corpus is pinnable.
+
+Two independent reasons, both verified:
+
+1. **Scope.** `check-reachability.mjs:187` **excludes `agent-api`, `mc-harness`, `server` and `gym-bridge`
+   by name** — confirmed, zero baseline entries for all four.
+2. **Kind.** *"A ratchet counts symbols nothing calls; it cannot count requirements nothing implements."*
+   It cannot see a hardcoded literal where an input belongs, a missing `permits()` inside a function that
+   *is* reached, a live function reading the wrong field, or unauthored content. **Six of the magic
+   audit's ten worst rows would survive a green ratchet untouched.**
+
+The ratchet is worth having and it is not a substitute for reading. That belongs written at the ratchet.
+
+### Three from the final slice
+
+- **`contracts.md` §4.3 requires an event record and nothing emits it** — zero lines across `agent-api`,
+  `state` and `coordination`, with the positive control confirming the pathspec resolves. **Four consumers
+  already rest on it**: `sound-design.md` §6.5's sequenced loss cue, §0.4's density thresholds, §10 items
+  1–2, and `interface-findings.md` §2.3. Invisible to the ratchet by scope.
+- **`AgentSession` is eleven methods and the knowledge is already computed.** `rules-magic` publishes
+  `masteryFloor` and `masteryDecayPerTick`; `ticksToUnteachable` is computed at `knowledge-census.ts:678`
+  — **with no door out.** The game calculates how long until a mage's knowledge stops being teachable and
+  no agent can observe it. W203 from a fourth side.
+- **`observation-entitlement.md`'s `project()` landed as a second implementation.** No production caller;
+  every call site is a test, and `player-state-roundtrip.test.ts:17–21` says that was deliberate. **The
+  inversion the design asked for did not happen, and step 4's `unacknowledgedByStrategy` — the gate that
+  would catch the next `permissive-breadth` — is absent.** I reported #165 as landed without noticing it
+  landed *beside* the vector rather than *under* it.
+
+### And `sound-design.md` is in better shape than its size suggested
+
+About **a third** of its 1,975 lines is reachable, and most of the rest is correctly unstarted rather than
+missing: §0's constraints are enforced by two test files, 56 cues and 198 voice lines ship inside
+`npm run validate`, and `assets/selections.json` carries **217 auditioned takes** — *"which is how we know
+the generation pipeline ran rather than merely exists."* Playback is unstarted because no client package
+exists. Its genuine gap is four §10 read-path requirements, and **all four resolve to the same observation
+boundary** as the three findings above.
+
+### The effects union landed the three rulings, and the zero meant three different things in one day
+
+PR #169 implements all three pre-made decisions — negative schema bound, `!== 0` / `=== 0` guards, and the
+`routeYieldByForm` magnitude clamp dropped with `combined`'s argument carried verbatim. The clamp
+genuinely did not conflict, **so the merge commit argues it explicitly** rather than letting it land
+invisibly.
+
+**And `5662934`'s "contributes zero on every tick" has now been true, false, and true again in a day**: on
+`e2b89d8` it was 2,592 contributions with population 494 against 325, carried entirely by `fertility`; on
+the merged tree it is **zero again** — because faster research reaches the far half of
+`creo-ignem ⊥ creo-umbra` sooner and burns the school carrying `lifespan` and `fertility`. A scope-wrong
+claim that keeps coinciding with the truth is the hardest kind to catch.
+
+My warning about the stale `+110` was right and is now quantified: re-derived, `referencePopulation@
+permissive-breadth` is **−0.59 SE, inside tolerance.**
+
+## W207 — the pin was already blind, and the ratchet caught real drift within hours
+
+PR #179. `ui/session.json` and `ui/design-dashboard/data.json` are out of version control, gitignored, and
+built — with a new gate, `npm run check:generated`, wired into `verify` and named as a step in both
+full-suite Actions jobs.
+
+### The finding that justifies the change, and vindicates the reasoning behind it
+
+**The pin was already blind on `main`.** At `63f44ced` the committed dashboard payload disagreed with
+fresh output in **`examinedSymbolCount` (858 vs 864)**, **`productionFileCount` (309 vs 313)** and
+**`NO_DEMAND`'s line (84 vs 132)** — *exactly* the three fields the third projection had carved out.
+
+**The file the pin existed to keep current was stale, and the test was green over it.** W176 argued that
+three projections in a row meant the shape was wrong rather than the fields. The measurement is stronger
+than the argument: *"three projections in a row didn't just narrow the pin; they finished it."*
+
+### Controls, all actually run
+
+| control | expected | observed |
+|---|---|---|
+| clean tree | 0 | **0** |
+| `Date.now()` injected into provenance | 42 | **42** — and **both files came out the same length**, so a size check would have missed it |
+| generator throws | **1**, not 42 | **1** |
+| `git add -f ui/session.json` | 42 | **42** |
+| an upstream metric's `disprovedBy` emptied | payload changes, test red | **both**, failing with `winRateByPrimitive has no disprovedBy` |
+
+Each reverted with `git show <ref>:<path>`, never `git stash`. Determinism proven rather than assumed —
+both generators produce byte-identical output on a second run, neither payload contains an absolute path
+or machine string, and `check-reachability.mjs` sorts its emitted arrays so `readdir` order cannot reach
+the output. Scoped honestly: determinism is proven **same-machine**, which is the property this design
+needs, because the artifact is built fresh wherever it is read.
+
+### And it told me my brief asked for something incoherent
+
+I specified *"fail if the working tree is dirty afterwards."* That **cannot survive gitignoring the
+files** — the staleness failure mode is **removed by construction**, not preserved. Rather than
+implementing a check that would look like the one I asked for and test nothing, it gated the two
+properties removal depends on and **said so plainly in the code and the PR.** That is the correct response
+to a brief that contradicts itself.
+
+One assertion it wrote failed and was replaced, and the failure was the finding: **`primitives.unconsumed`
+is not the set of rows with `status: 'unconsumed'`** — 3 against 1 — *"and that difference is the finding
+the panel exists to show."*
+
+### The ratchet earned its place on day one
+
+`Rules-path reachability ratchet` is red on this PR and equally red on `main`'s own head: **129 reported
+against 125 pinned.** Three of the four are in `strategy-audit.ts` and predate the branch; the fourth,
+`characterFor`, **arrived with main's character-forge merge (#103)** — the merge that also regenerated
+`data.json`, a live instance of the coupling this PR removes.
+
+**The ratchet detected genuine new debt within hours of landing, and the agent left it red rather than
+re-pinning it** — *"accepting that debt belongs to the PR that incurred it."* That is precisely the
+behaviour the design intended: a ratchet that anyone may re-pin to make green is a counter, not a gate.
+
+## W208 — what `teach-rate` actually is, after four passes at it
+
+This document has said four different things about `teach-rate` in one night. Consolidating, because the
+drift is more instructive than any single entry.
+
+| entry | claim | status |
+|---|---|---|
+| W187 | *"wired, registered, green on `check:consumption`, and behaviourally inert"* | **over-reached** |
+| W190 | *"inert for tiers 1–3 only; every measurement was below tier 4"* | **wrong premise** — the 1.25× is not a tier gate |
+| W205 | live at width twelve — 11 tier-4 + 2 tier-5 nodes, mean deepest tier 3.89, **5 of 19 sources** | **holds** |
+| W203/W204 | it barely moves because **almost nothing is teachable** | **holds, and is the cause** |
+
+**What is true:** `teach-rate` is wired, its sources are inside v1, and it moves lesson *completions* by
+**+3.1%**. The "1.25×" is `LIBRARY_CONTRIBUTION`'s knot at **24 shelved nodes** — a founding-position
+threshold, not a tier gate; the twelve reach 49.0 shelved nodes under the scenario default against 7.3
+under `LONG_RUN_OPTIONS`, same square, same seeds. And it cannot do more than that because **nothing
+raises mastery**, so the pool of teachable knowledge is whatever a god granted.
+
+### The agent corrected its own source, not just its PR
+
+Asked only to soften a paragraph, it grepped its own code first and found **two sentences it had written
+that over-reached in exactly the way that section is about** — *"behaviourally inert under v1 content"*
+and *"nineteen `single`-target effects reach a consumer and move no outcome"* — when what it had measured
+was **one metric in one harness**. It had promoted a completion count to a claim about the mechanic.
+
+`consumption.ts` now carries the narrow claim **and the retraction beside it**, kept rather than edited
+out, on the grounds that it is that section's own thesis one turn further on: **a number that does not
+move is evidence about that number** — and about nothing else.
+
+That is the whole night's methodological lesson in one file. The recurring error, mine included, was never
+bad measurement. It was **promoting a narrow measurement to a broad claim**, and then citing the broad
+claim somewhere the measurement's scope did not travel.
+
+### W207 addendum — a count is not a diff, and the ratchet already knew
+
+A second instance of the ratchet's design being right for a reason nobody had tested.
+
+An agent checked whether its branch added reachability findings by **comparing counts**: both its tree and
+`main` report **129**, so it concluded no change. Then it diffed the symbol *lists* instead:
+
+```
+only mine:  :256 applyWard   :378 summedYield
+only main:  :221 applyWard   :365 summedYield
+```
+
+**Same two symbols, same two files, different line numbers** — its own doc comments had grown and pushed
+them down. **An add plus a removal reads as no change**, so the count proved nothing either way, and its
+earlier PR body had claimed three added findings — attributing `applyWard` in `primitives/src/stacking.ts`
+to `signed-magnitudes` — when the symbol was never its own. The 125 → 128 delta it first saw was `main`
+moving underneath it between two measurements.
+
+**The ratchet is immune to this by construction**: its identity is `group:file:name`, and the design note
+says *"deliberately not the line — line numbers rot."* Had it keyed on lines, a grown doc comment would
+have fired 42 on every branch that added a comment. The tool was right; the human-shaped comparison beside
+it was not.
+
+Which is the same rule the aggregator section already carries, one level up: **a count is a projection, and
+two different sets project to the same number.** Diff identities, not totals.
+
+*(And the agent noted against itself that it ran that diff through `/tmp` files minutes after thanking me
+for the `/tmp` rule — inside a single command, so nothing could race, but the wrong reflex.)*
+
+## W209 — the first reachability *repair*, and a usability trap in the ratchet
+
+#170 merged `main` and came out **337/337 files, 4,652/4,652 tests, zero failures**. Three of tonight's
+new gates fired on it, and all three fired usefully — within hours of landing, against a component that
+did not exist when they were written.
+
+### The ratchet's `--update` is all-or-nothing, and that is a trap
+
+The ratchet reported **5 new findings**. **Four were `main`'s own** — proved with a control worktree on
+untouched `origin/main` rather than assumed. The fifth was the agent's: `fidelityFractionOf`, a wrapper
+nothing called.
+
+**It deleted the wrapper rather than pinning it**, and the reason is the finding:
+
+> *"Pinning banks debt for speculation, and `reachability:pin` would have silently adopted main's four
+> too."*
+
+`npm run reachability:pin` re-pins **everything currently reported**. So an author pinning their own new
+finding silently adopts every other unpinned finding on the tree — including debt that arrived from
+someone else's merge minutes earlier. **The correct use is almost always to fix the finding, not pin it**,
+and the tool makes the wrong action one command and the right action manual. Worth a warning at the script,
+and worth considering a `--only <key>` form.
+
+### And the first repair: 125 → 124
+
+`study.ts` — the reading edge that did not exist before this PR — **gives `STANDARD_STORE` a consumer**.
+So the baseline drops to **124**, integration debt **61 → 60**, and §2's store-policy row goes from five
+members to four. **Baseline, triage document, its title and its test all move together**, which is the
+shape a ratchet repair is supposed to have and the first time anything has taken it.
+
+### The entitlement gate worked on a component invented after it
+
+It caught `knowledge-fidelity`'s two new fields unclassified. Both went to `undecided()`, and the reasoning
+on one is worth keeping:
+
+> *"`corruption` deliberately not argued either way — a channel saying **this book is wrong** deletes the
+> mechanic; one saying **a reader marked it** would be legitimate and doesn't exist. **Two questions, one
+> field.**"*
+
+That is exactly what the 70 `not-yet-decided` traits are for: a place to record that a decision has not
+been made, rather than making it by accident in an encoder.
+
+### Two conventions converging independently
+
+- **`data.json` resolved by regenerating, not merging** — *"hand-merging a payload whose contract is 'this
+  is what the command produces today' would produce a file no command produces."* Independently the same
+  reasoning I used on #126 an hour earlier, and the argument for #179 stated better than #179 states it.
+- **`observable-trait-inventory.md` amended at the head, not rewritten**, because *"its tables are a
+  measurement taken at `be446a6` and belong to that tree."* That is the discipline this whole campaign has
+  been trying to establish, applied without being asked.
+
+## W210 — students are entities, the cost is negative, and two gates now do one job twice
+
+PR #181. Students become `MAGE` entities in a **student role** — the owner's own *"students are immediately
+mages, they're just student mages"* — so they hold knowledge, read shelves, and graduate on curriculum.
+
+### The cost inverted the worry the brief was written around
+
+I commissioned this expecting entity growth to be the risk. Measured at 1,200 ticks over two seeds, the
+same probe against both refs:
+
+| | change |
+|---|---|
+| entities | **−13 to −27%** |
+| snapshot | **−19 to −29%** |
+| step time | **−15 to −25%** |
+| populace | **+29%** |
+
+**Students-as-entities makes the world cheaper**, because the same gate that produces fewer mages produces
+fewer *entities* — an unseated student stays a cheap number in a cohort. (If the magnitudes below are
+retuned, this table inverts and must be re-taken.)
+
+**And it cost no schema revision and no new RNG stream**: `roleId` is an existing uint8 with `student`
+appended as value 4, and the single stream-1 draw is unchanged. So `rngRegistryHash` holds and **every
+baseline delta is a behaviour delta rather than an identity invalidation** — which is exactly what the
+no-baselines rule needs to stay legible.
+
+### The finding that needs a ruling: `prevalence × mageAptitude` is a double gate
+
+Living mages fall **~55%**. The agent split the gap measurement rather than guessing at it, and
+**`unseated` — cleared the species gate, found no chair — is zero on every tick of a 1,200-tick run.
+Seats never bind.** The entire collapse is the *product* of the two gates.
+
+| species | effect |
+|---|---|
+| human | **512 → 51**, an order of magnitude |
+| dwarf, gnome, orc | same shape |
+| elf, draconic | **no cost** — prevalence 1024 |
+
+Both gates are in the design and both are now built. But **the shipped `mageAptitude` values were tuned as
+the only gate**, so for four species they now do that job twice. **The mechanism is right; the magnitudes
+are content and belong to the author.**
+
+**The second-order effect argues the direction is correct:** lessons **+28%**, research **−64%**. *"A
+smaller schooled population teaches far more, which is what a university is."*
+
+### Two things it declined to do on someone else's branch
+
+- **#170 composes without an edit** — it folds the shelf into `seek-teaching`, and the `student` bias row
+  already points there at +384. But **#170 tries teacher-first, shelf-second, which is backwards for the
+  owner's *"it's not just in your class."*** Noted in code, not changed on another branch.
+- Twelve tests left red, all pinned literals over the reference universe. **Re-recording them before the
+  magnitude decision would pin numbers about to move again.**
+
+### And one test was moved rather than deleted, correctly
+
+The defect-4 assertion failed in `coordination` and **was right to fail**: that fixture graduates students
+almost as fast as it seats them, so the claim was true and *unshowable*. It now lives in `scenario`, where
+the reference run records **3,060 student-tick holdings and one student reaching 48 nodes.** A test that
+cannot express its claim in its own fixture is in the wrong package, not wrong.
+
+## W211 — the no-baselines rule makes content PRs unmergeable, and there is no re-seal path
+
+A structural conflict between the owner's standing rule and the CI design, found by triaging two PRs that
+took opposite paths through it.
+
+### The mechanism
+
+`.github/workflows/ci.yml` runs **three balance gates as steps inside `Verify (pinned Node)`** — the
+required context. A gate refuses **`baseline-invalid`** before reading any metric when the baseline's
+`provenance.contentHash` does not match the tree's content revision.
+
+So a PR that moves `contentRevision` and then **complies with the no-baselines rule by reverting its
+re-records** fails a **required** check and **cannot merge**.
+
+### The two paths, demonstrated
+
+| PR | what it did | required check |
+|---|---|---|
+| **#170** scribing fidelity | re-recorded **before** the rule landed, kept them | **`Verify` passes — all three gates success** |
+| **#169** effects union | re-recorded, then **reverted per the rule** | **`Verify` fails** at the five-year gate, `baseline-invalid` |
+
+Every step above the gate is green in both, on Node 20 and Node 24. **The difference is compliance.**
+#169's own triage is careful about it: the refusal is *"the documented behaviour of a gate whose baseline
+belongs to another build — not a balance regression"*, confirmed by reading the two hashes rather than by
+re-running the thing being deferred.
+
+**And it corrects a claim I made a moment earlier.** I said the rule blocks every content-touching PR. It
+blocks every content-touching PR **that complied**. #170 escaped by predating the rule, which is luck
+rather than design.
+
+### There is no provenance-only re-seal
+
+`grep` for `provenance-only`, `reseal`, `skipMeasure` across `scripts`, `tools` and `packages` returns
+**nothing**. Re-sealing a baseline against new content — updating `contentHash` without re-measuring a
+single metric — **is not currently expressible**, so the only way to clear `baseline-invalid` is a full
+re-record, which is exactly what the rule forbids.
+
+### The decision this needs
+
+The rule's purpose was sound and is well-evidenced: pooled sweeps cannot see subsystem wiring, and every
+re-record costs a merge conflict to every other branch. But **applied literally it prevents the wiring
+work from landing at all**, which defeats its own goal. Three options:
+
+1. **Carve out a provenance-only re-seal** *(recommended)* — a flag that updates `contentHash` and touches
+   no metric. It is not a measurement, so it is not what the rule prohibits; and it restores the gate's
+   ability to compare numbers, so a genuine regression still fails on a number rather than being masked by
+   a refusal. Precedent exists in the record: W160 notes a regeneration that was *"provenance-only again"*.
+2. **Move the three gates out of the required job** — the required contexts live in a repository ruleset
+   and changing them is the owner's call, not an agent's.
+3. **Accept that content PRs wait** until the rule lifts — which stalls #169, #176 and #181, three of the
+   night's largest changes.
+
+Recorded rather than acted on: the rule is the owner's and so is its exception.
+
+### W211 addendum — #172's blocker is the session pin, not the baseline seal, and #179 is on the critical path
+
+Traced #172's required-check failure to the step rather than assuming it matched #169's. **It does not.**
+
+```
+FAIL packages/scenario/test/unit/ui-recording.test.ts
+  > ui/session.json > is byte-for-byte what `npm run ui:record` produces today
+  AssertionError: expected { seed: 20260813, ticks: 400, …(7) } to deeply equal { … }
+```
+
+**Not a balance gate and not `baseline-invalid`.** It is the **committed session fixture's byte pin** —
+the *third* `snapshotHash` the cohort agent identified and deliberately left red under the no-baselines
+rule, on the correct reasoning that neither committed version is right on the combined tree.
+
+So the night's PRs are blocked by **two different committed-derived-artifact problems**, not one:
+
+| PR | required check fails on | cleared by |
+|---|---|---|
+| #169 | `baseline-invalid` — `provenance.contentHash` mismatch | a provenance-only re-seal, which **does not exist** |
+| #172 | `ui/session.json` byte pin | **#179**, which deletes the pin and builds the artifact in CI |
+
+**That puts #179 on the critical path for landing the scribing loop**, rather than being the tidy-up it
+was commissioned as. It was justified on merge-conflict cost and on the discovery that the dashboard pin
+had already gone blind; it turns out to also be the thing that unblocks a required check.
+
+The two problems share a cause — **a generated file committed and pinned byte-for-byte** — and #179 fixes
+that cause for both artifacts. It does **not** fix `baseline-invalid`, which is a different seal on a
+different file and still needs the carve-out W211 recommends.
+
+**Also: #171 has no CI at all.** No check runs exist for `9911cdf5` and `gh run list` reports no runs for
+its branch — the workflow never triggered, so it is not queued, it is absent. That needs a push to
+re-trigger, and it is not the serial runner's queue.
+
+## W212 — universities are staffed. 6 → 5 → 4 → 3 → 2 → 1 becomes 64 of 69.
+
+PR #134. The single highest-leverage item the macro model identified, closed and green.
+
+### The curve that defined the defect, inverted
+
+Passive reference, seed 20260813, 200 world years:
+
+| tick | 0 | 120 | 480 | 960 | 1920 | 2400 |
+|---|--:|--:|--:|--:|--:|--:|
+| **before** | 6 | 5 | 4 | 3 | 2 | **1** |
+| **after** | 6 | 14 | 17 | 47 | 25 | **64** |
+
+**64 of 69 living mages, in an academy of exactly 64 seats.** `referenceGrimoires` **90.5 → 411.7**,
+`referenceLibraryDepth` **3.8 → 7.0**, `referenceLivingMages` unmoved — so this is not more mages, it is
+the *same* mages finally attached to institutions.
+
+### And the founding academy is no longer life support
+
+Measured on `main` + `w24/university-siting` + this branch: with the academy deleted and a god founding,
+**487 grimoires by world-year 25** — where W181 measured **zero in every arm ever taken.**
+
+**With the caveat stated rather than buried:** the **passive** arm is still zero, and correctly so — *a
+passive god founds nothing, so no university exists to join.* The gates run `passive-control`, so removing
+the academy still needs an opening position that funds a university. **That is a scenario question now,
+not a broken wire**, which is exactly the right kind of remaining problem.
+
+### It chose the existing PR over its own implementation, on a real distinction
+
+It had written its own version and abandoned it: `settleAffiliations` adds movers to `completedBy`, so a
+moved mage re-evaluates through the `'complete'` path, whereas its phase-6b version routed a *successful*
+goal through the `'infeasible'` branch. **Same wasted month either way — but only one tells the truth in
+the histogram.** That is the difference between a fix and a fix you can measure afterwards.
+
+### Three findings it flagged rather than fixed
+
+- **A pre-existing zero the tests were hiding.** `raid-engagement` asserts raids destroy knowledge, and it
+  **passed on `main`** — while every raid ends with **zero casualties and zero nodes lost.** The gap was
+  engagement *freezing world time*, not destruction. Once scribing got loud the proxy split 2–2 across
+  seeds. A test that passes because time does not advance is not a test of destruction.
+- **Dwarf reversed hard** — confirmed by two independent instruments (12 of 12 seed sets, and occupancy
+  **12 → 5 cells**). Highest `scribeAffinity` in the content, trading breadth for depth. Recorded as
+  *consistent, not proven*, with the test stating what would refute it.
+- **A real test-isolation bug**: a timed-out test leaks a global sentinel through a `finally` that never
+  runs.
+
+`verify:nosweeps` exit 0 — **332 files, 4,617 tests, zero failures** — and CI's `Verify (pinned Node)`
+**success on this exact head.**
+
+### W209 addendum — the ratchet trap, stated correctly, and a test that asserted a count
+
+Two corrections from the agent that found the trap, both sharper than my version.
+
+**The trap is not "pin adopts main's four."** `reachability:pin` **regenerates the whole baseline from the
+current report**, so it banks every unpinned finding present at that instant — the author's and everyone
+else's — **in one undifferentiated write**. And what made the distinction visible was **the control
+worktree on untouched `origin/main`, not the pin**. Without that control the agent *could not have known
+which of the five findings were its own*, so the honest move would have been **unavailable rather than
+merely unattractive**.
+
+Which collapses two findings into one, and it is the better statement:
+
+> **A tool that writes a whole baseline needs an instrument that attributes rows, or its convenience path
+> silently launders someone else's debt.**
+
+That applies to `reachability:pin`, and it applies unchanged to `regenerate-baseline.mjs` — which is the
+same shape and is currently the only way to clear `baseline-invalid` (W211).
+
+**And two defects on that branch were the agent's own**, reported against itself:
+
+- **`corruptibleIn` excluded only the saboteur's *own* corruptions**, so two saboteurs in one warband
+  double-counted the deepest book — **seven corruptions against a four-book shelf.** Caught by its own
+  test, *"but only because it asserted a count rather than existence."* An existence assertion would have
+  passed on a wrong number, which is the same failure as W205's spread pin and W198's population equality.
+- The power-table rewriter that matched by row shape and rewrote 27 rows across four tables — already
+  recorded, and worth repeating only because it was *"committed by the agent who had read that section
+  that hour."*
+
+**Still open and stated plainly:** `scribingQueueDepth: 0` is upstream of measuring the telephone problem
+properly — the scriptorium stops after its founding cohorts, so **the copy chain closes only 1–3 times per
+run.** #172 fixes the literal. The agent left it there rather than pulling another branch's question into
+its own PR, which is the right boundary.
+
+## W213 — 99 distinct defects, 13 closed, 86 remaining — and the denominator was wrong
+
+PR #182, `docs/design/audit-sequence.md`. The five audits become a plan, and the first thing it did was
+refuse the number I gave it.
+
+### The base was wrong before dedup started
+
+**BUILT and SUPERSEDED are findings about *documents*, not defects** — so the defect base is
+PARTIAL + ABSENT, not the row total. And counting every table's status cells mechanically,
+**`audit-contracts.md`'s summary block disagrees with its own table body by two rows in each direction**:
+six BUILT and seventeen ABSENT, not eight and fifteen.
+
+So the corpus is **29 BUILT / 93 ABSENT**, base **119** — not the 91 I have been quoting.
+
+| step | count |
+|---|--:|
+| PARTIAL + ABSENT | **119** |
+| less 2 rows where two audits contradict a third and the two are right | 117 |
+| less 18 rows from **13 findings filed more than once** | **99 distinct defects** |
+| less **13 closed by in-flight PRs** | **86 remaining** |
+
+**The mastery hole surfaced in four audits, not three** — contracts §1.5, magic's missing `practice`,
+world's missing `publish`, and agent-interface's `ticksToUnteachable` computed with no door out. Four
+independent slices, four descriptions, one defect.
+
+### Every closure verified by reading the diff at the cited line
+
+#134 (`completeAffiliation` **called** at `world-step.ts:1678`), #169, #170, #171, #172, #176, #181, and
+`w196`. **#179 closes nothing in the base and is the unblocker for #172** — which is the distinction that
+makes a sequence useful.
+
+**And four residuals the diffs do *not* close, named so nobody assumes them done:**
+`scribeRateBonuses: []` survives on #169 **at a different site**; `PRIMITIVE_COVERAGE_EXCLUSIONS` is
+unchanged; `universityProfile` / `dominantCell` / `staffCohortsOf` are **still unreached on #134**; and
+**combat attempts are still zero on #171.**
+
+### The order, five layers
+
+**Layer 0** — #179 → #172, plus the re-seal ruling, since **#169 is blocked on a decision rather than on
+code**. **Layer 1** — twelve cheap unblocked fixes, including the loot-shelf re-key, a `permits()` in
+`yieldSources`, `check:consumption` into the gate, the remainder-draw idiom at its three missing sites,
+24 rotted doc rows, and a **v1 vellum source**. **Layer 2** — blocked-then-cheap. **Layer 3** — **arm a
+raider**, which gates six findings at once: the corpus's largest single unblocking and its most expensive
+item. **Layer 4** — structural: the §4.3 event record, `AgentSession`, prestige, discriminating ascension,
+enforced §7 values.
+
+### "Correctly absent" is three buckets, not one
+
+Unstarted future work (`sound-design.md` playback — **thirteen packages on `main`, none a client**);
+**deliberate, with the argument already in the tree** (terminated-universe hash, `permits()` at looting,
+`NO_STANDING_ARMY`); and **awaiting an owner ruling** (*Intellego Mentem*'s palace, portal arrival gating,
+`refused` vs `destructive`, #181's magnitudes, the baseline re-seal). Collapsing those three into "absent"
+is what would turn a plan back into 86 obligations.
+
+### Two operational flags, one of them urgent
+
+- **Neither `w196/mastery-rises` nor `w197/aptitude-sorts-careers` is on `origin`.** Both were found via
+  `git worktree list` and read with `git show` — never entered. Same durability exposure as
+  `w116/affiliation-capacity` and `content/deep-magic` earlier tonight. **And `w197` is currently
+  byte-identical to #181 with no work of its own.**
+- **`w196` moved mid-audit**: at `9d536263` its whole diff was an instrument and the mastery hole was
+  open; at `cac97dab` it carries **`practice.ts:237` raising mastery through an eleventh goal**. *"Both
+  readings were right about their ref"* — which is the campaign's own rule turned on a moving branch.
+
+### And it corrected me twice more
+
+The ratchet baseline is **125 on `main`**; my "124" was a fact about `pr/170`. And `audit-magic`'s
+top-ranked row is **downgraded**: W205's ablation attributes ~4/5 of #137's collapse to one `destructive`
+anti-requisite, so the loot-shelf re-key stays as a cheap real prerequisite but **a measurement outranks a
+derivation**. It did not edit the five audit docs; where one is wrong, the correction lives in the
+sequence.
+
+## W214 — mastery rises: 0 → 69 crossings, and the reason the hole was total
+
+PR #183. The defect W203 called the largest in the campaign, closed — and the mechanism explains why it
+was so complete.
+
+### The measurement
+
+`tools/w196/mastery-crossings.mjs`, root seed 20260811, 2 strategies × 2 starting cells × 3 replicates ×
+600 ticks, **the same grid on both trees**:
+
+| | upward crossings | distinct nodes | runs positive |
+|---|---:|---:|---:|
+| `origin/main` | **0** | 0 | **0/12** |
+| this branch | **69** | 11 | **12/12** |
+
+The probe is inert on all four arms (byte-identical snapshot hashes), carries a **positive control** —
+31–150 nodes per run *born* at ≥512 from god grants — and has a **third exit (42) for "the probe is
+broken"** rather than folding that into "the answer is zero."
+
+### The discriminator nobody had connected
+
+**`MASTERY_ACTIVATION_THRESHOLD` is also 512.**
+
+So a node a mage researched herself, sitting at 256, is **not castable either**. It is inert in *both*
+directions — she cannot teach it and she cannot use it. That is why the hole was total rather than merely
+awkward, and it kills the obvious candidate mechanism in one line: **repeated casting cannot bootstrap
+mastery, because you cannot cast the thing you would be practising.**
+
+Teaching-received and #170's `study` both *create* instances rather than raising held ones.
+Time-at-institution is the passive accrual `metis-from-use-results` §2 already measured and rejected
+(1.0001×, 877×). **A goal costs a month, which is what makes it immune to that finding** — so `GOAL.practice`
+(id 10) plus a second trigger on casting at the world.
+
+### The mētis ruling survives; its premise does not
+
+§5a — *"no mage ever applies magic"* — is **false on this tree**. `applyMagic` is goal 9, and the ruling
+was taken at **#50 (2026-08-13)** against a tree that received `application.ts` at **#127 (2026-08-14)**,
+both confirmed from `git log`. What survives intact is the predicate critique: **never accrue on passively
+held knowledge.**
+
+**And §6 of that same document prescribed this exact goal.** The doc contained its own fix and was read as
+a rejection. Written up as a dated §10 naming the ref, with two departures recorded rather than smuggled.
+
+### Low-tier durability, solved per mage per node
+
+`min(1024, 512 + 256 × max(0, depthCeiling − tier))`. **At her ceiling a mage lands at exactly 512 —
+teachable only while she keeps drilling. Two tiers inside her reach, full mastery.** So *"an orc masters
+tier 1 forever and can never teach tier 3 unattended."*
+
+That is the owner's *"you need low level spell casters to stay in the population"* falling out of the
+arithmetic rather than being asserted. Measured by removing only the cast trigger: mages applying
+**5,549 (goal only) → 21,791 (both triggers)**, against 12,027 on main.
+
+### The disclosed regression, and it is a design question
+
+**`lessonsTaught` fell 31%** (11,199 → 7,675); scribing −14%; research flat. **Isolated rather than
+guessed**: halving practice's appeal cut crossings 69 → 32 and **did not recover lessons.** The freed
+months went to applied work — *"because crossing 512 makes a node castable and teachable in the same
+instant."*
+
+**One threshold gates two behaviours, and mages prefer the one that pays now.** Whether teaching and
+casting should share a threshold is an author's ruling, not a tuning accident.
+
+### A test that had written the defect down as a property
+
+`acquire-hook-in-the-loop.test.ts` asserted a standard universe teaches **exactly 0 lessons**, *"which
+nothing in the loop ever raises."* That is the hole, recorded as a property of traditions and passing.
+True Naming is now **15× the transmission (479 against 31)** rather than the only tradition that appears
+to work.
+
+**And all seven prose sites asserting "`setMastery` only lowers" are updated — `grep` for the claim now
+returns nothing.** Five source files documented that hole while working around it; none of them says it
+any more.
+
+### Two process notes worth carrying
+
+Its first isolation experiment **silently failed to apply** — a comment block sat between the two lines it
+matched on — and it **initially read the identical numbers as a finding**, caught only by checking the
+edit had landed. Same family as the stale-`dist` trap: *the experiment that did not run looks exactly like
+the experiment that changed nothing.*
+
+Nine tests left red across five `scenario` files, with **a control run of those same five files on
+`origin/main` passing 47/47**, so all nine are attributable. 9.5 was deliberately **not** rewritten — cause
+stated, left to whoever owns long-run balance.
+
+### W212 addendum — three corrections to my briefing, and a stronger result than I asked for
+
+**1. I had the branch relationship inverted.** I told the agent `w116/affiliation-capacity` was *3 ahead*
+of #134's head and asked which was authoritative. One command settles it:
+
+```
+git merge-base --is-ancestor origin/w116/affiliation-capacity origin/w116/complete-affiliation → YES
+```
+
+**`affiliation-capacity` is an ancestor with nothing unique.** The three commits are on
+`complete-affiliation`. So **`w116/complete-affiliation` is authoritative and `affiliation-capacity`
+should be deleted** — and the durability push I made of it earlier was harmless but unnecessary.
+
+**2. The `world-step.ts` merge is clean, and the proof is behavioural rather than structural.** `main`'s
+entire contribution to that file is one hunk — `standingSoldierTarget: 0` → `NO_STANDING_ARMY`, and
+**`NO_STANDING_ARMY` *is* `0`**, the same literal named — passed to `computeOccupationDemand` in **phase
+2**, while the affiliation seam is in **phase 5**. `universitiesStanding` was a false alarm, already on
+both sides from #164.
+
+But the structural argument is not the proof. **The passive 200-year curve on the merged tree is
+6 / 14 / 17 / 47 / 25 / 64 — byte-identical to pre-merge, with the same grimoire counts at every mark.**
+*"A silent semantic break would have moved it."* That is the right standard, and it is the one I asked for
+without being able to state it that well.
+
+**3. The gates PASS, against my instruction to leave them red — and that is the better outcome.** The
+committed hash and the merged tree's `contentRevision` are **the same** (`68cea590b84f1140…`).
+
+> **⚠ Corrected by W229.** I wrote that as *"none of the sixteen commits touches content."* **False** — the
+> branch adds two `goal-affiliate-*` weights to `autonomy-weight.json`. The gates passed because **the
+> branch had re-recorded its own baselines at that tree's revision**, not because content was untouched. So
+`balance:gate` passes at **0.00 SE on all nine metrics**, horizon and agency likewise, with **no baseline
+re-recorded.**
+
+> *"Every metric exactly its committed value is the right result for a behaviourally-inert merge — and a
+> stronger statement than 'expected red.'"*
+
+I had generalised "content PRs go red under the no-baselines rule" into an instruction. **It applies to
+PRs that move `contentRevision`, and this one does not.** The rule is narrower than my instruction, twice
+over now — first #170 escaping by predating it, now #134 escaping by not touching content at all.
+
+**And the abandoned worktree is safe to delete**, checked rather than assumed: of 41 dirty files, 39 are
+tracked, **35 identical to `main` and the other 4 are *deletions* of main's content** — a stale checkout,
+not work. The two untracked are a byte-identical copy of committed `tools/w183/` and a losing
+`applyAffiliations` design with **zero references anywhere**.
+
+#134: `MERGEABLE`, `Verify (pinned Node)` **success** on its exact head, local `verify:nosweeps` exit 0 at
+**335 files / 4,638 tests**.
+
+## W215 — three Layer-1 fixes, and a test harness that ran code not on disk
+
+PR #186. Each fix verified still-present at base before changing, each measured separately.
+
+### Fix 1 — the loot shelf, re-keyed, and a bigger finding underneath it
+
+Re-keyed from the content `v1` flag to `permits()`. **The ruleset had to be passed in, not read off
+`world`** — `world` there is the *rival's*, and the function widens the rival's own masks twelve lines
+later, so reading it would have **collapsed the shelf to empty.** `raids.ts` now hands over
+`local.ruleset`.
+
+Measured: **249 → 249 at the shipped opening.** That is *"the identity the old code was relying on, not a
+null"* — it diverges only when the ruleset stops equalling the `v1` set (2×2 → 284, 1×1 → 295, 4×4 → 233).
+
+**And the finding underneath is larger than the fix.** The shelf indexes
+`foreign[(targetId × 12 + index) % pool]`, so it only ever reads indices **12–47** — **36 nodes are ever
+shelved, all `creo-*`.** The gloss's *"this is what makes the other 249 reachable at all"* is off by
+roughly **7×**.
+
+### Fix 2 — the remainder draw, one site of three
+
+Only `portal.ts` was open; **#172 already closes the other two, and better** — `reallocation.ts` gets an
+occupation-level rate pool with per-cohort shares rounded up (**its own note names `portal.ts` as the site
+that inherited the bug**), and `capital.ts` has the floored line *deleted*.
+
+| arm | before | after |
+|---|--:|--:|
+| 20 cohorts × 40, 200 seeds | **0.000** | **8.070** (ideal 8.0) |
+| 8 × 90 | 0.000 | 7.275 (ideal 7.2) |
+| 4 × 400 — **negative control** | 16.000 | **16.000** |
+
+### Fix 3 — my premise was wrong, and the narrow claim is the true one
+
+**`nomen` *is* v1** — four of the twelve cells are `*-nomen`. So "the only vellum-yielding form is not in
+v1" was wrong. The real shape: of **59 `resource-yield` effects, exactly 5 are in v1 cells and all five
+are `*-terram`** (stone-weighted); the one nomen yield node sits in `muto-nomen`, and *muto* is not a v1
+technique. **And vellum is not sourceless — all five territories yield it through labour.**
+
+**The defensible claim is the narrow one: no *magical* vellum source existed in v1.** Grounded the new one
+in `rn-call-by-name` (Rego Nomen, tier 1, no prerequisites) — *"say a thing's name in the imperative and
+have it arrive"* — which already carries `summon`. Tier 1 matters because the sink runs from tick zero.
+
+**Effect, and CI measured it better than the agent could:** its three seeds gave +20/+28/+29% grimoires at
+2,400 ticks; the 200-year gate, 16 replicates × 2 factors × 8 strategies, gives **+30.9% overall (5.70 SE)**
+and **`@archivist` +113% (6.75 SE)** — the book-hoarding strategy more than doubles.
+
+### The one result it refused to explain
+
+**Seven arms rise and `permissive-breadth` falls 60.6% (−6.39 SE).** The agent ran no sweep — this came
+from CI — and **deliberately did not pick a cause**, naming two distinguishable candidates instead: Fix 1
+(that strategy is the only regime where re-keying changes the shelf) or Fix 3 via goal selection, since
+`rn-call-by-name` is now an `apply-magic` target and *a mage casting is a mage not scribing.*
+
+**And it flagged the trap: re-baselining that arm without answering first would pin 189.250 and make the
+fall the new normal** — regenerating a fixture to make a check go green, which is the thing `CLAUDE.md`
+forbids by name.
+
+### `@mm/rules-raid` was missing from vitest's alias table
+
+So a **src-level control ran the `dist` build**, and *"Fix 2's negative control reported 7 green tests
+about code not on disk."* Added, with the incident in the comment. This is the stale-`dist` family again,
+and the third variant tonight: not reading a stale build, not writing into a running measurement, but
+**testing a package whose source the runner could not see.**
+
+**Handoff:** #186 and #170 both take **RNG stream 13**, and `rng-registry-append-only.test.ts` asserts the
+table is **dense from 1**, so skipping is unavailable — whichever merges second renumbers to 14 and
+re-states §6.
+
+## W216 — three PRs claim RNG stream 13, and nothing catches that until after a merge
+
+The first genuine **simulation-rigor** consequence of the wiring wave, and it is exactly the class
+`CLAUDE.md` constraint 3 exists for: *"adding a draw in one subsystem must not re-roll any other."*
+
+Verified with a control — `origin/main`'s `RNG_STREAM` table has **12** entries — and each of three open
+PRs adds a thirteenth:
+
+| PR | new stream | subsystem |
+|---|---|---|
+| **#170** | `corruption: 13` | ambient scribal error |
+| **#185** | `career: 13` | graduate career sort |
+| **#186** | `detachment: 13` | soldier detachment remainder |
+
+**And `rng-registry-append-only.test.ts` asserts the table is dense from 1**, so the ids must match
+*merge order*. Nobody can sidestep the collision by picking 14 — a tree holding 1–12 and 14 fails the same
+test.
+
+### The assignment, ruled by merge proximity
+
+| PR | id | why |
+|---|--:|---|
+| **#170** | **13** | closest to merge — `Verify` green, only the artifact conflict outstanding |
+| **#186** | **14** | green and independent; its three fixes touch no other PR's surface |
+| **#185** | **15** | furthest out — branched from #181, which is itself unmerged |
+
+Each renumber moves `rngRegistryHash`, which invalidates that baseline's identity seal — so **#186 and
+#185 each need a re-seal or a re-record after renumbering**, and #184's `reseal` tool is the cheap path
+for whichever of them has no metric movement.
+
+### The gap this exposes, which is worth more than the collision
+
+**Nothing catches two open PRs claiming the same stream.** The append-only test fires only once a
+conflicting id is *on main* — by which point the second PR is red for a reason that reads like its own
+defect. Three agents each found it independently, each reported it as a handoff risk, and **none of them
+could see the other two.**
+
+This is the same shape as the reachability finding it took four investigations to notice: a check that can
+only speak after the fact makes every discoverer pay the full cost. **A pre-merge check — "does any open
+PR add a stream id this PR also adds?" — is cheap and would have cost one of three agents nothing instead
+of costing all three something.**
+
+Recorded rather than built, because it belongs with the other CI work and the queue is already the
+constraint.
+
+## W217 — the vellum source costs 22% of knowledge, and the attribution was closed by elimination
+
+A correction the agent made against itself, and it lands on a number I relayed as a win.
+
+### Books up, population up, knowledge down
+
+I reported Fix 3 (#186's v1 vellum source) as **grimoires +30.9%, `@archivist` +113%**. Reading the full
+gate log rather than the `referenceGrimoires` rows:
+
+**`referenceNodesGained` and `referenceNodesKnown` fall 22%, at −25.03 SE.**
+
+In the agent's own words: *"I led with the metric that flattered the change."* Books rise, population
+rises, and **the thing the game is about — knowledge — falls.** That is not a tuning nit; it is the
+opposite sign on the metric that matters, and it needs a ruling rather than a re-baseline.
+
+### And the attribution was closed by elimination, not dropped
+
+The earlier report left `permissive-breadth`'s −60.6% deliberately unattributed between two candidates.
+The agent then closed it with a control it already had:
+
+**`passive-control` has `signatureActions: []` and `preferences: () => []`** — it issues no god action, so
+**no portal opens, so Fix 1 (the loot-shelf re-key) cannot reach it.** Yet that arm moved: **+7.40 SE
+population, +5.73 SE instances.** In the one arm where the god never intervenes, **Fix 3 is the only
+change that can act.** So the pooled −25.03 SE is Fix 3's.
+
+That is attribution by elimination using a strategy that *provably cannot trigger* the alternative — a
+better instrument than a sweep, and it cost nothing to run. `@permissive-breadth` may still carry a Fix 1
+component on top; the **mechanism** — whether `apply-magic` displaces research months — is a goal
+histogram and remains unrun.
+
+**It also withdrew an over-claim on the way**: it had written *"Fix 2 provably cannot fire"* having checked
+only zero demand, and re-verified on two legs — `SEEDED_OCCUPATIONS = [laborer, student, scribe]` seeds no
+soldier cohort, **and** `NO_STANDING_ARMY = 0` means reallocation never creates one.
+
+### The renumber, and what it reorders
+
+`detachment` is now **14**, applied in all four places that must agree — `streams.ts`, `contracts.md` §6,
+and both test-side copies — with §6 carrying a paragraph on *why 13 is absent*. The self-healing was
+**verified rather than asserted**:
+
+```
+this branch alone                    1..12, 14        dense = false
+after #170 lands corruption:13       1..12, 13, 14    dense = true
+after #170 and #185 land career:15   1..13, 14, 15    dense = true
+```
+
+**And it reorders the CI story:** `Verify` now fails at the **test** step, before reaching any balance
+gate. The PR body had claimed a green suite and was corrected.
+
+### #184 has not landed, and I was wrong to treat it as available
+
+Verified at `origin/main` `3b90089c`: `packages/mc-harness/bin/` holds eight scripts and
+**`reseal-baseline.mjs` is not among them**; `resealCommand` appears nowhere in that package's `src`. Its
+entry point imports from `../dist/index.js`, so **it is not runnable from another branch at all.** I
+described it as Layer 0 and tried to merge it; it is still open.
+
+Its verdict is also **not uniform across gates**, which is worth knowing before anyone runs it:
+
+| gate | verdict |
+|---|---|
+| **200-year** | **refuses** — names `referenceNodesGained` at −25.03 SE |
+| **five-year** | **would succeed** — all nine metrics passed in CI (grimoires 90.860 → 90.855) |
+
+So "is this a provenance-only case" is a **per-gate** question, not a per-PR one.
+
+### W216 addendum — I relayed a finding without checking its ref, and the real gap was a missing principle
+
+I passed on a report that #186's source comment said *"whichever of the two lands second renumbers to
+14."* **The sentence was already gone** — introduced at `dd321fe4`, removed at `dd28b4c9`, the renumber
+commit made in response to an earlier message. The agent that found it had read a superseded ref, and **I
+relayed it without checking**, which is the campaign's own rule about refs applied to a finding rather
+than to code.
+
+Checked against what `dd28b4c9` actually said, two of my three points were already correct. **The third
+was real and worse than the stale quote suggested.**
+
+**All three sites stated the rule only for the #170 case.** `git grep -E "every lower id|all lower|lower
+id"` returned **nothing anywhere in the repository** — `streams.ts`, the append-only test and
+`contracts.md` §6 each carried *this queue's arithmetic* and none carried the principle it is an instance
+of. Someone appending stream 16 next month would have found three worked examples and no rule.
+
+Now stated in all three places (`fb930c45`):
+
+> **An append's ID is valid only once every ID below it has landed.** So an ID is settled by a branch's
+> position in the merge queue rather than at the moment it is authored, and **re-checking it is part of
+> merging** — a change that has sat while another append landed must confirm its ID is still the next one
+> and renumber if it is not. That costs nothing extra: the `rngRegistryHash` refusal forces a re-baseline
+> for any append regardless. **"Take the next free number" is correct only when nothing else is in flight,
+> and is precisely wrong when something is, because both changes see the same number free.**
+
+That last clause is the whole failure mode in one sentence, and it generalises past RNG streams to every
+dense append-only registry in the tree — world-schema revisions among them, which already collided once.
+
+**And a citation discipline worth copying:** it cited the test **by filename rather than by line number**,
+because `CLAUDE.md` treats a mismatched line number as the cheapest available signal that a row has
+rotted — so pinning `:225` would manufacture exactly that signal on the next edit to that file. I have
+been citing line numbers throughout this document; where the line is not the point, the filename is the
+better reference.
+
+## W218 — the doc rot is repaired, and the health warning was itself the rot
+
+PR #188. **21 rows marked superseded**, **29 corrected in place**, **2 left unverified and labelled**, all
+re-verified against `08ca5368` rather than the `0940061`/`59dfc637` the audits ran on.
+
+The spec/record distinction held: `vision-audit.md` is a **measurement record** and **no number in it was
+rewritten** — 21 rows carry a superseded marker naming what is true now. The four **specifications**
+(`magic-projection`, `reachability-triage`, `invariants`, `hard-magic`) were corrected outright.
+
+### The banner was the rot
+
+`vision-audit.md`'s existing health warning asserted *"`raidEngagement` is still `false` on `main` … so
+every `implemented-unreached` verdict below still holds."* **That paragraph was itself stale**, and it was
+doing the most damage of anything in the file, because it told readers the rest could be trusted. Now
+retracted, replaced with a pointer to `audit-vision.md` carrying its caveat verbatim — **a row not named
+there has not been cleared** — and §8's orphan-package claim is called out at the head of the section
+*and* at the head of ranked gap #1.
+
+**And G1 in its tick-off list is deliberately left unticked**: the linkage half is closed, the *fires end
+to end* half is not. Ticking it would have been the same failure one level up.
+
+### An audit correction that was itself wrong
+
+`audit-sequence.md` §2.1 credits **#170** with closing `hard-magic` missing piece 3, on the evidence that
+`GRIMOIRE.durability` derives from `scribeAffinity`. **That is already true on `main`** —
+`SCRIBE_DURABILITY_BASE` has been in `scribing.ts` since the `knowledge-model` release, and #170 is not
+merged. Corrected in `hard-magic.md` rather than in someone else's open PR, following
+`audit-sequence`'s own convention.
+
+*(Durability's honest residue, recorded rather than glossed: it gates surviving a **burning** only —
+`decay.ts` deliberately excludes it from forgetting.)*
+
+### Two corrections that land on me
+
+- **`ECONOMIC_PRIMITIVES` is three, not two** — `{resource-yield, build-rate, worship-yield}` — so
+  `gatherEffects` drives **3 of 16** primitives. W180 is marked in place above. The academic-rate finding
+  is unaffected; my count of what *is* admitted was wrong.
+- **`campaign-plan.md` is named as a remaining carrier** of the stale `gatherEffects` claim, alongside
+  `strategy-dimensionality.md:370,424` and `interface-findings.md:705`. Mine is now fixed; those two and
+  the two code files (`check-primitive-consumption.mjs`, `consumption.ts`'s header) are not.
+
+### And a reclassification it declined to make
+
+`reachability-triage`'s `rules-raid` row **keeps its verdict and loses only its reason**: `scenario` *does*
+open a portal (`raids.ts:423`), so the stated reason was wrong — but **all five findings are still
+`unreached` in the committed baseline**, so moving them to `superseded` would have been a fresh defect
+dressed as a repair. Fixing the reason and leaving the verdict is the harder and correct call.
+
+Counts corrected while there: **44 of 59** integration-debt rows, **16** superseded, and §4's heading said
+26 tooling-only where its own body and §1 both said 27.
+
+## W219 — the game is playable, and the recording every UI reads had every action rejected
+
+PR #189. `npm run play` → **http://localhost:8300/**, and a person can act as the god of a running
+universe.
+
+### What a player can do
+
+Opens at **tick 40 with thirteen of sixteen verbs lit**. Tick 0 is not a playable position — the god has
+no favor and **§4.2's mask folds affordability into the same bit as legality**, so exactly one action is
+legal there. The forty warm ticks are real: on the spine, in the action log, replayed by the control.
+`--warm 0` opts out.
+
+All sixteen verbs render with the right parameter chooser. **Thirteen are legal; three render masked**
+(`revokeEdict` with no edict in force, `changeTradition`, `declareAscension`) — **no button does nothing.**
+Measured at tick 80 against a no-op at the same tick, settled 30 ticks: **seven move something the console
+draws**, and **six are admitted and move the world without moving a drawn slot** — including `assignRole`,
+which the PR calls *"the honest row."*
+
+Best end-to-end demonstration, driven through the browser: **forbid form → Mentem** at tick 83 →
+favor **40.0 → 37.7**, permitted grid cells **12 → 9**, `mentem` gone.
+
+### The control is a receipt that can invalidate itself
+
+`control` replays the run twice from its seed — with the action and with a no-op — settles both 30 ticks,
+and reports snapshot hashes plus which observation slots differ. **A third replay is the null control, and
+if it does not come back identical to the no-op arm the receipt says *believe nothing below*.**
+
+```
+assignRole at tick 80, settled 30 ticks.
+null control held — a third replay with a no-op came back identical to the no-op arm
+admitted · snapshot fb347a7c046f8dfc vs a105e8700a858d0c — the world diverged
+0 of 400 observation slots differ
+The action reached the simulation and reached nothing this page can draw.
+```
+
+**And it separates *reach* from *effect*, because a refused action also moves the hash** —
+`noteIllegalAction()` writes a counter inside the hashed snapshot. A cruder receipt would have read
+"hash moved" as "the action worked."
+
+### The defect: `ui/session.json` is a recording of a god who did nothing
+
+**`scripts/record-session.mjs` submits `{ id: GOD_ACTION.noop }` while `admit()` reads `action.kind`.**
+Every tick of the recording is rejected `unknown-action`. Measured: 40 ticks of `{id:0}` → hash
+`07466680da25d689` with **illegalActionCount 40**; `{kind:0}` → `70664c0580e14131` with **0**.
+
+**Every UI in the repository reads that recording.** So every page has been rendering a world in which the
+god's actions never landed — and a live run at seed *S* is not the recording at seed *S*. Reported, not
+fixed: the fix moves `ui/session.json` and its golden, which is a separate change.
+
+### Honesty about what the morning will show
+
+Exercised against **`main` at `08ca5368`**, and checked at the end: **none of #134, #170, #183, #172 or
+#126 had merged**, so no rebase was possible. **The world is the inert one** — `grantFoundingKnowledge`'s
+candidates empty by tick 200 — and the PR's sweep *measures* that rather than hiding it.
+
+Also kept honest: **no build step added** (Node's own `http`; `ui/shared/session.js` gained a `live` branch
+beside `recording`); without a live server the console **falls back to the recording, says `Recording`, and
+does not render the cast controls at all**; `ui/raid/` was already labelled `Synthetic trace` and was left
+alone; and `openPortal` is legal and admitted but nothing in `scenario` opens a portal, so the engagement
+block stays zero-filled and `capabilities()` already says `engagement: false`.
+
+It went **around `@mm/server`** after reading it — `Match`, `ordering` and `desync` solve multi-client
+problems a local player does not have.
+
+## W220 — four float divisions in the rules path, in a file that cites the rule against them
+
+PR #190 (the fix) and #187 (the pass). Adding `packages/coordination/src/**/*.ts` to `RULES_SRC` exposed
+**four live violations of constraint 1** — the deterministic core's float ban — in the world loop.
+
+| site | was |
+|---|---|
+| `god/ascension.ts:522` | `Math.floor(share(…) / FP_ONE)` |
+| `god/ascension.ts:523` | `Math.floor((nodes * FP_ONE * budget) / (FP_ONE * FP_ONE))` |
+| `god/interventions.ts:443` | `Math.floor((cellId - 1) / GRID_FORM_COUNT)` |
+| `god/interventions.ts:846` | `Math.ceil(encourageMagnitude / encourageDecayPerTick)` |
+
+### The detail that makes this the night's best illustration
+
+**`ascension.ts` states the rule at line 228** — *"integer arithmetic throughout: `floorDiv` over fixed
+point at 1/1024"* — **imports `floorDiv`, uses it three times, and divides with `/` at line 522 of the same
+file.**
+
+**Nobody had forgotten the rule. Nothing checked it.** The file knows the constraint, cites it, uses the
+correct helper three times, and violates it four times — because no tool covered the package. That is the
+whole campaign's thesis in one file: the failures are not ignorance, they are unenforced knowledge.
+
+All four are now `floorDiv`; the ceiling uses the exact identity `floorDiv(a + b - 1, b)`, whose
+denominator the content loader already refuses non-positive. **Equivalence sweep: 82,001 comparisons, 0
+disagreements** across every reachable input — so the fix is behaviour-preserving by measurement, not by
+inspection.
+
+### And the anti-rot measure fixes the *meta*-problem
+
+The existing probe block catches **a ban that stopped firing**. It cannot catch **a package never
+listed** — because the probe list and the glob are written by the same hand, and **both were missing
+`coordination`.**
+
+So `purity-lint.test.ts` now **reads `packages/` off disk and asserts the partition**: adding a workspace
+package **fails until somebody decides which side of the ban it is on.** That is the difference between a
+check and a checklist.
+
+`scenario` was investigated and **recommended out, with reasons written down** — nine float sites, all
+statistics or reporting, none in the state it seeds, and it is a genuine leaf. `server` and `gym-bridge`
+were **unmentioned in the comment too**, the same silence that hid `coordination`, and are now named. Six
+exclusions, seven rules-path packages, all accounted for.
+
+Verified in both directions: injected float + clock + random gives **5 errors per `coordination/src` file**,
+matching `rules-world`; and `verify:nosweeps` is **exit 0 at 336 files / 4,676 tests**. Three further
+controls — removing `coordination` from the list, an unclassified package on disk, and an excluded package
+gaining the ban — each fail with the right message.
+
+**Stated rather than glossed:** the three balance gates were **not** run, because the pass is constrained
+against gates and sweeps. #190's body says so and asks a reviewer to run them before merge. **The
+equivalence sweep is offered in their place, not as a substitute for them.**
+
+## W221 — 27 mechanisms instrumented: ten fire zero times, eight fire and move nothing, none is content-scoped
+
+PR #191, measured at `08ca5368` with `dist/` built at that SHA. The hunt for the class no existing check
+can see — **wired, reachable, green, and inert.**
+
+| outcome | count |
+|---|--:|
+| fire **zero** times | **10** |
+| fire — tens of thousands of times — and **move nothing** | **8** |
+| move the world but nothing the record can see | 1 |
+| live | 8 |
+
+**Eighteen structural, zero content-scoped.** **No inert row would bind at a wider opening square** — which
+independently corroborates #173's *keep the twelve* and closes the last version of the widening argument.
+
+### 1. `affiliate` consumes 36.5% of all mage-life and accrues nothing
+
+**13,572 of 37,211 committed mage-ticks** go to the `affiliate` goal, and `workOne` falls through to
+`default: return undefined`. **Six affiliations happen in 600 ticks and none on a tick the mage was
+committed to the goal** — `assignStaff` does it, and does not read the goal.
+
+*"`check:reachability` already prints `completeAffiliation` as unreached. **What nothing names is the
+cost.**"* Over a third of every mage's working life, spent on a goal that cannot advance.
+
+### 2. Discovery cannot move the rates discovery is meant to move
+
+Over a no-action run: `researchBonusesFor` **19,285 calls**, `teachBonusesFor` **695**,
+`lifespanEffectsFor` **74,343** — each returns an **empty list on every call**. `scribe-rate` is handed
+the literal `NO_BONUSES`. **Only god constants feed any of them.**
+
+**And `content-set.ts` records this as a *non-node consumer registration*, which is exactly why
+`check:consumption` passes.** The blind spot is not an oversight in the checker; it is a registration
+shape that satisfies it.
+
+### 3. Every balance baseline is blind to the economy by construction
+
+**`resource-yield` moves materials −36.8% and is byte-identical across the entire committed run record.**
+`CensusSample` has no material field — and neither do the **eighteen §7 metrics** nor the **eleven
+`REFERENCE_MEASURES`.**
+
+Its mirror: **`build-rate` stacks 39 sources every tick for 2,400 ticks into a `buildProgressAdded` that
+is zero on all of them.**
+
+### Controls — and two of my numbers were never in the tree
+
+Reproduced exactly: six-of-seven primitives inert at 240 ticks; `constructionBacklog` 0, extended to 2,400.
+Reproduced at scale: combat attempts zero with `bySource: {}` over **121,167 combatant-ticks in 93 raids**.
+
+**But the 108/88,470 and 7/19,912 figures I have quoted all night appear nowhere in the tree.** The
+recorded figure is **61 raids / 80,615 ticks over 8 strategies at `b02892b`**, which scales cleanly to
+twelve. The finding is unaffected; the numbers I attached to it were not the repository's.
+
+**`lifespan`'s 1,594 contributions are driver-dependent** — 0 with no god, 3,401 under
+`worship-maximizer` — so that figure is a property of the arm, not of the wire.
+
+**And `teach-rate` is more inert than anyone reported: byte-identical at zero *and* at ×100.** Every
+earlier figure for it — mine included, four times over — was measuring something else.
+
+### The instrument caught itself twice, and both are now self-checks
+
+- **The snapshot hash moves on a content-only edit.** Amplifying `direct-damage` in a raidless driver moved
+  the hash while every behavioural counter was identical — **judged on the hash, all sixteen primitives
+  would have read live.**
+- **An arm can replace a policy with itself**, reporting a perfect byte-identical null that means nothing.
+
+Both now **refuse to print a table** rather than printing a wrong one. That is the right shape for an
+instrument whose whole job is to tell inert from live.
+
+## W222 — #134 was already the fix, and the freed third of mage-life went to scribing
+
+PR #192. I commissioned a fix for the `affiliate` goal on the premise that **#134 makes it worse**. That
+premise was **measurably wrong**, and falsifying it produced the better result.
+
+### #134 is the fix
+
+Its `spendTheMonth` collects `affiliate` commitments and hands them to `settleAffiliations` **before
+`workOne` is reached**, so the goal never falls through the switch at all. Proof, on #134 at seed 589825
+over 600 ticks: **99 observed `universityId` gains, of which Σ `report.magesAffiliated` = 93** — and the
+residual **6 equals `main`'s `assignStaff`-only total exactly.**
+
+So my *"those affiliations come through `assignStaff`, not through the goal"* was wrong, and I had extended
+W221's finding past what it measured.
+
+### Where a third of every mage's life went
+
+`tools/w204/goal-census.mjs` reused rather than rewritten. Reference universe, 600 ticks, no actions,
+three seeds. **Shares**, because #134 also runs a larger population:
+
+| goal | `main` | with #134 |
+|---|---|---|
+| research-node | 51.9 / 49.8 / 55.8 % | 53.2 / 53.1 / 51.5 % |
+| **scribe** | **4.4 / 3.3 / 3.8 %** | **34.2 / 34.3 / 41.5 %** |
+| **affiliate** | **36.5 / 38.3 / 34.4 %** | **0.2 / 0.3 / 0.2 %** |
+| apply-magic | 5.3 / 4.4 / 4.2 % | 7.8 / 7.6 / 3.9 % |
+
+**The freed months went to scribing, roughly eightfold in share** — and the mechanism is not incidental:
+**`scribeThroughputFor` returns zero for `universityId === 0`**, so the mages were queued on the one goal
+that unlocks the channel. Research barely moves.
+
+### The ablation #134's author did not have
+
+**Zeroing the four `ROLE_BIAS[*][affiliate]` literals on top of #134's wiring leaves the census
+essentially unchanged.** So **#134's headline — grimoires 90.5 → 411.7 — is carried *entirely* by
+`settleAffiliations`**, and the bias raise's real effect is **staffing only** (affiliations 67 → 93,
+mages-ever-affiliated 51 → 64).
+
+Which also retires my warning that #134 "increases a known waste." It does not.
+
+### Why nobody could see it
+
+`WorldStepReport` carried exactly one goal-shaped number — **`goalSwitches`, which counts *changes*** — and
+the per-tick `GoalHistogram` was read for that scalar and **dropped**. *"That is why a goal taking a third
+of mage-life looked exactly like a goal nobody picks."*
+
+#192 ships `WorldStepReport.monthsByGoal`, counted in `spendTheMonth` on a walk that already reads every
+commitment, **before `workOne` and unconditionally** — because *"a tally on the way out would count exactly
+the goals that work and miss exactly the ones that do not."* Its test is a **positive control**, verified
+against a deliberate break: moving the increment behind `workOne`'s early return fails two of five cases.
+
+### The design ruling, made on one sentence
+
+**Affiliation is a decision, not work — and it stays a selectable goal.** Both extremes lose on the
+`mage-autonomy` requirement quoted in `affiliation.ts`: *"WHEN a mage **selects** `affiliate` and the goal
+completes THEN its `universityId` changes **in that tick** with no intervening travel state."*
+
+A `workOne` accrual arm is a **duration**, and the module already notes that *"a duration is a distance
+divided by a speed"* — a position model `contracts.md` §0 and vision §7a rejected. Removing it from the
+commitment set dies on the word **selects**, and on `feasibility.ts:116` already gating it on
+`betterAffiliationAvailable` — machinery only a selectable goal needs.
+
+And `'complete'` versus `'infeasible'` settled as arithmetic rather than as a reading: **98 committed
+mage-months against 93 affiliations, one month per move, no churn.**
+
+### Two more corrections, one of them to the instrument that started this
+
+- **Gates are green, not red.** My brief said to expect a `contentHash` refusal; that assumed content
+  literals would move. **None did** — all three balance gates **PASS**, 337 files, 4,663 tests.
+- **W221's instrument has a defect that this inherited.** Its `NO_ACCRUAL` set holds `'wardDuty'` /
+  `'raidReadiness'` against **kebab-case** `GOAL_NAMES`, so the accrual column prints **"yes" for two goals
+  that have no `workOne` arm** — dormant on `main`, **live on #134**, where `raid-readiness` runs 0.3–1.4%
+  and is mislabelled. And `gainedWhileCommittedToAffiliate` is **blind by construction**: it samples at end
+  of tick, after autonomy re-selects. Both reported back to #191.
+
+## W223 — mastery rising kills scribing on vellum, and #186 authored the fix before anyone knew
+
+Diagnosing why the four world-animating PRs cannot merge. **The answer is not uniform, and assuming it was
+would have been the mistake.**
+
+`Verify` on #183 (mastery rises) fails on six assertions, and they are three different kinds:
+
+| assertion | kind |
+|---|---|
+| **`scribing died of the economy again — vellum ran out, not just food: expected 0 to be greater than 0`** | **a tripwire firing on a real consequence** |
+| `expected 9 to be 12`, `expected 0.186 to be close to 0.0473`, `expected ['perdo-limen', …] to deeply equal […]` | pinned literals that moved |
+| **`gnome and dwarf now overlap in every seed set… Re-measure with --sets 12 and re-record this, in both files.`** | **a test naming its own remedy** |
+
+### The tripwire is the finding
+
+**Mastery rising makes mages scribe more; more scribing exhausts vellum; scribing then dies of the
+economy.** That is a genuine causal chain, and the tripwire exists precisely to catch it.
+
+**And #186 authored the fix before this was known.** W215: *"no **magical** vellum source existed in v1"* —
+five of 59 `resource-yield` effects are in v1 cells and **all five are `*-terram`**, so vellum came only
+from territory labour. #186 adds one at `rn-call-by-name`, **tier 1, because the sink runs from tick zero.**
+
+**So #183 and #186 need each other**, and neither branch knows it. That is the fourth producer/consumer
+pair of the campaign — after scribe-demand × cohort-valve, #170's reachability × w23, and student-entities
+× the reading edge — and the first found by a tripwire rather than by a person.
+
+### The species-spread pin, third correction
+
+`expected 0.186 to be close to 0.0473`. W188 read a move to **0.0729** as a 9.9 lead; W205 showed the pin
+is **one seed from a distribution with mean 0.117** and retired it as noise. **0.186 is outside even that
+distribution's mean**, so mastery rising moves species spread substantially — but after two wrong readings
+of this exact number, **it wants the twelve-set re-measure the sibling test is asking for, not a third
+interpretation.**
+
+### And one test names its own remedy
+
+*"Re-measure with `--sets 12` and re-record this, in both files."* A failing assertion that says what would
+settle it, and in which files. That is what a pin should do when it moves, and it is the difference
+between a red test and a red test that costs an investigation.
+
+### Why this blocks merging, and what it is not
+
+`Verify (pinned Node)` is a **required** context and runs the unit suite, so a PR that leaves pins red
+cannot merge. The standing no-baselines rule was aimed at **sweeps and baseline re-records** — hours of
+compute, and a merge conflict for every branch touching `balance/`. **Re-pinning a unit-test literal from a
+measured run is neither**: no sweep, no `balance/` file, no gate. It is the same distinction agents have
+drawn all night between a `contentRevision` re-pin and a baseline re-record.
+
+The vellum tripwire is the exception and must **not** be re-pinned — it is reporting a real regression whose
+fix is sitting in another PR.
+
+## W224 — the tripwire did not clear: mastery rising concentrates knowledge on five nodes
+
+PR #194. My W223 hypothesis — that #183's vellum tripwire was #186's missing source — is **falsified**, and
+the four-tree comparison says so cleanly. Books scribed per 20-year window, same seed, 200 world years,
+each tree built and run separately:
+
+| tree | series | total | last window |
+|---|---|--:|--:|
+| `origin/main` | 633/209/44/6/0/0/5/6/9/**7** | 919 | 7 |
+| **#183 only** | 428/302/60/3/0/0/0/1/0/**0** | **794** | **0** |
+| **#186 only** | 628/316/67/10/4/13/27/6/10/**13** | **1,094** | **13** |
+| **paired** | 434/303/133/10/1/10/22/7/0/**0** | 920 | **0** |
+
+**#186 is exonerated and measurably positive inside the pairing** — adding it to #183 moves total scribing
+**794 → 920 (+16%)** and books standing at y200 **132 → 198 (+50%)**. It is simply **not the binding
+constraint**. On its own it is green 28/28 and raises library depth *above* main (49 vs 44).
+
+### The real regression is #183's, and it is the compounding loop biting
+
+**Library depth at y200: main 44 → #183 5.** **198 books on five distinct nodes.** Scribing *volume* is
+barely changed; it all lands on the same handful. That is *"a return toward the exact defect
+`candidates.ts`'s novelty preference was written to fix."*
+
+**Mastery rising makes drilling what you know beat discovering what you do not.** That is the risk named
+when the fix was commissioned — *"it is a compounding loop, and vision §2.3 prices research in mage-months
+on the assumption that a mage-month is a fixed unit"* — and it has arrived exactly there.
+
+**Draconic is censored in 69 of 72 runs**, and the shipped `species-separation.mjs` calibration now reads
+*"draconic censored in all 6 seeds"* against a committed `[27, 246] (1 censored)` — **whose own instruction
+is "stop: the instrument is wrong."**
+
+### The species-spread number, third reading, and this time it is measured
+
+| tree | mean | SE | range | the pinned seed |
+|---|--:|--:|---|---|
+| main | 0.0985 | ±0.0166 | [0.0190, 0.1725] | 0.0473 — rank 3/12, −0.89 sd |
+| paired | **0.2183** | ±0.0091 | [0.1728, 0.2619] | 0.2163 — rank 6/12, −0.06 sd |
+
+**A real effect at ~6.3 pooled SE, not a one-seed artifact.** W188 called this metric a 9.9 lead and was
+wrong; W205 showed the pin was one seed from a wide distribution and retired it. **This time it moves for
+real — and it is bad news wearing the metric's clothes**, because it is *"driven by draconic alone (2–12
+cells on main, 1–3 paired)."* Species spread rose because one species collapsed.
+
+**#183's headline survives**: **0 → 67 crossings over 13 distinct nodes, 12/12 runs**, with the main
+control at **0** and `born` 31–150 so the positive control fired.
+
+### It overruled my instruction, correctly
+
+I told it to follow `species-separation-spread.test.ts`'s own remedy and re-record in both files. **It ran
+the measurement** — `gnome < dwarf` refuted 0/12, overlap 12/12 against main's 7/12 — **reported it, and
+declined to apply it**, because *"writing `0/12` into two files as a dated current measurement would pin a
+regression-contingent number and turn the assertion green while the regression is live."*
+
+That is right, and it is the distinction the whole campaign turns on: **a test's stated remedy assumes the
+change under it is correct.** Following it while a regression is live converts a red assertion into a green
+lie. Flagged under its own heading with the numbers present, so overruling *it* costs a minute.
+
+### Where this leaves the morning
+
+**#183 should not merge as it stands.** Mastery rising is right in principle, its headline is real, and it
+carries an unfixed consequence that returns the knowledge model to a defect the frontier logic exists to
+prevent. **#186 should merge on its own** — green, positive, and wrongly implicated by my hypothesis.
+
+## W225 — #186 is mergeable and cannot merge: the gates are steps inside the required check
+
+PR #186 is `MERGEABLE` at `35ffb21a` with `verify:nosweeps` **exit 0 — 338 files, 4,698 tests, all
+passing**. It still cannot land, and the reason is W211 restated with line numbers.
+
+**The three balance gates are steps *inside* `Verify (pinned Node)`** — `ci.yml` lines 154–185 — not a job
+beside it, and `ci/hetzner-lint` runs them through `npm run verify`. **So "leave the gates red" and "`Verify`
+green" cannot both hold.** Confirmed in CI run `31886334146`: every step through `Test (unit + golden
+replay)` green, then the five-year gate refusing on both identity axes.
+
+**With a positive control on the gate's own arithmetic**: `canonicalHash` over the twelve-row table `main`
+still carries reproduces the baselines' `2bc5d131…` exactly. And a control on *where* it stops — `main`'s
+own head run has `Verify` **success**, so it reaches and clears those same steps there.
+
+### The decision this forces, and the recommendation already on record
+
+Unblocking needs the three baselines' provenance re-sealed. `main` now carries the tool for it
+(`packages/mc-harness/bin/reseal-baseline.mjs`, #184) — **and the re-seal verifies by measuring**, so it
+would surface Fix 3's real movement: `referenceNodesGained` / `referenceNodesKnown` **−22% at −25.03 SE**,
+which W217's correction says not to re-baseline over yet.
+
+**`sim-rigor-2026-08-15.md` §4.3 already recommends one re-seal after #170 and #185 land, not three.** That
+is the coherent plan: let the stream queue drain, then re-seal once. The cost of the current state is that
+every content-touching PR waits.
+
+### The merge itself was cleaner than expected, for a reason worth noting
+
+**Exactly one file conflicted** — `interning.test.ts`, the `contentRevision` ledger — because **#179 *is*
+the merge base** (`3b90089c`). The `ui/` deletions were already in this branch's history, so neither path
+appears in its diff at all. #190's float ban and #126's seventeen-action space auto-merged clean, and
+`packages/rules-raid/` is **byte-identical** across the merge.
+
+Resolved as a **union** in the file's own house style, since neither preimage contains the other; new
+revision **`3fa982e302f5b191c417d6bce36d1660`**, measured by running the test with a placeholder and
+reading the received value. Density **green, 25/25** after renumbering `detachment` 14 → 13 in all four
+places that must agree — **and the prose was rewritten rather than sed'd**, because two passages became
+*false* under 13 ("until #170 lands the density assertion is red", "the assignment is 13, 14, 15").
+
+`sim-rigor-2026-08-15.md` §4.3 states its ruling as a **dated measurement**, so it got a dated supersession
+note rather than a silent rewrite — the spec/record distinction applied without being asked.
+
+### And a grep trap now in `CLAUDE.md`
+
+**`packages/scenario/src/executor.ts` contains two literal NUL bytes** — an intentional memo-key separator,
+committed on `main` — so **`grep` treats all 880 lines as binary and prints nothing.** An empty result that
+means "skipped", not "absent". Same family as a pathspec matching no files, and it cost an agent a detour.
+
+## W226 — the morning handoff
+
+**Read this first. Everything below it in this document is detail.**
+
+### To play it
+
+```
+git checkout demo/playable-wired
+npm ci && npm run play          # → http://localhost:8300/
+```
+
+**Use the demo branch, not `main`.** Both run, but `main`'s world is the inert one — the four PRs that
+animate it are still queued. The demo branch also already carries the `actionSpaceSize` fix that `main` is
+waiting on as #193, verified: **17 verbs, zero occurrences of the hardcoded 16.**
+
+What differs, same seed, `main` → demo:
+
+| | t=200 | t=400 |
+|---|---|---|
+| library depth | 9 → **24** | 9 → **38** |
+| grimoires | 176 → **367** | 341 → **583** |
+| species alive | 6 → 6 | **5 → 6** |
+
+On `main` the library reaches depth 9 by tick 200 **and never moves again**, and by t=400 a species — the
+only one that ever reaches the deepest tier — is **extinct**.
+
+**Honest limits:** the raid is **not** playable (`openPortal` never reaches engagement across 795 frames,
+measured with a positive control on the scanner); #134's *"affiliated 1 → 64"* is **not observable** because
+the institutions block has no affiliated-mages slot; and mastery is invisible under no-op play — you have
+to act.
+
+### Two decisions waiting
+
+**1. The re-seal, and it is circular as documented.** *(Amended by W227: this clears #170 but **not**
+#172, which refuses on **numbers**, not identity — see below.)* Every remaining PR fails `Verify` because
+the three balance gates are steps *inside* it (`ci.yml` 154–185). `sim-rigor` §4.3 recommends one re-seal *after*
+#170 and #185 land — **but they cannot land while the gate refuses.** Allowing **one** re-seal on one
+branch breaks the loop, and #184's tool **refuses if any metric actually moved**, so it cannot launder a
+regression. That is the recommendation.
+
+**2. Should practice compete with discovery?** #183 makes mastery rise — headline confirmed, **0 → 67
+crossings, 12/12 runs** — and concentrates knowledge onto **five nodes**, library depth **44 → 5**,
+draconic censored in **69 of 72 runs**. Drilling what you know currently beats finding what you do not.
+**That is a design question, not a tuning one**, and it is the last thing between the mastery fix and
+`main`.
+
+### What changed structurally
+
+- **The world loop is lint-enforced deterministic.** Adding `coordination/src` to the float ban exposed
+  **four live violations in a file that cites the rule against them at line 228.**
+- **"Built but never called" is a ratchet**, not a report, and caught real drift within hours.
+- **Generated artifacts are built, not committed** — after the byte-pin was found to have *already gone
+  blind* on three fields.
+- **`monthsByGoal` exists**, so a goal consuming a third of mage-life no longer looks like one nobody picks.
+- **Five documents repaired**, including a health warning that was itself the rot.
+
+### The number that should shape what comes next
+
+**27 mechanisms instrumented: ten fire zero times, eight fire tens of thousands of times and move nothing,
+and *none* is content-scoped** — no inert mechanism would bind at a wider opening square. Of 170 audit
+rows, **99 distinct defects**, **86 remaining** after subtracting what tonight closes, sequenced in five
+layers in `docs/design/audit-sequence.md`.
+
+**And every balance baseline is blind to the economy by construction**: `CensusSample`, the eighteen §7
+metrics and the eleven `REFERENCE_MEASURES` have **no material field**, so `resource-yield` moves materials
+−36.8% and is byte-identical across the entire committed run record. That is not a bug to fix — it is an
+apparatus that cannot observe something the design cares about.
+
+## W227 — one decision does not land the stack, and W199's confirmation was measured on a stale tree
+
+Staging the last two PRs falsified the premise I staged them under. **#170 and #172 refuse for opposite
+reasons**, and only one of them is an identity problem.
+
+| PR | gate behaviour |
+|---|---|
+| **#170** | **identity refuses** — every metric it reported moved by exactly **0.00000**. Clearing identity clears it. |
+| **#172** | **identity *matches***, so the gate **admits** it and then refuses on **7 of 9 metrics**: `referenceLivingMages` **−67.60 SE**, `referenceKnowledgeInstances` −15.86 SE, `referencePopulation` **+19.72 SE**. |
+
+**So moving the gates out of the required check — or re-sealing — would let a real, unaccepted behaviour
+change merge.** That is a different decision from the re-seal, and my handoff conflated them.
+
+### And it corrects W199, one of the three pillars under the no-baselines rule
+
+W199 recorded #172's gates as **0 of 9, 0 of 10, and 4 of 90 at max 0.39 SE**, and I called it *"third
+independent confirmation that pooled sweeps cannot see subsystem work."* **That measurement was taken on a
+tree predating the opening square**, and #172's body has now retired it.
+
+The other two pillars are untouched — `balance-gate-v1` at delta 0.00000 with the scribing change in the
+tree, and the raid seam moving nothing beyond 1.24 SE. **But the rule now rests on two confirmations, not
+three, and one of its cited cases turns out to move seven metrics.**
+
+### The headline claim survives; its figures do not — and the merge is not why
+
+Scribe cohort at t=600, three arms rebuilt: **B (valve only) 8 · D (demand only) 15 · C (both) 28** at one
+seed, **8 · 15 · 40** at the other. **Both halves alone drain the founding 24; only the pair grows it** —
+the claim holds. But `24 → 46`, the queue draining `40 → 18 → 0`, and library `24 → 180` **do not
+reproduce.**
+
+**And the control settles that the merge is innocent**: the branch's **pre-merge tip gives byte-identical
+trajectory columns**, with **different snapshot hashes** (`8ce6669b` vs `3fbd6f71`) proving the trees
+genuinely differ. **The merge moved it by zero; the numbers were already stale** — `reference-universe.ts`
+changed under the probe when the branch merged the opening square, **two days after the measurement
+commit.**
+
+A counter-reading it reported rather than buried: at one seed, library instances at t=600 finish **lowest**
+in the paired arm (62, against 99 and 72).
+
+### Two pieces of diligence worth copying
+
+- **`gate-power.test.ts` derives `balance/README.md`'s power table from the baselines**, so taking main's
+  baselines left three cells stale — **a break no conflict marker points at.** Fixed with the branch's own
+  generator, and the result is **byte-identical to main's table**, which is the positive control on the
+  operation.
+- **It audited the three silently auto-merged files for dropped test blocks**, because *"a green suite
+  cannot detect that"* — `it(` counts match both parents at **23 / 13 / 6**. Nobody else checked this all
+  night, and an auto-merge that drops a describe block is invisible to every gate we have.
+
+## W228 — the re-seal decision, measured and reduced to one command
+
+Ran #184's tool in **`--dry-run`** on #170's five-year baseline. It verifies by running the gate sweep and
+discarding every number, and it wrote nothing — `git status` clean afterwards.
+
+```
+Observed movement, none of it written (k = 3):
+  referenceGrimoires            −0.05 SE
+  referenceKnowledgeInstances   +0.35 SE
+  referenceLibraryDepth         +0.10 SE
+  referenceLivingMages          0.00 SE     referenceNodesGained   0.00 SE
+  referenceNodesKnown           0.00 SE     referencePopulation    0.00 SE
+  referencePopulationChange     0.00 SE     referencePeakPopulation  unmoved
+  provenance.contentHash      0dfdd5ef… → 5a876168…
+  provenance.rngRegistryHash  2bc5d131… → 3666e19c…
+```
+
+**Every metric inside noise against a k = 3 tolerance, five of nine at exactly 0.00 SE.** Only the two
+identity hashes move. **#170 is a genuine provenance-only case, verified rather than argued.**
+
+### The two PRs are now distinguishable by measurement, not by judgement
+
+| PR | verdict |
+|---|---|
+| **#170** | **safe to re-seal** — all metrics within noise; the gate would then compare *numbers* and pass |
+| **#172** | **not safe** — identity *matches*, and it refuses on **7 of 9 metrics**, `referenceLivingMages` at **−67.60 SE** |
+
+**That distinction is the whole reason #184 was worth building rather than just deciding.** A blanket
+"re-seal everything" or "move the gates out of the required check" would clear #170 correctly **and let
+#172's unaccepted behaviour change through unexamined.**
+
+### The command, if the answer is yes
+
+Run from a worktree on `w190/scribing-fidelity` at `db2410ad` (0 behind `main`), once per baseline:
+
+```
+node packages/mc-harness/bin/reseal-baseline.mjs \
+  --scenario ./packages/scenario/bin/scenario.mjs \
+  --sweep    ./balance/sweeps/balance-gate.sweep.json \
+  --baseline ./balance/baselines/balance-gate-v1.baseline.json \
+  --sealed-on 2026-08-15 --workers 4
+```
+
+It **refuses if any metric has actually moved**, so it cannot be used on #172 by accident — that is
+enforced by the tool, not by the operator remembering.
+
+### Why this was left undone
+
+By the distinction this document has drawn all night — *"re-pinning a unit-test literal from a measured
+run is not a sweep, not a `balance/` file, and not a gate"* — **a re-seal is a `balance/` file**, and that
+is the thing the owner stopped. The dry run converts the question from a judgement into a fact; **writing
+the seal is still a decision, and it is theirs.**
+
+`sim-rigor` §4.3's advice to re-seal once after #170 and #185 land is **circular** and should be read as
+superseded: they cannot land while the gate refuses. **One re-seal, on #170, breaks the loop** — and every
+later PR then re-seals against a `main` whose baselines already carry these hashes.
+
+## W229 — #134 is the second verified provenance-only case, and a silent merge nearly bolted the wrong provenance onto the right numbers
+
+PR #134 is `MERGEABLE` and current at `c5b2ffd0`, with `main` a full ancestor. **The headline survived
+both merge rounds**: **6 / 14 / 17 / 47 / 25 / 64** at ticks 0/240/480/960/1440/2400, identical on both
+heads, same grimoire and occupation columns at every mark. 4,711 tests, 338 files, exit 0.
+
+### Gates: every metric passes; only the seal is stale
+
+Verified with #184's tool — **which landed on `main` inside this very merge**: **9 / 10 / 90 metric lines,
+all pass, 0.00 SE.** The sole failure on all three gates is
+`baseline-invalid: provenance.contentHash 201d3719… vs 68cea590…`.
+
+**So #134 joins #170 as a verified provenance-only case.** Two PRs, same one-command remedy, both measured
+rather than argued. And an agent **asked for approval to run it and was denied by the permission
+classifier — correctly, as a guarded baseline write — and did not hand-edit the `contentHash` fields to
+work around it.** That is the system working as designed.
+
+### The near-trap is the finding
+
+Resolving the three baselines, **only `contentHash` and `notes` appeared inside conflict markers** — so
+**git had already silently taken this branch's `411.72` metrics outside them.** A hunk-level resolution
+would have produced **main's provenance bolted onto this branch's numbers**: a baseline that is internally
+coherent, passes every shape check, and describes no tree that has ever existed.
+
+It resolved **whole-file** instead. And *"take main's side and leave them red"* — my instruction — **was
+not available at all**: because the merged tree's revision is new, **both parents' baselines refuse**.
+There is no revert that merges.
+
+### Ordering was load-bearing in `world-step.ts`
+
+#192's `monthsByGoal` tally **must precede** this PR's new `affiliate` early-return — otherwise
+**`affiliate` reports zero months, which is the exact goal #192 exists to measure.** A union merge that got
+the order wrong would have silently disabled the instrument built to watch that goal, and every test would
+still pass.
+
+### And hetzner is environmental, now confirmed twice on one head
+
+On `c5b2ffd0`, `Verify (pinned Node)` passed **every step including `Test (unit + golden replay)`** and
+failed only at the gate. On the **identical head**, `ci/hetzner-lint` died **inside the test run** with the
+same unnamed *"error during the test run"* banner and **never reached the gate**. Same code, opposite
+outcome on the step in question. `Next Node major` also fails only at the gate, so it is not a Node 24
+issue either.
+
+**Left alone deliberately:** `reachability:pin` was not run, because it *"would bank main's new
+`strategy-audit.ts` / `characterFor` findings as this PR's debt"* — the all-or-nothing trap W209 recorded,
+avoided by someone who had read it. And `balance-gate-ascension-v1` is sealed older than `main`'s own seal,
+so its red predates this branch and resealing it would cost a ~1000 s sweep for a non-required check.
+
+The PR body now keeps **revision re-pin**, **provenance-only re-seal**, and **baseline re-record (did not
+happen)** as three distinct categories — which is the distinction this whole campaign kept having to
+rediscover.
+
+## W230 — I merged the wrong branch under the right title
+
+**My error, and it put unreviewed work on `main`.**
+
+I patched `scripts/play-server.mjs` in the `playable` worktree, committed and pushed it to
+`w206/play-action-space`, and then ran `gh pr create` **from the shared checkout** — which sits on
+`plan-w18`. **`gh` takes the branch of the directory it runs in**, so the pull request was opened from
+`plan-w18` with **my title and body attached to somebody else's diff**.
+
+#193's actual content: **`mages-page.png` added, `mm-hero.png` deleted.** Two image files, zero lines of
+code. I merged it as `871be32b`, so `main` now carries an asset change I never reviewed, under a commit
+message that describes an action-space fix it does not contain.
+
+**How it surfaced:** I checked whether the fix had landed and grepped for `kind >= 16` — expecting zero and
+finding one. The instinct was to assume my grep had matched my own comment, which has been the right answer
+several times tonight. It was not. **`git show --stat` on the merge commit named two PNGs.**
+
+### What is and is not damaged
+
+- **The fix is safe** on `origin/w206/play-action-space`, line 371, and is now open correctly as **#195**.
+- **The dead button is still live on `main`** — `toAction` still rejects `kind >= 16` while the action
+  space is 17, so `inviteScholar` 400s.
+- **The images are on `main` unreviewed**, and the commit message misdescribes them. Whether that matters
+  is the owner's call: they are somebody's asset work that landed early rather than wrong content, but the
+  history now says something false about `871be32b`.
+
+### The rule, now in `CLAUDE.md`
+
+**`gh pr create` takes the branch of the directory you run it in.** Always pass `--head` explicitly, or run
+it from the worktree holding the work. **And before merging, check the PR's files match its description** —
+`gh pr view <n> --json headRefName,files` is one call, and it is the only thing that would have caught
+this.
+
+It belongs with the night's other instances of the same shape: a `git worktree add` that took a stale local
+branch, a `grep` silenced by a NUL byte, a trailing `echo` swallowing an exit code, and a `pass`-line count
+that read one check twice. **Every one of them reported confidently about the wrong input.** This is the
+first where the wrong input reached `main`.

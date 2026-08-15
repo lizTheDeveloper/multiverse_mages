@@ -166,6 +166,17 @@ quietly dropped a workspace one side added. The failure then surfaces as a wall 
 the tree tells you. Three separate agents lost time to this in one session before it was written
 down.
 
+**The same auto-merge trap has a second shape, and it is worse: YAML.** Bringing `w59/gate-power`
+current, git auto-merged `.github/workflows/ci.yml` **without a conflict** and produced a *duplicate*
+`ascension:` job — main already carried that job verbatim. A duplicate mapping key is not a syntax
+error, so there is no conflict marker, no typecheck failure, and no test that fails. It lands directly
+in the workflow that gates `main`. `package-lock.json` at least breaks loudly on `npm ci`; a duplicate
+YAML key just silently takes one of the two definitions.
+
+So after any merge that touches `.github/workflows/`, **read the merged file** rather than trusting a
+clean `git merge`. When the other side is `main` and your branch's version is stale, take main's
+wholesale.
+
 The reason is concrete: more than one agent or person may be editing this repository at the same
 time. Files changing underneath a running command produce failures that look like real defects and
 are not, and `git stash` in a shared tree can sweep up someone else's uncommitted work.
@@ -299,6 +310,108 @@ command might assume.
 If you do land a commit on the wrong branch: **reverting is usually right and force-pushing is not.**
 Reverting a *merge* commit is the exception — it poisons future merges of the same content for
 whoever owns the branch, so a stray merge is better left in place than reverted.
+
+## `gh pr create` takes the branch of the directory you run it in
+
+I patched a file in a worktree, committed and pushed it there, then ran `gh pr create` from the **shared
+checkout** — which sits on a different branch. `gh` used *that* branch as the head. The pull request
+carried **my title and body**, describing a fix that was not in it, over an unrelated two-file image diff.
+I then merged it, putting someone else's unreviewed work on `main` under a commit message about something
+else.
+
+**Always pass `--head <branch>` explicitly**, or run `gh` from the worktree that holds the work. And
+**before merging, check the PR's files match its description** — `gh pr view <n> --json headRefName,files`
+costs one call and is the only thing that would have caught this.
+
+## `git worktree add <dir> <branch>` checks out the *local* branch, not the remote
+
+An agent ran `git worktree add .claude/worktrees/x w116/complete-affiliation` and got a checkout **89
+commits behind `origin`**, because a local ref of that name existed and was stale. Merging `origin/main`
+into it produced **seven conflicts including `packages/coordination/src/world-step.ts`** — a file that had
+already been verified clean at the real head. Resolving those would have been surgery on the deterministic
+rules path to fix a conflict that does not exist.
+
+**Add worktrees from the remote ref, or fast-forward immediately after:**
+
+    git worktree add <dir> --detach origin/<branch>       # or
+    git -C <dir> merge --ff-only origin/<branch>
+
+And when a merge conflicts in a file someone told you was clean, **suspect your ref before their finding.**
+
+## A guessable temp path is shared, exactly like the stash
+
+An agent wrote a PR body to `/tmp/pr-body.md`, another overwrote it, and the first **pushed the second's
+PR body onto its own pull request** before catching it.
+
+**And the obvious fix is not enough.** Told to use the session scratchpad instead, agents hit the same
+collision there within the hour — one found *another agent's PR body* at its own `pr-body.md` path and
+caught it only because it read the file back before pushing.
+
+**The rule is about the filename, not the directory.** Any path another process could guess is shared,
+wherever it lives. Put something unique in the name — the branch, the PR number, the task id — and **read
+a file back before acting on it** when anything else might have written there.
+
+## A source file with a NUL byte makes `grep` return nothing, silently
+
+`packages/scenario/src/executor.ts` carries two literal NUL bytes — an intentional memo-key separator,
+committed on `main`. `grep` therefore treats all 880 lines as **binary** and prints nothing at all rather
+than matching. An agent lost a detour to it.
+
+So a `grep` that comes back empty has two readings — *"not present"* and *"the file was skipped"* — and
+nothing distinguishes them. **Use `grep -a` when a negative matters**, or confirm with a positive control
+that the file is being read at all. This is the same failure as a pathspec that matches no files: an empty
+result that looks like an answer.
+
+## A trailing `echo` throws away the exit code you were checking
+
+A compound command's status is its **last** command's status. So
+
+    npm test; echo "done=$?"
+
+reports success no matter what `npm test` did — the shell's status is `echo`'s, and any harness reading it
+sees green. An agent read `done=1` in the output while the wrapper above it said *exit code 0*, and the two
+disagreed for the whole run.
+
+This is the `awk '{print $2}'` trap in a different costume: **the thing you read is not the thing you
+think you read.** Put the check first and let it fail —
+
+    npm test || { echo "FAILED"; exit 1; }
+
+— or capture the status into a variable *before* anything else runs, and never end a block whose failure
+matters with a bare `echo`.
+
+## Do not write into a running measurement
+
+The documented hazard is *reading* a stale `dist` and believing the result. **The inverse is worse and
+happened tonight:** an agent rebuilt `dist` while a baseline regeneration was running, and the
+regeneration recorded numbers from a tree that changed underneath it. The output was well-formed, plausible
+and wrong, and nothing flagged it — it was caught only because the agent remembered starting both.
+
+A measurement run is a lock on the tree it reads. **Before `tsc --build`, `npm ci`, a branch switch, or any
+file swap, check whether a regeneration or sweep is in flight in that worktree** — and if you started one,
+finish it before touching anything it reads.
+
+This is also why the "many sessions share this machine" rule cuts both ways: your build can corrupt someone
+else's measurement, in a different worktree, through the shared `dist`.
+
+## A gate run taken after re-recording cannot fail
+
+When a baseline is regenerated from a tree and the gate is then run on that same tree, the gate compares
+the tree against numbers derived from it. **It passes by construction.** Quoting that run as evidence the
+change is safe is circular, and it looks exactly like evidence.
+
+**Cite the pre-record run**: the gate against the *old* baselines, which either shows every row at
+`delta 0.00000` or shows what moved. `supersededDeltas` in the regenerated file carries the same
+information and is committed, so it is quotable after the fact.
+
+Two related traps in the same command:
+
+- **`regenerate.ts` replaces `notes` and defaults to empty.** Carrying prior entries forward is an
+  explicit act, not a default. A re-record that silently drops four notes looks identical to one that
+  never had them.
+- **`contentHash` at the top level of a baseline is a tamper seal over the file's own fields, not a
+  content revision.** `provenance.contentHash` is the content revision. Reasoning from the wrong one
+  produces confident nonsense — two baselines with different seals can hold identical provenance.
 
 ## A background loop outlives the reasoning that started it
 
