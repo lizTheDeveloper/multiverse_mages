@@ -12382,3 +12382,63 @@ Two rules, both earned the same way:
 - **A harness that writes an archive without a ref has produced an anecdote.**
   `search-strategies.mjs` should stamp the commit it measured. Until it does, every
   archive it writes is unfalsifiable — and this one nearly inverted a causal claim.
+
+## W233 — "Nothing beats doing nothing" was the horizon, not the game
+
+[executed, 2026-08-15, on `w233/stamp-the-search-archive` @ d458d44c, clean tree,
+`search-strategies.mjs --seeds 2` at three horizons]
+
+W232 said `smoke-600.json` had no ref. Stamping one is a four-line fix, and doing it
+turned up why the missing ref mattered more than it looked.
+
+**The stamp.** `payload.provenance = {commit, branch, dirty}`, best-effort, never throws.
+`build-design-dashboard.mjs` argues *against* exactly this and is right — for its own
+artifact. That payload is a pure function of the tree and byte-checked by
+`check:generated`, so stamping would make CI's dashboard differ from yours and the tree is
+already its provenance. **A search archive is not a function of the tree.** It records how
+the simulation *behaved*; the same command on two commits yields two different archives
+that are both correct. Three controls, because a probe that reports the negative case has
+to be shown accepting the positive one:
+
+    dirty tree  -> dirty: true
+    clean tree  -> dirty: false
+    no git repo -> {commit: unknown, branch: unknown, dirty: "unknown"}
+
+`dirty` uses `status --porcelain`, not `diff --quiet`: untracked content breaks
+reproducibility exactly as much as modified content, and `diff` cannot see it. Failure
+reports `"unknown"`, never `false`, so *"could not tell"* and *"clean"* cannot collapse.
+
+**And then the real finding.** Re-running at three horizons:
+
+    --ticks  600   shape = dead
+    --ticks  900   shape = dead
+    --ticks 1500   shape = WIDE
+
+*"Nothing beats doing nothing"* was an artifact of the tick cap. The game has strategic
+variety; a 600-tick run cannot show it, because **`ascension-min-tick` is 600** — the
+horizon equals the earliest tick at which anything can ascend, so zero runs ascend by
+construction.
+
+The guard at line 107 rejects `--ticks < ascensionMinTick` and admits `==`. The file's own
+comment says *"a tick cap below `ascension-min-tick` measures content, not play"* — and a
+cap **equal** to it measures nothing at all. That is the repo's documented
+checker-answers-about-the-wrong-input shape, in the one place built to prevent it. The
+guard wants a margin, not a `<`. (Current `main` already prints a much better warning than
+the archive I was reading carried; the archive predates it.)
+
+**What the game actually looks like with room to finish**, at 1500 ticks, 8 strategies:
+
+    width 2   reachable-not-worth-playing 6   marginOverNull 1
+    occupied: alliance-abstainer (ascended 1/2), permissive-breadth (ascended 1/2)
+    archivist reaches libraryDepth 42, spendConcentration 1000 -- and still does not win
+
+So the answer to *"does the demo set have enough variety to be fun"* is **width 2 of 8**.
+Thin, but a number, and not zero. Every prior reading of this as *dead* was measuring a
+horizon.
+
+**One defect falls straight out:** `portal-rush` runs at `illegalActionRate 0.483`. A
+strategy in the shipped demo pool submits an illegal action **just under half the time**,
+and nothing failed — the mask rejects them and the run continues. Filed as its own thread.
+
+The rule: **a measurement whose horizon is a parameter must report that parameter next to
+its verdict, and a verdict at the boundary of a parameter is not a verdict.**
