@@ -1,22 +1,21 @@
 {
   "baselineFormatVersion": 1,
   "configurationHash": "4e4532ef15feeb3b64f123b87ad060bc3318768c915c8ebf6097b5958799b1d0",
-  "contentHash": "c1eef88c4f7d14d54e609ed44449c721c2fae32905880d1412db6cd1b5520b68",
+  "contentHash": "39c2c8cb63861177fd44c844a38d0763de4f23f0ba88081ac0c119079c21f0c2",
   "kind": "gate",
   "metrics": [
-    {"aggregation":"mean","definitionVersion":1,"metricId":"referenceGrimoires","sampleSize":200,"standardError":1.6751746786773112,"standardErrorMethod":"stratified-by-cell","status":"measured","tolerance":5.025524036031934,"unit":"grimoires","value":90.47},
-    {"aggregation":"mean","definitionVersion":1,"metricId":"referenceKnowledgeInstances","sampleSize":200,"standardError":2.0484883675131607,"standardErrorMethod":"stratified-by-cell","status":"measured","tolerance":6.145465102539482,"unit":"instances","value":277.115},
-    {"aggregation":"mean","definitionVersion":1,"metricId":"referenceLibraryDepth","sampleSize":200,"standardError":0.20945142147806894,"standardErrorMethod":"stratified-by-cell","status":"measured","tolerance":0.6283542644342068,"unit":"nodes","value":3.815},
-    {"aggregation":"mean","definitionVersion":1,"metricId":"referenceLivingMages","sampleSize":200,"standardError":0.09951412575353207,"standardErrorMethod":"stratified-by-cell","status":"measured","tolerance":0.2985423772605962,"unit":"mages","value":38.97},
-    {"aggregation":"mean","definitionVersion":1,"metricId":"referenceNodesGained","sampleSize":200,"standardError":0.128428491975186,"standardErrorMethod":"stratified-by-cell","status":"measured","tolerance":0.38528547592555795,"unit":"nodes","value":13.39},
-    {"aggregation":"mean","definitionVersion":1,"metricId":"referenceNodesKnown","sampleSize":200,"standardError":0.128428491975186,"standardErrorMethod":"stratified-by-cell","status":"measured","tolerance":0.38528547592555795,"unit":"nodes","value":15.89},
-    {"aggregation":"max","definitionVersion":1,"metricId":"referencePeakPopulation","sampleSize":200,"standardError":0,"standardErrorMethod":"jackknife","status":"measured","tolerance":0,"unit":"people","value":216},
-    {"aggregation":"mean","definitionVersion":1,"metricId":"referencePopulation","sampleSize":200,"standardError":0.4243127697001497,"standardErrorMethod":"stratified-by-cell","status":"measured","tolerance":1.2729383091004491,"unit":"people","value":129.295},
-    {"aggregation":"mean","definitionVersion":1,"metricId":"referencePopulationChange","sampleSize":200,"standardError":0.4243127697001497,"standardErrorMethod":"stratified-by-cell","status":"measured","tolerance":1.2729383091004491,"unit":"people","value":-14.705}
+    {"aggregation":"mean","definitionVersion":1,"metricId":"referenceGrimoires","sampleSize":200,"standardError":1.6606468496292865,"standardErrorMethod":"stratified-by-cell","status":"measured","tolerance":4.981940548887859,"unit":"grimoires","value":90.85},
+    {"aggregation":"mean","definitionVersion":1,"metricId":"referenceKnowledgeInstances","sampleSize":200,"standardError":1.9822052757224822,"standardErrorMethod":"stratified-by-cell","status":"measured","tolerance":5.946615827167447,"unit":"instances","value":242.7},
+    {"aggregation":"mean","definitionVersion":1,"metricId":"referenceLibraryDepth","sampleSize":200,"standardError":0.1983696302463702,"standardErrorMethod":"stratified-by-cell","status":"measured","tolerance":0.5951088907391106,"unit":"nodes","value":3.725},
+    {"aggregation":"mean","definitionVersion":1,"metricId":"referenceLivingMages","sampleSize":200,"standardError":0.09475263175495334,"standardErrorMethod":"stratified-by-cell","status":"measured","tolerance":0.28425789526486,"unit":"mages","value":32.315},
+    {"aggregation":"mean","definitionVersion":1,"metricId":"referenceNodesGained","sampleSize":200,"standardError":0.14570903351878906,"standardErrorMethod":"stratified-by-cell","status":"measured","tolerance":0.43712710055636717,"unit":"nodes","value":12.935},
+    {"aggregation":"mean","definitionVersion":1,"metricId":"referenceNodesKnown","sampleSize":200,"standardError":0.14570903351878906,"standardErrorMethod":"stratified-by-cell","status":"measured","tolerance":0.43712710055636717,"unit":"nodes","value":15.435},
+    {"aggregation":"max","definitionVersion":1,"metricId":"referencePeakPopulation","sampleSize":200,"standardError":3.980000000000005,"standardErrorMethod":"jackknife","status":"measured","tolerance":11.940000000000015,"unit":"people","value":228},
+    {"aggregation":"mean","definitionVersion":1,"metricId":"referencePopulation","sampleSize":200,"standardError":0.44741719106125427,"standardErrorMethod":"stratified-by-cell","status":"measured","tolerance":1.3422515731837628,"unit":"people","value":137.695},
+    {"aggregation":"mean","definitionVersion":1,"metricId":"referencePopulationChange","sampleSize":200,"standardError":0.44741719106125416,"standardErrorMethod":"stratified-by-cell","status":"measured","tolerance":1.3422515731837625,"unit":"people","value":-6.305}
   ],
   "notes": [
-    "The universe remains degenerate in the ways integration round 2 recorded, and w107 closes none of them. Two measured findings worth reading beside this gate. First, the v1 rectangle cannot make food: of the 59 authored resource-yield effects at target universe, exactly five sit in a v1 cell and all five route to stone, because terram is the only material-bearing form among the twelve. Every ruleset comparison taken inside the v1 rectangle is therefore an argument about stone. Second, stated carefully because the sloppy version has misled several readers: advanceConstruction and applyLibraryUpkeep both have production callers in world-step.ts and run every tick, so construction is NOT inert. What is measured over 1200 ticks of the reference universe with zero god actions is constructionStoneOwed 0, buildProgressAdded 0, universitiesCompleted 0, against exactly one university -- the seeded academy, already complete. Founding a site is a god action, so with no actions submitted there is nothing to advance and stone is never spent. Those two facts together are why the campaign-plan W90 measurement of a yield-maximising ruleset was null by construction of its arms rather than for want of a mechanism: the arms could only make stone, and stone had nothing to buy.",
-    "Measured 2026-08-14 on w70/opening-square merged with origin/main at 769452845f31c33ab7800d3333fcb5c818feef41. NO GOLDEN FIXTURE WAS REGENERATED, and none needed to be: what moved is the stream registry hash, not a replay. ui/session.json is byte-identical after npm run ui:record -- snapshotHash did not move. balance-gate-ascension-v1 was deliberately NOT re-recorded: it carries the same superseded rngRegistryHash and will refuse for the same reason, but its Actions job is already failing on main at that ref and is marked not required to merge, so re-recording it is a separate decision on a separate failure."
+    "Measured on w185/cohort-source. The valve now responds to demand: with scribe demand injected at 44 the reference universe reaches exactly 44 scribes, where before the run was byte-identical with and without that demand. Pre-0.5.0, so none of these magnitudes is claimed to be balanced."
   ],
   "provenance": {
     "buildVersion": "0.3.0",
@@ -26,21 +25,21 @@
     "observationSchemaVersion": 1,
     "rngRegistryHash": "2bc5d131f2a7423ce439ee6ca933d74316f48eac1d214b23259aa4559b18c2c9"
   },
-  "rationale": "PR #72 (w70/opening-square) appends RNG_STREAM.openingSquare = 12 to the stream registry, which moves canonicalHash(RNG_STREAM) from 80608208d3325be1ffb3dba4ef810caac712eccb0a1b5f35c585fcb6d31d9cab to 2bc5d131f2a7423ce439ee6ca933d74316f48eac1d214b23259aa4559b18c2c9. gate.ts treats provenance.rngRegistryHash as a block-level refusal, so all three gates report baseline-invalid before reading a metric. A HASH CANNOT DISTINGUISH APPENDED FROM RENUMBERED -- that is the real finding and it will recur on every future stream addition; fixing the baseline format so an appended stream is distinguishable is its own change and is NOT attempted here. The repository owner authorised this hash refresh for PR #72 specifically. NO BEHAVIOUR CHANGED: resolveOpeningSquare's default path (openingTechniqueCount = openingFormCount = 0) returns v1RulesetAxes(registry) and is deliberately draw-free, so the reference universe is byte-for-byte today's universe, and no committed sweep sets either count. THIS FILE IS A MEASUREMENT, NOT A BALANCE CLAIM: release-plan.md forbids a balance claim before 0.5.0, and nothing here is one. THIS FILE: all 9 metric rows were already at delta 0.00000 against the superseded baseline on the merged tree (verify:nosweeps exit 0, 4473/4473 tests). This regeneration is provenance-only: 0 of 9 values moved and 0 of 9 tolerances moved.",
+  "rationale": "W185: the occupation transfer pool replaces the per-cohort floor, and university seats are filled from idle only. Reallocation previously moved zero people out of any cohort below sixteen members, which is nearly every cohort, so the labour market was shut in both directions; every number below was measured against a shut valve.",
   "rootSeed": 20260811,
   "runCount": 200,
   "supersededDeltas": [
-    {"delta":0,"deltaInStandardErrors":0,"metricId":"referenceGrimoires","previousValue":90.47,"value":90.47},
-    {"delta":0,"deltaInStandardErrors":0,"metricId":"referenceKnowledgeInstances","previousValue":277.115,"value":277.115},
-    {"delta":0,"deltaInStandardErrors":0,"metricId":"referenceLibraryDepth","previousValue":3.815,"value":3.815},
-    {"delta":0,"deltaInStandardErrors":0,"metricId":"referenceLivingMages","previousValue":38.97,"value":38.97},
-    {"delta":0,"deltaInStandardErrors":0,"metricId":"referenceNodesGained","previousValue":13.39,"value":13.39},
-    {"delta":0,"deltaInStandardErrors":0,"metricId":"referenceNodesKnown","previousValue":15.89,"value":15.89},
-    {"delta":0,"deltaInStandardErrors":null,"metricId":"referencePeakPopulation","previousValue":216,"value":216},
-    {"delta":0,"deltaInStandardErrors":0,"metricId":"referencePopulation","previousValue":129.295,"value":129.295},
-    {"delta":0,"deltaInStandardErrors":0,"metricId":"referencePopulationChange","previousValue":-14.705,"value":-14.705}
+    {"delta":0.37999999999999545,"deltaInStandardErrors":0.22684201524585892,"metricId":"referenceGrimoires","previousValue":90.47,"value":90.85},
+    {"delta":-34.41500000000002,"deltaInStandardErrors":-16.800193032962838,"metricId":"referenceKnowledgeInstances","previousValue":277.115,"value":242.7},
+    {"delta":-0.08999999999999986,"deltaInStandardErrors":-0.4296939088065511,"metricId":"referenceLibraryDepth","previousValue":3.815,"value":3.725},
+    {"delta":-6.655000000000001,"deltaInStandardErrors":-66.8749280527523,"metricId":"referenceLivingMages","previousValue":38.97,"value":32.315},
+    {"delta":-0.45500000000000007,"deltaInStandardErrors":-3.542827553312016,"metricId":"referenceNodesGained","previousValue":13.39,"value":12.935},
+    {"delta":-0.45500000000000007,"deltaInStandardErrors":-3.542827553312016,"metricId":"referenceNodesKnown","previousValue":15.89,"value":15.435},
+    {"delta":12,"deltaInStandardErrors":null,"metricId":"referencePeakPopulation","previousValue":216,"value":228},
+    {"delta":8.400000000000006,"deltaInStandardErrors":19.796717421292925,"metricId":"referencePopulation","previousValue":129.295,"value":137.695},
+    {"delta":8.4,"deltaInStandardErrors":19.79671742129291,"metricId":"referencePopulationChange","previousValue":-14.705,"value":-6.305}
   ],
-  "supersedes": "f39c5b9dfda4728f949209dff53176abc1cbc4f38dd298678a8cd805cc9a2def",
+  "supersedes": "c1eef88c4f7d14d54e609ed44449c721c2fae32905880d1412db6cd1b5520b68",
   "sweepId": "balance-gate-v1",
   "toleranceK": 3
 }
