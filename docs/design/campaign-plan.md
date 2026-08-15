@@ -10968,3 +10968,57 @@ The defect-4 assertion failed in `coordination` and **was right to fail**: that 
 almost as fast as it seats them, so the claim was true and *unshowable*. It now lives in `scenario`, where
 the reference run records **3,060 student-tick holdings and one student reaching 48 nodes.** A test that
 cannot express its claim in its own fixture is in the wrong package, not wrong.
+
+## W211 — the no-baselines rule makes content PRs unmergeable, and there is no re-seal path
+
+A structural conflict between the owner's standing rule and the CI design, found by triaging two PRs that
+took opposite paths through it.
+
+### The mechanism
+
+`.github/workflows/ci.yml` runs **three balance gates as steps inside `Verify (pinned Node)`** — the
+required context. A gate refuses **`baseline-invalid`** before reading any metric when the baseline's
+`provenance.contentHash` does not match the tree's content revision.
+
+So a PR that moves `contentRevision` and then **complies with the no-baselines rule by reverting its
+re-records** fails a **required** check and **cannot merge**.
+
+### The two paths, demonstrated
+
+| PR | what it did | required check |
+|---|---|---|
+| **#170** scribing fidelity | re-recorded **before** the rule landed, kept them | **`Verify` passes — all three gates success** |
+| **#169** effects union | re-recorded, then **reverted per the rule** | **`Verify` fails** at the five-year gate, `baseline-invalid` |
+
+Every step above the gate is green in both, on Node 20 and Node 24. **The difference is compliance.**
+#169's own triage is careful about it: the refusal is *"the documented behaviour of a gate whose baseline
+belongs to another build — not a balance regression"*, confirmed by reading the two hashes rather than by
+re-running the thing being deferred.
+
+**And it corrects a claim I made a moment earlier.** I said the rule blocks every content-touching PR. It
+blocks every content-touching PR **that complied**. #170 escaped by predating the rule, which is luck
+rather than design.
+
+### There is no provenance-only re-seal
+
+`grep` for `provenance-only`, `reseal`, `skipMeasure` across `scripts`, `tools` and `packages` returns
+**nothing**. Re-sealing a baseline against new content — updating `contentHash` without re-measuring a
+single metric — **is not currently expressible**, so the only way to clear `baseline-invalid` is a full
+re-record, which is exactly what the rule forbids.
+
+### The decision this needs
+
+The rule's purpose was sound and is well-evidenced: pooled sweeps cannot see subsystem wiring, and every
+re-record costs a merge conflict to every other branch. But **applied literally it prevents the wiring
+work from landing at all**, which defeats its own goal. Three options:
+
+1. **Carve out a provenance-only re-seal** *(recommended)* — a flag that updates `contentHash` and touches
+   no metric. It is not a measurement, so it is not what the rule prohibits; and it restores the gate's
+   ability to compare numbers, so a genuine regression still fails on a number rather than being masked by
+   a refusal. Precedent exists in the record: W160 notes a regeneration that was *"provenance-only again"*.
+2. **Move the three gates out of the required job** — the required contexts live in a repository ruleset
+   and changing them is the owner's call, not an agent's.
+3. **Accept that content PRs wait** until the rule lifts — which stalls #169, #176 and #181, three of the
+   night's largest changes.
+
+Recorded rather than acted on: the rule is the owner's and so is its exception.
