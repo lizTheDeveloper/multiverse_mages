@@ -116,6 +116,12 @@
   --theirs: #8C2B19;
   --deny:   #8C2B19;
 
+  /* The ground a scroll region fades its content into. Declared once, in the
+     light block only: it points at --panel, which each theme redefines on the
+     same :root, so the reference resolves to whichever theme is winning. A
+     region sitting on a different surface overrides it locally. */
+  --scroll-bg: var(--panel);
+
   --mono:  ui-monospace, "SF Mono", SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
   --sans:  ui-sans-serif, -apple-system, "Segoe UI", system-ui, sans-serif;
   --serif: "Hoefler Text", "Iowan Old Style", "Palatino Linotype", Palatino, "Book Antiqua", Georgia, serif;
@@ -268,6 +274,85 @@ body {
 }
 
 code, .mono { font-family: var(--mono); }
+
+/* ===================================== a scroll region that admits it scrolls
+ *
+ * Four prototypes cap a list with `max-height` and `overflow-y:auto`, and on a
+ * platform with overlay scrollbars the result is a row sliced through the
+ * middle of its own sentence with nothing on screen saying why. Measured on
+ * `ruleset/`, `targets/` and `knowledge/`: the last visible row was cut at
+ * mid-x-height and read as a rendering fault rather than as "there is more".
+ *
+ * **The scrollbar cannot be the signal on this platform, and that was
+ * measured rather than assumed.** With overlay scrollbars — the macOS default
+ * of "show when scrolling", and what headless Chromium runs — `offsetWidth -
+ * clientWidth` is 0 for a scrollable box styled with `scrollbar-width: thin`,
+ * with `::-webkit-scrollbar { width }`, and with the `-webkit-appearance: none`
+ * variant alike. All three draw nothing until the user already knows to
+ * scroll. Only `scrollbar-gutter: stable` reserved anything, at 15px, and a
+ * reserved lane with no thumb in it is not an affordance either.
+ *
+ * So the sticky fade is the load-bearing signal: it puts a soft edge where the
+ * cut lands, which reads as "there is more" rather than as a rendering fault.
+ * The gutter and the `::-webkit-scrollbar` rules stay because they cost
+ * nothing and do carry on a platform whose scrollbars are laid out.
+ *
+ * The classic `background-attachment: local` shadow — visible only when there
+ * is more, gone at the end — was tried first and does not work here: every one
+ * of these lists paints an opaque `--sunk` on the rows themselves, so a
+ * background layer on the container renders *behind* the content it is meant
+ * to cover. The fade is therefore unconditional, which is its one dishonesty.
+ *
+ * A region on a surface other than `--panel` sets `--scroll-bg` itself.
+ *
+ * **Apply it only where the list is long enough for the cut to be the
+ * problem.** CSS cannot ask whether there is anything past the edge, so the
+ * fade paints over a short list too. Tried on `raid/`'s exposure lists and cast
+ * log — three regions whose reference state is a two-line "nothing has happened
+ * yet" — it faded the second line of that message to near-invisible, i.e. it
+ * made an empty state harder to read in order to fix a problem those regions do
+ * not have. Reverted there.
+ */
+.mm-scroll {
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
+}
+.mm-scroll::after {
+  content: '';
+  display: block;
+  flex: none;
+  position: sticky;
+  bottom: -1px;
+  height: 1.35rem;
+  margin-top: -1.35rem;
+  pointer-events: none;
+  background: linear-gradient(transparent, var(--scroll-bg));
+}
+.mm-scroll::-webkit-scrollbar { width: 9px; }
+.mm-scroll::-webkit-scrollbar-thumb {
+  background: var(--rule-hi);
+  border-radius: 9px;
+  border: 3px solid transparent;
+  background-clip: content-box;
+}
+.mm-scroll::-webkit-scrollbar-track { background: transparent; }
+
+/* ================================ an essay is not a column of a control panel
+ *
+ * Every prototype ends with a prose section — "What operating these settles" —
+ * capped at 74ch so the measure stays readable. In a 84rem page that leaves
+ * the right half of the screen empty for six to eight hundred pixels, which
+ * reads as a pane that failed to render rather than as a margin. Eight of the
+ * eleven did this. Two columns keep the same measure and use the space; the
+ * `break-inside` guard stops a paragraph being sawn across the gutter, which
+ * is the one way multi-column prose gets worse rather than better.
+ */
+@media (min-width: 68rem) {
+  .mm-essay { columns: 2; column-gap: 2.6rem; }
+  .mm-essay > * { break-inside: avoid; }
+  .mm-essay > h2, .mm-essay > h3 { column-span: all; }
+}
 
 /* ============================================== the god's controls, themed once */
 
