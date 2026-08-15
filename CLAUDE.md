@@ -311,6 +311,24 @@ If you do land a commit on the wrong branch: **reverting is usually right and fo
 Reverting a *merge* commit is the exception — it poisons future merges of the same content for
 whoever owns the branch, so a stray merge is better left in place than reverted.
 
+## A trailing `echo` throws away the exit code you were checking
+
+A compound command's status is its **last** command's status. So
+
+    npm test; echo "done=$?"
+
+reports success no matter what `npm test` did — the shell's status is `echo`'s, and any harness reading it
+sees green. An agent read `done=1` in the output while the wrapper above it said *exit code 0*, and the two
+disagreed for the whole run.
+
+This is the `awk '{print $2}'` trap in a different costume: **the thing you read is not the thing you
+think you read.** Put the check first and let it fail —
+
+    npm test || { echo "FAILED"; exit 1; }
+
+— or capture the status into a variable *before* anything else runs, and never end a block whose failure
+matters with a bare `echo`.
+
 ## Do not write into a running measurement
 
 The documented hazard is *reading* a stale `dist` and believing the result. **The inverse is worse and
