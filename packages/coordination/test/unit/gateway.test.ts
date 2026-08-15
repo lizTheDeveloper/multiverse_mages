@@ -24,7 +24,7 @@ import {
   createUniverse,
   defineWorldStateSchema,
 } from '@mm/state';
-import { KnowledgeSubsystem } from '@mm/rules-magic';
+import { KnowledgeSubsystem, MASTERY_ACTIVATION_THRESHOLD } from '@mm/rules-magic';
 
 import { CoordinatingKnowledgeGateway } from '../../src/index.js';
 
@@ -53,7 +53,6 @@ function buildWorld() {
     favor: 0,
     worship: 0,
     worshipTier: 0,
-    materials: 0,
     prestige: 0,
     prestigeEarned: 0,
     terminalReason: 0,
@@ -136,6 +135,65 @@ describe('the port answers the questions rules-world asks', () => {
     expect(after.knows(mage, held?.nodeId ?? 0)).toBe(true);
     expect(after.heldNodes(mage)).toEqual([held?.nodeId]);
   });
+
+  it('separates what a mage holds from what she can cast', () => {
+    // `castableNodes` is the gateway's half of `GOAL.applyMagic`'s
+    // applicability, and it is three of `gatherEffects`' four gates asked of one
+    // mage. The one that is easy to get wrong is the mastery threshold: a node
+    // finished last month sits at `DEFAULT_INITIAL_MASTERY` and is held without
+    // being castable, and a build that conflated the two would let a mage
+    // harvest with a spell she cannot yet perform.
+    const { state, knowledge, gateway, mage } = universeWithOneMage();
+    const [low, high] = gateway.researchFrontier(mage, 2);
+    expect(low).toBeDefined();
+    expect(high).toBeDefined();
+
+    for (const [target, mastery] of [
+      [low, MASTERY_ACTIVATION_THRESHOLD - 1],
+      [high, MASTERY_ACTIVATION_THRESHOLD],
+    ] as const) {
+      attachRecord(state, KNOWLEDGE_INSTANCE, state.entities.create(), {
+        nodeId: target?.nodeId ?? 0,
+        locationKind: LOCATION_KIND.mind,
+        locationId: mage,
+        acquiredTick: 0,
+        mastery,
+      });
+    }
+    knowledge.rebuild();
+
+    const after = buildGatewayOver(state, knowledge, gateway);
+    expect(after.heldNodes(mage)).toContain(low?.nodeId);
+    expect(after.heldNodes(mage)).toContain(high?.nodeId);
+    // At the threshold, not above it: the comparison is `>=`, and a strict `>`
+    // would move the whole activation boundary by one fixed-point unit for
+    // every consumer of it.
+    expect(after.castableNodes(mage)).toEqual([high?.nodeId]);
+  });
+
+  it('stops offering a cast the moment the ruleset stops permitting it', () => {
+    // Permission is evaluated when the question is asked, so an interdiction
+    // takes the verb away without touching what anybody knows. Asserted through
+    // a second gateway over the *same* state with a different ruleset, which is
+    // the only difference between the two answers.
+    const { state, knowledge, gateway, mage } = universeWithOneMage();
+    const target = gateway.researchFrontier(mage, 1)[0];
+    attachRecord(state, KNOWLEDGE_INSTANCE, state.entities.create(), {
+      nodeId: target?.nodeId ?? 0,
+      locationKind: LOCATION_KIND.mind,
+      locationId: mage,
+      acquiredTick: 0,
+      mastery: 1024,
+    });
+    knowledge.rebuild();
+
+    expect(buildGatewayOver(state, knowledge, gateway).castableNodes(mage)).toEqual([
+      target?.nodeId,
+    ]);
+    expect(forbiddenGateway(state, knowledge).castableNodes(mage)).toEqual([]);
+    // And she still knows it.
+    expect(forbiddenGateway(state, knowledge).knows(mage, target?.nodeId ?? 0)).toBe(true);
+  });
 });
 
 describe('a gateway built without a ledger is query-only, and says so', () => {
@@ -159,6 +217,41 @@ describe('a gateway built without a ledger is query-only, and says so', () => {
 });
 
 /** Rebuilds the gateway with the same deps, for the "one view per phase" rule. */
+/**
+ * The same state under a ruleset that permits nothing.
+ *
+ * Written as a whole second gateway rather than as a mutated ruleset, because a
+ * gateway memoizes its scans against the ruleset it was built with — that is
+ * what makes it a view of one phase — and mutating one in place would answer a
+ * question that was never asked.
+ */
+function forbiddenGateway(
+  state: ReturnType<typeof buildWorld>['state'],
+  knowledge: KnowledgeSubsystem,
+): CoordinatingKnowledgeGateway {
+  const { catalog, cells } = catalogAndCells();
+  const { speciesOf, ids } = speciesTable();
+  const species = speciesOf(ids[0] as number);
+  if (species === undefined) throw new Error('the shipped registry declares no species');
+  const traditionId = registry().traditions[0]?.contentId ?? 1;
+  return new CoordinatingKnowledgeGateway({
+    state,
+    knowledge,
+    catalog,
+    cells,
+    facets: nodeFacets(),
+    ruleset: { permittedTechniques: 0, permittedForms: 0, edicts: [] },
+    ratesOf: () => ({
+      learnRate: species.learnRate,
+      rediscoveryAffinity: species.rediscoveryAffinity,
+      depthCeiling: species.depthCeiling,
+      scribeAffinity: species.scribeAffinity,
+    }),
+    store: shippedStorePolicy(traditionId),
+    acquire: shippedAcquirePolicy(traditionId),
+  });
+}
+
 function buildGatewayOver(
   state: ReturnType<typeof buildWorld>['state'],
   knowledge: KnowledgeSubsystem,
@@ -192,3 +285,109 @@ function buildGatewayOver(
     acquire: shippedAcquirePolicy(traditionId),
   });
 }
+
+describe('what the frontier quotes is what research charges', () => {
+  /**
+   * `researchFrontier` used to price rediscovery on `wasEverKnown` alone.
+   *
+   * That flag is set by `createInstance` and never cleared, so it is true of
+   * every node anybody in the universe has *ever* learned — the ones still on
+   * the shelf included. `research()` prices the same work with `isRediscovery`,
+   * which is `wasEverKnown && !exists`. The two therefore disagreed on exactly
+   * the set of nodes the universe currently holds, and disagreed in the
+   * direction that hurts: the quote said "at least three times", the charge said
+   * "ordinary", and a mage ranking her options priced held nodes off the list.
+   *
+   * The setup below is the minimum that reproduces it — two mages, one of whom
+   * holds the node the other is considering.
+   */
+  function twoMages(): ReturnType<typeof buildWorld> & { readonly second: number } {
+    const world = buildWorld();
+    const { speciesOf, ids } = speciesTable();
+    const species = speciesOf(ids[0] as number);
+    if (species === undefined) throw new Error('the shipped registry declares no species');
+
+    const second = world.state.entities.create();
+    attachRecord(world.state, MAGE, second, {
+      speciesId: ids[0] as number,
+      birthTick: 0,
+      roleId: MAGE_ROLE.researcher,
+      universityId: 0,
+      curiosity: species.curiosity,
+      ambition: 1024,
+      caution: 1024,
+      vigor: 1024,
+      maxVigor: 1024,
+      alive: 1,
+    });
+    return { ...world, second };
+  }
+
+  function quoteFor(
+    gateway: CoordinatingKnowledgeGateway,
+    mage: number,
+    nodeId: number,
+  ): number | undefined {
+    return gateway.researchFrontier(mage, 512).find((target) => target.nodeId === nodeId)
+      ?.remainingCost;
+  }
+
+  it('quotes a node a colleague still holds at the ordinary price, not the rediscovery one', () => {
+    const { state, knowledge, gateway, mage, second } = twoMages();
+    const target = gateway.researchFrontier(second, 1)[0];
+    expect(target).toBeDefined();
+    const nodeId = target?.nodeId ?? 0;
+    const before = quoteFor(gateway, second, nodeId);
+    expect(before).toBeGreaterThan(0);
+
+    // The first mage learns it, through the subsystem rather than by attaching a
+    // record: `createInstance` is what sets the persisted ever-known mark, and
+    // that mark is the whole subject of this test.
+    knowledge.createInstance({
+      nodeId,
+      locationKind: LOCATION_KIND.mind,
+      locationId: mage,
+      acquiredTick: 0,
+      mastery: 1024,
+    });
+
+    const after = buildGatewayOver(state, knowledge, gateway);
+    // The persisted mark is set and stays set — read off the subsystem, because
+    // that is where §1.5's record lives. What the *gateway* reports is the
+    // narrower question its callers actually ask, and the answer is no: a node
+    // somebody is holding is not a lost art.
+    expect(knowledge.wasEverKnown(nodeId)).toBe(true);
+    expect(after.instanceCount(nodeId)).toBe(1);
+    expect(after.rediscovery(nodeId)).toBe(false);
+    // Unchanged: somebody else holding it is not the second mage rediscovering
+    // a lost art, and `research()` would charge her exactly what it charged
+    // before.
+    expect(quoteFor(after, second, nodeId)).toBe(before);
+  });
+
+  it('still quotes the rediscovery price once the last copy is gone', () => {
+    const { state, knowledge, gateway, mage, second } = twoMages();
+    const nodeId = gateway.researchFrontier(second, 1)[0]?.nodeId ?? 0;
+    const ordinary = quoteFor(gateway, second, nodeId);
+    expect(ordinary).toBeGreaterThan(0);
+
+    const instance = knowledge.createInstance({
+      nodeId,
+      locationKind: LOCATION_KIND.mind,
+      locationId: mage,
+      acquiredTick: 0,
+      mastery: 1024,
+    });
+    knowledge.destroyInstance(instance, 1);
+
+    const after = buildGatewayOver(state, knowledge, gateway);
+    expect(knowledge.wasEverKnown(nodeId)).toBe(true);
+    expect(after.instanceCount(nodeId)).toBe(0);
+    // And the gateway agrees, so goal selection buckets this one as a
+    // rediscovery and the quote above prices it as one.
+    expect(after.rediscovery(nodeId)).toBe(true);
+    // Known once, now gone: the gap `contracts.md` prices at three times, and
+    // the half of the old behaviour that was right.
+    expect(quoteFor(after, second, nodeId)).toBeGreaterThan(ordinary as number);
+  });
+});

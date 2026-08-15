@@ -1,0 +1,397 @@
+<!doctype html>
+<!--
+  Multiverse Mages — the ending you have to choose.
+  Copyright (C) 2026 Ann Kelner
+  SPDX-License-Identifier: AGPL-3.0-or-later
+
+  Action 15 is unlike the other fifteen. Ascension is *declared, never
+  automatic*: satisfying a path sets the mask entry true and does not end the
+  run, the god must declare, and a universe that declines keeps simulating
+  normally. The condition can also lapse — lose the qualifying mage and the
+  mask goes back to false.
+
+  So this is a button that appears, that you may refuse, and that can be taken
+  away from you while you hesitate. Nothing else in the action space behaves
+  like that, and no management-game convention covers it.
+
+  It is sharpened by the two paths pulling opposite ways on whether to wait:
+
+    Path A  Apotheosis of Mastery   a living mage holds the deepest node in its
+            cell's graph, the cell is permitted, at least two instances of it
+            survive, and worshipTier >= 4. A summit you can lose by waiting.
+
+    Path B  Enduring Canon          era 4 reached, with libraryDependence at or
+            under 25% at every era boundary since era 1 and no more than 2 nodes
+            lost in any of them. A record you can break by continuing.
+
+  Three directions:
+
+    A  the button      it unmasks, you confirm. Minimal and honest.
+    B  two ladders     both paths visible all run, so waiting is informed.
+    C  the reckoning   at the moment it unmasks, what ending here would mean.
+
+  Serve with `npm run ui`, then open /ui/ascension/.
+
+  KNOWN COST: this evaluates no rule. The path states are a scripted timeline
+  chosen to reach, lapse and regain the condition, because that sequence is the
+  thing worth looking at and a real run reaches it once in many hours. Every
+  constant shown is real: ASCENSION_MIN_TICK 600, ASCENSION_TIER_GATE 4,
+  ASCENSION_ERA_COUNT 4, ASCENSION_DEPENDENCE_MAX fp(256), ASCENSION_LOSS_MAX 2,
+  prestige-earn-max 2048, stagnation-mageless-ticks 60.
+-->
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Multiverse Mages — ascension</title>
+
+<link rel="stylesheet" href="../shared/theme.css">
+<style>
+  .wrap{max-width:84rem;margin:0 auto;padding:1.9rem 1.25rem 5rem}
+  .eyebrow{font:11px var(--mono);letter-spacing:.16em;text-transform:uppercase;color:var(--summit)}
+  h1{font:400 clamp(1.7rem,3.4vw,2.5rem)/1.08 var(--serif);margin:.35rem 0 .5rem;letter-spacing:-.015em}
+  .lede{color:var(--soft);max-width:68ch;margin:0 0 .45rem}
+  .lede b{color:var(--summit-lit);font-weight:500}.lede em{color:var(--ink);font-style:italic}
+  code{font:12.5px var(--mono);color:var(--soft)}
+
+  .timeline{display:flex;gap:.5rem;align-items:center;flex-wrap:wrap;margin:1.3rem 0 1.4rem;
+    padding:.7rem .85rem;background:var(--panel);border:1px solid var(--edge);border-radius:4px}
+  .timeline .k{font:10px var(--mono);letter-spacing:.13em;text-transform:uppercase;color:var(--faint)}
+  .stage{font:11px var(--mono);letter-spacing:.04em;text-transform:uppercase;padding:.4rem .65rem;border-radius:3px;
+    border:1px solid var(--edge);background:transparent;color:var(--soft);cursor:pointer}
+  .stage[aria-pressed="true"]{color:var(--summit-lit);border-color:var(--summit);
+    background:color-mix(in srgb,var(--summit) 12%,transparent);
+    box-shadow:0 0 0 1px color-mix(in srgb,var(--summit) 26%,transparent),
+               0 0 18px -3px color-mix(in srgb,var(--summit) 60%,transparent)}
+  .stage:focus-visible{outline:2px solid var(--summit-lit);outline-offset:2px}
+  .timeline .tick{margin-left:auto;font:11px var(--mono);color:var(--faint)}
+  .timeline .tick b{color:var(--ink);font-variant-numeric:tabular-nums}
+
+  .dirs{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:1.1rem;align-items:start}
+  @media (max-width:76rem){.dirs{grid-template-columns:1fr}}
+  .dir{border:1px solid var(--edge);border-radius:5px;background:var(--panel);display:flex;flex-direction:column}
+  .dhead{padding:.75rem .9rem;border-bottom:1px solid var(--edge);display:flex;align-items:baseline;gap:.5rem}
+  .dhead .letter{font:700 13px var(--mono);color:var(--summit)}
+  .dhead .name{font:400 1.06rem var(--serif)}
+  .dhead .tag{margin-left:auto;font:10px var(--mono);letter-spacing:.1em;text-transform:uppercase;color:var(--faint)}
+  /* Was 22rem, which is a floor no column's content reaches in three of the
+     four world states: A and C sat at 352px against 95-112px and 61px of
+     content, i.e. 240px and 291px of empty panel with the footnote pinned
+     under it, which reads as a pane that failed to render. Measured, per state,
+     as A/B/C box heights:
+         0     112/341/61   95/404/413   112/419/61   95/356/413
+        13rem  208/341/208  208/404/413  208/419/208  208/356/413
+        22rem  352/352/352  352/404/413  352/419/352  352/356/413
+     13rem is the value that pins A in all four — it is min-height-bound in
+     every state — and halves the void. It does not pin C: C moves 208<->413
+     where 22rem moved it 352<->413. That is the trade, and it is deliberate.
+     The void is on screen the moment the page loads; the jump only happens on
+     a state button the reader just pressed, and nothing above the panels moves. */
+  .dbody{padding:.85rem .9rem;display:flex;flex-direction:column;gap:.7rem;min-height:13rem}
+  .dfoot{padding:.6rem .9rem .75rem;border-top:1px solid var(--edge);font:11px var(--mono);line-height:1.6;color:var(--faint)}
+
+  /* the declaration control, in its three states */
+  .declare{font:12px var(--mono);letter-spacing:.07em;text-transform:uppercase;padding:.75rem 1rem;
+    border-radius:3px;width:100%;cursor:pointer;transition:box-shadow 180ms ease,background 180ms ease,
+    border-color 180ms ease,color 180ms ease}
+  .declare[data-s="masked"]{border:1px dashed var(--rule-hi);background:transparent;color:var(--ctl-denied-fg);cursor:not-allowed}
+  /* --ground, not --ctl-charged-fg. The charged foreground is the god's cyan on
+     ink, and this button's fill is the summit's gold: the label measured
+     1.47:1 against the darker gradient stop, i.e. unreadable, and only in the
+     dark theme and only in the two states where the button is actually live —
+     which is why a sweep of each page's default state never saw it. --ground
+     inverts with the fill and holds in both: 9.5:1 on ink, 6.7:1 on vellum. */
+  .declare[data-s="open"]{border:1px solid var(--summit);color:var(--ground);
+    background:linear-gradient(180deg,var(--summit-lit),var(--summit));
+    box-shadow:0 0 0 1px color-mix(in srgb,var(--summit) 40%,transparent),
+               0 0 34px -4px color-mix(in srgb,var(--summit) 85%,transparent)}
+  .declare[data-s="open"]:hover{box-shadow:0 0 0 2px var(--summit),0 0 46px -2px var(--summit-lit)}
+  .declare[data-s="lapsed"]{border:1px solid var(--loss);background:transparent;color:var(--loss);cursor:not-allowed}
+  .declare:focus-visible{outline:2px solid var(--summit-lit);outline-offset:3px}
+  .why{font:10.5px var(--mono);color:var(--faint);line-height:1.6}
+  .why b{color:var(--soft)}
+  .why .no{color:var(--loss)}
+
+  /* two ladders */
+  .path{border:1px solid var(--edge);border-radius:3px;padding:.6rem .65rem;background:var(--sunk)}
+  .path.met{border-color:var(--summit);box-shadow:0 0 16px -6px color-mix(in srgb,var(--summit) 75%,transparent)}
+  .path .nm{font:400 1rem var(--serif);display:flex;align-items:baseline;gap:.4rem}
+  .path .nm .st{margin-left:auto;font:9.5px var(--mono);letter-spacing:.1em;text-transform:uppercase;color:var(--faint)}
+  .path.met .nm .st{color:var(--summit)}
+  .path .sub{font:10px var(--mono);color:var(--faint);margin:.15rem 0 .5rem;line-height:1.5}
+  .cond{display:grid;grid-template-columns:1rem 1fr auto;gap:.4rem;align-items:baseline;
+    font:10.5px var(--mono);padding:.16rem 0;line-height:1.45}
+  .cond .m{text-align:center}
+  .cond[data-ok="true"] .m{color:var(--ok)}
+  .cond[data-ok="false"] .m{color:var(--loss)}
+  .cond[data-ok="false"] .l{color:var(--soft)}
+  .cond .v{color:var(--faint);font-variant-numeric:tabular-nums}
+  .drift{margin-top:.4rem;font:10px var(--mono);color:var(--warn);line-height:1.5}
+
+  /* the reckoning */
+  .reck{display:flex;flex-direction:column;gap:.5rem}
+  .reck .grp{border:1px solid var(--edge);border-radius:3px;padding:.55rem .6rem;background:var(--sunk)}
+  .reck .grp .h{font:9.5px var(--mono);letter-spacing:.12em;text-transform:uppercase;color:var(--faint);margin-bottom:.3rem}
+  .reck .line{display:flex;justify-content:space-between;gap:.5rem;font-size:.87rem;padding:.1rem 0}
+  .reck .line b{font:11px var(--mono);font-variant-numeric:tabular-nums;color:var(--ink)}
+  .reck .keep{border-color:var(--summit)}
+  .reck .keep .h{color:var(--summit)}
+  .reck .keep b{color:var(--summit-lit)}
+  .reck .lose{border-color:var(--edge)}
+  .reck .lose .h{color:var(--loss)}
+  .reck .lose .line{color:var(--soft)}
+  .reck .never{font:10.5px var(--mono);color:var(--faint);line-height:1.6;padding-top:.15rem}
+  .reck .never b{color:var(--loss)}
+
+  .note{margin-top:2.6rem;border-top:1px solid var(--edge);padding-top:1.2rem}
+  .note h2{font:400 1.4rem var(--serif);margin:0 0 .5rem}
+  .note p{color:var(--soft);max-width:74ch;margin:0 0 .75rem}
+  .note b{color:var(--ink);font-weight:600}.note .hot{color:var(--summit-lit)}
+  footer{margin-top:2rem;padding-top:.9rem;border-top:1px solid var(--edge);color:var(--faint);font:11px var(--mono);line-height:1.8}
+</style>
+
+<div class="wrap">
+  <div class="eyebrow">Multiverse Mages · action 15 · vision §8a · god-agency/ascension-and-prestige</div>
+  <h1>The ending you have to choose</h1>
+  <p class="lede">Action 15 is unlike the other fifteen. Ascension is <b>declared, never automatic</b> —
+  satisfying a path unmasks the action and does not end the run, and a universe that declines keeps
+  simulating normally. The condition can also <b>lapse</b>: lose the qualifying mage and the mask goes back
+  to false. <em>It is a button that appears, that you may refuse, and that can be taken away while you
+  hesitate.</em> Nothing else in the action space behaves like that.</p>
+  <p class="lede">And the two paths pull opposite ways on whether to wait. <b>Apotheosis</b> is a summit you
+  can lose by waiting; <b>Enduring Canon</b> is a record you can break by continuing. Step the timeline —
+  the interesting part is the moment it lapses.</p>
+
+  <div id="srchost" style="margin:1.2rem 0 1.4rem"></div>
+
+  <div class="timeline">
+    <span class="k">world state</span>
+    <button class="stage" type="button" data-s="0" aria-pressed="true">before the floor</button>
+    <button class="stage" type="button" data-s="1" aria-pressed="false">condition met</button>
+    <button class="stage" type="button" data-s="2" aria-pressed="false">lapsed</button>
+    <button class="stage" type="button" data-s="3" aria-pressed="false">regained, era 4</button>
+    <span class="tick">world tick <b id="tickv">—</b> · floor is <b>600</b></span>
+  </div>
+
+  <div class="dirs" id="dirs"></div>
+
+  <div class="note mm-essay">
+    <h2>What operating these settles</h2>
+    <p><b class="hot">A lapse is the whole design problem, and only one direction survives it.</b> In
+    direction A the button simply vanishes, and a player who was deciding is given no account of what
+    happened — the most consequential control in the game silently stops existing. B and C can both say
+    <em>which condition broke</em>, which is the difference between a bug and a story. The spec already
+    reports the gap between first-met and declared as a metric, so the simulation considers hesitation
+    interesting; the interface should be able to explain what it cost.</p>
+    <p><b>Showing the paths all run changes what kind of game this is.</b> Direction B makes ascension a
+    thing you steer toward for hours, which is what a win condition usually is. But vision §8a wants a
+    summit that is <em>reachable but not routine</em>, and a permanently visible progress bar is an
+    invitation to optimise. There is a real argument for A's austerity: an ending that arrives unannounced
+    is a better ending, and the balance harness measures whether it arrives at all.</p>
+    <p><b>C is the only one that prices the decision.</b> Prestige is earned at run end from bounded
+    achievement, grants stocks and never rates, and its head start decays within the next run. So
+    declaring is a trade — a finished thing now against an unfinished thing continued — and a player cannot
+    make that trade without seeing both sides. Showing what you would carry and what you would abandon at
+    the moment of choosing is the only version where refusing is a real option rather than a mistake.</p>
+    <p><b>What none of these can show yet.</b> The meta-game the author specified this session — clearing
+    a bubble by conquest, rejoining with prestige — collides with ascension as a second win condition, and
+    is explicitly not decided for v1. Every direction here assumes ascension is <em>the</em> ending. If
+    conquest becomes a second one, this screen has to present two endings that compete, and none of these
+    three extends to that cleanly.</p>
+  </div>
+
+  <footer>
+    Prototype · not the client. No rule is evaluated; path states are a scripted timeline, because a real
+    run reaches this once in many hours. Constants are real and untuned: <code>ASCENSION_MIN_TICK 600</code>,
+    <code>TIER_GATE 4</code>, <code>ERA_COUNT 4</code>, <code>DEPENDENCE_MAX fp(256)</code>,
+    <code>LOSS_MAX 2</code>, <code>prestige-earn-max 2048</code>.<br>
+    Multiverse Mages © 2026 Ann Kelner · AGPL-3.0-or-later
+  </footer>
+</div>
+
+<script type="module">
+/* A scripted timeline through the one sequence worth looking at: the condition
+   is met, taken away, and regained by the other path. */
+const STAGES = [
+  {
+    tick: 412, label: 'before the floor',
+    a: { met: false, conds: [
+      ['Ismene Farrowgate holds The Standing Gate', true, 'deepest in rego-limen'],
+      ['rego-limen is permitted', true, 'permits() true'],
+      ['at least 2 instances survive', true, '2 of 2'],
+      ['worshipTier ≥ 4', true, 'tier 4'],
+      ['world tick ≥ 600', false, '412 / 600'],
+    ]},
+    b: { met: false, conds: [
+      ['era 4 reached', false, 'era 2 of 4'],
+      ['libraryDependence ≤ 25% at every boundary', true, '19%, 22%'],
+      ['≤ 2 nodes lost in any era', true, '1, 0'],
+    ]},
+    mask: 'masked',
+    why: 'Every Apotheosis condition holds and the action is still masked. <b>ASCENSION_MIN_TICK</b> is a floor against a rush and it has 188 months left to run.',
+  },
+  {
+    tick: 604, label: 'condition met',
+    a: { met: true, conds: [
+      ['Ismene Farrowgate holds The Standing Gate', true, 'deepest in rego-limen'],
+      ['rego-limen is permitted', true, 'permits() true'],
+      ['at least 2 instances survive', true, '2 of 2'],
+      ['worshipTier ≥ 4', true, 'tier 4'],
+      ['world tick ≥ 600', true, '604 / 600'],
+    ]},
+    b: { met: false, conds: [
+      ['era 4 reached', false, 'era 3 of 4'],
+      ['libraryDependence ≤ 25% at every boundary', true, '19%, 22%, 24%'],
+      ['≤ 2 nodes lost in any era', true, '1, 0, 2'],
+    ]},
+    mask: 'open',
+    why: 'Apotheosis is satisfied. The run does <b>not</b> end — declining is legal and the universe keeps simulating with the mask true for as long as the condition holds.',
+    drift: 'Enduring Canon is one era away and its margins are thinning: 24% against a 25% ceiling, and 2 losses against a limit of 2.',
+  },
+  {
+    tick: 631, label: 'lapsed',
+    a: { met: false, conds: [
+      ['a living mage holds The Standing Gate', false, 'Ismene died at t629'],
+      ['rego-limen is permitted', true, 'permits() true'],
+      ['at least 2 instances survive', true, '2 of 2 — but neither in a mind'],
+      ['worshipTier ≥ 4', true, 'tier 4'],
+      ['world tick ≥ 600', true, '631 / 600'],
+    ]},
+    b: { met: false, conds: [
+      ['era 4 reached', false, 'era 3 of 4'],
+      ['libraryDependence ≤ 25% at every boundary', true, '19%, 22%, 24%'],
+      ['≤ 2 nodes lost in any era', true, '1, 0, 2'],
+    ]},
+    mask: 'lapsed',
+    why: '<span class="no">Ismene Farrowgate died 27 months after the condition opened.</span> Both surviving copies are in books, and Path A needs a <b>living mage</b> holding it. The ending was available for 27 months and is not any more.',
+    drift: 'Teaching The Standing Gate to any living mage restores Path A. Nothing else does.',
+  },
+  {
+    tick: 792, label: 'regained, era 4',
+    a: { met: false, conds: [
+      ['a living mage holds The Standing Gate', false, 'taught to nobody yet'],
+      ['rego-limen is permitted', true, 'permits() true'],
+      ['at least 2 instances survive', true, '2 of 2'],
+      ['worshipTier ≥ 4', true, 'tier 4'],
+      ['world tick ≥ 600', true, '792 / 600'],
+    ]},
+    b: { met: true, conds: [
+      ['era 4 reached', true, 'era 4 of 4'],
+      ['libraryDependence ≤ 25% at every boundary', true, '19%, 22%, 24%, 21%'],
+      ['≤ 2 nodes lost in any era', true, '1, 0, 2, 0'],
+    ]},
+    mask: 'open',
+    why: 'The other path arrived. <b>Enduring Canon</b> is a record rather than a summit — it cannot lapse the way Apotheosis did, because it is a statement about eras already survived.',
+  },
+];
+
+const RECKONING = {
+  keep: [
+    ['Prestige earned', '1,840 / 2,048'],
+    ['Canon breadth at close', '47 nodes'],
+    ['Eras held intact', '4'],
+    ['Deepest node reached', 'The Standing Gate · tier 5'],
+  ],
+  lose: [
+    ['Living mages', '31'],
+    ['Universities', '3, one at 62% build'],
+    ['Research in progress', '9 projects, one at 79%'],
+    ['Nodes never reached', '4 of 51'],
+  ],
+};
+
+let stage = 0;
+
+function render() {
+  const S = STAGES[stage];
+  document.getElementById('tickv').textContent = S.tick;
+  const host = document.getElementById('dirs');
+
+  const ladder = (p, name, sub) => `
+    <div class="path ${p.met ? 'met' : ''}">
+      <div class="nm">${name}<span class="st">${p.met ? 'satisfied' : 'not met'}</span></div>
+      <div class="sub">${sub}</div>
+      ${p.conds.map(([l, ok, v]) => `
+        <div class="cond" data-ok="${ok}"><span class="m">${ok ? '✓' : '·'}</span>
+          <span class="l">${l}</span><span class="v">${v}</span></div>`).join('')}
+    </div>`;
+
+  host.innerHTML = `
+    <section class="dir">
+      <div class="dhead"><span class="letter">A</span><span class="name">The button</span>
+        <span class="tag">minimal</span></div>
+      <div class="dbody">
+        <button class="declare" type="button" data-s="${S.mask}"
+          ${S.mask === 'open' ? '' : 'disabled'}>
+          ${S.mask === 'open' ? 'Declare ascension' : S.mask === 'lapsed' ? 'No longer available' : 'Ascension unavailable'}
+        </button>
+        <div class="why">${S.mask === 'open'
+          ? 'Action 15 is legal this tick.'
+          : 'Action 15 is masked. The interface says nothing about which condition is missing, because the mask is a boolean.'}</div>
+      </div>
+      <div class="dfoot">Exactly what the mask carries and nothing more. Honest, austere, and at the lapse
+        it simply stops existing — the most consequential control in the game, vanishing without an
+        account.</div>
+    </section>
+
+    <section class="dir">
+      <div class="dhead"><span class="letter">B</span><span class="name">Two ladders</span>
+        <span class="tag">both paths, all run</span></div>
+      <div class="dbody">
+        ${ladder(S.a, 'Apotheosis of Mastery', 'A summit. Can be lost by waiting.')}
+        ${ladder(S.b, 'Enduring Canon', 'A record. Can be broken by continuing.')}
+        ${S.drift ? `<div class="drift">${S.drift}</div>` : ''}
+      </div>
+      <div class="dfoot">Says which condition is missing and, at the lapse, which one broke. Also makes
+        ascension a thing you steer toward for hours — which is what a win condition usually is, and not
+        what vision §8a asks for.</div>
+    </section>
+
+    <section class="dir">
+      <div class="dhead"><span class="letter">C</span><span class="name">The reckoning</span>
+        <span class="tag">what ending here means</span></div>
+      <div class="dbody">
+        ${S.mask === 'open' ? `
+          <div class="reck">
+            <div class="grp keep"><div class="h">carried forward as prestige</div>
+              ${RECKONING.keep.map(([k, v]) => `<div class="line"><span>${k}</span><b>${v}</b></div>`).join('')}
+            </div>
+            <div class="grp lose"><div class="h">closed with the universe</div>
+              ${RECKONING.lose.map(([k, v]) => `<div class="line"><span>${k}</span><b>${v}</b></div>`).join('')}
+            </div>
+            <div class="never">Prestige grants <b>stocks and never rates</b>, and the head start decays
+              within the next run — so this is a finished thing now against an unfinished thing
+              continued.</div>
+            <button class="declare" type="button" data-s="open">Close this universe</button>
+          </div>`
+          : `<div class="why">Nothing to price. The reckoning only appears when the choice is real —
+             ${S.mask === 'lapsed'
+               ? 'and it was real 27 months ago.'
+               : 'the run is still the only thing on offer.'}</div>`}
+      </div>
+      <div class="dfoot">The only direction that prices the decision, so refusing is a real option rather
+        than a mistake. It appears exactly when the choice exists and never otherwise.</div>
+    </section>`;
+}
+
+document.querySelectorAll('.stage').forEach((b) => {
+  b.addEventListener('click', () => {
+    stage = Number(b.dataset.s);
+    document.querySelectorAll('.stage').forEach(x => x.setAttribute('aria-pressed', String(x === b)));
+    render();
+  });
+});
+render();
+</script>
+
+<script type="module">
+  import { floatThemeControl } from '../shared/theme.js';
+  floatThemeControl();
+</script>
+
+<script type="module">
+  /* Where this page's data comes from, and — for the parts the read path
+     does not carry — which capability is missing and why. Sourced from
+     capabilities() rather than prose, so it cannot go stale quietly. */
+  import { mountSourceNote, openSession } from '../shared/session.js';
+  const s = await openSession({ recording: '../session.json' }).catch(() => null);
+  mountSourceNote(document.getElementById('srchost'), s, ['actionMask', 'eventDeltas']);
+</script>

@@ -69,14 +69,33 @@ export type { Located, SpatialIndex } from './spatial.js';
 export { buildSpatialIndex } from './spatial.js';
 
 export type {
+  ActionEconomyReport,
+  AttemptCounts,
+  BySide,
+  TargetSettlement,
+} from './action-economy.js';
+export {
+  ActionEconomyLedger,
+  COMBAT_SOURCE,
+  UNIMPLEMENTED_CHANNELS,
+  apportion,
+} from './action-economy.js';
+
+export type {
   ArbitrationFaults,
   CastEffects,
   CastRefusal,
   CastRequest,
   CastResolution,
+  CombatEffectIndex,
   HeldInstance,
 } from './arbitration.js';
-export { COMBAT_PRIMITIVES, CastArbiter, summonCount } from './arbitration.js';
+export {
+  COMBAT_PRIMITIVES,
+  CastArbiter,
+  combatEffectIndex,
+  summonCount,
+} from './arbitration.js';
 
 export type { ExposureRecord } from './exposure.js';
 export {

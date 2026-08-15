@@ -59,10 +59,15 @@ export const GOD_ACTION_ID_MAX = 15;
  * result as a finding.
  */
 export const REQUIRED_GOD_CONSTANTS: readonly string[] = Object.freeze([
+  'ascension-canon-breadth',
+  'ascension-canon-cells',
   'ascension-dependence-max',
   'ascension-era-count',
+  'ascension-loss-fraction',
   'ascension-loss-max',
   'ascension-min-tick',
+  'ascension-summit-cells',
+  'ascension-summit-copies',
   'ascension-tier-gate',
   'bless-duration-ticks',
   'bless-lifespan-months',
@@ -77,6 +82,9 @@ export const REQUIRED_GOD_CONSTANTS: readonly string[] = Object.freeze([
   'favor-regen-base',
   'found-university-capacity',
   'found-university-cost',
+  'founding-grant-accrual-nodes',
+  'founding-grant-budget-cap',
+  'founding-grant-budget-start',
   'fund-progress',
   'grant-mastery',
   'hysteresis-decay-ticks',
@@ -372,6 +380,68 @@ export function checkGodConstants(
         '',
         'encourage-decay-per-tick must be positive. A zero decay makes a research emphasis ' +
           'permanent, which turns a bounded, decaying nudge into a rate the god buys once.',
+      ),
+    );
+  }
+
+  // ---- The ascension predicates' own invariants ---------------------------
+  //
+  // Both paths now gate on quantities the god's play produces, and every one of
+  // the four checks below pins a way of setting those constants that would make
+  // a summit *unreachable* rather than merely hard. §8a asks for "reachable but
+  // not routine", and an unreachable ending is the failure mode that costs a
+  // whole sweep to notice — the runs simply all truncate and the rate reads 0.
+
+  const summitCopies = value('ascension-summit-copies');
+  if (summitCopies !== undefined && summitCopies < 1) {
+    out.push(
+      problem(
+        file,
+        '',
+        `ascension-summit-copies is ${String(summitCopies)}. A cell cannot stand at its floor on ` +
+          'fewer than one surviving instance of its deepest node, and at zero the conjunct is ' +
+          'satisfied by a node nobody holds — which reads as mastery and is the opposite of it.',
+      ),
+    );
+  }
+
+  const summitCells = value('ascension-summit-cells');
+  if (summitCells !== undefined && summitCells < 1) {
+    out.push(
+      problem(
+        file,
+        '',
+        `ascension-summit-cells is ${String(summitCells)}, so Path A is satisfied by mastering no ` +
+          'cell at all. The apotheosis path would then be a worship-tier clock, which is exactly ' +
+          'the defect the constant was introduced to close.',
+      ),
+    );
+  }
+
+  const canonBreadth = value('ascension-canon-breadth');
+  const canonCells = value('ascension-canon-cells');
+  if (canonBreadth !== undefined && canonCells !== undefined && canonCells > canonBreadth) {
+    out.push(
+      problem(
+        file,
+        '',
+        `ascension-canon-cells is ${String(canonCells)} and ascension-canon-breadth is ` +
+          `${String(canonBreadth)}. A universe cannot know nodes in more cells than it knows ` +
+          'nodes, so this setting makes Path B unsatisfiable by arithmetic rather than by ' +
+          'difficulty, and every run would truncate with the rate reading a flat zero.',
+      ),
+    );
+  }
+
+  const lossFraction = value('ascension-loss-fraction');
+  if (lossFraction !== undefined && (lossFraction < 0 || lossFraction > FP_ONE)) {
+    out.push(
+      problem(
+        file,
+        '',
+        `ascension-loss-fraction is ${String(lossFraction)}, outside [0, fp(1024)]. Below zero it ` +
+          'would subtract from the authored floor; above fp(1024) a passing era could lose more ' +
+          'nodes than the universe knows, which is not an allowance but the absence of one.',
       ),
     );
   }

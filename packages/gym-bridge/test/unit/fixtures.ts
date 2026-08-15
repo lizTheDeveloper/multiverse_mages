@@ -51,6 +51,7 @@ import {
 import type { SimState, System } from '@mm/sim-core';
 import { RNG_STREAM, TIME_MODE, createState, nextUint32 } from '@mm/sim-core';
 import {
+  MATERIAL_STOCK,
   OCCUPATION,
   POPULACE_COHORT,
   UNIVERSE,
@@ -111,7 +112,7 @@ export function probeScenario(scenarioId = PROBE_SCENARIO_ID): Scenario {
     catalogue: EMPTY_CATALOGUE,
     create(runSeed: number): SimState {
       const state = createState({ rootSeed: runSeed, schema });
-      createUniverse(state, {
+      const universe = createUniverse(state, {
         permittedTechniques: 0,
         permittedForms: 0,
         edictBudget: 4,
@@ -119,13 +120,13 @@ export function probeScenario(scenarioId = PROBE_SCENARIO_ID): Scenario {
         favor: 20 * FP,
         worship: 0,
         worshipTier: 1,
-        materials: 100 * FP,
         prestige: 0,
         prestigeEarned: 0,
         terminalReason: 0,
         favorCap: 100 * FP,
         ascended: 0,
       });
+      attachRecord(state, MATERIAL_STOCK, universe, { food: 100 * FP, stone: 0, vellum: 0 });
       const cohort = state.entities.create();
       attachRecord(state, POPULACE_COHORT, cohort, {
         speciesId: 1,

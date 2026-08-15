@@ -69,6 +69,7 @@ import {
   findUniverse,
   writeRuleChange,
 } from '@mm/state';
+import { destroyGrimoire } from '@mm/rules-magic';
 
 import { EXPOSURE_LOCATION_KIND } from './exposure.js';
 import { OBJECTIVE_KIND } from './objectives.js';
@@ -259,16 +260,50 @@ function applyConstitutionalMarks(
 }
 
 /**
- * What happens to a library that was reached: its books are taken, and what
- * cannot be taken is burned.
+ * What happens to a library that was reached: the raiders carry off what they
+ * can, and what they leave behind burns unless it was made well enough not to.
  *
- * The three verbs are kept apart because they produce three different worlds
- * (`raid-consequences`): a **looted** grimoire moves to the raider, a **burned**
- * one is destroyed, and a **read** mind is copied. A library that was reached
- * loses its shelved grimoires one way or the other, and each book's durability
- * decides which — on **stream 5**, the registry's *"scribing outcomes and
- * grimoire durability"*, because a book's resistance to fire is the same
- * property its scribe gave it.
+ * **This is the only path in the game that moves or destroys written
+ * knowledge.** Until something called it, `durability` was a field written once
+ * at scribing and read nowhere, `destroyGrimoire` and `destroyLibrary` had no
+ * production callers at all, and the only knowledge a universe could ever lose
+ * was whatever its own god interdicted — loss was a thing the player
+ * administered rather than feared.
+ *
+ * Vision §8 gives the attacker two verbs, not one: *"attacker wins by
+ * **destroying or looting** a target"*. §5 makes the difference mechanical — a
+ * grimoire is *"portable, lootable, burnable"* — and the two produce genuinely
+ * different worlds:
+ *
+ * - **Looted.** The book *moves*. The host's copy is gone and the raider's
+ *   universe has one it did not have. Nothing leaves the multiverse; it changes
+ *   hands. This is the verb that matters most: a god can only research what
+ *   their own ruleset permits, so a book taken from a universe that permitted
+ *   other cells is knowledge no amount of domestic research could ever have
+ *   reached. §4a's split is what makes it survive the trip — *"what a raider
+ *   knows and how she carries it follow her own"* tradition, not the host's —
+ *   and a node her own universe forbids arrives real and inert, which is
+ *   `raid-engagement`'s own task 8.14.
+ * - **Burned.** The instance is destroyed. If it was the last one anywhere, §8's
+ *   stake applies in full: *"knowledge whose last instance dies with a mage or
+ *   burns in a library is lost and must be rediscovered"*.
+ *
+ * How many books a warband carries is {@link RaidTuning.lootedGrimoiresPerRaid},
+ * an untuned content magnitude. A raid that took everything would make burning
+ * unreachable and durability decorative; a raid that took nothing would leave
+ * the multiverse's 249 nodes outside the enabled cells permanently out of
+ * anyone's reach.
+ *
+ * **Durability gates burning and nothing else, and that is a decision this
+ * change declines to extend.** §6's *"dwarven grimoires resist destruction"* is
+ * about fire, and the roll is taken on **stream 5** — the registry's *"scribing
+ * outcomes and grimoire durability"* — because a book's resistance to fire is
+ * the same property its scribe gave it. Whether a well-made book should also be
+ * *harder to carry off* is not something vision §5, §6 or §8 says, and it is a
+ * rule rather than a magnitude, so it is raised here rather than answered:
+ * making durability resist looting would turn the dwarf's line into a general
+ * defence of the archive, which is a different and larger claim than the one
+ * the species table makes.
  *
  * Memory palace instances are untouched here and cannot be: they are not at a
  * library, they are in a mage's head, and the Art of Memory's `store` hook
@@ -282,40 +317,61 @@ function settleLibrary(raid: Raid, libraryId: Handle, worldTick: number): Knowle
     (entry) => entry.row.holderKind === HOLDER_KIND.library && entry.row.holderId === libraryId,
   );
 
+  // Instances that survived on their shelf, so the sweep below — which exists
+  // for whatever the library held *without* a grimoire record — does not burn
+  // the books this loop just spared. A shelved grimoire's instance sits at
+  // `(library, libraryId)`, the same address a loose one does, so the two are
+  // distinguishable only by having been walked here first.
+  const spared = new Set<Handle>();
+  let carried = 0;
+
   shelved.forEach((entry, ordinal) => {
-    const stream = raid.rng.actorStream(RNG_STREAM.scribing, worldTick, ordinal);
-    const resist = Math.min(entry.row.durability, raid.tuning.grimoireBurnResistCap);
-    // A dwarven book resists fire; it is not fireproof. The cap is the same
-    // ceiling §3 puts on ward, and it is content rather than a literal.
-    const survives = nextBounded(stream, 1024) < resist;
     const instance = host.knowledge.instanceForGrimoire(entry.handle);
     if (instance === 0) return;
 
-    if (survives) {
-      // Looted: the grimoire and its instance leave the host universe. The
-      // host's count for that node goes down; the raider's goes up. This is the
-      // verb that *moves*.
-      host.knowledge.destroyInstance(instance, worldTick);
+    if (carried < raid.tuning.lootedGrimoiresPerRaid) {
+      carried += 1;
+      const view = host.knowledge.read(instance);
+      // Read before the destroy, because the destroy is what makes the answer
+      // unavailable. Ascending shelf order, so two peers carry the same books.
+      destroyGrimoire(host.knowledge, entry.handle, worldTick);
+      shelveLoot(raid, entry.row.nodeId, entry.row.durability, view.mastery, worldTick);
       movements.push({
         nodeId: entry.row.nodeId,
         verb: 'moved',
         byCombatant: 0,
         forfeited: false,
       });
-    } else {
-      host.knowledge.destroyInstance(instance, worldTick);
-      movements.push({
-        nodeId: entry.row.nodeId,
-        verb: 'destroyed',
-        byCombatant: 0,
-        forfeited: false,
-      });
+      return;
     }
+
+    const stream = raid.rng.actorStream(RNG_STREAM.scribing, worldTick, ordinal);
+    // A dwarven book resists fire; it is not fireproof. The cap is the same
+    // ceiling §3 puts on ward, and it is content rather than a literal.
+    const resist = Math.min(entry.row.durability, raid.tuning.grimoireBurnResistCap);
+    if (nextBounded(stream, 1024) < resist) {
+      spared.add(instance);
+      return;
+    }
+
+    // `destroyGrimoire` rather than a bare `destroyInstance`: it is
+    // `knowledge-model`'s own name for this, it owns the book-and-contents
+    // pair, and routing through it is what keeps this from becoming a second
+    // destruction mechanism beside the one the model already publishes.
+    destroyGrimoire(host.knowledge, entry.handle, worldTick);
+    movements.push({
+      nodeId: entry.row.nodeId,
+      verb: 'destroyed',
+      byCombatant: 0,
+      forfeited: false,
+    });
   });
 
   // Whatever else the library held — instances shelved without a grimoire
-  // record — burns with it.
+  // record — burns with it. Nothing gave those a durability, so nothing
+  // resists.
   for (const instance of host.knowledge.instancesAt(LOCATION_KIND.library, libraryId)) {
+    if (spared.has(instance)) continue;
     const view = host.knowledge.read(instance);
     host.knowledge.destroyInstance(instance, worldTick);
     movements.push({
@@ -327,6 +383,51 @@ function settleLibrary(raid: Raid, libraryId: Handle, worldTick: number): Knowle
   }
 
   return movements;
+}
+
+/**
+ * Puts a looted book on the raider's side of the portal.
+ *
+ * Unowned rather than shelved, and that is the same choice `disownGrimoire`
+ * makes for a dead author's library: the raider's universe may have no library
+ * at all, and inventing a shelf for a book to land on would be this function
+ * deciding where another universe keeps its things. An unowned book is still a
+ * book — its node exists in that universe, and §1.5's existence question is
+ * answered by the instance and not by who is holding it.
+ *
+ * The book keeps its durability, because durability is a fact about how it was
+ * made and not about who owns it: a dwarven grimoire carried home by an orc is
+ * still a dwarven grimoire, and it is what makes the raid a transfer of
+ * *quality* and not only of contents.
+ */
+function shelveLoot(
+  raid: Raid,
+  nodeId: ContentId,
+  durability: Fixed,
+  mastery: Fixed,
+  worldTick: number,
+): void {
+  const world = raid.attacker.world;
+  const grimoire = world.entities.create();
+  attachRecord(world, GRIMOIRE, grimoire, {
+    nodeId,
+    durability,
+    holderKind: HOLDER_KIND.unowned,
+    holderId: 0,
+  });
+  raid.attacker.knowledge.createInstance({
+    nodeId,
+    locationKind: LOCATION_KIND.grimoire,
+    locationId: grimoire,
+    // The world tick the raid resumes at, which is the tick it paused at: a
+    // raid consumes zero world ticks.
+    acquiredTick: worldTick,
+    // The mastery the book was written at, carried across unchanged. A book
+    // does not forget on the journey, and re-rolling it here would make the
+    // same grimoire worth different amounts depending on who took it.
+    mastery,
+    grimoire,
+  });
 }
 
 /** The world mage behind a combatant handle, or `0` if there is none. */

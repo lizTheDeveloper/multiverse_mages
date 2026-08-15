@@ -56,6 +56,7 @@ import {
   addMage,
   addSoldiers,
   addUniversity,
+  combat,
   emptyWorld,
   grid,
   knowledgeFor,
@@ -132,6 +133,7 @@ function build(options: {
     host: participant(hostWorld, hostKnowledge, hostSnapshot, hostSnapshot.traditionId),
     registry,
     grid,
+    combat,
     tuning: { ...tuning, ...options.tuningOverride },
     raidSeed: options.seed ?? 0x5eed_1234,
     ...(options.faults === undefined ? {} : { faults: options.faults }),
@@ -470,6 +472,7 @@ describe('a universe with nothing to take still yields a terminating raid', () =
       host: participant(hostWorld, hostKnowledge, snapshot, snapshot.traditionId),
       registry,
       grid,
+      combat,
       tuning,
       raidSeed: 31337,
     });

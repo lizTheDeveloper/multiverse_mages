@@ -232,7 +232,10 @@ function cheapestPrice(
       // pairs and the tier is the catalogue's, but the list is already
       // restricted to prerequisite-free roots — every one of which is tier 1 in
       // any content set where a root is a root. Priced at the base for that
-      // reason, and stated rather than assumed.
+      // reason, and no longer merely stated: `@mm/content`'s
+      // `roots-are-tier-one.test.ts` pins the equivalence in both directions,
+      // because `candidates.ts` depends on it too and a content edit that broke
+      // it would put the mask and `grantPlan` back into disagreement.
       return base;
     }
     case GOD_ACTION.revokeEdict:

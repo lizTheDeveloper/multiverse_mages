@@ -54,6 +54,22 @@ export { stackContributions } from './stack.js';
 // The package barrel exposes this one as `requireRegistryNode`.
 export { primitiveIndex, requirePrimitive } from './registry-lookup.js';
 
+export type {
+  ConsumerKind,
+  ConsumerRegistration,
+  ConsumptionRecorder,
+  PrimitiveConsumptionEntry,
+  PrimitiveConsumptionReport,
+} from './consumption.js';
+export {
+  checkPrimitiveConsumption,
+  createConsumptionRecorder,
+  formatPrimitiveConsumptionReport,
+  nodeEffectMagnitudes,
+  nodeEffectRecords,
+  registerNonNodeConsumer,
+} from './consumption.js';
+
 export type { PrimitiveCoverageEntry, PrimitiveCoverageReport } from './coverage.js';
 export {
   PORTAL_HOME_CELL_ID,

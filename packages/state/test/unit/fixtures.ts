@@ -38,6 +38,7 @@ import {
   EVER_KNOWN,
   GOAL_COMMITMENT,
   GOD_STATE,
+  GRANT_BUDGET,
   GRIMOIRE,
   HOLDER_KIND,
   KNOWLEDGE_INSTANCE,
@@ -45,6 +46,7 @@ import {
   LOCATION_KIND,
   MAGE,
   MAGE_ROLE,
+  MATERIAL_STOCK,
   MID_RAID_CHANGE,
   OBJECTIVE,
   OBJECTIVE_STATUS,
@@ -107,12 +109,20 @@ export function populatedWorld(): PopulatedWorld {
     favor: 12 * FP_ONE,
     worship: 7 * FP_ONE,
     worshipTier: 3,
-    materials: 900 * FP_ONE,
     prestige: 4 * FP_ONE,
     prestigeEarned: 0,
     terminalReason: 0,
     favorCap: 40 * FP_ONE,
     ascended: 0,
+  });
+
+  // The three kinds `materials` used to be one number for — on the universe's
+  // own handle, like `god-state`, since §1.1 still describes one economy per
+  // universe rather than one per kind.
+  attachRecord(state, MATERIAL_STOCK, universe, {
+    food: 500 * FP_ONE,
+    stone: 250 * FP_ONE,
+    vellum: 150 * FP_ONE,
   });
 
   const edict = state.entities.create();
@@ -243,6 +253,17 @@ export function populatedWorld(): PopulatedWorld {
     libraryDependence: 192,
     nodesLost: 1,
     passed: 1,
+  });
+
+  // On the universe handle too, and for the same singleton reason as god-state:
+  // one universe, one budget. Every field distinct and none of them zero, so a
+  // round-trip that dropped or transposed one is visible.
+  attachRecord(state, GRANT_BUDGET, universe, {
+    startingGrants: 2,
+    accrualNodes: 8,
+    cap: 12,
+    grantsUsed: 1,
+    seededNodes: 3,
   });
 
   // One raid-scarred technique, so the mark `raid-engagement.md` §1 leaves is
