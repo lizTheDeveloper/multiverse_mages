@@ -70,6 +70,7 @@
 
 import type { SimState } from '@mm/sim-core';
 import { TIME_MODE, eraOf } from '@mm/sim-core';
+import type { Edict, Ruleset } from '@mm/state';
 import {
   COMBATANT,
   EDICT_BUDGET_MAX,
@@ -115,36 +116,30 @@ import {
 // The entitlement, as types.
 // ---------------------------------------------------------------------------
 
-/** One edict as the player sees it: which cell, and which kind. */
-export interface PlayerEdict {
-  readonly cellId: number;
-  readonly kind: number;
-}
-
-/**
- * The ruleset the player set, read back.
+/*
+ * There is deliberately no `PlayerRuleset` type here. `@mm/state` already
+ * exports `Ruleset` — `{permittedTechniques, permittedForms, edicts}` — and
+ * `packages/state/test/unit/schema-duplication.test.ts` rejects a second
+ * declaration of it by shape, naming the reason exactly: *"a hand-rolled
+ * {permittedTechniques, permittedForms, edicts} is step one of a second
+ * permits()"*. It caught the first draft of this file, which expanded the two
+ * bitfields into flag arrays.
  *
- * `permittedTechniques` and `permittedForms` are the bitfields expanded — one
- * entry per axis, `0` or `1`. Expanded rather than left as a mask because the
- * entitlement is per *axis*: a player is entitled to know whether Creo is
- * permitted, and that is a fact about one bit, not about an integer.
+ * Consuming the shared type is the better design anyway, and the guard is what
+ * made that obvious. **Expanding a bitmask into nineteen slots is an *encoding*
+ * decision, not an entitlement one** — the design's third stated reason for a
+ * named intermediate is that encoding stays free to change — so the expansion
+ * belongs in `encodePlayerState` and the entitlement is the ruleset itself. The
+ * practical payoff: a strategy holding a `PlayerState` can call
+ * `permits(player.ruleset, cellId)` directly, rather than reimplementing
+ * interdiction precedence against a flag array.
+ *
+ * `universe.edictBudget` is still absent, and that is the deliberate part: the
+ * inventory records it withheld, so a player sees the edicts standing and not
+ * how many more may be issued. `PlayerState.ruleset.edicts` is truncated at
+ * `EDICT_BUDGET_MAX` because that is what actually reaches a player, not merely
+ * what fits.
  */
-export interface PlayerRuleset {
-  /** `GRID_TECHNIQUE_COUNT` flags, ascending by bit. */
-  readonly permittedTechniques: readonly number[];
-  /** `GRID_FORM_COUNT` flags, ascending by bit. */
-  readonly permittedForms: readonly number[];
-  /**
-   * Edicts in force, truncated at `EDICT_BUDGET_MAX`.
-   *
-   * **`universe.edictBudget` is not here, and that is deliberate.** The
-   * inventory records it withheld: a player sees the edicts standing and not how
-   * many more may be issued. That reaches an agent only as a mask bit, which is
-   * the same "may not versus cannot pay for" confusion the design's opening
-   * paragraph is about.
-   */
-  readonly edicts: readonly PlayerEdict[];
-}
 
 /**
  * §1.1's five resource channels.
@@ -239,7 +234,8 @@ export interface PlayerEngagement {
  * was indistinguishable from an oversight.
  */
 export interface PlayerState {
-  readonly ruleset: PlayerRuleset;
+  /** `@mm/state`'s shared `Ruleset`, so `permits()` takes it as-is. */
+  readonly ruleset: Ruleset;
   /** §1.1: exactly one is held, never `0`. */
   readonly traditionId: number;
   readonly resources: PlayerResources;
@@ -415,9 +411,9 @@ export function project(input: ObservationInput): PlayerState {
   const digest = projectKnowledge(state, catalogue);
   const universe = findUniverse(state);
 
-  const permittedTechniques: number[] = [];
-  const permittedForms: number[] = [];
-  const edicts: PlayerEdict[] = [];
+  let permittedTechniques = 0;
+  let permittedForms = 0;
+  const edicts: Edict[] = [];
   let traditionId = 0;
   let resources: PlayerResources = {
     favor: 0,
@@ -427,17 +423,12 @@ export function project(input: ObservationInput): PlayerState {
     prestige: 0,
   };
 
-  if (universe === 0) {
-    for (let bit = 0; bit < GRID_TECHNIQUE_COUNT; bit += 1) permittedTechniques.push(0);
-    for (let bit = 0; bit < GRID_FORM_COUNT; bit += 1) permittedForms.push(0);
-  } else {
+  // A world with no universe leaves an empty ruleset — both masks zero and no
+  // edicts — which is the same early return `writeRuleset` takes.
+  if (universe !== 0) {
     const record = readUniverse(state, universe);
-    for (let bit = 0; bit < GRID_TECHNIQUE_COUNT; bit += 1) {
-      permittedTechniques.push((record.permittedTechniques & (1 << bit)) === 0 ? 0 : 1);
-    }
-    for (let bit = 0; bit < GRID_FORM_COUNT; bit += 1) {
-      permittedForms.push((record.permittedForms & (1 << bit)) === 0 ? 0 : 1);
-    }
+    permittedTechniques = record.permittedTechniques;
+    permittedForms = record.permittedForms;
     // Truncated at the budget maximum rather than trusted to fit: an unbounded
     // list would otherwise report a ninth edict's cell id as the tradition.
     for (const edict of readEdicts(state).slice(0, EDICT_BUDGET_MAX)) {
@@ -519,9 +510,12 @@ export function project(input: ObservationInput): PlayerState {
 /**
  * A {@link PlayerState} scattered into §4.1's positions.
  *
- * **This function does no arithmetic and no saturation.** Every value it writes
- * is already the integer the channel carries — {@link project} did the summing
- * and the clamping, at the points `./observation.ts` does them. That split is
+ * **This function does no summing and no saturation.** Every value it writes is
+ * already the integer the channel carries — {@link project} did the summing and
+ * the clamping, at the points `./observation.ts` does them. The one computation
+ * left here is expanding the two ruleset bitfields into nineteen flag slots,
+ * which is placement rather than aggregation: it is exactly the kind of choice
+ * that should move the layout digest without touching the entitlement. That split is
  * what makes the pair reviewable: an entitlement question is answered by reading
  * {@link PlayerState}, and a layout question by reading this function, and
  * neither can quietly become the other.
@@ -530,11 +524,15 @@ export function encodePlayerState(player: PlayerState): Int32Array {
   const view = new Int32Array(OBSERVATION_SIZE);
 
   const ruleset = observationBlock('ruleset').offset;
+  // The one place a bitfield becomes slots. This is an encoding decision and it
+  // lives here rather than in `project` — see the note where `PlayerRuleset`
+  // would have been.
   for (let bit = 0; bit < GRID_TECHNIQUE_COUNT; bit += 1) {
-    view[ruleset + bit] = player.ruleset.permittedTechniques[bit] ?? 0;
+    view[ruleset + bit] = (player.ruleset.permittedTechniques & (1 << bit)) === 0 ? 0 : 1;
   }
   for (let bit = 0; bit < GRID_FORM_COUNT; bit += 1) {
-    view[ruleset + GRID_TECHNIQUE_COUNT + bit] = player.ruleset.permittedForms[bit] ?? 0;
+    view[ruleset + GRID_TECHNIQUE_COUNT + bit] =
+      (player.ruleset.permittedForms & (1 << bit)) === 0 ? 0 : 1;
   }
   const edictBase = ruleset + GRID_TECHNIQUE_COUNT + GRID_FORM_COUNT;
   for (let slot = 0; slot < EDICT_BUDGET_MAX; slot += 1) {

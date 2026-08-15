@@ -128,13 +128,11 @@ export { isEngaged, rawObservation } from './observation.js';
  * trait could be added to the world and silently reach nobody.
  */
 export type {
-  PlayerEdict,
   PlayerEngagement,
   PlayerInstitutions,
   PlayerKnowledgeCell,
   PlayerObjective,
   PlayerResources,
-  PlayerRuleset,
   PlayerSide,
   PlayerState,
   PlayerClock,
