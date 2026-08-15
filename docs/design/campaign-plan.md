@@ -11918,3 +11918,66 @@ drawn all night between a `contentRevision` re-pin and a baseline re-record.
 
 The vellum tripwire is the exception and must **not** be re-pinned — it is reporting a real regression whose
 fix is sitting in another PR.
+
+## W224 — the tripwire did not clear: mastery rising concentrates knowledge on five nodes
+
+PR #194. My W223 hypothesis — that #183's vellum tripwire was #186's missing source — is **falsified**, and
+the four-tree comparison says so cleanly. Books scribed per 20-year window, same seed, 200 world years,
+each tree built and run separately:
+
+| tree | series | total | last window |
+|---|---|--:|--:|
+| `origin/main` | 633/209/44/6/0/0/5/6/9/**7** | 919 | 7 |
+| **#183 only** | 428/302/60/3/0/0/0/1/0/**0** | **794** | **0** |
+| **#186 only** | 628/316/67/10/4/13/27/6/10/**13** | **1,094** | **13** |
+| **paired** | 434/303/133/10/1/10/22/7/0/**0** | 920 | **0** |
+
+**#186 is exonerated and measurably positive inside the pairing** — adding it to #183 moves total scribing
+**794 → 920 (+16%)** and books standing at y200 **132 → 198 (+50%)**. It is simply **not the binding
+constraint**. On its own it is green 28/28 and raises library depth *above* main (49 vs 44).
+
+### The real regression is #183's, and it is the compounding loop biting
+
+**Library depth at y200: main 44 → #183 5.** **198 books on five distinct nodes.** Scribing *volume* is
+barely changed; it all lands on the same handful. That is *"a return toward the exact defect
+`candidates.ts`'s novelty preference was written to fix."*
+
+**Mastery rising makes drilling what you know beat discovering what you do not.** That is the risk named
+when the fix was commissioned — *"it is a compounding loop, and vision §2.3 prices research in mage-months
+on the assumption that a mage-month is a fixed unit"* — and it has arrived exactly there.
+
+**Draconic is censored in 69 of 72 runs**, and the shipped `species-separation.mjs` calibration now reads
+*"draconic censored in all 6 seeds"* against a committed `[27, 246] (1 censored)` — **whose own instruction
+is "stop: the instrument is wrong."**
+
+### The species-spread number, third reading, and this time it is measured
+
+| tree | mean | SE | range | the pinned seed |
+|---|--:|--:|---|---|
+| main | 0.0985 | ±0.0166 | [0.0190, 0.1725] | 0.0473 — rank 3/12, −0.89 sd |
+| paired | **0.2183** | ±0.0091 | [0.1728, 0.2619] | 0.2163 — rank 6/12, −0.06 sd |
+
+**A real effect at ~6.3 pooled SE, not a one-seed artifact.** W188 called this metric a 9.9 lead and was
+wrong; W205 showed the pin was one seed from a wide distribution and retired it. **This time it moves for
+real — and it is bad news wearing the metric's clothes**, because it is *"driven by draconic alone (2–12
+cells on main, 1–3 paired)."* Species spread rose because one species collapsed.
+
+**#183's headline survives**: **0 → 67 crossings over 13 distinct nodes, 12/12 runs**, with the main
+control at **0** and `born` 31–150 so the positive control fired.
+
+### It overruled my instruction, correctly
+
+I told it to follow `species-separation-spread.test.ts`'s own remedy and re-record in both files. **It ran
+the measurement** — `gnome < dwarf` refuted 0/12, overlap 12/12 against main's 7/12 — **reported it, and
+declined to apply it**, because *"writing `0/12` into two files as a dated current measurement would pin a
+regression-contingent number and turn the assertion green while the regression is live."*
+
+That is right, and it is the distinction the whole campaign turns on: **a test's stated remedy assumes the
+change under it is correct.** Following it while a regression is live converts a red assertion into a green
+lie. Flagged under its own heading with the numbers present, so overruling *it* costs a minute.
+
+### Where this leaves the morning
+
+**#183 should not merge as it stands.** Mastery rising is right in principle, its headline is real, and it
+carries an unfixed consequence that returns the knowledge model to a defect the frontier logic exists to
+prevent. **#186 should merge on its own** — green, positive, and wrongly implicated by my hypothesis.
