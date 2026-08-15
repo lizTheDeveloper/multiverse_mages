@@ -1,0 +1,670 @@
+<!--
+Multiverse Mages — Copyright (C) 2026 Ann Kelner
+SPDX-License-Identifier: AGPL-3.0-or-later
+-->
+
+# The opening square, built and swept
+
+**Build:** `w70/opening-square`, branched from `main` at `a6b1da8`.
+**Instrument:** five arms — the v1 rectangle plus seeded 1×1, 2×2, 3×3 and 3×4 openings — over
+eight strategies × two starting positions × six replicates, 1,200 world ticks, under common random
+numbers. Plus a static audit of all 300 authored nodes over all 14,630 candidate squares.
+
+Everything below is measured. Where a number is a hypothesis rather than a reading, it says so.
+
+---
+
+## 0. What was built, in one paragraph
+
+A universe used to open on the twelve `v1` cells — `{intellego, perdo, rego} × {limen, mentem,
+nomen, terram}` — identically, for everyone, forever. It now opens on a **technique-count ×
+form-count sub-rectangle of the grid**, either drawn from its own seed or named outright.
+
+**There is no new notion of "is this cell open."** `permits()` was already
+`technique ∈ mask AND form ∈ mask` modulo edicts, so an opening square *is* those two masks at tick
+zero, and growing the square is `permitTechnique` / `permitForm`, which `god/interventions.ts`
+already prices in favor. That is why this change costs **no component, no `WORLD_SCHEMA_VERSION`
+bump and no §1.2 deviation** — the state to express it was already there and nobody had varied it.
+
+The one thing it does cost is `RNG_STREAM.openingSquare: 12`, and §4 is about what that costs.
+
+---
+
+## 1. Q1 — who chooses the square? **Both, and the scenario layer already expressed both.**
+
+The question was posed as god *or* seed *or* species, with a note that god-and-seed are not
+exclusive if the scenario layer can express both. **It can, and the two arrive at the rules path in
+the same shape**, which is the part worth reporting:
+
+- `seededOpeningAxes(registry, size, stream)` — the harness answer. Draws a permutation of both
+  axes off stream 12 and takes a prefix.
+- `explicitOpeningAxes(registry, techniqueIds, formIds)` — the play answer. Names the axes by
+  content id, for the same reason `referenceContent` names a tradition by string rather than by
+  ordinal: an ordinal is a fact about the order of a data file.
+
+Both return a `RulesetAxes`. No mode flag reaches the rules path, and nothing downstream can tell
+which one built the universe. **God-chosen for play and seed-chosen for the harness is therefore
+not a compromise, it is one mechanism with two callers.**
+
+**Species-chosen is not recommended and was not built.** A species affinity is already a modifier
+on how well a mage works *within* a cell; making species also decide *which* cells exist would put
+two different kinds of claim on one content field, and the founding mix is a sweep factor
+(`foundingSpeciesMask`) whose whole point is that it can be varied independently of the grid. If
+species chose the square, that factor and this one would be the same factor.
+
+---
+
+## 2. Q2 — must the square stay contiguous? **No. It must stay *rectangular*, and it already does.**
+
+Take the position: **contiguity in grid coordinates is not a property worth having, and the shipped
+game does not have it.**
+
+Three readings, measured:
+
+1. **The shipped "3×4 block" is not geometrically contiguous.** Its technique bits are `{1, 3, 4}`
+   — skipping `muto` at 2 — and its form bits are `{7, 8, 12, 13}` — skipping `vim`, `umbra` and
+   `fatum` at 9, 10, 11. The doc's phrase "a small contiguous sub-block" describes something v1
+   never was.
+2. **Axis order carries no metric anywhere in the rules.** `technique.json` orders Creo, Intellego,
+   Muto, Perdo, Rego — which is alphabetical, and Ars Magica's convention. `form.json` orders
+   Animal … Vim then the three invented forms Umbra, Fatum, Limen, Nomen appended after. There is no
+   rule anywhere that reads adjacency. "Contiguous" would therefore be a constraint on an authoring
+   convention, and inserting a technique would silently re-shape which openings were legal.
+3. **The property that actually makes a technique an axis is rectangularity**, and `permits()`
+   enforces it structurally: the permitted set is always a full technique-set × form-set product.
+   A universe that permits Creo and Rego and permits Ignem and Terram permits *all four* of
+   Creo-Ignem, Creo-Terram, Rego-Ignem, Rego-Terram. It could not permit three of them without an
+   edict. **That is what makes "you learned Rego" an axis rather than a token** — Rego multiplies
+   against every form you hold — and it is true today, for free, with no new rule.
+
+So the recommendation: read the plan's "contiguous" as **"rectangular product"**, which is already
+guaranteed, and do not add a geometric-adjacency constraint. Growth then means *adding an axis*,
+which multiplies against everything already held — the prefix growth the seeded arms use is exactly
+this, and it is the concrete growth model this change ships.
+
+---
+
+## 3. Q3 — do the twelve v1 cells survive as a standard opening? **Yes, but they are not the best one, and the other 249 nodes are worse than expected.**
+
+### 3a. The v1 rectangle is a deliberately safe square, and the measurement says how safe
+
+Over all **10,010** possible 3×4 squares:
+
+| property | the v1 rectangle | all 3×4 squares |
+|---|---|---|
+| nodes inside the square | 51 | mean 51.4 |
+| nodes actually **reachable** (prerequisite closure inside the square) | **51 (100%)** | mean 44.5 (86.5%) |
+| squares with at least one unreachable node | **none** | 9,420 of 10,010 (94%) |
+| distinct primitives reachable | 14 of 16 | mean 11.5 |
+| can ever open a portal | **yes** | 858 of 10,010 (8.6%) |
+
+Only **126 of 10,010** 3×4 squares are both prerequisite-closed *and* raid-capable. The v1
+rectangle is one of them, and ranks **175th of 10,010** by reachable primitives. So it survives as a
+standard opening — it was clearly chosen with care — but it is not optimal:
+`{intellego, muto, rego} × {aquam, fatum, limen, nomen}` is closed, raid-capable, holds 55 nodes and
+reaches **all 16** primitives.
+
+### 3b. What is broken in the 249 unexercised nodes
+
+**Finding 1 — the prerequisite graph escapes cells, and it escapes overwhelmingly toward
+Intellego.** There are **36 cross-cell prerequisite edges** among the 300 nodes. Twenty-four of them
+point into an `intellego-*` cell: `intellego-nomen` is required by 10 nodes elsewhere,
+`intellego-mentem` by 6, `intellego-limen` by 6, `intellego-terram` by 3. A square without Intellego
+loses a large fraction of its own content, and the effect compounds with square size because a
+larger square holds more nodes with prerequisites:
+
+| square size | squares | mean nodes in square | mean reachable | reachable share | squares holding dead nodes |
+|---|--:|--:|--:|--:|--:|
+| 1×1 | 70 | 4.3 | 3.4 | 79.7% | 32 (46%) |
+| 2×2 | 910 | 17.1 | 14.2 | 82.7% | 726 (80%) |
+| 3×3 | 3,640 | 38.6 | 33.2 | 86.0% | 3,338 (92%) |
+| 3×4 | 10,010 | 51.4 | 44.5 | 86.5% | 9,420 (94%) |
+| **v1 3×4** | 1 | 51 | **51** | **100%** | **0** |
+
+**This is not purely a defect.** A prerequisite that escapes the square is exactly what makes
+growing the square *directional* — you permit Intellego not for its own cells but because it
+unlocks nodes you already hold cells for. That is the best argument this measurement produces for
+the mechanic. What *is* a defect is that nothing checks it: the loader's
+`v1-unreachable-prerequisite` diagnostic hard-fails a node whose prerequisite is outside the v1
+flag, and there is **no general version of that check**. Under an opening square, "reachable" is
+relative to the square, and 249 nodes have never been asked the question.
+
+**Finding 2 — raiding is content-gated to a single cell pair, and it is a sharper gate than
+anything in the design says.** Both `portal` nodes live in `rego-limen`, and `rl-open-the-portal`
+requires `il-read-the-binding` from `intellego-limen`. So a universe can raid only if its square
+holds **both** `rego-limen` and `intellego-limen` — techniques ⊇ {rego, intellego}, forms ∋ limen:
+
+- **0 of 70** 1×1 openings can ever raid.
+- **13 of 910** (1.4%) 2×2 openings.
+- **234 of 3,640** (6.4%) 3×3 openings.
+- **858 of 10,010** (8.6%) 3×4 openings.
+
+`contracts.md` §8 already requires `rego-limen` in any v1 build for exactly this reason, but the
+requirement is written against the *v1 flag*, not against whatever square a universe actually opens
+on. **A 2×2 opening makes PvP unreachable for 98.6% of universes**, and PvP is the vision's core.
+This is the single strongest argument found against a 2×2 opening as shipped, and it is a content
+placement problem rather than a mechanic problem — two portal nodes in one cell is a thin thread for
+the game's headline feature to hang from.
+
+**Finding 3 — `fertility` and `lifespan` have zero v1 nodes, and that fully explains the campaign's
+"one genuine null."** The campaign records, as its one surviving null result, that *knowledge does
+not convert into population* — η²(strategy) 0.01–0.04 while η²(seed) runs 0.6–1.0. The cause is
+visible in the content:
+
+- every `fertility` effect is in `creo-animal` (3), `creo-corpus` (1) or `muto-fatum` (1);
+- every `lifespan` effect is in `creo-corpus`, `intellego-{aquam,corpus,fatum,herbam}`,
+  `muto-{corpus,fatum}` or `rego-{corpus,fatum}`.
+
+Creo is not a v1 technique. Corpus, Animal and Fatum are not v1 forms. **No node inside the twelve
+enabled cells touches population at all**, so the god's play could not move it whatever the god did.
+That is not a null about the mechanic; it is a null about the opening. An opening square elsewhere on
+the grid reaches those primitives, which makes this the most interesting single prediction the change
+generates.
+
+**Finding 4 — `lifespan` magnitudes look like the fixed-point trap, latent.** `primitive.json`
+declares `lifespan` as `additive-months`, and its 17 authored magnitudes run **18 to 480 — a 26.7×
+spread, the widest of any primitive**, against a cap of 50% of species base lifespan (360–9,000
+months). Read as `Fp`, magnitude 18 is 0.0176 months — about thirteen hours — and magnitude 480 is
+under half a month. Read as raw months they are 1.5 to 40 years, which is the only reading in which
+the numbers mean anything. `npm run check:consumption` confirms no node effect reaches `lifespan`
+today (it is moved only by god blessing/curse constants), so **nothing is currently wrong at
+runtime** — but the day that consumer is wired, all 17 nodes will be four orders of magnitude too
+small, and it will read as a balance problem rather than a units problem.
+
+**What is *not* broken.** The 249 are uniform with the 51 on every axis that could have drifted:
+`researchCost`, `teachCost`, `scribeCost` and `rediscoveryMultiplier` share the same ranges and
+medians; no node is below the `fp(5376)` authoring floor or the `fp(3072)` hard floor; there are no
+dangling prerequisite references and no cycles; every one of the seventy cells holds **exactly one**
+prerequisite-free node. That last fact has a direct mechanical consequence: **a 1×1 square offers
+exactly one founding-grant candidate however many a sweep asks for**, which is why
+`foundingCandidates` deals what exists rather than refusing.
+
+---
+
+## 4. Q4 — the balance baselines. **All three invalidate, at the identity level, before any number moves.**
+
+Measured, not predicted:
+
+```
+current rngRegistryHash: 2bc5d131f2a7423ce439ee6ca933d74316f48eac1d214b23259aa4559b18c2c9
+baselines were recorded at: 80608208d3325be1ffb3dba4ef810caac712eccb0a1b5f35c585fcb6d31d9cab
+```
+
+`gate.ts`'s `PROVENANCE_KEYS` compares `rngRegistryHash` as a **block-level refusal**, and that hash
+is `canonicalHash(RNG_STREAM)` — taken over the whole registry table. Appending
+`openingSquare: 12` changes it. Therefore `balance-gate-v1`, `balance-gate-horizon-v1` and
+`balance-gate-ascension-v1` all refuse, and `npm run verify` is red at its last three steps.
+
+**Three things are true at once and they must not be collapsed:**
+
+1. **The refusal is correct behaviour.** The registry genuinely changed. The gate is conservative by
+   design and is doing what it was built to do.
+2. **The behavioural delta at the default opening is zero, and that is proved rather than argued.**
+   Sixteen paired runs — four strategies × two starting positions × two replicates, against
+   unmodified `main` — agree on **snapshot hash, terminal reason and tick count**, every one. The
+   default path through `resolveOpeningSquare` is structurally draw-free: it returns the cached v1
+   axes without touching stream 12 at all. `contentHash`, `buildVersion`,
+   `observationLayoutDigest` and `observationSchemaVersion` all still match; `rngRegistryHash` is
+   the *only* key that moved.
+3. **Nothing here regenerated a baseline, and the provenance field was not hand-edited.** A baseline
+   is a claim that *these metrics were measured under this build identity*. Editing the identity and
+   keeping the metrics would record a measurement nobody ran — strictly worse than regenerating.
+   **Re-baselining is the owner's decision.**
+
+**The generalisable finding, which is bigger than this change:** under the current gate design,
+**any** future RNG subsystem addition forces a re-baseline event, however provably inert. `sim-core`
+documents the registry as append-only and promises that "adding a subsystem takes the next free
+number and nothing else moves" — that promise holds for the *simulation* and does not hold for the
+*gate*. Stream 12 is the first append since the baselines were committed, so this is the first time
+anyone has paid the bill. It is now recorded in `contracts.md` §6.
+
+---
+
+## 5. The containment curve by square size
+
+480 runs: five arms × eight strategies × two starting positions × six replicates, 1,200 world ticks,
+every arm on the **identical** coordinate grid with the square supplied out of band. The seeded arms
+are nested by construction — at one coordinate the 1×1 square is inside the 2×2 is inside the 3×3 —
+so size is the only factor that moves between them. No run failed and no arm has an empty node set.
+
+### 5a. The curve
+
+Terminal horizon. `cross` is mean pairwise containment `|A∩B| / min(|A|,|B|)` between two
+*strategies* at **one coordinate**; `within` is the same statistic between two *coordinates* at one
+strategy — W15's diagonal. **`cross − within` positive is W15's signature of a one-dimensional
+space**: the strategy label explains less about composition than the seed does.
+
+| arm | cross-strategy | within-strategy | cross − within | distinct nodes reached\* |
+|---|--:|--:|--:|--:|
+| **`v1-3x4`** (today) | 0.928 | **0.980** | **−0.052** | **51 of 300** |
+| `seeded-1x1` | 0.989 | 0.176 | +0.813 | 28 of 300 |
+| `seeded-2x2` | 0.956 | 0.174 | +0.782 | 120 of 300 |
+| `seeded-3x3` | 0.941 | 0.250 | +0.691 | 194 of 300 |
+| `seeded-3x4` | 0.944 | 0.277 | +0.667 | **236 of 300** |
+
+\* union of terminal node sets over all twelve universes and seven strategies, **excluding
+`permissive-breadth`** — see §5c for why it is excluded and why that is itself a finding.
+
+The curve is flat between 1×1 and 2×2 (0.176 → 0.174) and then rises: **2×2 is not measurably more
+divergent than 1×1, and every step above it costs divergence.** Read as "what square size buys a
+second dimension", the answer is that *any* seeded square buys essentially all of it, and larger
+squares give some back.
+
+### 5b. The sharpest single number
+
+Same size, same seeds, same strategies. Only the *method of choosing the square* differs:
+
+- **`v1-3x4` reaches 51 of 300 nodes.** Across twelve universes and seven strategies, the content
+  set is the same 51 nodes every time. This is W15's finding reproduced exactly on the current
+  build: not "strategies converge", but **there was only ever one content set to converge on**.
+- **`seeded-3x4` reaches 236 of 300.**
+
+Per strategy, the within-strategy diagonal makes the same point with no averaging:
+
+| strategy | `v1-3x4` | `seeded-1x1` | `seeded-2x2` | `seeded-3x3` | `seeded-3x4` |
+|---|--:|--:|--:|--:|--:|
+| `archivist` | **1.000** | 0.061 | 0.064 | 0.150 | 0.190 |
+| `passive-control` | **1.000** | 0.061 | 0.064 | 0.150 | 0.190 |
+| `portal-rush` | **1.000** | 0.061 | 0.064 | 0.150 | 0.188 |
+| `uniform-random-legal` | **1.000** | 0.061 | 0.064 | 0.148 | 0.190 |
+| `worship-maximizer` | **1.000** | 0.061 | 0.064 | 0.150 | 0.190 |
+| `denial-warden` | **1.000** | 0.061 | 0.042 | 0.127 | 0.157 |
+| `narrow-depth` | 0.852 | 0.061 | 0.040 | 0.130 | 0.120 |
+| `permissive-breadth` | 0.988 | **0.985** | **0.990** | **0.992** | **0.993** |
+
+Six of eight strategies hold **literally the identical node set in all twelve universes** under
+today's opening. Under a seeded square the same six hold sets with 4–19% overlap. Counting distinct
+terminal compositions for `passive-control` over the twelve coordinates: **1 under `v1-3x4`**, 9
+under `seeded-1x1`, and **12 of 12** under every larger seeded square.
+
+### 5c. What this does and does not prove — and the one strategy that ignores the square
+
+**It proves a second dimension in the *content* space, keyed by whoever chooses the square.** It
+does **not** prove a second *strategic* dimension. Cross-strategy containment stays at 0.93–0.99 in
+every arm, including the seeded ones: **at a fixed square, strategies are still one queue walked to
+different depths.** That is the honest headline, and it matches the plan's own framing of
+seed-chosen — *"divergence across a sweep without relying on the strategy to produce it."* Whether
+different squares make different strategies *win* is a strategy × square interaction on outcomes,
+which this probe reads no signal for and which is the obvious follow-up.
+
+**`permissive-breadth` is unmoved by the opening square, in every arm, and that is a pricing
+finding.** It holds ~200 nodes and a within-strategy diagonal of 0.985–0.993 whether it opens on 1
+cell or 12, because its whole strategy is to permit every technique and every form immediately. The
+cost of doing so, from `god-cost.json`: `permit-technique` is `fp(8192)` and `permit-form` is
+`fp(4096)`, so **going from a 1×1 opening to the entire seventy-cell grid costs 4 × 8 + 13 × 4 = 84
+favor**, once, forever. At that price the opening square is a *starting position*, not a
+constraint.
+
+That is not an argument against the mechanic — six of eight strategies respect it and diverge
+sharply — but it is the measurement that says what has to happen next: **the square is only as real
+as the price of leaving it**, and `permit-technique` / `permit-form` are both flagged
+`"tuningStatus": "untuned"`. This is the natural companion to W69's founding-grant budget, which
+makes *seeding* scarce; nothing yet makes *expanding* scarce.
+
+### 5d. Stability across horizons
+
+`cross − within` at 240 / 480 / 960 / 1,440 ticks:
+
+| arm | 240 | 480 | 960 | 1440 |
+|---|--:|--:|--:|--:|
+| `v1-3x4` | −0.139 | −0.102 | −0.064 | −0.052 |
+| `seeded-1x1` | +0.810 | +0.804 | +0.804 | +0.813 |
+| `seeded-2x2` | +0.723 | +0.745 | +0.777 | +0.782 |
+| `seeded-3x3` | +0.619 | +0.649 | +0.687 | +0.691 |
+| `seeded-3x4` | +0.592 | +0.625 | +0.664 | +0.667 |
+
+The sign is stable at every horizon and every arm — the control negative, every seeded arm strongly
+positive. W19 swept twelve horizons from tick 30 to 2,400 and found one dimension at all of them;
+this is the first thing that moves the statistic at all of them.
+
+### 5e. Playability
+
+`seeded-1x1` is the only arm that looks unplayable, and it says so in two ways: it holds a mean of
+3.4 terminal nodes for the strategies that respect it, and **27 of its 96 runs terminated in
+stagnation** (reason 3) against 11 for the control and 6 for `seeded-3x4`. Combined with §3b's
+result that **no 1×1 opening can ever open a portal**, 1×1 is a degenerate control rather than a
+candidate.
+
+`seeded-2x2` stagnates 17 of 96 — worse than the control but not pathological — and buys no more
+divergence than 1×1. **On this measurement 3×3 is the best-supported recommendation**: it retains
+most of the divergence (`within` 0.250 against 0.174), stagnates no more than today's opening (8 of
+96 against 11), reaches 194 of 300 nodes, and 6.4% of its squares can raid against 1.4% of 2×2's.
+That said, the raid gate is a *content placement* problem (§3b, finding 2) and fixing it — putting
+portal nodes in more than one cell — would change this recommendation, which is the honest caveat.
+
+---
+
+## 6. What this does and does not deliver against `ages-of-magic.md`
+
+The campaign plan argues that the opening square is *"the rule underneath the fiction"* of
+`ages-of-magic.md`. **Checked against the doc rather than against the abstraction: it is a partial
+match, and the half it misses is the half the doc is actually about.**
+
+`ages-of-magic.md` §1 defines its ages by **compound-spell arity**, not by how many cells a universe
+holds:
+
+| age | a spell is | space over 70 cells |
+|---|---|--:|
+| first | one cell | 70 |
+| second | two cells | 2,415 |
+| third | three cells | 54,740 |
+
+*"Ages of magic are mostly governed by the interactions of two"* means a spell that names Creo Ignem
+**and** Muto Ignem **and** Intellego Mentem. **That mechanic does not exist in the engine.** A node
+names exactly one cell (`node.json` has a single `cell` field), and `agent-api`'s legality mask is
+not shaped for a legality that depends on holding *n* cells at once — which the doc's own §5.3 lists
+as an open problem.
+
+What the opening square **does** deliver, and it is real:
+
+- **§1's first-age texture, honestly.** "Raw, new, everyone working it out alone" is a description of
+  a universe that genuinely holds four cells. Today's universe holds twelve from tick zero and the
+  first age is over by tick 300. Measured here: a 1×1 opening reaches a mean of 3.4 nodes, a 2×2
+  reaches 14.2.
+- **§2's compression having something to compress.** The doc says the knowledge-capital loop "had
+  nothing to compress, because the frontier was always one step away." A square that has to grow puts
+  distance between a novice and the frontier for the first time.
+- **§4's "content exhaustion was the first age ending" reading**, structurally rather than as
+  interpretation: the 51-node plateau is now one square's ceiling among many, not the game's.
+
+What it **does not** deliver, and should not be claimed to:
+
+- **"A civilization is known by its pairings."** Two universes with different squares hold different
+  *cells*, not different *pairings*. Compounds are what make pairings a thing to be known by.
+- **The third age, or the college as the only road to it.** §2a's claim — that a lone mage cannot
+  cross the third age's prerequisite mass — needs a prerequisite mass that scales with set size.
+  Growing a square is priced in favor by `permitTechnique`, which is the *god's* resource, not the
+  university's.
+- **Mage-driven discovery of techniques and forms.** The plan's phrase is *"the rest is reached by
+  discovering techniques and forms."* What ships here is **god-permitted, favor-priced** growth,
+  which is the existing `permitTechnique` / `permitForm` path. An academic cannot discover a
+  technique. That is a real gap between the sentence and the build, and it is future work.
+
+**The honest summary: the opening square is the first age's floor, and compounds are the second and
+third ages' ceiling. They are complementary, not the same rule.**
+
+---
+
+## 9. The #137 companion question, measured
+
+**Measured 2026-08-14 on `06abf3e`** — this branch merged up to `origin/main` at `5a1ce6c`. #137
+(*enable all seventy cells*) is **not** in this tree, and `packages/content/data/cell.json` was not
+touched to fake it. Where a counterfactual was needed it was computed by flagging every cell `v1`
+**in memory**, against the shipped registry, which is what #137 does to the same field.
+
+#137's reviewer note asks whether the opening square restores three effects that #137 breaks. The
+answer for all three, as this branch stands, is **no — and the reason is one line.**
+
+### 9a. The default opening is still derived from the `v1` flag, so #137 widens it
+
+`resolveOpeningSquare` returns `content.axes` unchanged whenever both counts are zero, which is the
+default, every committed sweep and every shipped path. `content.axes` is `v1RulesetAxes(registry)`,
+which ORs the axes of cells flagged `"v1": true` — **the same field #137 sets on all seventy.**
+
+| `v1RulesetAxes` | techniques | forms | cells open |
+|---|--:|--:|--:|
+| `cell.json` as shipped (main) | 3 `[1,3,4]` | 4 `[7,8,12,13]` | **12** |
+| all seventy flagged `v1` (#137) | 5 `[0..4]` | 14 `[0..13]` | **70** |
+
+So **#72 merged on top of #137 opens the whole grid on the default path**, exactly as #137 alone
+does. The change supplies the *mechanism* for a narrow opening — `explicitOpeningAxes` names a
+square by content id and never reads `v1` — but **nothing on the default path calls it.** Making #72
+the companion #137 needs is a further edit: the reference universe must name its opening square
+outright instead of deriving it from the enabled set.
+
+### 9b. Looting cannot be restored by an opening square at all
+
+`shelveForeignBooks` picks its shelf with `entry.record.v1 === true` — the **content** flag. An
+opening square sets `permittedTechniques` / `permittedForms` on the `UNIVERSE` component. These are
+different gates, and no square of any size moves the first.
+
+| non-`v1` nodes available to shelve | count |
+|---|--:|
+| `cell.json` as shipped (main) | **249 of 300** |
+| all seventy flagged `v1` (#137) | **0 of 300** → `foreign.length === 0` → early return |
+
+`raid-constant.json`'s gloss describes the *god's* gate; the code reads the *content* gate. They
+coincided while exactly twelve cells were enabled. **Re-keying `shelveForeignBooks` onto the raiding
+universe's ruleset is a prerequisite for #137, and it is only meaningful once 9a is also done** —
+under #137 *without* a narrowed opening the universe permits all seventy cells, so a ruleset-keyed
+predicate is empty too.
+
+### 9c. `build-rate` — measured, and it does **not** reproduce the reported collapse
+
+A `5 × 14` opening square produces the *identical* `RulesetAxes` #137 gives the player's universe
+(9a), and nothing on the player's path reads `cell.v1` other than `v1RulesetAxes` — so it is an exact
+stand-in **for the player's universe only**. Definition: the distinct magnitudes on
+`universeEconomyBonuses(state, …).buildRate` at the final probed tick — literally what construction
+is handed — unioned over 8 strategies × 2 starting positions, 1,200 ticks, common random numbers.
+
+| arm | magnitudes reaching construction | effect lines |
+|---|---|--:|
+| `v1-3x4` (main today) | `{96,128,192,256,384,640}` | 507 |
+| `full-5x14` (#137 stand-in) | `{96,128,192,256,384,448}` | **873** |
+| `seeded-3x4` | `{96,128,192,256,384,640}` | 475 |
+| `seeded-2x2` | `{96,128,192,256,384}` | 118 |
+
+Widening the opening **increased** the number of `build-rate` effect lines reaching construction, from
+507 to 873, and left the distinct-magnitude count at six. Content agrees that widening can only add:
+the twelve `v1` cells hold `build-rate` magnitudes `{128,192,256,384,640}`, the whole grid holds
+`{96,128,192,256,384,448,640}`.
+
+**This does not reproduce #137's reported `{128,192,256,384}` → `{128,192}`**, and the discrepancy is
+not resolved here. The reported set is a strict subset of what the twelve `v1` cells hold, so it is
+plausibly a single arm rather than a pool union. **Reconciling it needs #137 in the tree and its own
+measurement script; do not treat the table above as a refutation of that one.**
+
+### 9d. `portal-rush` — **not measurable on this branch**
+
+The `5 × 14` stand-in is exact for the player's universe and **not** for the rival's: both
+`raiderNodeCandidates` and `shelveForeignBooks` key on `cell.v1`, which the stand-in does not move.
+A raid number taken here would be measuring a different configuration than the one that regressed, so
+none is reported.
+
+---
+
+## 10. The wiring, and what the choice is worth
+
+**Measured 2026-08-14 on `w72/opening-square-wiring` at `02cb41f`, branched from `origin/main` at
+`5e6237f`.** #137 (*enable all seventy cells*) is **not** in this tree and `cell.json` was not
+touched. Every number below is a reading; where one is not, it says so.
+
+### 10a. What was wired
+
+§9a's finding was that `explicitOpeningAxes` had no caller, so #72 as merged opened the same twelve
+cells it always did. It has one now, and it is the **default** path:
+
+    size -> standardOpeningOrder -> explicitOpeningAxes -> RulesetAxes -> permits()
+
+`standardOpeningOrder` is the v1 rectangle's own axes first, ascending by content id, then every
+remaining axis. Two properties follow, both asserted in `test/unit/opening-square.test.ts` rather
+than argued: the prefix **at the rectangle's own size is the rectangle** — so the full-size arm of a
+size sweep is a control, and `ui/session.json` re-records byte-identical at snapshot hash
+`f6974848cef4578c` — and smaller squares **nest** inside larger, so a size sweep varies size alone.
+
+`openingSquareSeeded: 1` keeps W82's drawn square. The default is the god because the owner's
+sentence is that the square *"shouldn't be hard-coded — that's for the player to decide"*, and
+*"the RNG decides"* is that abdication pointed the other way. **The god's square draws nothing**, so
+unlike #72 itself it adds no stream and forces no re-baseline event.
+
+### 10b. What each square holds, statically
+
+Ascending content order makes the arms `intellego` → `+perdo` → `+rego` over `limen` → `+mentem` →
+`+nomen` → `+terram`.
+
+| square | cells | nodes in square | prerequisite-reachable | founding candidates | raid cell (`rego-limen`) | distinct primitives |
+|---|--:|--:|--:|--:|:--:|--:|
+| 1×2 | 2 | 8 | **7** | 2 | no | 4 |
+| 1×3 | 3 | 12 | **12** | 3 | no | 5 |
+| 2×2 | 4 | 17 | **16** | 4 | no | 6 |
+| 2×3 | 6 | 25 | **25** | 6 | no | 7 |
+| **3×4 (control)** | 12 | 51 | **51** | 12 | **yes** | **14** |
+
+Two consequences that must lead any reading of the arms below, not surface as mysteries:
+
+- **No arm below 3×3 can raid.** Both nodes carrying the `portal` primitive — `rl-open-the-portal`
+  and `rl-the-standing-gate`, selected by `effects[].primitive`, not by id — sit in `rego-limen`,
+  and `rego` is the third technique in content order. This is a genuine consequence of a narrow
+  opening, not an artefact of the ordering: W82's static audit found 0 of 70 possible 1×1 openings
+  and 13 of 910 2×2 openings can ever raid.
+- **`foundingNodes` clamps, and it is a confound the arms must be read against.** Every cell holds
+  exactly one prerequisite-free node, so a 1×2 square offers **two** candidates to a sweep asking
+  for six; `buildReferenceState` deals what exists. Founding grants are not a marginal channel on
+  the passive path — `reference-universe.ts`'s limit 2 makes them the **only** knowledge that can
+  ever be taught — so an arm with a smaller endowment differs from the control in two ways at once.
+
+  | | 1×2 | 1×3 | 2×2 | 2×3 | 3×4 |
+  |---|--:|--:|--:|--:|--:|
+  | founding candidates | 2 | 3 | 4 | 6 | 12 |
+  | dealt at `foundingNodes: 6` (§10c) | 2 | 3 | 4 | **6** | **6** |
+  | dealt at `foundingNodes: 4` (§10d) | 2 | 3 | **4** | **4** | **4** |
+
+  **The endowment-matched comparisons are therefore 2×3 against 3×4 in §10c, and 2×2, 2×3 and 3×4
+  against each other in §10d.** Those carry the headline on their own; the arms below them cannot
+  separate square size from endowment size and are reported as suggestive, not as evidence.
+
+### 10c. Differentiation — `species-separation.mjs`, 12 seed sets × 6 seeds, tier 3, 720 ticks
+
+72 runs per arm. The control is the default build (no `--opening`), and its calibration set
+reproduces the committed docstring in `reference-time-to-tier.test.ts` exactly — gnome `[24,25]`,
+dwarf `[25,30]`, orc `[32,51]`, human `[30,31]`, draconic `[25,301]` — so the instrument is sound
+before any arm is read.
+
+**Read the 2×3 column against the control first.** Those two deal the identical six founding nodes,
+so the difference between them is the square and nothing else. 1×2, 1×3 and 2×2 additionally carry a
+smaller endowment (2, 3 and 4 nodes) and are shown for shape, not as evidence.
+
+**Rates, not verdicts.** A verdict is a function of how many sets were run; a rate is not.
+
+| pair | 1×2 | 1×3 | 2×2 | 2×3 | **3×4 control** |
+|---|--:|--:|--:|--:|--:|
+| `gnome < elf` | 12/12 | 12/12 | 12/12 | 12/12 | **12/12** |
+| `gnome < human` | 12/12 | 12/12 | 12/12 | 12/12 | **12/12** |
+| `dwarf < elf` | 7/12 | 10/12 | 11/12 | 11/12 | **12/12** |
+| `human < elf` | 10/12 | 10/12 | 11/12 | 11/12 | **12/12** |
+| `gnome < dwarf` | 4/12 | 5/12 | 6/12 | 6/12 | 5/12 |
+| `dwarf < human` | 4/12 | 1/12 | 0/12 | 0/12 | 1/12 |
+| **pairs reaching ESTABLISHED** | **2** | **2** | **2** | **2** | **4** |
+
+The four-species chain `gnome < dwarf < human < elf` is **REFUTED in every arm including the
+control** — that is a fact about `main` at this horizon, reproduced here, not something the opening
+square broke.
+
+Mean time to tier 3, ± standard error over the twelve set means:
+
+| species | 1×2 | 1×3 | 2×2 | 2×3 | **3×4 control** |
+|---|--:|--:|--:|--:|--:|
+| gnome | 24.3 ± 0.1 | 24.2 ± 0.1 | 24.2 ± 0.1 | 24.0 ± 0.1 | **24.3 ± 0.0** |
+| human | 29.8 ± 0.1 | 30.0 ± 0.2 | 29.8 ± 0.1 | 29.8 ± 0.1 | **29.9 ± 0.1** |
+| dwarf | 29.4 ± 1.2 | 27.6 ± 0.2 | 28.5 ± 0.2 | 28.4 ± 0.3 | **27.7 ± 0.3** |
+| elf | 51.0 ± 0.8 | 51.5 ± 0.7 | 51.4 ± 0.4 | 50.8 ± 0.5 | **54.8 ± 0.3** |
+| orc | 48.3 ± 10.0 † | 91.8 ± 18.4 † | 56.0 ± 8.2 † | 39.3 ± 1.7 | **34.2 ± 0.8** |
+| draconic | 216.8 ± 107.1 † | 215.0 ± 58.7 † | 275.8 ± 46.5 † | 201.6 ± 43.8 † | **209.0 ± 21.8 †** |
+
+† censored at the horizon in some runs, and the censoring is itself the finding. Runs censored out
+of 72: **draconic 65 / 56 / 37 / 30 / 17** and **orc 28 / 11 / 1 / 0 / 0** across 1×2 → 3×4. The
+other four species are censored nowhere.
+
+**So the narrow arms' draconic and orc numbers are about truncation, not about species**, and none
+of them should be quoted as a separation — the same failure mode #143 found at the opposite extreme
+under #137. The rows that *are* clean are gnome, human, dwarf and elf, and elf carries the result:
+**54.8 ± 0.3 in the control against 50.8–51.5 ± 0.4–0.8 in every narrow arm, six to eight standard
+errors apart.**
+
+**The clean pair, stated on its own:** 2×3 against 3×4, six founding nodes each, common seeds.
+`elf` 50.8 ± 0.5 against **54.8 ± 0.3** — about seven standard errors. `orc` 39.3 ± 1.7 against
+**34.2 ± 0.8**, with **zero** censoring on either side. `dwarf < elf` 11/12 against **12/12** and
+`human < elf` 11/12 against **12/12**. Two established pairs against **four**. Every one of those is
+a square effect with the endowment held equal.
+
+### 10d. Width — the quality-diversity archive, 12 strategies × 4 seeds, 1,200 ticks
+
+`--ticks 1200`, above `ascension-min-tick` 600, so the horizon guard is respected and ascension is
+reachable. One arm per invocation at a fixed `--search-seed`, one level per factor, so all five arms
+run on the **same** universes — checked from the records rather than argued from the seed
+derivation: `allocate-concentrate` carries `runSeed 2725566061` in the 1×2, 2×3 and control record
+files alike.
+
+At `foundingNodes: 4` the endowment is equal across **2×2, 2×3 and 3×4** (four nodes each); 1×2 and
+1×3 deal two and three.
+
+| arm | archive width | margin over null | ascended | mean nodes known across the pool |
+|---|--:|--:|--:|--:|
+| 1×2 | 1 | 3 | 6/48 | 70.3 |
+| 1×3 | 1 | 3 | 6/48 | 72.7 |
+| 2×2 | 1 | 4 | 9/48 | 73.6 |
+| 2×3 | 2 | 4 | 7/48 | 79.3 |
+| **3×4 control** | **2** | 4 | 7/48 | **94.4** |
+
+Width is a small integer at four seeds and the 1↔2 step is one strategy crossing the bar; read it as
+consistent with 10c rather than as independent evidence.
+
+### 10e. The sharpest number, and it is not about differentiation
+
+Nodes known at 1,200 ticks, per strategy, per arm:
+
+| strategy | 1×2 | 1×3 | 2×2 | 2×3 | 3×4 |
+|---|--:|--:|--:|--:|--:|
+| `passive-control` | **7** | **12** | **16** | **25** | **51** |
+| `uniform-random-legal` | 7 | 12 | 16 | 25 | 62 |
+| `archivist` | 7 | 12 | 16 | 25 | 51 |
+| `worship-maximizer` | 7 | 12 | 16 | 25 | 51 |
+| `portal-rush` | 7 | 12 | 16 | 25 | 56 |
+| `permit-then-idle` | **196** | 195 | 196 | 197 | **199** |
+| `permissive-breadth` | **204** | 205 | 199 | 207 | **207** |
+| `allocate-concentrate` | **192** | 192 | 186 | 186 | **194** |
+| `allocate-spread` | **207** | 207 | 204 | 208 | **203** |
+
+**The passive row is exactly the reachable-node column of 10b — 7, 12, 16, 25, 51 — reproduced by a
+dynamic run from a static content audit taken independently.** A universe whose god never spends
+learns precisely its square and stops.
+
+**And four of twelve strategies erase the square entirely.** `permit-then-idle` reaches 196 nodes
+from a two-cell opening against 199 from the twelve-cell one: **a 1.5% difference from a starting
+content set seven times smaller.** W82 found that going from 1×1 to the whole grid costs **84 favor,
+once**; this is that price paid, measured on the god's square rather than the seed's.
+
+### 10f. The answer
+
+**The opening square is a real choice, and today it binds only on gods who do not spend.**
+
+- On the passive universe — which is every balance baseline, every separation reading and every
+  golden fixture — the square is a hard ceiling on content and it **reduces** species
+  differentiation: **four** established pairs at 3×4 and **two** at every narrower size, including
+  the endowment-matched 2×3. The count is flat across the narrow sizes and then steps at the full
+  rectangle rather than falling smoothly, which is the sharper claim: among small squares, size
+  barely matters; the shipped twelve differ in kind.
+- On a god who permits, it is gone inside 1,200 ticks for the price of 84 favor, and the arms differ
+  by about 1.5%.
+
+So the finding is **not** "square size does not change the game". It is that square size changes the
+game the harness measures and barely changes the game a player plays, and the gap between those two
+is `permit-technique` / `permit-form` being `untuned`. **Pricing the permit verbs is the change that
+makes the opening square a decision rather than a starting position** — W82 said this from a
+containment probe and it is now measurable in nodes.
+
+**A recommendation the measurement supports:** keep the default at the full v1 rectangle. It is the
+best of the five sizes for species differentiation and the only one that can raid, and a smaller
+default would hard-code the decision the owner reserved for the player.
+
+### 10g. What was not measured
+
+- **Interaction between square and strategy.** Every arm ran the same pool; nothing here separates
+  "the square changed the game" from "the square changed what this pool does".
+- **How fast a permitting god erases the square.** The 1,200-tick endpoint says it happens, not
+  when. That needs per-tick permitted-cell counts, and it is the measurement that would price the
+  verbs.
+- **Squares of one size in different positions.** Only the content-order prefix was run, so
+  *position* is unmeasured and every claim here is about size alone.
+- **Sizes above 3×4.** The standard order extends past the rectangle into the disabled cells, and
+  nothing was run there; §9 and #143 both suggest the horizon would need to grow first.
+- **`--sets` above 12 and `--seeds` above 4.** Both were budget, on a machine at load 17–75
+  throughout.
+
+### 10h. Looting, confirmed unchanged
+
+`shelveForeignBooks` still selects on `entry.record.v1` — the **content** flag — and this change
+moves only `permittedTechniques` / `permittedForms` on the `UNIVERSE` component. **A narrow opening
+therefore does not change what is shelvable**, and §9b stands exactly as written: re-keying that
+predicate onto the raiding universe's ruleset remains a prerequisite for #137, and it is a separate
+change from this one.

@@ -1,0 +1,242 @@
+{
+  "spec": {
+    "name": "capital-curve",
+    "axes": [
+      "seededDepth",
+      "speciesMix"
+    ],
+    "ticks": 60,
+    "capacity": 40
+  },
+  "digest": {
+    "runs": 280,
+    "crossSize": 280,
+    "stride": 1,
+    "columns": {
+      "adds.demand.0": {
+        "min": 0,
+        "max": 0,
+        "sum": 0,
+        "distinct": 1,
+        "minAt": "seededDepth=0 speciesMix=human",
+        "maxAt": "seededDepth=0 speciesMix=human"
+      },
+      "adds.demand.1": {
+        "min": 0,
+        "max": 0,
+        "sum": 0,
+        "distinct": 1,
+        "minAt": "seededDepth=0 speciesMix=human",
+        "maxAt": "seededDepth=0 speciesMix=human"
+      },
+      "adds.demand.2": {
+        "min": 40,
+        "max": 40,
+        "sum": 11200,
+        "distinct": 1,
+        "minAt": "seededDepth=0 speciesMix=human",
+        "maxAt": "seededDepth=0 speciesMix=human"
+      },
+      "adds.demand.3": {
+        "min": 0,
+        "max": 0,
+        "sum": 0,
+        "distinct": 1,
+        "minAt": "seededDepth=0 speciesMix=human",
+        "maxAt": "seededDepth=0 speciesMix=human"
+      },
+      "adds.demand.4": {
+        "min": 0,
+        "max": 0,
+        "sum": 0,
+        "distinct": 1,
+        "minAt": "seededDepth=0 speciesMix=human",
+        "maxAt": "seededDepth=0 speciesMix=human"
+      },
+      "adds.instancesDegraded": {
+        "min": 0,
+        "max": 885,
+        "sum": 68432,
+        "distinct": 4,
+        "minAt": "seededDepth=0 speciesMix=human",
+        "maxAt": "seededDepth=256 speciesMix=human"
+      },
+      "adds.scribeMonthsFinal": {
+        "min": 240,
+        "max": 5158,
+        "sum": 627770,
+        "distinct": 222,
+        "minAt": "seededDepth=0 speciesMix=orc",
+        "maxAt": "seededDepth=256 speciesMix=human+elf+dwarf+gnome"
+      },
+      "adds.scribeMonthsTotal": {
+        "min": 12240,
+        "max": 288848,
+        "sum": 34222746,
+        "distinct": 260,
+        "minAt": "seededDepth=0 speciesMix=orc",
+        "maxAt": "seededDepth=256 speciesMix=human+elf+dwarf+gnome"
+      },
+      "adds.seatsRefused": {
+        "min": 200,
+        "max": 200,
+        "sum": 56000,
+        "distinct": 1,
+        "minAt": "seededDepth=0 speciesMix=human",
+        "maxAt": "seededDepth=0 speciesMix=human"
+      },
+      "adds.shelfReplacementCost": {
+        "min": 0,
+        "max": 1142784,
+        "sum": 99606528,
+        "distinct": 5,
+        "minAt": "seededDepth=0 speciesMix=human",
+        "maxAt": "seededDepth=256 speciesMix=human"
+      },
+      "adds.stoneConsumed": {
+        "min": 1368,
+        "max": 4096,
+        "sum": 625260,
+        "distinct": 36,
+        "minAt": "seededDepth=0 speciesMix=orc",
+        "maxAt": "seededDepth=0 speciesMix=draconic"
+      },
+      "adds.studentsAdmitted": {
+        "min": 40,
+        "max": 40,
+        "sum": 11200,
+        "distinct": 1,
+        "minAt": "seededDepth=0 speciesMix=human",
+        "maxAt": "seededDepth=0 speciesMix=human"
+      },
+      "adds.vellumShortfall": {
+        "min": 0,
+        "max": 29728,
+        "sum": 2413824,
+        "distinct": 4,
+        "minAt": "seededDepth=0 speciesMix=human",
+        "maxAt": "seededDepth=256 speciesMix=human"
+      },
+      "adds.vellumUpkeepPaid": {
+        "min": 0,
+        "max": 992,
+        "sum": 220416,
+        "distinct": 3,
+        "minAt": "seededDepth=0 speciesMix=human",
+        "maxAt": "seededDepth=32 speciesMix=human"
+      },
+      "contains.buildProgress": {
+        "min": 1024,
+        "max": 1024,
+        "sum": 286720,
+        "distinct": 1,
+        "minAt": "seededDepth=0 speciesMix=human",
+        "maxAt": "seededDepth=0 speciesMix=human"
+      },
+      "contains.complete": {
+        "min": 1,
+        "max": 1,
+        "sum": 280,
+        "distinct": 1,
+        "minAt": "seededDepth=0 speciesMix=human",
+        "maxAt": "seededDepth=0 speciesMix=human"
+      },
+      "contains.completedOnTick": {
+        "min": 3,
+        "max": 26,
+        "sum": 1845,
+        "distinct": 11,
+        "minAt": "seededDepth=0 speciesMix=human+elf+dwarf+orc",
+        "maxAt": "seededDepth=0 speciesMix=draconic"
+      },
+      "contains.designedCapacity": {
+        "min": 40,
+        "max": 40,
+        "sum": 11200,
+        "distinct": 1,
+        "minAt": "seededDepth=0 speciesMix=human",
+        "maxAt": "seededDepth=0 speciesMix=human"
+      },
+      "contains.distinctNodes": {
+        "min": 0,
+        "max": 256,
+        "sum": 21952,
+        "distinct": 5,
+        "minAt": "seededDepth=0 speciesMix=human",
+        "maxAt": "seededDepth=256 speciesMix=human"
+      },
+      "contains.dominantCell": {
+        "min": 0,
+        "max": 1,
+        "sum": 224,
+        "distinct": 2,
+        "minAt": "seededDepth=0 speciesMix=human",
+        "maxAt": "seededDepth=8 speciesMix=human"
+      },
+      "contains.effectiveCapacity": {
+        "min": 40,
+        "max": 40,
+        "sum": 11200,
+        "distinct": 1,
+        "minAt": "seededDepth=0 speciesMix=human",
+        "maxAt": "seededDepth=0 speciesMix=human"
+      },
+      "contains.grimoireCount": {
+        "min": 0,
+        "max": 0,
+        "sum": 0,
+        "distinct": 1,
+        "minAt": "seededDepth=0 speciesMix=human",
+        "maxAt": "seededDepth=0 speciesMix=human"
+      },
+      "contains.hosted": {
+        "min": 40,
+        "max": 40,
+        "sum": 11200,
+        "distinct": 1,
+        "minAt": "seededDepth=0 speciesMix=human",
+        "maxAt": "seededDepth=0 speciesMix=human"
+      },
+      "contains.instanceCount": {
+        "min": 0,
+        "max": 256,
+        "sum": 21952,
+        "distinct": 5,
+        "minAt": "seededDepth=0 speciesMix=human",
+        "maxAt": "seededDepth=256 speciesMix=human"
+      },
+      "contains.profileCells": {
+        "min": 0,
+        "max": 60,
+        "sum": 5096,
+        "distinct": 5,
+        "minAt": "seededDepth=0 speciesMix=human",
+        "maxAt": "seededDepth=256 speciesMix=human"
+      },
+      "contains.residentMages": {
+        "min": 0,
+        "max": 0,
+        "sum": 0,
+        "distinct": 1,
+        "minAt": "seededDepth=0 speciesMix=human",
+        "maxAt": "seededDepth=0 speciesMix=human"
+      },
+      "contains.staffCohorts": {
+        "min": 1,
+        "max": 4,
+        "sum": 780,
+        "distinct": 4,
+        "minAt": "seededDepth=0 speciesMix=human",
+        "maxAt": "seededDepth=0 speciesMix=human+elf+dwarf+draconic"
+      },
+      "contains.staffHeadcount": {
+        "min": 40,
+        "max": 160,
+        "sum": 31200,
+        "distinct": 4,
+        "minAt": "seededDepth=0 speciesMix=human",
+        "maxAt": "seededDepth=0 speciesMix=human+elf+dwarf+draconic"
+      }
+    }
+  }
+}

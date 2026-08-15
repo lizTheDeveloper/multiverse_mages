@@ -65,7 +65,7 @@ describe('shipped content', () => {
       // god-agency rules read by name. Both coverings are checked by the
       // loader; these are the counts they come out at.
       godCosts: 16,
-      godConstants: 69,
+      godConstants: 72,
       // One per magnitude the raid rules read by name, checked in both
       // directions by the loader for the reason the god constants are. Five of
       // them are the composition root's rather than the engine's — how many
@@ -74,7 +74,12 @@ describe('shipped content', () => {
       // multiverse out of state and something has to say who is on the other
       // end of the portal.
       raidConstants: 46,
-      autonomyWeights: 36,
+      // Thirty-eight since `apply-magic` added `apply-output-per-month` and
+      // `apply-ration-per-month`. Both are scalars rather than role-appeal rows
+      // — they price what applied work makes and eats, not what a role wants —
+      // and both are in `REQUIRED_AUTONOMY_WEIGHTS`, so the loader checks the
+      // set in both directions exactly as it does for the target weights.
+      autonomyWeights: 38,
     });
   });
 
