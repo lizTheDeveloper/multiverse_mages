@@ -409,7 +409,22 @@ describe('contentRevision', () => {
     // — the same situation the three-branch paragraph above describes, and the
     // reason the check is a digest over the preimage rather than a
     // hand-maintained list of files.
-    expect(registry.contentRevision).toBe('e8442af2c5f91ae6f80ad9a178e0e451');
+    //
+    // e8442af2c5f91ae6f80ad9a178e0e451 -> 183e06fecce6dac7f68dadba398f2d95,
+    // when a second exclusion pair was authored — *Perdo Nomen* and *Rego
+    // Nomen*, `destructive` — and this one is **inside the v1 rectangle**. The
+    // entry above says of the first pair that "the mechanic is live and the
+    // reference run cannot see it, which is exactly the state a balance sweep
+    // should be able to change without a content edit." This is that edit. Both
+    // halves are cells the reference universe opens on, so unlike `creo-ignem`
+    // ⊥ `creo-umbra` this pair is reachable by every arm in the pool rather than
+    // only by the ones that permit the whole grid.
+    //
+    // In the preimage for the same reason the first pair is, only harder: two
+    // universes disagreeing here disagree about the *opening square*, which is
+    // the position every session starts from and the one §8's arbitration split
+    // makes a raider carry across a portal.
+    expect(registry.contentRevision).toBe('183e06fecce6dac7f68dadba398f2d95');
   });
 
   it('is stable across loads of identical content', () => {
