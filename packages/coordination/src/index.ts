@@ -136,6 +136,17 @@ export type {
   AcademicRateDeps,
 } from './academic-effects.js';
 export { NO_ACADEMIC_BONUSES, academicRateBonuses, academicEffectIndex } from './academic-effects.js';
+export type {
+  VitalityBonuses,
+  VitalityDeps,
+  VitalityIndex,
+} from './knowledge-vitality.js';
+export {
+  NO_VITALITY_BONUSES,
+  lifespanBonusesFor,
+  vitalityBonuses,
+  vitalityIndex,
+} from './knowledge-vitality.js';
 
 export type { WorldSimulation, WorldStepDeps, WorldStepReport } from './world-step.js';
 export { defineWorldSimulation, worldSystem } from './world-step.js';
