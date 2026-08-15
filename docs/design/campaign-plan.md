@@ -12745,7 +12745,10 @@ branch:
   Previously this 400'd. The division is now right: the *server* accepts the verb and the
   *game* declines it, which is the difference between a broken button and a disabled one.
 - `POST /live/submit {"kind":17}` — HTTP 400. The bound holds on the other side too.
-- `POST /live/advance {"count":5}` — HTTP 200.
+- `POST /live/advance {"count":5}` — HTTP 200. **And that line proves less than it looks
+  like, corrected in W246:** the handler reads `body?.ticks`, so `count` fell through to
+  the default and advanced **one** tick. It still returned 200. A 200 from that endpoint is
+  not evidence the requested tick count was honoured, and I recorded it as though it were.
 
 **And the frame settles W236's claim with direct evidence.** The response carries a
 `candidates` map alongside the mask:
@@ -13076,3 +13079,37 @@ claim I would be making on the author's behalf. Aborted and recorded.
 The useful finding for whoever picks this up: **the four `:426` PRs are not blocked on the
 ratio.** They are blocked on being forty commits behind a `main` whose content revision has
 moved, and the ratio argument is the *second* thing each of them needs.
+
+## W246 — The other half of the literal 16, and a 200 that meant nothing
+
+[executed, 2026-08-15, clean worktree at `origin/main` @ edcaf591, server run and endpoints
+curled; `npm run verify` exit 0, 4,698 tests]
+
+Re-verifying *"the game plays"* against the current head rather than the one it was first
+checked on, six merges earlier. Two things fell out, and only one was a defect.
+
+**The banner.** `#195` fixed `toAction`'s `kind >= 16`, which had made `inviteScholar` a
+dead button. It did not fix this:
+
+    `  ${legal} of 16 actions legal right now.`
+
+The first line an operator reads undercounts the action space by one and can never say more
+than "16 of 16". Now reads `run.session.actionSpaceSize`. Verified by running the server —
+`13 of 16` → `13 of 17` — rather than by reading the diff. #200.
+
+**And a correction to W239, which is the more useful half.** I recorded
+`POST /live/advance {"count":5}` → HTTP 200 as evidence the loop advances. The handler
+reads `body?.ticks`. `count` fell through to the default, so it advanced **one** tick and
+returned **200**. Testing it properly: `{"ticks":10}` moves the clock 43 → 53 and returns
+ten frames. The server was right and my probe was wrong — the seventh correction this
+session and the second where a green result concealed a bad test rather than a bad build.
+
+Nothing in `ui/` calls that endpoint, so no caller is affected and the parameter name is
+not worth changing.
+
+The rule, which this repo already has in another form: **a 2xx is a statement about the
+request being accepted, not about the parameters being read.** The existing entries warn
+about a checker that answers about the wrong input; this is the same shape from the client
+side — an endpoint that defaults a misspelled field is indistinguishable from one that
+honoured it, unless you measure the effect. `t0` and `t1` cost one extra call each and are
+the whole difference between "HTTP 200" and "it advanced ten ticks".
