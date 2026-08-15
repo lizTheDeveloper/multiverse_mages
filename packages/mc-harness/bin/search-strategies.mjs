@@ -58,7 +58,7 @@
  * without invalidating every committed measurement.
  */
 
-import { spawn } from 'node:child_process';
+import { execFileSync, spawn } from 'node:child_process';
 import { mkdirSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import process from 'node:process';
@@ -128,7 +128,7 @@ async function main() {
   })();
 
   const harness = await import('../dist/index.js');
-  const { BOT_POOL, NULL_LADDER, foldArchive } = harness;
+  const { BOT_POOL, MAX_ELITE_ILLEGAL_RATE, NULL_LADDER, foldArchive } = harness;
 
   const nullIds = new Set(NULL_LADDER.map((entry) => entry.strategyId));
   const seedStrategies = BOT_POOL.filter((entry) => !nullIds.has(entry.strategyId));
@@ -336,6 +336,7 @@ async function main() {
   const archive = foldArchive(axes, candidates, nulls);
   const payload = {
     searchSeed, sweepId: SWEEP_ID, runId, ticks: Number(args.ticks), seeds, axes, ladder: NULL_LADDER,
+    provenance: measuredRef(),
     nulls, candidates, archive,
     status: archive.cells.length === 0 ? 'no-observations' : 'measured',
   };
@@ -372,13 +373,61 @@ async function main() {
         'strategies; re-run longer before reading it as one.\n',
     );
   }
+  // A cell can fail to be occupied for two unrelated reasons, and printing them
+  // the same way is the failure this repo has documented five times: folding
+  // "the probe is broken" into "the answer is no". `clearsLadder` already
+  // separates them -- an elite over `MAX_ELITE_ILLEGAL_RATE` is refused -- and
+  // then reuses `failedRung` to say so, which prints as `(lost to rung N)`. That
+  // sentence means *this strategy is weaker than doing nothing*. Exclusion means
+  // *this strategy was never allowed to play*, and reading the first for the
+  // second retires a real defect as a balance result.
+  //
+  // The label says EXCLUDED and not MASK-BUG deliberately, even though
+  // `MAX_ELITE_ILLEGAL_RATE`'s own comment says "above this it is a mask bug".
+  // What is *measured* here is a rejection rate; which component is wrong is a
+  // second question this report cannot answer, and there are at least two live
+  // readings. `strategies.ts`'s `noise-floor-submits-axis-actions-bare` records
+  // that a missing-parameter refusal lands on the core's `illegalActionCount`
+  // and **not** on the session counters `illegalActionRate` is collected from,
+  // which would make a session-counted rejection a genuine mask disagreement.
+  // But `session.ts` warns that an unresolvable slot index is "recorded as an
+  // ordinary illegal action, hiding the bug", which would make it target-level
+  // and the mask innocent. Naming the culprit in the output would be the same
+  // misreport this block exists to fix, one layer over.
+  //
+  // Recomputed here from `elite.illegalActionRate` rather than plumbed through a
+  // new status, so this is display-only and cannot move a baseline. The archive
+  // JSON already carries the rate, so an analyser can make the same distinction.
+  const excluded = [];
   for (const cell of archive.cells) {
+    const masked = cell.status !== 'occupied' && cell.elite.illegalActionRate > MAX_ELITE_ILLEGAL_RATE;
+    if (masked) excluded.push(cell.elite);
     process.stdout.write(
-      `  ${cell.status === 'occupied' ? 'OCCUPIED ' : 'not-worth'} ${cell.elite.strategyId.padEnd(22)}` +
+      `  ${cell.status === 'occupied' ? 'OCCUPIED ' : masked ? 'EXCLUDED ' : 'not-worth'} ` +
+      `${cell.elite.strategyId.padEnd(22)}` +
       ` asc ${String(cell.elite.ascended).padStart(3)}/${cell.elite.runs}` +
       ` bar ${String(cell.nullBar).padStart(3)}` +
-      (cell.failedRung ? ` (lost to rung ${cell.failedRung})` : '') +
+      (masked
+        ? ` (illegal ${(cell.elite.illegalActionRate * 100).toFixed(1)}% > ${String(MAX_ELITE_ILLEGAL_RATE * 100)}% -- excluded, not beaten)`
+        : cell.failedRung
+          ? ` (lost to rung ${cell.failedRung})`
+          : '') +
       `  ${cell.coordinate}\n`,
+    );
+  }
+  // Loud, and last, because it is a defect report rather than a result. A strategy
+  // that cannot submit a legal action is not evidence about balance in either
+  // direction, and a sweep containing one has a smaller effective pool than its
+  // own header claims.
+  for (const elite of excluded) {
+    process.stdout.write(
+      `[search] WARNING: excluded -- ${elite.strategyId} was rejected on ` +
+        `${(elite.illegalActionRate * 100).toFixed(1)}% of its submissions, over the ` +
+        `${String(MAX_ELITE_ILLEGAL_RATE * 100)}% ceiling, so it could not hold a cell. It is absent ` +
+        'from the archive for a reason that is not about its play, and this sweep measured a ' +
+        'smaller pool than its header claims. Whether the mask, the slot resolution or the ' +
+        "strategy's own preferences are at fault is not decided here -- diagnose before reading " +
+        "this sweep's width.\n",
     );
   }
 }
@@ -388,4 +437,67 @@ if (import.meta.url === pathToFileURL(process.argv[1] ?? '').href) {
     process.stderr.write(`${String(error?.stack ?? error)}\n`);
     process.exitCode = 1;
   });
+}
+
+/**
+ * The ref this archive is a measurement **of**.
+ *
+ * `scripts/build-design-dashboard.mjs` argues at length against exactly this —
+ * no clock, no `git rev-parse` — and that argument is right *there* and wrong
+ * *here*, for one reason. The dashboard payload is a **pure function of the
+ * repository contents**, byte-checked by `check:generated`; stamping it would
+ * make CI's dashboard differ from yours, and the tree is already its own
+ * provenance. A search archive is not a function of the tree. It is a
+ * measurement of how the simulation **behaved**, and the same command run on
+ * two commits produces two different archives that are both correct. Without
+ * the ref there is no way to say which world a result describes.
+ *
+ * That is not hypothetical. `smoke-600.json` reported `shape: dead` —
+ * "nothing beats doing nothing" — with no commit, branch or date in it. It was
+ * read a day later as evidence about the *wired* game when it had been measured
+ * on the unwired one, which inverts the causal claim it was being used to
+ * support. See `docs/design/campaign-plan.md` W232.
+ *
+ * Everything here is best-effort and never throws: a tarball, a shallow CI
+ * checkout, or no `git` at all yields `unknown` rather than failing a sweep that
+ * has already done the expensive part. `dirty` is the load-bearing field — a
+ * measurement taken on uncommitted edits is not reproducible from the ref alone,
+ * and silently reporting the base commit for a dirty tree would be a worse lie
+ * than reporting nothing.
+ */
+/**
+ * `status --porcelain` rather than `diff --quiet` because the question is
+ * whether this archive is reproducible from `commit` alone, and an untracked
+ * content file changes the answer exactly as much as a modified one — `diff`
+ * does not see untracked files at all. Errors report `unknown`, never `false`:
+ * "I could not tell" and "the tree is clean" must not collapse into each other,
+ * which is the checker-that-answers-about-the-wrong-input shape CLAUDE.md names.
+ */
+function isDirty() {
+  try {
+    const out = execFileSync('git', ['status', '--porcelain'], {
+      encoding: 'utf8',
+      stdio: ['ignore', 'pipe', 'ignore'],
+    });
+    return out.trim().length > 0;
+  } catch {
+    return 'unknown';
+  }
+}
+
+function measuredRef() {
+  const git = (cmd) => {
+    try {
+      return execFileSync('git', cmd, { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] }).trim();
+    } catch {
+      return '';
+    }
+  };
+  const commit = git(['rev-parse', 'HEAD']);
+  if (!commit) return { commit: 'unknown', branch: 'unknown', dirty: 'unknown' };
+  return {
+    commit,
+    branch: git(['rev-parse', '--abbrev-ref', 'HEAD']) || 'unknown',
+    dirty: isDirty(),
+  };
 }
