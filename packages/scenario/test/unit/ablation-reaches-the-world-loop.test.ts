@@ -291,8 +291,11 @@ const RUN_TIMEOUT_MS = 300_000;
  * 68.63 to 42.50. **That delta was read off a baseline re-record that has since
  * been reverted** — no baseline in this tree was regenerated, by standing rule —
  * so it is a measurement someone took once and not a number this repository
- * currently commits. Re-derive it before quoting; the six-seed instrumentation
- * above is the evidence that does live in the tree.
+ * currently commits. **Do not re-derive it to check: that means running a gate,
+ * and gates are deferred until the wiring is finished.** Treat it as a lead. The
+ * six-seed instrumentation above is the evidence that lives in the tree, and the
+ * 68.63 → 42.50 half of the comparison is committed — `docs/design/anti-requisites.md`
+ * and the agency baseline's own rationale both carry it.
  *
  * **Three separate mechanics now meet on `permissive-breadth` and are invisible
  * everywhere else**, which is a fact about the opening square rather than about

@@ -154,8 +154,9 @@
  * anywhere the v1 rectangle can see. The agency gate records the same mechanism
  * where it is not seed anecdote: `referenceNodesKnown@permissive-breadth`
  * 42.5 → 36.625 — read off a baseline re-record that was **reverted**, so it is
- * a measurement taken once rather than a committed number. Re-derive before
- * quoting.
+ * a measurement taken once rather than a committed number, and re-deriving it
+ * means running a gate, which is deferred. Treat it as a lead. The 68.63 → 42.50
+ * half of that comparison *is* committed, in `docs/design/anti-requisites.md`.
  *
  * The lesson to carry is not about any of the three changes. **A zero here has
  * meant three different things in one day** — never reachable, reachable and
