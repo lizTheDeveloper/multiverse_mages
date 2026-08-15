@@ -168,6 +168,7 @@ interface World {
   report(): WorldStepReport;
   advance(ticks?: number): void;
   totals(): { researchCompleted: number; grimoiresScribed: number };
+  instancesMade(): number;
 }
 
 /**
@@ -189,9 +190,37 @@ function universe(options: WorldOptions): World {
     store.set(handle, 'universityId', home.university);
   });
 
+  // The transfer door is shut on the academy the mages are *not* in, by leaving
+  // it no seats.
+  //
+  // Until `settleAffiliations` existed this fixture held still by accident:
+  // `completeAffiliation` had no caller, so an assignment written here was the
+  // affiliation for the length of the run. Now mages move, and the **control
+  // arm dissolves** — every mage seeded at the bare academy walks to the
+  // scholarly one within a few ticks, because `universityPreference` ranks on
+  // library depth and has one answer for the whole universe.
+  //
+  // That is not a hypothesis. With no bound the five-year book counts came back
+  // **1030 for the deep shelf and 1031 for the bare one**: one universe sampled
+  // twice, and an apparently one-book §6a near-miss. With the door shut it is
+  // **384 against 1031** — see the note on the assertion below, because the sign
+  // of that gap is itself a finding.
+  //
+  // A zero `capacity` is the smallest thing that says "not somewhere a mage may
+  // go" in the vocabulary the loop reads, and it changes nothing else this file
+  // asserts on: `libraryCapital` and the §7 emission read `buildProgress` and
+  // the shelves, so the away academy is still a completed university with a
+  // library and still reports its own entry.
+  const away = options.affiliation === 'scholarly' ? bare : scholarly;
+  componentOf(state, UNIVERSITY).set(away.university as EntityHandle, 'capacity', 0);
+
   let current = state;
   const source = sourceFor(ROOT_SEED);
   const summed = { researchCompleted: 0, grimoiresScribed: 0 };
+  const instancesNow = (): number =>
+    collectRecords(current, KNOWLEDGE_INSTANCE).filter(
+      ({ row }) => row.locationKind !== LOCATION_KIND.library || row.acquiredTick !== 0,
+    ).length;
 
   return {
     get state() {
@@ -210,6 +239,11 @@ function universe(options: WorldOptions): World {
       }
     },
     totals: () => ({ ...summed }),
+    // Every instance the run *made*, endowment excluded. The endowed shelf is
+    // written at `acquiredTick` 0 into a library, and nothing else in this
+    // fixture is — so the filter removes the deep arm's forty-copy head start
+    // without removing a single book its mages wrote.
+    instancesMade: instancesNow,
   };
 }
 
@@ -226,53 +260,80 @@ const TIMEOUT_MS = 120_000;
 
 describe('a deep library makes the mages who work in it faster (vision §6a)', () => {
   /**
-   * ## Why this counts books and not completed research projects
+   * ## This measure has now been chosen three times, and the third time it got a control
    *
-   * It counted `researchCompleted` when `knowledge-capital` landed, and that
-   * measure **inverted** the moment target selection became a utility score
-   * (`autonomy/target-appeal.ts`, W17). Measured on this fixture at 60 ticks,
-   * scholarly against bare:
+   * It counted `researchCompleted` when `knowledge-capital` landed. That
+   * **inverted** the moment target selection became a utility score
+   * (`autonomy/target-appeal.ts`, W17) — 4131 against 4142 — and the file moved
+   * to `grimoiresScribed`, where the margin was 324 against 231.
    *
-   * | measure | value-scored selection | five non-effort bounds zeroed |
+   * Wiring `completeAffiliation` inverted the book count too, and much harder.
+   * Measured here at 60 ticks with the transfer door shut (see `universe`):
+   *
+   * | measure | scholarly | bare |
    * |---|---|---|
-   * | `researchCompleted` | 4131 vs **4142** | **4366** vs 4257 |
-   * | `grimoiresScribed` | **324** vs 231 | **324** vs 211 |
-   * | distinct nodes held | **42** vs 41 | 40 vs 40 |
-   * | knowledge instances | **7839** vs 7744 | **6052** vs 5968 |
+   * | `researchCompleted` | 5138 | 5182 |
+   * | `grimoiresScribed` | 408 | **1032** |
+   * | instances made | **10908** | 10639 |
    *
-   * Zeroing the five non-effort term bounds reduces the score to the cost order
-   * this file was written against, and the old comparison comes back — so the
-   * inversion is the reordering and nothing else. But it is an inversion of the
-   * **metric**, not of the mechanism: under value-scored selection the deep
-   * library still yields more distinct nodes, more instances and 40% more
-   * books. What changed is the goal *mix* — the score moves effort toward
-   * teaching, so total instances rise about 30% while the **count** of finished
-   * research projects falls about 4% in both arms, and an 0.27% arm difference
-   * sits inside that shift.
+   * **The book count inverts for a reason that is a *feature*.** A mage does
+   * not commit to copying a node her library already holds — this file's own
+   * last test asserts it — so the deep arm's forty shelved nodes are forty
+   * things its mages may not write. The bare arm has the same forty in its heads
+   * and an empty shelf to put them on. A universe with a deep library writes
+   * fewer books *because* it has one, and no amount of §6a effect will out-run
+   * that. `grimoiresScribed` is not a proxy for depth; it is very nearly a proxy
+   * for the *complement* of depth.
    *
-   * A count of completions was always a weak proxy for §6a's *"a university's
-   * output scales with the depth of its library"*: it weights a tier-1 project
-   * and a tier-5 project the same and ignores everything learned by being
-   * taught. Books are the loop's own output — the thing that deepens the
-   * library that raises the rate — and the margin is 40% rather than 0.27%.
+   * ## And the third measure needs a null arm, because this fixture is not symmetric
    *
-   * `researchCompleted` is kept as a **control** on both arms. It is the
-   * assertion that this universe is doing research at all, which is what makes
-   * the comparison above a comparison.
+   * `instancesMade` looks clean and is not, on its own. Run the same pair with
+   * **nothing shelved anywhere** and the scholarly arm still comes out ahead:
+   * 10940 against 10846. Nothing about library depth is in that gap. It is the
+   * two arms being different universes — different university handles, hence
+   * different tie-breaks in `universityPreference`, different upkeep order —
+   * and it is 0.87% against the treated arms' 2.5%. An assertion on the treated
+   * gap alone would have been a third of a claim about depth and two thirds a
+   * claim about which handle the entity store issued first.
+   *
+   * So the assertion is a **difference in differences**: the shelved pair must
+   * separate by more than the unshelved pair does. Measured, +269 against +94.
+   * Four runs rather than two, which is what the timeout below is for.
+   *
+   * `researchCompleted` stays as a control on both arms. It is the assertion
+   * that these universes are doing anything at all, which is what makes the
+   * comparison a comparison.
+   *
+   * **What is deliberately not claimed.** Not that a deep shelf raises a single
+   * academy's own output: the same academy at shelf 40 makes *fewer* instances
+   * than at shelf 0 (10908 against 10940) on this fixture, because brake 4
+   * charges upkeep on every instance and forty of them is a bill five years is
+   * not long enough to earn back. That is a real interaction between §6a and
+   * brake 4, it is untuned on both sides, and it is 0.5.0's to price — not
+   * something to hide by picking a fourth measure.
    */
-  it('produces strictly more of the library output over five years than a bare shelf', () => {
+  it('separates a deep shelf from a bare one by more than the fixture separates itself', () => {
     const scholarly = universe({ affiliation: 'scholarly' });
     scholarly.advance(TICKS);
     const unaided = universe({ affiliation: 'bare' });
     unaided.advance(TICKS);
 
-    // The control first: both universes must still be doing research, or
-    // "strictly more" would be a claim about a universe that does nothing.
+    // Both universes must still be doing research, or "more" would be a claim
+    // about a universe that does nothing.
     expect(unaided.totals().researchCompleted).toBeGreaterThan(0);
     expect(scholarly.totals().researchCompleted).toBeGreaterThan(0);
-    expect(scholarly.totals().grimoiresScribed).toBeGreaterThan(
-      unaided.totals().grimoiresScribed,
-    );
+
+    // The null arm: the identical pair with **nothing on the shelf**. Whatever
+    // separates the two universes that is not library depth separates them here
+    // too, and the claim is that depth adds something on top of it.
+    const nullScholarly = universe({ affiliation: 'scholarly', shelf: 0 });
+    nullScholarly.advance(TICKS);
+    const nullBare = universe({ affiliation: 'bare', shelf: 0 });
+    nullBare.advance(TICKS);
+
+    const treated = scholarly.instancesMade() - unaided.instancesMade();
+    const untreated = nullScholarly.instancesMade() - nullBare.instancesMade();
+    expect(treated).toBeGreaterThan(untreated);
   }, TIMEOUT_MS);
 
   it('adds nothing to any rate while the shelves are bare', () => {

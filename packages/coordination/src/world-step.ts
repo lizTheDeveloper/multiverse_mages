@@ -557,6 +557,30 @@ export interface WorldStepReport {
    * count that doing nothing reaches.
    */
   readonly universitiesUnstaffed: number;
+  /**
+   * Mages who joined or changed university this tick.
+   *
+   * `completeAffiliation` had no caller outside its own tests until
+   * `settleAffiliations`, and the shape of that hole was a **falling**
+   * affiliated count: six at tick zero and one two hundred world years later, on
+   * a passive reference run — while a run where the god founds buildings read
+   * zero against 189 standing. A run where this is zero for every tick after the
+   * first university completes is a run where the wire has come out again, and
+   * no other series here would say so: scribing would simply stop, which is also
+   * what a universe short of vellum does.
+   */
+  readonly magesAffiliated: number;
+  /**
+   * Mages whose first-choice university was full this tick.
+   *
+   * `contracts.md` §1.4's `capacity` had no reader that treated it as a bound
+   * until this change, and `capacity.ts` says why the refusal has to be visible
+   * rather than merely obeyed: *"a bound that is never observed to bind is a
+   * bound nobody can tune."* Expected to be zero on the shipped position — the
+   * founding academy seats 64 against tens of mages — which is exactly why it is
+   * emitted rather than assumed.
+   */
+  readonly affiliationsRefused: number;
 }
 
 /** A world schema with the coordinating loop installed, and its last report. */
@@ -848,7 +872,7 @@ export function worldSystem(
       const gateway = gatewayFor();
       // One scan of the shelves for the whole phase, not one per mage. See
       // `universityPreference`.
-      const preferredUniversityFor = universityPreference(state);
+      const preferredUniversityFor = universityPreference(state).preferredFor;
       const autonomy = stepMageAutonomy({
         state,
         worldTick,
@@ -1035,6 +1059,8 @@ export function worldSystem(
         staffAssigned: staffing.assigned.length,
         staffPruned: staffing.pruned,
         universitiesUnstaffed: staffing.unstaffed,
+        magesAffiliated: work.magesAffiliated,
+        affiliationsRefused: work.affiliationsRefused,
         materialsApplied: totalAmount(work.applied),
         appliedByKind: work.applied,
         magesApplying: work.applyingMages,
@@ -1433,6 +1459,10 @@ interface WorkPhaseOutcome {
   readonly applied: MaterialAmounts;
   /** Mages who spent the month applying magic. What the rations are owed for. */
   readonly applyingMages: number;
+  /** Mages whose `universityId` changed this tick. */
+  readonly magesAffiliated: number;
+  /** Mages whose first-choice university had no free seat. */
+  readonly affiliationsRefused: number;
 }
 
 /**
@@ -1497,7 +1527,8 @@ function spendTheMonth(
     for (const kind of MATERIAL_KINDS) applied[kind] += cast[kind];
   });
 
-  const completedBy = new Set<Handle>(settleAffiliations(state, affiliating));
+  const affiliation = settleAffiliations(state, affiliating);
+  const completedBy = new Set<Handle>(affiliation.completed);
   let researchCompleted = 0;
   let lessonsTaught = 0;
   let grimoiresScribed = 0;
@@ -1515,6 +1546,8 @@ function spendTheMonth(
     grimoiresScribed,
     applied,
     applyingMages,
+    magesAffiliated: affiliation.moved,
+    affiliationsRefused: affiliation.refused,
   };
 }
 
@@ -1559,29 +1592,70 @@ function spendTheMonth(
  * live and reaching around it is how a second writer of `roleId` eventually
  * appears. What persists is the returned handle, written here.
  *
- * @returns The mages whose goal completed. They re-evaluate in the same tick
- * rather than holding a commitment to a move they have already made — and the
- * point of the move is that scribing and warding are now open to them.
+ * ## Seats are spent as the list is walked, not quoted from before it
+ *
+ * `universityPreference` is built once, and that is right for the *shelves* —
+ * every mover sees the same libraries. It is wrong for the *seats*: the ranking
+ * would tell every mover in one tick about the same last free desk, and a bound
+ * that a hundred mages can pass through simultaneously is not a bound. So the
+ * standing is told about each move through `takeSeat` and the next mage is
+ * asked afresh.
+ *
+ * Ascending mage handle, which is the order `spendTheMonth`'s slot-ordered walk
+ * collected them in. `assignStaff` states the argument for the other end of the
+ * same question: which claimant gets the last unit of a shared resource must
+ * depend on the state and not on the destroy history that reached it. No draw is
+ * taken — the ordering is total — so no RNG stream moves.
+ *
+ * A mage whose first choice is full is **refused** rather than truncated into
+ * it, counted, and then offered the deepest library that does have room. She
+ * does not queue: `preferredFor` filters full universities too, so at her next
+ * outlook `betterAffiliationAvailable` is false for a universe with no seats
+ * anywhere and she goes back to work instead of re-adopting a goal that cannot
+ * resolve.
+ *
+ * @returns The mages whose goal completed, and how many were turned away from
+ * their first choice. Completing means they re-evaluate in the same tick rather
+ * than holding a commitment to a move they have already made — and the point of
+ * the move is that scribing and warding are now open to them. A mage who was
+ * refused everywhere completes too: she asked, the universe answered, and
+ * holding the goal for six more months would not change the answer.
  */
-function settleAffiliations(state: SimState, affiliating: readonly Handle[]): ReadonlySet<Handle> {
+function settleAffiliations(
+  state: SimState,
+  affiliating: readonly Handle[],
+): { readonly completed: ReadonlySet<Handle>; readonly moved: number; readonly refused: number } {
   const completed = new Set<Handle>();
-  if (affiliating.length === 0) return completed;
+  if (affiliating.length === 0) return { completed, moved: 0, refused: 0 };
 
-  const preferredFor = universityPreference(state);
+  const standing = universityPreference(state);
   const mages = componentOf(state, MAGE);
+  let moved = 0;
+  let refused = 0;
   for (const handle of affiliating) {
     const entity = handle as EntityHandle;
     if (!mages.has(entity)) continue;
     const record = readRecord(state, MAGE, entity);
-    const preferred = preferredFor(record.universityId);
+    const current = record.universityId;
+    const preferred = standing.preferredFor(current);
+    // Wanted somewhere she could not get into. Not the complement of `moved`: a
+    // mage refused at the deepest library and admitted at the second-deepest is
+    // counted in both, and that is the pair of facts capacity tuning needs.
+    const unbounded = standing.unboundedFor(current);
+    if (unbounded !== current && unbounded !== preferred) refused += 1;
+
     const destination = completeAffiliation(record, {
-      betterAffiliationAvailable: preferred !== record.universityId,
+      betterAffiliationAvailable: preferred !== current,
       preferredUniversity: preferred,
     });
+    if (destination !== current) {
+      standing.takeSeat(destination, current);
+      moved += 1;
+    }
     mages.set(entity, 'universityId', destination);
     completed.add(handle);
   }
-  return completed;
+  return { completed, moved, refused };
 }
 
 /**
