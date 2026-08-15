@@ -72,6 +72,7 @@
  * caps is not redundancy here; they catch different failures.
  */
 
+import type { CandidateLists } from '@mm/agent-api';
 import { TERMINAL_REASON } from '@mm/agent-api';
 
 /** How an episode ended. `failed` is the harness's, not the session's. */
@@ -141,6 +142,19 @@ export interface AgentSession<TConfig = unknown> {
   observe(): Float64Array;
   legalActions(): Uint8Array;
   /**
+   * §4.4's slot-indexed candidate lists, for the parameterized actions.
+   *
+   * Forwarded because the mask is **per-kind** — `legalActions()` says whether
+   * an action has any target at all, never how many — and a strategy that picks
+   * a slot index without this is guessing against `candidateSlotCount`'s
+   * declared constant. Measured 2026-08-15: `portal-rush` was refused on 48% of
+   * its submissions and `worship-maximizer` on 20%, both entirely on their own
+   * signature verb, because the declared count outruns the live list. The
+   * information was on the session all along; this adapter simply did not carry
+   * it across. See `docs/design/campaign-plan.md` W240.
+   */
+  candidates(): CandidateLists;
+  /**
    * Offers one action, and raises only on a *terminated* session.
    *
    * An illegal action is not an error: §4.2 makes it a no-op and a counter
@@ -203,6 +217,7 @@ interface ApiSessionLike<TConfig> {
   reset(runSeed: number, config: TConfig): unknown;
   observe(): Float64Array;
   legalActions(): Uint8Array;
+  candidates(): CandidateLists;
   submit(action: { readonly kind: number; readonly params?: readonly number[] }): unknown;
   /**
    * §4.3's outcome record, of which the adapter reads exactly one field.
@@ -244,6 +259,7 @@ export function adaptAgentSession<TConfig>(session: ApiSessionLike<TConfig>): Ag
     },
     observe: () => session.observe(),
     legalActions: () => session.legalActions(),
+    candidates: () => session.candidates(),
     submit(actionId: number, parameter?: number): void {
       session.submit(parameter === undefined ? { kind: actionId } : { kind: actionId, params: [parameter] });
     },
@@ -274,6 +290,7 @@ export type SlotPolicy = (
   observation: Float64Array,
   mask: Uint8Array,
   slot: number,
+  candidates: CandidateLists,
 ) => number | ActionSubmission;
 
 /**
@@ -379,7 +396,9 @@ export function runEpisode<TConfig>(input: EpisodeInput<TConfig>): EpisodeOutcom
     }
     for (let slot = 0; slot < policies.length; slot += 1) {
       const policy = policies[slot] as SlotPolicy;
-      const chosen = normalizeSubmission(policy(session.observe(), session.legalActions(), slot));
+      const chosen = normalizeSubmission(
+        policy(session.observe(), session.legalActions(), slot, session.candidates()),
+      );
       if (!Number.isInteger(chosen.action)) {
         throw new Error(
           `Policy for slot ${String(slot)} returned ${String(chosen.action)}, which is not an action id.`,

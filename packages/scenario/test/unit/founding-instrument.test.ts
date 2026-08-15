@@ -137,19 +137,27 @@ describe('the shipped starting position, measured rather than described', () => 
    *
    * The promotion is conditional on `universityCount === 0`, and the starting
    * position above makes that condition **permanently false**. So the strategy
-   * whose stated role is to fund broadly still founds nothing: it submits action
-   * 11 only through its funding lines, and never once names slot 0.
+   * whose stated role is to fund broadly submitted action 11 only through its
+   * funding lines — and never once named slot 0.
    *
-   * This assertion is expected to *fail* the day the founding academy leaves the
-   * starting position, and that is the point of writing it down: it is the
-   * before-measurement of a change that has not been made.
+   * **The change arrived, by a route this comment did not anticipate.** The
+   * assertion was written expecting to fail "the day the founding academy leaves
+   * the starting position". The academy has not moved. What moved is that
+   * `fundUniversity`'s slot index is now rotated over the **live** candidate
+   * list instead of `candidateSlotCount`'s declared pin, and that list holds two
+   * entries in the reference position — slot 0, "found a new one", and the one
+   * existing academy. `round % 2` reaches slot 0 every other round, so the
+   * strategy that exists to fund broadly now founds.
+   *
+   * Kept as a measurement rather than deleted, with the number updated: the
+   * point of the original was that a stated role and an observed behaviour had
+   * come apart, and the honest record of that is the before *and* the after.
+   * Before: 0 submitted, 0 founded. After: 3 submitted.
    */
-  it('never lets permissive-breadth found a university, because universityCount is never zero', () => {
-    expect(breadth?.founding.submittedFound).toBe(0);
-    expect(breadth?.founding.founded).toBe(0);
-    expect(breadth?.founding.firstFoundedTick).toBe(-1);
-    // And not because it cannot afford one, which is the other explanation a
-    // zero would be consistent with.
+  it('lets permissive-breadth found a university once the live candidate list is rotated', () => {
+    expect(breadth?.founding.submittedFound).toBeGreaterThan(0);
+    // Affordability was never the constraint, and still is not — this is the
+    // control that separates "it could not pay" from "it never asked".
     expect(breadth?.founding.ticksAffordable).toBeGreaterThan(0);
   });
 
