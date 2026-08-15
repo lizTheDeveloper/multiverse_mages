@@ -74,7 +74,17 @@ describe('shipped content', () => {
       // multiverse out of state and something has to say who is on the other
       // end of the portal.
       raidConstants: 46,
-      autonomyWeights: 38,
+      // Thirty-eight since `apply-magic` added `apply-output-per-month` and
+      // `apply-ration-per-month`. Both are scalars rather than role-appeal rows
+      // — they price what applied work makes and eats, not what a role wants —
+      // and both are in `REQUIRED_AUTONOMY_WEIGHTS`, so the loader checks the
+      // set in both directions exactly as it does for the target weights.
+      //
+      // Forty since W116 added the two `goal-affiliate-*` opportunities beside
+      // them. Both pairs are scalars in the same file for the same reason, and
+      // they arrived on separate branches — see `interning.test.ts` for the
+      // revision digest that union produces.
+      autonomyWeights: 40,
     });
   });
 

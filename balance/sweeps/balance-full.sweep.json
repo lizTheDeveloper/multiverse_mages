@@ -3,21 +3,55 @@
   "kind": "full",
   "rootSeed": 20260811,
   "factors": [
-    { "id": "cohortSize", "levels": [2, 4, 8, 12] },
-    { "id": "foundingMages", "levels": [1, 4] },
-    { "id": "foundingNodes", "levels": [1, 2, 4, 8, 16] }
+    {
+      "id": "cohortSize",
+      "levels": [
+        2,
+        4,
+        8,
+        12
+      ]
+    },
+    {
+      "id": "foundingMages",
+      "levels": [
+        1,
+        4
+      ]
+    },
+    {
+      "id": "foundingNodes",
+      "levels": [
+        1,
+        2,
+        4,
+        8,
+        16
+      ]
+    }
   ],
   "replicates": 250,
   "agentPool": {
-    "strategies": ["passive-control"],
+    "strategies": [
+      "passive-control"
+    ],
     "assignment": "fixed",
     "slots": 1
   },
   "termination": {
-    "worldTickCap": 240,
+    "worldTickCap": 1200,
     "perRunTimeoutMs": 600000
   },
   "metrics": [
+    "combatActionEconomy",
+    "combatThresholdEfficiency",
+    "illegalActionRate",
+    "inboundRaidTempoLoss",
+    "knowledgeHalfLife",
+    "libraryDependence",
+    "lossShockRecovery",
+    "raidInitiationCost",
+    "raidLengthDistribution",
     "referenceGrimoires",
     "referenceKnowledgeInstances",
     "referenceLibraryDepth",
@@ -27,8 +61,15 @@
     "referenceNodesKnown",
     "referencePeakPopulation",
     "referencePopulation",
-    "referencePopulationChange"
+    "referencePopulationChange",
+    "roleAssignmentDemographicCost",
+    "speciesCellOccupancy",
+    "speciesGridVersatility",
+    "timeToTierBySpecies"
   ],
-  "ablation": { "mode": "none", "primitives": [] },
+  "ablation": {
+    "mode": "none",
+    "primitives": []
+  },
   "failureThreshold": 0
 }

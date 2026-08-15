@@ -25,6 +25,7 @@ import { MAGE_ROLE } from '@mm/state';
 
 import {
   GOAL,
+  GOAL_COUNT,
   GoalHistogram,
   MONOCULTURE_SHARE,
   MONOCULTURE_SUSTAINED_TICKS,
@@ -154,6 +155,10 @@ describe('a monoculture is visible as a number', () => {
 
 describe('the histogram is small enough not to need a flag', () => {
   it('is bounded by species × roles × goals', () => {
-    expect(histogramCellCount(6, 4)).toBe(6 * 4 * 9);
+    expect(histogramCellCount(6, 4)).toBe(6 * 4 * GOAL_COUNT);
+    // Ten goals since `apply-magic`. Written against the constant rather than a
+    // literal, because the claim is that the histogram is bounded by the goal
+    // set and not that the goal set is a particular size.
+    expect(GOAL_COUNT).toBe(10);
   });
 });

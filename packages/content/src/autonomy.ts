@@ -94,6 +94,14 @@ export const REQUIRED_AUTONOMY_WEIGHTS = [
   // `changeAffiliation` are two functions. See `terms.ts`.
   'goal-affiliate-first-opportunity',
   'goal-affiliate-transfer-opportunity',
+  // The two applied-work magnitudes. Not target-selection weights — they price
+  // what `GOAL.applyMagic` makes and what it eats — but they belong in this
+  // file for the reason the file exists: the rules read each by name, so the id
+  // set is a contract checked in both directions while the value stays an
+  // untuned placeholder the balance harness owns. A second table for two
+  // scalars would be a second place to forget.
+  'apply-output-per-month',
+  'apply-ration-per-month',
 ] as const;
 
 /** The scalar ids that must be at least 1, because they are divisors. */

@@ -28,7 +28,8 @@
 import { OBSERVATION_LAYOUT_DIGEST, OBSERVATION_SCHEMA_VERSION, createSession } from '@mm/agent-api';
 import type { ScenarioConfig } from '@mm/agent-api';
 import { RNG_STREAM } from '@mm/sim-core';
-import type { GodTickReport } from '@mm/coordination';
+import { ablationMaskFor } from '@mm/coordination';
+import type { AblationMask, GodTickReport } from '@mm/coordination';
 import type {
   AgentSession,
   ArmContribution,
@@ -37,21 +38,29 @@ import type {
   IllegalActionAccounting,
   JsonValue,
   MechanicAvailability,
+  MetricEntries,
+  MetricEntry,
   Provenance,
   RaidObservation,
   RunExecutor,
   RunOutcome,
   RunTask,
+  RunTelemetry,
   TerminalStatus,
 } from '@mm/mc-harness';
 import {
+  BALANCE_METRIC_REGISTRY,
   BOT_POOL_REGISTRY,
   SNOWBALL_CHECKPOINT_TICKS,
   adaptAgentSession,
   canonicalHash,
+  collectRunMetrics,
+  metricDefinitionVersions,
   policiesForRun,
   runEpisode,
 } from '@mm/mc-harness';
+
+import type { ActionEconomyReport } from '@mm/rules-raid';
 
 import type { CensusSample } from './census.js';
 import { censusOf } from './census.js';
@@ -309,6 +318,31 @@ function recordingSession<TConfig>(
   };
 }
 
+/**
+ * Every metric this executor can put in a record, at the version it collects.
+ *
+ * Both registries, because this executor now collects from both: the vital
+ * signs of `measures.ts` and `contracts.md` §7's registry. A record whose
+ * provenance omitted a metric it carries would leave a reader with a number and
+ * no way to know which definition produced it — and the gate compares a
+ * baseline's per-metric `definitionVersion` against the sweep's, which it can
+ * only do for versions that were written down.
+ *
+ * Both scopes of §7 are listed, not only the per-run half. The five arm-scoped
+ * metrics are computed by `runner.ts` out of this executor's `armContribution`
+ * and land in the sweep **summary**; they are as much this build's output as the
+ * per-run ones, and a summary whose arm metrics had no declared versions is the
+ * same gap one level up.
+ *
+ * `metricDefinitionVersions` is not one of the provenance keys the gate compares
+ * as a block, so widening this map does not invalidate a committed baseline —
+ * the per-metric comparison only ever runs against metrics the baseline records.
+ */
+const COLLECTED_METRIC_VERSIONS: Readonly<Record<string, number>> = Object.freeze({
+  ...REFERENCE_METRIC_VERSIONS,
+  ...metricDefinitionVersions(),
+});
+
 /** What the harness believes about a build that runs the reference universe. */
 export function referenceProvenance(content: ReferenceContent = referenceContent()): Provenance {
   return {
@@ -320,7 +354,7 @@ export function referenceProvenance(content: ReferenceContent = referenceContent
     rngRegistryHash: canonicalHash(RNG_STREAM as unknown as JsonValue, 'rng-stream-registry'),
     observationSchemaVersion: OBSERVATION_SCHEMA_VERSION,
     observationLayoutDigest: OBSERVATION_LAYOUT_DIGEST,
-    metricDefinitionVersions: REFERENCE_METRIC_VERSIONS,
+    metricDefinitionVersions: COLLECTED_METRIC_VERSIONS,
   };
 }
 
@@ -445,6 +479,82 @@ export interface ReferenceRunResult {
   readonly rawRaids: readonly RaidRecord[];
   /** What this run declares it implements. Feeds every §7 availability check. */
   readonly mechanics: MechanicAvailability;
+  /**
+   * Everything §7's seven per-run collectors read, as they read it.
+   *
+   * Exported beside the outcome so a test can assert what a metric was computed
+   * *from* rather than only what it came to. The outcome carries the declared
+   * metrics and nothing more, because that is what a record is made of.
+   */
+  readonly telemetry: RunTelemetry;
+}
+
+/**
+ * Collects the metrics a task declared, from whichever registry defines each.
+ *
+ * The reference scenario now answers to two registries, and the split is by id
+ * rather than by guess: `measures.ts` owns everything prefixed `reference`, and
+ * `contracts.md` §7 owns the twelve in `BALANCE_METRIC_REGISTRY`. The prefix was
+ * chosen for exactly this moment — *"a metric registry whose ids collide with
+ * §7's would let a sweep declare `nodesKnown` and be validated against a
+ * definition nobody wrote"*.
+ *
+ * `collectRunMetrics` is called once and its entries selected from, rather than
+ * per requested id. That is not an optimization: the function's first documented
+ * property is that *"every registered metric gets an entry"*, and calling it per
+ * id would quietly reduce it to a per-metric collector and lose the guarantee
+ * that a dead collector fails the run instead of writing a missing key.
+ *
+ * @throws Error naming a metric neither registry defines. The sweep validator
+ * rejects that before dispatch, so reaching here means a hand-built task.
+ */
+export function collectDeclaredMetrics(
+  requested: readonly string[],
+  measurement: RunMeasurement,
+  telemetry: RunTelemetry,
+): MetricEntries {
+  const referenceIds = requested.filter((metricId) => !BALANCE_METRIC_REGISTRY.has(metricId));
+  const entries: Record<string, MetricEntry> = {
+    ...collectReferenceMetrics(referenceIds, measurement),
+  };
+  if (referenceIds.length === requested.length) return entries;
+
+  const balance = collectRunMetrics(telemetry);
+  for (const metricId of requested) {
+    if (!BALANCE_METRIC_REGISTRY.has(metricId)) continue;
+    entries[metricId] = balance[metricId] as MetricEntry;
+  }
+  return entries;
+}
+
+/**
+ * The ablation mask a task asks for, or `undefined` on the control arm.
+ *
+ * **This function is the fix for a seam that was open from the day task group 7
+ * landed.** `RunTask.ablatedPrimitives` has been set by `tasks.ts` and carried
+ * across the worker boundary since then, and nothing on this side of the
+ * boundary ever read it. A sweep declaring `ablation.mode: "one-sided"`
+ * therefore ran its arm against an unmasked universe: instrumenting
+ * `stackMagnitudes` over a 300-tick reference run showed **0 of 70,462** stacked
+ * magnitudes seeing a mask, and the declared arm's `RunOutcome` was byte-identical
+ * to the control's. That is precisely the condition `winRateByPrimitive`'s own
+ * `disprovedBy` names — *"a control arm and an ablation arm producing
+ * byte-identical run records"* — and it is the same failure shape as `raids`
+ * being *"declared on the options type and silently dropped"* in
+ * {@link makeReferenceExecutor}, three paragraphs down this file.
+ *
+ * Empty returns `undefined` rather than `NO_ABLATION`, so a control run leaves
+ * `WorldStepDeps.ablation` unset and takes the identical branch it always took.
+ * See `ReferenceScenarioOptions.ablation` for why that distinction is worth a
+ * line of code on a path with committed baselines on it.
+ *
+ * `ablationMaskFor` rather than `neutralizing(ids[0])`, so a task naming two
+ * primitives is refused by name here instead of quietly ablating the first and
+ * being recorded under both.
+ */
+function ablationFor(task: RunTask): AblationMask | undefined {
+  if (task.ablatedPrimitives.length === 0) return undefined;
+  return ablationMaskFor(task.ablatedPrimitives);
 }
 
 /**
@@ -467,7 +577,11 @@ export function executeReferenceRun(
   const interval = options.censusIntervalTicks ?? CENSUS_INTERVAL_TICKS;
 
   const raiding = options.raids ?? true;
-  const { scenario, lastGodReport, raids } = referenceScenario(content, { raids: raiding });
+  const ablation = ablationFor(task);
+  const { scenario, lastGodReport, raids, balanceTelemetry } = referenceScenario(content, {
+    raids: raiding,
+    ...(ablation === undefined ? {} : { ablation }),
+  });
   const strategyId = task.strategies[0];
   if (strategyId === undefined) {
     throw new Error(
@@ -504,13 +618,32 @@ export function executeReferenceRun(
   };
 
   const mechanics = raiding ? REFERENCE_MECHANICS : RAIDLESS_MECHANICS;
+  const raidObservations = raiding
+    ? raids().map((record) => raidObservationOf(record, lastGodReport()))
+    : undefined;
+
+  // After the episode, deliberately: `balanceTelemetry()` takes the terminal
+  // census sample, which is the one a system inside `step` cannot reach.
+  const balance = balanceTelemetry();
+  const runTelemetry: RunTelemetry = {
+    coordinates: task.coordinates,
+    status: episode.status,
+    ticksRun: episode.ticksRun,
+    mechanics,
+    census: balance.census,
+    speciesIds: balance.speciesIds,
+    tierFirstReached: balance.tierFirstReached,
+    checkpoints: recorder.checkpoints,
+    raids: raidObservations,
+    accounting: episode.accounting,
+  };
+
   return {
     samples: recorder.samples,
     mechanics,
-    raids: raiding
-      ? raids().map((record) => raidObservationOf(record, lastGodReport()))
-      : undefined,
+    raids: raidObservations,
     rawRaids: raiding ? [...raids()] : [],
+    telemetry: runTelemetry,
     outcome: {
       status: episode.status,
       // §1.1's ending, carried through rather than re-derived from the status.
@@ -519,7 +652,7 @@ export function executeReferenceRun(
       // could not say which summit a universe took.
       terminalReason: episode.terminalReason,
       ticksRun: episode.ticksRun,
-      metrics: collectReferenceMetrics(task.metrics, measurement),
+      metrics: collectDeclaredMetrics(task.metrics, measurement, runTelemetry),
       accounting: episode.accounting,
       provenance: referenceProvenance(content),
       armContribution: armContributionOf(recorder.checkpoints, content, mechanics),
@@ -565,25 +698,72 @@ function raidObservationOf(record: RaidRecord, god: GodTickReport | undefined): 
     attackerTempoCostWorldTicks:
       regenerated <= 0 ? 0 : Math.floor(record.attackerFavorCost / regenerated),
 
-    // The action-economy fields, declared absent rather than reported as zero.
+    // The action-economy fields, now measured rather than declared absent.
     //
-    // `RaidRecord` carries no combat instrumentation: this executor observes a
-    // raid's shape — how long it ran, what the portal cost — and not what
-    // happened inside it. Emitting empty sources with a zero denominator would
-    // make "no instrumentation" and "no combat" the same observation, which is
-    // the confusion `unimplementedCombatChannels` exists to end, and it is the
-    // fifth instance of a metric reading as a healthy constant while being
-    // structurally incapable of moving.
+    // They used to read `combatSources: []`, a zero denominator, and
+    // `['removal', 'save', 'decoy', 'displacement']` — three of those four
+    // channels named as unimplemented *in this executor* while `rules-raid`
+    // implemented all three. That was honest at the time and it was expensive:
+    // it made `combatActionEconomy` and `combatThresholdEfficiency` two of the
+    // six §7 metrics with no committed measurement, and it made every sweep arm
+    // ablating a combat primitive report a null for a live wire.
     //
-    // So every channel §3 permits is named here as unimplemented *in this
-    // executor*. The engine may implement them — `rules-raid` does — but
-    // nothing carries them across this boundary yet, and a reader of the metric
-    // needs to know which of those two statements the zero is.
-    combatSources: [],
-    totalCombatantTicks: 0,
-    worldScaleRemovals: 0,
-    summonsRemoved: 0,
-    unimplementedCombatChannels: ['removal', 'save', 'decoy', 'displacement'],
+    // Only `displacement` is genuinely absent, and the list is no longer
+    // written here — it is `rules-raid`'s own `UNIMPLEMENTED_CHANNELS`, carried
+    // through the record, so the declaration and the engine cannot drift apart.
+    ...combatObservationOf(record.actionEconomy),
+  };
+}
+
+/**
+ * `ActionEconomyReport` in the shape §7's two combat collectors read.
+ *
+ * A regrouping and nothing else. Every number here is a sum of numbers
+ * `rules-raid` computed: the per-side pairs are added, because the metric pools
+ * both sides and a raid-relative pair has no meaning to a collector that does
+ * not know which side this universe was on. **No division happens here** —
+ * `combatActionEconomy`'s scalar is a rate and its denominator is a pinned
+ * constant of the metric, so normalising on this side of the boundary would put
+ * the arithmetic somewhere other than the definition that names it.
+ *
+ * The three tables are keyed independently by `rules-raid` — a source can have
+ * attempts and no denial, or denial credited by a removal it did not attempt
+ * this raid — so the row set is their union, ascending, and a source missing
+ * from one table contributes zero rather than dropping the row.
+ */
+function combatObservationOf(
+  report: ActionEconomyReport,
+): Pick<
+  RaidObservation,
+  | 'combatSources'
+  | 'totalCombatantTicks'
+  | 'worldScaleRemovals'
+  | 'summonsRemoved'
+  | 'unimplementedCombatChannels'
+> {
+  const denied = new Map(report.deniedTicks);
+  const hp = new Map(report.hpRemoved);
+  const attempts = new Map(report.attempts);
+  const sources = [...new Set([...denied.keys(), ...hp.keys(), ...attempts.keys()])].sort();
+
+  return {
+    combatSources: sources.map((source) => {
+      const deniedPair = denied.get(source) ?? [0, 0];
+      const hpPair = hp.get(source) ?? [0, 0];
+      const counts = attempts.get(source) ?? { removing: 0, hurting: 0, spent: 0 };
+      return {
+        source,
+        deniedCombatantTicks: deniedPair[0] + deniedPair[1],
+        hitPointsRemoved: hpPair[0] + hpPair[1],
+        removingAttempts: counts.removing,
+        hurtingAttempts: counts.hurting,
+        spentAttempts: counts.spent,
+      };
+    }),
+    totalCombatantTicks: report.totalCombatantTicks,
+    worldScaleRemovals: report.removals[0] + report.removals[1],
+    summonsRemoved: report.summonsRemoved[0] + report.summonsRemoved[1],
+    unimplementedCombatChannels: report.unimplementedChannels,
   };
 }
 
@@ -644,6 +824,13 @@ export function makeReferenceExecutor(options: ReferenceExecutorOptions = {}): R
     ...(options.censusIntervalTicks === undefined
       ? {}
       : { censusIntervalTicks: options.censusIntervalTicks }),
+    // `raids` was declared on the options type and silently dropped here, so
+    // every caller that passed it got the default and every raid measurement
+    // taken through this factory was taken on one arm. A metric-reachability
+    // probe found it: with the switch actually forwarded, raids move four of
+    // thirteen metrics — they were never inert, only unreachable through the
+    // factory the whole pipeline uses.
+    ...(options.raids === undefined ? {} : { raids: options.raids }),
   };
   return (task: RunTask): RunOutcome => executeReferenceRun(task, resolved).outcome;
 }

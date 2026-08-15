@@ -134,7 +134,9 @@
     font-family: var(--mono); font-size: 11.5px; color: var(--soft);
     letter-spacing: 0.02em;
   }
-  .ident .meta .sep { color: var(--rule-hi); }
+  /* Measured 1.99:1 on ink. A separator is still a text node, and the sheet
+     has a token for text that should recede. */
+  .ident .meta .sep { color: var(--faint); }
 
   .verbs { display: flex; flex-direction: column; gap: 8px; align-items: flex-start; }
   .verbrow { display: flex; gap: 6px; flex-wrap: wrap; }
@@ -517,6 +519,8 @@
     here is operable.</b> Three of the sixteen actions in §4.2 apply to a mage; the rest is instrumentation
     for reading someone you cannot command.</p>
   </div>
+
+  <div id="srchost" style="margin:1.2rem 0 1.4rem"></div>
 
   <div class="provbar">
     <label><input type="checkbox" id="pt"> Show data provenance</label>
@@ -906,4 +910,13 @@
 <script type="module">
   import { floatThemeControl } from '../shared/theme.js';
   floatThemeControl();
+</script>
+
+<script type="module">
+  /* Where this page's data comes from, and — for the parts the read path
+     does not carry — which capability is missing and why. Sourced from
+     capabilities() rather than prose, so it cannot go stale quietly. */
+  import { mountSourceNote, openSession } from '../shared/session.js';
+  const s = await openSession({ recording: '../session.json' }).catch(() => null);
+  mountSourceNote(document.getElementById('srchost'), s, ['individualMages', 'explainChannel']);
 </script>

@@ -72,7 +72,20 @@
   .dhead .letter{font:700 13px var(--mono);color:var(--summit)}
   .dhead .name{font:400 1.06rem var(--serif)}
   .dhead .tag{margin-left:auto;font:10px var(--mono);letter-spacing:.1em;text-transform:uppercase;color:var(--faint)}
-  .dbody{padding:.85rem .9rem;display:flex;flex-direction:column;gap:.7rem;min-height:22rem}
+  /* Was 22rem, which is a floor no column's content reaches in three of the
+     four world states: A and C sat at 352px against 95-112px and 61px of
+     content, i.e. 240px and 291px of empty panel with the footnote pinned
+     under it, which reads as a pane that failed to render. Measured, per state,
+     as A/B/C box heights:
+         0     112/341/61   95/404/413   112/419/61   95/356/413
+        13rem  208/341/208  208/404/413  208/419/208  208/356/413
+        22rem  352/352/352  352/404/413  352/419/352  352/356/413
+     13rem is the value that pins A in all four — it is min-height-bound in
+     every state — and halves the void. It does not pin C: C moves 208<->413
+     where 22rem moved it 352<->413. That is the trade, and it is deliberate.
+     The void is on screen the moment the page loads; the jump only happens on
+     a state button the reader just pressed, and nothing above the panels moves. */
+  .dbody{padding:.85rem .9rem;display:flex;flex-direction:column;gap:.7rem;min-height:13rem}
   .dfoot{padding:.6rem .9rem .75rem;border-top:1px solid var(--edge);font:11px var(--mono);line-height:1.6;color:var(--faint)}
 
   /* the declaration control, in its three states */
@@ -80,7 +93,13 @@
     border-radius:3px;width:100%;cursor:pointer;transition:box-shadow 180ms ease,background 180ms ease,
     border-color 180ms ease,color 180ms ease}
   .declare[data-s="masked"]{border:1px dashed var(--rule-hi);background:transparent;color:var(--ctl-denied-fg);cursor:not-allowed}
-  .declare[data-s="open"]{border:1px solid var(--summit);color:var(--ctl-charged-fg);
+  /* --ground, not --ctl-charged-fg. The charged foreground is the god's cyan on
+     ink, and this button's fill is the summit's gold: the label measured
+     1.47:1 against the darker gradient stop, i.e. unreadable, and only in the
+     dark theme and only in the two states where the button is actually live —
+     which is why a sweep of each page's default state never saw it. --ground
+     inverts with the fill and holds in both: 9.5:1 on ink, 6.7:1 on vellum. */
+  .declare[data-s="open"]{border:1px solid var(--summit);color:var(--ground);
     background:linear-gradient(180deg,var(--summit-lit),var(--summit));
     box-shadow:0 0 0 1px color-mix(in srgb,var(--summit) 40%,transparent),
                0 0 34px -4px color-mix(in srgb,var(--summit) 85%,transparent)}
@@ -141,6 +160,8 @@
   can lose by waiting; <b>Enduring Canon</b> is a record you can break by continuing. Step the timeline —
   the interesting part is the moment it lapses.</p>
 
+  <div id="srchost" style="margin:1.2rem 0 1.4rem"></div>
+
   <div class="timeline">
     <span class="k">world state</span>
     <button class="stage" type="button" data-s="0" aria-pressed="true">before the floor</button>
@@ -152,7 +173,7 @@
 
   <div class="dirs" id="dirs"></div>
 
-  <div class="note">
+  <div class="note mm-essay">
     <h2>What operating these settles</h2>
     <p><b class="hot">A lapse is the whole design problem, and only one direction survives it.</b> In
     direction A the button simply vanishes, and a player who was deciding is given no account of what
@@ -364,4 +385,13 @@ render();
 <script type="module">
   import { floatThemeControl } from '../shared/theme.js';
   floatThemeControl();
+</script>
+
+<script type="module">
+  /* Where this page's data comes from, and — for the parts the read path
+     does not carry — which capability is missing and why. Sourced from
+     capabilities() rather than prose, so it cannot go stale quietly. */
+  import { mountSourceNote, openSession } from '../shared/session.js';
+  const s = await openSession({ recording: '../session.json' }).catch(() => null);
+  mountSourceNote(document.getElementById('srchost'), s, ['actionMask', 'eventDeltas']);
 </script>
