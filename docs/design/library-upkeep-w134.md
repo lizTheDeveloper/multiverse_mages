@@ -20,11 +20,10 @@ outputs were not committed; `balance/` was not touched and no baseline was moved
 reported against **`toleranceK = 3`**, the value every committed baseline uses.
 
 **Instrument validation, three ways.** (1) The probe's final grimoire mean reproduces
-`balance/results-w116-{before,after}-2400.json` to the reported decimal — all seven arms on the
-before tree, six of seven on the after tree, with the `all-six` after arm still running when this
-was written.
+`balance/results-w116-{before,after}-2400.json` to the reported decimal, on **all seven arms of both
+trees**.
 (2) The decomposition closes: `scribed − degraded = final`, exactly, on both trees
-(417.1 − 174.6 = 242.5; 597.3 − 545.5 = 51.8). (3) A positive control asserts that a
+(417.1 − 174.6 = 242.5; 597.3 − 545.5 = 51.8; and on the mixed arm, 821.45 − 545.50 = 275.95). (3) A positive control asserts that a
 200-instance library against a stock of zero owes 400 fp and loses 12 instances, and every arm
 reports the first tick at which each counter fired, so a zero is readable beside a sibling that
 fired rather than being a broken probe.
@@ -62,6 +61,19 @@ fired rather than being a broken probe.
 6. **The population premise does not hold.** dwarf living mages 9.8 ± 3.9 → 18.9 ± 16.1 is
    **0.55 SE**, and the populace point estimate *fell* (706.8 → 195.2, 1.38 SE). Neither direction
    is a movement.
+
+## The `all-six` arm, which is the cleanest illustration
+
+Mixed-species universes make the point without any species story at all. Destruction rose by 136.8
+instances (408.7 ± 62.8 → 545.5 ± 54.3) and unpayable ticks by 84.6 (313.4 ± 61.3 → 398.0 ± 59.0),
+with the first unpayable tick moving **286 → 125** — and the outcome did not move: grimoires
+264.00 ± 64.31 → 275.95 ± 52.98, **0.14 SE**, because production rose in step (672.7 → 821.45).
+A final shelf count cannot tell "nothing happened" from "a great deal was written and most of it was
+destroyed", which is exactly why W116's table could not settle either hypothesis.
+
+The arm also fired **before** this PR — 313.4 unpayable ticks in 17 of 20 runs from tick 286 — so
+"newly reached" fails here too. And the redundancy reading holds: 545.5 instances destroyed cost
+0.90 ± 0.35 nodes, against 1.35 ± 0.42 before, with `nodesKnown` 72.30 → 71.60.
 
 ## The economy underneath it
 
