@@ -216,12 +216,6 @@ export function mayTransitionTo(
   if (!options.mature) {
     return destination === OCCUPATION.student;
   }
-  if (
-    destination === OCCUPATION.student &&
-    (globalThis as unknown as { __W185S__?: boolean }).__W185S__ === true
-  ) {
-    return false;
-  }
   return true;
 }
 
