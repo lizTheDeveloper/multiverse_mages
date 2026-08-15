@@ -9063,3 +9063,69 @@ entire discover → teach → record loop, which is the loop the whole design is
 authored nodes moves any of them. That is Task 12's shape (*a lever exists and nothing drives it*) at
 the centre of the game rather than at its edges, and it belongs ahead of any further balance work,
 because a baseline over a loop whose three rates are inert is a baseline over a constant.
+
+## W180 — a mage cannot learn to research, teach or scribe better. 93 authored effects reach nothing
+
+Chasing the non-blocking consumption failure from W179 to its mechanism. Three corrections on the way,
+all mine, all the same shape: **a grep that matched prose, and a pathspec that matched nothing.**
+
+1. `git grep -l "$p" origin/main -- 'packages/*/src'` returned empty for all six spellings of the three
+   rates. That is the glob failing, not an answer — the positive control (`teachCost`, which certainly
+   exists) came back empty too. With `-- packages` it returns eight files per rate.
+2. I said `gatherEffects` has two production callers, `gateway.ts` and `universe-effects.ts`. **It has
+   one.** `gateway.ts` never imports it; its only mention is a doc comment at line 934 describing
+   *"three of `gatherEffects`' four gates"*. `git grep -l` on an identifier matches prose.
+3. The checker's own header comment says `gatherEffects` and `stackContributions` have *"zero
+   production callers"*. That was true when written and is not now.
+
+### The mechanism, measured from `node.json`
+
+300 nodes author **407 effects**. The single production consumer, `universe-effects.ts:330`, gates them
+twice — `ECONOMIC_PRIMITIVES = new Set(['resource-yield', 'build-rate'])` and
+`effect.target === 'universe'`:
+
+| primitive | effects | targets |
+|---|---|---|
+| `research-rate` | **55** | 45 `self`, 10 `universe` |
+| `scribe-rate` | **19** | 19 `self` |
+| `teach-rate` | **19** | 19 `single` |
+| `resource-yield` | 59 | 59 `universe` ✅ |
+| `build-rate` | 33 | 33 `universe` ✅ |
+
+**Neither gate admits any of the three.** `scribe-rate` and `teach-rate` fail on target alone —
+`self` and `single` are never gathered. `research-rate`'s ten `universe`-target effects pass the target
+gate and are dropped by the primitive gate. **93 authored effects are inert.**
+
+### What that means in the game, and it is not a small thing
+
+`world-step.ts`'s `MAGE_MONTHS_PER_TICK` docstring enumerates its own sources without noticing:
+
+> *"What scales it is every source of `research-rate`, `teach-rate` and `scribe-rate` there is, stacked
+> once into `(1 + Σ)` … — a blessing, an encouragement, and, since this change, the depth of the
+> library the mage works in."*
+
+A blessing and an encouragement are **god actions**. Library depth is **institutional state**. **Nothing
+a mage has learned appears in that list.** So a mage cannot learn to research faster, teach better, or
+scribe more accurately — the three rates the entire discover → teach → record loop runs on move only
+when the god intervenes or the building improves.
+
+Two consequences worth stating plainly:
+
+- **It bounds species differentiation (task 9.9) from above.** The obvious differentiator — this
+  species learns the things that make it better at learning — cannot express itself, because that
+  feedback edge does not exist. Three approaches and their combination failed against a loop with no
+  learning-to-learn term in it.
+- **It is why the god feels like the only actor.** Every scalar on mage productivity is a god lever or
+  a building. The academics are autonomous in *what* they study and not in *how well* they come to do
+  it.
+
+**Scope, stated so this is not over-quoted:** 93 effects on three primitives, verified. This is *not* a
+claim that 315 of 407 effects are unreachable overall — the checker reports only these three primitives
+lacking a consumer, so other primitives reach the simulation by paths that do not run through
+`universe-effects.ts` (combat's, confirmed live at 85,056 fp, is one). The unreachable-effect total is
+a separate measurement and has not been taken.
+
+**The fix is small and the decision is not.** Admitting `self`/`single` targets and the three rates to a
+consumer is a narrow change. Whether a node *should* make its holder better at the thing that found it
+is a design ruling — it is a compounding loop, and vision §2.3 prices research in mage-months on the
+assumption that a mage-month is a fixed unit.
