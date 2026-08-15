@@ -8,6 +8,16 @@ moved: every arm below is an opening square spliced onto the reference content t
 > A measurement is a statement about the tree it was taken on. If the ref above is not the one you
 > are reading, re-run the instruments before acting on any number here. The commands are in §9.
 
+**Re-checked after merging `origin/main`.** Four PRs landed while this was running — #165, #166,
+#167 and #168 — two of which touch the rules path (`coordination/src/world-step.ts` and
+`rules-world/src/populace/demand.ts`). The v1 control arm was re-run at twelve seeds on the merge
+result and came back **identical on every column**: arrivals `draconic 206 (2 censored) · dwarf 28 ·
+elf 56 · gnome 24 · human 30 · orc 36`, censoring 2.8%, `nodesKnown` 50.2, `libDepth` 17.0,
+`capitalContribution` 180.0 fp, mean deepest tier 3.89. The frontier below therefore stands on the
+merge result and not only on `1e2651ad`. The record is `tools/w192/postmerge-v1.ndjson`, kept
+separate from `tools/w192/frontier-a.ndjson` so the two readings can never be folded into one
+denominator.
+
 ---
 
 ## The answer
