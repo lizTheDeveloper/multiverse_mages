@@ -16,8 +16,8 @@
  * Criterion 4 of W192.
  *
  *     node scripts/w192-strategy-compare.mjs \
- *       control=balance/w192/strat-v1/w192-opening-strategies.0.runs.ndjson \
- *       wide=balance/w192/strat-named-4x6/w192-opening-strategies.0.runs.ndjson
+ *       control=tools/w192/strat-v1/w192-opening-strategies.0.runs.ndjson \
+ *       wide=tools/w192/strat-named-4x6/w192-opening-strategies.0.runs.ndjson
  *
  * Both files are **named**, never globbed, and the two are paired **by run
  * seed** rather than by position: the sweep's cell ordering is an implementation

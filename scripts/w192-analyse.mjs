@@ -13,7 +13,7 @@
  */
 
 /**
- *     node scripts/w192-analyse.mjs balance/w192/frontier-a.ndjson balance/w192/frontier-b.ndjson
+ *     node scripts/w192-analyse.mjs tools/w192/frontier-a.ndjson tools/w192/frontier-b.ndjson
  *
  * **Every input is named on the command line and nothing is globbed.** The
  * failure `CLAUDE.md` records five instances of is an aggregator that finds a

@@ -16,7 +16,7 @@
  * The dynamic half of W192. Run `npm run typecheck` first — this loads `dist/`.
  *
  *     node scripts/w192-opening-sweep.mjs --arms v1,std-4x6,named-4x6 --seeds 6 \
- *       --out balance/w192/frontier.ndjson
+ *       --out tools/w192/frontier.ndjson
  *
  * | flag | default | meaning |
  * |---|---|---|

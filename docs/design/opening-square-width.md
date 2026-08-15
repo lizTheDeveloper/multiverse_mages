@@ -290,6 +290,33 @@ and "roughly 20× slower". This is the same signature and somewhat more severe, 
 than 72 and under `LONG_RUN_OPTIONS`, which #137 may not have used — so read it as *reproduces the
 signature*, not as *reproduces the number*.
 
+### 6.4 Why 16 cells and not 18 or 24, as magic rather than as arithmetic
+
+Three squares are affordable on the numbers: `4×4` at 16 cells (free), `3×6`/`named 3×6` at 18
+(1.8×), and `3×8`/`4×6` at 24 (4.5×). The 16-cell one is also the only one that is a *sentence*.
+
+`vision.md` §4 records that all eleven cross-cell prerequisite edges in the v1 subset originate in an
+*Intellego* cell: **you must perceive a thing before you can unmake or command it.** The twelve are
+therefore three verbs about what you may do to a thing — perceive, unmake, command — crossed with four
+things. Adding **`creo`** completes the verb list to *perceive, make, unmake, command*: everything a
+universe can do to a thing's **existence**, with *Muto* — transform, the verb about a thing's
+**identity** — left as the axis a god must still buy. That is a legible boundary, and "you may bring
+things into being and end them, but you may not change what they are" is a rule a player can hold in
+their head.
+
+The alternatives are arithmetic rather than design. `standard 3×6` adds *Animal* and *Aquam* because
+they sort early; `standard 3×8` adds *Auram* and *Corpus* for the same reason. Neither says anything.
+`named 3×6` — adding *Ignem* and *Umbra* without *Creo* — at least names a pair (fire and shadow) and
+has the best deepest-tier reading on the whole frontier (3.94), but it half-authors the exclusion: it
+permits both forms while withholding the technique that would make them exclude anything, which is
+the worst of both readings.
+
+And the 24-cell exclusion square, which is what the brief was pointing at, is the one square where
+coherence and measurement disagree: it is the most legible set on the board and it costs 18.1%
+censoring. **That disagreement is the finding, not a tie to be broken** — a mechanic whose only
+coherent home costs a sixth of all species-runs is a mechanic that needs retuning, not an opening
+that needs widening.
+
 ---
 
 ## 7. What actually breaks progression: two ablations and one refuted hypothesis
@@ -363,9 +390,54 @@ matters — 18.1% against 44.4% on the identical square.
 
 W191's new pair is `perdo-nomen ⊥ rego-nomen`, resolution **`destructive`**, and both cells are
 inside the twelve. Everything in §6.2 and §7 says a live destructive pair is the single largest
-determinant of whether species reach tier 3.
+determinant of whether species reach tier 3, so the obvious worry is that W191 trades an invisible
+mechanic for a broken default opening.
 
-*(measured below — the v1 rectangle on W191's content, 12 seeds, same instrument)*
+**Measured.** `git show w191/anti-requisites-in-v1:packages/content/data/cell.json` over the
+worktree's copy — a data-only swap, since `packages/content/data` is read at runtime — confirmed with
+the reach script that the v1 rectangle now reports `perdo-nomen ⊥ rego-nomen` live, then the v1 arm
+at 12 seeds and 720 ticks, then restored:
+
+| v1 rectangle | censoring | draconic | dwarf | elf | gnome | human | orc | nodesKnown | libDepth | deepest tier |
+|---|---|---|---|---|---|---|---|---|---|---|
+| `1e2651ad` (no live pair) | 2.8% | 206 (2 cens) | 28 | 56 | 24 | 30 | 36 | 50.2 | 17.0 | 3.89 |
+| **W191's content** | **6.9%** | 130 (**5 cens**) | 28 | 56 | 24 | 30 | 36 | 45.2 | 12.7 | 3.78 |
+
+**W191's pair is cheap, and it is nothing like the `creo` pair.** Five of the six species arrive at
+*exactly* the same tick — dwarf 28, elf 56, gnome 24, human 30, orc 36, unchanged to the tick. The
+entire cost lands on **draconic**, which goes from 2 censored runs to 5, and on five distinct nodes
+of knowledge (50.2 → 45.2) and four shelved ones (17.0 → 12.7).
+
+So: **W191 should land.** It makes anti-requisites expressible at the default width, and it costs
+2.8% → 6.9% censoring concentrated entirely on the species that was already at the margin. Whoever
+reviews it should decide whether pushing draconic from 2/12 to 5/12 censored is acceptable — it is a
+real cost on the one species `reference-time-to-tier.test.ts` already records as barely arriving —
+but it is two orders of magnitude away from what `creo-ignem ⊥ creo-umbra` does at 24 cells.
+
+That difference is itself worth understanding before more exclusions are authored: two pairs with the
+same `destructive` resolution cost 4.1 points of censoring and 15.3 points respectively, and nothing
+in the content says which will be which.
+
+---
+
+## 8a. A note on the instrument, since a pooled gate cannot see this
+
+`balance-gate-v1` passes at delta 0.00000 on all nine metrics with a scribing change in the tree, so
+"a pooled sweep did not move" is not evidence that a subsystem did not move. That gate runs
+`passive-control` alone at a **60-tick** `worldTickCap`, which is a twelfth of the horizon anything
+here is measured at and a fortieth of the long run.
+
+This measurement is not exposed to that failure, and the reason is checkable rather than asserted:
+**the four arms did move**, at 6.1 to 10.0 standard errors (§4). An instrument that reports a
+6-sigma paired difference on four independent strategies is not blind. Had they all come back flat,
+the way to tell blindness from a true null would have been the positive control that is already in
+the pool — `permissive-breadth`, which PR #169 moved — and it moved here too (+2.0 to +2.7 SE). A
+flat result with a flat positive control is a broken instrument; a flat result with a moving positive
+control is an answer.
+
+No baseline was regenerated and no `balance:gate*` command was run in the course of this work.
+Measurement artefacts live under `tools/w192/` precisely so that nothing here can be mistaken for a
+committed balance baseline.
 
 ---
 
@@ -384,20 +456,20 @@ node packages/scenario/bin/species-separation.mjs --sets 1 --tier 3   # the ship
 
 # the frontier. --out is required and nothing is globbed.
 node scripts/w192-opening-sweep.mjs --list
-node scripts/w192-opening-sweep.mjs --arms v1,named-4x6 --seeds 12 --out balance/w192/mine.ndjson
-node scripts/w192-analyse.mjs balance/w192/frontier-a.ndjson balance/w192/frontier-b.ndjson \
-                              balance/w192/frontier-c.ndjson balance/w192/frontier-d.ndjson
+node scripts/w192-opening-sweep.mjs --arms v1,named-4x6 --seeds 12 --out tools/w192/mine.ndjson
+node scripts/w192-analyse.mjs tools/w192/frontier-a.ndjson tools/w192/frontier-b.ndjson \
+                              tools/w192/frontier-c.ndjson tools/w192/frontier-d.ndjson
 
 # criterion 3, the task 9.9 spread. Refuses to run unless v1 reproduces the pinned 0.0473.
-node scripts/w192-opening-occupancy.mjs --seeds 6 --out balance/w192/occupancy.ndjson
+node scripts/w192-opening-occupancy.mjs --seeds 6 --out tools/w192/occupancy.ndjson
 
 # criterion 4, the strategy pool under an arm's opening square
 W192_ARM=named-4x6 node packages/mc-harness/bin/run-sweep.mjs \
-  --scenario ./balance/w192/scenario.mjs --sweep ./balance/w192/strategies.sweep.json \
-  --out ./balance/w192/strat-named-4x6 --workers 4
+  --scenario ./tools/w192/scenario.mjs --sweep ./tools/w192/strategies.sweep.json \
+  --out ./tools/w192/strat-named-4x6 --workers 4
 node scripts/w192-strategy-compare.mjs \
-  control=balance/w192/strat-v1/w192-opening-strategies.0.runs.ndjson \
-  wide=balance/w192/strat-named-4x6/w192-opening-strategies.0.runs.ndjson
+  control=tools/w192/strat-v1/w192-opening-strategies.0.runs.ndjson \
+  wide=tools/w192/strat-named-4x6/w192-opening-strategies.0.runs.ndjson
 ```
 
 Every one of these refuses rather than defaults: the sweep exits `2` if `explicitOpeningAxes` on the

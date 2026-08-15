@@ -16,9 +16,9 @@
  * executor closes over carries this arm's opening square.
  *
  *     W192_ARM=named-4x6 node packages/mc-harness/bin/run-sweep.mjs \
- *       --scenario ./balance/w192/scenario.mjs \
- *       --sweep    ./balance/w192/strategies.sweep.json \
- *       --out      ./balance/w192/strategies-named-4x6 \
+ *       --scenario ./tools/w192/scenario.mjs \
+ *       --sweep    ./tools/w192/strategies.sweep.json \
+ *       --out      ./tools/w192/strategies-named-4x6 \
  *       --workers  6
  *
  * The registries are the shipped ones, so a sweep file here is validated

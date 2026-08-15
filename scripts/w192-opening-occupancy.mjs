@@ -15,7 +15,7 @@
 /**
  * Criterion 3 of W192. Run `npm run typecheck` first — this loads `dist/`.
  *
- *     node scripts/w192-opening-occupancy.mjs --seeds 4 --out balance/w192/occupancy.ndjson
+ *     node scripts/w192-opening-occupancy.mjs --seeds 4 --out tools/w192/occupancy.ndjson
  *
  * ## Same call the pinned number comes from
  *
