@@ -59,6 +59,22 @@ export const RNG_STREAM = {
    * the mages'.
    */
   openingSquare: 12,
+  /**
+   * Scribal error: whether a finished book is *silently wrong*
+   * (`docs/design/scribing-fidelity.md`).
+   *
+   * Its own id rather than borrowing `scribing` (5), which is the other draw
+   * taken at the moment a book is finished, and by the same actor. A shared
+   * cursor would make *whether this book is corrupt* shift every subsequent
+   * durability roll that scribe takes — so adding the error rate would move
+   * "dwarven books resist burning" for reasons that have nothing to do with
+   * burning, and every committed balance number downstream of durability would
+   * change without any of them being about the change.
+   *
+   * That is the whole content of §6's insertion-invariance rule, applied to the
+   * one case where it was cheapest to get wrong.
+   */
+  scribalError: 13,
 } as const;
 
 /** Any ID in the permanent registry. */

@@ -261,6 +261,45 @@ export function canDiscoverCorruption(readerDeepestTier: number, tier: number): 
 }
 
 // ---------------------------------------------------------------------------
+// Scribal error: where a corrupted book comes from when nobody attacked you.
+// ---------------------------------------------------------------------------
+
+/**
+ * Probability a tier-1 book by a `fp(1024)` scribe comes out silently wrong,
+ * in `fp` out of {@link FP_ONE}. **Untuned.**
+ *
+ * The design names two sources of corruption and this is the ambient one —
+ * *"there's also some error rate… a scribe can mess up one spell but not others
+ * for that grimoire."* It is deliberately small: the interesting corruption is
+ * the **attack**, and an ambient rate high enough to be felt would drown the
+ * signal a raid is supposed to leave.
+ *
+ * It matters that it is not zero, though. A universe where the only corrupted
+ * books arrive by raid is a universe where finding one is a *proof* of attack,
+ * and the design wants the opposite — *"if no one is constantly turning over
+ * your books, you have no idea if they're good or not."* Ambient error is what
+ * makes an unread library genuinely unknown rather than merely unattacked.
+ */
+export const SCRIBAL_ERROR_BASE: Fp = 16;
+
+/** Ceiling on {@link scribalErrorChance}, so no scribe is hopeless. **Untuned.** */
+export const SCRIBAL_ERROR_MAX: Fp = 256;
+
+/**
+ * The chance this book comes out silently wrong, in `fp` out of {@link FP_ONE}.
+ *
+ * Rises with tier — a deeper text has more to get wrong, and is the one nobody
+ * will read for a century — and falls with `scribeAffinity`. A dwarf at tier 6
+ * errs at `16 * 6 * 1024 / 1792 = 54`, about 5%; an orc at the same tier hits
+ * the cap at 25%.
+ */
+export function scribalErrorChance(scribeAffinity: Fp, tier: number): Fp {
+  const affinity = Math.max(scribeAffinity, 1);
+  const raw = floorDiv(SCRIBAL_ERROR_BASE * tier * FP_ONE, affinity);
+  return Math.min(raw, SCRIBAL_ERROR_MAX);
+}
+
+// ---------------------------------------------------------------------------
 // What a reader takes away.
 // ---------------------------------------------------------------------------
 

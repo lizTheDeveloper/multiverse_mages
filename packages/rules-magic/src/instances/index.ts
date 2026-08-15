@@ -90,6 +90,8 @@ export {
   GENERATION_STEP_MIN,
   KNOWLEDGE_KIND_STEP,
   PRISTINE,
+  SCRIBAL_ERROR_BASE,
+  SCRIBAL_ERROR_MAX,
   canDiscoverCorruption,
   corruptionReadBar,
   fidelityAt,
@@ -99,6 +101,7 @@ export {
   isCorruptionValue,
   masteryFromBook,
   readsThroughCorruption,
+  scribalErrorChance,
   setFidelity,
 } from './fidelity.js';
 

@@ -1278,6 +1278,7 @@ invalidates every committed balance baseline.**
 | 10 | objective and raid generation |
 | 11 | terrain generation and combatant deployment |
 | 12 | the opening square — which techniques and forms a universe is founded holding |
+| 13 | scribal error — whether a finished book is silently wrong |
 
 **Stream 12 is the first append since the baselines were committed, and it is what taught us that
 appending is not free.** The gate compares `provenance.rngRegistryHash` as a block-level refusal,

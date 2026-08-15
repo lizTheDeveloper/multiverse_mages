@@ -75,6 +75,13 @@ const PERMANENT_IDS: Readonly<Record<string, number>> = {
   // and refuses on it, so all three baselines invalidated by identity before a
   // single measured number moved. See `docs/design/opening-square.md` §4.
   openingSquare: 12,
+  // Appended by `w190/scribing-fidelity`, and the second append since the
+  // baselines were committed — so the same `rngRegistryHash` refusal applies
+  // and the same re-baseline is owed. It takes its own id rather than sharing
+  // stream 5 with durability precisely so that the *only* baseline movement is
+  // behavioural: a shared cursor would have shifted every durability roll a
+  // scribe takes after her first book.
+  scribalError: 13,
 };
 
 /**
@@ -107,6 +114,7 @@ const DOC_TEXT_BY_SUBSYSTEM: Readonly<Record<string, string>> = {
   objectives: 'objective and raid generation',
   terrain: 'terrain generation and combatant deployment',
   openingSquare: 'the opening square',
+  scribalError: 'scribal error',
 };
 
 /** The consequence sentence every failure from this file has to carry. */
