@@ -61,8 +61,14 @@
  *
  * `knowledge-steal` still bites because a thief scores the *intent* to steal
  * before there is a victim, and a thief whose theft is worth nothing spends her
- * raid differently. That is the mask changing behaviour through the arbiter, on
- * two of the six seeds, and it is what this file asserts.
+ * raid differently. That is the mask changing behaviour through the arbiter,
+ * and it is what this file asserts.
+ *
+ * **It bites harder since `withdraw-after-ticks`.** It used to move two of six
+ * surveyed seeds; it now moves every seed that raids at all, because a theft is
+ * only delivered by a thief who comes home and until raiders could withdraw,
+ * every theft was forfeited with its thief. The control on the control moved
+ * with it — see {@link UNMOVED_PRIMITIVES}.
  *
  * The honest reading is not "the mask barely works". It is **"reference raids
  * contain no combat at all"**, which is a finding for whoever tunes raid
@@ -84,17 +90,44 @@ const content = referenceContent();
 const HORIZON = 400;
 
 /**
- * The two seeds whose raid log moves when `knowledge-steal` is neutralized, of
- * six surveyed at this horizon.
+ * Seeds whose raid log moves when `knowledge-steal` is neutralized.
  *
- * Named rather than swept, because two arms per seed at 400 ticks is seconds
- * each and a survey belongs in the commit message. Both are asserted, so one of
- * them ceasing to raid cannot silently leave this file passing on the other.
+ * All four raid and all four move. This list used to be two, with the other two
+ * held as a by-seed control; `withdraw-after-ticks` made thefts deliverable and
+ * every raiding seed started moving, so the control had to change shape rather
+ * than be re-picked — a by-seed control that has to be re-chosen whenever
+ * behaviour improves is a control that tests the seed list.
  */
-const SEEDS: readonly number[] = Object.freeze([0x0bad_c0de, 0x00ab_cdef]);
+const SEEDS: readonly number[] = Object.freeze([
+  0x0bad_c0de,
+  0x00ab_cdef,
+  0x1234_5678,
+  0x0004_1000,
+]);
 
-/** Seeds whose raid log does **not** move — the control on the control. */
-const UNMOVED_SEEDS: readonly number[] = Object.freeze([0x1234_5678, 0x0004_1000]);
+/**
+ * The six combat primitives whose neutralization moves **nothing** — the
+ * control on the control, by primitive rather than by seed.
+ *
+ * A stronger control than the seed list it replaced, and a more honest one: it
+ * says the mask is not a general perturbation that moves any run it is handed,
+ * *and* it states the finding that makes this whole file unusual — **reference
+ * raids contain no combat at all.** All six act through a cast, no shipped
+ * strategy puts a combat node in a combatant's hands, and `firstCastableNode`
+ * therefore returns nothing on every tick of every raid.
+ *
+ * So this list is a live measurement of a gap, and it fails the day somebody
+ * closes it — which is the correct thing for it to do, and the reason it is
+ * asserted rather than written in a comment.
+ */
+const UNMOVED_PRIMITIVES: readonly string[] = Object.freeze([
+  'direct-damage',
+  'area-denial',
+  'ward',
+  'concealment',
+  'blink',
+  'summon',
+]);
 
 interface Played {
   readonly raidLog: string;
@@ -103,7 +136,23 @@ interface Played {
   readonly livingMages: number;
 }
 
+/**
+ * Memoized on `(seed, ablation)`, because it is a pure function of both and an
+ * arm at this horizon costs seconds. The by-primitive control asks for the same
+ * four control arms once per primitive; without this it would compute
+ * twenty-four runs to look at four, and time out doing it.
+ */
+const played = new Map<string, Played>();
 function play(seed: number, ablated?: string): Played {
+  const key = `${String(seed)}:${ablated ?? ''}`;
+  const cached = played.get(key);
+  if (cached !== undefined) return cached;
+  const result = playOnce(seed, ablated);
+  played.set(key, result);
+  return result;
+}
+
+function playOnce(seed: number, ablated?: string): Played {
   const run = referenceScenario(content, {
     raids: true,
     // Off: this file reads the raid log, and the census is seconds of work it
@@ -139,12 +188,19 @@ describe('§9’s mask crosses the scenario boundary into a raid', () => {
     expect(ablated.raidLog).not.toBe(control.raidLog);
   });
 
-  it.each(UNMOVED_SEEDS)('leaves a run it does not touch byte-identical on seed %i', (seed) => {
+  it.each(UNMOVED_PRIMITIVES)('leaves a run byte-identical when %s is neutralized', (primitive) => {
     // The other direction, and it is what makes the assertion above mean
-    // something: the mask is not a general perturbation that moves any run it is
-    // handed. Two of six surveyed seeds move and four do not.
-    const control = play(seed);
-    expect(play(seed, 'knowledge-steal').raidLog).toBe(control.raidLog);
+    // something: the mask is not a general perturbation that moves any run it
+    // is handed. Six of the seven primitives move nothing on any seed, because
+    // nothing in a reference raid ever casts.
+    for (const seed of SEEDS) {
+      const control = play(seed);
+      expect(control.raidCount, `seed ${String(seed)} resolved no raid`).toBeGreaterThan(0);
+      expect(
+        play(seed, primitive).raidLog,
+        `${primitive} moved seed ${String(seed)} — a reference raid now contains combat`,
+      ).toBe(control.raidLog);
+    }
   });
 });
 
