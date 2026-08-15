@@ -186,11 +186,41 @@ describe('routeYieldByForm splits a resource-yield magnitude by content weights'
     expect(totalAmount(routed)).toBeGreaterThan(1024);
   });
 
-  it('ignores a negative magnitude and negative weights rather than crediting them', () => {
-    expect(routeYieldByForm(form({ food: 512 }), -100)).toEqual(zeroAmounts());
+  it('routes a negative magnitude as a cost, and still ignores negative weights', () => {
+    // **This assertion was inverted on purpose, and the old one was not wrong
+    // when it was written.** It read "ignores a negative magnitude ... rather
+    // than crediting them" and was green for as long as `node.schema.json` set
+    // `magnitude` to `minimum: 1` — no negative could reach this function, so
+    // the clamp was a statement about impossible input.
+    //
+    // Signed magnitudes make a negative `resource-yield` authorable content: a
+    // node whose magic costs the economy rather than feeding it. Clamping it
+    // here would discard the cost before material routing saw it, which is the
+    // "reads as a rule and behaves as a comment" failure the consumption check
+    // exists to catch.
+    expect(routeYieldByForm(form({ food: 512 }), -100)).toEqual({
+      food: -50,
+      stone: 0,
+      vellum: 0,
+    });
+
+    // The weights keep their clamp, and that asymmetry is deliberate. A
+    // negative weight would be a *form* claiming that producing food consumes
+    // stone — a claim about the material taxonomy rather than about one
+    // working, and nothing in `form.json` means it. The sign comes from the
+    // node; the mix stays a non-negative property of the form.
     expect(routeYieldByForm(form({ food: -512, stone: 256 }), 1024)).toEqual({
       food: 0,
       stone: 256,
+      vellum: 0,
+    });
+
+    // And the two compose: a negative magnitude routes proportionally negative
+    // amounts to exactly the kinds a positive one would have fed, and to no
+    // others.
+    expect(routeYieldByForm(form({ food: -512, stone: 256 }), -1024)).toEqual({
+      food: 0,
+      stone: -256,
       vellum: 0,
     });
   });

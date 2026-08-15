@@ -170,10 +170,25 @@ export function territoryYieldShares(regions: readonly TerritoryRecord[]): Mater
  * whose material is not a material.
  */
 export function routeYieldByForm(form: FormRecord, magnitude: Fixed): MaterialAmounts {
-  const share = Math.max(0, magnitude);
+  // **The magnitude is signed; the weights are not.**
+  //
+  // This clamped the magnitude with `Math.max(0, …)` while `node.schema.json`
+  // set `minimum: 1`, when no negative could reach it and the clamp was a
+  // statement about impossible input. Signed magnitudes make a negative
+  // `resource-yield` authorable content — a node whose magic *costs* the
+  // economy — so clamping it here would silently discard the cost before the
+  // material routing ever saw it.
+  //
+  // The weights keep their clamp. A negative weight would be a form asserting
+  // that producing food consumes stone, which is a claim about the material
+  // taxonomy rather than about one working, and nothing in `form.json` means
+  // it. So the *sign* now comes from the node, and the *mix* stays a
+  // non-negative property of the form: a negative magnitude routes
+  // proportionally negative amounts to exactly the kinds a positive one would
+  // have fed.
   return {
-    food: floorDiv(share * Math.max(0, form.yieldWeights.food), FP_ONE),
-    stone: floorDiv(share * Math.max(0, form.yieldWeights.stone), FP_ONE),
-    vellum: floorDiv(share * Math.max(0, form.yieldWeights.vellum), FP_ONE),
+    food: floorDiv(magnitude * Math.max(0, form.yieldWeights.food), FP_ONE),
+    stone: floorDiv(magnitude * Math.max(0, form.yieldWeights.stone), FP_ONE),
+    vellum: floorDiv(magnitude * Math.max(0, form.yieldWeights.vellum), FP_ONE),
   };
 }

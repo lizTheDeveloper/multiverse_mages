@@ -30,6 +30,7 @@ import { describe, expect, it } from 'vitest';
 
 import type { ConsumptionRecorder } from '../../src/effects/index.js';
 import {
+  PRIMITIVE_CONSUMPTION_EXCLUSIONS,
   PRIMITIVE_COVERAGE_EXCLUSIONS,
   checkPrimitiveConsumption,
   createConsumptionRecorder,
@@ -60,8 +61,15 @@ function registryWithNoKnowledgeStealNodes(): ReturnType<typeof shippedRegistry>
   });
 }
 
-/** Every primitive the registry declares, minus the exclusions. */
-function required(exclusions: readonly string[] = PRIMITIVE_COVERAGE_EXCLUSIONS): string[] {
+/**
+ * Every primitive the registry declares, minus the exclusions.
+ *
+ * The default is {@link PRIMITIVE_CONSUMPTION_EXCLUSIONS} — **empty** since
+ * `lifespan` and `fertility` gained a node-driven consumer — and no longer
+ * `coverage.ts`'s list. The two are different questions and now give different
+ * answers; `consumption.ts` records why the split was forced.
+ */
+function required(exclusions: readonly string[] = PRIMITIVE_CONSUMPTION_EXCLUSIONS): string[] {
   return shippedRegistry()
     .primitives.map((entry) => entry.record.id)
     .filter((id) => !exclusions.includes(id))
@@ -300,18 +308,16 @@ describe('direction four: an excluded primitive gains a node consumer', () => {
     }
     // An exclusion that quietly becomes covered is the failure `coverage.ts`
     // argues about at length, and it rots the same way here.
-    recorder.register({
-      primitiveId: 'lifespan',
-      consumer: 'test/mortality.sink',
-      kind: 'node',
-      nodeCount: 4,
-    });
-
-    const report = checkPrimitiveConsumption(registry, recorder);
+    //
+    // The exclusion list is passed explicitly, because the shipped one is empty
+    // — which is the campaign's exit condition and not a reason to stop testing
+    // the direction. `direct-damage` stands in for whatever the next parked
+    // primitive would be.
+    const report = checkPrimitiveConsumption(registry, recorder, ['direct-damage']);
     expect(report.ok).toBe(false);
-    expect(report.consumedExclusions).toEqual(['lifespan']);
+    expect(report.consumedExclusions).toEqual(['direct-damage']);
     expect(formatPrimitiveConsumptionReport(report)).toContain(
-      'FAIL: excluded primitive(s) now node-driven: lifespan',
+      'FAIL: excluded primitive(s) now node-driven: direct-damage',
     );
   });
 });
@@ -372,17 +378,29 @@ describe('direction six: nothing registered at all', () => {
   });
 });
 
-describe('the two checks share one exclusion list', () => {
-  it('defaults to the coverage check’s exclusions rather than restating them', () => {
+describe('the two checks no longer share one exclusion list', () => {
+  it('defaults to an empty consumption list, which is the campaign’s exit condition', () => {
     const { recorder, registry } = fullyConsumed();
-    expect(checkPrimitiveConsumption(registry, recorder).exclusions).toEqual([
-      ...PRIMITIVE_COVERAGE_EXCLUSIONS,
-    ]);
+    expect(checkPrimitiveConsumption(registry, recorder).exclusions).toEqual([]);
+    expect([...PRIMITIVE_CONSUMPTION_EXCLUSIONS]).toEqual([]);
+  });
+
+  it('leaves the coverage list standing, because its question is the other one', () => {
+    // `lifespan` and `fertility` have a node-driven consumer *and* no v1 node
+    // authoring them. One list cannot hold both answers, and this is the pair
+    // of assertions that says so out loud.
+    expect([...PRIMITIVE_COVERAGE_EXCLUSIONS]).toEqual(['fertility', 'lifespan']);
+    const { recorder, registry } = fullyConsumed();
+    expect(checkPrimitiveConsumption(registry, recorder).consumed.map((e) => e.primitiveId)).toContain(
+      'lifespan',
+    );
   });
 
   it('states the exclusions in the formatted report, so a reader sees the gap', () => {
     const { recorder, registry } = fullyConsumed();
-    const text = formatPrimitiveConsumptionReport(checkPrimitiveConsumption(registry, recorder));
+    const text = formatPrimitiveConsumptionReport(
+      checkPrimitiveConsumption(registry, recorder, ['fertility', 'lifespan']),
+    );
     expect(text).toContain('Declared exclusions: fertility, lifespan');
   });
 });

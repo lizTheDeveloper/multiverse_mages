@@ -66,6 +66,24 @@ import type { ContentRegistry, NodeRecord } from '@mm/content';
  * Sorted, and asserted to be exactly this pair by test. Adding a third entry is
  * a claim that a third primitive is unmeasurable at 0.5.0, and should be as
  * hard to do quietly as this list makes it.
+ *
+ * ## This list is no longer the consumption check's
+ *
+ * It was, and `consumption.ts` argued at length that sharing was safe because
+ * the two scopes agreed: *"`lifespan` is carried by seventeen non-v1 nodes and
+ * by no v1 node at all, so 'no academic can move it' holds in v1 either way."*
+ * Both halves of that sentence were true and the second one is now false.
+ * `coordination/knowledge-vitality.ts` fetches both primitives' authored
+ * magnitudes and the world loop applies them, so a **node-driven consumer
+ * exists** — while **no v1 node still declares either**, which is the only
+ * question this file asks.
+ *
+ * So the exclusion here has narrowed rather than lapsed. It no longer says
+ * *"knowledge cannot move this"*; it says *"no learnable node authors this
+ * yet"*, which is an authoring gap and is closed by content — an authored
+ * effect on a v1 node, or a v1 rectangle that includes *Corpus* — not by
+ * wiring. {@link PRIMITIVE_CONSUMPTION_EXCLUSIONS} in `consumption.ts` is now
+ * the other list, and it is empty.
  */
 export const PRIMITIVE_COVERAGE_EXCLUSIONS: readonly string[] = ['fertility', 'lifespan'];
 
