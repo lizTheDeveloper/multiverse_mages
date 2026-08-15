@@ -162,49 +162,81 @@ describe('twenty world years in', () => {
     }
   });
 
-  it('has four species at the ruleset ceiling and two below it', () => {
-    // **Every species gained breadth when W18 wired the academic rates, and the
-    // laggards gained most.** Measured at this horizon, before -> after:
-    // draconic 10 -> 11, dwarf 12 -> 12, elf 10 -> 11, gnome 8 -> 9,
-    // human 12 -> 12, orc 11 -> 12. Three species at the ceiling became four.
+  it('has two species at the ruleset ceiling and four below it', () => {
+    // **Re-measured on the merge of `main` (5a1ce6c) into
+    // `w108/university-fidelity`, 2026-08-14.** Not inherited from either side:
+    // both sides of that merge re-recorded this block for different reasons and
+    // *neither side's numbers survived the combination*. `main` had
+    // `12/12/11/10/10/8` (dwarf, human, orc, draconic, elf, gnome) and the
+    // branch had `12/9/12/10/10/9`; the merged run reads none of those. Taking
+    // either hunk verbatim would have pinned a number no build produces.
     //
-    // The mechanism is the one `academic-effects.ts` describes: a mage who holds
-    // `research-rate` nodes finishes more projects per century, and a project
-    // finished in a cell she had not entered is a cell occupied. The two species
-    // already at 12 could not gain — the v1 ruleset permits twelve cells and no
-    // more — so the effect shows up entirely in the ones that were behind, which
-    // is why the spread below flattens rather than widens.
+    // Two causes compose here, and neither is a balance decision:
     //
-    // The pin is **re-recorded, not widened**, for the reason the `apply-magic`
-    // note this replaces gave: the point of the metric is that these numbers
-    // move, and a range assertion would let them move to anything.
+    // 1. **`apply-magic` (#127).** `speciesTerm` reads `laborAffinity` for that
+    //    goal, so species with high labor affinity spend months casting that
+    //    they used to spend reaching into another cell. That is the trade the
+    //    goal is supposed to create.
+    // 2. **The staffing rule this branch wires.** `UNIVERSITY_STAFF` link rows
+    //    are entities, and `contracts.md` §6 splits the RNG per entity handle,
+    //    so creating them shifts every handle allocated afterwards and re-rolls
+    //    every handle-keyed draw in the run. The branch verified this rather
+    //    than assuming it: a control build that creates the link rows and keeps
+    //    the old global-pool scribing reproduces the branch run byte for byte,
+    //    and the reference universe has exactly **one** university, where
+    //    owning every scribe cohort and sharing the universe's pool are
+    //    arithmetically the same thing — 142 books over 36 ticks on both.
+    //
+    // The composition is not the sum of the parts, and that is the honest
+    // reading of it: orc fell to 11 on `main` under `apply-magic` and is back
+    // at 12 here, while draconic and elf each gained a cell they held at 10 on
+    // both sides. A re-roll moves things in both directions. What the staffing
+    // rule actually *changes* needs more than one university to see, and is
+    // measured in `coordination/test/unit/university-staffing.test.ts` — not
+    // here.
+    //
+    // ## Re-measured a third time, on the merge of `main` (`be446a6`, i.e. #125
+    // already landed) into `w18/academic-primitive-consumers`, 2026-08-15
+    //
+    // **And it happened again, in the way this file is now three-for-three on:
+    // neither side's numbers survived, and the textual merge produced a set no
+    // build produces.** `main` (with #125) reads `12/12/12/11/11/9` for dwarf,
+    // human, orc, draconic, elf, gnome; W18 alone read `12/12/12/11/11/9` for
+    // dwarf, human, orc, draconic, elf, gnome by its own different route. The
+    // *combination* reads:
+    //
+    // ```text
+    //   dwarf 12   human 12   elf 11   orc 11   draconic 9   gnome 9
+    // ```
+    //
+    // Two species at the ceiling, not three. **Draconic falls from 11 to 9 and
+    // orc from 12 to 11**, and the assertion literals below merged cleanly
+    // — only the comments conflicted — so an unexamined merge would have
+    // committed `orc 12` and `draconic 11`, numbers neither branch measured and
+    // this tree does not produce. The pins here are read off a run of the merged
+    // tree, not chosen from a side.
     expect(bySpecies('dwarf').occupiedCells).toBe(12);
     expect(bySpecies('human').occupiedCells).toBe(12);
-    expect(bySpecies('orc').occupiedCells).toBe(12);
-    expect(bySpecies('draconic').occupiedCells).toBe(11);
     expect(bySpecies('elf').occupiedCells).toBe(11);
+    expect(bySpecies('orc').occupiedCells).toBe(11);
+    expect(bySpecies('draconic').occupiedCells).toBe(9);
     expect(bySpecies('gnome').occupiedCells).toBe(9);
   });
 
   it('measures a spread that is neither flat nor a hegemony', () => {
     const entry = collectSpeciesCellOccupancy(telemetryFor(sample));
     expect(entry.status).toBe('measured');
-    // 0.0473 at this horizon, down from 0.0714 before W18 — a third of the
-    // spread gone, and in the direction the occupancy pin above explains: the
-    // two species already at the ruleset ceiling could not gain, the four behind
-    // them all did, so wiring the academic rates makes the grid *more* evenly
-    // held rather than less.
+    // 0.0625 at this horizon, re-measured on the merge described above — was
+    // 0.0729 before any of these changes, 0.0714 on `main` before #125, 0.0645
+    // on #125 alone, 0.0473 on #125 merged with #127, and 0.0473 again on W18
+    // measured against a pre-#125 base. Pinned to four places: the point of the
+    // metric is that this number moves, and a test that only asserted "greater
+    // than zero" would let it move to anything.
     //
-    // Worth stating plainly because it cuts against the reflex reading. A
-    // mechanism that rewards knowing more sounds like a rich-get-richer term,
-    // and §7's `capitalSnowball` exists to catch exactly that. Here it is not
-    // one, and the reason is the ceiling: twelve cells is a hard cap that the
-    // leaders had already reached.
-    //
-    // Pinned to four places for the reason the previous note gave: the point of
-    // the metric is that this number moves, and a test that only asserted
-    // "greater than zero" would let it move to anything.
-    expect((entry as { value: number }).value).toBeCloseTo(0.0473, 4);
+    // It moves **up** from 0.0473 rather than further down, and the reason is in
+    // the pin above: the spread widens because draconic drops to 9, not because
+    // any leader pulled ahead — the two at the ceiling are capped and cannot.
+    expect((entry as { value: number }).value).toBeCloseTo(0.0625, 4);
     expect(entry).toMatchObject({ detail: { everySpeciesEqual: false, everySpeciesZero: false } });
   });
 
@@ -220,20 +252,41 @@ describe('twenty world years in', () => {
 
   it('names which cells each species is missing, not just how many', () => {
     // **The reading a count cannot give.** Gnome is three cells short at this
-    // horizon and the three have a shape: no Perdo Mentem, Terram or Limen. A
-    // count of 9 says "behind"; this says "behind in Perdo", which is the
+    // horizon and the three have a shape: two of the three are Perdo. A count of
+    // 9 says "behind"; this says "mostly behind in Perdo", which is the
     // difference between a species that is slow and a species that is locked out
     // of a technique.
     //
-    // W18 took `rego-terram` off this list — gnome reached it at 9 cells where
-    // it had not at 8 — and left the Perdo shape completely intact. That is the
-    // more interesting half of the result: faster research buys a species
-    // *breadth*, and it does not buy it the technique its affinities are worst
-    // at. A wire that had simply made everyone better at everything would have
-    // dissolved this shape, and it did not.
+    // **Re-derived on the merge described above, 2026-08-14, and the branch's
+    // claim about it did not survive.** The branch recorded
+    // `perdo-limen/mentem/terram` and argued the shape had got *cleaner* —
+    // `rego-terram` having dropped out — and called that "the strongest evidence
+    // yet that it is about Perdo and not about the seed". The merged run reads
+    // `perdo-mentem`, `perdo-terram`, `rego-terram`: gnome picked up Perdo Limen
+    // and lost Rego Terram again. So the shortfall is three cells of which two
+    // are Perdo, on both `main`'s numbers and these, but *which* three is not
+    // stable across a re-roll.
+    //
+    // That is worth stating rather than quietly re-pinning, because it is
+    // evidence against the branch's own argument: a set that reorders under a
+    // pure re-roll of handle-keyed draws is partly a seed artifact. The durable
+    // reading is "gnome is short, and disproportionately short in Perdo"; the
+    // exact membership is a pin, not a finding, and the next agent to see it
+    // move should not read the movement as a defect.
     const cellName = new Map(content.registry.cells.map((e) => [e.contentId, e.record.id]));
     const held = new Set(bySpecies('gnome').occupiedCellIds.map((id) => cellName.get(id)));
     const dwarfHeld = bySpecies('dwarf').occupiedCellIds.map((id) => cellName.get(id));
+    //
+    // **Third measurement, on the merge with #125 landed, 2026-08-15: the set is
+    // `perdo-limen`, `perdo-mentem`, `perdo-terram` — three cells, all three
+    // Perdo.** The two-entry list that stood here was not measured on any build:
+    // #125 dropped `perdo-limen` from the four-entry original and W18 dropped
+    // `rego-terram`, both deletions merged cleanly, and the result was the
+    // intersection rather than anything a run produces. Read together with the
+    // note above, the durable statement is the one that has survived every
+    // re-roll — **gnome is short, and disproportionately short in Perdo** —
+    // while the exact membership has now been three different sets in three
+    // measurements and should be treated as a pin rather than a finding.
     expect(dwarfHeld.filter((cell) => !held.has(cell)).sort()).toEqual([
       'perdo-limen',
       'perdo-mentem',

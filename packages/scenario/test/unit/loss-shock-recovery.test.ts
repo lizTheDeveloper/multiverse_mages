@@ -311,6 +311,16 @@ describe('recovery, per species', () => {
     // claim about species that were: **the two shortest-lived species that had
     // a roster do not recover.** Symmetrical with the `censored` guard, and
     // stated rather than left to whoever next reads a green test and a zero.
+    //
+    // **Both sides of the `w108` merge wrote this same guard, independently and
+    // for different runs.** `w108/university-fidelity` hit an empty orc roster
+    // because `UNIVERSITY_STAFF` link rows are entities and `contracts.md` §6
+    // splits the RNG per entity handle, so creating them re-rolls every
+    // handle-keyed draw in the run; `main` hit it because `apply-magic` shipped
+    // and moved orc's months. That two unrelated changes both landed on the
+    // same hole is the argument for the general guard kept here rather than the
+    // one-species version the branch wrote — the hole is structural, not a
+    // property of either change.
     const recoverers = species
       .map((row) => String(row['speciesId']))
       .filter((speciesId) => present.has(speciesId));
