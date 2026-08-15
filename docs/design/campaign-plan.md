@@ -9744,7 +9744,18 @@ identically.
 2. **`teach-rate` is inert for tiers 1–3 only.** Above tier 3 its 1.25× multiplier is live, and **every
    measurement of it was taken below tier 4.** W187's "wired and behaviourally inert" is true of the
    measured range and false as stated.
-3. **`npm run verify:nosweeps` exits 1, not 0**, on both the branch and the pre-merge tree — vitest returns
-   non-zero on an unhandled worker-RPC timeout even when every test passes (`species-separation-spread`
-   passed at 276s and 314s, load 60–90). Several agents reported that command green tonight by reading its
-   summary line rather than its exit code. **Read the exit code, and expect it to be polluted under load.**
+3. **`npm run verify:nosweeps` exits 1 under contention**, on both the branch and the pre-merge tree —
+   vitest returns non-zero on an unhandled worker-RPC timeout even when every test passes. Several agents
+   reported that command green tonight by reading its summary line rather than its exit code. **Read the
+   exit code, and expect it to be polluted under load.**
+
+   **Settled since, by the re-run `CLAUDE.md` prescribes rather than by argument from the error's shape:**
+   `npx vitest run packages/scenario/test/unit/species-separation-spread.test.ts` alone gives 16/16 and
+   **exit 0**, and CI's `Verify (pinned Node)` passed on the merged tree in 10m55s. So the exit code was
+   contention and the tree is sound — but the lesson stands, because the only way to know that was to run
+   the control.
+
+   **And a fifth instance of the night's shape, inside the check for it:** grepping CI's job log for the
+   suspect file returned **empty**, which reads as *"CI never hit this problem."* The real reason was
+   `run … is still in progress; logs will be available when it is complete`. Caught only by putting a
+   positive control on the probe before believing its negative.
