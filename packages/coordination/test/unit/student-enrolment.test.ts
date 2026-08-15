@@ -227,6 +227,14 @@ describe('defect 3: aptitude sorts careers, and sorts nobody out of existence', 
     // reachable in a real world loop, or the sort is a constant wearing a draw's
     // clothes — and the two reported halves must add up to the whole, because a
     // reader who has to subtract will eventually subtract the wrong thing.
+    //
+    // **The margin, so a future red here is legible.** At 120 ticks and a cohort
+    // of 120 this measures `academic=197, populace=232` — nowhere near either
+    // floor, so a failure means the sort genuinely stopped producing an outcome
+    // rather than the run being too short to reach one. `240` was the first
+    // length tried and it is the *only* reason to prefer it; at 12.8s it timed
+    // out under suite contention while passing alone, which is a red that says
+    // nothing about the code.
     const world = runWorld({ cohortSize: 120, ticks: 120 });
     expect(world.magesGraduated).toBe(world.graduatedAcademic + world.graduatedPopulace);
     expect(world.graduatedAcademic).toBeGreaterThan(0);
