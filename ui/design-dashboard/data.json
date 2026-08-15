@@ -3,7 +3,7 @@
     "generatedBy": "scripts/build-design-dashboard.mjs",
     "command": "npm run ui:dashboard",
     "pinnedBy": "packages/content/test/unit/design-dashboard-payload.test.ts",
-    "contentRevision": "d4e3047657b4fa8a1a74e1d52f9f5c86",
+    "contentRevision": "158fa287ad4ac368546cd65060968024",
     "contentCounts": {
       "techniques": 5,
       "forms": 14,
@@ -2543,8 +2543,8 @@
       "scripts/check-reachability.mjs --json"
     ],
     "ok": false,
-    "findingCount": 125,
-    "examinedSymbolCount": 855,
+    "findingCount": 124,
+    "examinedSymbolCount": 874,
     "examinedPackages": [
       "content",
       "coordination",
@@ -2556,7 +2556,7 @@
       "sim-core",
       "state"
     ],
-    "productionFileCount": 309,
+    "productionFileCount": 311,
     "orphanPackages": [],
     "unreached": [
       {
@@ -2615,7 +2615,7 @@
       },
       {
         "file": "packages/coordination/src/god/interventions.ts",
-        "line": 1047,
+        "line": 1080,
         "name": "tierDerivedValues",
         "kind": "function"
       },
@@ -2896,12 +2896,6 @@
         "kind": "const"
       },
       {
-        "file": "packages/rules-world/src/economy/carrying-capacity.ts",
-        "line": 222,
-        "name": "NO_TERRITORY",
-        "kind": "const"
-      },
-      {
         "file": "packages/rules-world/src/economy/counts.ts",
         "line": 97,
         "name": "ECONOMIC_INPUTS",
@@ -3071,14 +3065,20 @@
       },
       {
         "file": "packages/scenario/src/long-run.ts",
-        "line": 573,
+        "line": 577,
         "name": "longRunLines",
         "kind": "function"
       },
       {
         "file": "packages/scenario/src/long-run.ts",
-        "line": 516,
+        "line": 520,
         "name": "longestOccupationAlternation",
+        "kind": "function"
+      },
+      {
+        "file": "packages/scenario/src/reference-universe.ts",
+        "line": 470,
+        "name": "academySiteKindOf",
         "kind": "function"
       },
       {
@@ -3185,7 +3185,7 @@
       },
       {
         "file": "packages/state/src/migrations.ts",
-        "line": 496,
+        "line": 546,
         "name": "loadWorldSnapshot",
         "kind": "function"
       },
@@ -3254,15 +3254,6 @@
         ]
       },
       {
-        "file": "packages/rules-world/src/universities/construction.ts",
-        "line": 194,
-        "name": "effectiveCapacity",
-        "via": [
-          "admitStudents",
-          "worshipInputs"
-        ]
-      },
-      {
         "file": "packages/scenario/src/strategy-audit.ts",
         "line": 396,
         "name": "actionName",
@@ -3280,7 +3271,7 @@
       },
       {
         "file": "packages/state/src/migrations.ts",
-        "line": 450,
+        "line": 500,
         "name": "migrateWorldEnvelope",
         "via": [
           "loadWorldSnapshot"
@@ -3352,7 +3343,7 @@
     "structuralExclusions": [
       {
         "id": "fields-match",
-        "count": 23,
+        "count": 25,
         "reason": "A `KeysMatch<Record, typeof COMPONENT>` assertion. Its consumer is `tsc`: it fails the build if a component spec and its record interface disagree about a field, and it does nothing at run time. One with a caller would be the surprise."
       },
       {
