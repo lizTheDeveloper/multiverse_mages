@@ -12767,6 +12767,65 @@ UI is handed the candidate lists; the agent is handed a per-kind bit.** Every st
 and `illegalActionRate` measures that handicap rather than the strategy.
 
 Which also means the repair has a shape the observation layout may not need to change for:
-the play server already computes these lists per tick from the session. The question is
-whether the agent is *entitled* to them under §4.4 — and that is the design decision W236
-declined to take, now with the evidence that the other client already takes it.
+the play server already computes these lists per tick from the session.
+
+**Superseded by W240, in the next entry.** The question I asked here — *whether the agent
+is entitled to them under §4.4* — has an answer already in the code, and it is yes. Tracing
+`session.candidates()` shows the agent-facing session exposes the lists and the harness
+adapter drops them. This paragraph inferred a design gap from a dev harness's behaviour
+without checking whether the sanctioned path already existed.
+
+## W240 — The fix W236 called a schema-version decision is a one-method passthrough
+
+[executed, 2026-08-15, `origin/main` @ e8ce6619; `agent-api/src/session.ts:250,419`,
+`mc-harness/src/session.ts`, `scripts/play-server.mjs:154`]
+
+W239 closed by saying the play server "already takes" a decision the agent path declines,
+and inferred that from the frames alone. Tracing where the server actually gets that map
+inverts the conclusion — the fifth time tonight, and the most consequential.
+
+`scripts/play-server.mjs:154` reads `session.candidates()`. Not raw state: a **public
+method on the session**. And on the agent-facing interface it sits here —
+
+    observe(): Float64Array;
+    legalActions(): Uint8Array;
+    /** §4.4's slot-indexed candidate lists, for the parameterized actions. */
+    candidates(): CandidateLists;
+    submit(action: Action): SubmitResult;
+
+— beside `observe`, `legalActions`, `submit`, `status`, `outcome` and `accounting`,
+implemented as `currentView().candidates`. **§4.4 already grants the agent the candidate
+lists.** There is no entitlement gap in the API at all.
+
+    grep candidates packages/agent-api/src/session.ts   ->  250, 419, 420
+    grep candidates packages/mc-harness/src/session.ts  ->  nothing
+
+**`mc-harness`'s adapter drops it.** `AgentSession` forwards `observe`, `legalActions`,
+`submit`, `status`, `terminalReason` and `accounting`, and simply does not carry
+`candidates` across. So every strategy in `BOT_POOL` guesses a slot index against a
+declared constant while the information it needed was one method away on the session it
+was already holding.
+
+**This retracts W236's recommendation, which I also gave the user as a decision they had
+to make.** W236 said the honest repair was exposing live candidate counts in the
+observation, moving `observationLayoutDigest` and the `snapshotHash` byte-pins with it,
+and called it a `WORLD_SCHEMA_VERSION`-class call. **It is none of those things.** The
+observation layout does not change. No digest moves. No byte-pin churn. The repair is:
+
+1. forward `candidates()` through the harness adapter,
+2. put the lists on the strategy context,
+3. rotate over the live length instead of `candidateSlotCount`'s declared constant.
+
+`allocate-spread`'s hand-patched literal 8 is then deletable rather than duplicable — it
+was a constant standing in for a lookup that was always available.
+
+**One consequence to state plainly:** doing this changes what every parameterized strategy
+submits, so it moves balance baselines. That is a real accept/reject, unlike the schema
+decision I wrongly escalated.
+
+The rule: **"the API does not expose X" is a claim about the API, and I checked the
+caller.** W236 grepped `layout.ts`, `observation.ts`, `entitlement.ts` and
+`player-state.ts` — the observation surface — concluded the agent could not see candidate
+lists, and never grepped `session.ts`, which is where the agent's other three inputs
+already come from. The absence was real in the place I looked and the thing was sitting in
+the place I did not.
