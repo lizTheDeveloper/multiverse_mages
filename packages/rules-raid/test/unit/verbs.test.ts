@@ -301,6 +301,9 @@ interface ArmResult {
   readonly resolutionTick: number;
   /** Nodes the host learned by watching. §3's exposure. */
   readonly exposed: number;
+  /** Mage raiders who did not go home — killed, or taken by the timer. */
+  readonly raidersLost: number;
+  readonly raidersWithdrawn: number;
 }
 
 /** How a player spends. `none` is the control arm. */
@@ -354,20 +357,29 @@ function arm(seed: number, spend: Spend): ArmResult {
     objectivesTaken: outcome.objectives.filter((objective) => objective.status !== 0).length,
     resolutionTick: outcome.resolutionTick,
     exposed: outcome.exposures.length,
+    raidersLost: outcome.raidersFielded - outcome.raidersWithdrawn,
+    raidersWithdrawn: outcome.raidersWithdrawn,
   };
 }
 
-function totals(spend: Spend): { attackers: number; defenders: number; taken: number } {
+function totals(spend: Spend): {
+  attackers: number;
+  defenders: number;
+  taken: number;
+  raidersLost: number;
+} {
   let attackers = 0;
   let defenders = 0;
   let taken = 0;
+  let raidersLost = 0;
   for (const seed of SEEDS) {
     const result = arm(seed, spend);
     attackers += result.attackersAlive;
     defenders += result.defendersAlive;
     taken += result.objectivesTaken;
+    raidersLost += result.raidersLost;
   }
-  return { attackers, defenders, taken };
+  return { attackers, defenders, taken, raidersLost };
 }
 
 function seedsThatDiffer(spend: Spend): number {
@@ -399,18 +411,29 @@ describe('§5: the muster decisions change the outcome', () => {
 
   it('a defender who musters ends every raid differently, and better', () => {
     // Measured on this commit, 8 seeds, two levies and a ward for 11,264 favor:
-    //   defenders alive at close   31 -> 54
-    //   raiders alive at close     23 -> 10
-    //   objectives taken           24 -> 22
+    //   defenders alive at close    22 -> 53
+    //   raiders lost (killed or timed out)   3 -> 8
+    //   objectives taken            12 -> 11
     // 8 of 8 seeds differ. The verbs are not decoration.
     expect(seedsThatDiffer('defender')).toBe(SEEDS.length);
 
     const control = totals('none');
     const spent = totals('defender');
-    console.log('W182 VERBS', { control, spent });
     expect(spent.defenders).toBeGreaterThan(control.defenders);
-    expect(spent.attackers).toBeLessThan(control.attackers);
     expect(spent.taken).toBeLessThanOrEqual(control.taken);
+
+    // **`raidersLost`, not `attackersAlive`.** Both arms leave four attackers
+    // standing at close, and that number stopped being a measure of harm the
+    // moment `withdraw-after-ticks` let raiders leave: a raider who went home
+    // alive and a raider who was never threatened both read as "not alive on
+    // the field", so `attackersAlive` now counts *how many are still walking
+    // around at resolution* and is nearly a constant.
+    //
+    // What a defender's muster actually buys is raiders who do not get home —
+    // killed outright, or still on the field when their deadline passes. That
+    // is the harm the levies and the ward are for, and it is the number that
+    // moves.
+    expect(spent.raidersLost).toBeGreaterThan(control.raidersLost);
   });
 
   it('an attacker who musters and mends changes the raid on most seeds', () => {

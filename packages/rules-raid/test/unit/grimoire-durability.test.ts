@@ -126,6 +126,10 @@ function totalSurvivors(durability: number): number {
   return SEEDS.reduce((sum, seed) => sum + survivorsOf(durability, seed), 0);
 }
 
+function totalLooted(durability: number): number {
+  return SEEDS.reduce((sum, seed) => sum + lootedBy(durability, seed), 0);
+}
+
 describe('a raid burns a library, and durability decides how much of it', () => {
   it('destroys books that would otherwise have survived the run forever', () => {
     // The floor of the claim: without this path there is no way at all for a
@@ -139,8 +143,22 @@ describe('a raid burns a library, and durability decides how much of it', () => 
     // a thing to vandalise rather than a thing to take from, and the 249 nodes
     // outside this content set's enabled cells would stay out of reach of
     // every strategy for ever.
-    console.log('W182 LOOT', SEEDS.map((seed) => lootedBy(ORCISH, seed)));
-    expect(lootedBy(ORCISH, SEEDS[0] as number)).toBeGreaterThan(0);
+    //
+    // Summed over the seed set rather than asserted on `SEEDS[0]`, and the
+    // change is a real behavioural finding rather than a test being loosened.
+    // `withdraw-after-ticks` gives a raider a deadline: she now leaves at tick
+    // 56 whether or not she reached the shelf, so **reaching a library is a
+    // race she can lose**, and on this two-mage fixture she usually does. It
+    // used to be unconditional because she never left at all — she stood on the
+    // field until the portal collapsed, and the stranded-raider rule killed her
+    // holding the books.
+    //
+    // The claim being made is that the looting *path* is live and reachable,
+    // which is what the 249 unreachable nodes depend on. How often it wins the
+    // race is a tuning question, and one this fixture is the wrong instrument
+    // for: the scenario-scale measurement is in `scripts/w182-withdrawal.mjs`,
+    // where 208 raids across four seeds loot 246 nodes.
+    expect(totalLooted(ORCISH)).toBeGreaterThan(0);
   });
 
   it('leaves a dwarven shelf measurably fuller than an orcish one', () => {
