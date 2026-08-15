@@ -9129,3 +9129,52 @@ a separate measurement and has not been taken.
 consumer is a narrow change. Whether a node *should* make its holder better at the thing that found it
 is a design ruling — it is a compounding loop, and vision §2.3 prices research in mage-months on the
 assumption that a mage-month is a fixed unit.
+
+## W181 — universities are built and never staffed. `completeAffiliation` has no caller
+
+The founding-academy removal was not shipped, and the reason it could not be is the finding.
+
+**`completeAffiliation` has no production caller.** Measured over 200 world years on the shipped build:
+the affiliated-mage count runs **6 → 5 → 4 → 3 → 2 → 1**, monotonically falling, while **189 universities
+stand and 81 complete.** No mage born after tick 0 ever affiliates with anything. The six who begin
+affiliated die and are never replaced.
+
+**So the founding academy is not a starting position. It is life support.** Remove it and the reference
+universe deadlocks — passive control, the denominator every balance measurement is a difference from,
+freezes at world-year 80 with 11 mages, 0 research, 0 teaching. `referenceGrimoires` **90.47 → 0.000**
+(−54.01 SE at 60 ticks, −45.34 SE at 240), `referenceLibraryDepth` → **0.000**, `referenceLivingMages`
+−67.28 SE, 22 tests failing across 13 files including `reference-long-run`'s own tripwire *"no lesson
+taught in the whole second century."* Nodes known and population move *up* — mages who cannot scribe
+research instead, which is the shape of the whole defect in one row.
+
+### It also explains the `permissive-breadth` funding mystery, and the explanation is circular
+
+W-earlier recorded the strategy comment claiming `permissive-breadth` *"completed no university in any
+run of any sweep ever taken"*. That is now measured rather than asserted: on the shipped position it
+submits action 11 **four times in 600 ticks** and names slot 0 **zero** times — **and not from poverty.
+It could afford the founding price on 566 of 600 ticks.** The promotion written to fix it is gated on
+`universityCount === 0`, and **the founding academy falsifies that condition before tick 0.** The life
+support disabled the fix for the thing the life support was compensating for.
+
+### Two instrument notes worth keeping
+
+**The positive control earned its place, and caught a broken instrument.** It predicts a founding tick
+from content — favor 0, regen fp 1024/tick, price fp 10240 — rather than asserting non-zero. Measured:
+the ledger opens at tick 9 with 10,463, spends 10,240, one university standing. The first watcher built
+for this held the `SimState` that `Scenario.create` returned; since `step` clones, it reported **0
+universities founded on a run that founded 195.** A watcher that holds a pre-`step` handle answers about
+a world that stopped existing.
+
+**`ui/session.json`'s `snapshotHash` did not move** when `universitiesStanding` was added —
+it is a report field and nothing hashes it. Worth knowing before treating that hash as a
+behaviour seal.
+
+### This is the same shape as W180, and that is now a pattern, not a coincidence
+
+W180: the effect pipeline runs and nothing asks it for the three academic rates. W181: the affiliation
+function exists and nothing calls it. W178: `applyDirective` and `runPlanFor` exported, called by nothing
+outside their own tests. The reachability check reports **125 findings** and is non-blocking.
+
+**The mechanisms are built. The wiring is not.** That is the whole of the integration debt, and it is why
+baselines taken now describe a game that is mostly not running — a measurement over an inert subsystem
+is a measurement of a constant. Fixing callers outranks refining numbers until the count comes down.
