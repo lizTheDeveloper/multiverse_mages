@@ -9468,3 +9468,88 @@ One earlier claim of the pair's is now false and is corrected: the reference gat
 byte-identical on the merged tree. **Proved to be #125's rather than the pair's by stripping the
 `excludes` arrays and reproducing every reference value byte-identically** — which is the control that
 turns "probably not us" into "not us".
+
+## W187 — the academic wire works, `teach-rate` is inert, and neither branch alone is complete
+
+The review of the other campaign's rate wire. The measurement is unambiguous and two of the findings are
+worth more than it.
+
+### It works
+
+`rootSeed 20260811`, 200 runs (4 cells × 50 replicates), `passive-control`, 60 ticks:
+
+| metric | pre-wire `main` | `campaign/combined` | delta |
+|---|--:|--:|---|
+| `referenceNodesKnown` | 15.88 | **21.58** | +5.69 (**44.3 SE**) |
+| `referenceKnowledgeInstances` | 277.31 | **338.50** | +61.4 (**30.0 SE**) |
+| `referenceNodesGained` | 13.38 | 19.08 | +5.69 |
+| `referenceLivingMages` | 39.00 | 38.95 | flat |
+
+Paired ablation on the wired tree: control **21.770 ± 0.189** against `research-rate` neutralized
+**15.795 ± 0.163**, **z = −23.94**, n = 200 each. Correctly caveated: ablating `research-rate` also
+neutralizes the god's blessing constants and §6a's library contribution, so the ablated arm is **not** a
+reconstruction of pre-wire main — 15.795 ≈ 15.880 is suggestive, not evidence. The paired z is the claim.
+
+`check:consumption`: **FAIL** (15 registrations, 11 reachable, exclusions `{fertility, lifespan}`) →
+**PASS** (20 registrations, 16 reachable, exclusions empty).
+
+### `teach-rate` is wired, registered, green — and behaviourally inert
+
+Research completions **+28.8%**, nodesKnown **+58.6%**, grimoires **+31.2%**, and **lessons 3547 → 3550,
++0.1%**. The shipped test is literally named *"finds no completion-count gain for `teach-rate`, because a
+lesson already fits in a month."* Nineteen `single`-target effects reach a consumer and change nothing
+under v1 content.
+
+**So `check:consumption` cannot distinguish a live wire from one whose magnitude never binds.** That is
+**the checker's own failure class, one layer up** — it was built because `check:coverage` counted authored
+primitives and was compatible with the pipeline being connected to nothing; it now counts *connected*
+primitives and is compatible with the connection doing nothing. Worth writing at the checker rather than
+discovering a third time.
+
+### Neither branch alone is complete, and the merge hides the decision
+
+| | schema `minimum` | universe-effects | academic-effects | `kinds.ts` clamp |
+|---|---|---|---|---|
+| `w/knowledge-rate-wire` | 1 | `> 0` bug | `<= 0` bug | present |
+| `campaign/signed-magnitudes` | −1073741823 ✅ | `!== 0` ✅ | `=== 0` ✅ | **present** ✗ |
+| `campaign/combined` | **1** ✗ | `!== 0` ✅ | `=== 0` ✅ | **dropped** ✅ |
+| `campaign/breaker` | −1073741823 | `> 0` bug | `=== 0` ✅ | present |
+
+`combined`'s four guard fixes — and it found **four** sites, not the two the brief knew: `academic-effects
+:332`, `universe-effects:347` and `:358`, `economy/kinds.ts:173` — are **correct and inert**, because the
+schema still forbids authoring a negative. `signed-magnitudes` permits the content and silently drops it
+at `routeYieldByForm`.
+
+**And a trial merge produces three conflicts, none of them the one that matters.**
+`academic-effects.ts` and `universe-effects.ts` conflict **comment-only** (code lines identical both
+sides); the dashboard payload is generated. **`kinds.ts` does not conflict** — so a naive merge adopts
+`combined`'s clamp decision **without any reviewer seeing a choice was made.** W178's rule again, and this
+time the auto-merge hides a design ruling rather than a number.
+
+Commissioned as `w187/effects-union` with all three decisions pre-made: schema takes the negative bound;
+`routeYieldByForm` takes `combined`'s reading with its argument carried verbatim — *"a negative weight is
+a FORM claiming that producing food consumes stone … the sign now comes from the node; the mix stays a
+non-negative property of the form"*; and `primitive-consumption.test.ts` keeps a **synthetic** god-only
+registration rather than asserting the section is permanently empty, because post-merge every shipped
+primitive is node-driven and neither parent's file passes.
+
+### An interaction defect neither branch's CI could catch
+
+`ablation-reaches-the-world-loop` fails `expected 495 to be 494`. **Passes at `d11e09c` (rate wire alone).
+Passes at `3219c62` (vitality tip alone). Fails only on the merge.** It also sits against `5662934`'s
+claim that the vitality wire *"contributes zero on every tick"* under v1 content — either that is false,
+or the ±1 is the academic wire moving materials through scribing. **Undetermined, and assigned.** A
+one-unit population difference is exactly the size of thing that is waved away and turns out to be a real
+coupling — and note this is the same assertion W186 found had no power, so the fix must not be a
+loosening of the thing under review.
+
+### And the reviewer declined to re-record, correctly
+
+*"The tree that lands does not exist yet; a baseline taken on a verification tree measures a ref nobody
+will merge."* Same reason `ui:dashboard` was skipped. The re-record belongs on the union tree, and is
+commissioned there.
+
+Also of note: the `single` design fork was resolved **against** the brief I wrote. Shipped reading is
+*each participant's own nodes scale her own half of the lesson* (`world-step.ts:1737` teacher, `:1758`
+student), not "the professor's node scales what the student receives" — because it mirrors how the god's
+blessing and library depth already work. Better sourced than my instruction, and documented in place.
