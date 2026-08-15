@@ -195,7 +195,9 @@ describe('the subsystem stream registry', () => {
       objectives: 10,
       terrain: 11,
       openingSquare: 12,
-      career: 13,
+      // 15 rather than 13: three branches appended at once and the ids follow
+      // merge order (#170 → 13, #186 → 14, this → 15). See `streams.ts`.
+      career: 15,
     });
   });
 

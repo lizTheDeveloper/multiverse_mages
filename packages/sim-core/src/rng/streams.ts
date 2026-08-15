@@ -70,8 +70,22 @@ export const RNG_STREAM = {
    * mean that adding a graduate this tick re-rolled the personality of every
    * mage enrolled in it — the insertion-variance defect that §6's per-actor
    * streams exist to remove, arriving through the stream registry instead.
+   *
+   * **`15`, not `13`, and the number was assigned by merge order rather than by
+   * discovery order.** Three open branches each appended a thirteenth stream at
+   * once — `w190/scribing-fidelity` (#170) `corruption`, `w200/layer-one-fixes`
+   * (#186) `detachment`, and this one — a collision none of them could see from
+   * inside itself. The registry is append-only against *merged* history, so the
+   * ids follow the order the branches land: 13, 14, 15. This branch is last
+   * because it is cut from #181, which is itself unmerged.
+   *
+   * **Until #170 and #186 land, this table reads `1–12, 15` and the density
+   * assertion in `rng-registry-append-only.test.ts` fails.** That red is a
+   * statement about merge order rather than about this code, and it clears
+   * itself the moment the two branches ahead arrive. Renumbering to close the
+   * gap early would recreate the collision it exists to avoid.
    */
-  career: 13,
+  career: 15,
 } as const;
 
 /** Any ID in the permanent registry. */

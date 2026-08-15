@@ -75,12 +75,17 @@ const PERMANENT_IDS: Readonly<Record<string, number>> = {
   // and refuses on it, so all three baselines invalidated by identity before a
   // single measured number moved. See `docs/design/opening-square.md` §4.
   openingSquare: 12,
-  // Appended by `w197/aptitude-sorts-careers`. The second append, taken with the
-  // cost above known: the graduate career draw — academic track or populace
-  // mage — which has its own id rather than borrowing `mageBirth`'s because a
-  // shared cursor would have adding a graduate re-roll the personality of every
-  // mage enrolled in the same tick.
-  career: 13,
+  // Appended by `w197/aptitude-sorts-careers`: the graduate career draw —
+  // academic track or populace mage — which has its own id rather than borrowing
+  // `mageBirth`'s because a shared cursor would have adding a graduate re-roll
+  // the personality of every mage enrolled in the same tick.
+  //
+  // **15, not 13, and the gap at 13–14 is deliberate.** Three branches appended
+  // a thirteenth stream simultaneously; ids follow merge order, so #170 takes
+  // 13, #186 takes 14, and this takes 15. Until those two land, the sibling
+  // `is dense from 1` assertion fails on this tree — correctly, and by
+  // construction. Closing the gap early would recreate the collision.
+  career: 15,
 };
 
 /**

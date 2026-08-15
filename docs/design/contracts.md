@@ -1286,7 +1286,7 @@ invalidates every committed balance baseline.**
 | 10 | objective and raid generation |
 | 11 | terrain generation and combatant deployment |
 | 12 | the opening square — which techniques and forms a universe is founded holding |
-| 13 | the career sort at graduation — academic track or populace mage |
+| 15 | the career sort at graduation — academic track or populace mage |
 
 **Stream 12 was the first append since the baselines were committed, and it is what taught us that
 appending is not free.** The gate compares `provenance.rngRegistryHash` as a block-level refusal,
@@ -1296,7 +1296,21 @@ but it means **any** future subsystem addition forces a re-baseline event, and t
 the plan for one rather than being discovered in a red gate. See
 `docs/design/opening-square.md` §4.
 
-**Stream 13 (W197) is the second append, taken with that cost known and accepted.** It is the
+**13 and 14 are missing from this table on purpose, and the gap is the record of a three-way
+collision.** Three branches each appended a thirteenth stream at once, none able to see the others:
+`w190/scribing-fidelity` (#170) `corruption`, `w200/layer-one-fixes` (#186) `detachment`, and W197
+`career`. The registry is append-only against *merged* history, so the ids follow the order the
+branches land — **#170 takes 13, #186 takes 14, W197 takes 15** — and W197 is last only because it
+is cut from #181, which is itself unmerged.
+
+They are **not** written in as reserved rows. This table is parsed by
+`rng-registry-append-only.test.ts` and compared row-for-row against the code, so a placeholder row
+would be a row the registry does not have, and two true assertions would start failing to describe a
+gap that is already visible. **Whoever merges #170 or #186 adds the real row then.** Until both land,
+a tree carrying only W197 reads `1–12, 15` and the *density* assertion fails — which is a statement
+about merge order rather than about any of the three branches.
+
+**Stream 15 (W197) is the third append, taken with that cost known and accepted.** It is the
 graduate career draw — see `packages/rules-world/src/mages/careers.ts`. It has its own ID rather
 than borrowing stream 1 because the two are the same subsystem in spirit and are taken from
 opposite ends of a life: a shared cursor would mean that adding one graduate re-rolled the
