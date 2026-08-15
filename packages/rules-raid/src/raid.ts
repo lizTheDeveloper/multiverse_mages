@@ -673,7 +673,7 @@ function chooseIntent(
     const price = corruptionPrice(raid, corruptNode);
     if (price !== undefined && field(raid, brief.handle, 'vigor') >= price) {
       const library = nearestLibraryInReach(raid, here, tick, brief);
-      if (library !== undefined && corruptibleIn(raid, brief, library) !== 0) {
+      if (library !== undefined && corruptibleIn(raid, library) !== 0) {
         return { kind: 'corrupt', nodeId: corruptNode, objective: library };
       }
     }
@@ -1078,7 +1078,7 @@ function resolveCorruption(
   const stream = raid.rng.actorStream(RNG_STREAM.corruption, tick, packCombatantKey(saboteur.key));
   if (!raid.arbiter.attemptCorruption(nodeId, magnitudes, stream)) return;
 
-  const target = corruptibleIn(raid, saboteur, objective);
+  const target = corruptibleIn(raid, objective);
   if (target === 0) return;
 
   saboteur.corrupted.push(target);
@@ -1099,7 +1099,17 @@ function corruptionPrice(raid: Raid, nodeId: ContentId): Fixed | undefined {
 }
 
 /**
- * The instance a saboteur would ruin in this library, or `0`.
+ * The instance the *next* corruption in this raid would ruin, or `0`.
+ *
+ * Deliberately not a function of which saboteur is asking. Phase 1 computes
+ * every intent against tick-start state, so two saboteurs in one tick both probe
+ * the same shelf and both see the same top book; phase 5b then runs them in
+ * order and the second finds it already taken and moves down. If the shelf is
+ * exhausted between them, the second **has paid her vigor and got nothing** —
+ * which is the rule casting already follows, stated here so it is a decision
+ * rather than an accident of ordering: a spell costs what it costs whether or
+ * not it lands, and a probe that could reserve a target would make corruption
+ * the one action in the raid that cannot be wasted.
  *
  * Deepest tier first, ties on the instance handle — the same ranking theft
  * uses, and here it is not only about taking something worth having. The design
@@ -1121,9 +1131,8 @@ function corruptionPrice(raid: Raid, nodeId: ContentId): Fixed | undefined {
  * consequence time, so the state's own `corruption` field still says `sound`
  * during the engagement and cannot be the exclusion either.
  */
-function corruptibleIn(raid: Raid, saboteur: CombatantBrief, objective: ObjectiveBrief): Handle {
+function corruptibleIn(raid: Raid, objective: ObjectiveBrief): Handle {
   if (objective.kind !== OBJECTIVE_KIND.library) return 0;
-  void saboteur;
   const already = new Set<Handle>();
   for (const roster of raid.rosters) {
     for (const brief of roster.briefs) for (const instance of brief.corrupted) already.add(instance);
