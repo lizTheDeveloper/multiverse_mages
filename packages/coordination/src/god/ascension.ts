@@ -409,6 +409,33 @@ export function prestigeEarned(inputs: PrestigeInputs, constants: GodConstants):
  * analytic limit of the recurrence at maximum earning. An infinite streak of
  * perfect runs approaches it asymptotically and never exceeds it, and the tenth
  * consecutive ascension adds a few percent over the fifth.
+ *
+ * ## Staged ahead of its consumer, and the consumer is a run boundary
+ *
+ * **Nothing in this repository calls this function, and that is a statement
+ * about what the simulation does not yet have rather than about this file.**
+ * `check:reachability` reports it, and the report is correct.
+ *
+ * The recurrence needs two runs to relate. Half of the seam exists: `system.ts`
+ * writes `prestigeEarned` onto the universe row once, at termination, exactly
+ * as the gloss above describes. The other half does not. Nothing reads that
+ * field back, because **nothing starts a successor universe** — `scenario`'s
+ * `buildReferenceState` composes one universe with `prestige: 0` and `step()`s
+ * it to a tick cap, and `agent-api`'s session has no successor lifecycle. A
+ * grep for a write of a non-zero `prestige` anywhere in `packages/` returns
+ * nothing.
+ *
+ * So the missing thing is a **succession layer above the world step**: something
+ * that, on `terminalReason !== none`, reads `prestigeEarned`, calls this, and
+ * builds the next universe's tick-zero state through {@link legacyGrant}. It
+ * belongs above `step()` because §1.1 makes `prestige` read-only for the length
+ * of a run — a universe that could raise its own carried prestige mid-flight
+ * would be the meta-game feeding the loop it exists to sit outside.
+ *
+ * **That layer is a change of its own, with its own spec.** It is deliberately
+ * not invented here: a succession seam built as a side effect of silencing a
+ * reachability finding would be a mechanic nobody designed, and unwinding one
+ * later costs more than the finding does now.
  */
 export function carriedPrestige(
   prestige: Fixed,
@@ -447,8 +474,25 @@ export interface LegacyGrant {
   readonly favor: Fixed;
   readonly materials: Fixed;
   readonly populace: number;
-  /** Knowledge instances to place in a library, at or below the authored tier. */
+  /** Knowledge instances to place in a library, at or below {@link archiveMaxTier}. */
   readonly archiveNodes: number;
+  /**
+   * The deepest node tier a seeded instance may be — `legacy-archive-max-tier`.
+   *
+   * Carried in the grant rather than left for the seeder to look up, because the
+   * count above is meaningless without it and the two were separated once
+   * already: `archiveNodes` shipped with a gloss promising *"at or below the
+   * authored tier"* while the tier itself was resolved into `GodConstants` and
+   * read by nothing, so the promise was made in a comment and kept nowhere. A
+   * seeder handed only a count would have to re-derive the bound, and a seeder
+   * that forgot would let a legacy seed the summit — which the constant's own
+   * gloss names as the failure it exists to prevent: *"prestige buying the
+   * ascension condition."*
+   *
+   * Not a magnitude this function computes. It is passed through unchanged, so
+   * that the one place a retune has to happen stays `god-constant.json`.
+   */
+  readonly archiveMaxTier: number;
 }
 
 /**
@@ -467,6 +511,44 @@ export interface LegacyGrant {
  * channel at the reference tick. That single fraction is the only knob
  * `prestigeAdvantage` turns, and if it reaches zero and the metric still fails,
  * the model is wrong and gets redesigned rather than retuned.
+ *
+ * ## Staged ahead of its consumer, for the same reason {@link carriedPrestige} is
+ *
+ * Nothing calls this, and `check:reachability` reports it together with the five
+ * constants only it reads — `legacy-archive-nodes`, `legacy-headstart-fraction`,
+ * and the three `legacy-baseline-*`. They inherit this function's answer rather
+ * than having one of their own.
+ *
+ * A grant is a **tick-zero starting position for a universe that does not exist
+ * yet**, so its caller is the succession layer described on
+ * {@link carriedPrestige}: the thing that ends one run and founds the next.
+ *
+ * Note what that caller still has to decide, none of which is settled here and
+ * none of which is mechanical:
+ *
+ * - **`materials` is one figure and `MATERIAL_STOCK` has three fields** — food,
+ *   stone and vellum. Splitting it three ways, weighting it, or giving each
+ *   field the whole figure are three different starting positions.
+ * - **`populace` is a headcount, and a cohort is keyed by `(speciesId,
+ *   occupation, birthTickBucket)`** with `contracts.md` §1.3 requiring exactly
+ *   one entity per key. So the heads either join existing cohorts — changing the
+ *   species and occupation mix — or found new ones, which needs a birth bucket
+ *   nobody has chosen.
+ * - **`archiveNodes` cannot be placed as bare instances.** A written copy at
+ *   `LOCATION_KIND.library` requires a paired `GRIMOIRE` row whose `holderKind`
+ *   and `holderId` agree with it — `KnowledgeSubsystem.createInstance` throws
+ *   otherwise — so seeding an archive means authoring book durability, which is
+ *   a magnitude no constant here supplies.
+ *
+ * Those are seeding decisions with balance consequences, and inventing them to
+ * give this function a call site would be inventing the mechanic.
+ *
+ * The three `legacy-baseline-*` values are additionally **placeholders their own
+ * glosses disown** — *"a measurement that has not been taken"* — pinned to
+ * `legacy-reference-tick`. Until a `prestigeAdvantage` sweep replaces them, this
+ * function is correct arithmetic over numbers nobody has measured, which is a
+ * second and independent reason not to wire it to anything that reports a
+ * balance figure.
  */
 export function legacyGrant(prestige: Fixed, constants: GodConstants): LegacyGrant {
   const budget = legacyBudget(prestige, constants);
@@ -482,5 +564,6 @@ export function legacyGrant(prestige: Fixed, constants: GodConstants): LegacyGra
     archiveNodes: Math.floor(
       (constants.legacyArchiveNodes * FP_ONE * budget) / (FP_ONE * FP_ONE),
     ),
+    archiveMaxTier: constants.legacyArchiveMaxTier,
   };
 }

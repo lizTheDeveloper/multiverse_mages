@@ -138,6 +138,8 @@
   and <code>libraryDependence</code> is the set of nodes surviving on exactly one instance. Move the
   redundancy slider: that number is what decides whether any of this matters.</p>
 
+  <div id="srchost" style="margin:1.2rem 0 1.4rem"></div>
+
   <div class="bar">
     <span class="k">mean copies per node</span>
     <input id="red" type="range" min="1" max="60" step="1" value="4">
@@ -155,7 +157,7 @@
 
   <div class="dirs" id="dirs"></div>
 
-  <div class="note">
+  <div class="note mm-essay">
     <h2>What operating these settles</h2>
     <p><b class="hot">Drag the slider to 55 and all three directions become the same screen — and that is now measured rather than predicted.</b> W8 landed raids: books burn, grimoires fell <b>1232 to 354</b> in a raid season, and <em>nothing was lost</em> — <code>nodesLost</code> is 0.00 for six of eight strategies and <code>libraryDependence</code> sits at <b>0</b>, because at 50–80 copies per node a whole library is held fifty other places. The campaign's own verdict: <em>concentration, not the absence of a mechanism, is the remaining problem.</em> So the risk direction has nothing to sort, permanently, until copies stop being free — and no decay constant and no interface can change that.</p>
     <p><b>Vessels are not decoration and only direction B makes them primary.</b> The four location kinds
@@ -281,7 +283,7 @@ function render() {
     <section class="dir">
       <div class="dhead"><span class="letter">A</span><span class="name">By node</span>
         <span class="tag">the canonical list</span></div>
-      <div class="dbody"><div class="scroll">
+      <div class="dbody"><div class="scroll mm-scroll">
         ${world.map(n => `
           <div class="nrow" data-sole="${held(n) === 1}">
             <span><span class="nm">${n.name}</span>
@@ -318,7 +320,7 @@ function render() {
         ${dep === 0 ? `<div class="flat"><b>Nothing is at risk.</b> libraryDependence is empty at this
           redundancy, so this direction has nothing to sort and its colouring never fires. At the
           campaign's measured ~55 copies per node this is the permanent state of the screen.</div>` : ''}
-        <div class="scroll">
+        <div class="scroll mm-scroll">
         ${byRisk.map(n => {
           const r = riskOf(n);
           return `<div class="risk" data-r="${r}">
@@ -345,4 +347,13 @@ render();
 <script type="module">
   import { floatThemeControl } from '../shared/theme.js';
   floatThemeControl();
+</script>
+
+<script type="module">
+  /* Where this page's data comes from, and — for the parts the read path
+     does not carry — which capability is missing and why. Sourced from
+     capabilities() rather than prose, so it cannot go stale quietly. */
+  import { mountSourceNote, openSession } from '../shared/session.js';
+  const s = await openSession({ recording: '../session.json' }).catch(() => null);
+  mountSourceNote(document.getElementById('srchost'), s, ['knowledgeAggregates', 'individualMages', 'eventDeltas']);
 </script>

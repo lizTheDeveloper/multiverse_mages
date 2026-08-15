@@ -194,6 +194,7 @@ describe('the subsystem stream registry', () => {
       knowledgeTheft: 9,
       objectives: 10,
       terrain: 11,
+      openingSquare: 12,
     });
   });
 

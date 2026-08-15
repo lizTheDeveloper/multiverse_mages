@@ -55,6 +55,7 @@ import {
 } from '../../src/index.js';
 
 import { constants } from './god-fixtures.js';
+import { registry } from './world-fixtures.js';
 
 /**
  * The shipped constants, with Path A's cell gate held at **1**.
@@ -439,13 +440,24 @@ describe('the legacy conversion is concave, and it buys stocks only', () => {
 
   it('grants nothing at all to a universe with no prestige', () => {
     const grant = legacyGrant(0, C);
-    expect(grant).toEqual({ favor: 0, materials: 0, populace: 0, archiveNodes: 0 });
+    expect(grant).toEqual({
+      favor: 0,
+      materials: 0,
+      populace: 0,
+      archiveNodes: 0,
+      // The bound rides along even when there is nothing to bound. It is a
+      // property of the content, not of this universe's prestige, and a seeder
+      // reading it off a zero grant must get the same answer as off a full one.
+      archiveMaxTier: C.legacyArchiveMaxTier,
+    });
   });
 
   it('grants only the four stock channels, and each is monotonic in prestige', () => {
     const small = legacyGrant(Math.floor(C.prestigeCap / 8), C);
     const large = legacyGrant(C.prestigeCap, C);
-    expect(Object.keys(large).sort()).toEqual(['archiveNodes', 'favor', 'materials', 'populace']);
+    expect(Object.keys(large).sort()).toEqual(
+      ['archiveNodes', 'archiveMaxTier', 'favor', 'materials', 'populace'].sort(),
+    );
     expect(large.favor).toBeGreaterThanOrEqual(small.favor);
     expect(large.materials).toBeGreaterThanOrEqual(small.materials);
     expect(large.populace).toBeGreaterThanOrEqual(small.populace);
@@ -456,6 +468,32 @@ describe('the legacy conversion is concave, and it buys stocks only', () => {
     expect(legacyGrant(C.prestigeCap * 1000, C).archiveNodes).toBeLessThanOrEqual(
       C.legacyArchiveNodes,
     );
+  });
+
+  /**
+   * The count is meaningless without the bound, and the bound used to be carried
+   * nowhere.
+   *
+   * `archiveNodes` shipped with a gloss promising *"at or below the authored
+   * tier"* while `legacy-archive-max-tier` was resolved into `GodConstants` and
+   * read by nothing — `check:reachability` reported it as a constant nothing
+   * consumes. A promise kept only in a comment is one a seeder can miss, and the
+   * failure mode is named in the constant's own gloss: *"A legacy that could
+   * seed the summit would be prestige buying the ascension condition."*
+   *
+   * The second assertion is the one with teeth. It is not "3 equals 3" — it
+   * checks the bound against the **deepest tier the shipped node graph actually
+   * authors**, so it fails if either number moves toward the other. Retuning the
+   * bound up to the summit, or authoring a graph shallow enough that the bound
+   * reaches it, both break this.
+   */
+  it('carries the archive tier bound, and the bound stays below the authored summit', () => {
+    const deepestAuthoredTier = Math.max(...registry().nodes.map((entry) => entry.record.tier));
+
+    for (const prestige of [0, 1, 2048, C.prestigeCap, C.prestigeCap * 1000]) {
+      expect(legacyGrant(prestige, C).archiveMaxTier).toBe(C.legacyArchiveMaxTier);
+    }
+    expect(legacyGrant(C.prestigeCap, C).archiveMaxTier).toBeLessThan(deepestAuthoredTier);
   });
 
   it('grants a whole number of people, because a fifth of a person is not one', () => {

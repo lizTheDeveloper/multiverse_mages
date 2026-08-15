@@ -27,6 +27,7 @@ import type {
   ArmTelemetry,
   CensusSample,
   MechanicAvailability,
+  RaidObservation,
   RunTelemetry,
 } from '@mm/mc-harness';
 import { MECHANICS_AT_0_5_0 } from '@mm/mc-harness';
@@ -48,6 +49,30 @@ export function sample(
   singleInstanceNodeIds: readonly number[] = [],
 ): CensusSample {
   return { worldTick, existingNodeIds, singleInstanceNodeIds };
+}
+
+/**
+ * One raid observation, defaulted to a raid in which nothing happened.
+ *
+ * The action-economy fields default to *empty*, not to plausible numbers: a
+ * fixture that quietly supplied denied combatant-ticks would let a collector
+ * test pass against a raid the fixture invented rather than one a test declared.
+ */
+export function raidObservation(overrides: Partial<RaidObservation> = {}): RaidObservation {
+  return {
+    raidId: 1,
+    raidSeed: 4242,
+    engagementTicks: 15,
+    initialPortalStabilityTicks: 100,
+    defenderFrozenWorldTicks: 3,
+    attackerTempoCostWorldTicks: 7,
+    combatSources: [],
+    totalCombatantTicks: 0,
+    worldScaleRemovals: 0,
+    summonsRemoved: 0,
+    unimplementedCombatChannels: ['displacement'],
+    ...overrides,
+  };
 }
 
 /** A run telemetry record with everything defaulted to the 0.5.0 build. */
