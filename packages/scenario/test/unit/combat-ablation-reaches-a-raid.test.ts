@@ -39,16 +39,25 @@
  * today, and the reason is worth writing down because it is a gap in the
  * scenario rather than in this wiring.
  *
- * **The reference universe fields no mage combatants.** `eligibleMages` selects
- * on role — attackers field `raider`, defenders field `warden` — and role is set
- * by god action 10, which no shipped passive strategy submits. Every mage in a
- * reference run is therefore a `researcher`, asserted below so this stays true
- * or the test fails. So an inbound raid is a rival warband walking onto an empty
- * field: nothing on the host side has a `ward` or a `concealment` to neutralize,
- * and the rival's `direct-damage` has no mage to spend itself on. Measured over
- * six seeds at 400 ticks, ablating `direct-damage`, `concealment` or `blink`
- * changes the raid log on **none** of them, and every raid resolves with zero
- * casualties, zero nodes lost and zero nodes gained.
+ * **The reference universe joins no combat.** The first version of this
+ * paragraph said it fields no mage combatants and gave the wrong mechanism —
+ * *"defenders field `warden`"* — which `combatants.ts` contradicts:
+ * `DEFENDING_ROLES` is `{warden, professor, researcher, raider}`, so every
+ * living mage defends and an inbound raid is not walking onto an empty field.
+ * The measured cause, from `scripts/w144-ablation-visibility.mjs` over all eight
+ * shipped strategies at two seeds each — **61 raids, 80,615 combatant-ticks,
+ * zero combat attempts** — is `chooseIntent`'s priority order. Theft is
+ * candidate 2 and casting is candidate 3, and no shipped strategy grants a
+ * raider a combat node, so `firstCastableNode` returns nothing on every tick of
+ * every raid. Bodies are on the field; nobody swings.
+ *
+ * So ablating `direct-damage`, `concealment` or `blink` changes the raid log on
+ * none of six seeds at 400 ticks, and every raid resolves with zero casualties,
+ * zero nodes lost and zero nodes gained. Until `RaidRecord` grew an `actionEconomy` block that null was also
+ * *unfalsifiable* — `RaidRecord` carried no combat instrumentation, so a live
+ * mask and a dead one produced the same log. It carries `actionEconomy` now, and
+ * `raid-metrics.test.ts` pins the zero-attempt finding as the tripwire that
+ * fails the day a strategy fields an armed combatant.
  *
  * `knowledge-steal` still bites because a thief scores the *intent* to steal
  * before there is a victim, and a thief whose theft is worth nothing spends her
@@ -56,9 +65,9 @@
  * two of the six seeds, and it is what this file asserts.
  *
  * The honest reading is not "the mask barely works". It is **"reference raids
- * contain almost no combat"**, which is a finding for whoever tunes raid
+ * contain no combat at all"**, which is a finding for whoever tunes raid
  * participation next, and which this file will start reporting differently the
- * moment a strategy assigns a warden.
+ * moment a strategy puts a combat node in a combatant's hands.
  */
 
 import { describe, expect, it } from 'vitest';
@@ -141,20 +150,25 @@ describe('§9’s mask crosses the scenario boundary into a raid', () => {
 
 describe('why six of the seven combat primitives cannot be measured here', () => {
   it.each(['direct-damage', 'concealment', 'blink'])(
-    'neutralizing %s changes nothing, because no mage is fielded to be hit',
+    'neutralizing %s changes nothing, because nobody ever swings',
     (primitive) => {
       const seed = 0x0bad_c0de;
+      // The raid log now carries `actionEconomy`, so this comparison is a real
+      // one: before the record carried `actionEconomy` it could not have distinguished a live mask from a dead
+      // one, because the fields a combat primitive moves were not in it.
       expect(play(seed, primitive).raidLog).toBe(play(seed).raidLog);
     },
   );
 
-  it('fields no warden, which is the whole reason', () => {
+  it('fields no warden — which is a symptom, and not the cause', () => {
     const played = play(0x0bad_c0de);
-    // Not a bug in this change and not something it fixes: `assign role` is god
-    // action 10 and the passive strategy never submits it, so every mage stays
-    // a `researcher` and a defending universe sends nobody. When that changes,
-    // this assertion fails and the file above it needs rewriting with the
-    // primitives that have become measurable.
+    // `assign role` is god action 10 and the passive strategy never submits it,
+    // so every mage stays a `researcher`. That is worth asserting and it is
+    // **not** why the six are invisible: `DEFENDING_ROLES` includes
+    // `researcher`, so these mages do defend. The cause is that nobody on either
+    // side holds a combat node and theft outranks casting in `chooseIntent`, so
+    // no attempt is ever begun — pinned as a tripwire in `raid-metrics.test.ts`,
+    // where the record can now show it.
     expect(played.livingMages).toBeGreaterThan(0);
     expect(played.wardens).toBe(0);
   });
