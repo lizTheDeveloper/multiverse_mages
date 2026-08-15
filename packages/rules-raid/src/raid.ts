@@ -1112,10 +1112,22 @@ function corruptionPrice(raid: Raid, nodeId: ContentId): Fixed | undefined {
  * Already-corrupted instances are excluded, for the reason phase 2's second
  * clause exists: without it a saboteur would ruin the same book every tick for
  * the whole raid and the mechanic would be 455 identical nothings.
+ *
+ * **The exclusion is the raid's, not the saboteur's**, and that is a correction
+ * a test caught rather than a design. Read off `brief.corrupted` alone, two
+ * saboteurs in one warband both went for the deepest book and both counted it —
+ * seven corruptions against a four-book shelf, a number that describes one book
+ * ruined twice and reads as one ruined seven times. The world write happens at
+ * consequence time, so the state's own `corruption` field still says `sound`
+ * during the engagement and cannot be the exclusion either.
  */
 function corruptibleIn(raid: Raid, saboteur: CombatantBrief, objective: ObjectiveBrief): Handle {
   if (objective.kind !== OBJECTIVE_KIND.library) return 0;
-  const already = new Set<Handle>(saboteur.corrupted);
+  void saboteur;
+  const already = new Set<Handle>();
+  for (const roster of raid.rosters) {
+    for (const brief of roster.briefs) for (const instance of brief.corrupted) already.add(instance);
+  }
   const ranked = raid.host.knowledge
     .instancesAt(LOCATION_KIND.library, objective.targetId)
     .filter((instance) => !already.has(instance))
