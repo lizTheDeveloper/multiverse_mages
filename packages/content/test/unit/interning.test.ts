@@ -404,11 +404,11 @@ describe('contentRevision', () => {
     // ee99b5845d1da2afe532eb5280e07f57`, and the two arrived on separate
     // branches, so neither literal is a digest over a preimage holding both:
     // `d4e30476` has the applied-magic scalars and no exclusions, `ee99b584`
-    // has the exclusions and no scalars.
-    // This tree is the first holding both, and a third value is what a digest
-    // over the union is supposed to produce — the same situation the
-    // three-branch paragraph above describes, and the reason the check is a
-    // digest over the preimage rather than a hand-maintained list of files.
+    // has the exclusions and no scalars. This tree is the first holding both,
+    // and a third value is what a digest over the union is supposed to produce
+    // — the same situation the three-branch paragraph above describes, and the
+    // reason the check is a digest over the preimage rather than a
+    // hand-maintained list of files.
     expect(registry.contentRevision).toBe('e8442af2c5f91ae6f80ad9a178e0e451');
   });
 
