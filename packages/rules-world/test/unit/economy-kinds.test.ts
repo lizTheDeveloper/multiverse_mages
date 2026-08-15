@@ -31,6 +31,7 @@ import {
   CLAIMANT_KIND,
   CONSUMPTION_ORDER,
   MATERIAL_KINDS,
+  materialsProduced,
   routeYieldByForm,
   territoryYieldShares,
   totalAmount,
@@ -186,12 +187,74 @@ describe('routeYieldByForm splits a resource-yield magnitude by content weights'
     expect(totalAmount(routed)).toBeGreaterThan(1024);
   });
 
-  it('ignores a negative magnitude and negative weights rather than crediting them', () => {
-    expect(routeYieldByForm(form({ food: 512 }), -100)).toEqual(zeroAmounts());
+  it('routes a negative magnitude as a cost, and still ignores negative weights', () => {
+    // **Inverted on purpose, and the old assertion was not wrong when written.**
+    // It read "ignores a negative magnitude … rather than crediting them" and
+    // was green for as long as `node.schema.json` set `minimum: 1` — no
+    // negative could reach this function, so the clamp described impossible
+    // input rather than a decision.
+    //
+    // Signed magnitudes make a negative `resource-yield` authorable content.
+    // Clamping here would be a *naive* bound: a floor chosen to avoid a
+    // negative rather than derived from what the quantity is, and it would
+    // discard the cost at the door where nothing downstream could see it.
+    //
+    // The bound that survives is mechanical and lives where the mechanism
+    // supplies one — `stackingFloor`'s `fp(0)` on the stacked multiplier, which
+    // says labour with every debuff in the world produces **nothing** and never
+    // anti-materials. Measured through `materialsProduced` at 100 laborers:
+    // no bonus 1600, −50% cost 800, −100% cost 0, −300% cost 0. The cost bites
+    // proportionally and stops at zero by arithmetic, not by a sign test.
+    expect(routeYieldByForm(form({ food: 512 }), -100)).toEqual({
+      food: -50,
+      stone: 0,
+      vellum: 0,
+    });
+
+    // The weights keep their clamp, and the asymmetry is the point. A negative
+    // weight would be a *form* claiming that producing food consumes stone — a
+    // statement about the material taxonomy, not about one working. The sign
+    // comes from the node; the mix stays a property of the form.
     expect(routeYieldByForm(form({ food: -512, stone: 256 }), 1024)).toEqual({
       food: 0,
       stone: 256,
       vellum: 0,
     });
+
+    // And the two compose: a cost routes proportionally negative amounts to
+    // exactly the kinds a gain would have fed, and to no others.
+    expect(routeYieldByForm(form({ food: -512, stone: 256 }), -1024)).toEqual({
+      food: 0,
+      stone: -256,
+      vellum: 0,
+    });
+  });
+
+  it('floors production at nothing, so a cost can stop labour but never invert it', () => {
+    // The mechanical bound, asserted through the real production path rather
+    // than by reading the stacking code — the claim is about the chain
+    // routeYieldByForm -> resourceYieldBonuses -> resourceYieldMultiplier ->
+    // stackingFloor, and only an end-to-end call exercises all four joints.
+    const resourceYield = shippedRegistry().primitives.find(
+      ({ record }) => record.id === 'resource-yield',
+    )?.record;
+    if (resourceYield === undefined) throw new Error('resource-yield is missing from content');
+    const produced = (bonuses: readonly number[]): number =>
+      materialsProduced({
+        laborerCount: 100,
+        laborAffinity: FP_ONE,
+        shares: { food: FP_ONE, stone: 0, vellum: 0 },
+        resourceYield,
+        resourceYieldBonuses: { food: bonuses, stone: [], vellum: [] },
+      }).food;
+
+    expect(produced([])).toBe(1600);
+    expect(produced([-512])).toBe(800);
+    expect(produced([-FP_ONE])).toBe(0);
+    // Absurd input floors rather than inverting. This is the assertion that
+    // makes the bound mechanical rather than incidental.
+    expect(produced([-3 * FP_ONE])).toBe(0);
+    // And a cost composes with a gain instead of short-circuiting it.
+    expect(produced([FP_ONE, -512])).toBe(2400);
   });
 });

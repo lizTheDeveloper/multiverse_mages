@@ -170,10 +170,34 @@ export function territoryYieldShares(regions: readonly TerritoryRecord[]): Mater
  * whose material is not a material.
  */
 export function routeYieldByForm(form: FormRecord, magnitude: Fixed): MaterialAmounts {
-  const share = Math.max(0, magnitude);
+  // **The magnitude is signed here; the bound is downstream, and mechanical.**
+  //
+  // This clamped the magnitude with `Math.max(0, …)` while `node.schema.json`
+  // set `minimum: 1`, when no negative could arrive and the clamp described
+  // impossible input. Signed magnitudes make a negative `resource-yield`
+  // authorable — a node whose magic *costs* the economy — and clamping it at
+  // this door would discard the cost before anything could bound it, which is
+  // the naive shape: a floor chosen to avoid a negative rather than derived
+  // from what the quantity is.
+  //
+  // The real bound sits where the mechanism supplies one. What this function
+  // feeds is `resourceYieldBonuses`, which `resourceYieldMultiplier` stacks
+  // into an `additive-into-multiplier` and `stackingFloor` floors at `fp(0)`.
+  // That floor *is* mechanical: labour with every debuff in the world produces
+  // **nothing**, and there is no arrangement of magic under which a cohort
+  // digging in a quarry yields anti-stone. So a cost reduces the multiplier
+  // toward zero and stops there, by arithmetic, in the one place every
+  // consumer shares — rather than by four consumers each deciding what a
+  // negative means.
+  //
+  // The weights keep their clamp, and that asymmetry is deliberate rather than
+  // an oversight. A negative weight would be a *form* claiming that producing
+  // food consumes stone: a statement about the material taxonomy, not about
+  // one working, and nothing in `form.json` means it. The sign comes from the
+  // node; the mix stays a non-negative property of the form.
   return {
-    food: floorDiv(share * Math.max(0, form.yieldWeights.food), FP_ONE),
-    stone: floorDiv(share * Math.max(0, form.yieldWeights.stone), FP_ONE),
-    vellum: floorDiv(share * Math.max(0, form.yieldWeights.vellum), FP_ONE),
+    food: floorDiv(magnitude * Math.max(0, form.yieldWeights.food), FP_ONE),
+    stone: floorDiv(magnitude * Math.max(0, form.yieldWeights.stone), FP_ONE),
+    vellum: floorDiv(magnitude * Math.max(0, form.yieldWeights.vellum), FP_ONE),
   };
 }

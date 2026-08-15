@@ -360,7 +360,11 @@ export function universeEconomyBonuses(
     if (form === undefined) continue;
     const routed = routeYieldByForm(form, contribution.magnitude);
     for (const kind of MATERIAL_KINDS) {
-      if (routed[kind] > 0) resourceYield[kind].push(routed[kind]);
+      // Zero, not positive: a negative routed amount is this node's cost to
+      // that material kind, and dropping it here would undo `routeYieldByForm`
+      // one line downstream. The bound is `stackingFloor`'s `fp(0)` on the
+      // stacked multiplier, not a sign test at the door.
+      if (routed[kind] !== 0) resourceYield[kind].push(routed[kind]);
     }
   }
 
