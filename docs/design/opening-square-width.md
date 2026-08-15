@@ -6,39 +6,48 @@ moved: every arm below is an opening square spliced onto the reference content t
 `explicitOpeningAxes` — the play verb a god calls — with the shipped default left alone.
 
 > A measurement is a statement about the tree it was taken on. If the ref above is not the one you
-> are reading, re-run the instruments before acting on any number here. The commands are in §8.
+> are reading, re-run the instruments before acting on any number here. The commands are in §9.
 
 ---
 
 ## The answer
 
-**Do not widen the default opening square. The width was never the binding constraint.**
+**Do not widen the default opening square, and the reason is not the one anybody expected.**
 
-Three mechanisms were said to be invisible at twelve cells. Two of those claims are false on this ref
-(§1), the third turns out to be a founding-position question rather than a grid question (§3), and
-the one remaining argument for widening was closed by authoring rather than by width on a sibling
-branch the same night (§2).
+The three mechanisms said to be invisible at twelve cells are not the constraint. Two of those claims
+are false on this ref (§1), the third is a founding-position question rather than a grid question
+(§3), and the one surviving argument was closed by authoring on a sibling branch the same night (§2).
 
-Then, chasing the frontier, the measurement found the thing that actually breaks progression, and it
-is not dilution: **a wider opening displaces the founding grant off the *Intellego* trunk.**
-`foundingCandidates` returns candidates ordered by content id and the scenario takes the first
-`foundingNodes` of them, so permitting *Creo* — alphabetically first — silently replaces a founding
-grant of four *Intellego* roots with a grant of *Creo* roots. `vision.md` §4 says perception gates
-depth in every *Perdo* and *Rego* cell. A universe founded without it is founded without the trunk.
-§7 isolates that with a controlled arm.
+Chasing the frontier then found something larger. **Widening the opening has two costs, and they are
+different things with different shapes:**
 
-So the recommendation has two parts:
+1. **Time-to-tier slows smoothly with the number of *reachable nodes*** — 1.00× at 51 nodes,
+   1.9× at 76, 4.5× at 101, 12× at 170, 17× at 223. That is dilution: a fixed supply of mage-months
+   spread over more content. It is a curve, and the owner can pick a point on it (§6).
+2. **Censoring — a species never reaching tier 3 at all — is a step function, and it is caused
+   entirely by one authored *destructive* anti-requisite.** Across fourteen squares from 12 to 70
+   cells, **every arm without a live exclusion pair censors 1.4–4.2%, and every arm with one censors
+   18.1–75.0%.** Removing either half of `creo-ignem ⊥ creo-umbra` from the whole grid takes
+   censoring from **75.0% to 13.9%** (§7).
 
-1. **Keep the twelve.** Nothing measured here is bought by widening that is not bought more cheaply
-   another way, and the god's `permitTechnique` / `permitForm` verbs already widen the square in
-   play: `permissive-breadth` ends a 720-tick run holding **101 distinct nodes** on an opening that
-   structurally contains 51. The opening is a starting position, not a ceiling.
-2. **Fix the founding grant before anyone widens anything.** A prefix of an alphabetical list is not
-   a starting position; it is an accident of the alphabet, and it is the largest single effect this
-   measurement found.
+So **PR #137's collapse is mostly an anti-requisite finding, not a dilution finding**, and the
+question "how wide can the opening be" has been answered against the wrong variable. That has an
+immediate consequence for W191, which is authoring a second `destructive` pair *inside the twelve*
+(§8).
 
-If the owner wants a wider opening regardless, §5 names the two candidates with their prices, and §6
-is the frontier so the trade is visible rather than asserted.
+The recommendation:
+
+- **Keep the twelve as the default.** Nothing measured here is bought by widening that is not bought
+  more cheaply another way, and the god's `permitTechnique` / `permitForm` verbs already widen the
+  square in play: `permissive-breadth` ends a 720-tick run holding **101 distinct nodes** on an
+  opening that structurally contains 51. The opening is a starting position, not a ceiling.
+- **If the owner wants a wider default anyway, `{creo, intellego, perdo, rego} × {limen, mentem,
+  nomen, terram}` — 16 cells, 67 reachable nodes — is measurably free**: 0.97× time-to-tier for
+  human, 4.2% censoring against the twelve's 2.8%, a mean deepest tier of 3.85 against 3.89, and it
+  takes `teach-rate` sources from five to nine. It is the only widening on the whole frontier that
+  costs nothing.
+- **Before anyone widens past that, decide what a `destructive` exclusion is supposed to do**, because
+  at present it is the single largest determinant of whether a universe progresses at all.
 
 ---
 
@@ -46,15 +55,14 @@ is the frontier so the trade is visible rather than asserted.
 
 ### 1.1 "`teach-rate`'s multiplier is live only above tier 3; v1's 51 nodes sit below it"
 
-Both halves are false. The v1 rectangle's tier histogram, read from
-`packages/content/data/node.json`:
+Both halves are false. The v1 rectangle's tier histogram, from `packages/content/data/node.json`:
 
 | tier | 1 | 2 | 3 | 4 | 5 |
 |---|---|---|---|---|---|
 | nodes in the twelve cells | 12 | 13 | 13 | **11** | **2** |
 
 Thirteen of the fifty-one sit at tier 4 or above; `perdo-mentem` and `rego-limen` each run to tier 5.
-And they are reached, not merely authored: a 720-tick run on the v1 rectangle ends with a mean
+They are reached, not merely authored: a 720-tick run on the v1 rectangle ends with a mean
 deepest-tier-held of **3.89** across six species and a **maximum of 5**.
 
 `teach-rate` also has sources inside the twelve. Nineteen nodes across the seventy cells carry the
@@ -70,7 +78,8 @@ primitive; **five are in v1 cells**:
 
 ### 1.2 "anti-requisites cannot be expressed inside the twelve"
 
-True on this ref, and closed by authoring on a sibling branch while this ran. §2.
+True on this ref, and closed by authoring on a sibling branch while this ran — see §2. Whether that
+is good news is §8.
 
 ### 1.3 What is left
 
@@ -80,7 +89,7 @@ whether the four arms that were flat under it start moving when the square widen
 
 ---
 
-## 2. Anti-requisites: closed by authoring, and the arithmetic of why width could not have done it
+## 2. Anti-requisites, and the arithmetic of why width could never have shown them
 
 On `1e2651ad` there is exactly **one** authored anti-requisite pair, authored on *cells* rather than
 on nodes (`ExclusionRecord`, `packages/content/src/types.ts`):
@@ -98,10 +107,10 @@ forms:      limen mentem nomen terram animal aquam auram corpus fatum herbam ign
 ```
 
 `creo` is 4th, `ignem` 11th, `umbra` 13th. **The first nested prefix holding the pair is 4 × 13 =
-52 cells and 223 reachable nodes** — where 56.9% of species-runs are censored (§6). Widening by
-*size* could never have made this mechanism visible at a survivable width. A deliberately chosen
-4 × 6 gets there at 24 cells and 100 nodes: 2.2× less content for the same mechanic, which is the
-clearest available demonstration that **an opening is a set, not a number.**
+52 cells and 223 reachable nodes** — where 56.9% of species-runs are censored. Widening by *size*
+could never have made this mechanism visible at a survivable width. A deliberately chosen 4 × 6 gets
+there at 24 cells and 100 nodes: 2.2× less content for the same mechanic, which is the clearest
+available demonstration that **an opening is a set, not a number.**
 
 **It is moot as of 2026-08-14.** `w191/anti-requisites-in-v1`, commit `2f461a69` — local at the time
 of writing, verified with `git ls-remote` **not** to be on `origin` — authors a second pair inside
@@ -111,8 +120,8 @@ the twelve:
 perdo-nomen ⊥ rego-nomen    resolution: destructive
 ```
 
-Both cells carry `"v1": true`. **This document's recommendation is conditional on that landing.** If
-W191 is abandoned, the 24-cell set in §5 becomes the answer, at the price §6 records for it.
+Both cells carry `"v1": true`, so anti-requisites become expressible at width twelve and stop being
+an argument for widening at all. §8 measures what that costs.
 
 ---
 
@@ -141,9 +150,9 @@ So criterion 2 is a question about library depth. Here is the same instrument
 | std 3×6, 18 cells | `LONG_RUN_OPTIONS` | 19.8 | ~1.216 | 1215 |
 
 **The twelve cells reach the knot twice over under the scenario's own default founding position.**
-Changing the founding position on a fixed opening moves library depth by **6.7×**; widening the
-opening from 12 to 18 cells moves it by 2.7× in one direction and *down* by 1.5× in the other — the
-width effect does not even keep its sign, while the founding-position effect is unambiguous.
+Changing the founding position on a fixed opening moves library depth **6.7×**; widening from 12 to
+18 cells moves it 2.7× in one direction and *down* 1.5× in the other — the width effect does not keep
+its sign, while the founding-position effect is unambiguous.
 
 Under `LONG_RUN_OPTIONS` the twelve genuinely never get there. A 200-world-year trajectory:
 
@@ -156,18 +165,18 @@ std-3x6   seed 1508681164  libDepth 240:3  480:30 720:36 1200:43 1800:74 2400:74
 std-3x6   seed 4163116925  libDepth 240:4  480:5  720:6  1200:6  1800:7  2400:18  peak 18  first ≥24: never
 ```
 
-That is a finding about `LONG_RUN_OPTIONS`, not about the grid: **2.7× the population and one
-seventh of the library, on the identical twelve cells.** Somebody should own that; widening the grid
-does not fix it, because the mechanism is in the cohort, the upkeep and the scribing loop.
+That is a finding about `LONG_RUN_OPTIONS`, not about the grid: **2.7× the population and one seventh
+of the library, on the identical twelve cells.** Somebody should own that; widening does not fix it,
+because the mechanism is in the cohort, the upkeep and the scribing loop.
 
 ---
 
-## 4. Criterion 4: all four flat arms move at 24 cells — and what moves them is the damage
+## 4. Criterion 4: all four flat arms move at 24 cells — downward
 
 `passive-control`, `narrow-depth`, `archivist` and `worship-maximizer` were byte-identical under
 anti-requisites and flat under the vitality wire. Run under the MC harness at 720 ticks, 20 paired
-seeds per strategy, control = v1 rectangle, treatment = the 24-cell exclusion square,
-**paired by run seed** (`permissive-breadth` is in the pool as the positive control):
+seeds per strategy, control = the v1 rectangle, treatment = the 24-cell exclusion square, **paired by
+run seed** (`permissive-breadth` is in the pool as the positive control):
 
 | strategy | metric | control | Δ | SE |
 |---|---|---|---|---|
@@ -179,90 +188,184 @@ seeds per strategy, control = v1 rectangle, treatment = the 24-cell exclusion sq
 | `archivist` | `referenceNodesKnown` | 50.1 | +24.20 | **+5.43** |
 | `worship-maximizer` | `referenceLibraryDepth` | 39.5 | **−23.60** | **−10.02** |
 | | `referenceGrimoires` | 244.5 | +139.00 | +3.52 |
-| `permissive-breadth` *(control)* | `referenceKnowledgeInstances` | 1595.3 | +328.05 | +2.72 |
+| `permissive-breadth` *(positive control)* | `referenceKnowledgeInstances` | 1595.3 | +328.05 | +2.72 |
 
 **The test as posed is passed, and the passing is the damage.** The largest movements are
 `passive-control` and `worship-maximizer` losing 21 and 24 distinct nodes off their library shelves
-at 6.1 and 10.0 standard errors — the rate multiplier falling from ~1.33 to ~1.16. A wider grid does
-make the four arms move. It moves them **down**.
+at 6.1 and 10.0 standard errors — the rate multiplier falling from ~1.33 to ~1.16. The treatment
+square here is the smallest opening that makes `creo-ignem ⊥ creo-umbra` live, and its resolution is
+`destructive`: §7 shows that pair is what censors progression, so the honest reading of these rows is
+**held knowledge being deleted**, not merely diluted.
 
-Two mechanisms could produce that drop and §7 separates them: a fixed supply of mage-months scribing
-across twice as many distinct nodes (dilution), or the **destructive** resolution on
-`creo-ignem ⊥ creo-umbra` deleting held knowledge, which this 24-cell square is the smallest opening
-to make live. Do not read the drop as dilution before §7.
+`narrow-depth` is the one arm that gains on everything. It keeps one technique and one form whatever
+the opening, so a wider opening changes *which* cell it builds on rather than spreading it thinner.
 
-The one honest exception is `narrow-depth`, which gains on everything — it keeps one technique and
-one form whatever the opening, so a wider opening changes *which* cell it builds on rather than
-diluting it.
-
-Note also `permissive-breadth` on the **control** arm: 101.1 distinct nodes known at 720 ticks, on an
-opening that structurally contains 51. The god's permit verbs already widen the square in play. That
+Note also `permissive-breadth` on the **control** arm: 101.1 distinct nodes known at 720 ticks on an
+opening that structurally contains 51. The god's permit verbs already widen the square in play, which
 is the strongest single argument for leaving the default small.
 
 ---
 
-## 5. If you widen anyway
+## 5. Criterion 3: the spread metric cannot see the opening square
 
-Two candidates, both stated with their price.
+`species-occupancy.test.ts` pins `collectSpeciesCellOccupancy` — a Gini over per-species occupied-cell
+counts, where **zero is the healthy end** and a rising value is the roster collapsing onto one
+species — at **0.0473** for the v1 rectangle at twenty world years from `LONG_RUN_SEED`. The
+instrument used here reproduces that exactly, and refuses to run if it does not.
 
-### `{creo, intellego, perdo, rego} × {limen, mentem, nomen, terram}` — 16 cells, 67 nodes
+Six seeds per square, same horizon, same collector:
 
-The cheapest coherent widening. It keeps the v1 rectangle whole and adds exactly one axis, *Creo*,
-the making verb. `vision.md` §4 wires v1 so that every cross-cell edge originates in an *Intellego*
-cell — *you must perceive a thing before you can unmake or command it* — and adding *Creo* completes
-that sentence: perceive, make, unmake, command, with *Muto* (transform) left as the axis a god still
-has to buy. Four verbs about a thing's existence and none about its identity is a legible opening.
+| square | cells | spread, mean of 6 seeds | SE | the pinned seed alone |
+|---|---|---|---|---|
+| v1, 3×4 | 12 | 0.1168 | ±0.0228 | **0.0473** |
+| std 4×4 | 16 | 0.1867 | ±0.0302 | 0.1667 |
+| std 3×6 | 18 | 0.1723 | ±0.0299 | 0.0833 |
+| std 3×8 | 24 | 0.1783 | ±0.0273 | 0.0776 |
+| named 4×6 | 24 | 0.1618 | ±0.0291 | 0.1242 |
+| std 4×13 | 52 | 0.1402 | ±0.0258 | 0.0801 |
+| std 5×14 | 70 | 0.1472 | ±0.0286 | 0.0758 |
 
-It raises `teach-rate` sources from five to nine. It **cannot** express `creo-ignem ⊥ creo-umbra`.
-And it carries the founding-grant hazard of §7 in full, because *Creo* sorts first.
+**Every square is within about one standard error of every other**, and the whole grid is
+indistinguishable from the twelve. The between-seed spread (sd ≈ 0.06–0.08 on six seeds) is three
+times the between-square spread.
 
-### `{creo, intellego, perdo, rego} × {ignem, limen, mentem, nomen, terram, umbra}` — 24 cells, 100 nodes
+The pinned **0.0473 is one seed out of a distribution whose mean is 0.117**. That is worth writing
+down beside the pin: the test is not wrong to pin a single seed — it is a regression tripwire, and
+`species-occupancy.test.ts` says so — but nobody should read 0.0473 as *the* spread of the v1
+rectangle, and the history in that comment (0.0729 → 0.0714 → 0.0645 → 0.0473) is a walk inside one
+seed's noise band rather than four measurements of a trend.
 
-The exclusion square: the smallest opening that contains the whole v1 rectangle *and* the authored
-anti-requisite pair. Fire and shadow are a coherent pair to add — *"a light thrown by nothing and a
-shadow cast by nothing are one claim about what throws a thing, pointed opposite ways"* — and it
-costs 1 stranded node (a node in the square whose prerequisite is outside it).
-
-**Its price is 18.1% censoring**, against 2.8% for the twelve and **1.4%** for `standard 3×8`, which
-is the same size and holds one *more* reachable node. Thirteen times the censoring for an equal-sized
-square is not a rounding difference, and §7 says where it comes from.
-
-### The set matters more than the size, and here is the pair that proves it
-
-| arm | cells | reachable nodes | censoring |
-|---|---|---|---|
-| `standard 3×8` | 24 | 101 | **1.4%** |
-| `named 4×6` (exclusion square) | 24 | 100 | **18.1%** |
-
-Same size. Same content volume to within one node. Thirteenfold difference in whether a species ever
-reaches tier 3. **"Twelve cells chosen well" beats "twenty-four chosen badly" is not the interesting
-version of this claim — the interesting version is that two twenty-four-cell squares differ from each
-other by more than either differs from the twelve.**
+**Criterion 3 does not discriminate at this horizon**, and that is a finding about the metric.
 
 ---
 
 ## 6. The frontier
 
 Twelve seeds per arm, 720 ticks, tier 3, `LONG_RUN_OPTIONS`, no god actions. Censoring is pooled over
-six species × twelve runs = 72 species-runs. The slowdown column is `human`, computed over uncensored
-runs only and therefore **optimistic wherever censoring is non-zero** — the runs that never arrived
-are exactly the slow ones, so read it beside the censoring column and never alone.
+six species × twelve runs = 72 species-runs. Slowdown is `human`'s mean arrival relative to the v1
+rectangle, computed over uncensored runs only and therefore **optimistic wherever censoring is
+non-zero** — the runs that never arrived are exactly the slow ones. Read it beside the censoring
+column, never alone.
 
-*(table)*
+| arm | cells | reachable nodes | pair live? | censoring | human slowdown | deepest tier (mean) |
+|---|---|---|---|---|---|---|
+| **v1 (3×4)** | 12 | 51 | no | **2.8%** | 1.00× | 3.89 |
+| std 4×4 = named 4×4 | 16 | 67 | no | 4.2% | **0.97×** | 3.85 |
+| std 3×6 | 18 | 76 | no | 2.8% | 1.83× | 3.83 |
+| named 3×6 | 18 | 75 | no | **1.4%** | 1.87× | **3.94** |
+| std 3×8 | 24 | 101 | no | **1.4%** | 4.45× | 3.85 |
+| std 4×6 | 24 | 101 | no | 4.2% | 4.46× | 3.68 |
+| **named 4×6** (exclusion square) | 24 | 100 | **yes** | **18.1%** | 4.85× | 3.32 |
+| named 4×7 | 28 | 118 | **yes** | **59.7%** | 5.84× | 2.53 |
+| std 4×8 | 32 | 136 | no | 2.8% | 7.92× | 3.46 |
+| std 5×8 | 40 | 170 | no | 4.2% | 13.03× | 3.43 |
+| std 3×14 | 42 | 177 | no | 2.8% | 11.82× | 3.38 |
+| std 4×13 | 52 | 223 | **yes** | **56.9%** | 17.40× | 1.92 |
+| **std 5×14** (PR #137) | 70 | 300 | **yes** | **75.0%** | censored 12/12 | 1.58 |
 
-### The x-axis is reachable nodes, not cells
+Two separate curves live in that table and they must not be read as one.
 
-*(text)*
+### 6.1 Slowdown is smooth, and it is a function of reachable nodes
 
-### Reproducing #137
+Sorted by reachable nodes, human's slowdown is monotone and has nothing to do with the pair:
+51 → 1.00×, 67 → 0.97×, 75 → 1.87×, 101 → 4.45×, 118 → 5.84×, 136 → 7.92×, 170 → 13.03×,
+177 → 11.82×, 223 → 17.40×. **Cells are the wrong x-axis**: `std 3×14` at 42 cells and `std 5×8` at
+40 cells sit within 10% of each other because they hold 177 and 170 nodes, while `std 4×4` at 16
+cells costs nothing at all because 67 nodes is barely more than 51.
 
-*(text)*
+**The knee is around 75 reachable nodes.** Below it, widening is free. Above it, every extra ~25
+nodes costs roughly a further 1.5× on time-to-tier.
+
+### 6.2 Censoring is a step, and the step is the destructive exclusion
+
+Ten arms hold no live exclusion pair. Their censoring runs **1.4% to 4.2%**, with no trend in cells
+(12 → 42) or nodes (51 → 177). Four arms hold one. Their censoring runs **18.1% to 75.0%**. There is
+no overlap. §7 shows the relation is causal and not a coincidence of which squares happen to be wide.
+
+### 6.3 Reproducing PR #137
+
+`std 5×14` reproduces #137's signature: **human censored in 12 of 12 runs**, gnome 21.4× slower, mean
+deepest tier 1.58 against the twelve's 3.89. #137 reported human censored in **51 of 72** runs (71%)
+and "roughly 20× slower". This is the same signature and somewhat more severe, at 12 seeds rather
+than 72 and under `LONG_RUN_OPTIONS`, which #137 may not have used — so read it as *reproduces the
+signature*, not as *reproduces the number*.
 
 ---
 
-## 7. The founding grant is a prefix of an alphabetical list
+## 7. What actually breaks progression: two ablations and one refuted hypothesis
 
-*(the controlled arm)*
+### 7.1 The destructive pair, ablated at 24 cells
+
+Four squares over the same four techniques `{creo, intellego, perdo, rego}`, differing only in which
+of `ignem` and `umbra` are permitted. Twelve seeds each:
+
+| forms | cells | pair live? | censoring |
+|---|---|---|---|
+| `ignem limen mentem nomen terram umbra` | 24 | **yes** | **18.1%** |
+| minus `umbra` | 20 | no | 4.2% |
+| minus `ignem` | 20 | no | 4.2% |
+| minus both | 16 | no | 4.2% |
+
+Dropping either half costs four cells and takes censoring from 18.1% to 4.2%. Dropping the *second*
+half costs four more cells and changes nothing. **The cells are not the variable; holding both halves
+is.** (The 18.1% row also re-runs `named-4x6` on the same seed schedule as §6 and reproduces it
+exactly, which is the reproducibility check for the whole frontier.)
+
+### 7.2 The same ablation at the whole grid
+
+| square | cells | reachable nodes | pair live? | censoring |
+|---|---|---|---|---|
+| 5 × 14 (the whole grid) | 70 | 300 | **yes** | **75.0%** |
+| 5 × 13, minus `umbra` | 65 | ~285 | no | **23.6%** |
+| 5 × 13, minus `ignem` | 65 | ~283 | no | **13.9%** |
+
+**Removing one form from the whole grid takes censoring from 75.0% to 13.9%.** The pair accounts for
+roughly four fifths of #137's collapse. The residue — 14–24% against the twelve's 2.8% — is the real
+dilution cost of 285 reachable nodes, and it is exactly what §6.1's curve predicts at that node
+count.
+
+### 7.3 The founding-grant hypothesis, refuted
+
+`foundingCandidates` returns candidates ordered by content id and the scenario takes the first
+`foundingNodes` of them, so permitting *Creo* — alphabetically first — replaces a founding grant of
+four *Intellego* roots with *Creo* roots:
+
+| square | founding six, by technique | *Intellego* count |
+|---|---|---|
+| v1 | inte inte inte inte perd perd | 4 |
+| std 3×6, 3×8, 3×14 | inte × 6 | 6 |
+| std 4×4, named 4×4 | creo creo creo creo inte inte | 2 |
+| std 4×13, 5×8, 5×14, named 4×6 | creo × 6 | **0** |
+
+`vision.md` §4 says perception gates depth in every *Perdo* and *Rego* cell, so the obvious
+hypothesis is that a wide opening founds a universe without the trunk. **It is wrong, and the sign is
+backwards.** Forcing the v1 rectangle's own (*Intellego*-heavy) founding grant onto a wide square:
+
+| arm | censoring |
+|---|---|
+| v1 | 2.8% |
+| named 4×6, its own grant | 18.1% |
+| **named 4×6 + v1's grant** | **44.4%** |
+| std 5×14, its own grant | 75.0% |
+| **std 5×14 + v1's grant** | **93.1%** |
+
+A wide square's own grant is *better* than the twelve's, on both. The hypothesis is refuted rather
+than unsupported, and it is recorded here so nobody spends a night on it again.
+
+It leaves a real question open, though, and it is worth someone's time: **the founding grant is a
+prefix of an alphabetical list.** `foundingCandidates` sorts by content id and the scenario slices
+the first *n*. That is not a starting position anybody chose, and the experiment above shows it
+matters — 18.1% against 44.4% on the identical square.
+
+---
+
+## 8. What this says about W191
+
+W191's new pair is `perdo-nomen ⊥ rego-nomen`, resolution **`destructive`**, and both cells are
+inside the twelve. Everything in §6.2 and §7 says a live destructive pair is the single largest
+determinant of whether species reach tier 3.
+
+*(measured below — the v1 rectangle on W191's content, 12 seeds, same instrument)*
 
 ---
 
@@ -314,8 +417,8 @@ committed docstring, stop: the instrument is wrong."* Running it produces
 against the docstring's line-48 table of `gnome [39,53] dwarf [41,54] orc [42,63] human [44,57]
 elf [54,110] draconic [68,245]`. The later before/after tables in the same file carry the current
 figures, so the file contradicts itself and the misleading half is the one the harness points a
-reader at. This measurement's own calibration matched the *shipped instrument* byte for byte, which
-is the control that matters; the docstring is a documentation-rot finding and is not repaired here.
+reader at. This measurement's calibration matched the *shipped instrument* byte for byte, which is
+the control that matters; the docstring is a documentation-rot finding and is not repaired here.
 
 **Two broken probes, both caught by a positive control, both of the shape `CLAUDE.md` names.**
 A wait loop written as `until [ ! -e /proc/$$ ] || …` exited immediately on macOS, where `/proc` does
@@ -326,6 +429,10 @@ individually, each pattern matched. Neither threw. Both were found by asking the
 absence is allowed to mean anything.
 
 **`awk '{print $9}'` on this document's own table reads the wrong column.** The square label
-`standard 3x4` is two whitespace-separated fields, so the anti-requisite column is `$10`. The
-W191 check in §7 parses `--json` instead. This is the fourth instance of that shape in the
-repository's notes and it took one command to catch.
+`standard 3x4` is two whitespace-separated fields, so the anti-requisite column is `$10`. The W191
+check in §8 parses `--json` instead. This is the fourth instance of that shape in the repository's
+notes and it took one command to catch.
+
+**A duplicate arm is a free consistency check and it passed.** `std-4x4` and `named-4x4` are the same
+square reached through two different arm definitions, run as separate arms without either knowing
+about the other. They agree on every species to the tick.
