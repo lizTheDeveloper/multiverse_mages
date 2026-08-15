@@ -11518,3 +11518,37 @@ Its verdict is also **not uniform across gates**, which is worth knowing before 
 | **five-year** | **would succeed** — all nine metrics passed in CI (grimoires 90.860 → 90.855) |
 
 So "is this a provenance-only case" is a **per-gate** question, not a per-PR one.
+
+### W216 addendum — I relayed a finding without checking its ref, and the real gap was a missing principle
+
+I passed on a report that #186's source comment said *"whichever of the two lands second renumbers to
+14."* **The sentence was already gone** — introduced at `dd321fe4`, removed at `dd28b4c9`, the renumber
+commit made in response to an earlier message. The agent that found it had read a superseded ref, and **I
+relayed it without checking**, which is the campaign's own rule about refs applied to a finding rather
+than to code.
+
+Checked against what `dd28b4c9` actually said, two of my three points were already correct. **The third
+was real and worse than the stale quote suggested.**
+
+**All three sites stated the rule only for the #170 case.** `git grep -E "every lower id|all lower|lower
+id"` returned **nothing anywhere in the repository** — `streams.ts`, the append-only test and
+`contracts.md` §6 each carried *this queue's arithmetic* and none carried the principle it is an instance
+of. Someone appending stream 16 next month would have found three worked examples and no rule.
+
+Now stated in all three places (`fb930c45`):
+
+> **An append's ID is valid only once every ID below it has landed.** So an ID is settled by a branch's
+> position in the merge queue rather than at the moment it is authored, and **re-checking it is part of
+> merging** — a change that has sat while another append landed must confirm its ID is still the next one
+> and renumber if it is not. That costs nothing extra: the `rngRegistryHash` refusal forces a re-baseline
+> for any append regardless. **"Take the next free number" is correct only when nothing else is in flight,
+> and is precisely wrong when something is, because both changes see the same number free.**
+
+That last clause is the whole failure mode in one sentence, and it generalises past RNG streams to every
+dense append-only registry in the tree — world-schema revisions among them, which already collided once.
+
+**And a citation discipline worth copying:** it cited the test **by filename rather than by line number**,
+because `CLAUDE.md` treats a mismatched line number as the cheapest available signal that a row has
+rotted — so pinning `:225` would manufacture exactly that signal on the next edit to that file. I have
+been citing line numbers throughout this document; where the line is not the point, the filename is the
+better reference.
