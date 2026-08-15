@@ -15,7 +15,7 @@
  * Writing a node out of a mind and into a book — the operation that makes
  * knowledge survive its holder, and makes it lootable.
  *
- * Three things about a grimoire are decided here and nowhere else.
+ * Four things about a grimoire are decided here and nowhere else.
  *
  * **It holds exactly one node.** `contracts.md` §1.5 fixes that in the schema,
  * and it is why a library's depth is a count rather than a traversal.
@@ -27,6 +27,12 @@
  * average — the requirement says "strictly greater", and a wide roll would
  * quietly turn that into a statistical claim.
  *
+ * **Whether it is silently wrong.** A second roll, from RNG stream 13 rather
+ * than stream 5, decides whether the scribe made an error nobody will notice
+ * until a reader fails against the text. See `fidelity.ts` for why the ambient
+ * rate is small and why it is not zero, and the note at the draw for why it
+ * takes its own stream.
+ *
  * **Consumption is reported, not applied.** Materials are a universe-level
  * balance (`contracts.md` §1.1) and scribe capacity is a fact about populace
  * cohorts (§1.3); both belong to `rules-world`. This operation refuses when
@@ -37,10 +43,17 @@
 import type { ContentId, Fp } from '@mm/content';
 import type { Handle, Ruleset, Tick } from '@mm/state';
 import { GRIMOIRE, HOLDER_KIND, attachRecord, permits } from '@mm/state';
-import { RNG_STREAM, mul, nextBounded } from '@mm/sim-core';
+import { FP_ONE, RNG_STREAM, mul, nextBounded } from '@mm/sim-core';
 
 import type { CellResolver, KnowledgeRng, NodeCatalog } from './catalog.js';
 import { requireNode } from './catalog.js';
+import {
+  CORRUPTION,
+  fidelityOf,
+  generationStep,
+  scribalErrorChance,
+  setFidelity,
+} from './fidelity.js';
 import {
   SCRIBE_CAPACITY_PER_TIER,
   SCRIBE_DURABILITY_BASE,
@@ -114,6 +127,24 @@ export interface ScribingOutcome {
   /** The instance that *is* its contents, or `0`. */
   readonly instance: Handle;
   readonly durability: Fp;
+  /**
+   * The copy distance the new book was written at, in `fp` generations.
+   *
+   * `fp(1024)` — one generation — for a book scribed out of a mind that
+   * researched the node or was taught it in person. Higher when the scribe
+   * herself learned it from a book, which is the whole of the telephone problem:
+   * see `fidelity.ts`.
+   */
+  readonly copyGeneration: Fp;
+  /**
+   * Whether the scribe made a silent error and the book is wrong.
+   *
+   * Reported, and reported honestly, because this is an *outcome* and the
+   * caller may need to count it. The **world** is not told: nothing observable
+   * distinguishes this book from a sound one until a reader fails against it,
+   * which is the design and is why `study` is the only place the flag is read.
+   */
+  readonly corrupted: boolean;
   /** What the caller should deduct. Zero on a refusal. */
   readonly materialsConsumed: Fp;
   readonly capacityConsumed: Fp;
@@ -182,10 +213,33 @@ export function scribe(inputs: ScribingInputs): ScribingOutcome {
     });
   }
 
+  // The distance the *best* copy the scribe holds sits at. A mage who learned
+  // the same node twice — once from a teacher, once from a spent book — writes
+  // from the better memory, which is the only reading that does not punish her
+  // for having read widely.
+  const sourceGeneration = bestHeldGeneration(inputs);
+  const copyGeneration = sourceGeneration + generationStep(inputs.scribeAffinity, node.knowledgeKind);
+
   const stream = inputs.rng.actorStream(RNG_STREAM.scribing, inputs.scribe);
   const durability =
     mul(SCRIBE_DURABILITY_BASE, inputs.scribeAffinity) +
     nextBounded(stream, SCRIBE_DURABILITY_ROLL_SPAN);
+
+  // Stream 13, not stream 5. Sharing the scribe's durability cursor would make
+  // *whether this book is wrong* shift every durability roll she takes after
+  // it — so "dwarven books resist burning" would move for a reason that has
+  // nothing to do with burning. §6's insertion invariance, at the one place it
+  // was cheapest to get wrong.
+  //
+  // The draw is unconditional, taken before the chance is compared, so a book
+  // written by a flawless scribe consumes the same ordinal as one written by a
+  // poor one. Otherwise the *affinity* would decide the stream position and two
+  // species would diverge in every roll downstream of the first book.
+  const errorRoll = nextBounded(
+    inputs.rng.actorStream(RNG_STREAM.corruption, inputs.scribe),
+    FP_ONE,
+  );
+  const corrupted = errorRoll < scribalErrorChance(inputs.scribeAffinity, node.tier);
 
   const holderKind = inputs.holderKind ?? HOLDER_KIND.mage;
   const holderId = inputs.holderId ?? inputs.scribe;
@@ -210,15 +264,54 @@ export function scribe(inputs: ScribingInputs): ScribingOutcome {
     grimoire,
   });
 
+  // Written after the instance exists, because the row hangs on its handle. A
+  // book at generation zero is not representable and must not be: zero means
+  // "in a mind that has not read a book", and every book is at least one
+  // scribing away from one.
+  setFidelity(inputs.knowledge.state, instance, {
+    copyGeneration,
+    corruption: corrupted ? CORRUPTION.hidden : CORRUPTION.sound,
+  });
+
   return {
     grimoire,
     instance,
     durability,
+    copyGeneration,
+    corrupted,
     materialsConsumed: node.scribeCost,
     capacityConsumed: capacityRequired,
   };
 }
 
+/**
+ * The lowest copy distance among the instances of this node the scribe holds.
+ *
+ * `heldMastery` already established that at least one exists, so the fallback of
+ * `0` is unreachable through {@link scribe}; it is written as a default rather
+ * than a throw because a scribe holding nothing is a refusal this function is
+ * called after, not an invariant it is responsible for.
+ */
+function bestHeldGeneration(inputs: ScribingInputs): Fp {
+  let best: Fp | undefined;
+  for (const instance of inputs.knowledge.instancesHeldBy(inputs.scribe)) {
+    const view = inputs.knowledge.read(instance);
+    if (view.nodeId !== inputs.nodeId) continue;
+    const { copyGeneration } = fidelityOf(inputs.knowledge.state, instance);
+    if (best === undefined || copyGeneration < best) best = copyGeneration;
+  }
+  return best ?? 0;
+}
+
 function refuse(refusal: KnowledgeRefusal): ScribingOutcome {
-  return { refusal, grimoire: 0, instance: 0, durability: 0, materialsConsumed: 0, capacityConsumed: 0 };
+  return {
+    refusal,
+    grimoire: 0,
+    instance: 0,
+    durability: 0,
+    copyGeneration: 0,
+    corrupted: false,
+    materialsConsumed: 0,
+    capacityConsumed: 0,
+  };
 }

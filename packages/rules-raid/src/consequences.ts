@@ -65,7 +65,7 @@ import {
   collectRecords,
   componentOf,
 } from '@mm/state';
-import { destroyGrimoire } from '@mm/rules-magic';
+import { CORRUPTION, destroyGrimoire, setFidelity } from '@mm/rules-magic';
 
 import { OBJECTIVE_KIND } from './objectives.js';
 import type { Raid } from './raid.js';
@@ -113,6 +113,22 @@ export function applyRaidOutcome(raid: Raid, outcome: RaidOutcome): AppliedConse
     // is a bug in derivation, and a negative count would turn it into a
     // population that grows when it is attacked.
     cohorts.set(loss.cohortId, 'count', remaining > 0 ? remaining : 0);
+  }
+
+  // ---- 2b. Corruption, before the shelf is settled. ----
+  //
+  // Before, because `settleLibrary` destroys instances and a handle written
+  // after its instance is gone is a row attached to a dead entity. The guard is
+  // `isInstance` rather than an ordering argument alone: a book can also have
+  // burned earlier in this same loop for a different objective.
+  //
+  // Nothing is pushed onto `movements`. That is the mechanic, not an omission —
+  // a corrupted book has not moved, has not been destroyed, and does not change
+  // `nodesLostByHost`. The victim's accounting of what the raid cost him is
+  // *correct and complete and wrong*, and stays that way until somebody reads.
+  for (const instance of outcome.corruptedInstances) {
+    if (!raid.host.knowledge.isInstance(instance)) continue;
+    setFidelity(raid.host.world, instance, { corruption: CORRUPTION.hidden });
   }
 
   // ---- 3. Instance destruction and transfer. ----

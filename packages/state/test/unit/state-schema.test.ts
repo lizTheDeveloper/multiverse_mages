@@ -173,6 +173,12 @@ describe('the world schema is stable in the way the snapshot format needs', () =
       // Appended by the founding-grant budget, as world-schema revision 6, and
       // after `material-stock` for exactly the reason above.
       'grant-budget',
+      // Appended by scribing fidelity, as world-schema revision 7. It hangs off
+      // a knowledge-instance handle and so reads as if it belonged beside
+      // `knowledge-instance`; it goes last, because every revision-6 save on
+      // disk was written with twenty sections and expects the twenty-first to be
+      // the one it does not know.
+      'knowledge-fidelity',
     ]);
   });
 

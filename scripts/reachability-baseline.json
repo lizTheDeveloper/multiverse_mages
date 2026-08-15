@@ -1,5 +1,5 @@
 {
-  "note": "Pinned reachability findings. Generated — do not hand-edit. Regenerate with `npm run reachability:pin` and explain the diff in the commit message: an entry removed is a repair, an entry added is a debt someone accepted.",
+  "note": "Pinned reachability findings. Generated \u2014 do not hand-edit. Regenerate with `npm run reachability:pin` and explain the diff in the commit message: an entry removed is a repair, an entry added is a debt someone accepted.",
   "scan": {
     "examinedSymbolCount": 860,
     "productionFileCount": 311
@@ -8,7 +8,7 @@
     "examinedSymbolCount": 688,
     "productionFileCount": 248
   },
-  "findingCount": 125,
+  "findingCount": 124,
   "findings": [
     {
       "key": "constant:packages/coordination/src/god/constants.ts:legacyArchiveMaxTier",
@@ -301,14 +301,6 @@
       "category": "unreached",
       "file": "packages/rules-magic/src/instances/scribing.ts",
       "name": "PALACE_STORE",
-      "kind": "const"
-    },
-    {
-      "key": "symbol:packages/rules-magic/src/instances/scribing.ts:STANDARD_STORE",
-      "group": "symbol",
-      "category": "unreached",
-      "file": "packages/rules-magic/src/instances/scribing.ts",
-      "name": "STANDARD_STORE",
       "kind": "const"
     },
     {

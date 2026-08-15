@@ -79,7 +79,7 @@ import {
   endEngagement,
 } from '@mm/state';
 import type { KnowledgeSubsystem, MagicGrid, PortalHooks } from '@mm/rules-magic';
-import { MASTERY_ACTIVATION_THRESHOLD } from '@mm/rules-magic';
+import { CORRUPTION, MASTERY_ACTIVATION_THRESHOLD, fidelityOf } from '@mm/rules-magic';
 
 import type { TargetSettlement } from './action-economy.js';
 import { ActionEconomyLedger, COMBAT_SOURCE } from './action-economy.js';
@@ -187,7 +187,7 @@ export interface RaidFaults extends ArbitrationFaults {
 
 /** What a combatant decided to do this tick, scored against tick-start state. */
 interface Intent {
-  readonly kind: 'cast' | 'steal' | 'move' | 'objective' | 'withdraw' | 'guard';
+  readonly kind: 'cast' | 'steal' | 'corrupt' | 'move' | 'objective' | 'withdraw' | 'guard';
   readonly nodeId?: ContentId;
   readonly goal?: Point;
   readonly objective?: ObjectiveBrief;
@@ -483,6 +483,17 @@ export function stepEngagement(raid: Raid): ReturnType<typeof terminationOf> {
     resolveTheft(raid, brief, intent.nodeId, combatants, tick, ledger);
   }
 
+  // ---- Phase 5b: corruption, beside theft and for the same reason. ----
+  //
+  // After damage, so that a saboteur who dies this tick has still done it —
+  // which is where corruption and theft part company. See `CombatantBrief`.
+  for (const brief of combatants) {
+    const intent = intents.get(brief.handle);
+    if (intent?.kind !== 'corrupt' || intent.nodeId === undefined) continue;
+    if (intent.objective === undefined) continue;
+    resolveCorruption(raid, brief, intent.nodeId, intent.objective, tick);
+  }
+
   // ---- Phase 6: objective interaction. ----
   for (const brief of combatants) {
     const intent = intents.get(brief.handle);
@@ -640,6 +651,31 @@ function chooseIntent(
     const victim = acquireTarget(raid, brief, combatants, raid.tuning.theftRange);
     if (victim !== undefined && stealableFrom(raid, brief, victim) !== 0) {
       return { kind: 'steal', nodeId: theftNode };
+    }
+  }
+
+  // 2b. Corrupt, if she came to do that and is standing in the stacks.
+  //
+  // Above casting and below theft, because it is what she came for and a
+  // corrupting raider who spent the tick throwing bolts has wasted the trip.
+  // Below `objective` for the opposite reason: taking a library *resolves* it,
+  // so a raider who looted first would have nothing left to poison.
+  //
+  // **Priced, and that is the bound.** The design asks for a move that is
+  // griefable on purpose and expensive on purpose — *"all spells cost something
+  // that the raiders are using up, and so it should cost something"* — so the
+  // damage is capped by the vigor pool and not by a rule about how many books a
+  // raid may ruin. A warband that empties itself into a library ruins a great
+  // many books and does nothing else, which is exactly the trade the design
+  // wants available and wants to hurt.
+  const corruptNode = firstNodeWith(raid, brief, COMBAT_PRIMITIVES.knowledgeCorrupt);
+  if (isAttacker && corruptNode !== undefined) {
+    const price = corruptionPrice(raid, corruptNode);
+    if (price !== undefined && field(raid, brief.handle, 'vigor') >= price) {
+      const library = nearestLibraryInReach(raid, here, tick, brief);
+      if (library !== undefined && corruptibleIn(raid, library) !== 0) {
+        return { kind: 'corrupt', nodeId: corruptNode, objective: library };
+      }
     }
   }
 
@@ -1011,6 +1047,131 @@ function resolveTheft(
 }
 
 /**
+ * One corruption attempt, on stream 13, gated by the host's ruleset.
+ *
+ * **One instance, never a shelf.** *"It targets a spell, because then a scribe
+ * can mess up one spell but not others for that grimoire."* Corrupting the
+ * container was the tempting shortcut and it is the wrong mechanic: a raid that
+ * poisoned a whole library in one action would make the cost bound meaningless
+ * and would make the diagnosis — one reader, one failure, one book — impossible
+ * to play out.
+ *
+ * The vigor is spent on the **attempt**, not on the success. A spell costs what
+ * it costs whether or not it lands, which is the rule casting already follows,
+ * and it is what makes a low-magnitude corruption node a bad way to spend a
+ * warband rather than a free lottery ticket.
+ */
+function resolveCorruption(
+  raid: Raid,
+  saboteur: CombatantBrief,
+  nodeId: ContentId,
+  objective: ObjectiveBrief,
+  tick: number,
+): void {
+  const price = corruptionPrice(raid, nodeId);
+  if (price === undefined) return;
+  const vigor = field(raid, saboteur.handle, 'vigor');
+  if (vigor < price) return;
+  setField(raid, saboteur.handle, 'vigor', vigor - price);
+
+  const magnitudes = raid.arbiter.corruptionMagnitudes(nodeId);
+  const stream = raid.rng.actorStream(RNG_STREAM.corruption, tick, packCombatantKey(saboteur.key));
+  if (!raid.arbiter.attemptCorruption(nodeId, magnitudes, stream)) return;
+
+  const target = corruptibleIn(raid, objective);
+  if (target === 0) return;
+
+  saboteur.corrupted.push(target);
+  raid.ledger.applied(COMBAT_PRIMITIVES.knowledgeCorrupt, saboteur.side, magnitudes[0] ?? 0);
+}
+
+/**
+ * What one corruption costs the raider, or `undefined` for a node off the grid.
+ *
+ * The **cast** price, deliberately reused rather than given a schedule of its
+ * own. A spell costs what a spell of that depth costs; a second price table
+ * would be a second place the raid says what magic is worth, and the two would
+ * drift the first time either was tuned.
+ */
+function corruptionPrice(raid: Raid, nodeId: ContentId): Fixed | undefined {
+  if (!raid.grid.hasNode(nodeId)) return undefined;
+  return raid.tuning.castVigorBase + raid.tuning.castVigorPerTier * raid.grid.tierOf(nodeId);
+}
+
+/**
+ * The instance the *next* corruption in this raid would ruin, or `0`.
+ *
+ * Deliberately not a function of which saboteur is asking. Phase 1 computes
+ * every intent against tick-start state, so two saboteurs in one tick both probe
+ * the same shelf and both see the same top book; phase 5b then runs them in
+ * order and the second finds it already taken and moves down. If the shelf is
+ * exhausted between them, the second **has paid her vigor and got nothing** —
+ * which is the rule casting already follows, stated here so it is a decision
+ * rather than an accident of ordering: a spell costs what it costs whether or
+ * not it lands, and a probe that could reserve a target would make corruption
+ * the one action in the raid that cannot be wasted.
+ *
+ * Deepest tier first, ties on the instance handle — the same ranking theft
+ * uses, and here it is not only about taking something worth having. The design
+ * observes that *"your deepest, rarest knowledge is the most likely to be
+ * silently gone"*, because only a reader near that tier can diagnose it. A
+ * raider who goes for the bottom of the shelf is going for the books that will
+ * stay broken longest, and she should be, so the ranking is the attack rather
+ * than a tidy tie-break.
+ *
+ * Already-corrupted instances are excluded, for the reason phase 2's second
+ * clause exists: without it a saboteur would ruin the same book every tick for
+ * the whole raid and the mechanic would be 455 identical nothings.
+ *
+ * **The exclusion is the raid's, not the saboteur's**, and that is a correction
+ * a test caught rather than a design. Read off `brief.corrupted` alone, two
+ * saboteurs in one warband both went for the deepest book and both counted it —
+ * seven corruptions against a four-book shelf, a number that describes one book
+ * ruined twice and reads as one ruined seven times. The world write happens at
+ * consequence time, so the state's own `corruption` field still says `sound`
+ * during the engagement and cannot be the exclusion either.
+ */
+function corruptibleIn(raid: Raid, objective: ObjectiveBrief): Handle {
+  if (objective.kind !== OBJECTIVE_KIND.library) return 0;
+  const already = new Set<Handle>();
+  for (const roster of raid.rosters) {
+    for (const brief of roster.briefs) for (const instance of brief.corrupted) already.add(instance);
+  }
+  const ranked = raid.host.knowledge
+    .instancesAt(LOCATION_KIND.library, objective.targetId)
+    .filter((instance) => !already.has(instance))
+    .filter((instance) => fidelityOf(raid.host.world, instance).corruption === CORRUPTION.sound)
+    .map((instance) => ({ instance, nodeId: raid.host.knowledge.read(instance).nodeId }))
+    .sort(
+      (a, b) => raid.grid.tierOf(b.nodeId) - raid.grid.tierOf(a.nodeId) || a.instance - b.instance,
+    );
+  return ranked[0]?.instance ?? 0;
+}
+
+/**
+ * The nearest library objective this attacker is already standing in, or
+ * `undefined`.
+ *
+ * Reuses the objective scan rather than a second one: a saboteur is a raider who
+ * reached the stacks, and *"in reach"* has to mean exactly what it means for
+ * looting or the two verbs would disagree about where the library is.
+ */
+function nearestLibraryInReach(
+  raid: Raid,
+  here: Point,
+  tick: number,
+  brief: CombatantBrief,
+): ObjectiveBrief | undefined {
+  const objective = nearestUnresolvedObjective(raid, here, tick, brief);
+  if (objective === undefined) return undefined;
+  if (objective.kind !== OBJECTIVE_KIND.library) return undefined;
+  if (!withinRange(here, objective.position, raid.tuning.objectiveInteractionRadius)) {
+    return undefined;
+  }
+  return objective;
+}
+
+/**
  * The node a thief would take from this victim, or `0`.
  *
  * Deepest first, so a successful theft takes something worth having, and ties
@@ -1137,6 +1298,15 @@ export function resolveRaid(raid: Raid, reason: RaidOutcome['reason']): RaidOutc
     }
   }
 
+  // Every corruption, from every saboteur, alive or dead, withdrawn or stranded.
+  // Ascending by instance handle so two peers write them in one order. See
+  // `CombatantBrief.corrupted` for why survival is not a condition here.
+  const corruptedInstances: Handle[] = [];
+  for (const roster of raid.rosters) {
+    for (const brief of roster.briefs) corruptedInstances.push(...brief.corrupted);
+  }
+  corruptedInstances.sort((left, right) => left - right);
+
   const outcome: RaidOutcome = {
     victor: victorOf({
       takenValue: taken,
@@ -1148,6 +1318,7 @@ export function resolveRaid(raid: Raid, reason: RaidOutcome['reason']): RaidOutc
     maxTicks: raid.maxTicks,
     casualties,
     cohortLosses,
+    corruptedInstances,
     objectives: raid.objectives.map((objective) => ({
       kind: objective.kind,
       targetId: objective.targetId,

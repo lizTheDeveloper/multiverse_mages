@@ -139,12 +139,20 @@ describe('unclassifiedTraits (step 2)', () => {
    * moves, `docs/design/observable-trait-inventory.md` is stale and its date and
    * ref line are lying about the tree.
    */
-  it('covers the 108 traits the inventory counted at be446a6', () => {
+  it('covers the 110 traits the inventory counts, and says what moved it', () => {
     let traits = 0;
     for (const spec of [...WORLD_COMPONENTS, ...ENGAGEMENT_COMPONENTS]) {
       traits += Object.keys(spec.fields).length;
     }
-    expect(traits).toBe(108);
+    // **110, where the inventory was taken at 108.** `w190/scribing-fidelity`
+    // added `knowledge-fidelity` — world-schema revision 7, two fields — and
+    // this assertion is the mechanism working rather than a number needing a
+    // nudge: a component added to `@mm/state` and not classified turns
+    // `unclassifiedTraits` red, and this says the *count* moved too so the
+    // inventory document cannot quietly go stale beside it. Both were updated
+    // in the same commit; the document keeps `be446a6` as the ref its prose was
+    // read at and records this delta beneath it.
+    expect(traits).toBe(110);
 
     let classified = 0;
     for (const rows of Object.values(TRAIT_CLASSIFICATION)) {
@@ -168,7 +176,14 @@ describe('unclassifiedTraits (step 2)', () => {
         byReason.set(reason, (byReason.get(reason) ?? 0) + 1);
       }
     }
-    expect(byReason.get('not-yet-decided')).toBe(70);
+    // 72, from 70: `knowledge-fidelity`'s two fields are both `undecided()`.
+    // `corruption` is the one worth pausing on and the reason it is not
+    // classified either way is written beside it in `entitlement.ts` — an
+    // observation channel carrying "this book is corrupt" would delete the
+    // mechanic, while one carrying "a reader has marked it" would be legitimate
+    // and does not exist. Two entitlement questions, one field, and
+    // `scribing-fidelity.md` decides neither.
+    expect(byReason.get('not-yet-decided')).toBe(72);
     expect(byReason.get('internal-bookkeeping')).toBe(6);
     // Unused until there is an opponent-facing projection to hide anything
     // from. Asserted at zero so that the day it stops being zero is a diff.

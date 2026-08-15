@@ -257,16 +257,16 @@ proportional change in that metric the gate would report as `regressed`. Anythin
 
 | metric | 5-year gate | 20-year gate | 20-year agency gate | 200-year gate |
 |---|---|---|---|---|
-| `referenceGrimoires` | 3.3 % | 6.8 % | 16.2 % | 16.2 % |
-| `referenceKnowledgeInstances` | 2.0 % | 2.9 % | 7.2 % | 7.2 % |
-| `referenceLibraryDepth` | 8.7 % | 5.2 % | 8.0 % | 17.5 % |
-| `referenceLivingMages` | 0.8 % | 1.5 % | 3.3 % | 6.1 % |
-| `referenceNodesGained` | 2.1 % | 1.1 % | 7.6 % | 2.8 % |
-| `referenceNodesGainedFinalQuarter` | — | 4.9 % | 24.3 % | 26.4 % |
-| `referenceNodesKnown` | 1.7 % | 1.0 % | 7.0 % | 2.7 % |
-| `referencePeakPopulation` | 0.0 % | 5.8 % | 9.3 % | 1.4 % |
-| `referencePopulation` | 1.0 % | 1.7 % | 3.1 % | 8.1 % |
-| `referencePopulationChange` | 8.7 % | 5.4 % | 9.8 % | 8.2 % |
+| `referenceGrimoires` | 5.5 % | 6.5 % | 12.2 % | 16.2 % |
+| `referenceKnowledgeInstances` | 2.3 % | 2.5 % | 5.7 % | 7.2 % |
+| `referenceLibraryDepth` | 16.1 % | 14.6 % | 23.4 % | 17.5 % |
+| `referenceLivingMages` | 0.8 % | 1.6 % | 3.3 % | 6.1 % |
+| `referenceNodesGained` | 3.0 % | 1.4 % | 8.7 % | 2.8 % |
+| `referenceNodesGainedFinalQuarter` | — | 3.6 % | 25.6 % | 26.4 % |
+| `referenceNodesKnown` | 2.5 % | 1.4 % | 8.0 % | 2.7 % |
+| `referencePeakPopulation` | 0.0 % | 18.2 % | 8.2 % | 1.4 % |
+| `referencePopulation` | 1.0 % | 1.8 % | 3.3 % | 8.1 % |
+| `referencePopulationChange` | 8.6 % | 5.7 % | 10.1 % | 8.2 % |
 | runs | 200 | 200 | 64 | 64 |
 | plays a god verb | no | no | **yes** | **yes** |
 | wall clock, 4 workers | 4 s | 27 s | **10 s** | **830–1154 s** |

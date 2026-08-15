@@ -149,6 +149,7 @@ import {
   DEFAULT_TEACH_THRESHOLD,
   MASTERY_ACTIVATION_THRESHOLD,
   disownGrimoire,
+  fidelityOf,
   isRediscovery,
   practice,
   practiceCeiling,
@@ -157,6 +158,7 @@ import {
   scribe,
   scribeCapacityCost,
   shelveGrimoire,
+  study,
   teach,
 } from '@mm/rules-magic';
 import type { RediscoveryClampCounter } from '@mm/primitives';
@@ -185,6 +187,14 @@ export interface MageRates {
   readonly depthCeiling: number;
   /** Species `scribeAffinity`. Raises a finished book's durability. */
   readonly scribeAffinity: Fp;
+  /**
+   * Species `curiosity`. The defence against a corrupted text.
+   *
+   * The one trait that decides whether a mage can read through a book that is
+   * silently wrong, and it is why the species best at *writing* books is second
+   * worst at *recovering* them — see `rules-magic`'s `fidelity.ts`.
+   */
+  readonly curiosity: Fp;
 }
 
 /**
@@ -906,6 +916,164 @@ export class CoordinatingKnowledgeGateway implements KnowledgeGateway {
       counterparty: 0,
       nodeId,
     });
+  }
+
+  /**
+   * Spends mage-months reading a book, and creates the instance when the node's
+   * `teachCost` is met.
+   *
+   * **The book on the shelf is the teacher.** `teachCost` is the price rather
+   * than a new content field because §2.3 already prices "one person acquiring
+   * this node with help", and a text is help. What differs from a lesson is
+   * everything on the other side: no second mage is committed, no `teach-rate`
+   * bonus applies, and what arrives is bounded by the *book's* fidelity rather
+   * than by a teacher's mastery.
+   *
+   * **The source is chosen, and the choice is the freshest copy on the shelf.**
+   * Ties break on the instance handle, so the pick is a function of state and
+   * not of iteration order. A library holding a pristine copy and a spent one
+   * teaches from the pristine one, which is the behaviour that makes refreshing
+   * a scriptorium from minds worth doing.
+   *
+   * **A corrupted source consumes the month and clamps.** That is deliberate and
+   * is the design's deferred cost: the reader spent the time, got nothing, and —
+   * unless she was deep enough to diagnose it — does not know why. The clamp
+   * stops her re-reading it forever at no cost, and the mark, when she can make
+   * one, is the only signal a player ever receives that a raid happened.
+   */
+  contributeStudy(mage: MageHandle, nodeId: ContentId, mageMonths: Fixed): void {
+    const ledger = this.#ledger('study');
+    const node = this.#deps.catalog.node(nodeId);
+    const rates = this.#ratesOf(mage);
+    if (node === undefined || rates === undefined) return;
+
+    const source = this.readableSourceFor(mage, nodeId);
+    if (source === undefined) return;
+
+    const required = this.#deps.acquire.teachCost(node.teachCost);
+    const key = effortKey(EFFORT_KIND.study, mage, nodeId, 0);
+    const progress = ledger.accrue(key, mageMonths);
+    if (progress < required) return;
+
+    const outcome = study({
+      knowledge: this.#deps.knowledge,
+      catalog: this.#deps.catalog,
+      cells: this.#deps.cells,
+      ruleset: this.#deps.ruleset,
+      reader: mage,
+      source,
+      worldTick: this.#deps.state.clock.worldTick,
+      curiosity: rates.curiosity,
+      readerDeepestTier: this.deepestTierHeld(mage),
+      store: this.#deps.store,
+    });
+
+    if (outcome.refusal !== undefined) {
+      ledger.clampTo(key, required);
+      return;
+    }
+    ledger.clear(key);
+    this.#completed.push({
+      kind: EFFORT_KIND.study,
+      subject: mage,
+      counterparty: source,
+      nodeId,
+    });
+  }
+
+  /**
+   * The freshest written instance of `nodeId` this mage could open, or
+   * `undefined`.
+   *
+   * Her own shelf first, then books in her own hands. Nothing else: a library
+   * she is not affiliated with is somebody else's, and reaching into it here
+   * would make affiliation decorative.
+   *
+   * "Freshest" is lowest copy distance, ties on the instance handle. **A
+   * corrupted book is not skipped** — it is invisible until read, which is the
+   * whole mechanic, and a chooser that avoided corrupted texts would be the
+   * omniscience the design is built to deny.
+   */
+  readableSourceFor(mage: MageHandle, nodeId: ContentId): Handle | undefined {
+    const candidates: Handle[] = [];
+    const shelf = this.#shelfFor(mage);
+    if (shelf !== 0) {
+      candidates.push(...this.#deps.knowledge.instancesAt(LOCATION_KIND.library, shelf));
+    }
+    for (const grimoire of this.#grimoiresHeldBy(mage)) {
+      const instance = this.#deps.knowledge.instanceForGrimoire(grimoire);
+      if (instance !== 0) candidates.push(instance);
+    }
+
+    let best: Handle | undefined;
+    let bestGeneration = 0;
+    for (const instance of candidates) {
+      if (this.#deps.knowledge.read(instance).nodeId !== nodeId) continue;
+      const { copyGeneration } = fidelityOf(this.#deps.state, instance);
+      if (best === undefined) {
+        best = instance;
+        bestGeneration = copyGeneration;
+        continue;
+      }
+      // The handle tie-break is not decoration. `candidates` arrives in
+      // `instancesAt`'s slot order followed by the mage's own books, and slots
+      // move under swap-removal — so a strict `<` alone would break ties on the
+      // *destruction history* of the universe rather than on its values, and two
+      // peers agreeing on every number could open different books.
+      if (copyGeneration < bestGeneration || (copyGeneration === bestGeneration && instance < best)) {
+        best = instance;
+        bestGeneration = copyGeneration;
+      }
+    }
+    return best;
+  }
+
+  /**
+   * Nodes this mage could learn by opening a book she can reach.
+   *
+   * The archive's half of `seek-teaching`. Same admission test a lesson gets —
+   * permitted cell, not already held, prerequisites in hand — asked of the
+   * shelf instead of of a colleague.
+   *
+   * **Corrupted texts are included.** A mage cannot tell a sound book from a
+   * silently wrong one by looking at the spine, so neither may this list; the
+   * month is spent and lost, which is the design's deferred cost and not an
+   * oversight in the candidate scan.
+   */
+  readableToMe(mage: MageHandle): ContentId[] {
+    const found = new Set<ContentId>();
+    const shelf = this.#shelfFor(mage);
+    const candidates: Handle[] = [];
+    if (shelf !== 0) {
+      candidates.push(...this.#deps.knowledge.instancesAt(LOCATION_KIND.library, shelf));
+    }
+    for (const grimoire of this.#grimoiresHeldBy(mage)) {
+      const instance = this.#deps.knowledge.instanceForGrimoire(grimoire);
+      if (instance !== 0) candidates.push(instance);
+    }
+    for (const instance of candidates) {
+      const nodeId = this.#deps.knowledge.read(instance).nodeId;
+      if (found.has(nodeId)) continue;
+      if (!this.#admitsLesson(mage, nodeId)) continue;
+      found.add(nodeId);
+    }
+    return [...found].sort((left, right) => left - right);
+  }
+
+  /**
+   * The deepest tier this mage already holds — the corruption discovery gate.
+   *
+   * Zero for a mage holding nothing, which is correct and is the design's point:
+   * *"the newest students can't discover corruption"*, and a mage who knows
+   * nothing at all cannot diagnose anything.
+   */
+  deepestTierHeld(mage: MageHandle): number {
+    let deepest = 0;
+    for (const instance of this.#deps.knowledge.instancesHeldBy(mage)) {
+      const node = this.#deps.catalog.node(this.#deps.knowledge.read(instance).nodeId);
+      if (node !== undefined && node.tier > deepest) deepest = node.tier;
+    }
+    return deepest;
   }
 
   /**

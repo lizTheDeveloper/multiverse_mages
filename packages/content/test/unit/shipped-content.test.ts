@@ -56,11 +56,11 @@ describe('shipped content', () => {
       forms: 14,
       cells: 70,
       v1Cells: 12,
-      nodes: 300,
+      nodes: 301,
       species: 6,
       traditions: 3,
       territories: 5,
-      primitives: 16,
+      primitives: 17,
       // One per action id in contracts.md §4.2, and one per magnitude the
       // god-agency rules read by name. Both coverings are checked by the
       // loader; these are the counts they come out at.

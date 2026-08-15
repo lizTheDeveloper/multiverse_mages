@@ -447,7 +447,7 @@
     "id": "cc-the-long-tenure",
     "cell": "creo-corpus",
     "name": "The Long Tenure",
-    "gloss": "Twenty more years of working life for everyone who holds it. It sits at tier 3 deliberately, so that orcs — depth ceiling 3, and the shortest-lived of the six — can reach the one working that answers what is actually wrong with them.",
+    "gloss": "Twenty more years of working life for everyone who holds it. It sits at tier 3 deliberately, so that orcs \u2014 depth ceiling 3, and the shortest-lived of the six \u2014 can reach the one working that answers what is actually wrong with them.",
     "tier": 3,
     "prerequisites": [
       "cc-the-mended-decade"
@@ -981,7 +981,7 @@
     "id": "cim-the-perfect-forgery",
     "cell": "creo-imaginem",
     "name": "The Perfect Forgery",
-    "gloss": "An image of a grimoire, accurate down to the name on every page. It reads correctly and teaches correctly, and it stops doing either on the day the mage who cast it dies — which no catalogue records.",
+    "gloss": "An image of a grimoire, accurate down to the name on every page. It reads correctly and teaches correctly, and it stops doing either on the day the mage who cast it dies \u2014 which no catalogue records.",
     "tier": 4,
     "prerequisites": [
       "cim-the-absent-scholar",
@@ -1058,7 +1058,7 @@
     "id": "cl-the-made-door",
     "cell": "creo-limen",
     "name": "The Made Door",
-    "gloss": "Put a door in a wall that had none, and a corridor behind it the building did not have room for. Declares no portal effect and never will: making a threshold is not opening one, and the raid gate stays in Rego Limen (contracts.md §8).",
+    "gloss": "Put a door in a wall that had none, and a corridor behind it the building did not have room for. Declares no portal effect and never will: making a threshold is not opening one, and the raid gate stays in Rego Limen (contracts.md \u00a78).",
     "tier": 3,
     "prerequisites": [
       "cl-draw-the-circle",
@@ -1242,7 +1242,7 @@
     "id": "cn-name-the-unnamed",
     "cell": "creo-nomen",
     "name": "Name the Unnamed",
-    "gloss": "Make a true name for something that has never had one — a new working, a made beast, a hall that was grown rather than built. The name is correct, which is not the same as it being deserved.",
+    "gloss": "Make a true name for something that has never had one \u2014 a new working, a made beast, a hall that was grown rather than built. The name is correct, which is not the same as it being deserved.",
     "tier": 2,
     "prerequisites": [
       "cn-give-the-use-name"
@@ -1694,7 +1694,7 @@
     "id": "ian-number-the-herd",
     "cell": "intellego-animal",
     "name": "Number the Herd",
-    "gloss": "Know how many, of what ages, and which of them will not see the winter — without penning a single animal to be looked at. Herders who have it stop losing the whole beast to find out it was sick.",
+    "gloss": "Know how many, of what ages, and which of them will not see the winter \u2014 without penning a single animal to be looked at. Herders who have it stop losing the whole beast to find out it was sick.",
     "tier": 2,
     "prerequisites": [
       "ian-cut-the-sign"
@@ -1748,7 +1748,7 @@
     "id": "ian-the-beasts-own-eye",
     "cell": "intellego-animal",
     "name": "The Beast's Own Eye",
-    "gloss": "Borrow what an animal is looking at, from wherever it happens to be standing. A scholar whose watchmen are all crows is difficult to surprise, and impossible to catch listening — nothing she posted can be questioned afterwards.",
+    "gloss": "Borrow what an animal is looking at, from wherever it happens to be standing. A scholar whose watchmen are all crows is difficult to surprise, and impossible to catch listening \u2014 nothing she posted can be questioned afterwards.",
     "tier": 4,
     "prerequisites": [
       "ian-chart-the-migration",
@@ -1861,7 +1861,7 @@
     "id": "iaq-fathom-the-watershed",
     "cell": "intellego-aquam",
     "name": "Fathom the Watershed",
-    "gloss": "Hold every water of a country in one perception at once — springs, seeps, the river's bad years, the marsh that used to be a lake. Mills get sited on this, and so do the arguments about who owns the rain.",
+    "gloss": "Hold every water of a country in one perception at once \u2014 springs, seeps, the river's bad years, the marsh that used to be a lake. Mills get sited on this, and so do the arguments about who owns the rain.",
     "tier": 4,
     "prerequisites": [
       "iaq-trace-the-current"
@@ -2073,7 +2073,7 @@
     "id": "ic-tell-the-hour-of-a-body",
     "cell": "intellego-corpus",
     "name": "Tell the Hour of a Body",
-    "gloss": "Say how long this body has, from the body alone. It is not fate — Fatum reads the hour that was appointed; this reads only the hour the flesh is already walking toward, which is why it can be argued with.",
+    "gloss": "Say how long this body has, from the body alone. It is not fate \u2014 Fatum reads the hour that was appointed; this reads only the hour the flesh is already walking toward, which is why it can be argued with.",
     "tier": 4,
     "prerequisites": [
       "ic-listen-at-the-ribs"
@@ -2210,7 +2210,7 @@
     "id": "if-the-thread-fate-set-down",
     "cell": "intellego-fatum",
     "name": "The Thread Fate Set Down",
-    "gloss": "Perceive your own thread so exactly that you can tell the moment fate puts it down to attend to someone else — and live in those moments. Nothing that works by destiny can find a mage who is not currently being tracked by it. Archmages who hold it tend to have no recorded death.",
+    "gloss": "Perceive your own thread so exactly that you can tell the moment fate puts it down to attend to someone else \u2014 and live in those moments. Nothing that works by destiny can find a mage who is not currently being tracked by it. Archmages who hold it tend to have no recorded death.",
     "tier": 5,
     "prerequisites": [
       "if-the-appointed-hour"
@@ -2268,7 +2268,7 @@
     "id": "ih-question-the-orchard",
     "cell": "intellego-herbam",
     "name": "Question the Orchard",
-    "gloss": "Put the question to the trees themselves — what they are short of, what they are hoarding, which of them is dying quietly and taking the row with it.",
+    "gloss": "Put the question to the trees themselves \u2014 what they are short of, what they are hoarding, which of them is dying quietly and taking the row with it.",
     "tier": 2,
     "prerequisites": [
       "ih-sight-the-blight"
@@ -2587,7 +2587,7 @@
     "id": "il-count-the-doors",
     "cell": "intellego-limen",
     "name": "Count the Doors",
-    "gloss": "Enumerate every threshold in a place at once — its gates, its grave-lines, the seams nobody built on purpose.",
+    "gloss": "Enumerate every threshold in a place at once \u2014 its gates, its grave-lines, the seams nobody built on purpose.",
     "tier": 2,
     "prerequisites": [
       "il-sense-the-seam"
@@ -2942,7 +2942,7 @@
     "id": "it-read-the-fault",
     "cell": "intellego-terram",
     "name": "Read the Fault",
-    "gloss": "See where the ground intends to fail. Knowing where a wall cannot stand is the cheapest possible way to learn where it can — and it sits at tier 3 deliberately, so that orcs, whose depth ceiling is 3, can reach a build-rate working at all.",
+    "gloss": "See where the ground intends to fail. Knowing where a wall cannot stand is the cheapest possible way to learn where it can \u2014 and it sits at tier 3 deliberately, so that orcs, whose depth ceiling is 3, can reach a build-rate working at all.",
     "tier": 3,
     "prerequisites": [
       "it-survey-the-strata",
@@ -3044,7 +3044,7 @@
     "id": "iu-the-unlit-line",
     "cell": "intellego-umbra",
     "name": "The Unlit Line",
-    "gloss": "Perceive, continuously and without effort, which line through a room no eye is currently on — and be on it. Nothing about the mage is hidden. She is simply never where the looking is happening.",
+    "gloss": "Perceive, continuously and without effort, which line through a room no eye is currently on \u2014 and be on it. Nothing about the mage is hidden. She is simply never where the looking is happening.",
     "tier": 4,
     "prerequisites": [
       "iu-look-along-the-shadow"
@@ -3146,7 +3146,7 @@
     "id": "iv-the-residue-in-the-room",
     "cell": "intellego-vim",
     "name": "The Residue in the Room",
-    "gloss": "Perceive what was cast in a place after the casting is over — a day after, in a still room, three weeks. Most of what a university knows about its neighbours was picked up off a floor.",
+    "gloss": "Perceive what was cast in a place after the casting is over \u2014 a day after, in a still room, three weeks. Most of what a university knows about its neighbours was picked up off a floor.",
     "tier": 3,
     "prerequisites": [
       "iv-price-the-working"
@@ -3306,7 +3306,7 @@
     "id": "maq-sweeten-the-cistern",
     "cell": "muto-aquam",
     "name": "Sweeten the Cistern",
-    "gloss": "Turn foul water into water. Not clean water — water, which is a lower standard than the phrase suggests and has founded more towns than any other working in the cell.",
+    "gloss": "Turn foul water into water. Not clean water \u2014 water, which is a lower standard than the phrase suggests and has founded more towns than any other working in the cell.",
     "tier": 1,
     "prerequisites": [],
     "researchCost": 2048,
@@ -4106,7 +4106,7 @@
     "id": "ml-the-door-that-was-a-window",
     "cell": "muto-limen",
     "name": "The Door That Was a Window",
-    "gloss": "Change a threshold's kind rather than its state. Declares no portal effect and never will: opening onto another sky is Rego Limen, and contracts.md §8 keeps it there on purpose.",
+    "gloss": "Change a threshold's kind rather than its state. Declares no portal effect and never will: opening onto another sky is Rego Limen, and contracts.md \u00a78 keeps it there on purpose.",
     "tier": 2,
     "prerequisites": [
       "ml-change-what-the-wall-means"
@@ -4660,7 +4660,7 @@
     "id": "mv-convert-the-form",
     "cell": "muto-vim",
     "name": "Convert the Form",
-    "gloss": "Change what a working is about without changing what it does — Ignem to Aquam and back again. The grid is not a filing system for scholars; this is the working that proves it.",
+    "gloss": "Change what a working is about without changing what it does \u2014 Ignem to Aquam and back again. The grid is not a filing system for scholars; this is the working that proves it.",
     "tier": 2,
     "prerequisites": [
       "mv-turn-the-working"
@@ -4797,7 +4797,7 @@
     "id": "pan-nothing-takes-the-scent",
     "cell": "perdo-animal",
     "name": "Nothing Takes the Scent",
-    "gloss": "Unmake what you left in the air behind you. The hounds are not confused — a confused hound casts about. These sit down.",
+    "gloss": "Unmake what you left in the air behind you. The hounds are not confused \u2014 a confused hound casts about. These sit down.",
     "tier": 2,
     "prerequisites": [
       "pan-founder-the-horse"
@@ -4845,7 +4845,7 @@
     "id": "pan-nothing-answers-the-horn",
     "cell": "perdo-animal",
     "name": "Nothing Answers the Horn",
-    "gloss": "Unmake what was called. Warhorses, hounds, the summoned things a Nomen mage keeps on a name — all of it goes, and the field is very quiet, and the horn is blown twice more before anyone stops.",
+    "gloss": "Unmake what was called. Warhorses, hounds, the summoned things a Nomen mage keeps on a name \u2014 all of it goes, and the field is very quiet, and the horn is blown twice more before anyone stops.",
     "tier": 4,
     "prerequisites": [
       "pan-empty-the-pasture"
@@ -4976,7 +4976,7 @@
     "id": "pau-take-the-breath",
     "cell": "perdo-auram",
     "name": "Take the Breath",
-    "gloss": "Unmake the air a body has already drawn. She does not gasp — there is nothing left to gasp with — and it is the surprise on the face that wardens remember afterwards.",
+    "gloss": "Unmake the air a body has already drawn. She does not gasp \u2014 there is nothing left to gasp with \u2014 and it is the surprise on the face that wardens remember afterwards.",
     "tier": 1,
     "prerequisites": [],
     "researchCost": 2048,
@@ -5443,7 +5443,7 @@
     "id": "pig-the-unburnt-library",
     "cell": "perdo-ignem",
     "name": "The Unburnt Library",
-    "gloss": "Unmake a fire that is already in the stacks. Perdo is how a library is saved rather less often than it is how one is lost, and it is the same working either way — the same training, the same hour of practice, different people holding it.",
+    "gloss": "Unmake a fire that is already in the stacks. Perdo is how a library is saved rather less often than it is how one is lost, and it is the same working either way \u2014 the same training, the same hour of practice, different people holding it.",
     "tier": 3,
     "prerequisites": [
       "pig-snuff"
@@ -5592,7 +5592,7 @@
     "id": "pl-fray-the-edge",
     "cell": "perdo-limen",
     "name": "Fray the Edge",
-    "gloss": "Wear at a boundary until it stops being certain about where it is. Contains no portal-stability effect, and may never gain one (contracts.md §1.6).",
+    "gloss": "Wear at a boundary until it stops being certain about where it is. Contains no portal-stability effect, and may never gain one (contracts.md \u00a71.6).",
     "tier": 1,
     "prerequisites": [],
     "researchCost": 2048,
@@ -5764,7 +5764,7 @@
     "id": "pm-unmake-the-mind",
     "cell": "perdo-mentem",
     "name": "Unmake the Mind",
-    "gloss": "Not kill. Unmake — the body walks out of the hall and the scholar does not. This is the working the vision's flagship interdiction forbids by name: Mentem is open to my scholars, but none shall unmake a mind.",
+    "gloss": "Not kill. Unmake \u2014 the body walks out of the hall and the scholar does not. This is the working the vision's flagship interdiction forbids by name: Mentem is open to my scholars, but none shall unmake a mind.",
     "tier": 4,
     "prerequisites": [
       "pm-scatter-the-lesson"
@@ -5903,6 +5903,30 @@
         "primitive": "concealment",
         "magnitude": 320,
         "target": "self",
+        "durationTicks": 0
+      }
+    ],
+    "knowledgeKind": "metis",
+    "tuningStatus": "untuned"
+  },
+  {
+    "id": "pn-the-wrong-true-name",
+    "cell": "perdo-nomen",
+    "name": "The Wrong True Name",
+    "gloss": "Not to destroy a text but to unmake one syllable of it, and leave the rest immaculate. The page still reads. It reads a name that is no longer anyone's.",
+    "tier": 4,
+    "prerequisites": [
+      "pn-unsay-the-name"
+    ],
+    "researchCost": 12288,
+    "teachCost": 3072,
+    "scribeCost": 6144,
+    "rediscoveryMultiplier": 7168,
+    "effects": [
+      {
+        "primitive": "knowledge-corrupt",
+        "magnitude": 384,
+        "target": "single",
         "durationTicks": 0
       }
     ],
@@ -6084,7 +6108,7 @@
     "id": "pu-make-sure",
     "cell": "perdo-umbra",
     "name": "Make Sure",
-    "gloss": "A scholar who dies holding something nobody else holds leaves a shade that still, faintly, holds it — enough for a patient Intellego man and a long night in the right graveyard. This unmakes the shade. Whoever commissions it is not being cruel. She is making sure.",
+    "gloss": "A scholar who dies holding something nobody else holds leaves a shade that still, faintly, holds it \u2014 enough for a patient Intellego man and a long night in the right graveyard. This unmakes the shade. Whoever commissions it is not being cruel. She is making sure.",
     "tier": 4,
     "prerequisites": [
       "pu-nothing-casts-here",
@@ -6156,7 +6180,7 @@
     "id": "pv-where-nothing-takes",
     "cell": "perdo-vim",
     "name": "Where Nothing Takes",
-    "gloss": "Unmake, over a stretch of ground, the willingness of workings to hold at all — your own among them. It declares no portal-stability effect and never will (contracts.md §1.6). The cell stops at three nodes on purpose: further down, unmaking magic stops being a spell and starts being a rule, and rules belong to the god.",
+    "gloss": "Unmake, over a stretch of ground, the willingness of workings to hold at all \u2014 your own among them. It declares no portal-stability effect and never will (contracts.md \u00a71.6). The cell stops at three nodes on purpose: further down, unmaking magic stops being a spell and starts being a rule, and rules belong to the god.",
     "tier": 3,
     "prerequisites": [
       "pv-the-unfinished-sentence",
@@ -6508,7 +6532,7 @@
     "id": "rc-still-the-limb",
     "cell": "rego-corpus",
     "name": "Still the Limb",
-    "gloss": "Hold a body to its stance, one part at a time — usually your own. Flesh that has been told not to give does not give, and the surgeons found this useful a long time before the duellists did.",
+    "gloss": "Hold a body to its stance, one part at a time \u2014 usually your own. Flesh that has been told not to give does not give, and the surgeons found this useful a long time before the duellists did.",
     "tier": 1,
     "prerequisites": [],
     "researchCost": 2048,
@@ -7144,7 +7168,7 @@
     "id": "rl-open-the-portal",
     "cell": "rego-limen",
     "name": "Open the Portal",
-    "gloss": "Hold a threshold open onto a sky that is not yours. Everything the multiverse does to a universe begins here, which is why contracts.md §8 requires this cell in every v1 build.",
+    "gloss": "Hold a threshold open onto a sky that is not yours. Everything the multiverse does to a universe begins here, which is why contracts.md \u00a78 requires this cell in every v1 build.",
     "tier": 4,
     "prerequisites": [
       "rl-step-across",
@@ -7170,7 +7194,7 @@
     "id": "rl-the-standing-gate",
     "cell": "rego-limen",
     "name": "The Standing Gate",
-    "gloss": "A portal that does not have to be argued into existence each time. Declares no portal-stability effect and never will: the raid's termination guarantee is a proof, not an observation (contracts.md §1.6).",
+    "gloss": "A portal that does not have to be argued into existence each time. Declares no portal-stability effect and never will: the raid's termination guarantee is a proof, not an observation (contracts.md \u00a71.6).",
     "tier": 5,
     "prerequisites": [
       "rl-open-the-portal"
@@ -7356,12 +7380,21 @@
     "name": "Keep the Name Close",
     "gloss": "Hold your own name in your own keeping, so that it does not answer when someone else uses it. Taught in the same term as Compel by Name, by professors who consider that an ethics curriculum.",
     "tier": 2,
-    "prerequisites": ["rn-call-by-name"],
+    "prerequisites": [
+      "rn-call-by-name"
+    ],
     "researchCost": 4096,
     "teachCost": 1024,
     "scribeCost": 2048,
     "rediscoveryMultiplier": 5632,
-    "effects": [{ "primitive": "concealment", "magnitude": 160, "target": "self", "durationTicks": 0 }],
+    "effects": [
+      {
+        "primitive": "concealment",
+        "magnitude": 160,
+        "target": "self",
+        "durationTicks": 0
+      }
+    ],
     "knowledgeKind": "episteme",
     "tuningStatus": "untuned"
   },
@@ -7369,7 +7402,7 @@
     "id": "rn-compel-by-name",
     "cell": "rego-nomen",
     "name": "Compel by Name",
-    "gloss": "Hold a mage by her name and take what she knows out through it. The second theft vector, and the one that leaves a mark — which is why a universe may want to close exactly one of the two.",
+    "gloss": "Hold a mage by her name and take what she knows out through it. The second theft vector, and the one that leaves a mark \u2014 which is why a universe may want to close exactly one of the two.",
     "tier": 3,
     "prerequisites": [
       "rn-call-by-name"
@@ -7446,7 +7479,7 @@
     "id": "rt-raise-the-course",
     "cell": "rego-terram",
     "name": "Raise the Course",
-    "gloss": "Lay a whole course of a wall as one working. This is vision §4's worked example: earth magic building universities faster is a number here, not a special case in code.",
+    "gloss": "Lay a whole course of a wall as one working. This is vision \u00a74's worked example: earth magic building universities faster is a number here, not a special case in code.",
     "tier": 2,
     "prerequisites": [
       "rt-set-the-stone"

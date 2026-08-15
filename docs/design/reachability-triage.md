@@ -1,7 +1,19 @@
-# The 125 reachability findings, triaged
+# The 124 reachability findings, triaged
 
 **Measured at `e2b89d8` on 2026-08-14**, by `npm run check:reachability` plus the capability
-analysis described in §5. This is an **inventory, not a fix**: the point is to convert the single
+analysis described in §5.
+
+> **Amended 2026-08-14 on `w190/scribing-fidelity`: 125 → 124.** `STANDARD_STORE` was repaired,
+> not reclassified. `rules-magic`'s new `study.ts` — the operation that reads a written instance
+> back into a mind — passes the store hook the same way `scribe` does, so the constant now has a
+> production consumer and the ratchet stopped reporting it. §2's *"Tradition store policy"* row
+> falls from 5 findings to 4, `rules-magic`'s integration-debt column from 16 to 15, and the total
+> integration debt from 61 to 60.
+>
+> The row is *"the consequences of a store kind are computed by nothing"*, and it is still true of
+> the other four: palace depth, perishing with the holder and scribe availability remain
+> unreached. What changed is one of its five members, which is the honest scale of the repair —
+> a mechanism partly wired, not a mechanism fixed. This is an **inventory, not a fix**: the point is to convert the single
 number "125 findings" into a count of things somebody would act on, because that number is what
 nobody currently knows.
 
@@ -30,15 +42,15 @@ is what happens when you skip that step.
 | `content` | 0 | 0 | 5 | 1 | 0 | 6 |
 | `coordination` | 13 | 2 | 0 | 1 | 0 | 16 |
 | `primitives` | 1 | 1 | 1 | 0 | 0 | 3 |
-| `rules-magic` | 16 | 6 | 1 | 4 | 0 | 27 |
+| `rules-magic` | 15 | 6 | 1 | 4 | 0 | 26 |
 | `rules-raid` | 5 | 0 | 0 | 2 | 0 | 7 |
 | `rules-world` | 19 | 6 | 3 | 12 | 0 | 40 |
 | `scenario` | 0 | 0 | 12 | 0 | 0 | 12 |
 | `sim-core` | 0 | 1 | 5 | 0 | 0 | 6 |
 | `state` | 5 | 0 | 0 | 3 | 0 | 8 |
-| **Total** | **59** | **16** | **27** | **23** | **0** | **125** |
+| **Total** | **58** | **16** | **27** | **23** | **0** | **124** |
 
-The headline: **59 of the 125 are integration debt** — mechanics that are built, mostly tested,
+The headline: **58 of the 124 are integration debt** — mechanics that are built, mostly tested,
 exported, and that nothing in a running universe calls. That is the number the raw count was hiding.
 The other 66 are noise of three different kinds.
 
@@ -71,7 +83,7 @@ were moved to §3 and are not here.
 | **Ascension legacy** — `legacyGrant`, `legacyBudget`, `carriedPrestige`, `LEGACY_CHANNELS`, and eight god constants (`legacy-*`, `prestige-retention`, `legacy-reference-tick`) | 12 | The largest single dead mechanism, and the clearest case for the check's one-hop transitivity: eight authored constants look like knobs to a content author and turn nothing, because their only reader is `legacyGrant` and `legacyGrant` has no caller. |
 | **Spell preparation and its cost half** — `prepare`, `isCastable`, `preparationCost`, `costSplit` | 4 | `castPolicy`, `expendOnCast`, `costPolicy` and `castCost` *are* reached, so casting works. The **preparation** half does not: nothing splits a cost across preparation and cast, and nothing asks whether a spell is castable before it is cast. |
 | **Portal spell transfer** — `populatePreparedSpells`, `releaseAbroad` | 2 | `resolvePortalHooks` is reached and the two functions that would use the resolved hooks are not. Prepared spells do not cross a portal. |
-| **Tradition store policy** — `palaceLibraryDepth`, `perishesWithHolder`, `scribeAvailability`, `PALACE_STORE`, `STANDARD_STORE` | 5 | `storePolicy`, `canHoldAt` and `admitToStore` are reached, so storage admits. The *consequences* of a store kind — palace depth, perishing with the holder, scribe availability — are computed by nothing. |
+| **Tradition store policy** — `palaceLibraryDepth`, `perishesWithHolder`, `scribeAvailability`, `PALACE_STORE` | 4 | `storePolicy`, `canHoldAt` and `admitToStore` are reached, so storage admits. The *consequences* of a store kind — palace depth, perishing with the holder, scribe availability — are computed by nothing. **`STANDARD_STORE` was the fifth member and is repaired** (see the amendment at the head of this file): `study.ts` passes the store hook, so the constant has a production consumer. The other four are unchanged. |
 | **`changeTradition`** and `RESOLUTION`, `hooksOfTradition` | 3 | `agent-api` publishes a change-tradition action and `mc-harness`'s strategies name it, while the rules function that would execute it has no caller. The action space advertises a move the rules never make. |
 | **Library-level destruction** — `destroyLibrary`, `grimoiresIn` | 2 | Narrower than it looks, and corrected once. `destroyGrimoire` **is** live: `rules-raid/src/consequences.ts:241` and `:265` loot and burn books one at a time, and that file's own comment claiming it was the fix for both is out of date about the library half. What has no caller is destruction of a library *as a unit* — and `instances/subsystem.ts:116` already records the consequence, that an unshelved book is one `grimoiresIn` cannot see and `destroyLibrary` leaves standing. |
 | **`rules-raid` consequences and objectives** — `returnedWithKnowledge`, `strandedAttackers`, `objectiveHoldsKnowledge`, `OBJECTIVE_LOCATION_KIND`, `BURNABLE_LOCATION_KINDS` | 5 | ~~Consistent with CLAUDE.md: `raid-engagement` is 67/92 and nothing in `scenario` opens a portal.~~ **Reason corrected 2026-08-15 at `08ca5368`: `scenario` does open a portal** — `packages/scenario/src/raids.ts:423` calls `openPortal` and `reference-universe.ts:1007` supplies `portalTargets`. All five names are nevertheless still `unreached` in `scripts/reachability-baseline.json` at this ref, so the row keeps its count and its category: portals open and raids terminate, and the *consequences* of a raid — knowledge carried home, attackers stranded, an objective that holds knowledge, a burnable location — are what nothing reaches. |
@@ -80,8 +92,9 @@ were moved to §3 and are not here.
 
 One more was dropped from this table on inspection: **`withdrawGrimoire`** is declared deliberately unused by `gateway.ts:107` — *"`withdrawGrimoire` is unused and stays unused"* — which is an accepted design decision rather than debt.
 
-That is 44 of the 59. (It was 46 of 61 until `applyWard` and `replay` moved to §3 in the third
-correction round.) The remaining 15 are integration debt of the ordinary kind — an economy input
+That is 43 of the 58. (It was 46 of 61 until `applyWard` and `replay` moved to §3 in the third
+correction round, and 44 of 59 until `study.ts` gave `STANDARD_STORE` a consumer.) The remaining 15
+are integration debt of the ordinary kind — an economy input
 list, a commitment predicate, a monoculture threshold, `speciesRediscoveryMultiplier`,
 `worshipShareOfRegeneration` — worth wiring, not worth a row.
 
