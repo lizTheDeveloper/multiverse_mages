@@ -380,3 +380,30 @@ export function parseBaseline(
 export function baselineMetrics(baseline: Baseline): Map<string, BaselineMetric> {
   return new Map(baseline.metrics.map((metric) => [metric.metricId, metric]));
 }
+
+/**
+ * One top-level field's exact bytes inside {@link encodeBaseline}'s output.
+ *
+ * Exists so that "the metric block did not change" can be asserted on the
+ * **file text** rather than on two in-memory arrays. The re-seal command's whole
+ * claim is that it touched no metric, and an object comparison would still pass
+ * if the printer's output had moved underneath it — which is the same class of
+ * mistake as a checker that answers about the wrong input.
+ *
+ * The parse is trivial because the printer is: top-level keys are the only lines
+ * that begin with exactly two spaces and a quote, so the field runs from its own
+ * label to the next such line, or to the closing brace.
+ *
+ * @returns the span, or `undefined` when the text carries no such field.
+ */
+export function encodedFieldSpan(text: string, key: string): string | undefined {
+  const label = `\n  ${JSON.stringify(key)}: `;
+  const start = text.indexOf(label);
+  if (start < 0) return undefined;
+  const rest = text.slice(start + 1);
+  const nextKey = /\n {2}"/.exec(rest);
+  const nextClose = rest.indexOf('\n}');
+  const ends = [nextKey === null ? -1 : nextKey.index, nextClose].filter((at) => at >= 0);
+  const end = ends.length === 0 ? rest.length : Math.min(...ends);
+  return rest.slice(0, end);
+}

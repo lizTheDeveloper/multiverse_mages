@@ -410,6 +410,55 @@ describe('contentRevision', () => {
     // reason the check is a digest over the preimage rather than a
     // hand-maintained list of files.
     //
+    // 162f80bf169296d0e5fd516cc3c5257a -> 87fdff6cbf4414b584fef95bf9d4916a,
+    // when `w109` appended the seventeenth god cost — action 16, the alliance
+    // invitation. A price is in the preimage for the same reason every god
+    // constant is: two universes that disagreed about what a scholar costs
+    // would be playing different games while their revisions called them
+    // compatible. This is an *addition* rather than a value edit, so every
+    // existing price is byte-identical and a universe that never invites
+    // anybody plays exactly as it did — but the revision moves anyway, and it
+    // has to. A digest that only moved when an existing byte changed could not
+    // tell a build that knows action 16 from one that does not, and those two
+    // builds genuinely cannot replay each other's runs.
+    //
+    // Union, for the third time in this list, and the two moves above are
+    // independent: `apply-magic`'s two `autonomy-weight.json` scalars landed on
+    // `main`, this branch's seventeenth god cost landed here, and neither
+    // literal is a digest over a preimage holding both. `d4e30476` does not
+    // know action 16 exists; `87fdff6c` does not know what a mage-month of
+    // applied magic makes. This tree is the first one holding both, so a sixth
+    // value is what a digest over the union is supposed to produce — not a
+    // disagreement being settled.
+    //
+    // b63bd615c1877925b36c7b3eb7812731 -> 0dfdd5efc2c6dad07bd486a7d80c851d,
+    // when this branch merged the `main` that had meanwhile landed
+    // anti-requisites (PR #161). And so, for the fourth time in this list,
+    // neither side's literal survives: `e8442af2` is a digest over a preimage
+    // holding the exclusion pair and not the seventeenth god cost, `b63bd615`
+    // over one holding the seventeenth god cost and not the exclusion pair.
+    // This tree is the first one holding both, so a sixth value is what a
+    // digest over the union is supposed to produce -- not a disagreement being
+    // settled.
+    //
+    // MEASURED, in one direction only, and the asymmetry is worth reading.
+    // Stripping the two `excludes` arrays from `cell.json` on this tree and
+    // reloading reproduces `b63bd615...` EXACTLY, so the exclusion pair is the
+    // whole of `main`'s contribution to the move and this branch contributes
+    // none of it. The mirror probe cannot be run as a content edit: deleting the
+    // `invite-scholar` record is refused first by the schema's `minItems` and
+    // then, with that relaxed, by the `god-cost` content invariant -- "no cost
+    // is declared for action id 16" -- because `GOD_ACTION_ID_MAX` moved to 16
+    // in code on this branch. That refusal is the defect fix in the PR body
+    // working as intended (an undeclared price is a free action), so the
+    // one-sided probe is a property of the invariant, not a gap in the check.
+    //
+    // Also measured, because it is the obvious thing to assume wrongly: the
+    // schema is NOT in the preimage. Editing `god-cost.schema.json`'s
+    // `minItems` from 17 to 16 while leaving all seventeen records in place
+    // reproduces `0dfdd5ef...` byte-identically. The digest is over the content
+    // values, not over the files that constrain them.
+    //
     // 162f80bf169296d0e5fd516cc3c5257a -> f49b406d509a1d0e0ed4e152f7b90fb5 (on this branch,
     // before the merge below: b37b15fc7f882af127057304f72a7522),
     // when `affiliate` stopped being priced with one number. Two autonomy
@@ -422,12 +471,28 @@ describe('contentRevision', () => {
     // change every run from its first year, and the balance baselines it moves
     // are reported in the change that added it rather than regenerated.
     //
-    // Union again, and the third one in this list: `apply-magic`'s two scalars
-    // and W116's two affiliation weights were authored on separate branches and
-    // meet here. Neither literal above is a digest over a preimage holding both
-    // pairs, so neither is a competing claim about this tree — the value below
-    // is the union arriving.
-    expect(registry.contentRevision).toBe('68cea590b84f1140d42a9aed0c49f227');
+    // Union, for the fifth time in this list, and the last two entries are
+    // independent: `main` reached this merge asserting `0dfdd5ef` — a digest
+    // over a preimage holding the exclusion pair and the seventeenth god cost
+    // but not W116's two affiliation weights — while this branch reached it
+    // asserting `68cea590`, over one holding the affiliation weights and
+    // neither of those. Neither is a competing claim about *this* tree, whose
+    // preimage strictly contains both, so the value below is the union
+    // arriving rather than a disagreement being settled.
+    //
+    // MEASURED on the merged tree rather than carried from either side, which
+    // is the only way a digest over a union can be pinned: a revision literal
+    // is a statement about the tree it was read on, and neither parent is that
+    // tree. `201d3719` was read back from `loadContent(shippedContentSource())`
+    // on this merge commit. It is a **revision re-pin** and nothing else: no
+    // gated metric was measured into any baseline for it. The three gate
+    // baselines carry this same digest in `provenance.contentHash` by way of a
+    // provenance-only re-seal (`reseal-baseline.mjs`, PR #184), which runs the
+    // sweep, refuses if any metric has moved, and passes every metric line
+    // through byte for byte — the verification reported 0.00 SE on every gated
+    // metric of all three gates, so this merge is behaviourally inert and only
+    // the seal was stale.
+    expect(registry.contentRevision).toBe('201d3719cf136c9093d9c363c3864343');
   });
 
   it('is stable across loads of identical content', () => {
