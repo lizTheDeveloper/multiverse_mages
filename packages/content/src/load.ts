@@ -186,6 +186,57 @@ function rediscoveryRequirementOverflows(researchCost: number, multiplier: numbe
   return researchCost * effective > FP_CEILING * FP_SCALE;
 }
 
+/**
+ * Whether a node may author a **negative** magnitude for this primitive.
+ *
+ * ## The rule, and the whole reason it is one line
+ *
+ * `node.schema.json` read `"minimum": 1` for as long as there was content, so
+ * all 407 shipped effects were positive and no node could express a cost. Every
+ * deep spell was a bonus, and a rate primitive wired to node effects could only
+ * ever *add* — which is a pure output boost with no opposing term, exactly the
+ * shape the balance work keeps refusing to build on.
+ *
+ * A negative is meaningful under `additive-into-multiplier` and only there. Those
+ * are the seven world-scale rate multipliers; their magnitudes are contributions
+ * to the `(1 + Σ)` a rate is multiplied by, `Σ` is a signed quantity by
+ * construction, and `@mm/primitives` floors the fold at zero so a stack of costs
+ * can stop a rate and can never reverse it.
+ *
+ * Every other rule is refused, and each refusal is a defect that would otherwise
+ * be silent rather than a conservatism:
+ *
+ * - **`presence`** (`portal`) — the magnitude carries no meaning at all, so a
+ *   negative one still opens the portal while reading as a prohibition.
+ * - **`multiplicative-on-remainder`** (`ward`, `concealment`) — the value is a
+ *   *prevented fraction*. A negative one makes `applyWard` amplify damage with
+ *   no bound at all, because the only bound in that direction is a ceiling.
+ * - **`max`** (`blink`, `knowledge-steal`) — `knowledge-steal` is an fp
+ *   probability and `rollStackedProbability` tests `draw < value` against an
+ *   unclamped stack, so a negative probability is silently always-false.
+ * - **`additive`** and **`summed-then-single-ward`** (`direct-damage`,
+ *   `area-denial`, `summon`, `lifespan`) — each would need a floor of its own
+ *   that no shared rule can supply. A negative `summon` has no count floor; a
+ *   negative `direct-damage` is healing, which is a design decision rather than
+ *   a sign convention.
+ *
+ * `lifespan` is the near miss worth naming here rather than in a commit message:
+ * `effectiveLifespan` **already** floors a curse at `MIN_EFFECTIVE_LIFESPAN_MONTHS`
+ * and its own field is documented *"true when the floor bound, i.e. a curse drove
+ * the total non-positive."* Enabling it is one line in this function. It is left
+ * refused because how many months a curse takes is a content-scale decision — and
+ * because authored `lifespan` magnitudes are currently sub-month values that
+ * `toInt` floors to zero, so the first authored curse would have to answer that
+ * question anyway.
+ *
+ * Derived from the registry's declared `stacking` rather than a per-primitive
+ * flag, so opening a rule opens it everywhere at once and there is no way for
+ * `primitive.json` to say "signed" about a rule that cannot hold a sign.
+ */
+export function permitsNegativeMagnitude(primitive: PrimitiveRecord): boolean {
+  return primitive.stacking === 'additive-into-multiplier';
+}
+
 /** Result of a validation pass that is allowed to fail without throwing. */
 export interface ValidationResult {
   readonly diagnostics: readonly ContentDiagnostic[];
@@ -810,7 +861,8 @@ function checkNodes(
     for (let index = 0; index < node.effects.length; index += 1) {
       const effect = node.effects[index];
       if (effect === undefined) continue;
-      if (!primitiveById.has(effect.primitive)) {
+      const primitive = primitiveById.get(effect.primitive);
+      if (primitive === undefined) {
         out.push(
           diagnostic(
             file,
@@ -819,6 +871,36 @@ function checkNodes(
             `node "${node.id}" declares effect primitive "${effect.primitive}", which primitive.json ` +
               'does not define. The primitive set is closed: content may not invent one — which is also ' +
               'what forbids a primitive that would modify portalStability (contracts.md §1.6)',
+          ),
+        );
+        continue;
+      }
+
+      if (effect.magnitude === 0) {
+        out.push(
+          diagnostic(
+            file,
+            `${at}/effects/${String(index)}/magnitude`,
+            'content-invariant',
+            `node "${node.id}" authors a magnitude of zero for "${effect.primitive}". An effect that ` +
+              'does nothing reads as an authored intent and behaves as a comment; delete the effect ' +
+              'instead. (The schema cannot say this: the interpreter behind it implements neither ' +
+              '"not" nor "exclusiveMinimum".)',
+          ),
+        );
+      } else if (effect.magnitude < 0 && !permitsNegativeMagnitude(primitive)) {
+        out.push(
+          diagnostic(
+            file,
+            `${at}/effects/${String(index)}/magnitude`,
+            'content-invariant',
+            `node "${node.id}" authors a negative magnitude for "${effect.primitive}", whose ` +
+              `stacking rule is "${primitive.stacking}". A cost is only meaningful under ` +
+              '"additive-into-multiplier", where it subtracts from the (1 + Σ) a rate is ' +
+              'multiplied by and @mm/primitives floors that fold at zero. Under every other rule ' +
+              'a negative is a category error with no floor to catch it: it inverts a prevented ' +
+              'fraction, an evasion probability or a summoned headcount rather than opposing one ' +
+              '(contracts.md §3)',
           ),
         );
       }

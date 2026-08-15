@@ -51,6 +51,7 @@ export {
   V1_TECHNIQUE_COUNT,
   contentSchemas,
   loadContent,
+  permitsNegativeMagnitude,
   validateContent,
 } from './load.js';
 

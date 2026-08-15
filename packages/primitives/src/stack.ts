@@ -26,7 +26,7 @@ import type { PrimitiveRecord, PrimitiveStacking } from '@mm/content';
 
 import { NO_ABLATION, neutralizedMagnitude } from './ablation.js';
 import type { AblationMask } from './ablation.js';
-import { ClampCounters, applyCap } from './caps.js';
+import { ClampCounters, applyCap, applyFloor, stackingFloor } from './caps.js';
 import type { CapContext } from './caps.js';
 import {
   additive,
@@ -51,10 +51,20 @@ export interface StackOptions extends CapContext {
   readonly ablation?: AblationMask;
 }
 
-/** The stacked, capped magnitude, and whether the cap bound producing it. */
+/** The stacked, bounded magnitude, and which of the two bounds produced it. */
 export interface StackOutcome {
   readonly value: Fixed;
+  /** The primitive's `cap` bound: the value was too **high**. */
   readonly clamped: boolean;
+  /**
+   * The stacking rule's floor bound: the value was too **low**.
+   *
+   * Only `additive-into-multiplier` has one (`caps.ts`, {@link
+   * import('./caps.js').stackingFloor}), so this is `false` for every other
+   * rule and for every stack of purely positive magnitudes — which is every
+   * stack that existed before content could express a cost.
+   */
+  readonly floored: boolean;
 }
 
 /**
@@ -124,15 +134,27 @@ export function stackMagnitudes(
   const stacked = ablation.neutralizes(primitive.id)
     ? neutralizedMagnitude(primitive.stacking)
     : stackByRule(primitive.stacking, magnitudes);
+
+  // Floor first, then cap. The order is forced rather than chosen: the floor is
+  // below the cap for every rule that has both, so a value raised to the floor
+  // can never then be clamped, and a value cut to the cap can never then be
+  // raised. Doing it the other way round would produce the same numbers and
+  // would leave the two bounds *able* to disagree the day a cap is authored
+  // below zero — which `primitive.schema.json` still permits structurally,
+  // since a cap value has `"minimum": 0`.
+  const floored = applyFloor(stackingFloor(primitive.stacking), stacked);
   const capped = applyCap(
     primitive.cap,
-    stacked,
+    floored.value,
     options.speciesBase === undefined ? {} : { speciesBase: options.speciesBase },
   );
 
+  if (floored.floored) {
+    options.counters?.recordFloor(primitive.id);
+  }
   if (capped.clamped) {
     options.counters?.record(primitive.id);
   }
 
-  return capped;
+  return { value: capped.value, clamped: capped.clamped, floored: floored.floored };
 }

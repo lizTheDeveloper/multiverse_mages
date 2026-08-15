@@ -268,7 +268,7 @@ describe('the mask reaches only the primitive it names', () => {
       counters: ablated,
       ablation: neutralizing('worship-yield'),
     });
-    expect(outcome).toEqual({ value: FP_ONE, clamped: false });
+    expect(outcome).toEqual({ value: FP_ONE, clamped: false, floored: false });
     expect(ablated.total()).toBe(0);
   });
 });
