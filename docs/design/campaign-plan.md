@@ -11327,8 +11327,11 @@ But the structural argument is not the proof. **The passive 200-year curve on th
 without being able to state it that well.
 
 **3. The gates PASS, against my instruction to leave them red — and that is the better outcome.** The
-committed hash and the merged tree's `contentRevision` are **the same** (`68cea590b84f1140…`): the union
-digest was pinned at the previous merge and **none of the sixteen commits touches content**. So
+committed hash and the merged tree's `contentRevision` are **the same** (`68cea590b84f1140…`).
+
+> **⚠ Corrected by W229.** I wrote that as *"none of the sixteen commits touches content."* **False** — the
+> branch adds two `goal-affiliate-*` weights to `autonomy-weight.json`. The gates passed because **the
+> branch had re-recorded its own baselines at that tree's revision**, not because content was untouched. So
 `balance:gate` passes at **0.00 SE on all nine metrics**, horizon and agency likewise, with **no baseline
 re-recorded.**
 
@@ -12202,3 +12205,55 @@ the seal is still a decision, and it is theirs.**
 `sim-rigor` §4.3's advice to re-seal once after #170 and #185 land is **circular** and should be read as
 superseded: they cannot land while the gate refuses. **One re-seal, on #170, breaks the loop** — and every
 later PR then re-seals against a `main` whose baselines already carry these hashes.
+
+## W229 — #134 is the second verified provenance-only case, and a silent merge nearly bolted the wrong provenance onto the right numbers
+
+PR #134 is `MERGEABLE` and current at `c5b2ffd0`, with `main` a full ancestor. **The headline survived
+both merge rounds**: **6 / 14 / 17 / 47 / 25 / 64** at ticks 0/240/480/960/1440/2400, identical on both
+heads, same grimoire and occupation columns at every mark. 4,711 tests, 338 files, exit 0.
+
+### Gates: every metric passes; only the seal is stale
+
+Verified with #184's tool — **which landed on `main` inside this very merge**: **9 / 10 / 90 metric lines,
+all pass, 0.00 SE.** The sole failure on all three gates is
+`baseline-invalid: provenance.contentHash 201d3719… vs 68cea590…`.
+
+**So #134 joins #170 as a verified provenance-only case.** Two PRs, same one-command remedy, both measured
+rather than argued. And an agent **asked for approval to run it and was denied by the permission
+classifier — correctly, as a guarded baseline write — and did not hand-edit the `contentHash` fields to
+work around it.** That is the system working as designed.
+
+### The near-trap is the finding
+
+Resolving the three baselines, **only `contentHash` and `notes` appeared inside conflict markers** — so
+**git had already silently taken this branch's `411.72` metrics outside them.** A hunk-level resolution
+would have produced **main's provenance bolted onto this branch's numbers**: a baseline that is internally
+coherent, passes every shape check, and describes no tree that has ever existed.
+
+It resolved **whole-file** instead. And *"take main's side and leave them red"* — my instruction — **was
+not available at all**: because the merged tree's revision is new, **both parents' baselines refuse**.
+There is no revert that merges.
+
+### Ordering was load-bearing in `world-step.ts`
+
+#192's `monthsByGoal` tally **must precede** this PR's new `affiliate` early-return — otherwise
+**`affiliate` reports zero months, which is the exact goal #192 exists to measure.** A union merge that got
+the order wrong would have silently disabled the instrument built to watch that goal, and every test would
+still pass.
+
+### And hetzner is environmental, now confirmed twice on one head
+
+On `c5b2ffd0`, `Verify (pinned Node)` passed **every step including `Test (unit + golden replay)`** and
+failed only at the gate. On the **identical head**, `ci/hetzner-lint` died **inside the test run** with the
+same unnamed *"error during the test run"* banner and **never reached the gate**. Same code, opposite
+outcome on the step in question. `Next Node major` also fails only at the gate, so it is not a Node 24
+issue either.
+
+**Left alone deliberately:** `reachability:pin` was not run, because it *"would bank main's new
+`strategy-audit.ts` / `characterFor` findings as this PR's debt"* — the all-or-nothing trap W209 recorded,
+avoided by someone who had read it. And `balance-gate-ascension-v1` is sealed older than `main`'s own seal,
+so its red predates this branch and resealing it would cost a ~1000 s sweep for a non-required check.
+
+The PR body now keeps **revision re-pin**, **provenance-only re-seal**, and **baseline re-record (did not
+happen)** as three distinct categories — which is the distinction this whole campaign kept having to
+rediscover.
