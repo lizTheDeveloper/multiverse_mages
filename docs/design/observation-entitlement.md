@@ -50,7 +50,9 @@ same idiom to observability, and adds nothing architecturally new.
 
 ```
 WORLD_COMPONENTS × fields  ──▶  classify each (component, field) trait
-                                  ├─ OBSERVABLE  → projected into PlayerState
+                                  ├─ OBSERVABLE  → projected into PlayerState per entity
+                                  ├─ AGGREGATED  → reaches the player only as a
+                                  │                histogram; names which one
                                   └─ WITHHELD    → declared, with a reason
 
 project(state: WorldState): PlayerState        // the abstract reducer
@@ -61,6 +63,20 @@ PlayerState fields         ──▶  ├─ ENCODED      → ≥1 named observa
 PlayerState × Strategy     ──▶  ├─ reads        → the value function consults it
                                 └─ ignores      → { field, because }
 ```
+
+### Classification is three-way, because most of the vector is histograms
+
+Most blocks are not projections of component fields at all. `knowledgeSlot(cellId)` is 70×3 = 210
+slots, `mageTierSlot(speciesId, tier)` is 6×8 = 48, `cohortSlot(speciesId, occupation)` is 6×5 = 30.
+Those are **histograms over entities**. `MAGE.tier` is therefore neither observable nor withheld: it
+is observable *in aggregate* and withheld *per entity*, and a gate that demands a two-way answer
+would force a false one on nearly every field in the registry.
+
+So the third state is load-bearing, and it carries the name of the aggregate it feeds. That is also
+what makes the lossiest mapping in the vector visible: `institutions` is **4 slots covering four
+components** — `UNIVERSITY`, `UNIVERSITY_STAFF`, `LIBRARY`, `GRIMOIRE`. Everything a university is
+reaches the player as four numbers. Whether that is right is a design question this change does not
+answer; it only makes it impossible to keep not asking.
 
 `PlayerState` is **named and structural** — one field per entitled trait, not a `Float64Array`. The
 existing 400-slot vector becomes an *encoding* of it (`encode(PlayerState): Float64Array`) rather
@@ -84,13 +100,17 @@ Each in the `worldComponentsWithPosition` idiom: a pure function returning `stri
 
 | Gate | Turns red when | Fixed by |
 |---|---|---|
-| `unclassifiedTraits()` | a component field is neither projected nor withheld | deciding, in one line |
+| `unclassifiedTraits()` | a component field is none of observable / aggregated / withheld | deciding, in one line |
 | `unencodedObservables()` | a `PlayerState` field reaches no slot and isn't declared unencoded | encoding it, or declaring why not |
 | `unacknowledgedByStrategy(s)` | a strategy neither reads nor ignores a field | `reads:` or `ignores: {field, because}` |
 
-The third is the checklist, generated. `StrategyDefinition` gains `reads: readonly string[]` and
-`ignores: readonly { field: string; because: string }[]`, and their union must equal `PlayerState`'s
-field set exactly — not a subset. **Adding an observable trait turns every strategy in the pool red
+The third is the checklist, generated. `StrategyDefinition` gains `reads` and `ignores`, and their union must be exact — not a subset.
+
+**At block granularity, not field.** Nine blocks × twelve strategies is 108 decisions and a human
+reviews them. A hundred-odd traits × twelve is ~1200 `because` strings, nearly all of them *"static
+preference list, reads nothing"* — which gets bulk-generated once and never read again. That is the
+hand-maintained checklist reimplemented in TypeScript, and it fails the same way. The user's
+standard — by design or manually excluded — only holds at a granularity someone actually reads. **Adding an observable trait turns every strategy in the pool red
 until each one decides about it.** That is the property being bought: forgetting stops being
 possible, and excluding stays cheap.
 
@@ -118,14 +138,29 @@ Two known holes get names on day one:
   legal and honest first state, and it is what most of the pool will declare.
 - Not a price-aware strategy. That is the experiment this unblocks, not this change.
 
+**And it does not gate that experiment.** A strategy can already see `favor` — the resources block
+encodes `saturate(record.favor)` — but not what anything *costs*, so it cannot compute
+affordability. Sixteen cost slots is a standalone additive change that unblocks a price-aware
+strategy today. It should not wait on the entitlement work, and the entitlement work is what stops
+the next such gap from going unnamed for a year.
+
 ## The sequence
 
-1. `PlayerState` + `project()` covering the traits the 400 slots already encode, and the coverage
-   test proving the projection round-trips to the existing vector unchanged.
-2. `unclassifiedTraits()` over the registry, with every currently-unobserved field explicitly
-   withheld — a large one-time declaration, and the honest starting inventory.
+0. **The inventory, before any code.** Enumerate `WORLD_COMPONENTS × Object.keys(spec.fields)`
+   against the nine blocks and hand-classify every trait three ways. This is the checklist as a
+   document, it costs one script, and it is the only thing that says whether the granularity above is
+   right: thirty traits and this design is comfortable, a hundred and fifty and it needs coarsening
+   before a line is written.
+1. `PlayerState` + `project()` covering what the 400 slots already encode, with a test proving the
+   projection round-trips to the existing vector unchanged.
+2. `unclassifiedTraits()` over the registry, seeded from step 0's inventory.
 3. `unencodedObservables()`, which is where cost lands as a declared gap.
 4. `reads`/`ignores` on `StrategyDefinition`, backfilled across the pool.
 
-Steps 1–3 change no behaviour and move no baseline. Step 4 changes no behaviour either — it only
+Steps 0–3 change no behaviour and move no baseline. Step 4 changes no behaviour either — it only
 makes the pool state what it looks at, which is how anyone finds the next `permissive-breadth`.
+
+**Step 4 waits.** It edits `StrategyDefinition`, which every in-flight branch defining a strategy
+will conflict with, and there are currently eight rebases in flight with at least two in
+`mc-harness`. Land 0–3 now; take 4 after the integration wave settles, or land it as optional fields
+plus a test rather than required ones.
