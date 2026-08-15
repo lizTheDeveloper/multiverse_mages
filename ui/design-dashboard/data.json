@@ -3,7 +3,7 @@
     "generatedBy": "scripts/build-design-dashboard.mjs",
     "command": "npm run ui:dashboard",
     "pinnedBy": "packages/content/test/unit/design-dashboard-payload.test.ts",
-    "contentRevision": "fd8ce7ef5fded0b0a23fc85f8006f595",
+    "contentRevision": "b6e0866220a71930e3846b01f6c03b34",
     "contentCounts": {
       "techniques": 5,
       "forms": 14,
@@ -2543,8 +2543,8 @@
       "scripts/check-reachability.mjs --json"
     ],
     "ok": false,
-    "findingCount": 131,
-    "examinedSymbolCount": 888,
+    "findingCount": 129,
+    "examinedSymbolCount": 891,
     "examinedPackages": [
       "content",
       "coordination",
@@ -2556,7 +2556,7 @@
       "sim-core",
       "state"
     ],
-    "productionFileCount": 314,
+    "productionFileCount": 317,
     "orphanPackages": [],
     "unreached": [
       {
@@ -2831,19 +2831,13 @@
       },
       {
         "file": "packages/rules-raid/src/phases.ts",
-        "line": 83,
+        "line": 85,
         "name": "ENGAGEMENT_PHASE_NAMES",
         "kind": "const"
       },
       {
-        "file": "packages/rules-raid/src/phases.ts",
-        "line": 133,
-        "name": "phaseAdmitsAction",
-        "kind": "function"
-      },
-      {
         "file": "packages/rules-raid/src/raid.ts",
-        "line": 1350,
+        "line": 1415,
         "name": "BURNABLE_LOCATION_KINDS",
         "kind": "const"
       },
@@ -3259,14 +3253,6 @@
         "name": "preparationCost",
         "via": [
           "costSplit"
-        ]
-      },
-      {
-        "file": "packages/rules-raid/src/verbs.ts",
-        "line": 296,
-        "name": "applyDirective",
-        "via": [
-          "runPlanFor"
         ]
       },
       {
