@@ -12550,3 +12550,77 @@ verdict. The two cases are distinguishable and currently print identically.
 The rule, again and more expensively: **a measurement that varies a single parameter has
 measured that parameter, not the system.** W234 varied `--ticks` five times and called the
 result a property of the game.
+
+## W236 — Two strategies are refused on 100% of their signature verb, and the cause is an entitlement gap
+
+[executed, 2026-08-15, run records under `--ticks 1500 --seeds 2`, `accounting.byActionId`;
+code read at `origin/main` @ 1873e9b7]
+
+W234 flagged `portal-rush` at 48% illegal and deliberately did **not** name a culprit.
+Naming it now, from the records rather than from reading:
+
+| strategy             | rate  | rejected action            |
+|----------------------|-------|----------------------------|
+| portal-rush          | 0.49  | **14 `openPortal`** — 712/712 |
+| worship-maximizer    | 0.25  | **9 `blessMage`** — 371/371   |
+| uniform-random-legal | 0.13  | spread over 9,11,12,14,16  |
+| permissive-breadth   | 0.003 | 11                         |
+
+**Both named strategies are refused on every single submission of the one verb they exist
+to press.** `portal-rush` never opens a portal. `worship-maximizer` never blesses a mage.
+
+**It is not the mask.** `policyFor` submits the first preference the mask *permits*, so a
+mask that forbade action 14 would make portal-rush skip it and never be rejected at all.
+It submits and is refused, which means mask and dispatch disagree — and the disagreement
+is about the **parameter**, not the verb:
+
+- `mask.ts:160` — `mask[action] = (candidates.get(action)?.length ?? 0) > 0 ? 1 : 0`. The
+  mask is **per-kind**: one bit for *"is there at least one target"*. It never says how
+  many.
+- `candidateSlotCount(action)` returns `CANDIDATE_SLOTS[action]` — a **static declared
+  constant**, not the live list length.
+- `rotate(action, round)` cycles the slot index over that declared constant.
+- Grepped across `layout.ts`, `observation.ts`, `entitlement.ts` and `player-state.ts`:
+  **no observation slot exposes a candidate-list length.**
+
+So a bot must guess an index in `[0, declared)` with no way to learn the live length, and
+every index past the end is refused as *"an ordinary illegal action"*. `blessMage` is
+pinned at 32 against 13–18 living mages early in a run — the arithmetic gives roughly the
+observed rate.
+
+**The repo already found this once and repaired one instrument.** `SPREAD_BLESS_SLOTS`
+documents it exactly — *"a bot rotating over the declared 32 names a slot past the end of
+the list for most of the run… the gate refuses it and it buys nothing"* — measured at
+**13,497 gate rejections**, and fixed by hand-patching `allocate-spread` to a literal 8.
+`worship-maximizer` and `portal-rush` were never patched. A constant in one strategy is a
+workaround for a missing observation field, and it does not generalise, which is precisely
+why the same defect is still live in two others.
+
+**This is an entitlement defect, not a strategy defect.** A human at a UI picks a target
+from a list containing only real candidates. The agent cannot see that the list exists.
+It is strictly *less* informed than the player it stands in for — which makes every
+parameterized action a lottery and makes `illegalActionRate` a measure of list-length
+mismatch rather than of play.
+
+**Three results this invalidates, and one it explains:**
+
+- Every raid-facing measurement in this campaign. The one bot whose purpose is portals
+  opened none.
+- `worship-maximizer`'s standing as a weak strategy. It spends a quarter of its turns on
+  nothing.
+- Both are over `MAX_ELITE_ILLEGAL_RATE`, so both were excluded from the archive — the
+  effective pool was **12**, not the 14 the header printed. W235's width numbers are
+  widths of a pool missing two members.
+- And it explains W235's `idle-then-declare` result. Doing nothing competes because
+  several strategies are *also* effectively doing nothing for a large share of their turns.
+
+**The fix is a design decision, so it is stated and not taken.** The honest repair is to
+expose live candidate counts in the observation — which moves `observationLayoutDigest`,
+and therefore the `snapshotHash` byte-pins in `ui-recording.test.ts`. The alternatives are
+worse: a per-slot mask multiplies the mask's width by the largest candidate list, and
+clamping the index at dispatch silently changes which target an agent named. Recommend
+exposing the counts and taking the digest change deliberately.
+
+The rule: **when a workaround is a literal constant in one caller, the defect is in what
+that caller could not ask.** Patching the second caller with a second constant is the
+error the first patch should have prevented.
