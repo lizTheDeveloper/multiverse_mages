@@ -11453,3 +11453,68 @@ of costing all three something.**
 
 Recorded rather than built, because it belongs with the other CI work and the queue is already the
 constraint.
+
+## W217 — the vellum source costs 22% of knowledge, and the attribution was closed by elimination
+
+A correction the agent made against itself, and it lands on a number I relayed as a win.
+
+### Books up, population up, knowledge down
+
+I reported Fix 3 (#186's v1 vellum source) as **grimoires +30.9%, `@archivist` +113%**. Reading the full
+gate log rather than the `referenceGrimoires` rows:
+
+**`referenceNodesGained` and `referenceNodesKnown` fall 22%, at −25.03 SE.**
+
+In the agent's own words: *"I led with the metric that flattered the change."* Books rise, population
+rises, and **the thing the game is about — knowledge — falls.** That is not a tuning nit; it is the
+opposite sign on the metric that matters, and it needs a ruling rather than a re-baseline.
+
+### And the attribution was closed by elimination, not dropped
+
+The earlier report left `permissive-breadth`'s −60.6% deliberately unattributed between two candidates.
+The agent then closed it with a control it already had:
+
+**`passive-control` has `signatureActions: []` and `preferences: () => []`** — it issues no god action, so
+**no portal opens, so Fix 1 (the loot-shelf re-key) cannot reach it.** Yet that arm moved: **+7.40 SE
+population, +5.73 SE instances.** In the one arm where the god never intervenes, **Fix 3 is the only
+change that can act.** So the pooled −25.03 SE is Fix 3's.
+
+That is attribution by elimination using a strategy that *provably cannot trigger* the alternative — a
+better instrument than a sweep, and it cost nothing to run. `@permissive-breadth` may still carry a Fix 1
+component on top; the **mechanism** — whether `apply-magic` displaces research months — is a goal
+histogram and remains unrun.
+
+**It also withdrew an over-claim on the way**: it had written *"Fix 2 provably cannot fire"* having checked
+only zero demand, and re-verified on two legs — `SEEDED_OCCUPATIONS = [laborer, student, scribe]` seeds no
+soldier cohort, **and** `NO_STANDING_ARMY = 0` means reallocation never creates one.
+
+### The renumber, and what it reorders
+
+`detachment` is now **14**, applied in all four places that must agree — `streams.ts`, `contracts.md` §6,
+and both test-side copies — with §6 carrying a paragraph on *why 13 is absent*. The self-healing was
+**verified rather than asserted**:
+
+```
+this branch alone                    1..12, 14        dense = false
+after #170 lands corruption:13       1..12, 13, 14    dense = true
+after #170 and #185 land career:15   1..13, 14, 15    dense = true
+```
+
+**And it reorders the CI story:** `Verify` now fails at the **test** step, before reaching any balance
+gate. The PR body had claimed a green suite and was corrected.
+
+### #184 has not landed, and I was wrong to treat it as available
+
+Verified at `origin/main` `3b90089c`: `packages/mc-harness/bin/` holds eight scripts and
+**`reseal-baseline.mjs` is not among them**; `resealCommand` appears nowhere in that package's `src`. Its
+entry point imports from `../dist/index.js`, so **it is not runnable from another branch at all.** I
+described it as Layer 0 and tried to merge it; it is still open.
+
+Its verdict is also **not uniform across gates**, which is worth knowing before anyone runs it:
+
+| gate | verdict |
+|---|---|
+| **200-year** | **refuses** — names `referenceNodesGained` at −25.03 SE |
+| **five-year** | **would succeed** — all nine metrics passed in CI (grimoires 90.860 → 90.855) |
+
+So "is this a provenance-only case" is a **per-gate** question, not a per-PR one.
