@@ -328,7 +328,7 @@ export function raidSystem(deps: RaidSystemDeps): System {
         // captured here, at the portal, alongside the tradition. It is the same
         // snapshot arbitration uses, so a shelf can never be stocked against a
         // ruleset the raid does not then enforce.
-        raiderRuleset: local.ruleset,
+        localRuleset: local.ruleset,
         constants,
       });
 

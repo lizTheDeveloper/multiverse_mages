@@ -262,7 +262,9 @@ export function buildRival(input: {
   readonly constants: RivalConstants;
   /**
    * The ruleset of the universe that will meet this rival — **not** the
-   * rival's own.
+   * rival's own. Named for the call site rather than for a role, because the
+   * role flips: on an outbound raid this universe is the raider, on an inbound
+   * one it is the defender, and the loot shelf is keyed on it either way.
    *
    * It decides what goes on the rival's loot shelf, and it has to come from
    * outside because a rival is built in isolation from a seed. See
@@ -270,7 +272,7 @@ export function buildRival(input: {
    * raider's god could not have permitted it at home, and only the raider's
    * ruleset can say that.
    */
-  readonly raiderRuleset: Ruleset;
+  readonly localRuleset: Ruleset;
 }): Rival {
   const { content, constants } = input;
   const world = buildReferenceState({
@@ -310,7 +312,7 @@ export function buildRival(input: {
   // through its own subsystem, so a fresh index would start blind to it.
   const knowledge = KnowledgeSubsystem.fromState(world, content.deps.catalog.nodeCount);
   armRaiders(world, knowledge, content, constants);
-  shelveForeignBooks(world, knowledge, content, constants, input.targetId, input.raiderRuleset);
+  shelveForeignBooks(world, knowledge, content, constants, input.targetId, input.localRuleset);
 
   const universe = findUniverse(world);
   const ruleset = captureRuleset(world, universe);
@@ -392,7 +394,7 @@ function shelveForeignBooks(
   content: ReferenceContent,
   constants: RivalConstants,
   targetId: number,
-  raiderRuleset: Ruleset,
+  localRuleset: Ruleset,
 ): void {
   const library = firstLibrary(world);
   if (library === 0) return;
@@ -408,7 +410,7 @@ function shelveForeignBooks(
             'change rather than a content typo.',
         );
       }
-      return !permits(raiderRuleset, cellId);
+      return !permits(localRuleset, cellId);
     })
     .map((entry) => entry.contentId)
     .sort((a, b) => a - b);
