@@ -10828,3 +10828,32 @@ move is evidence about that number** — and about nothing else.
 That is the whole night's methodological lesson in one file. The recurring error, mine included, was never
 bad measurement. It was **promoting a narrow measurement to a broad claim**, and then citing the broad
 claim somewhere the measurement's scope did not travel.
+
+### W207 addendum — a count is not a diff, and the ratchet already knew
+
+A second instance of the ratchet's design being right for a reason nobody had tested.
+
+An agent checked whether its branch added reachability findings by **comparing counts**: both its tree and
+`main` report **129**, so it concluded no change. Then it diffed the symbol *lists* instead:
+
+```
+only mine:  :256 applyWard   :378 summedYield
+only main:  :221 applyWard   :365 summedYield
+```
+
+**Same two symbols, same two files, different line numbers** — its own doc comments had grown and pushed
+them down. **An add plus a removal reads as no change**, so the count proved nothing either way, and its
+earlier PR body had claimed three added findings — attributing `applyWard` in `primitives/src/stacking.ts`
+to `signed-magnitudes` — when the symbol was never its own. The 125 → 128 delta it first saw was `main`
+moving underneath it between two measurements.
+
+**The ratchet is immune to this by construction**: its identity is `group:file:name`, and the design note
+says *"deliberately not the line — line numbers rot."* Had it keyed on lines, a grown doc comment would
+have fired 42 on every branch that added a comment. The tool was right; the human-shaped comparison beside
+it was not.
+
+Which is the same rule the aggregator section already carries, one level up: **a count is a projection, and
+two different sets project to the same number.** Diff identities, not totals.
+
+*(And the agent noted against itself that it ran that diff through `/tmp` files minutes after thanking me
+for the `/tmp` rule — inside a single command, so nothing could race, but the wrong reflex.)*
