@@ -13113,3 +13113,49 @@ about a checker that answers about the wrong input; this is the same shape from 
 side — an endpoint that defaults a misspelled field is indistinguishable from one that
 honoured it, unless you measure the effect. `t0` and `t1` cost one extra call each and are
 the whole difference between "HTTP 200" and "it advanced ten ticks".
+
+## W247–W249 — Priced the ending; the cap was the wrong price
+
+[executed, 2026-08-15, `w248/price-the-ending`; ascension sweep 2400 ticks x 16 replicates]
+
+`discriminating-ascension` task 1.5 says price `declare-ascension` at 20480. Never applied —
+`main` still read `favorCost: 0`. That is why W242's `permit-then-idle` wins: the ending is free,
+so spending is optional.
+
+Applied it. Two short baselines re-sealed provenance-only, every metric 0.00 SE, because both
+gate sweeps run below `ascension-min-tick` 600 and no run in them can declare. The **ascension**
+sweep runs at 2400 and the re-seal tool **refused**:
+
+| metric | before | after | SE |
+|--------|--------|-------|-----|
+| referenceNodesKnown | 60.7 | 46.8 | **-25.6** |
+| referenceNodesGained@permissive-breadth | 201.8 | 96 | **-30.5** |
+| referencePopulation@permissive-breadth | 4,724 | 13,134 | +6.4 |
+| referencePopulation@portal-rush | 18,283 | 16,179 | -17.6 |
+
+**20480 is `favor-cap-base`.** The declaration is legal only at a full pool, so a god who spends
+on anything else can never end. Hoarding becomes optimal and every other verb starves — knowledge
+nearly halves while population balloons. That is not the win condition discriminating; it is the
+win condition excluding play, which is the same defect as zero with the sign flipped.
+
+Testing 8192 instead: affordable while still spending.
+
+Two things worth keeping:
+
+- **The re-seal tool earned its keep.** It refused, named every moved metric with its SE, and said
+  why re-sealing would hide a real change. A provenance tool that cannot tell provenance from
+  behaviour would have sealed this silently.
+- **A price equal to a cap is a lockout wearing a price's clothes.** The gloss being replaced
+  argued zero was right because *"charging for the ending would make a god who spent well unable
+  to stop."* That argument was correct about the failure mode and wrong about the remedy — the
+  answer is a price below the cap, not no price.
+
+Also found, extending the `x100` amplification method:
+
+    worship-yield   0 mentions in any rules package   11 authored effects, no consumer
+    fertility       consumer exists, bonuses hardcoded []   5 effects dead
+    lifespan        consumer exists, god blessings only     17 effects dead
+
+`stackMagnitudes` reads a primitive's stacking rule and cap and **never its magnitude**, so an
+empty bonus list stacks to neutral. Amplifying an authored magnitude x100 cannot move a primitive
+whose bonus list nothing fills. That is why lifespan and fertility came back byte-identical.
