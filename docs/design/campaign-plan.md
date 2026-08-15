@@ -10117,3 +10117,73 @@ cells, *"since stale hand-arithmetic is how that table rotted before"* — and g
 control**: its branch's ascension baseline is still main's, and the generated 200-year column reproduces
 the committed README exactly across all ten rows. So the cells that changed are ones that moved rather
 than ones it miscomputed. That is the right shape for any table a human would otherwise retype.
+
+## W197 — the telephone problem, measured: the best scribe in the game cannot repair a book
+
+PR #170 complete. The design's sentence — *"information that is not perfectly preserved is completely lost
+after a certain number of generations"* — is now a measured curve.
+
+### Mētis surviving, by copy generation (tier 3, four seeds, identical across all four because nothing draws)
+
+| species | `scribeAffinity` | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 |
+|---|--:|--:|--:|--:|--:|--:|--:|--:|--:|
+| human / elf | 1024 | 100% | 100% | 66.7% | 33.4% | **0%** | 0% | 0% | 0% |
+| **dwarf** | 1792 | 100% | 100% | **100%** | 90.5% | 71.5% | 52.4% | 33.4% | **14.4%** |
+| gnome | 896 | 100% | 90.5% | 52.4% | 14.4% | **0%** | 0% | 0% | 0% |
+| draconic | 640 | 100% | 60.1% | 6.7% | **0%** | 0% | 0% | 0% | 0% |
+| orc | 384 | 100% | **33.4%** | 0% | 0% | 0% | 0% | 0% | 0% |
+
+**The plateau is structural rather than tuned.** Copy distance is *stored* as an additive fp quantity and
+the mētis fraction is a piecewise curve read off it — never a multiplier applied per copy — so a literal
+range of the input maps to the literal constant `FP_ONE` and **no choice of the other constants can erode
+it.** It ends at `fp(2048)`, two generations, because that is the design's own sentence as a number: a
+book from a mind that never read one is generation 1 (*"fresh from a living holder: full"*), a copy of it
+by way of a reader is generation 2 (*"one copy out: fine"*), and the third is the first worse than its
+parent.
+
+**And the width was measured, not chosen.** At two generations per copy the curve gives `100% / 33% / 0%`
+— full, then over the cliff, **with no "one copy out" at all.** Mētis is the unit and episteme the
+half-cost discount, not the reverse.
+
+### The species tragedy, and it is exactly inverted
+
+Recovery from a **corrupted** text, by a reader competent to diagnose it:
+
+| species | repairs at tiers |
+|---|---|
+| gnome | **1–6** |
+| human | 1–3 |
+| elf | 1–2 |
+| **dwarf, orc, draconic** | **none** |
+
+**The best scribe in the game cannot recover a damaged text at any depth.** Dwarves carry knowledge eight
+generations where humans lose it at five — and cannot repair a single corrupted page. That is the owner's
+*"you've got to go in with a bunch of curious gnomes"* falling out of the numbers rather than being
+asserted. And for a novice, every failure outside tier 1 is **`silent`**, so deep knowledge rots invisibly.
+
+### The dwarf fork, decided against the doc's own preference and rightly
+
+`scribing-fidelity.md` left open whether dwarves get a **medium** (carving stone) or whether
+`scribeAffinity` reduces per-generation loss, and called the medium more expressive. The agent chose
+`scribeAffinity`: **a medium is more expressive only if something can *choose* it, and nothing in the game
+can** — no god action, mage goal or raid intent names one — so a `medium` field would be set from the
+scribe's species everywhere and be *"a species stat in a costume."* And the durable-object half already
+shipped as `GRIMOIRE.durability` from the same input.
+
+### Corruption's bound is cost, not a damage cap
+
+`knowledge-corrupt` at `perdo-nomen` tier 4, one node (`pn-the-wrong-true-name`), **per instance, never
+per grimoire**, priced at the cast price in vigor **spent on the attempt rather than on the success**. So
+a well-funded warband ruins a whole shelf and that is the design; **raising the price monotonically lowers
+the count**, which is what distinguishes N separate actions from one volume-wide sweep. Two saboteurs in a
+tick can both pay and one gets nothing — now a written decision rather than an accident of phase ordering.
+
+### Two late catches, both of shapes this document already catalogues
+
+- **`loss-shock-recovery` asserted a per-species guarantee the cull does not make.** It takes every *k*th
+  mage from a **global** ordering, so orc arrives at `preShock: 2, killed: 0` — two mages on the wrong
+  parity. A test believing a global operation was per-species.
+- **The agent's own first power-table rewriter matched by row *shape* and silently rewrote 27 rows across
+  four different tables** in `balance/README.md`. The committed tool locates the table by heading and by
+  the `| runs |` row that ends it. This is `CLAUDE.md`'s *"an aggregator that locates input by shape rather
+  than by name eventually finds the wrong input"*, committed by an agent who had read that rule.
