@@ -10665,3 +10665,78 @@ And W203 now says why that could not have worked anyway — nothing she discover
   censored). Two orders of magnitude cheaper than the `creo` pair. **And a warning for its reviewer: two
   pairs with the same `destructive` resolution cost 4.1 and 15.3 points, with nothing in the content
   predicting which.**
+
+## W206 — the audit, totalled: 170 rows, 91 absent, and the ratchet can see about a sixth of it
+
+All five audits landed — PRs **#174 magic, #175 vision, #177 contracts, #178 world, #180 agent/interface**
+— across 50 design documents.
+
+| slice | rows | BUILT | PARTIAL | ABSENT | SUPERSEDED |
+|---|--:|--:|--:|--:|--:|
+| magic | 42 | 1 | 5 | **30** | 6 |
+| vision | 20 | 2* | 5 | **12** | 1 |
+| contracts | 31 | 8 | 5 | **15** | 3 |
+| world | 47 | 14 | 4 | **21** | 8 |
+| agent/interface | 30 | 6 | 7 | **13** | 4 |
+| **total** | **170** | 31 | 26 | **91** | 22 |
+
+\* both "BUILT-but-wrong". And the world auditor noted that six of its fourteen BUILT are *"the document's
+diagnosis of a missing mechanism is confirmed"* — **so the BUILT column is not a health score, and two of
+five auditors said so unprompted.**
+
+### The meta-finding: the ratchet cannot see most of this, and now we know why
+
+Cross-references, where the auditors reported them: **7 of 42** (magic), **13 of 31** (contracts), **2 of
+47** (world), **2 of 30** (agent/interface). Roughly **a sixth** of the corpus is pinnable.
+
+Two independent reasons, both verified:
+
+1. **Scope.** `check-reachability.mjs:187` **excludes `agent-api`, `mc-harness`, `server` and `gym-bridge`
+   by name** — confirmed, zero baseline entries for all four.
+2. **Kind.** *"A ratchet counts symbols nothing calls; it cannot count requirements nothing implements."*
+   It cannot see a hardcoded literal where an input belongs, a missing `permits()` inside a function that
+   *is* reached, a live function reading the wrong field, or unauthored content. **Six of the magic
+   audit's ten worst rows would survive a green ratchet untouched.**
+
+The ratchet is worth having and it is not a substitute for reading. That belongs written at the ratchet.
+
+### Three from the final slice
+
+- **`contracts.md` §4.3 requires an event record and nothing emits it** — zero lines across `agent-api`,
+  `state` and `coordination`, with the positive control confirming the pathspec resolves. **Four consumers
+  already rest on it**: `sound-design.md` §6.5's sequenced loss cue, §0.4's density thresholds, §10 items
+  1–2, and `interface-findings.md` §2.3. Invisible to the ratchet by scope.
+- **`AgentSession` is eleven methods and the knowledge is already computed.** `rules-magic` publishes
+  `masteryFloor` and `masteryDecayPerTick`; `ticksToUnteachable` is computed at `knowledge-census.ts:678`
+  — **with no door out.** The game calculates how long until a mage's knowledge stops being teachable and
+  no agent can observe it. W203 from a fourth side.
+- **`observation-entitlement.md`'s `project()` landed as a second implementation.** No production caller;
+  every call site is a test, and `player-state-roundtrip.test.ts:17–21` says that was deliberate. **The
+  inversion the design asked for did not happen, and step 4's `unacknowledgedByStrategy` — the gate that
+  would catch the next `permissive-breadth` — is absent.** I reported #165 as landed without noticing it
+  landed *beside* the vector rather than *under* it.
+
+### And `sound-design.md` is in better shape than its size suggested
+
+About **a third** of its 1,975 lines is reachable, and most of the rest is correctly unstarted rather than
+missing: §0's constraints are enforced by two test files, 56 cues and 198 voice lines ship inside
+`npm run validate`, and `assets/selections.json` carries **217 auditioned takes** — *"which is how we know
+the generation pipeline ran rather than merely exists."* Playback is unstarted because no client package
+exists. Its genuine gap is four §10 read-path requirements, and **all four resolve to the same observation
+boundary** as the three findings above.
+
+### The effects union landed the three rulings, and the zero meant three different things in one day
+
+PR #169 implements all three pre-made decisions — negative schema bound, `!== 0` / `=== 0` guards, and the
+`routeYieldByForm` magnitude clamp dropped with `combined`'s argument carried verbatim. The clamp
+genuinely did not conflict, **so the merge commit argues it explicitly** rather than letting it land
+invisibly.
+
+**And `5662934`'s "contributes zero on every tick" has now been true, false, and true again in a day**: on
+`e2b89d8` it was 2,592 contributions with population 494 against 325, carried entirely by `fertility`; on
+the merged tree it is **zero again** — because faster research reaches the far half of
+`creo-ignem ⊥ creo-umbra` sooner and burns the school carrying `lifespan` and `fertility`. A scope-wrong
+claim that keeps coinciding with the truth is the hardest kind to catch.
+
+My warning about the stale `+110` was right and is now quantified: re-derived, `referencePopulation@
+permissive-breadth` is **−0.59 SE, inside tolerance.**
