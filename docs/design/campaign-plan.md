@@ -9553,3 +9553,60 @@ Also of note: the `single` design fork was resolved **against** the brief I wrot
 *each participant's own nodes scale her own half of the lesson* (`world-step.ts:1737` teacher, `:1758`
 student), not "the professor's node scales what the student receives" — because it mirrors how the god's
 blessing and library depth already work. Better sourced than my instruction, and documented in place.
+
+## W188 — three rulings, and the third is a lead on task 9.9
+
+Three decisions were blocking merges. All three are made here so the branches can move.
+
+### 1. `roots-are-tier-one` stands. w20 retiers its four nodes.
+
+`w20/compositional-content` gives four tier-1 Rego nodes prerequisites for its track model; main's #82
+asserts tier-1 ⟺ prerequisite-free. **The invariant wins, and not on seniority — it is load-bearing.**
+Both `agent-api/src/candidates.ts:201` and `mask.ts:229` cite the test by name, and `mask.ts` says why in
+as many words: a content edit that broke it *"would put the mask and `grantPlan` back into disagreement."*
+The equivalence is pinned **in both directions** precisely so a content change cannot quietly reopen that
+hole.
+
+So a node with prerequisites is not a root, whatever a track model would like to call it. w20's four move
+to the tier their prerequisite depth implies. Its 7 other failures — where `mode: 'control'` means
+`rl-step-across` (blink) and `rn-call-by-name` (summon) place nothing — are a **separate** question about
+whether control effects can be sources, and are not settled here.
+
+### 2. `resource-yield` magnitude unclamps; the form's weights stay non-negative.
+
+Ruled in the `w187/effects-union` brief and repeated here so it is findable: drop the *magnitude* clamp in
+`routeYieldByForm`, keep the *weight* clamps, and carry the argument verbatim — *"a negative weight is a
+FORM claiming that producing food consumes stone — a claim about the material taxonomy, not about one
+working. The sign now comes from the node; the mix stays a non-negative property of the form."* Schema
+`minimum` takes the negative bound, because a schema that forbids negatives makes the four guard fixes
+dead code.
+
+### 3. w53's red occupancy tests: **do not re-pin yet — this is 9.9 evidence**
+
+`w53/practice` adds a tenth goal and leaves three `species-occupancy` assertions red, deliberately
+un-repinned. Checking the literals rather than the report:
+
+```
+expect(bySpecies('draconic').occupiedCells).toBe(11);   // w53 measures 10
+expect(spread).toBeCloseTo(0.0473, 4);                  // w53 measures 0.0729
+```
+
+and main's own comment carries the history: **`0.0473` now, `0.0645`, `0.0714` on main alone, and
+`0.0729` before either change.** So spread has been *falling* across recent changes, and adding a
+competing goal **puts it back to 0.0729 — a 54% increase over main's pinned value.**
+
+**Task 9.9 wants species to differentiate. Spread is the metric. Three approaches and their combination
+have failed to move it. A tenth goal competing for the month moves it 0.0473 → 0.0729.** Occupancy
+falling to 10 cells is the same fact from the other side: less uniform occupancy *is* more spread.
+
+That is the first thing in this campaign to move 9.9's metric in the wanted direction, and it was found by
+an agent declining to erase it. **Re-pinning now would have destroyed the finding**, which is exactly what
+main's own comment warns about — *"a pin, not a finding … the next agent to see it move should not read
+the movement as a defect."* The pin is right that movement is not a defect; it does not follow that
+movement is not information.
+
+**Ruling: leave the three red, and treat `practice` as a 9.9 candidate to be measured properly** —
+spread across seeds, with and without the tenth goal, at both horizons. Only re-pin once that measurement
+says whether the effect is the goal competing or the draw order shifting. This joins W180's finding (a
+mage cannot learn to learn, which bounds 9.9 from above) as the second structural lead on a task that has
+resisted three direct attempts.
