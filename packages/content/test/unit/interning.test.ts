@@ -384,7 +384,49 @@ describe('contentRevision', () => {
     // revision is a digest over the values, so this is the ordinary case rather
     // than a union of branches. It changes every run in which any mage learns
     // The Nameless — which is the point of the change, not a side effect of it.
-    expect(registry.contentRevision).toBe('2644913b17fe046e21d3e61e765bd381');
+    //
+    // d4e3047657b4fa8a1a74e1d52f9f5c86 -> e8442af2c5f91ae6f80ad9a178e0e451,
+    // when anti-requisites landed (`vision.md` §4b) and `cell.json` gained an
+    // `excludes` array carrying one pair: *Creo Ignem* and *Creo Umbra* exclude
+    // one another, `destructive`. In the preimage for the sharpest version of
+    // the reason every entry above gives — two universes disagreeing about
+    // which bodies of magic exclude one another would disagree about what a
+    // mage may *hold*, and under a `destructive` resolution about what she
+    // loses when she learns the other. A raider carries her own acquisition
+    // rules across a portal (§8's arbitration split), so a revision mismatch
+    // here is not an abstract incompatibility: it decides whether a stolen node
+    // burns the thief's own school.
+    //
+    // Unlike the founding-grant constants above, this one is **not** inert at
+    // ship: the pair is authored on live cells, and any mage who holds one side
+    // and acquires the other loses her instances of it. What keeps the shipped
+    // baselines still is that no v1 cell is involved — the v1 rectangle is
+    // `intellego · perdo · rego` × `mentem · terram · limen · nomen`, and both
+    // halves of this pair are *creo*, so the reference universe never reaches
+    // either. The mechanic is live and the reference run cannot see it, which is
+    // exactly the state a balance sweep should be able to change without a
+    // content edit.
+    //
+    // On this branch that same edit was first recorded as `162f80bf ->
+    // ee99b5845d1da2afe532eb5280e07f57`, and the two arrived on separate
+    // branches, so neither literal is a digest over a preimage holding both:
+    // `d4e30476` has the applied-magic scalars and no exclusions, `ee99b584`
+    // has the exclusions and no scalars. This tree is the first holding both,
+    // and a third value is what a digest over the union is supposed to produce
+    // — the same situation the three-branch paragraph above describes, and the
+    // reason the check is a digest over the preimage rather than a
+    // hand-maintained list of files.
+    //
+    // And a third time, for the third pair of branches. `2644913b` is the
+    // signed-magnitude preimage without the exclusions; `e8442af2` is the
+    // exclusions without the signed magnitude. Neither is a claim about this
+    // tree. `e9511403d956c7cc67660d03dbd9cc2e` is the digest over the union of
+    // both preimages — one authored cost on `pn-the-nameless` **and** one
+    // authored exclusion pair on `creo-ignem` ⊥ `creo-umbra` — and the fact
+    // that this paragraph is now the third of its kind is the argument for the
+    // digest rather than an embarrassment about it. A hand-maintained list of
+    // files would have merged clean here and been wrong.
+    expect(registry.contentRevision).toBe('e9511403d956c7cc67660d03dbd9cc2e');
   });
 
   it('is stable across loads of identical content', () => {

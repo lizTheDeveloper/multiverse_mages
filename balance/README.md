@@ -257,30 +257,31 @@ proportional change in that metric the gate would report as `regressed`. Anythin
 
 | metric | 5-year gate | 20-year gate | 20-year agency gate | 200-year gate |
 |---|---|---|---|---|
-| `referenceGrimoires` | 5.8 % | 6.5 % | 12.7 % | 16.2 % |
-| `referenceKnowledgeInstances` | 2.3 % | 2.3 % | 5.5 % | 7.2 % |
-| `referenceLibraryDepth` | 17.5 % | 14.4 % | 26.8 % | 17.5 % |
-| `referenceLivingMages` | 0.8 % | 1.6 % | 3.8 % | 6.1 % |
-| `referenceNodesGained` | 2.5 % | 1.0 % | 2.9 % | 2.8 % |
-| `referenceNodesGainedFinalQuarter` | — | 7.3 % | 24.4 % | 26.4 % |
-| `referenceNodesKnown` | 2.2 % | 0.9 % | 2.7 % | 2.7 % |
-| `referencePeakPopulation` | 0.0 % | 18.0 % | 8.0 % | 1.4 % |
-| `referencePopulation` | 1.0 % | 1.8 % | 3.7 % | 8.1 % |
-| `referencePopulationChange` | 8.5 % | 5.7 % | 10.3 % | 8.2 % |
+| `referenceGrimoires` | 5.8 % | 6.5 % | 12.4 % | 16.2 % |
+| `referenceKnowledgeInstances` | 2.3 % | 2.3 % | 5.9 % | 7.2 % |
+| `referenceLibraryDepth` | 17.5 % | 14.4 % | 26.5 % | 17.5 % |
+| `referenceLivingMages` | 0.8 % | 1.6 % | 3.7 % | 6.1 % |
+| `referenceNodesGained` | 2.5 % | 1.0 % | 2.7 % | 2.8 % |
+| `referenceNodesGainedFinalQuarter` | — | 7.3 % | 44.2 % | 26.4 % |
+| `referenceNodesKnown` | 2.2 % | 0.9 % | 2.6 % | 2.7 % |
+| `referencePeakPopulation` | 0.0 % | 18.0 % | 1.7 % | 1.4 % |
+| `referencePopulation` | 1.0 % | 1.8 % | 3.3 % | 8.1 % |
+| `referencePopulationChange` | 8.5 % | 5.7 % | 10.4 % | 8.2 % |
 
-**Re-recorded 2026-08-14 on `w187/effects-union`.** Three columns moved because three baselines did;
-the fourth (200-year) is unchanged because that gate was not re-recorded. Two cells are worth a
-sentence rather than a shrug, because both got *worse* and neither is a mistake:
+**Re-recorded 2026-08-14 on `w187/effects-union`** (PR #169), which merges the two effect campaigns
+on top of #161. Three columns moved; the 200-year column did not, because that gate was not
+re-recorded. Four cells deserve a sentence, because three got *worse* and none is a mistake:
 
-- **`referenceNodesGainedFinalQuarter` 3.8 % → 7.3 % at twenty years**, and 10.1 % → 24.4 % on the
-  agency gate. The metric halved — 8.33 → 4.345 — and the MDE is a *proportion* of it, so the gate
-  can still see the same absolute drift it always could. A frontier reached sooner is a smaller
-  final-quarter figure, and a smaller figure has a larger percentage tolerance around it.
-- **`referencePeakPopulation` 5.8 % → 18.0 % at twenty years.** The vitality wire made peak
-  population strategy-dependent, so its variance across the sweep went up and the standard error
-  with it. This is the gate honestly reporting that it now watches a noisier quantity; tightening
-  it by hand would be widening a tolerance by the other spelling.
-
+- **`referenceNodesGainedFinalQuarter` 3.8 % → 7.3 % at twenty years**, and 25.7 % → 44.2 % on the
+  agency gate. The metric itself shrank — the frontier is reached sooner when research is faster —
+  and the MDE is a *proportion* of it, so the gate still sees the same absolute drift. A smaller
+  figure has a larger percentage tolerance around it.
+- **`referencePeakPopulation` 16.6 % → 18.0 % at twenty years**, and **8.2 % → 1.7 % on the agency
+  gate.** Opposite directions, same cause: peak population became more strategy-dependent, so the
+  spread within the round-robin pool grew while the single-strategy sweep's own variance did not.
+- **`referenceNodesGained` and `referenceNodesKnown` roughly halved their MDE on the agency gate**
+  (8.5 % → 2.7 %, 7.9 % → 2.6 %). That is the gate getting *sharper*, and it is the same event as
+  one arm line leaving `BLIND_ARM_LINES`.
 | runs | 200 | 200 | 64 | 64 |
 | plays a god verb | no | no | **yes** | **yes** |
 | wall clock, 4 workers | 4 s | 27 s | **10 s** | **830–1154 s** |
@@ -290,7 +291,7 @@ where their power actually lives; the column above is a summary of a mean taken 
 strategies that do very different things, and both figures below count **measured, nonzero** arm
 lines only — a line at zero has no proportional effect to be minimum-detectable about, which is the
 same reason the table above prints an em dash rather than `Infinity`. Agency arm lines: median MDE
-11.3 %, **78 of 80** below 100 %. Ascension arm lines: median 13.8 %, 67 of 77 below 100 % (the
+14.0 %, **77 of 80** below 100 %. Ascension arm lines: median 13.8 %, 67 of 77 below 100 % (the
 denominator moved from 80 to 77 when the convention was written down here, not when any file
 changed).
 
@@ -308,6 +309,15 @@ to zero that three standard errors exceed it. MDE is now 114 % and 289 % on thos
 instrument did not change; the arm moved under it, twice, in opposite directions.** That is the
 argument for keeping the list rather than a threshold: a line this close to zero will cross 100 %
 in either direction on a re-roll, and the crossing has to arrive with a rationale each time.
+
+**And a third opened at `anti-requisites` (PR #161) — this one a mechanic, not a re-roll.**
+The shipped exclusion pair (`creo-ignem` ⊥ `creo-umbra`, `destructive`) cut
+`permissive-breadth`'s final-quarter node gain to a fraction of what it was, and an arm whose mean
+has fallen onto zero is one whose three-standard-error tolerance exceeds it. It is listed alongside
+the two `denial-warden` lines in `gate-power.test.ts`'s `BLIND_ARM_LINES` so that a fourth cannot
+join them in silence. Note the contrast with the pair above, which is the whole reason the list
+carries reasons rather than counts: **the `denial-warden` crossings are the arm moving under a
+re-roll, and this one is content the god actually shipped.**
 
 `referencePeakPopulation` on the five-year gate has an MDE of exactly zero — its jackknife standard
 error is 0, because the peak is 216 in all 200 runs, so the gate demands exact equality. That is the

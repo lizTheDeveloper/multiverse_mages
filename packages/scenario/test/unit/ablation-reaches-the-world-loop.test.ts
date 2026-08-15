@@ -50,9 +50,15 @@
  * from early on — 2,997 by tick 120 — and the census is *still* identical at
  * tick 192, because a material surplus absorbs the loss. The census first
  * diverges between tick 192 and tick 204. 240 is four census intervals past
- * that boundary, where the divergence is 20% of knowledge instances and 68% of
+ * that boundary, where the divergence is 23% of knowledge instances and 71% of
  * grimoires: far enough that a content tweak moving the boundary a little
  * cannot silently turn this into a passing test of nothing.
+ *
+ * Those two percentages read 20% and 68% until 2026-08-14. They were
+ * re-measured on the `anti-requisites` tree — 3,190 → 2,462 and 1,024 → 298 —
+ * and moved because that branch's exclusion pair is reachable here; see
+ * `POPULATION_FLOOR_PERCENT` below. The argument is unchanged and the margin
+ * got wider, not narrower.
  *
  * That last sentence is the whole argument for spending seconds here. A cheaper
  * horizon exists and would have been fine on the day it was written.
@@ -146,83 +152,150 @@ function arms(): { control: CensusSample; ablated: CensusSample } {
 const RUN_TIMEOUT_MS = 300_000;
 
 /**
- * How far below the control's population the ablated arm may finish, in percent.
+ * How far below the control's population the ablated arm is allowed to finish,
+ * as a percentage.
  *
- * ## This was an equality, and the equality was never structural
+ * ## This was an equality, and the equality was wrong
  *
  * It read `expect(ablated.population).toBe(control.population)`, and its comment
- * gave the reason: the knowledge and grimoire losses above should read as *"a
- * loss the arm suffered rather than an arm that died"*. That reading is right.
- * The equality was the wrong instrument for it, and this tree is where it
- * finally reported so: **494 control, 495 ablated.**
+ * gave the reason: the divergence above should read as *"a loss the arm suffered
+ * rather than an arm that died"*. Both arms did land on the same population for
+ * as long as nothing in content could kill a school of magic.
  *
- * ## The mechanism, measured rather than argued
- *
- * The two effect campaigns this branch unions each raise the population level,
- * and the first suspicion was that one of them had coupled knowledge to bodies
- * in a way that made the arms diverge. Instrumented at the union's own seed
- * (`0x12345678`, `HORIZON` 240), the wires do move the level a long way:
- *
- * | wiring | control | ablated | delta |
- * |---|--:|--:|--:|
- * | both wires off | 325 | 325 | 0 |
- * | academic rates only | 304 | 304 | 0 |
- * | vitality only | 392 | 392 | 0 |
- * | **both (this tree)** | **494** | **495** | **+1** |
- *
- * Which looks exactly like an interaction defect, and is not one. Re-run across
- * six seeds it falls apart:
- *
- * | seed | both wires off | academic only | vitality only | both |
- * |---|--:|--:|--:|--:|
- * | `0x12345678` | 0 | 0 | 0 | **+1** |
- * | `0x00000001` | **−3** | **+1** | **−10** | **−5** |
- * | `0x00000002` | 0 | 0 | 0 | 0 |
- * | `0xdeadbeef` | 0 | 0 | 0 | 0 |
- * | `0x0badc0de` | 0 | 0 | 0 | 0 |
- * | `0x5eed0007` | 0 | 0 | 0 | 0 |
- *
- * **The pre-campaign column is not all zeroes.** With neither wire installed —
- * the behaviour `main` ships — seed `0x00000001` already finishes 3 people
- * apart. So the equality was a property of one seed, not of the simulation, and
- * "it passed before and fails now" is a statement about `0x12345678` rather than
- * about a coupling either wire introduced. The sign is not systematic either:
- * +1, −3, −5, −10 all appear. Nothing here says the ablated arm is better off.
- *
- * The channel is ordinary and predates both wires. `resource-yield` feeds
- * `stock.food`; food is the only kind `carryingCapacity` reads; capacity sets
- * `fertilityBrake`; and `deliverBirths` is stochastic. Two arms whose food
- * histories differ take different draws and land a few people apart in either
- * direction. What the wires changed is the *level* — 325 to 494 — which moved
- * this seed off the zero it had been sitting on by luck.
+ * The `anti-requisites` branch ships one exclusion pair — `creo-ignem` ⊥
+ * `creo-umbra`, resolution `destructive` — and **this file is the only run in
+ * the suite that can see it.** Every balance gate plays the v1 rectangle
+ * (`intellego · perdo · rego` × `mentem · terram · limen · nomen`); both halves
+ * of the pair are `creo`, so no gate can reach either cell. This test permits
+ * the full grid. So the two arms now lose different mages' schools at different
+ * ticks, their demographic paths separate, and the equality became a claim the
+ * mechanic legitimately breaks: **298 control, 300 ablated.**
  *
  * ## Why a floor, and why one-sided
  *
- * *Not having died* was always the claim; the equality was a proxy that happened
- * to hold. So this is the weakest statement that still makes the claim:
+ * The equality was never the point — *not having died* was. So the replacement
+ * is the weakest statement that still says that, and no weaker:
  *
- * - **One-sided.** An ablated arm finishing with slightly more people is not the
- *   failure this guards. The inverted-mask failure the file comment warns about
- *   — `0` substituted for `FP_ONE` under `additive-into-multiplier`, multiplying
- *   an arm's whole economy by zero — is caught by the two `toBeLessThan`
- *   assertions above, which a better-off arm cannot satisfy.
+ * - **One-sided.** The observed drift is *upward* (+2), and an ablated arm
+ *   finishing with slightly more people is not the failure this guards. The
+ *   inverted-mask failure the file comment warns about — `0` substituted for
+ *   `FP_ONE` in `additive-into-multiplier`, multiplying an arm's whole economy
+ *   by zero — is already caught by the two `toBeLessThan` assertions above,
+ *   which a better-off arm cannot satisfy.
  * - **A constant, not a ratio off `knowledgeInstances`.** A tolerance derived
- *   from the quantity that is diverging widens itself as the mechanic grows,
- *   which is how a guard stops guarding with nobody editing it.
- * - **A backstop, not a discriminator, and said plainly** — the largest
- *   population swing any lever in the table above produces is 10 of ~500, so
- *   nothing this test can currently do will trip 95%. It is kept because the
- *   coupling is real at longer horizons: `gate-power.test.ts`'s
- *   `BLIND_ARM_LINES` records `referencePeakPopulation@permissive-breadth`
- *   moving 7,009 → 12,685 at the 2,400-tick gate.
+ *   from the very quantity that is diverging widens itself as the mechanic
+ *   grows, which is how a guard stops guarding without anyone editing it.
+ * - **95, and it is a backstop rather than a discriminator. Stated plainly,
+ *   because the alternative is a line that looks like a guard and is not.**
  *
- * PR #161 (`anti-requisites`) reached the same replacement independently, from a
- * different failure and with the same constant and name, so the two resolve
- * together. Its evidence is the ablation table across all seven primitives at
- * one seed; this one is one primitive across six seeds, including the seeds
- * where the pre-campaign tree already disagreed with itself.
+ * ## The measurement that says so, and what it means for the old equality
  *
- * Measured on `w187/effects-union` at `9be84ea`, 2026-08-14.
+ * Every primitive was ablated in turn at `HORIZON` against the same control
+ * (population 298, living mages 67, knowledge 3,190, grimoires 1,024):
+ *
+ * | ablated | population | living mages | knowledge | grimoires |
+ * |---|--:|--:|--:|--:|
+ * | `resource-yield` | 300 (+2) | 67 (0) | 2,462 (−728) | 298 (−726) |
+ * | `fertility` | 298 (0) | 67 (0) | 3,190 (0) | 1,024 (0) |
+ * | `lifespan` | 298 (0) | 67 (0) | 3,190 (0) | 1,024 (0) |
+ * | `research-rate` | 298 (0) | 67 (0) | 3,190 (0) | 1,024 (0) |
+ * | `teach-rate` | 298 (0) | 67 (0) | 3,190 (0) | 1,024 (0) |
+ * | `scribe-rate` | 298 (0) | 67 (0) | 3,190 (0) | 1,024 (0) |
+ * | `build-rate` | 298 (0) | 67 (0) | 3,190 (0) | 1,024 (0) |
+ *
+ * Six of the seven are byte-identical to the control, which is the file
+ * comment's claim about `resource-yield` re-measured rather than restated. And
+ * one row harsher than any of them: substituting `0` for `FP_ONE` in
+ * `additive-into-multiplier` — the inversion this file warns about, which
+ * multiplies the ablated arm's yield by zero — costs **97 % of its grimoires**
+ * (1,024 → 31) and **31 % of its knowledge**, and still leaves population at
+ * **297 against 298** and living mages **unchanged at 67**.
+ *
+ * **So the equality this replaced never had power.** It held because population
+ * is very nearly decoupled from `resource-yield` at this horizon, not because
+ * the two arms were demographically matched — and a 2-mage knock-on through the
+ * exclusion pair was enough to break it. No ablation lever available moves
+ * population by more than 2 of 298, so nothing this test can do will trip the
+ * floor today.
+ *
+ * It is kept rather than deleted because the coupling is real at longer
+ * horizons and is documented elsewhere in the repository:
+ * `gate-power.test.ts`'s `BLIND_ARM_LINES` records
+ * `referencePeakPopulation@permissive-breadth` moving 7,009 → 12,685 at the
+ * 2,400-tick gate "because applied food raises `K` hardest in the arm that
+ * permits the most cells". A floor that costs nothing and would catch that
+ * coupling arriving at 240 ticks is worth its line; a floor presented as though
+ * it were discriminating between the arms today would not be.
+ *
+ * ## The negative control is on the assertions that do have power
+ *
+ * Not on this one, for the reason above. The three `deps.ablation` forwarding
+ * sites in `coordination`'s `world-step.ts` — `materialsProduced`,
+ * `advanceConstruction` and `appliedYield` — were severed, reproducing the
+ * defect this file was written for: the ablated arm goes byte-identical to the
+ * control, `not.toEqual` fails, and both `toBeLessThan` assertions fail with
+ * `expected 3190 to be less than 3190`. Restoring the three lines returns all
+ * six tests to green.
+ *
+ * ## A second, independent reason the equality had to go — `w187/effects-union`
+ *
+ * The paragraphs above were written against the `anti-requisites` failure. The
+ * union of the two effect campaigns hit the same assertion from a different
+ * direction, and the diagnosis is worth keeping because it is the stronger form
+ * of the claim: *the equality was never structural, and it was not structural
+ * before any of these changes landed.*
+ *
+ * It passes at `d11e09c` (the academic rate wire alone) and at `3219c62` (the
+ * vitality wire alone) and failed on their merge, which reads exactly like an
+ * interaction defect. Measured across six seeds instead of one, on this tree,
+ * it is not. Each cell is `ablated.population − control.population`:
+ *
+ * | seed | both wires off | academic only | vitality only | both |
+ * |---|--:|--:|--:|--:|
+ * | `0x12345678` | 0 | +1 | 0 | **+1** |
+ * | `0x00000001` | **−5** | **−2** | **−5** | **−2** |
+ * | `0x00000002` | 0 | 0 | 0 | 0 |
+ * | `0xdeadbeef` | 0 | 0 | 0 | 0 |
+ * | `0x0badc0de` | 0 | **−1** | 0 | **−1** |
+ * | `0x5eed0007` | 0 | 0 | 0 | 0 |
+ *
+ * **The first column is not all zeroes.** It is also not a simulation of the
+ * past: the same sweep was run on an unmodified checkout of `e2b89d8`, this
+ * branch's merge base, with no instrumentation and neither wire present, and
+ * seed `0x00000001` finishes **three** people apart there too. So "it passed
+ * before and fails now" is a statement about `0x12345678`, and the sign is not
+ * systematic: +1, −1, −2, −3 and −5 all appear.
+ *
+ * The channel predates every wire. `resource-yield` feeds `stock.food`; food is
+ * the only kind `carryingCapacity` reads; capacity sets `fertilityBrake`; and
+ * `deliverBirths` is stochastic. Two arms whose food histories differ take
+ * different draws.
+ *
+ * ## And the vitality column is zero for a reason worth its own paragraph
+ *
+ * On the pre-`anti-requisites` base this table looked very different: the
+ * vitality wire raised population from 325 to 392 on its own and to 494 with
+ * the academic wire, over 2,592 gathered contributions. **On this tree, with
+ * `#161` merged, the vitality wire gathers zero contributions at all six seeds
+ * whenever the academic rate wire is on** — and 650 to 739 at three of the six
+ * when it is off, worth 283 → 365, 311 → 382 and 328 → 408 in population.
+ *
+ * That is not the wire breaking. It is `creo-ignem ⊥ creo-umbra` resolving
+ * `destructive` under a faster research rate: the sooner a mage reaches the
+ * other half of an excluded pair, the sooner she burns the school, and the
+ * `lifespan` and `fertility` nodes live in `creo-animal`, `creo-corpus` and
+ * `creo-fatum`'s neighbourhood rather than in the v1 rectangle. The agency
+ * baseline records the same mechanism at gate scale, where it is not seed
+ * anecdote: `referenceNodesKnown@permissive-breadth` **42.5 → 36.625** when
+ * these wires land on top of `#161`, against `#161` itself having taken it from
+ * 68.63 to 42.50.
+ *
+ * **Three separate mechanics now meet on `permissive-breadth` and are invisible
+ * everywhere else**, which is a fact about the opening square rather than about
+ * any of them.
+ *
+ * Measured 2026-08-14 on `w187/effects-union` merged with `origin/main`
+ * `1e2651a`; the pre-wire control on an unmodified `e2b89d8`.
  */
 const POPULATION_FLOOR_PERCENT = 95;
 
@@ -244,12 +317,14 @@ describe('an ablation arm is not its own control', () => {
     // `FP_ONE` multiplies the arm's whole economy by zero.
     expect(ablated.knowledgeInstances).toBeLessThan(control.knowledgeInstances);
     expect(ablated.grimoires).toBeLessThan(control.grimoires);
+  }, RUN_TIMEOUT_MS);
 
-    // And it is a loss the arm suffered rather than an arm that died. See
-    // `POPULATION_FLOOR_PERCENT`: this was an equality until the union of the
-    // two effect campaigns showed the equality had only ever held on this seed.
-    expect(ablated.population).toBeGreaterThanOrEqual(
-      Math.floor((control.population * POPULATION_FLOOR_PERCENT) / 100),
+  it('lost knowledge rather than people, so this is not a collapsed universe', () => {
+    const { control, ablated } = arms();
+    // Integer arithmetic rather than a ratio, so the assertion has no floating
+    // point in it and the failure message prints two whole populations.
+    expect(ablated.population * 100).toBeGreaterThanOrEqual(
+      control.population * POPULATION_FLOOR_PERCENT,
     );
   }, RUN_TIMEOUT_MS);
 

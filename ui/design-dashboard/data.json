@@ -3,7 +3,7 @@
     "generatedBy": "scripts/build-design-dashboard.mjs",
     "command": "npm run ui:dashboard",
     "pinnedBy": "packages/content/test/unit/design-dashboard-payload.test.ts",
-    "contentRevision": "2644913b17fe046e21d3e61e765bd381",
+    "contentRevision": "e9511403d956c7cc67660d03dbd9cc2e",
     "contentCounts": {
       "techniques": 5,
       "forms": 14,
@@ -1949,14 +1949,14 @@
         "runCount": 200,
         "rootSeed": 20260811,
         "toleranceK": 3,
-        "fileSeal": "abc324863076a8f7af2065230600bebf83c07991480f0433de35624cb0b2b16a",
-        "contentRevision": "2644913b17fe046e21d3e61e765bd381",
+        "fileSeal": "0f78122fad6460436cc33173e53188ae0ea0c5fea312268860b80c4aaffa2f05",
+        "contentRevision": "e9511403d956c7cc67660d03dbd9cc2e",
         "configurationHash": "4e4532ef15feeb3b64f123b87ad060bc3318768c915c8ebf6097b5958799b1d0",
         "buildVersion": "0.3.0",
         "rngRegistryHash": "2bc5d131f2a7423ce439ee6ca933d74316f48eac1d214b23259aa4559b18c2c9",
         "armCount": 0,
         "arms": [],
-        "rationale": "w187/effects-union unions campaign/signed-magnitudes and campaign/combined, so node effects now drive the three academic rates (research-rate, teach-rate, scribe-rate) and the two vitality primitives (lifespan, fertility). Knowledge moves numbers it could not move when these figures were recorded, and the previous baselines refuse with baseline-invalid on contentHash besides. THIS FILE IS A MEASUREMENT, NOT A BALANCE CLAIM: release-plan.md forbids a balance claim before 0.5.0, and nothing here is one. Neither parent branch could have recorded it -- combined's four negative-magnitude guard fixes were inert under a schema that said minimum 1, and signed-magnitudes' negative magnitudes were swallowed by routeYieldByForm's clamp -- so the union tree is the first tree on which these numbers exist.",
+        "rationale": "w187/effects-union (PR #169) unions campaign/signed-magnitudes and campaign/combined ON TOP OF #161 and #164, so node effects now drive the three academic rates (research-rate, teach-rate, scribe-rate) and the two vitality primitives (lifespan, fertility), while the anti-requisites exclusion pair from #161 stays exactly as recorded there. Recorded from the tree MERGED WITH origin/main 1e2651a, not from the branch alone, per the w77 precedent. provenance.contentHash e8442af2c5f91ae6f80ad9a178e0e451 -> a new value: node.json gained one authored COST -- a teach-rate of -192 on pn-the-nameless -- and the revision is a digest over the values, so the previous baselines refuse before reading a metric. THIS FILE IS A MEASUREMENT, NOT A BALANCE CLAIM: release-plan.md forbids a balance claim before 0.5.0, and nothing here is one. Neither parent branch could have recorded these numbers: combined's four negative-magnitude guard fixes were inert under a schema saying minimum 1, and signed-magnitudes' negative magnitudes were swallowed by routeYieldByForm's clamp. NO GOLDEN FIXTURE WAS REGENERATED. balance-gate-ascension-v1 is deliberately NOT re-recorded, the same carve-out #161 and #72 record: it carries a superseded rngRegistryHash, already fails on main for that older unrelated reason, and balance/README.md marks its job not required to merge. The universe remains degenerate in the ways integration round 2 recorded and this change closes none of them.",
         "metricIds": [
           "referenceGrimoires",
           "referenceKnowledgeInstances",
@@ -2068,14 +2068,14 @@
         "runCount": 200,
         "rootSeed": 20260811,
         "toleranceK": 3,
-        "fileSeal": "3e3ec3b0e1af04fa84b9d899a4c092705e216436d93bfe9413bcb89f4cdcbf3d",
-        "contentRevision": "2644913b17fe046e21d3e61e765bd381",
+        "fileSeal": "c223a2fe8502a842b9e337f0daa1dc38c06c5a37f41ea5c1b0b252ae4c604eb3",
+        "contentRevision": "e9511403d956c7cc67660d03dbd9cc2e",
         "configurationHash": "aa74eef219106c40a8253e9a23c28911cd09f244ce05cd104ee3bd0c8cbea191",
         "buildVersion": "0.3.0",
         "rngRegistryHash": "2bc5d131f2a7423ce439ee6ca933d74316f48eac1d214b23259aa4559b18c2c9",
         "armCount": 0,
         "arms": [],
-        "rationale": "w187/effects-union unions campaign/signed-magnitudes and campaign/combined, so node effects now drive the three academic rates (research-rate, teach-rate, scribe-rate) and the two vitality primitives (lifespan, fertility). Knowledge moves numbers it could not move when these figures were recorded, and the previous baselines refuse with baseline-invalid on contentHash besides. THIS FILE IS A MEASUREMENT, NOT A BALANCE CLAIM: release-plan.md forbids a balance claim before 0.5.0, and nothing here is one. Neither parent branch could have recorded it -- combined's four negative-magnitude guard fixes were inert under a schema that said minimum 1, and signed-magnitudes' negative magnitudes were swallowed by routeYieldByForm's clamp -- so the union tree is the first tree on which these numbers exist.",
+        "rationale": "w187/effects-union (PR #169) unions campaign/signed-magnitudes and campaign/combined ON TOP OF #161 and #164, so node effects now drive the three academic rates (research-rate, teach-rate, scribe-rate) and the two vitality primitives (lifespan, fertility), while the anti-requisites exclusion pair from #161 stays exactly as recorded there. Recorded from the tree MERGED WITH origin/main 1e2651a, not from the branch alone, per the w77 precedent. provenance.contentHash e8442af2c5f91ae6f80ad9a178e0e451 -> a new value: node.json gained one authored COST -- a teach-rate of -192 on pn-the-nameless -- and the revision is a digest over the values, so the previous baselines refuse before reading a metric. THIS FILE IS A MEASUREMENT, NOT A BALANCE CLAIM: release-plan.md forbids a balance claim before 0.5.0, and nothing here is one. Neither parent branch could have recorded these numbers: combined's four negative-magnitude guard fixes were inert under a schema saying minimum 1, and signed-magnitudes' negative magnitudes were swallowed by routeYieldByForm's clamp. NO GOLDEN FIXTURE WAS REGENERATED. balance-gate-ascension-v1 is deliberately NOT re-recorded, the same carve-out #161 and #72 record: it carries a superseded rngRegistryHash, already fails on main for that older unrelated reason, and balance/README.md marks its job not required to merge. The universe remains degenerate in the ways integration round 2 recorded and this change closes none of them.",
         "metricIds": [
           "referenceGrimoires",
           "referenceKnowledgeInstances",
@@ -2198,8 +2198,8 @@
         "runCount": 64,
         "rootSeed": 20260811,
         "toleranceK": 3,
-        "fileSeal": "b0f977288bc72cc582e38384be0239917d5868941745eb7dfc2fe238f4bb417c",
-        "contentRevision": "2644913b17fe046e21d3e61e765bd381",
+        "fileSeal": "eabff8576dc7e42f7f6595309e91fa23df420292305a743015702d6bdae06e5f",
+        "contentRevision": "e9511403d956c7cc67660d03dbd9cc2e",
         "configurationHash": "1b73f7e27b0bf2eb582d9094c5747ebd29663c6f5991847ea2178fccd3304b28",
         "buildVersion": "0.3.0",
         "rngRegistryHash": "2bc5d131f2a7423ce439ee6ca933d74316f48eac1d214b23259aa4559b18c2c9",
@@ -2214,7 +2214,7 @@
           "uniform-random-legal",
           "worship-maximizer"
         ],
-        "rationale": "w187/effects-union unions campaign/signed-magnitudes and campaign/combined, so node effects now drive the three academic rates (research-rate, teach-rate, scribe-rate) and the two vitality primitives (lifespan, fertility). Knowledge moves numbers it could not move when these figures were recorded, and the previous baselines refuse with baseline-invalid on contentHash besides. THIS FILE IS A MEASUREMENT, NOT A BALANCE CLAIM: release-plan.md forbids a balance claim before 0.5.0, and nothing here is one. Neither parent branch could have recorded it -- combined's four negative-magnitude guard fixes were inert under a schema that said minimum 1, and signed-magnitudes' negative magnitudes were swallowed by routeYieldByForm's clamp -- so the union tree is the first tree on which these numbers exist.",
+        "rationale": "w187/effects-union (PR #169) unions campaign/signed-magnitudes and campaign/combined ON TOP OF #161 and #164, so node effects now drive the three academic rates (research-rate, teach-rate, scribe-rate) and the two vitality primitives (lifespan, fertility), while the anti-requisites exclusion pair from #161 stays exactly as recorded there. Recorded from the tree MERGED WITH origin/main 1e2651a, not from the branch alone, per the w77 precedent. provenance.contentHash e8442af2c5f91ae6f80ad9a178e0e451 -> a new value: node.json gained one authored COST -- a teach-rate of -192 on pn-the-nameless -- and the revision is a digest over the values, so the previous baselines refuse before reading a metric. THIS FILE IS A MEASUREMENT, NOT A BALANCE CLAIM: release-plan.md forbids a balance claim before 0.5.0, and nothing here is one. Neither parent branch could have recorded these numbers: combined's four negative-magnitude guard fixes were inert under a schema saying minimum 1, and signed-magnitudes' negative magnitudes were swallowed by routeYieldByForm's clamp. NO GOLDEN FIXTURE WAS REGENERATED. balance-gate-ascension-v1 is deliberately NOT re-recorded, the same carve-out #161 and #72 record: it carries a superseded rngRegistryHash, already fails on main for that older unrelated reason, and balance/README.md marks its job not required to merge. The universe remains degenerate in the ways integration round 2 recorded and this change closes none of them.",
         "metricIds": [
           "referenceGrimoires",
           "referenceKnowledgeInstances",
@@ -2230,102 +2230,102 @@
         "pooled": [
           {
             "metricId": "referenceGrimoires",
-            "value": 253.984375,
+            "value": 258.203125,
             "unit": "grimoires",
             "status": "measured",
             "aggregation": "mean",
-            "standardError": 10.71584554307895,
-            "tolerance": 32.14753662923685,
+            "standardError": 10.652686812636754,
+            "tolerance": 31.958060437910262,
             "sampleSize": 64
           },
           {
             "metricId": "referenceKnowledgeInstances",
-            "value": 965.171875,
+            "value": 845.625,
             "unit": "instances",
             "status": "measured",
             "aggregation": "mean",
-            "standardError": 17.76223032650672,
-            "tolerance": 53.28669097952016,
+            "standardError": 16.748717301632386,
+            "tolerance": 50.24615190489716,
             "sampleSize": 64
           },
           {
             "metricId": "referenceLibraryDepth",
-            "value": 16.625,
+            "value": 15.515625,
             "unit": "nodes",
             "status": "measured",
             "aggregation": "mean",
-            "standardError": 1.4833055357882272,
-            "tolerance": 4.449916607364681,
+            "standardError": 1.370821064408116,
+            "tolerance": 4.1124631932243485,
             "sampleSize": 64
           },
           {
             "metricId": "referenceLivingMages",
-            "value": 37.265625,
+            "value": 37.359375,
             "unit": "mages",
             "status": "measured",
             "aggregation": "mean",
-            "standardError": 0.467968097870998,
-            "tolerance": 1.4039042936129942,
+            "standardError": 0.4637756899892447,
+            "tolerance": 1.391327069967734,
             "sampleSize": 64
           },
           {
             "metricId": "referenceNodesGained",
-            "value": 38.53125,
+            "value": 32.75,
             "unit": "nodes",
             "status": "measured",
             "aggregation": "mean",
-            "standardError": 0.375,
-            "tolerance": 1.125,
+            "standardError": 0.29973947020704494,
+            "tolerance": 0.8992184106211348,
             "sampleSize": 64
           },
           {
             "metricId": "referenceNodesGainedFinalQuarter",
-            "value": 3.515625,
+            "value": 1.84375,
             "unit": "nodes",
             "status": "measured",
             "aggregation": "mean",
-            "standardError": 0.28598445652692384,
-            "tolerance": 0.8579533695807715,
+            "standardError": 0.2715335499528557,
+            "tolerance": 0.8146006498585672,
             "sampleSize": 64
           },
           {
             "metricId": "referenceNodesKnown",
-            "value": 41.03125,
+            "value": 35.25,
             "unit": "nodes",
             "status": "measured",
             "aggregation": "mean",
-            "standardError": 0.375,
-            "tolerance": 1.125,
+            "standardError": 0.29973947020704494,
+            "tolerance": 0.8992184106211348,
             "sampleSize": 64
           },
           {
             "metricId": "referencePeakPopulation",
-            "value": 556,
+            "value": 348,
             "unit": "people",
             "status": "measured",
             "aggregation": "max",
-            "standardError": 14.765625,
-            "tolerance": 44.296875,
+            "standardError": 1.96875,
+            "tolerance": 5.90625,
             "sampleSize": 64
           },
           {
             "metricId": "referencePopulation",
-            "value": 224.5,
+            "value": 210.6875,
             "unit": "people",
             "status": "measured",
             "aggregation": "mean",
-            "standardError": 2.755055721986399,
-            "tolerance": 8.265167165959198,
+            "standardError": 2.3206149844922574,
+            "tolerance": 6.961844953476772,
             "sampleSize": 64
           },
           {
             "metricId": "referencePopulationChange",
-            "value": 80.5,
+            "value": 66.6875,
             "unit": "people",
             "status": "measured",
             "aggregation": "mean",
-            "standardError": 2.755055721986399,
-            "tolerance": 8.265167165959198,
+            "standardError": 2.3206149844922574,
+            "tolerance": 6.961844953476772,
             "sampleSize": 64
           }
         ]
@@ -2538,8 +2538,8 @@
       "scripts/check-reachability.mjs --json"
     ],
     "ok": false,
-    "findingCount": 125,
-    "examinedSymbolCount": 872,
+    "findingCount": 128,
+    "examinedSymbolCount": 875,
     "examinedPackages": [
       "content",
       "coordination",
@@ -2670,13 +2670,13 @@
       },
       {
         "file": "packages/rules-magic/src/grid.ts",
-        "line": 486,
+        "line": 545,
         "name": "cellAxes",
         "kind": "function"
       },
       {
         "file": "packages/rules-magic/src/grid.ts",
-        "line": 137,
+        "line": 175,
         "name": "heldNodes",
         "kind": "function"
       },
@@ -3090,14 +3090,26 @@
       },
       {
         "file": "packages/scenario/src/strategy-audit.ts",
-        "line": 368,
+        "line": 663,
+        "name": "auditFounding",
+        "kind": "function"
+      },
+      {
+        "file": "packages/scenario/src/strategy-audit.ts",
+        "line": 649,
         "name": "auditPool",
         "kind": "function"
       },
       {
         "file": "packages/scenario/src/strategy-audit.ts",
-        "line": 401,
+        "line": 746,
         "name": "formatAudit",
+        "kind": "function"
+      },
+      {
+        "file": "packages/scenario/src/strategy-audit.ts",
+        "line": 703,
+        "name": "formatFounding",
         "kind": "function"
       },
       {
@@ -3259,7 +3271,15 @@
       },
       {
         "file": "packages/scenario/src/strategy-audit.ts",
-        "line": 396,
+        "line": 420,
+        "name": "FOUNDING_PROBE",
+        "via": [
+          "auditFounding"
+        ]
+      },
+      {
+        "file": "packages/scenario/src/strategy-audit.ts",
+        "line": 691,
         "name": "actionName",
         "via": [
           "formatAudit"
@@ -3267,9 +3287,10 @@
       },
       {
         "file": "packages/scenario/src/strategy-audit.ts",
-        "line": 280,
+        "line": 494,
         "name": "auditStrategy",
         "via": [
+          "auditFounding",
           "auditPool"
         ]
       },

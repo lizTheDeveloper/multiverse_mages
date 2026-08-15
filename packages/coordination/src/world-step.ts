@@ -117,7 +117,7 @@ import {
 } from '@mm/state';
 import type {
   AcquirePolicy,
-  CellResolver,
+  ExclusionResolver,
   KnowledgeSubsystem,
   NodeCatalog,
   StorePolicy,
@@ -220,7 +220,13 @@ export interface WorldStepDeps {
   /** The species behind an interned id, or `undefined` for one this content lacks. */
   readonly speciesOf: (speciesId: number) => SpeciesRecord | undefined;
   readonly catalog: NodeCatalog;
-  readonly cells: CellResolver;
+  /**
+   * Widened to {@link ExclusionResolver} rather than the bare `CellResolver`: the
+   * knowledge subsystem needs a cell's anti-requisites (`vision.md` §4b) on the
+   * acquisition path, and `MagicGrid` supplies both from one object. Every
+   * consumer that only wanted `cellOf` is unaffected — this is a superset.
+   */
+  readonly cells: ExclusionResolver;
   /**
    * A node's cell, form and effect primitives, and a species' resolved
    * affinities.
@@ -458,14 +464,19 @@ export interface WorldStepReport {
    * zero here and a zero in the birth rate therefore mean different things, and
    * without this counter they would look the same.
    *
-   * **The v1 scope is load-bearing and is easy to drop when quoting this.** A
-   * run that opens more of the grid than the v1 rectangle — which is every
-   * `scenario` reference run under `permissive-breadth`, including the ablation
-   * harness — sees this figure in the thousands, and sees population move with
-   * it. Measured on `w187/effects-union`: 2,592 contributions over 240 world
-   * ticks at seed `0x12345678`, and a final population of 494 against 325 with
-   * the wire absent. `knowledge-vitality.ts`'s module note carries the
-   * measurement and the date.
+   * **The v1 scope is load-bearing, and a zero here has meant three different
+   * things in one day.** A run that opens more of the grid than the v1
+   * rectangle — every `scenario` reference run under `permissive-breadth`,
+   * including the ablation harness — saw this figure in the thousands on
+   * `e2b89d8`: 2,592 contributions over 240 ticks, and a population of 494
+   * against 325 with the wire absent. On the tree that merges `#161`'s
+   * anti-requisites with the academic rate wire it reads **zero again**, at all
+   * six seeds measured, because a faster research rate reaches the far half of
+   * a `destructive` excluded pair sooner and burns the school carrying these
+   * primitives. Never reachable, reachable and lively, reachable and then
+   * destroyed — three zeroes, three meanings, and this counter is what
+   * separates them. `knowledge-vitality.ts`'s module note carries the
+   * measurements and their dates.
    */
   readonly vitalityContributions: number;
   /**
@@ -491,6 +502,24 @@ export interface WorldStepReport {
   readonly buildProgressAdded: Fixed;
   /** Universities finished by that labour this tick. */
   readonly universitiesCompleted: number;
+  /**
+   * Universities standing at the end of the tick, finished or not.
+   *
+   * A census, not an event, and the difference is the reason it exists.
+   * {@link universitiesCompleted} counts only the ones **laborers** finished, so
+   * a site the god's fourth funding action completed is invisible to it, and
+   * nothing at all reported a *founding*: §4.2 gives founding and funding one
+   * action id, so `spentByAction[11]` cannot say which purchase resolved, and
+   * `candidates` is capped at the action's slot count and stops counting at
+   * seven. A universe that founded a thousand universities and one that founded
+   * eight were the same number everywhere a caller could look — which is the
+   * same blindness {@link universitiesUnstaffed} was added for, one question
+   * earlier: *how many are there at all.*
+   *
+   * Read once per tick off the component that owns the answer. Nothing hashes
+   * it and no rule reads it back.
+   */
+  readonly universitiesStanding: number;
   /** Stone construction asked for this tick, `fp`. */
   readonly constructionStoneOwed: Fixed;
   /** Stone construction was actually paid, `fp`. Below `owed` means the quarry is the bottleneck. */
@@ -1099,6 +1128,7 @@ export function worldSystem(
         buildRateMagnitudes: economy.buildRate,
         buildProgressAdded: construction.progressAdded,
         universitiesCompleted: construction.completed,
+        universitiesStanding: componentOf(state, UNIVERSITY).size,
         constructionStoneOwed: construction.stoneOwed,
         constructionStonePaid: consumption.spent.construction,
         carryingCapacity: capacity,
