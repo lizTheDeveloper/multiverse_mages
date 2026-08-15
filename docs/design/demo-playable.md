@@ -34,7 +34,10 @@ ask what it *would* do. `▶| tick`, `▶▶ 10`, `▶▶ 50` and `▶ play` adv
 resources pane climb.** That is the shortest path to seeing the branch do something `main` does not.
 
 The verb sweep below is the whole action space, cast through `control` at **tick 91, seed
-20260813, settled 60 ticks**, on both trees. "Drawn slots" is the number of observation slots the
+20260813, settled 60 ticks**, on both trees. `main` has no play server, so the `main` column was
+taken by copying *this branch's* `scripts/play-server.mjs`, `ui/console/index.html` and
+`ui/shared/session.js` onto a clean `main` worktree, uncommitted, and sweeping there — so the two
+columns differ in the rules and in nothing else. "Drawn slots" is the number of observation slots the
 console actually renders that moved — not whether the action reached the simulation, which is a
 weaker question the snapshot hash answers.
 
@@ -91,14 +94,22 @@ not comparable. Quantities are the ones the console draws by name.
 | mages taught | 14 | 13 | 14 | 14 | 14 | **16** |
 | instance redundancy | 114 | **173** | 418 | **607** | 702 | **944** |
 | nodes known | 7 | 7 | 34 | 34 | 43 | **47** |
+| species alive | 6 | 6 | 6 | 6 | 5 | **6** |
 
 **The single clearest row: on `main` the library reaches depth 9 by tick 200 and never moves
 again.** Here it goes on to 38. And `main`'s mage population only ever falls — 19, 17, 17 — while
 here it recovers to 22 by tick 400, because the populace half of #172 lets the cohort grow.
 
-Reproduce with `scripts/play-server.mjs`'s own scenario construction; the numbers above came from a
-throwaway probe that builds the session exactly as the server does, run twice per tree to confirm
-it is deterministic before any difference was believed.
+**A species dies on `main` and survives here.** At tick 400 the population pane shows six species
+on this branch and five on `main`: species 5 — the only one that ever reaches the deepest tier, 5 —
+is extinct on `main` and holds two living mages here, and species 6 appears here with three
+untaught. That is the single most legible thing in the pane, and it is a consequence of the cohort
+and populace wiring rather than of any god action.
+
+Reproduce with **`node tools/demo/probe.mjs "$PWD" 20260813 400`**, committed on this branch. It
+builds the session exactly as the play server does and reports `ticksRun` and `status` alongside
+the quantities. Run it twice on one tree first: identical output is the cheap positive control that
+a difference between two trees means anything.
 
 ## What is still inert
 
@@ -106,17 +117,24 @@ Stated plainly, because a demo that oversells is worse than one that undersells.
 
 - **`assignRole` (10) is admitted, moves the world, and moves no pane.** It has been the honest row
   since #189 and it still is. That is a read-path gap, not a broken control.
-- **`openPortal` (14) is admitted and moves nothing you can see.** Nothing in `packages/scenario`
-  opens a portal, so #171's mid-raid work — the god acting during an engagement, the withdrawal
-  path — **is in this branch's rules but cannot be reached from the console.** The raid seam is
-  merged and schema-reconciled; it is not playable. This is the biggest gap between what the
-  branch contains and what a player can do.
+- **`openPortal` (14) is admitted and reaches no engagement — measured on this branch, not
+  inherited from #189's note about `main`.** All three portal targets were opened in a live run and
+  followed for 750 further ticks: the clock's mode slot is never `1` and the 64-slot engagement
+  block is never non-zero, across 795 frames. The scanner was positive-controlled against the
+  `knowledge`, `mages`, `resources` and `institutions` blocks in the same frames, which it reports
+  non-zero on all 795 — so this is *"the answer is no"* and not *"the probe is broken."*
+
+  So **#171's mid-raid work is in this branch's rules and cannot be reached from the console.** The
+  raid seam is merged and schema-reconciled at revision 8; it is not playable. **This is the
+  biggest gap between what the branch contains and what a player can do**, and the one item on the
+  original list that this branch does not deliver.
 - **`changeTradition` (13), `declareAscension` (15), `revokeEdict` (7) and `inviteScholar` (16) are
   masked** — three of them all run.
-- **#183 `mastery-rises` is in, and invisible under a no-op run.** Deepest tier reached stays 4 on
-  both trees and taught-mage counts barely move. It changes the snapshot hash from the first tick,
-  so it is live; it does not change a number this console draws at these ticks. Do not claim it
-  from this demo.
+- **#183 `mastery-rises` is in, and invisible under a no-op run.** Measured: at ticks 200 and 400
+  the per-species tier histogram — which is exactly what the population pane draws — is
+  **byte-identical between the two trees for every species present on both**. Deepest tier reached
+  stays 4. It changes the snapshot hash from the first tick, so it is live; it does not move a
+  number this console draws at these ticks under no-op play. Do not claim it from this demo.
 - **`universities` stays 1 and `capacity` stays 64** on both trees. The institutions block is
   `[universities, capacity, libraryDepth, grimoires]` — **there is no affiliated-mages slot**, so
   #134's headline "affiliated 1 → 64" is not a quantity this console can show. What #134 buys here
