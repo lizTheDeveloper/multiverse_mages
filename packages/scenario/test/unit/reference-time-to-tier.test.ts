@@ -247,7 +247,7 @@ describe('time to tier, by species', () => {
     // | claim | held in | kept? |
     // |---|---:|---|
     // | `gnome.high < elf.low`      | **12/12** | kept |
-    // | `dwarf.high < elf.low`      | **12/12** | kept |
+    // | `dwarf.high < elf.low`      | 12/12, **6/12 on w185** | **retired** |
     // | `gnome.high < human.low`    | **12/12** | kept |
     // | `draconic.high > elf.high`  | **12/12** | kept |
     // | `orc.high < elf.low`        | 11/12 | **retired** |
@@ -319,17 +319,27 @@ describe('time to tier, by species', () => {
     };
 
     const gnome = interval('gnome');
-    const dwarf = interval('dwarf');
     const human = interval('human');
     const elf = interval('elf');
     const draconic = interval('draconic');
     // `orc` is deliberately not bound. Both claims that read it — `orc.high <
     // elf.low` at 11/12 and `human.high < orc.low` at 0/12 — are retired, and
     // leaving the binding would invite the next author to reach for it.
-    const beforeElf = [gnome, dwarf];
+    // **`dwarf` was dropped from this list on `w185/cohort-source`,
+    // 2026-08-14.** `dwarf.high < elf.low` was 12/12 across seed sets when it
+    // was written and is 6/12 now: W185 opened the occupation transfer valve
+    // and filled university seats from `idle` only, which changes who becomes a
+    // student and therefore who is promoted, and dwarf's between-set spread
+    // widened enough that its interval reaches into elf's in half the sets. The
+    // paired gap is still 24.6 SE in dwarf's favour — the effect is real, and
+    // an interval over one seed set is not the instrument that can say so. The
+    // row next door records the retirement and its rate.
+    const beforeElf = [gnome];
 
-    // What separates strictly in **every one of twelve** independent seed sets:
-    // gnome and dwarf arrive before elf, and gnome arrives before human. Both
+    // What separates strictly in **every one of twelve** independent seed sets,
+    // re-measured on `w185/cohort-source` on 2026-08-14: gnome arrives before
+    // elf, and gnome arrives before human. (Dwarf before elf was in this group
+    // and is not any more; see the note on `beforeElf` above.) Both
     // are real statements about `curiosity` — gnome 1792, human 1152, elf 896 —
     // now that curiosity is an input to *which* node a mage reaches for and not
     // only to how fast she works on whichever one was cheapest.

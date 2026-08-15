@@ -173,12 +173,20 @@ const CLAIMED_SEPARATIONS: readonly {
     status: 'asserted',
     verdict: 'established',
   },
+  // **Retired on `w185/cohort-source`, 2026-08-14, at 6/12.** It was 12/12 when
+  // it was asserted. W185 opened the occupation transfer valve — which had been
+  // welded shut by a per-cohort floor — and filled university seats from `idle`
+  // only, so *who becomes a student* changed and with it who is promoted and
+  // when. Dwarf's between-set spread widened from single ticks to 3.0, and its
+  // interval now reaches into elf's in half the sets. The paired gap is still
+  // 24.6 SE in dwarf's favour, which is why this is `inconclusive` and not
+  // `refuted`: the effect is real and the interval test cannot state it.
   {
     faster: 'dwarf',
     slower: 'elf',
-    assertedAs: 'beforeElf.high < elf.low',
-    status: 'asserted',
-    verdict: 'established',
+    assertedAs: 'beforeElf.high < elf.low — retired 2026-08-14 on w185',
+    status: 'retired',
+    verdict: 'inconclusive',
   },
   {
     faster: 'gnome',
@@ -187,22 +195,34 @@ const CLAIMED_SEPARATIONS: readonly {
     status: 'asserted',
     verdict: 'established',
   },
-  // Strict in 11 of 12 sets at the bin's default design — a real effect, and not
-  // reproducible enough for a file with one seed set to assert. It fails in
-  // exactly the sets where elf's own interval reaches down to 45.
+  // Strict in 11 of 12 sets when it was retired — a real effect, and not
+  // reproducible enough for a file with one seed set to assert. **Re-measured
+  // on `w185/cohort-source`, 2026-08-14: 0/12, and the order is backwards.**
+  // Elf now arrives before orc by 2.9 SE. Retiring it was right and the reason
+  // has changed; it is recorded rather than quietly re-verdicted, because a
+  // claim that goes from 11/12 to reversed is a fact about how little the
+  // interval test was ever saying.
   {
     faster: 'orc',
     slower: 'elf',
     assertedAs: 'orc.high < elf.low — retired 2026-08-14',
     status: 'retired',
-    verdict: 'inconclusive',
+    verdict: 'refuted',
   },
+  // **The one that came back.** Retired at 0/12 as #127's retracted claim, and
+  // on `w185/cohort-source` it holds in 12/12 sets at 7.3 SE. It stays retired
+  // anyway, and that is a deliberate refusal rather than an oversight: this
+  // claim has now been true, false, and true again across three builds of a
+  // subsystem whose magnitudes are all `tuningStatus: "untuned"`, and
+  // re-asserting it in a fix PR would be the third time somebody published it
+  // on one build's numbers. Whoever re-asserts it should do so on purpose, with
+  // a second ref measured, and should move this row to `asserted` when they do.
   {
     faster: 'human',
     slower: 'orc',
     assertedAs: 'human.high < orc.low — retired 2026-08-14',
     status: 'retired',
-    verdict: 'refuted',
+    verdict: 'established',
   },
 ];
 
@@ -214,8 +234,11 @@ const CLAIMED_SEPARATIONS: readonly {
  * six-seed table will write the same line again. This is the trace.
  */
 const RETIRED_ASSERTIONS: readonly { readonly source: string; readonly heldIn: string }[] = [
-  { source: 'expect(human.high).toBeLessThan(orc.low)', heldIn: '0/12 sets' },
-  { source: 'expect(orc.high).toBeLessThan(elf.low)', heldIn: '11/12 sets' },
+  {
+    source: 'expect(human.high).toBeLessThan(orc.low)',
+    heldIn: '0/12 sets when retired, and 12/12 on w185 — see the row above',
+  },
+  { source: 'expect(orc.high).toBeLessThan(elf.low)', heldIn: '11/12 sets, and 0/12 on w185' },
   { source: 'expect(draconic.low).toBeLessThan(human.low)', heldIn: '5/12 sets' },
   { source: 'expect(overlaps(gnome, dwarf)).toBe(true)', heldIn: '7/12 sets' },
 ];
@@ -341,14 +364,16 @@ describe('every strict separation this repository asserts, re-rolled', () => {
         'remove the matching row in CLAIMED_SEPARATIONS so that every separation this ' +
         'repository publishes carries the number of seed sets it survives.',
     ).toBe(2);
-    // **Two sites, three asserted separations, and it was four sites and five
-    // before 2026-08-14.** The loop over `beforeElf` is one site and two
-    // separations; `orc` was dropped from it when `orc < elf` was retired at
-    // 11/12. The count is the tripwire and the two lines below say which two
-    // sites it is, so that swapping one claim for another cannot keep the count.
+    // **Two sites, two asserted separations, and it was two sites and three
+    // before `w185/cohort-source`.** The loop over `beforeElf` is one site; it
+    // held two species until `dwarf < elf` fell to 6/12 under W185 and is down
+    // to `gnome` alone. `orc` had been dropped from it earlier, when
+    // `orc < elf` was retired at 11/12. The count is the tripwire and the two
+    // lines below say which two sites it is, so that swapping one claim for
+    // another cannot keep the count.
     expect(sibling).toContain('for (const entry of beforeElf) expect(entry.high)');
     expect(sibling).toContain('expect(gnome.high).toBeLessThan(human.low)');
-    expect(CLAIMED_SEPARATIONS.filter((claim) => claim.status === 'asserted')).toHaveLength(3);
+    expect(CLAIMED_SEPARATIONS.filter((claim) => claim.status === 'asserted')).toHaveLength(2);
   });
 
   it.each(RETIRED_ASSERTIONS)(
