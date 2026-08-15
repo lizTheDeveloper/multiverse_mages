@@ -9228,9 +9228,8 @@ holdings materialize."* Without w24, that university **stands nowhere** — whic
 - **`w24`** renumbered its migration 4→5 into 6→7 and moved `TERRITORY_HOLDING`/`UNIVERSITY_SITE` to the
   end of `WORLD_COMPONENTS` — the union had left them where revision 5 would put them while their
   migration said 7, which lines every older save against the wrong layouts. `WORLD_SCHEMA_VERSION` is 7.
-- **`w23` shipped two reconstructions, one in the rules path.** `materialsObligation` was rebuilt as
-  `subsistenceDemand(total) + upkeepOwed`, dropping w23's `applicationRationsOwed` term — **a number no
-  side ever ran, in the deterministic path.** Sent back to recover the real formula.
+- **`w23` shipped two reconstructions, one in the rules path** — sent back to recover the real formula.
+  **See W183: that claim was wrong, and the real defect is elsewhere.**
 
 **And the best catch in the batch, worth generalising:** on `w78` the agent first took main's `5×`
 books-to-depth bound, then noticed both sides had widened the same ratio by different mechanisms cutting
@@ -9242,3 +9241,54 @@ taking either would have shipped green and wrong.** That is W178's rule paying o
 `w28 6ba14f8f`), so all three gates will fail on all four with a digest mismatch. Expected — but
 **nobody has confirmed the failure is the digest rather than something worse**, and that confirmation is
 owed before any of them lands.
+
+## W183 — the reconstruction was faithful; the missing term is real and sits three phases away
+
+W182 recorded that `w23`'s merge dropped an `applicationRationsOwed` term from `materialsObligation`,
+calling it *"a number no side ever ran."* **That is wrong, and both the agent and I had it wrong.**
+
+Checked at w23's **pre-merge** tip `aa11835` — and the checking method is the finding, because
+`origin/w23` already carried the merge, so **the branch ref was not a usable source for what the branch
+said.** At that tip:
+
+```
+const subsistenceReserve = subsistenceDemand(cohorts.totalCount());
+materialsObligation: subsistenceReserve + upkeepOwed,
+```
+
+That is all it ever was. `applicationRationsOwed` **does not appear anywhere on w23's tip** — it is
+entirely main's, from `apply-magic`. So the inlined form is w23's formula term for term, not an
+approximation, and nothing was dropped relative to w23.
+
+### The concern was right; it just had the wrong target
+
+On the *merged* tree, phase 8 computes the food claim as
+`subsistenceDemand(…) + applicationRationsOwed`, while the phase 2 demand omits the rations. **The
+universe's stated bill and its actual claim disagree by that term.**
+
+And it cannot simply be added, which is why it is a decision rather than a fix:
+`applicationRationsOwed` is `applicationRations(work.applyingMages, …)`, and `work` is assigned at
+**phase 5, line 844** — three phases after the demand at **phase 2, line 801**. Nothing earlier knows
+which mages will choose to apply magic, and no component carries the previous tick's figure. Both
+remedies are larger than the defect: moving phase 5 ahead of phase 2 reorders the world step and re-keys
+every per-actor stream (§6), or a new component exists to carry one addend.
+
+So it is now **named in code as a decision**, with its bound — rations scale with the *mage* population,
+tens, against a populace of tens of thousands, so the omission cannot flip this driver's sign or scale —
+and with what would have to change if applied magic ever became a large share of the food bill.
+
+### A rule worth keeping: a relation survives what a literal cannot
+
+The same standard applied to two merges gave opposite outcomes, and the difference was the assertion's
+*shape*:
+
+- **`w78` asserted a literal.** Both sides had widened the books-to-depth bound for compounding reasons,
+  so the merged tree failed main's `5 ×` **and** w78's `6 ×` at a measured **6.56**, and the bound had to
+  be re-derived to `8 ×`.
+- **`w23` asserted a relation** — `libraryDepth === nodesKnown`, against the run's own value rather than
+  a constant. Books standing moved **3,350 → 2,746**, an 18% swing in the numerator, and **the claim did
+  not move at all.** 12/12 green, 51 of 51 distinct nodes shelved.
+
+**The literal was the fragile one.** Where a test can assert a relationship between two things the run
+produces, it should — that assertion survives every merge that moves both, and it is the merges that
+move both which W178 showed are the ones that auto-merge green and wrong.
