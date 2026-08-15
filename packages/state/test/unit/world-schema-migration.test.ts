@@ -220,7 +220,7 @@ describe('the world-schema revision is read off the snapshot itself', () => {
     // hash in the project and fails the fixtures with a version error rather
     // than a behaviour diff.
     expect(SNAPSHOT_VERSION).toBe(1);
-    expect(WORLD_SCHEMA_VERSION).toBe(7);
+    expect(WORLD_SCHEMA_VERSION).toBe(8);
   });
 });
 
@@ -708,10 +708,14 @@ describe('migrating a revision-6 world snapshot forward', () => {
     // line every revision-6 save's sections up against the wrong layouts -- and
     // the failure would not be a refusal, it would be one component's values
     // read as another's. Asserted against the declaration itself rather than
-    // against a literal index, so it keeps holding at revision 8.
+    // against a literal index, so it keeps holding as revisions are appended.
+    // `mid-raid-change` is last, at revision 8: it and `knowledge-fidelity`
+    // both claimed revision 7, fidelity merged first, and appending is the only
+    // safe edit to this list.
     const declared = WORLD_COMPONENTS.map((spec) => spec.name);
-    expect(declared[declared.length - 1]).toBe(KNOWLEDGE_FIDELITY.name);
-    expect(declared[declared.length - 2]).toBe(GRANT_BUDGET.name);
+    expect(declared[declared.length - 1]).toBe(MID_RAID_CHANGE.name);
+    expect(declared[declared.length - 2]).toBe(KNOWLEDGE_FIDELITY.name);
+    expect(declared[declared.length - 3]).toBe(GRANT_BUDGET.name);
   });
 
   it('leaves the container format version exactly where it found it', () => {
