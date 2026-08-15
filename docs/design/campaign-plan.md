@@ -11340,3 +11340,71 @@ not work. The two untracked are a byte-identical copy of committed `tools/w183/`
 
 #134: `MERGEABLE`, `Verify (pinned Node)` **success** on its exact head, local `verify:nosweeps` exit 0 at
 **335 files / 4,638 tests**.
+
+## W215 — three Layer-1 fixes, and a test harness that ran code not on disk
+
+PR #186. Each fix verified still-present at base before changing, each measured separately.
+
+### Fix 1 — the loot shelf, re-keyed, and a bigger finding underneath it
+
+Re-keyed from the content `v1` flag to `permits()`. **The ruleset had to be passed in, not read off
+`world`** — `world` there is the *rival's*, and the function widens the rival's own masks twelve lines
+later, so reading it would have **collapsed the shelf to empty.** `raids.ts` now hands over
+`local.ruleset`.
+
+Measured: **249 → 249 at the shipped opening.** That is *"the identity the old code was relying on, not a
+null"* — it diverges only when the ruleset stops equalling the `v1` set (2×2 → 284, 1×1 → 295, 4×4 → 233).
+
+**And the finding underneath is larger than the fix.** The shelf indexes
+`foreign[(targetId × 12 + index) % pool]`, so it only ever reads indices **12–47** — **36 nodes are ever
+shelved, all `creo-*`.** The gloss's *"this is what makes the other 249 reachable at all"* is off by
+roughly **7×**.
+
+### Fix 2 — the remainder draw, one site of three
+
+Only `portal.ts` was open; **#172 already closes the other two, and better** — `reallocation.ts` gets an
+occupation-level rate pool with per-cohort shares rounded up (**its own note names `portal.ts` as the site
+that inherited the bug**), and `capital.ts` has the floored line *deleted*.
+
+| arm | before | after |
+|---|--:|--:|
+| 20 cohorts × 40, 200 seeds | **0.000** | **8.070** (ideal 8.0) |
+| 8 × 90 | 0.000 | 7.275 (ideal 7.2) |
+| 4 × 400 — **negative control** | 16.000 | **16.000** |
+
+### Fix 3 — my premise was wrong, and the narrow claim is the true one
+
+**`nomen` *is* v1** — four of the twelve cells are `*-nomen`. So "the only vellum-yielding form is not in
+v1" was wrong. The real shape: of **59 `resource-yield` effects, exactly 5 are in v1 cells and all five
+are `*-terram`** (stone-weighted); the one nomen yield node sits in `muto-nomen`, and *muto* is not a v1
+technique. **And vellum is not sourceless — all five territories yield it through labour.**
+
+**The defensible claim is the narrow one: no *magical* vellum source existed in v1.** Grounded the new one
+in `rn-call-by-name` (Rego Nomen, tier 1, no prerequisites) — *"say a thing's name in the imperative and
+have it arrive"* — which already carries `summon`. Tier 1 matters because the sink runs from tick zero.
+
+**Effect, and CI measured it better than the agent could:** its three seeds gave +20/+28/+29% grimoires at
+2,400 ticks; the 200-year gate, 16 replicates × 2 factors × 8 strategies, gives **+30.9% overall (5.70 SE)**
+and **`@archivist` +113% (6.75 SE)** — the book-hoarding strategy more than doubles.
+
+### The one result it refused to explain
+
+**Seven arms rise and `permissive-breadth` falls 60.6% (−6.39 SE).** The agent ran no sweep — this came
+from CI — and **deliberately did not pick a cause**, naming two distinguishable candidates instead: Fix 1
+(that strategy is the only regime where re-keying changes the shelf) or Fix 3 via goal selection, since
+`rn-call-by-name` is now an `apply-magic` target and *a mage casting is a mage not scribing.*
+
+**And it flagged the trap: re-baselining that arm without answering first would pin 189.250 and make the
+fall the new normal** — regenerating a fixture to make a check go green, which is the thing `CLAUDE.md`
+forbids by name.
+
+### `@mm/rules-raid` was missing from vitest's alias table
+
+So a **src-level control ran the `dist` build**, and *"Fix 2's negative control reported 7 green tests
+about code not on disk."* Added, with the incident in the comment. This is the stale-`dist` family again,
+and the third variant tonight: not reading a stale build, not writing into a running measurement, but
+**testing a package whose source the runner could not see.**
+
+**Handoff:** #186 and #170 both take **RNG stream 13**, and `rng-registry-append-only.test.ts` asserts the
+table is **dense from 1**, so skipping is unavailable — whichever merges second renumbers to 14 and
+re-states §6.
