@@ -61,7 +61,7 @@
 
 import type { ContentId, ContentRegistry } from '@mm/content';
 import type { EntityHandle, SimState, StepContext, WorldSchema } from '@mm/sim-core';
-import { createState, rngFromRootSeed } from '@mm/sim-core';
+import { RNG_STREAM, createState, rngFromRootSeed } from '@mm/sim-core';
 import type { Scenario, ScenarioConfig } from '@mm/agent-api';
 import {
   GRANT_BUDGET,
@@ -80,16 +80,23 @@ import {
 import { KnowledgeSubsystem, MASTERY_MAX, MagicGrid } from '@mm/rules-magic';
 import { readRaidTuning } from '@mm/rules-raid';
 import { createMage } from '@mm/rules-world';
-import type { GodConstants, GodTickReport, WorldStepReport } from '@mm/coordination';
+import type {
+  AblationMask,
+  GodConstants,
+  GodTickReport,
+  WorldStepReport,
+} from '@mm/coordination';
 import { defineWorldSimulation, resolveGodContent } from '@mm/coordination';
 
 import type { RulesetAxes } from './content-set.js';
 import {
   contentCatalogue,
   foundingCandidates,
+  seededOpeningAxes,
   scribingTraditionId,
   shippedContent,
   speciesTable,
+  standardOpeningAxes,
   traditionIdNamed,
   v1RulesetAxes,
   worldDeps,
@@ -157,6 +164,27 @@ const DEFAULT_FOUNDING_NODES = 1;
 const DEFAULT_FOUNDING_SPECIES_MASK = 0;
 
 /**
+ * The opening square a universe takes when a sweep names none.
+ *
+ * Zero, meaning **the v1 rectangle** — `contracts.md` §2.2's twelve cells,
+ * three techniques by four forms. It is not a magic number standing in for
+ * `3` and `4`: it selects a different code path, `v1RulesetAxes`, which reads
+ * the rectangle out of the content flags. The day content moves the rectangle,
+ * the default moves with it, and no sweep file has to be edited.
+ */
+const DEFAULT_OPENING_AXIS_COUNT = 0;
+
+/**
+ * Who chooses the opening square when a sweep does not say.
+ *
+ * Zero: **the god chooses**. The owner's sentence is that the square "shouldn't
+ * be hard-coded — that's for the player to decide", and a default of "the RNG
+ * decides" would be the same abdication in a different direction. A seeded
+ * square is still one flag away, and W82's arms take it.
+ */
+const DEFAULT_OPENING_SQUARE_SEEDED = 0;
+
+/**
  * The occupations a founding population is seeded into.
  *
  * Laborers produce the materials, students are what a mage is promoted from, and
@@ -221,6 +249,47 @@ export interface ReferenceOptions {
    */
   readonly foundingSpeciesMask: number;
   /**
+   * Techniques the universe is founded holding, or `0` for the v1 rectangle.
+   *
+   * The **opening square** (`campaign-plan.md`, "The 2×2 opening"). Non-zero
+   * means the square is drawn from the universe's own seed on
+   * `RNG_STREAM.openingSquare` — see {@link seededOpeningAxes} — so that two
+   * universes in one sweep begin on different content and have no queue in
+   * common to walk.
+   *
+   * **Zero is today's universe, byte for byte**, which is what keeps the
+   * committed baselines meaningful and what makes the 3×4 arm of a size sweep a
+   * real control rather than a re-implementation of one. The precedent is
+   * `foundingSpeciesMask`, whose zero means the same thing for the same reason.
+   *
+   * A count without {@link openingFormCount} is refused rather than defaulted:
+   * a 2-technique × 14-form opening is a legitimate square but almost certainly
+   * not what a sweep file that wrote one number meant, and a run that silently
+   * measured it would be recorded as a 2×2.
+   */
+  readonly openingTechniqueCount: number;
+  /** Forms the universe is founded holding, or `0` for the v1 rectangle. */
+  readonly openingFormCount: number;
+  /**
+   * Who chooses the square: `0` the god, non-zero the universe's own seed.
+   *
+   * **Zero is the default because the choice is the player's.** A size names a
+   * square through `standardOpeningAxes` — content order, no draw — so two
+   * universes at one size open on the same content and a size sweep varies size
+   * alone. That is the arm a differentiation measurement wants: the alternative
+   * moves *which* square as well as how big it is, and the two effects cannot
+   * then be separated at any sample size.
+   *
+   * Non-zero is W82's arm: `seededOpeningAxes` draws the square from
+   * `RNG_STREAM.openingSquare`, so every seed in a sweep opens on different
+   * content. That is what a *content-dimensionality* measurement wants and it
+   * is why the path is kept rather than replaced.
+   *
+   * Read only when both counts are non-zero. With no counts there is no square
+   * to choose and the universe takes the v1 rectangle either way.
+   */
+  readonly openingSquareSeeded: number;
+  /**
    * Founding grants the god may make, before anything is discovered.
    *
    * Absent means the shipped `founding-grant-budget-start`, which is the point:
@@ -254,6 +323,9 @@ export const REFERENCE_FACTOR_IDS: readonly string[] = Object.freeze([
   'foundingMages',
   'foundingNodes',
   'foundingSpeciesMask',
+  'openingTechniqueCount',
+  'openingFormCount',
+  'openingSquareSeeded',
   'tradition',
   'grantBudgetStart',
   'grantAccrualNodes',
@@ -333,6 +405,9 @@ export function referenceOptions(config: ScenarioConfig): ReferenceOptions {
     foundingMages: readCount(config, 'foundingMages', DEFAULT_FOUNDING_MAGES),
     foundingNodes: readCount(config, 'foundingNodes', DEFAULT_FOUNDING_NODES),
     foundingSpeciesMask: readCount(config, 'foundingSpeciesMask', DEFAULT_FOUNDING_SPECIES_MASK),
+    openingTechniqueCount: readCount(config, 'openingTechniqueCount', DEFAULT_OPENING_AXIS_COUNT),
+    openingFormCount: readCount(config, 'openingFormCount', DEFAULT_OPENING_AXIS_COUNT),
+    openingSquareSeeded: readCount(config, 'openingSquareSeeded', DEFAULT_OPENING_SQUARE_SEEDED),
     grantBudgetStart: readOptionalCount(config, 'grantBudgetStart'),
     grantAccrualNodes: readOptionalCount(config, 'grantAccrualNodes'),
     grantBudgetCap: readOptionalCount(config, 'grantBudgetCap'),
@@ -403,6 +478,64 @@ export function referenceContent(
 }
 
 /**
+ * The square this run opens on, and the founding grants it makes available.
+ *
+ * **One place decides what a universe starts holding**, and it decides it from
+ * the axis masks alone — there is no second notion of "is this cell open" here
+ * or anywhere else. `permits()` in `@mm/state` reads exactly these two numbers,
+ * so a granted node, a legal cast, a research frontier and the agent's legality
+ * mask all agree by construction rather than by three code paths staying in
+ * step.
+ *
+ * **The god-chosen and seed-chosen openings are the same shape.** A size names
+ * a square through `standardOpeningAxes`, which resolves it to content ids and
+ * hands them to `explicitOpeningAxes` — the play verb, and now the default
+ * path; `openingSquareSeeded` asks for W82's drawn square instead. Both arrive
+ * here as a {@link RulesetAxes}, so the scenario layer expresses both without a
+ * mode flag reaching the rules path.
+ *
+ * **Three sizes, three code paths, and the largest two agree by construction.**
+ * No counts is `v1RulesetAxes`; the counts of the v1 rectangle itself is
+ * `standardOpeningAxes` of the same size, and the two produce identical masks
+ * because the standard order puts the rectangle's own axes first. That is
+ * asserted in `test/unit/opening-square.test.ts`, which is what makes the
+ * full-size arm of a sweep a control rather than a second implementation of
+ * one.
+ */
+function resolveOpeningSquare(
+  content: ReferenceContent,
+  options: ReferenceOptions,
+  rng: StepContext['rng'],
+): { readonly axes: RulesetAxes; readonly foundingNodeIds: readonly ContentId[] } {
+  const { openingTechniqueCount, openingFormCount } = options;
+  if (openingTechniqueCount === 0 && openingFormCount === 0) {
+    // The default path, and it must stay draw-free. Touching the opening-square
+    // stream here would still not disturb any other subsystem — streams are
+    // split — but it would make the *seeded* arms depend on how many draws the
+    // control arm happened to take, and the arms would stop being nested.
+    return { axes: content.axes, foundingNodeIds: content.foundingNodeIds };
+  }
+  if (openingTechniqueCount === 0 || openingFormCount === 0) {
+    throw new Error(
+      `An opening square was asked for with ${String(openingTechniqueCount)} techniques and ` +
+        `${String(openingFormCount)} forms. Naming one axis and leaving the other at zero would ` +
+        'silently open the whole of the unnamed axis — a 2 × 14 opening recorded as a 2 × 2. ' +
+        'Give both counts, or neither for the v1 rectangle.',
+    );
+  }
+  const size = { techniqueCount: openingTechniqueCount, formCount: openingFormCount };
+  // The god's square draws nothing. That is the whole reason the default is
+  // this branch and not the other one: a standard opening touches no RNG
+  // stream, so it can never re-roll a subsystem and can never force the
+  // re-baseline event `contracts.md` §6 records against stream additions.
+  const axes =
+    options.openingSquareSeeded === 0
+      ? standardOpeningAxes(content.registry, size)
+      : seededOpeningAxes(content.registry, size, rng.stream(RNG_STREAM.openingSquare));
+  return { axes, foundingNodeIds: foundingCandidates(content.registry, axes) };
+}
+
+/**
  * Builds the tick-zero state: a universe, an academy, six species, and whatever
  * founding knowledge the options ask for.
  *
@@ -434,9 +567,11 @@ export function buildReferenceState(input: {
       source.actorStream(subsystemId, FOUNDING_TICK, actorKey),
   };
 
+  const opening = resolveOpeningSquare(content, options, rng);
+
   const universe = createUniverse(state, {
-    permittedTechniques: content.axes.permittedTechniques,
-    permittedForms: content.axes.permittedForms,
+    permittedTechniques: opening.axes.permittedTechniques,
+    permittedForms: opening.axes.permittedForms,
     edictBudget: STARTING_EDICT_BUDGET,
     traditionId: content.traditionId,
     // Zero player input: favor, worship and prestige are `god-agency`'s to move,
@@ -526,7 +661,20 @@ export function buildReferenceState(input: {
     }
   }
 
-  const seeded = content.foundingNodeIds.slice(0, options.foundingNodes);
+  // One list, used twice, and it has to be one list.
+  //
+  // The opening square supplies the founding nodes — `opening.foundingNodeIds`
+  // rather than `content.foundingNodeIds`, because a universe founded on a
+  // sub-rectangle must be seeded from inside that rectangle or its first grants
+  // name cells it cannot legally use.
+  //
+  // The grant budget then counts *these* nodes as already-seeded, so that its
+  // accrual does not read a god's own grant as a discovery the mages made. Two
+  // branches added those two readers independently and the merge briefly had
+  // them disagree — the budget counting `content`'s list while the grants came
+  // from `opening`'s. That would have credited a universe with discoveries it
+  // never made, in exactly the amount the two lists differ.
+  const seeded = opening.foundingNodeIds.slice(0, options.foundingNodes);
   grantFoundingKnowledge(state, {
     founders,
     nodeIds: seeded,
@@ -700,6 +848,26 @@ export interface ReferenceScenarioOptions {
    * shipped runs with it `true`.
    */
   readonly telemetry?: boolean;
+  /**
+   * §9's ablation mask for this run, or absent for the control arm.
+   *
+   * Per **scenario**, not per `ReferenceContent`, and that placement is the
+   * whole of the fix. A `ReferenceContent` is resolved once and memoized for the
+   * life of a worker process — `CONTENT_BY_TRADITION` in `executor.ts` — so a
+   * mask folded into `content.deps` would be shared by every subsequent run the
+   * worker executed, and one ablation arm would silently neutralize the arms
+   * scheduled after it. `referenceScenario` is already built once per run, for
+   * exactly the reasons its own doc comment gives, so it is the object whose
+   * lifetime matches a mask's.
+   *
+   * Absent is strictly not the same as {@link NO_ABLATION} here: absent leaves
+   * `WorldStepDeps.ablation` undefined, so every control run, every golden
+   * replay fixture and every committed baseline takes the byte-identical branch
+   * at `world-step.ts`'s three `deps.ablation === undefined` sites. The two are
+   * arithmetically equivalent and only one of them is a claim worth making on a
+   * path with baselines attached.
+   */
+  readonly ablation?: AblationMask;
 }
 
 /**
@@ -716,7 +884,9 @@ export function referenceScenario(
   content: ReferenceContent = referenceContent(),
   options: ReferenceScenarioOptions = {},
 ): ReferenceRun {
-  const simulation = defineWorldSimulation(content.deps);
+  const simulation = defineWorldSimulation(
+    options.ablation === undefined ? content.deps : { ...content.deps, ablation: options.ablation },
+  );
   const raiding = options.raids ?? true;
 
   // Per run, like the report closures and the raid log, and installed **first**
@@ -785,6 +955,11 @@ export function referenceScenario(
       schema: simulation.schema,
       onRaid: (record) => records.push(record),
       raidsSoFar: () => records,
+      // Per run, exactly like the mask handed to `defineWorldSimulation` above.
+      // Without this line the world loop is ablatable and raids are not, so an
+      // arm neutralizing a combat primitive would neutralize nothing and report
+      // a null result for a wire that was live the whole time.
+      ...(options.ablation === undefined ? {} : { ablation: options.ablation }),
     }),
   ]);
 

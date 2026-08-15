@@ -460,3 +460,37 @@ export {
   scoreBalance,
   varietyOf,
 } from './tuner.js';
+
+export type {
+  Archive,
+  Phase,
+  PhaseObservation,
+  PhasedArchive,
+  PhasedCandidate,
+  ArchiveCell,
+  BehaviourAxis,
+  CandidateOutcome,
+  CellStatus,
+  MetaShape,
+  NullOutcomes,
+  NullRung,
+} from './quality-diversity.js';
+export {
+  CELL_STATUS,
+  META_SHAPE,
+  MIN_CELLS_TO_JUDGE_SHAPE,
+  shapeOf,
+  PHASE,
+  PHASE_BOUNDS,
+  PHASE_WEIGHT,
+  foldPhasedArchive,
+  phaseOfTick,
+  MAX_ELITE_ILLEGAL_RATE,
+  NULL_LADDER,
+  NULL_RUNG,
+  binOf,
+  clearsLadder,
+  coordinateOf,
+  foldArchive,
+  nullBarOf,
+} from './quality-diversity.js';
