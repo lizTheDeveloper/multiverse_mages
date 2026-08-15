@@ -106,9 +106,25 @@ const BLIND_ARM_LINES: Readonly<Record<string, readonly string[]>> = {
   // knowledge line sits close enough to zero that it will cross this threshold
   // on any re-roll, in either direction, and that is a fact about the strategy
   // rather than about the tolerance.
+  //
+  // **Still two since W116, and they are two different lines.** Both of w108's
+  // entries left: `denial-warden`'s mages can now affiliate, so its
+  // `referenceNodesKnown` goes 4.125 → 6.875 and its `referenceGrimoires`
+  // 44 → 217.5, and a *level* that is no longer within a rounding error of zero
+  // has a tolerance that no longer exceeds it. Two `…FinalQuarter` lines took
+  // their place, at −1.5 against tolerance 1.91 and −0.625 against 0.650.
+  //
+  // The replacement is the same fact wearing a different metric.
+  // `referenceNodesGainedFinalQuarter` is a **derivative** — nodes gained in the
+  // last quarter of a run — so its natural value is near zero for any arm at
+  // equilibrium, and near zero is exactly where a tolerance outruns a mean. The
+  // lesson w108 wrote down generalises: it is not that `denial-warden` is
+  // special, it is that a series whose honest answer is "about zero" is blind by
+  // construction, and which series that is moves whenever a mechanic changes
+  // what a strategy accumulates.
   'balance/baselines/balance-gate-agency-v1.baseline.json': [
-    'referenceNodesGained@denial-warden',
-    'referenceNodesKnown@denial-warden',
+    'referenceNodesGainedFinalQuarter@denial-warden',
+    'referenceNodesGainedFinalQuarter@narrow-depth',
   ],
   // Ten since w107, up from seven, and the three that joined are all the same
   // shape: an arm whose *spread* widened rather than an arm that stopped

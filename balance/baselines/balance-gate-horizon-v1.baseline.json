@@ -1,7 +1,7 @@
 {
   "baselineFormatVersion": 1,
   "configurationHash": "aa74eef219106c40a8253e9a23c28911cd09f244ce05cd104ee3bd0c8cbea191",
-  "contentHash": "af9380c585f20559c996d624a2548a660324241313864f764859e5a265e2828f",
+  "contentHash": "78efa053c337d8f4dd911372b8a7eefe6231a78679380364be751f9864585da0",
   "kind": "gate",
   "metrics": [
     {"aggregation":"mean","definitionVersion":1,"metricId":"referenceGrimoires","sampleSize":200,"standardError":6.531556640101741,"standardErrorMethod":"stratified-by-cell","status":"measured","tolerance":19.594669920305222,"unit":"grimoires","value":289.705},
@@ -16,7 +16,9 @@
     {"aggregation":"mean","definitionVersion":1,"metricId":"referencePopulationChange","sampleSize":200,"standardError":1.1875802872966148,"standardErrorMethod":"stratified-by-cell","status":"measured","tolerance":3.5627408618898446,"unit":"people","value":66.58}
   ],
   "notes": [
-    "At 240 ticks the writing still wins. At the 600-tick founding arm it does not: upkeepOwed passes upkeepPaid around tick 300 and 577 shelved instances are annihilated, taking the grimoire count from 478 to 10. Brake 4 and vision 6a are untuned on both sides and nobody has ever swept the pair, because until affiliation was wired no universe kept a library deep enough to owe a bill it could not pay."
+    "The universe remains degenerate in the ways integration round 2 recorded, and this change closes none of them: the v1 rectangle still cannot make food, and every ruleset comparison taken inside it is still an argument about stone. What this change does close is one wire — mages a universe promotes for itself now join institutions, so scribing runs on the living population instead of on the six mages the scenario founds. That is a mechanism becoming reachable, not a universe becoming balanced.",
+    "At 240 ticks the writing still wins. On the 600-tick founding arm it does not: libraryUpkeepOwed passes libraryUpkeepPaid around tick 250 and 577 shelved instances are annihilated, taking the grimoire count from 478 to 10 and stopping scribing entirely after tick 240. Brake 4 and vision 6a are untuned on both sides and the pair has never been swept, because until affiliation was wired no universe kept a library deep enough to owe a bill it could not pay.",
+    "NO GOLDEN FIXTURE WAS REGENERATED and npm run goldens:regen was not run. Measured 2026-08-14 on w116/complete-affiliation merged with origin/main at 0349240. balance-gate-ascension-v1 was deliberately NOT re-recorded: it is the multi-minute gate, it is not required to merge, and CI is the better witness for it."
   ],
   "provenance": {
     "buildVersion": "0.3.0",
@@ -26,7 +28,7 @@
     "observationSchemaVersion": 1,
     "rngRegistryHash": "2bc5d131f2a7423ce439ee6ca933d74316f48eac1d214b23259aa4559b18c2c9"
   },
-  "rationale": "completeAffiliation gained a production caller and capacity became a bound; the longer horizon is where the library-upkeep interaction this fix reaches for the first time shows up",
+  "rationale": "completeAffiliation gained a production caller and capacity became a bound, so mages a universe promotes for itself now join institutions and may scribe. THIS FILE IS A MEASUREMENT, NOT A BALANCE CLAIM: release-plan.md forbids a balance claim before 0.5.0 and nothing here is one. Re-recorded rather than reported because provenance.contentHash moved underneath it -- apply-magic's two autonomy scalars and W116's two affiliation opportunities met in one merge -- and across two content hashes a delta is a category error rather than a regression.",
   "rootSeed": 20260811,
   "runCount": 200,
   "supersededDeltas": [

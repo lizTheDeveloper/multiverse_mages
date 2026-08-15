@@ -1,7 +1,7 @@
 {
   "baselineFormatVersion": 1,
   "configurationHash": "4e4532ef15feeb3b64f123b87ad060bc3318768c915c8ebf6097b5958799b1d0",
-  "contentHash": "27adf0381569d9359e9a332c1ad57b4c8d3965fb331c18b0d571d852ce22793a",
+  "contentHash": "876ad6a66dde3b89a22cb3d90d97294f1846b0ac836593a9170f6b4cb547f83e",
   "kind": "gate",
   "metrics": [
     {"aggregation":"mean","definitionVersion":1,"metricId":"referenceGrimoires","sampleSize":200,"standardError":4.529004711133494,"standardErrorMethod":"stratified-by-cell","status":"measured","tolerance":13.587014133400482,"unit":"grimoires","value":411.72},
@@ -15,8 +15,9 @@
     {"aggregation":"mean","definitionVersion":1,"metricId":"referencePopulationChange","sampleSize":200,"standardError":0.42733094282286366,"standardErrorMethod":"stratified-by-cell","status":"measured","tolerance":1.2819928284685909,"unit":"people","value":-14.655}
   ],
   "notes": [
-    "The affiliated-mage count on this position ran 6-5-4-3-2-1 over 200 world years before this change and now tracks the living population, filling the academy's 64 seats exactly by tick 2400. Every knowledge series moves as a consequence.",
-    "contentRevision moved twice: apply-magic's two scalars and W116's two affiliation opportunities met in one merge. A delta across two content hashes is a category error, which is why this is a re-record and not a reported regression."
+    "The universe remains degenerate in the ways integration round 2 recorded, and this change closes none of them: the v1 rectangle still cannot make food, and every ruleset comparison taken inside it is still an argument about stone. What this change does close is one wire — mages a universe promotes for itself now join institutions, so scribing runs on the living population instead of on the six mages the scenario founds. That is a mechanism becoming reachable, not a universe becoming balanced.",
+    "The affiliated-mage count on this position ran 6-5-4-3-2-1 over 200 world years before this change and now tracks the living population, filling the founding academy's 64 seats exactly by tick 2400. Every knowledge series moves as a consequence.",
+    "NO GOLDEN FIXTURE WAS REGENERATED and npm run goldens:regen was not run. Measured 2026-08-14 on w116/complete-affiliation merged with origin/main at 0349240. balance-gate-ascension-v1 was deliberately NOT re-recorded: it is the multi-minute gate, it is not required to merge, and CI is the better witness for it."
   ],
   "provenance": {
     "buildVersion": "0.3.0",
@@ -26,7 +27,7 @@
     "observationSchemaVersion": 1,
     "rngRegistryHash": "2bc5d131f2a7423ce439ee6ca933d74316f48eac1d214b23259aa4559b18c2c9"
   },
-  "rationale": "completeAffiliation gained a production caller and capacity became a bound; mages a universe promotes for itself now join institutions, so scribing runs on the living population instead of on the six founders",
+  "rationale": "completeAffiliation gained a production caller and capacity became a bound, so mages a universe promotes for itself now join institutions and may scribe. THIS FILE IS A MEASUREMENT, NOT A BALANCE CLAIM: release-plan.md forbids a balance claim before 0.5.0 and nothing here is one. Re-recorded rather than reported because provenance.contentHash moved underneath it -- apply-magic's two autonomy scalars and W116's two affiliation opportunities met in one merge -- and across two content hashes a delta is a category error rather than a regression.",
   "rootSeed": 20260811,
   "runCount": 200,
   "supersededDeltas": [

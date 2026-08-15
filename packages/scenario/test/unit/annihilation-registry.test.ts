@@ -137,6 +137,20 @@ const REGISTERED: ReadonlyMap<string, string> = new Map([
       'first one to keep libraries deep enough to owe upkeep it cannot pay.',
   ],
 
+  [
+    'terms:shareOfDeviation',
+    'A scoring term, and the floor is a rounding step rather than a lost ' +
+      'quantity: it converts how far a trait sits from `fp(1024)` neutral into ' +
+      'a signed share, so a value one or two units off neutral scores 0 rather ' +
+      'than a fraction of a point. Nothing accumulates and nothing can stall — ' +
+      'the result is compared against other goals in the same tick and ' +
+      '`boundTerm` clamps it anyway. `floorDiv` rather than a shift precisely ' +
+      'so it rounds the same way for both signs, which the site explains. ' +
+      '**Newly reached rather than newly written** — W116 made `affiliate` ' +
+      'score an `ambition` term only on a transfer, so the ternary reaches ' +
+      'this function on ticks where the old unconditional call did not.',
+  ],
+
   // ---- Handled at the site. ----
   [
     'worship:laggedWorship',

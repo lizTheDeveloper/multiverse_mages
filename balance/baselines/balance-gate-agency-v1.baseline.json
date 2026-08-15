@@ -1,7 +1,7 @@
 {
   "baselineFormatVersion": 1,
   "configurationHash": "1b73f7e27b0bf2eb582d9094c5747ebd29663c6f5991847ea2178fccd3304b28",
-  "contentHash": "aae86df1fbbc129342f0aadeab8bbd125c187200c0e6d55502c18066088c66d2",
+  "contentHash": "0d8c92935bf69cb4dec1ee6561ce6f946f8c3aeae70c3b3796301cc9b304808c",
   "kind": "gate",
   "metrics": [
     {"aggregation":"mean","definitionVersion":1,"metricId":"referenceGrimoires","sampleSize":64,"standardError":13.830711269444894,"standardErrorMethod":"stratified-by-cell","status":"measured","tolerance":41.492133808334685,"unit":"grimoires","value":264.34375},
@@ -96,7 +96,9 @@
     {"aggregation":"mean","definitionVersion":1,"metricId":"referencePopulationChange@worship-maximizer","sampleSize":8,"standardError":6.607287643201255,"standardErrorMethod":"stratified-by-cell","status":"measured","tolerance":19.821862929603768,"unit":"people","value":66.5}
   ],
   "notes": [
-    "Capacity is a bound and not a spreading policy. On the founding arm at 600 ticks, 22 living mages sit in one academy of 64 seats while 90 completed universities stand empty — universityPreference has one answer for the whole universe and there are not enough scholars to fill it. Spreading is a preference-policy question and belongs to 0.5.0."
+    "The universe remains degenerate in the ways integration round 2 recorded, and this change closes none of them: the v1 rectangle still cannot make food, and every ruleset comparison taken inside it is still an argument about stone. What this change does close is one wire — mages a universe promotes for itself now join institutions, so scribing runs on the living population instead of on the six mages the scenario founds. That is a mechanism becoming reachable, not a universe becoming balanced.",
+    "Capacity is a bound and not a spreading policy. On the founding arm at 600 ticks, 22 living mages sit in one academy of 64 seats while 90 completed universities stand empty -- universityPreference has one answer for the whole universe and there are not enough scholars to fill even one. Spreading is a preference-policy question and belongs to 0.5.0.",
+    "NO GOLDEN FIXTURE WAS REGENERATED and npm run goldens:regen was not run. Measured 2026-08-14 on w116/complete-affiliation merged with origin/main at 0349240. balance-gate-ascension-v1 was deliberately NOT re-recorded: it is the multi-minute gate, it is not required to merge, and CI is the better witness for it."
   ],
   "provenance": {
     "buildVersion": "0.3.0",
@@ -106,7 +108,7 @@
     "observationSchemaVersion": 1,
     "rngRegistryHash": "2bc5d131f2a7423ce439ee6ca933d74316f48eac1d214b23259aa4559b18c2c9"
   },
-  "rationale": "completeAffiliation gained a production caller and capacity became a bound; every strategy's knowledge series moves because scribing is no longer confined to the six founding mages",
+  "rationale": "completeAffiliation gained a production caller and capacity became a bound, so mages a universe promotes for itself now join institutions and may scribe. THIS FILE IS A MEASUREMENT, NOT A BALANCE CLAIM: release-plan.md forbids a balance claim before 0.5.0 and nothing here is one. Re-recorded rather than reported because provenance.contentHash moved underneath it -- apply-magic's two autonomy scalars and W116's two affiliation opportunities met in one merge -- and across two content hashes a delta is a category error rather than a regression.",
   "rootSeed": 20260811,
   "runCount": 64,
   "supersededDeltas": [
