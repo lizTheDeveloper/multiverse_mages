@@ -12509,3 +12509,44 @@ Two consequences worth stating plainly:
 The rule: **when a checker has a category for "the input is broken", that category has to
 survive to the output.** Computing it and then printing it as the ordinary negative is the
 same defect as not computing it.
+
+## W235 — The replication kills half of W234, and a null strategy ascends
+
+[executed, 2026-08-15, `w233/stamp-the-search-archive` @ 9f967b94, clean tree,
+`--seeds 4` at `--search-seed` 20260813 / 40260901 / 77771234]
+
+W234's five rows all shared one `--search-seed`. Repeating the two decisive horizons at
+two further seeds:
+
+| search seed | `--ticks 900`  | `--ticks 1350`          |
+|-------------|----------------|-------------------------|
+| 20260813    | dead, 0 asc    | wide, width **2**, 6 asc |
+| 40260901    | dead, 0 asc    | **dead, width 0**, 4 asc |
+| 77771234    | dead, 0 asc    | wide, width **1**, 6 asc |
+
+**What survives.** *Dead at 900 with zero ascensions* replicates 3 of 3. The horizon
+finding holds: a sweep at or near `ascension-min-tick` reports `dead` for a reason that is
+not about the strategies.
+
+**What does not.** W234 said *"width climbs with the horizon and has not plateaued."* At a
+**fixed** horizon of 1350, width is 2, 0 and 1 on three seeds. The curve in W234 was one
+seed's, and reading it as the game's was exactly the error the seed-qualification was
+added to guard against — the qualification named the risk correctly and I still had to run
+the seeds to learn the answer. **Naming a caveat is not measuring it.**
+
+**And the seed that disagrees says something worth more than the curve did.** Seed
+40260901 at 1350 is `dead` with **4 ascensions**. Runs *did* reach the win condition and
+still no cell was occupied — because occupancy requires beating the null ladder, and
+`clearsLadder` is strictly greater than the bar. So on that seed **a null ascended too**:
+`idle-then-declare` reached the win condition as often as the strategies did.
+
+That is a real balance finding and not a harness artifact. Ascension is priced at zero —
+`starting-position-is-broke` in `strategies.ts` says so directly — so *declare and wait*
+is a live strategy, and on one seed in three it is as good as playing. It also confirms
+the W234 discriminator is the right one and better than I argued: `dead` + 0 ascensions is
+a horizon; `dead` + n ascensions is the nulls matching the field, which is a genuine
+verdict. The two cases are distinguishable and currently print identically.
+
+The rule, again and more expensively: **a measurement that varies a single parameter has
+measured that parameter, not the system.** W234 varied `--ticks` five times and called the
+result a property of the game.
