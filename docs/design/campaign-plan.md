@@ -1167,7 +1167,13 @@ margin, and W9 separately measured **9.1–12.4M favor discarded per run** — t
 overflows.
 
 So every verb is priced, no price binds, permit-everything dominates, and every mechanic built
-inside that ceiling is a decision the winner never has to make. That is why the compositional graph,
+inside that ceiling is a decision the winner never has to make.
+
+> **⚠ Superseded in part by W175.** *"No price binds"* was measured on bots with **no value function** —
+> no pooled strategy reads cost, favor or affordability, and **price is not in the observation at all**.
+> The arithmetic here holds; the conclusion that pricing is the wrong lever does not, because the
+> instrument could not have detected a cost response. Do not cite this paragraph without W175.
+> `axis-price-sweep.md`'s title and summary carry the same unhedged claim. That is why the compositional graph,
 the cost curves, the rituals and the timing rule each measured a null against `permit-then-idle`.
 
 And the reason favor does not bind is upstream of favor again: **worship accrues passively.** W16
