@@ -1,0 +1,380 @@
+<!doctype html>
+<!--
+  Multiverse Mages — the god's light.
+  Copyright (C) 2026 Ann Kelner
+  SPDX-License-Identifier: AGPL-3.0-or-later
+
+  THE RULE: cyan is the god — potential, affordance, and the moment of touch.
+  The fourteen form hues stay the colour of magic that exists in the world.
+  Nothing glows that the god cannot currently do, so absence of light is the
+  legality mask, which is what sound-design §2.2 already makes the deny sound
+  do. That keeps art-plan §2's "magic reads as the only saturated thing on
+  screen" true, because the god is not part of the world.
+
+  This page used to compare three grounds — vellum with bloom, vellum with dark
+  insets, and full dark — as competing directions. Two of those are just light
+  mode and dark mode and the hybrid was answering a question nobody asked, so
+  the comparison is now a theme: vellum is light, ink is dark, and the page
+  demonstrates the same five states in whichever one you are looking at.
+
+  What survived the collapse is the finding underneath it. On a dark ground
+  charge is light emitted from the control; on vellum it cannot be, because a
+  cyan fill bright enough to read measured 1.01:1 against latent — a hue
+  difference with no luminance at all. So on paper charge blooms *downward*:
+  ink drawn to the control rather than light coming off it. That divergence
+  lives in ui/shared/theme.css and nowhere else.
+
+  Serve with `npm run ui`, then open /ui/glow/ and use the theme control.
+
+  KNOWN COST: the page is now fed from a real recorded session, and feeding it
+  cost a rule. The five states include *latent* (the god could, but not now) and
+  *denied* (masked), and contracts.md §4.2 gives one bit for both — mask.ts
+  masks an unaffordable action with the same zero it uses for an impossible one.
+  Separating them needs the action's price, and pricing is a rule the client is
+  not allowed to hold. So the reconstruction is isolated in one function named
+  after what it does wrong, ui/shared/session.js's reconstructedCharge, and
+  every control it touches is marked. The fix is a reason channel on the mask.
+-->
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Multiverse Mages — the god's light</title>
+<link rel="stylesheet" href="../shared/theme.css">
+
+<style>
+  .wrap { max-width: 74rem; margin: 0 auto; padding: 1.9rem 1.25rem 5rem; }
+  .eyebrow { font: 11px var(--mono); letter-spacing: .16em; text-transform: uppercase; color: var(--god); }
+  h1 { font: 400 clamp(1.7rem, 3.4vw, 2.5rem)/1.08 var(--serif); margin: .35rem 0 .5rem; letter-spacing: -.015em; }
+  .lede { color: var(--soft); max-width: 66ch; margin: 0 0 .45rem; }
+  .lede b { color: var(--god); font-weight: 600; }
+  .lede em { color: var(--ink); font-style: italic; }
+  code { font: 12.5px var(--mono); color: var(--ink); }
+
+  .topbar { display: flex; align-items: center; gap: 1rem; flex-wrap: wrap; margin: 1.3rem 0 1.6rem;
+    padding: .7rem .85rem; background: var(--panel); border: 1px solid var(--edge); border-radius: 4px; }
+  .topbar .k { font: 10px var(--mono); letter-spacing: .13em; text-transform: uppercase; color: var(--faint); }
+  .topbar .now { font: 11px var(--mono); color: var(--soft); }
+  .topbar .now b { color: var(--ink); }
+  .topbar .spacer { flex: 1; }
+
+  /* ---------------------------------------------- the five states */
+  .taxo { display: grid; grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr)); gap: .8rem; margin-bottom: 1.8rem; }
+  .tx { border: 1px solid var(--edge); border-radius: 4px; padding: .8rem .85rem; background: var(--panel); }
+  .tx .demo { height: 40px; border-radius: 3px; margin-bottom: .6rem; display: flex; align-items: center;
+    justify-content: center; font: 10px var(--mono); letter-spacing: .14em; text-transform: uppercase; }
+  .tx .n { font: 11px var(--mono); letter-spacing: .12em; text-transform: uppercase; color: var(--ink); }
+  .tx .d { font-size: .82rem; color: var(--soft); margin-top: .2rem; line-height: 1.45; }
+
+  .d-latent  { border: 1px solid var(--ctl-latent-border); background: var(--ctl-latent-bg); color: var(--ctl-latent-fg); }
+  .d-charged { border: 1px solid var(--ctl-charged-border); background: var(--ctl-charged-bg);
+               color: var(--ctl-charged-fg); box-shadow: var(--glow-charged); }
+  .d-touch   { border: 1px solid var(--ctl-charged-border); background: var(--ctl-charged-bg);
+               color: var(--ctl-charged-fg); box-shadow: var(--glow-strong); }
+  .d-world   { border: 1px solid var(--limen); color: var(--limen);
+               background: color-mix(in srgb, var(--limen) 14%, transparent); box-shadow: var(--glow-form); }
+  .d-denied  { border: 1px dashed var(--ctl-denied-border); background: transparent; color: var(--ctl-denied-fg); }
+
+  /* ---------------------------------------------- the live panel */
+  .panel { border: 1px solid var(--edge); border-radius: 5px; background: var(--panel); overflow: hidden; }
+  .phead { padding: .75rem .9rem; border-bottom: 1px solid var(--edge); display: flex; align-items: baseline; gap: .6rem; }
+  .phead .t { font: 400 1.1rem var(--serif); }
+  .phead .s { margin-left: auto; font: 10px var(--mono); letter-spacing: .1em; text-transform: uppercase; color: var(--faint); }
+  .pbody { padding: 1rem .9rem 1.1rem; display: flex; flex-direction: column; gap: .9rem; }
+
+  .favor { display: flex; align-items: center; gap: .55rem; }
+  .favor .k { font: 10px var(--mono); letter-spacing: .12em; text-transform: uppercase; color: var(--faint); }
+  .favor .track { flex: 1; height: 6px; border-radius: 3px; background: var(--sunk); position: relative; overflow: hidden; }
+  .favor .fill { position: absolute; inset: 0 auto 0 0; border-radius: 3px; background: var(--god);
+    box-shadow: var(--glow-soft); transition: width 320ms ease; }
+  .favor .v { font: 12px var(--mono); font-variant-numeric: tabular-nums; min-width: 3.6rem; text-align: right; color: var(--soft); }
+  .pulse { width: 9px; height: 9px; border-radius: 50%; background: var(--god); flex: none; }
+  @keyframes beat { 0%,100% { box-shadow: none; opacity: .7 } 50% { box-shadow: var(--glow-soft); opacity: 1 } }
+  .pulse { animation: beat 2.4s ease-in-out infinite; }
+
+  .rowlab { font: 10px var(--mono); letter-spacing: .12em; text-transform: uppercase; color: var(--faint); }
+  .verbs { display: flex; gap: .5rem; flex-wrap: wrap; }
+
+  /* A control whose state the read path did not supply. The client had to price
+     the action to tell latent from denied, and a reader is entitled to know
+     which of these lights is the contract talking and which is us guessing. */
+  .ctl[data-recon="true"] { position: relative; }
+  .ctl[data-recon="true"]::after { content: "†"; position: absolute; top: 1px; right: 3px;
+    font-size: 10px; color: var(--warn); }
+  .reconkey { font: 11px var(--mono); color: var(--faint); margin-top: .1rem; }
+  .reconkey b { color: var(--warn); }
+
+  .cells { display: flex; gap: .4rem; flex-wrap: wrap; }
+  .cellchip { font: 10px var(--mono); letter-spacing: .07em; text-transform: uppercase; padding: .42rem .55rem;
+    border-radius: 3px; border: 1px solid currentColor; }
+  .cellchip[data-live="true"] { background: color-mix(in srgb, currentColor 13%, transparent); box-shadow: var(--glow-form); }
+  .cellchip[data-live="false"] { opacity: .45; border-style: dashed; box-shadow: none; }
+  .c-limen { color: var(--limen) } .c-mentem { color: var(--mentem) }
+  .c-nomen { color: var(--nomen) } .c-terram { color: var(--terram) }
+
+  .measured { border-top: 1px solid var(--edge); padding: .7rem .9rem .8rem;
+    font: 11px var(--mono); line-height: 1.7; color: var(--faint); }
+  .measured b { color: var(--ink); }
+  .measured .pass { color: var(--ok); font-weight: 700; }
+  .measured .fail { color: var(--loss); font-weight: 700; }
+
+  .note { margin-top: 2.4rem; border-top: 1px solid var(--edge); padding-top: 1.2rem; }
+  .note h2 { font: 400 1.35rem var(--serif); margin: 0 0 .5rem; }
+  .note p { color: var(--soft); max-width: 74ch; margin: 0 0 .75rem; }
+  .note b { color: var(--ink); font-weight: 600; }
+  .note .hot { color: var(--god); }
+  footer { margin-top: 2rem; padding-top: .9rem; border-top: 1px solid var(--edge);
+    color: var(--faint); font: 11px var(--mono); line-height: 1.8; }
+</style>
+
+<div class="wrap">
+  <div class="eyebrow">Multiverse Mages · light system · art-plan §2 · sound-design §2.2</div>
+  <h1>The god's light</h1>
+  <p class="lede">One rule: <b>cyan is the god — potential, affordance, and the moment of touch.</b>
+  The fourteen form hues stay the colour of magic that exists in the world, and <em>nothing glows that
+  the god cannot currently do</em>, so absence of light is the legality mask rather than a red warning.</p>
+  <p class="lede">Two themes, not three grounds. Vellum is light and ink is dark; the hybrid this page
+  used to compare was answering a question nobody asked. <b>Switch the theme and watch the charged
+  state invert</b> — on ink it emits light, on paper it blooms downward.</p>
+
+  <div class="topbar">
+    <span class="k">theme</span>
+    <span id="themehost"></span>
+    <span class="now">showing <b id="nowv">—</b></span>
+    <span class="spacer"></span>
+    <span class="k"><label for="tick">tick</label></span>
+    <input id="tick" type="range" min="0" max="0" value="0" step="1" style="flex:0 1 16rem">
+    <span class="now"><b id="tickv">0</b> / <span id="tickmax">0</span></span>
+  </div>
+
+  <div id="srchost" style="margin:-.8rem 0 1.6rem"></div>
+
+  <div class="taxo">
+    <div class="tx"><div class="demo d-latent">latent</div><div class="n">Latent</div>
+      <div class="d">The god could do this, but not now — unaffordable, or its preconditions are unmet.</div></div>
+    <div class="tx"><div class="demo d-charged">charged</div><div class="n">Charged</div>
+      <div class="d">Legal and affordable this tick. The mask says yes.</div></div>
+    <div class="tx"><div class="demo d-touch">touch</div><div class="n">Touch</div>
+      <div class="d">The instant of intervention. A flare that decays; never a steady state.</div></div>
+    <div class="tx"><div class="demo d-world">world</div><div class="n">World magic</div>
+      <div class="d">A live cell in its form's own hue. Never cyan — this is not the god, it is what mages have.</div></div>
+    <div class="tx"><div class="demo d-denied">denied</div><div class="n">Denied</div>
+      <div class="d">Masked. Unlit and dashed, at full label strength — dimming it measured 2.4:1.</div></div>
+  </div>
+
+  <div class="panel">
+    <div class="phead"><span class="t">The god's verbs</span><span class="s">contracts §4.2</span></div>
+    <div class="pbody">
+      <div class="favor">
+        <span class="pulse" title="worship"></span>
+        <span class="k">favor</span>
+        <span class="track"><span class="fill" id="fill" style="width:0%"></span></span>
+        <span class="v" id="favv">—</span>
+      </div>
+      <div>
+        <div class="rowlab" style="margin-bottom:.45rem">The god's sixteen verbs, lit by the legality mask this tick — hover for what the mask actually said</div>
+        <div class="verbs" id="verbs"></div>
+        <div class="reconkey"><b>†</b> the mask said only <em>no</em>. Latent and denied were told
+          apart by pricing the action here, which §5 says the client may not do.</div>
+      </div>
+      <div>
+        <div class="rowlab" style="margin-bottom:.45rem">What the world holds — form hues, never cyan</div>
+        <div class="cells" id="cells"></div>
+      </div>
+    </div>
+    <div class="measured" id="measured"></div>
+  </div>
+
+  <div class="note mm-essay">
+    <h2>What this settles</h2>
+    <p><b class="hot">The same token means opposite things in the two themes, and that is the point.</b>
+    On ink, charge is light emitted from the control. On vellum it cannot be — a cyan fill bright enough
+    to read measured <b>1.01 : 1</b> against latent, a hue difference with no luminance at all, invisible
+    to a colourblind player and on any poor panel. So on paper charge blooms <em>downward</em>: ink drawn
+    to the control rather than light coming off it. Both resolve from
+    <code>--ctl-charged-*</code> and <code>--glow-charged</code>, so a prototype writes one rule and gets
+    the right treatment in either theme. If component CSS ever has to ask which theme it is in, the theme
+    layer has failed.</p>
+    <p><b>Why absence rather than red.</b> <code>sound-design §2.2</code> makes the deny sound the legality
+    mask made audible. Giving deny its own colour would make the interface shout on every illegal click,
+    and an RL agent submits illegal actions constantly. Unlit and dashed says the same thing quietly — but
+    the label stays at full strength, because dimming it with <code>opacity</code> measured <b>2.42 : 1</b>
+    on dark, under WCAG's 4.5 for body text. The state was legible only to someone who could already see
+    it.</p>
+    <p><b>The collision to watch.</b> Cyan is not one of the fourteen form hues and must never become one.
+    <span class="hot">Aquam is the risk</span> — the obvious hue for water is the hue chosen here for the
+    god. Aquam is outside the v1 subset, so the collision is not live yet, which is exactly why it should
+    be settled now. <code>sound-design §1.3</code> is the precedent: it allocates a frequency band per
+    subsystem and treats that allocation as a contract rather than a palette. Hue is the same shape one
+    dimension over, and the fourteen forms plus the god are the entire budget.</p>
+  </div>
+
+  <footer>
+    Prototype · not the client. Controls are inert demonstrations of state; no content is loaded and no
+    rule is evaluated — <code>ui/ruleset/</code> is where legality actually runs. Tokens live in
+    <code>ui/shared/theme.css</code>.<br>
+    Multiverse Mages © 2026 Ann Kelner · AGPL-3.0-or-later
+  </footer>
+</div>
+
+<script type="module">
+import { mountThemeControl, resolved } from '../shared/theme.js';
+import { mountSourceNote, openSession, reconstructedCharge } from '../shared/session.js';
+
+/* The five states are demonstrated by the specimens above, which are static
+   because a legend has to show every state whether or not the world is in it.
+   Everything below is the same rule applied to a real recorded universe, which
+   is a harder test: the world only offers the states it happens to be in. */
+const els = {
+  verbs: document.getElementById('verbs'),
+  cells: document.getElementById('cells'),
+  fill: document.getElementById('fill'),
+  favv: document.getElementById('favv'),
+  tick: document.getElementById('tick'),
+  tickv: document.getElementById('tickv'),
+  tickmax: document.getElementById('tickmax'),
+};
+
+/* Four form hues are declared in shared/theme.css, which is exactly the four
+   forms v1 enables. A form the theme has no token for falls back to the ink,
+   which reads as "the world holds this and the palette has not met it yet"
+   rather than as a mis-coloured chip. */
+const FORM_TOKEN = { limen: 'c-limen', mentem: 'c-mentem', nomen: 'c-nomen', terram: 'c-terram' };
+
+/* The v1 rectangle, so a dark chip means "enabled and empty" rather than "one
+   of the fifty-eight cells this release does not turn on at all".
+
+   Declared here rather than beside its helper at the bottom of the file: this
+   module calls paint() during evaluation, and a `const` further down is still
+   in its temporal dead zone when it does. The function hoists; the binding does
+   not. That threw `Cannot access 'V1' before initialization` on every load, in
+   both themes, and was invisible to a Node test that imported the decoder
+   without running the page. */
+const V1 = { techniques: ['intellego', 'perdo', 'rego'], forms: ['limen', 'mentem', 'nomen', 'terram'] };
+const isV1 = (c) => V1.techniques.includes(c.technique) && V1.forms.includes(c.form);
+
+const session = await openSession({ recording: '../session.json' }).catch(() => null);
+mountSourceNote(document.getElementById('srchost'), session, ['actionMask', 'maskReason']);
+
+if (session !== null) {
+  els.tick.max = String(session.frameCount - 1);
+  els.tickmax.textContent = String(session.frameCount - 1);
+  els.tick.addEventListener('input', () => paint(Number(els.tick.value)));
+
+  /* One button per action, built once. The state is repainted per tick; the
+     nodes are not rebuilt, so a control keeps its identity as it lights and
+     goes out — which is the whole thing being demonstrated. */
+  for (const a of session.frame(0).actions()) {
+    const b = document.createElement('button');
+    b.className = 'ctl';
+    b.type = 'button';
+    b.dataset.id = String(a.id);
+    b.textContent = a.name.replace(/([a-z])([A-Z])/gu, '$1 $2').toLowerCase();
+    b.addEventListener('click', () => {
+      if (b.dataset.s !== 'charged') return;
+      b.classList.remove('touched');
+      void b.offsetWidth;
+      b.classList.add('touched');
+    });
+    els.verbs.append(b);
+  }
+  paint(session.frameCount - 1);
+  els.tick.value = String(session.frameCount - 1);
+}
+
+function paint(at) {
+  if (!Number.isInteger(at)) {
+    throw new TypeError(`paint() needs a tick index and got ${String(at)}.`);
+  }
+  const f = session.frame(at);
+  const { favor } = f.resources();
+  els.tickv.textContent = String(f.clock().worldTick);
+
+  /* The meter's ceiling is the highest favor this run ever reached. A meter
+     needs a maximum and the read path has no favorCap channel — §1.1 makes the
+     cap rise with worship tier, so even a constant would be wrong later. Naming
+     the run's own peak is at least a number this page can defend. */
+  const peak = Math.max(1, ...Array.from({ length: session.frameCount }, (_, i) =>
+    session.frame(i).resources().favor));
+  els.fill.style.width = `${(favor / peak) * 100}%`;
+  els.favv.textContent = `${favor.toFixed(1)} / ${peak.toFixed(0)}`;
+
+  for (const b of els.verbs.children) {
+    const id = Number(b.dataset.id);
+    const { state, reconstructed, needs } = reconstructedCharge(f, session, id);
+    b.dataset.s = state;
+    b.dataset.recon = String(reconstructed);
+    b.disabled = state !== 'charged';
+    b.title =
+      state === 'charged'
+        ? `legal this tick — costs ${(session.actionCost(id) ?? 0) / 1024} favor`
+        : reconstructed
+          ? state === 'latent'
+            ? `masked. The mask does not say why; priced client-side, it needs ${needs} favor and you hold ${favor.toFixed(1)}.`
+            : 'masked, and affordable — so something structural is in the way. The mask does not say what.'
+          : 'masked, and the read path carries no price for this action.';
+  }
+
+  els.cells.replaceChildren();
+  for (const c of f.knowledge()) {
+    if (!c.live && c.form === undefined) continue;
+    const known = c.live;
+    if (!known && !isV1(c)) continue;
+    const chip = document.createElement('span');
+    chip.className = `cellchip ${FORM_TOKEN[c.form] ?? ''}`;
+    chip.dataset.live = String(known);
+    chip.textContent = `${c.technique} ${c.form}`;
+    chip.title = known
+      ? `${c.nodesKnown} nodes known, deepest tier ${c.deepestTier}, ${c.redundancy} instances`
+      : 'enabled by the ruleset, and nobody in this universe knows anything in it';
+    els.cells.append(chip);
+  }
+}
+
+
+/* The page measures itself in whichever theme is showing, because a
+   hand-written contrast number is one that was true once — and this one has to
+   hold in two themes rather than one. */
+function measure() {
+  document.getElementById('nowv').textContent = resolved();
+  const lum = (c) => {
+    const m = c.match(/[\d.]+/gu)?.map(Number) ?? [0, 0, 0];
+    const v = c.startsWith('color(') ? m.slice(0, 3) : m.slice(0, 3).map((x) => x / 255);
+    const f = v.map((x) => (x <= 0.03928 ? x / 12.92 : ((x + 0.055) / 1.055) ** 2.4));
+    return 0.2126 * f[0] + 0.7152 * f[1] + 0.0722 * f[2];
+  };
+  const ratio = (a, b) => {
+    const [hi, lo] = [lum(a), lum(b)].sort((p, q) => q - p);
+    return (hi + 0.05) / (lo + 0.05);
+  };
+  const cs = (n) => getComputedStyle(n);
+  /* Measure the taxonomy specimens rather than the live buttons: those always
+     exist in all five states, whereas favor regenerates to full and leaves no
+     latent control to compare against — which is why this reported nothing at
+     all the first time it ran. */
+  const cardBg = cs(document.querySelector('.tx')).backgroundColor;
+  const bgOf = (sel) => {
+    const n = document.querySelector(sel);
+    const b = cs(n).backgroundColor;
+    return b === 'rgba(0, 0, 0, 0)' ? cardBg : b;
+  };
+  const fgOf = (sel) => cs(document.querySelector(sel)).color;
+  const mark = (v, min) => `<span class="${v >= min ? 'pass' : 'fail'}">${v.toFixed(2)}</span>`;
+  const sep = ratio(bgOf('.d-charged'), bgOf('.d-latent'));
+  /* A low fill separation is the expected reading on ink, not a failure: there
+     the state is carried by the glow, and a background-luminance comparison
+     cannot see a box-shadow. On paper it is the fill or it is nothing, which is
+     the entire reason the two themes diverge. */
+  const carrier = sep >= 1.2
+    ? 'the fill carries the state'
+    : 'the fill carries nothing here — the glow does, and luminance cannot measure a shadow';
+  document.getElementById('measured').innerHTML =
+    `<b>measured live, in this theme:</b> ` +
+    `charged fill vs latent ${sep.toFixed(2)} — ${carrier} · ` +
+    `charged label ${mark(ratio(fgOf('.d-charged'), bgOf('.d-charged')), 4.5)} · ` +
+    `latent label ${mark(ratio(fgOf('.d-latent'), bgOf('.d-latent')), 4.5)} · ` +
+    `denied label ${mark(ratio(fgOf('.d-denied'), bgOf('.d-denied')), 4.5)} — labels against 4.5 : 1 for body text`;
+}
+
+mountThemeControl(document.getElementById('themehost'), () => requestAnimationFrame(measure));
+requestAnimationFrame(measure);
+setInterval(measure, 1500);
+</script>

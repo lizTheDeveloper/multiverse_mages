@@ -130,7 +130,6 @@ export const UNIVERSE = {
     favor: 'i32',
     worship: 'i32',
     worshipTier: 'u8',
-    materials: 'i32',
     prestige: 'i32',
     prestigeEarned: 'i32',
     terminalReason: 'u8',
@@ -154,7 +153,6 @@ export interface UniverseRecord {
   worship: Fp;
   /** Derived from worship by `god-agency`, cached here because nothing else can. */
   worshipTier: Enum8;
-  materials: Fp;
   /** Carried in from prior runs. **Read-only during a run.** */
   prestige: Fp;
   /** Written once at run end; the input to the next run's `prestige`. */
@@ -168,6 +166,66 @@ export interface UniverseRecord {
 }
 
 export const UNIVERSE_FIELDS_MATCH: KeysMatch<UniverseRecord, typeof UNIVERSE> = true;
+
+/**
+ * The physical economy, by kind — §6a's *materials*, which used to be one
+ * number on {@link UNIVERSE} and is now three.
+ *
+ * ## Why the scalar had to go rather than gain neighbours
+ *
+ * `materials: 'i32'` was a single stock with four claimants, and one number
+ * cannot express a shortage of **vellum** as distinct from a shortage of
+ * **food**. That is not a cosmetic loss. The economy's whole job is to create a
+ * bottleneck a spell can relieve, and a bottleneck nobody can name is one no
+ * ruleset can be chosen against: with one stock, permitting *Creo Herbam* and
+ * permitting *Rego Terram* are the same move, because both end up adding to the
+ * same integer. The grid is a materials taxonomy — `sound-design.md` §4.2 is
+ * literally titled *"Forms are materials"* — and the economy was not using it.
+ *
+ * The field was **removed** from `UNIVERSE` rather than left in place beside
+ * these three. A retained `materials` would have to be either a fourth stock
+ * nothing spends or a cached sum of the other three, and this codebase already
+ * has the argument about cached sums written down twice — §1.5's ban on derived
+ * node existence, and `counts.ts` refusing to memoize worship inputs. The
+ * moment one writer forgets the mirror, every consumer of the total is reading
+ * an economy that does not exist.
+ *
+ * ## Still one input, not four
+ *
+ * The `economy` spec says the economy tracks *"exactly three inputs — populace,
+ * materials, and knowledge-as-capital"* and MUST NOT introduce a fourth
+ * resource. `ECONOMIC_INPUTS` is unchanged and still has three entries. What
+ * changed is that the second of the three is a vector: the move a spreadsheet
+ * makes when one column becomes three, not the move it makes when a second
+ * sheet appears. Recorded as a delta in the spec rather than done quietly.
+ *
+ * ## One row, on the universe entity
+ *
+ * A component rather than three more `UNIVERSE` fields, because that is what
+ * the migration machinery can carry: `worldSchemaVersionOf` identifies a
+ * revision by *which components exist*, so an appended section is detectable and
+ * an added field is not.
+ */
+export const MATERIAL_STOCK = {
+  name: 'material-stock',
+  fields: {
+    food: 'i32',
+    stone: 'i32',
+    vellum: 'i32',
+  },
+} as const satisfies ComponentSpec<ComponentFields>;
+
+export interface MaterialStockRecord {
+  /** Eaten by subsistence. Grain, meat, water — Herbam, Animal, Aquam. */
+  food: Fp;
+  /** Spent raising buildings. Quarry, kiln, bellows — Terram, Ignem, Auram. */
+  stone: Fp;
+  /** Spent scribing grimoires and keeping libraries. Parchment and paper — Animal, Herbam, Nomen. */
+  vellum: Fp;
+}
+
+export const MATERIAL_STOCK_FIELDS_MATCH: KeysMatch<MaterialStockRecord, typeof MATERIAL_STOCK> =
+  true;
 
 /**
  * One entry of §1.1's `edicts` array.
@@ -508,6 +566,70 @@ export interface UniversitySiteRecord {
 
 export const UNIVERSITY_SITE_FIELDS_MATCH: KeysMatch<UniversitySiteRecord, typeof UNIVERSITY_SITE> =
   true;
+
+/**
+ * The founding-grant budget (`contracts.md` §1.1, added by `w69/grant-budget`).
+ *
+ * God action 8 grants a **full instance at `grantMastery`** — the shape is
+ * unchanged and deliberately so. `setMastery`'s only non-test caller is the
+ * decay pass and it lowers, so a granted instance is currently the only source
+ * of knowledge above the teach threshold in the universe. Weakening the grant
+ * would delete the thing before its replacement exists. What this component
+ * limits is the **count**: grants become scarce rather than weak.
+ *
+ * ## Why the parameters live in state and not only in content
+ *
+ * `god-constant.json` is the authority for the *defaults*, exactly as it is for
+ * everything else the god does. But the balance harness has to vary a budget
+ * across the arms of one sweep, and `worldDeps` resolves the god constants
+ * **once per worker** and shares the frozen struct across every run that worker
+ * executes — so a per-run value cannot come from there. `edictBudget` on the
+ * universe row is the existing answer to exactly this shape of problem, and
+ * this row is that answer applied a second time: seeded at founding from
+ * content, overridable by a scenario option, read from state thereafter.
+ *
+ * ## The row hangs on the universe handle, and absence means unbounded
+ *
+ * Like the god-state row next door. **Absence means no budget is in force** —
+ * which is what a pre-`w69` save describes, and what every hand-built test world
+ * means, and is the behaviour every one of them was written against. A world
+ * that has never heard of a grant budget is not a world with a budget of zero.
+ *
+ * ## `seededNodes` is what makes the accrual honest
+ *
+ * The budget grows with **nodes the mages discovered for themselves**, which is
+ * the ever-known count less the nodes a god put there. Without `seededNodes` a
+ * god could seed a node, be credited with having discovered it, and earn its own
+ * next grant — the budget would be a loop that pays for itself. It counts the
+ * grants that introduced a node the universe had *never* held, which is why a
+ * granted-then-lost-then-regranted node is counted once: the second grant makes
+ * nothing newly ever-known.
+ */
+export const GRANT_BUDGET = {
+  name: 'grant-budget',
+  fields: {
+    startingGrants: 'u16',
+    accrualNodes: 'u16',
+    cap: 'u16',
+    grantsUsed: 'u16',
+    seededNodes: 'u16',
+  },
+} as const satisfies ComponentSpec<ComponentFields>;
+
+export interface GrantBudgetRecord {
+  /** Grants available before the universe has discovered anything. */
+  startingGrants: number;
+  /** Self-discovered nodes that earn one further grant. `0` disables accrual. */
+  accrualNodes: number;
+  /** Ceiling on `startingGrants + earned`. Never on what has already been spent. */
+  cap: number;
+  /** Grants applied so far, over the whole run. */
+  grantsUsed: number;
+  /** Ever-known nodes a god put there rather than the universe finding them. */
+  seededNodes: number;
+}
+
+export const GRANT_BUDGET_FIELDS_MATCH: KeysMatch<GrantBudgetRecord, typeof GRANT_BUDGET> = true;
 
 // ---------------------------------------------------------------------------
 // §1.2 Mage. §1.3 Populace cohort.
@@ -1032,6 +1154,16 @@ export const WORLD_COMPONENTS = [
   ERA_EVALUATION,
   TERRITORY_HOLDING,
   UNIVERSITY_SITE,
+  // Appended last, though it is universe state and reads as if it belongs
+  // beside `UNIVERSE`. Section order in a snapshot is this list's order, so a
+  // component inserted anywhere but the end lines every older save's sections
+  // up against the wrong layouts. "Append; do not reorder" is above, and it
+  // outranks reading nicely.
+  MATERIAL_STOCK,
+  // And the same argument again, one revision later: `grant-budget` arrived
+  // after `material-stock` and so goes after it, however much both of them
+  // read as if they belonged beside `UNIVERSE`.
+  GRANT_BUDGET,
 ] as const satisfies readonly ComponentSpec<ComponentFields>[];
 
 /** Engagement-scale components, in snapshot order. */

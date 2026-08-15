@@ -60,7 +60,7 @@
 
 import type { Action, EntityHandle, SimState } from '@mm/sim-core';
 import type { AxisChangeCounterRecord } from '@mm/state';
-import { FP_ONE, TIME_MODE } from '@mm/sim-core';
+import { FP_ONE, NULL_ENTITY, TIME_MODE } from '@mm/sim-core';
 import type { Fixed } from '@mm/sim-core';
 import type { CellResolver, KnowledgeSubsystem, NodeCatalog } from '@mm/rules-magic';
 import {
@@ -82,9 +82,11 @@ import {
   UNIVERSE,
   UNIVERSITY,
   UPHEAVAL,
+  GRANT_BUDGET,
   activeBlessings,
   activeEncouragements,
   attachRecord,
+  canGrantFoundingKnowledge,
   collectRecords,
   componentOf,
   isCellId,
@@ -259,7 +261,7 @@ function refuse(state: SimState, tally: Tally): void {
 
 function findTheUniverse(state: SimState): EntityHandle {
   const rows = collectRecords(state, UNIVERSE);
-  return rows[0]?.handle ?? 0;
+  return rows[0]?.handle ?? NULL_ENTITY;
 }
 
 /** One action: validate everything, price it, deduct, apply. */
@@ -602,6 +604,25 @@ function revokePlan(
  * Granted at full mastery, because a grant at the research default would sit
  * below the teach threshold and could never leave the founder's head — which
  * would make founding knowledge a gift to one mage rather than to a universe.
+ *
+ * ## The fifth precondition: the budget
+ *
+ * Grants are **scarce, not weak**. The shape above is untouched — a full
+ * instance at `grantMastery` — because `setMastery`'s only non-test caller is
+ * the decay pass and it lowers, so a granted instance is the one source of
+ * knowledge above the teach threshold this universe has. What is limited is the
+ * count, through `canGrantFoundingKnowledge`, and a universe carrying no
+ * `grant-budget` row is unbounded exactly as it was before the row existed.
+ *
+ * The refusal is here **and** in `agent-api`'s candidate list, which is the same
+ * belt-and-braces the edict budget gets: the mask must close so a bot cannot
+ * submit an action that silently does nothing, and the rules must refuse so that
+ * a caller which never consulted a mask cannot spend past the budget anyway.
+ *
+ * `seededNodes` is incremented only when the grant makes a node **newly**
+ * ever-known. A god who re-seeds a node the universe once held and lost has not
+ * introduced anything, and crediting it would let the god quietly inflate the
+ * count that its own accrual is measured against.
  */
 function grantPlan(
   state: SimState,
@@ -621,6 +642,11 @@ function grantPlan(
   const cellId = deps.cells.cellOf(nodeId);
   if (!isCellId(cellId)) return undefined;
   if (!permits(readRulesetForObservation(state, universe), cellId)) return undefined;
+  if (!canGrantFoundingKnowledge(state, universe)) return undefined;
+
+  // Read before the write, because `createInstance` is what marks a node
+  // ever-known and asking afterwards would answer `true` for every grant.
+  const wasKnown = deps.knowledge.wasEverKnown(nodeId);
 
   return {
     cost: interventionCost(ACTION.grantFoundingKnowledge, deps.god.costs, { nodeTier: node.tier }),
@@ -632,8 +658,30 @@ function grantPlan(
         acquiredTick: worldTick,
         mastery: deps.god.constants.grantMastery,
       });
+      spendFoundingGrant(state, universe, wasKnown);
     },
   };
+}
+
+/**
+ * Charges one grant against the budget, and records whether it seeded a node.
+ *
+ * A universe with no budget row is one where no budget is in force, so there is
+ * nothing to charge and nothing to record — the ledger is the budget's own, and
+ * writing half of it into a world that declined to have one would turn "no
+ * budget" into "a budget of zero" the moment anything created the row.
+ */
+function spendFoundingGrant(
+  state: SimState,
+  universe: EntityHandle,
+  wasEverKnown: boolean,
+): void {
+  const store = componentOf(state, GRANT_BUDGET);
+  if (!store.has(universe)) return;
+  store.set(universe, 'grantsUsed', (store.get(universe, 'grantsUsed') ?? 0) + 1);
+  if (!wasEverKnown) {
+    store.set(universe, 'seededNodes', (store.get(universe, 'seededNodes') ?? 0) + 1);
+  }
 }
 
 // ---------------------------------------------------------------------------

@@ -34,6 +34,20 @@
  * Every magnitude is **untuned** (`docs/design/release-plan.md`).
  */
 
+export type {
+  ApplicationInput,
+  ApplicationWeightSource,
+  ApplicationWeights,
+} from './application.js';
+export {
+  APPLICATION_TUNING_STATUS,
+  REQUIRED_APPLICATION_WEIGHTS,
+  appliedYield,
+  applicationRations,
+  formRoutesToMaterials,
+  readApplicationWeights,
+} from './application.js';
+
 export type { BirthInput, CapacityInput, TerritoryExtent } from './carrying-capacity.js';
 export {
   BIRTHS_PER_MEMBER,
@@ -66,10 +80,23 @@ export {
 export type { EconomicInput, WorshipInputs } from './counts.js';
 export { ECONOMIC_INPUTS, worshipInputs } from './counts.js';
 
+export type { MaterialAmounts, MaterialKind } from './kinds.js';
+export {
+  MATERIAL_KINDS,
+  NO_MATERIALS,
+  addAmounts,
+  routeYieldByForm,
+  territoryYieldShares,
+  totalAmount,
+  zeroAmounts,
+} from './kinds.js';
+
 export type { ConsumptionDemand, ConsumptionKind, ConsumptionOutcome, ProductionInput } from './materials.js';
 export {
+  CLAIMANT_KIND,
   CONSUMPTION_ORDER,
   MATERIALS_PER_LABORER,
+  NO_YIELD_BONUSES,
   SUBSISTENCE_PER_PERSON,
   assertMaterialsNonNegative,
   consumeMaterials,

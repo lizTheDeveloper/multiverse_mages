@@ -117,9 +117,21 @@ export function gridContentFixture(options: FixtureOptions = {}): GridContent {
     record: { id, name: id, gloss: `${id} (fixture)`, bit },
   }));
 
+  // `yieldWeights` all-zero and `tuningStatus: 'untuned'`: these forms are
+  // inert placeholders for the grid rules under test, and routing any of them
+  // into food/stone/vellum would be an economy fact this fixture does not mean
+  // to assert. `kinds.ts` reads an all-zero form the same way — "not happening
+  // in the world" — so zero is the fixture-neutral choice, not a workaround.
   const forms: Interned<FormRecord>[] = FIXTURE_FORMS.map(([id, bit]) => ({
     contentId: internFromBit(bit),
-    record: { id, name: id, gloss: `${id} (fixture)`, bit },
+    record: {
+      id,
+      name: id,
+      gloss: `${id} (fixture)`,
+      bit,
+      yieldWeights: { food: 0, stone: 0, vellum: 0 },
+      tuningStatus: 'untuned',
+    },
   }));
 
   const nodesByCell = new Map<string, string[]>();
@@ -163,6 +175,7 @@ export function gridContentFixture(options: FixtureOptions = {}): GridContent {
       scribeCost: 1024,
       rediscoveryMultiplier: 5376,
       effects: [],
+      knowledgeKind: 'episteme',
       tuningStatus: 'untuned',
     },
   }));

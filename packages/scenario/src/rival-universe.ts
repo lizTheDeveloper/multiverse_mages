@@ -272,6 +272,12 @@ export function buildRival(input: {
     // would confound "which species founded my universe" with "which species I am
     // fighting". Zero is also what this builder did before the field existed, so
     // no raid measured before it moves.
+    //
+    // The opening-square counts are zero — the v1 rectangle — for that same
+    // reason and one more: a rival drawn onto a *different* square from its host
+    // would make the arbitration a test of which grid the two happened to be
+    // dealt. `rival-universe.ts` permits every technique and form a few lines
+    // below anyway, so the rival's opening is not the lever here.
     options: {
       cohortSize: 64,
       foundingMages: 2,
@@ -281,6 +287,11 @@ export function buildRival(input: {
       // a rival whose academy stood somewhere the host's did not would confound
       // "where my university is" with "who I am fighting".
       academySiteKind: 0,
+      openingTechniqueCount: 0,
+      openingFormCount: 0,
+      // Unread with no counts, and pinned anyway so that a later default flip
+      // cannot move a rival nobody meant to move.
+      openingSquareSeeded: 0,
     },
     content,
     schema: input.schema,

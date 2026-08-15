@@ -45,7 +45,16 @@ const BAND = { min: 0.05, max: 0.2 };
 
 function loadArm(directory) {
   const files = readdirSync(directory);
-  const runsFile = files.find((name) => name.endsWith('.runs.ndjson'));
+  const matches = files.filter((name) => name.endsWith('.runs.ndjson'));
+  if (matches.length > 1) {
+    throw new Error(
+      `${directory} holds ${String(matches.length)} run files (${matches.join(', ')}). ` +
+        'The harness numbers executions rather than overwriting them, so this directory has been ' +
+        'swept more than once — and picking one by readdir order would report a measurement of a ' +
+        'run nobody chose. Point at a directory holding one execution.',
+    );
+  }
+  const runsFile = matches[0];
   const summaryFile = files.find((name) => name.endsWith('.summary.json'));
   if (runsFile === undefined) throw new Error(`No .runs.ndjson in ${directory}`);
   const runs = readFileSync(join(directory, runsFile), 'utf8')

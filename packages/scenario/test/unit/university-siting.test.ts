@@ -83,6 +83,13 @@ const SHARED: Omit<ReferenceOptions, 'academySiteKind'> = {
   foundingMages: 1,
   foundingNodes: 6,
   foundingSpeciesMask: 0,
+  // The v1 rectangle, which is what every recorded run of this measurement was
+  // taken on. Pinned rather than defaulted so a later flip of the opening-square
+  // default cannot move a comparison whose whole point is that only the site
+  // differs.
+  openingTechniqueCount: 0,
+  openingFormCount: 0,
+  openingSquareSeeded: 0,
 };
 
 const RUN_SEED = 0x0009_0024;

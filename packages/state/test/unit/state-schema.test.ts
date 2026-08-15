@@ -165,10 +165,20 @@ describe('the world schema is stable in the way the snapshot format needs', () =
       'blessing',
       'upheaval',
       'era-evaluation',
-      // Appended by `university-siting`, together, as world-schema revision 5.
+      // Appended by `city-and-supply-chain`, as world-schema revision 5. It
+      // reads as though it belongs beside `universe` -- it is universe state --
+      // but section order is snapshot order, so it goes at the end like every
+      // other addition, not where it would read most naturally.
+      'material-stock',
+      // Appended by the founding-grant budget, as world-schema revision 6, and
+      // after `material-stock` for exactly the reason above.
+      'grant-budget',
+      // Appended by `university-siting`, together, as world-schema revision 7.
       // The pair for the same reason the four above are a group: a site is
       // meaningless without ground to stand in, and no build has shipped one
-      // without the other.
+      // without the other. Last, because section order is snapshot order and
+      // this pair was renumbered behind `material-stock` and `grant-budget` when
+      // the branch was brought current.
       'territory-holding',
       'university-site',
     ]);

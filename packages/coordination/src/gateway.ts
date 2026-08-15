@@ -146,7 +146,9 @@ import type {
 } from '@mm/rules-magic';
 import {
   DEFAULT_TEACH_THRESHOLD,
+  MASTERY_ACTIVATION_THRESHOLD,
   disownGrimoire,
+  isRediscovery,
   research,
   researchRequirement,
   scribe,
@@ -360,8 +362,20 @@ export class CoordinatingKnowledgeGateway implements KnowledgeGateway {
     return this.#deps.knowledge.instanceCount(nodeId);
   }
 
-  everKnown(nodeId: ContentId): boolean {
-    return this.#deps.knowledge.wasEverKnown(nodeId);
+  /**
+   * `isRediscovery`, not `wasEverKnown` — the same correction {@link
+   * researchFrontier} makes below, for the same reason, one call further out.
+   *
+   * This port used to answer `wasEverKnown`, and `gatherFrontier` used the
+   * answer to decide whether a target was a `research-node` or a
+   * `rediscover-node` goal. The mark is never cleared, so every node the
+   * universe currently holds was filed as a rediscovery, and goal selection
+   * scored, ranked and committed against a category the pricing path had
+   * already stopped believing in. Delegating to `rules-magic`'s own predicate
+   * is what keeps the two from drifting apart a second time.
+   */
+  rediscovery(nodeId: ContentId): boolean {
+    return isRediscovery(this.#deps.knowledge, nodeId);
   }
 
   knows(mage: MageHandle, nodeId: ContentId): boolean {
@@ -438,7 +452,19 @@ export class CoordinatingKnowledgeGateway implements KnowledgeGateway {
       const banked =
         this.#deps.effort?.progressOf(effortKey(EFFORT_KIND.research, mage, nodeId, 0)) ?? 0;
       const requirement = researchRequirement(node, {
-        rediscovery: this.#deps.knowledge.wasEverKnown(nodeId),
+        // `isRediscovery`, not `wasEverKnown`. The two differ on exactly the
+        // nodes the universe holds right now: `wasEverKnown` is set by
+        // `createInstance` and never cleared, so it is true of every node
+        // anybody here has ever learned — including the ones still on the
+        // shelf. Quoting those at the ≥3× rediscovery price while `research()`
+        // charges the ordinary one made this method disagree with the only
+        // other place that prices the same work, in the direction that hurts:
+        // research is currently the one route back to a teachable instance, so
+        // an inflated quote drags on the only preservation mechanism there is.
+        // `research.ts` states the rule and this now calls it rather than
+        // restating it: *"Only the gap between the two, known once and now
+        // gone, is expensive."*
+        rediscovery: isRediscovery(this.#deps.knowledge, nodeId),
         rediscoveryAffinity: rates.rediscoveryAffinity,
         learnRate: rates.learnRate,
         // Neutral: the stacked `research-rate` multiplier is a property of the
@@ -900,6 +926,35 @@ export class CoordinatingKnowledgeGateway implements KnowledgeGateway {
   /** Every node this mage holds in mind or palace, ascending by node id. */
   heldNodes(mage: MageHandle): readonly ContentId[] {
     return [...this.#holdings(mage).keys()].sort((a, b) => a - b);
+  }
+
+  /**
+   * Every node this mage could **cast right now**, ascending by node id.
+   *
+   * Three of `gatherEffects`' four gates, asked of one mage instead of of every
+   * instance in the universe: held at a mind or a memory palace (which is what
+   * `#holdings` already walks), mastery at or above
+   * {@link MASTERY_ACTIVATION_THRESHOLD}, and the cell permitted **now**. The
+   * fourth — whether the primitive applies in this time mode — is a question
+   * about an *effect* and belongs to whoever is spending it.
+   *
+   * The threshold is `rules-magic`'s own constant rather than a second copy.
+   * `universe-effects.ts` makes the argument at length and it is the same one
+   * here: two answers to *"can she cast this"* would diverge, and the one
+   * without the adversarial test would be the one a mage's career ran on.
+   *
+   * Permission is evaluated at the moment of the question, so an interdiction
+   * takes the verb away without touching what anybody knows — which is what an
+   * interdiction is.
+   */
+  castableNodes(mage: MageHandle): readonly ContentId[] {
+    const found: ContentId[] = [];
+    for (const [nodeId, mastery] of this.#holdings(mage)) {
+      if (mastery < MASTERY_ACTIVATION_THRESHOLD) continue;
+      if (!permits(this.#deps.ruleset, this.#deps.cells.cellOf(nodeId))) continue;
+      found.push(nodeId);
+    }
+    return found.sort((a, b) => a - b);
   }
 
   /**

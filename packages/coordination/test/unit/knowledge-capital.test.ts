@@ -59,6 +59,7 @@ import {
   LIBRARY,
   LOCATION_KIND,
   MAGE,
+  MATERIAL_STOCK,
   UNIVERSE,
   UNIVERSITY,
   attachRecord,
@@ -348,7 +349,12 @@ describe('libraries cost materials to keep (brake 4)', () => {
     // negative."*
     const world = universe({ affiliation: 'scholarly', shelf: 64, copies: 400 });
     const stock = collectRecords(world.state, UNIVERSE)[0] as { handle: EntityHandle };
-    componentOf(world.state, UNIVERSE).set(stock.handle, 'materials', 0);
+    // Library upkeep is paid in **vellum** (`materials.ts`'s `CLAIMANT_KIND`),
+    // so it is vellum that has to run out for this shortfall to happen — the
+    // single scalar this test used to zero was the whole economy at once, and
+    // zeroing food or stone here would starve or halt construction instead of
+    // exercising brake 4 at all.
+    componentOf(world.state, MATERIAL_STOCK).set(stock.handle, 'vellum', 0);
     world.advance();
 
     const report = world.report();
@@ -362,7 +368,9 @@ describe('libraries cost materials to keep (brake 4)', () => {
     // `libraryDependence` is the metric that would otherwise be moved by it.
     const world = universe({ affiliation: 'scholarly', shelf: 64, copies: 400 });
     const stock = collectRecords(world.state, UNIVERSE)[0] as { handle: EntityHandle };
-    componentOf(world.state, UNIVERSE).set(stock.handle, 'materials', 0);
+    // Vellum, for the same reason as the case above: it is the kind library
+    // upkeep is paid from.
+    componentOf(world.state, MATERIAL_STOCK).set(stock.handle, 'vellum', 0);
     world.advance();
 
     const report = world.report();

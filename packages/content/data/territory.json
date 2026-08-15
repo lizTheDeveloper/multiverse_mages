@@ -6,6 +6,7 @@
     "landUnits": 300,
     "capacityPerLandUnit": 40960,
     "libraryUpkeepMultiplier": 2048,
+    "yieldPerLandUnit": { "food": 2048, "stone": 128, "vellum": 384 },
     "tuningStatus": "untuned"
   },
   {
@@ -15,6 +16,7 @@
     "landUnits": 1600,
     "capacityPerLandUnit": 20480,
     "libraryUpkeepMultiplier": 1024,
+    "yieldPerLandUnit": { "food": 1536, "stone": 256, "vellum": 384 },
     "tuningStatus": "untuned"
   },
   {
@@ -24,6 +26,7 @@
     "landUnits": 1200,
     "capacityPerLandUnit": 6144,
     "libraryUpkeepMultiplier": 896,
+    "yieldPerLandUnit": { "food": 640, "stone": 384, "vellum": 768 },
     "tuningStatus": "untuned"
   },
   {
@@ -33,6 +36,7 @@
     "landUnits": 900,
     "capacityPerLandUnit": 3072,
     "libraryUpkeepMultiplier": 1280,
+    "yieldPerLandUnit": { "food": 384, "stone": 256, "vellum": 1024 },
     "tuningStatus": "untuned"
   },
   {
@@ -42,6 +46,7 @@
     "landUnits": 2000,
     "capacityPerLandUnit": 512,
     "libraryUpkeepMultiplier": 512,
+    "yieldPerLandUnit": { "food": 64, "stone": 512, "vellum": 64 },
     "tuningStatus": "untuned"
   }
 ]
