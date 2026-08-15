@@ -9919,3 +9919,74 @@ recording's 19 movers, so a zero from it means zero rather than a broken pattern
 
 `verify:nosweeps` exit 0, **331 files / 4,583 tests**, three gates PASS. The two non-blocking checks fail
 here and **also on `main`**.
+
+## W194 — the cohort valve is a floor that binds one way, and my brief named the wrong cause twice
+
+`w185/cohort-source`, pushed at `b5bf7b1c`. I gave the agent four candidate causes and asked it to name
+which with evidence. **It answered "none of them", and proved it.**
+
+### The real mechanism
+
+The transfer budget is `floorDiv(count * TRANSFER_RATE_PER_TICK, FP_ONE)` computed **per cohort**. Cohorts
+are keyed on **species × occupation × birth decade**, so nearly all of them sit below `1/rate` = 16 —
+**and every budget floors to zero.** `N` cohorts of `c` people yield `N·floor(c·r)`, which is zero whenever
+`c < 1/r`, where the control law asks for `floor(N·c·r)`. **The error is per-cohort, always downward, and
+grows with fragmentation.**
+
+My W185 entry said reallocation *"can classify `scribe` as surplus and never as wanted."* It cannot classify
+it as anything: **reallocation moved zero scribes in either direction on every tick.** Scribe is not drained
+as surplus — it is untouched.
+
+| occupation | mortality | retirement | **reallocation** | births+promotion |
+|---|---:|---:|---:|---:|
+| **scribe** | −11 | 0 | **0** | **0** |
+| student | −10 | 0 | +139 | −89 |
+
+**The discriminating control:** injecting `scribingQueueDepth = 22` produced a **byte-identical 600-tick
+run** while `unmetDemand[scribe]` accumulated **15,377 person-ticks**. So the want *was* computed, idle *did*
+hold 182 people, and demand *was* constant — which rules out the missing-source, asymmetric-comparison and
+ordering hypotheses in one measurement.
+
+**And this is the `detachment-strength` trap again** (W185: strength 100 with per-cohort deployment fields
+zero detachments). Two independent per-cohort thresholds, both defeated by fragmentation across species and
+birth decade. That is now a **pattern in the cohort model**, not two bugs: *any* threshold applied per
+cohort is applied to a population fragmented far below it.
+
+### The curves do not bend, and that is correct
+
+At `scribingQueueDepth: 0`, before and after are identical — 24 → 13 and 24 → 16 at the two seeds.
+**Necessarily so: no correct controller fills an occupation nothing asked for.** Three variants that *did*
+bend these curves bent them **down**, to 5 and to 0, and two killed three of five species.
+
+With demand injected at w23's measured range, the pair composes exactly as intended:
+
+| demand | before | after |
+|---|---|---|
+| 40 | 24 → 13 | 24 → **40**, met by tick 120 and held |
+| 88 | 24 → 13 | 24 → **60** and rising |
+| ramp 0→88 | 24 → 13 | 24 → **78**, tracking |
+
+**This is the producer/consumer point made concrete**: neither half moves a curve alone, and together they
+track. A pooled sweep of either half measures nothing — which is the second independent confirmation
+tonight, after `balance-gate-v1` passing at delta 0.00000 on all nine metrics with the scribing change in
+the tree.
+
+### A second change that is not optional
+
+`student` is now filled from `idle` only. **Without it, opening the valve turns the 64-seat university into
+a pump**: three of five species reach zero populace inside sixty years, scribes reach zero, mages go
+212 → 593, and both the `9.3 loses no species` and `9.5 teaching never dies` tripwires fire. With it every
+species survives (42 / 1,753 / 61 / 5,498 / 4,209 against a control of 44 / 1,578 / 105 / 5,385 / 4,828).
+
+### Two self-flagged violations, and one is a new hazard class
+
+The agent reported both against itself, which is why they are worth keeping:
+
+- It used **`pkill -f "regenerate-baseline.mjs"`** on this shared box, against `CLAUDE.md`'s rule. The
+  pattern was specific; another agent's regeneration could still have been caught.
+- **It rebuilt `dist` while a baseline regeneration was running, contaminating the agency baseline.**
+  Caught, reset, re-run cleanly. **This is the inverse of the documented stale-`dist` hazard** — not
+  *testing* against a stale build but *writing into a running measurement* — and the output was
+  well-formed, plausible and wrong with nothing to flag it. Now a rule in `CLAUDE.md`: a measurement run
+  is a lock on the tree it reads, and on a shared box your build can corrupt someone else's measurement in
+  a different worktree through the shared `dist`.

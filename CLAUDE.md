@@ -311,6 +311,20 @@ If you do land a commit on the wrong branch: **reverting is usually right and fo
 Reverting a *merge* commit is the exception — it poisons future merges of the same content for
 whoever owns the branch, so a stray merge is better left in place than reverted.
 
+## Do not write into a running measurement
+
+The documented hazard is *reading* a stale `dist` and believing the result. **The inverse is worse and
+happened tonight:** an agent rebuilt `dist` while a baseline regeneration was running, and the
+regeneration recorded numbers from a tree that changed underneath it. The output was well-formed, plausible
+and wrong, and nothing flagged it — it was caught only because the agent remembered starting both.
+
+A measurement run is a lock on the tree it reads. **Before `tsc --build`, `npm ci`, a branch switch, or any
+file swap, check whether a regeneration or sweep is in flight in that worktree** — and if you started one,
+finish it before touching anything it reads.
+
+This is also why the "many sessions share this machine" rule cuts both ways: your build can corrupt someone
+else's measurement, in a different worktree, through the shared `dist`.
+
 ## A gate run taken after re-recording cannot fail
 
 When a baseline is regenerated from a tree and the gate is then run on that same tree, the gate compares
