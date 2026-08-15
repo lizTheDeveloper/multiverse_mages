@@ -385,6 +385,7 @@ export {
   baselineMetrics,
   baselineProblems,
   encodeBaseline,
+  encodedFieldSpan,
   parseBaseline,
   sealBaseline,
 } from './baseline.js';
@@ -401,8 +402,16 @@ export {
 export type { RegenerateInput, RegenerateResult } from './regenerate.js';
 export { regenerateBaseline } from './regenerate.js';
 
-export type { GateCommandResult, GateSweepOptions, RegenerateArgs } from './balance-cli.js';
-export { gateCommand, loadBaseline, regenerateCommand } from './balance-cli.js';
+export type { ResealDrift, ResealInput, ResealResult } from './reseal.js';
+export { describeDrift, resealBaseline, resealNote } from './reseal.js';
+
+export type {
+  GateCommandResult,
+  GateSweepOptions,
+  RegenerateArgs,
+  ResealArgs,
+} from './balance-cli.js';
+export { gateCommand, loadBaseline, regenerateCommand, resealCommand } from './balance-cli.js';
 
 export type {
   AscensionStance,
