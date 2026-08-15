@@ -60,8 +60,8 @@ export type {
 } from './conformance.js';
 export { ablationConformance } from './conformance.js';
 
-export type { CapContext, CapOutcome } from './caps.js';
-export { ClampCounters, applyCap, capLimit } from './caps.js';
+export type { CapContext, CapOutcome, FloorOutcome } from './caps.js';
+export { ClampCounters, applyCap, applyFloor, capLimit, stackingFloor } from './caps.js';
 
 export {
   additive,
