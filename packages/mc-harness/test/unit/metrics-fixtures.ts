@@ -69,6 +69,8 @@ export function raidObservation(overrides: Partial<RaidObservation> = {}): RaidO
     raidersFielded: 0,
     raidersWithdrawn: 0,
     raidersStranded: 0,
+    victor: 0,
+    reason: 0,
     combatSources: [],
     totalCombatantTicks: 0,
     worldScaleRemovals: 0,

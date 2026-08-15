@@ -701,6 +701,8 @@ function raidObservationOf(record: RaidRecord, god: GodTickReport | undefined): 
     raidersFielded: record.raidersFielded,
     raidersWithdrawn: record.raidersWithdrawn,
     raidersStranded: record.raidersStranded,
+    victor: record.victor,
+    reason: record.reason,
 
     // The action-economy fields, now measured rather than declared absent.
     //

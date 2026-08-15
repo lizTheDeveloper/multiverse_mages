@@ -73,7 +73,11 @@ function summary(result) {
   let attempts = 0;
   const lengths = [];
   const sources = new Set();
+  const victors = [0, 0];
+  const reasons = new Map();
   for (const raid of raids) {
+    victors[raid.victor] = (victors[raid.victor] ?? 0) + 1;
+    reasons.set(raid.reason, (reasons.get(raid.reason) ?? 0) + 1);
     fielded += raid.raidersFielded;
     withdrawn += raid.raidersWithdrawn;
     stranded += raid.raidersStranded;
@@ -94,6 +98,9 @@ function summary(result) {
     combatantTicks,
     attempts,
     sources: [...sources].sort(),
+    attackerWins: victors[0],
+    defenderWins: victors[1],
+    reasons: [...reasons.entries()].sort((a, b) => a[0] - b[0]),
     p50: percentile(lengths, 50),
     p90: percentile(lengths, 90),
     max: lengths.length === 0 ? 0 : lengths[lengths.length - 1],
@@ -103,7 +110,18 @@ function summary(result) {
 
 console.log(`strategy=${STRATEGY} horizon=${HORIZON} seeds=${SEEDS.length}`);
 
-let all = { raids: 0, fielded: 0, withdrawn: 0, stranded: 0, killed: 0, attempts: 0, combatantTicks: 0 };
+let all = {
+  raids: 0,
+  fielded: 0,
+  withdrawn: 0,
+  stranded: 0,
+  killed: 0,
+  attempts: 0,
+  combatantTicks: 0,
+  attackerWins: 0,
+  defenderWins: 0,
+};
+const reasonTotals = new Map();
 const sources = new Set();
 let portalLow = Infinity;
 let portalHigh = 0;
@@ -113,6 +131,7 @@ for (const seed of SEEDS) {
   const s = summary(executeReferenceRun(task(seed)));
   for (const key of Object.keys(all)) all[key] += s[key];
   for (const source of s.sources) sources.add(source);
+  for (const [reason, count] of s.reasons) reasonTotals.set(reason, (reasonTotals.get(reason) ?? 0) + count);
   if (s.portalTicks.length > 0) {
     portalLow = Math.min(portalLow, s.portalTicks[0]);
     portalHigh = Math.max(portalHigh, s.portalTicks[s.portalTicks.length - 1]);

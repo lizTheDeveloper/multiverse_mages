@@ -225,6 +225,18 @@ export interface RaidObservation {
   readonly raidersStranded: number;
 
   /**
+   * Who won, and why it ended. `RAID_SIDE` and `RAID_END_REASON` values,
+   * carried as the integers `rules-raid` computed rather than as names.
+   *
+   * Present because an observation that could not say who won made the two
+   * halves of a withdrawal tuning indistinguishable: a threshold early enough
+   * that every raider comes home is also early enough that none of them takes
+   * anything, and without the victor the first reads as a success.
+   */
+  readonly victor: number;
+  readonly reason: number;
+
+  /**
    * Per-primitive action economy, ascending by `source`.
    *
    * Required rather than optional, for the reason the module opens with:
