@@ -61,13 +61,15 @@ were moved to §3 and are not here.
 | **Tradition store policy** — `palaceLibraryDepth`, `perishesWithHolder`, `scribeAvailability`, `PALACE_STORE`, `STANDARD_STORE` | 5 | `storePolicy`, `canHoldAt` and `admitToStore` are reached, so storage admits. The *consequences* of a store kind — palace depth, perishing with the holder, scribe availability — are computed by nothing. |
 | **`changeTradition`** and `RESOLUTION`, `hooksOfTradition` | 3 | `agent-api` publishes a change-tradition action and `mc-harness`'s strategies name it, while the rules function that would execute it has no caller. The action space advertises a move the rules never make. |
 | **`applyWard`** | 1 | `damage × (1 − preventedFraction)` is the **only** implementation of ward prevention in the tree — verified by reading `primitives/src/stacking.ts` and `ablation.ts`, which describes the stacked value as "the prevented fraction". Wards stack into a fraction that is never applied to damage. |
-| **Library and grimoire consequences** — `destroyLibrary`, `grimoiresIn`, `withdrawGrimoire` | 3 | A raid cannot burn a library and a mage cannot withdraw a grimoire. `rules-raid/src/consequences.ts` names `destroyLibrary` in prose without calling it — the doc-comment trap again. |
+| **Library-level destruction** — `destroyLibrary`, `grimoiresIn` | 2 | Narrower than it looks, and corrected once. `destroyGrimoire` **is** live: `rules-raid/src/consequences.ts:241` and `:265` loot and burn books one at a time, and that file's own comment claiming it was the fix for both is out of date about the library half. What has no caller is destruction of a library *as a unit* — and `instances/subsystem.ts:116` already records the consequence, that an unshelved book is one `grimoiresIn` cannot see and `destroyLibrary` leaves standing. |
 | **`replay`** | 1 | The replayer has no production caller: the only call-shaped occurrence of `replay(` in the tree is its own definition. Golden fixtures are *recorded* by `scripts/regen-goldens.mjs`, which mentions replay in prose and does not call it. Constraint 4's value is that a fixture diff means behaviour changed on purpose; nothing outside a test ever re-runs one. |
 | **`rules-raid` consequences and objectives** — `returnedWithKnowledge`, `strandedAttackers`, `objectiveHoldsKnowledge`, `OBJECTIVE_LOCATION_KIND`, `BURNABLE_LOCATION_KINDS` | 5 | Consistent with CLAUDE.md: `raid-engagement` is 67/92 and nothing in `scenario` opens a portal. Whole-subsystem debt, not individually surprising. |
 | **World-snapshot loading** — `loadWorldSnapshot`, `migrateWorldEnvelope` | 2 | Weaker than it looks and stated precisely for that reason: `sim-core`'s `envelopeToState` *is* reached, so snapshots decode. What has no caller is the **world-schema-aware** wrapper in `@mm/state`. Nothing in the rules path loads a world snapshot back. |
-| **`ENGAGEMENT_TICK_MS`** | 1 | The engagement half of the dual-scale clock, read by nothing. |
+| — | — | **`ENGAGEMENT_TICK_MS` was here and has been removed.** Its own doc comment settles it: the constant documents *"how much simulated time a combat tick represents, not how much wall clock a caller should spend on one"*, and real-time pacing *"is a client and server concern and never enters the core"*. Its consumers are the Electron client and the PvP server, both outside this repository. Reclassified tooling-only. |
 
-That is 48 of the 63. The remaining 15 are integration debt of the ordinary kind — an economy input
+One more was dropped from this table on inspection: **`withdrawGrimoire`** is declared deliberately unused by `gateway.ts:107` — *"`withdrawGrimoire` is unused and stays unused"* — which is an accepted design decision rather than debt.
+
+That is 45 of the 63. The remaining 18 are integration debt of the ordinary kind — an economy input
 list, a commitment predicate, a monoculture threshold, `speciesRediscoveryMultiplier`,
 `worshipShareOfRegeneration` — worth wiring, not worth a row.
 
@@ -139,7 +141,9 @@ not), and that constraint 3 was unenforced for populace draws (`RNG_STREAM.popul
 directly twice). Each of those was one grep away from being checked, and each would have sent
 somebody at a subsystem that already works.
 
-So: **an unreached symbol is a claim about a symbol, never about a capability.** Promoting it to a
+A second correction round, run after the first, moved three more rows: `ENGAGEMENT_TICK_MS` (its own comment names its consumers as the client and server), `destroyLibrary` (the grimoire-level destruction it appeared to gate is live at `consequences.ts:241`), and `withdrawGrimoire` (`gateway.ts:107` declares it deliberately unused). In each case the **adjacent source comment** held the answer and the first two passes had not read it.
+
+So: **an unreached symbol is a claim about a symbol, never about a capability** — and the cheapest place to look for the capability is the doc comment on the symbol itself, which in this repository is usually where somebody already wrote down why it has no caller. Promoting it to a
 claim about a capability takes a second search, for the thing the symbol would have done, under any
 name.
 
