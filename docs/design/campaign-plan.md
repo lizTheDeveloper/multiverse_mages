@@ -11210,3 +11210,88 @@ top-ranked row is **downgraded**: W205's ablation attributes ~4/5 of #137's coll
 anti-requisite, so the loot-shelf re-key stays as a cheap real prerequisite but **a measurement outranks a
 derivation**. It did not edit the five audit docs; where one is wrong, the correction lives in the
 sequence.
+
+## W214 — mastery rises: 0 → 69 crossings, and the reason the hole was total
+
+PR #183. The defect W203 called the largest in the campaign, closed — and the mechanism explains why it
+was so complete.
+
+### The measurement
+
+`tools/w196/mastery-crossings.mjs`, root seed 20260811, 2 strategies × 2 starting cells × 3 replicates ×
+600 ticks, **the same grid on both trees**:
+
+| | upward crossings | distinct nodes | runs positive |
+|---|---:|---:|---:|
+| `origin/main` | **0** | 0 | **0/12** |
+| this branch | **69** | 11 | **12/12** |
+
+The probe is inert on all four arms (byte-identical snapshot hashes), carries a **positive control** —
+31–150 nodes per run *born* at ≥512 from god grants — and has a **third exit (42) for "the probe is
+broken"** rather than folding that into "the answer is zero."
+
+### The discriminator nobody had connected
+
+**`MASTERY_ACTIVATION_THRESHOLD` is also 512.**
+
+So a node a mage researched herself, sitting at 256, is **not castable either**. It is inert in *both*
+directions — she cannot teach it and she cannot use it. That is why the hole was total rather than merely
+awkward, and it kills the obvious candidate mechanism in one line: **repeated casting cannot bootstrap
+mastery, because you cannot cast the thing you would be practising.**
+
+Teaching-received and #170's `study` both *create* instances rather than raising held ones.
+Time-at-institution is the passive accrual `metis-from-use-results` §2 already measured and rejected
+(1.0001×, 877×). **A goal costs a month, which is what makes it immune to that finding** — so `GOAL.practice`
+(id 10) plus a second trigger on casting at the world.
+
+### The mētis ruling survives; its premise does not
+
+§5a — *"no mage ever applies magic"* — is **false on this tree**. `applyMagic` is goal 9, and the ruling
+was taken at **#50 (2026-08-13)** against a tree that received `application.ts` at **#127 (2026-08-14)**,
+both confirmed from `git log`. What survives intact is the predicate critique: **never accrue on passively
+held knowledge.**
+
+**And §6 of that same document prescribed this exact goal.** The doc contained its own fix and was read as
+a rejection. Written up as a dated §10 naming the ref, with two departures recorded rather than smuggled.
+
+### Low-tier durability, solved per mage per node
+
+`min(1024, 512 + 256 × max(0, depthCeiling − tier))`. **At her ceiling a mage lands at exactly 512 —
+teachable only while she keeps drilling. Two tiers inside her reach, full mastery.** So *"an orc masters
+tier 1 forever and can never teach tier 3 unattended."*
+
+That is the owner's *"you need low level spell casters to stay in the population"* falling out of the
+arithmetic rather than being asserted. Measured by removing only the cast trigger: mages applying
+**5,549 (goal only) → 21,791 (both triggers)**, against 12,027 on main.
+
+### The disclosed regression, and it is a design question
+
+**`lessonsTaught` fell 31%** (11,199 → 7,675); scribing −14%; research flat. **Isolated rather than
+guessed**: halving practice's appeal cut crossings 69 → 32 and **did not recover lessons.** The freed
+months went to applied work — *"because crossing 512 makes a node castable and teachable in the same
+instant."*
+
+**One threshold gates two behaviours, and mages prefer the one that pays now.** Whether teaching and
+casting should share a threshold is an author's ruling, not a tuning accident.
+
+### A test that had written the defect down as a property
+
+`acquire-hook-in-the-loop.test.ts` asserted a standard universe teaches **exactly 0 lessons**, *"which
+nothing in the loop ever raises."* That is the hole, recorded as a property of traditions and passing.
+True Naming is now **15× the transmission (479 against 31)** rather than the only tradition that appears
+to work.
+
+**And all seven prose sites asserting "`setMastery` only lowers" are updated — `grep` for the claim now
+returns nothing.** Five source files documented that hole while working around it; none of them says it
+any more.
+
+### Two process notes worth carrying
+
+Its first isolation experiment **silently failed to apply** — a comment block sat between the two lines it
+matched on — and it **initially read the identical numbers as a finding**, caught only by checking the
+edit had landed. Same family as the stale-`dist` trap: *the experiment that did not run looks exactly like
+the experiment that changed nothing.*
+
+Nine tests left red across five `scenario` files, with **a control run of those same five files on
+`origin/main` passing 47/47**, so all nine are attributable. 9.5 was deliberately **not** rewritten — cause
+stated, left to whoever owns long-run balance.
