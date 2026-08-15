@@ -3,7 +3,7 @@
     "generatedBy": "scripts/build-design-dashboard.mjs",
     "command": "npm run ui:dashboard",
     "pinnedBy": "packages/content/test/unit/design-dashboard-payload.test.ts",
-    "contentRevision": "d4e3047657b4fa8a1a74e1d52f9f5c86",
+    "contentRevision": "ac4f330ba6e07d288e45213493745acf",
     "contentCounts": {
       "techniques": 5,
       "forms": 14,
@@ -2543,8 +2543,8 @@
       "scripts/check-reachability.mjs --json"
     ],
     "ok": false,
-    "findingCount": 125,
-    "examinedSymbolCount": 855,
+    "findingCount": 126,
+    "examinedSymbolCount": 860,
     "examinedPackages": [
       "content",
       "coordination",
@@ -2556,7 +2556,7 @@
       "sim-core",
       "state"
     ],
-    "productionFileCount": 309,
+    "productionFileCount": 310,
     "orphanPackages": [],
     "unreached": [
       {
@@ -2627,7 +2627,7 @@
       },
       {
         "file": "packages/coordination/src/universe-effects.ts",
-        "line": 365,
+        "line": 434,
         "name": "summedYield",
         "kind": "function"
       },
@@ -2912,6 +2912,12 @@
         "line": 67,
         "name": "worshipInputs",
         "kind": "function"
+      },
+      {
+        "file": "packages/rules-world/src/economy/displacement.ts",
+        "line": 123,
+        "name": "NO_DISPLACEMENT",
+        "kind": "const"
       },
       {
         "file": "packages/rules-world/src/economy/kinds.ts",
