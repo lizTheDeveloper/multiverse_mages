@@ -8836,3 +8836,76 @@ qualifier.
 
 *(`SeedSetInput.options` landed mid-measurement so the instrument can now vary the opening square; it
 still cannot vary a price or submit an action.)*
+
+## W175 — W174's pricing result was measured on a bot that cannot see prices, and the reason is architectural
+
+Asked directly: *"That permissive breadth isn't taking the price into the value function?"* It is not, and
+it is worse than an oversight in one strategy.
+
+**No strategy in the pool reads cost, favor-affordability, price or budget.** `permissive-breadth` has no
+value function — it returns a static preference list and the harness takes the first *legal* entry, which
+its own comment says is `permitTechnique` on every round. The mask filters the unaffordable action, the
+next preference goes through, and the strategy never learns anything happened. So **unaffordability is a
+substitution, not a rejection**, which is also why `illegalActionRate` recorded zero on arms where the god
+could afford nothing.
+
+That re-reads W174 without contradicting its arithmetic:
+
+- **Survives.** 2400 ticks of income against a 96-favor grid is real regardless of who spends it, and a
+  technique costing twice a form against a common cap does put the two verbs on opposite sides of a cliff.
+- **Does not survive.** *"The lever was probably never the cost."* That rests on a measurement which could
+  not have detected a cost response. **Pricing is untested for any agent that optimises** — which is every
+  human player and the RL bridge. The lockout at 8× and 16× is exactly what a price-blind agent does: it
+  ignores a price until the price becomes a wall.
+- **Unaffected.** Anti-requisites, which works by removing what a mage can *hold*.
+
+### It is not a bug in the strategy: price is not in the observation
+
+`PreferenceInput` is `{ observation, mask, round, context }` and none of the four carries a cost table.
+`god-cost.json` prices sixteen actions and **no strategy can see any of them.** A strategy can read `favor`
+— the resources block encodes `saturate(record.favor)` — and cannot read what anything costs, so it cannot
+compute affordability even in principle.
+
+Nothing detected this for a year because **nothing enumerates what a player is entitled to observe.**
+`ObservationSlot` is `{ index, block, blockIndex, descriptor }` — how a channel is *scaled*, never what it
+*is*. 400 anonymous slots. `OBSERVATION_LAYOUT_DIGEST` hashes positions and normalization rules, so it
+catches a slot moving and **would not notice every slot being about the wrong thing.** A trait that was
+never encoded and one deliberately withheld are the same state, and there is nowhere to write down which.
+
+Design at `docs/design/observation-entitlement.md`, branch `w175/observation-entitlement`: an abstract
+reducer `project(state) → PlayerState` over the component registry, three gates in the existing
+`worldComponentsWithPosition` / `assertNoWorldPositions` idiom, classification three-way (**observable /
+aggregated / withheld**, because knowledge is 70×3 and mage tiers 6×8 — most of the vector is histograms
+over entities, so `MAGE.tier` is observable-in-aggregate and withheld-per-entity). Strategy acknowledgement
+lands at **block** granularity: 9×12 = 108 decisions a human reviews, against ~1200 bulk-generated
+`because` strings that reimplement the failure being fixed. Steps 0–3 move no baseline and leave the digest
+unchanged; step 4 edits `StrategyDefinition` and is **held** until the integration wave settles.
+
+**The experiment this does not gate:** an mc-harness strategy is scripted and in-process, so a price-aware
+strategy can import the cost table from `@mm/content` directly — no observation resize, no digest move.
+That answers the pricing question without waiting on any of the above.
+
+## W176 — main's own baselines are stale against main, and one gate is 2.30 SE from tripping
+
+From the #126 re-derivation, and the control that settles it: **all 109 current values are byte-identical
+between #126's merged tree and `origin/main`.** #126 moves zero numbers. The nonzero gate deltas —
+`balance-gate-v1` **1/9** and `balance-gate-horizon-v1` **0/10** — are **#125's**: it changed
+`world-step.ts` and re-recorded only the *agency* baseline. So two of main's three baselines are stale
+against main itself, and every delta measured against them attributes #125's drift to whatever change is
+being tested.
+
+⚠️ **`balance-gate-horizon-v1 / referencePeakPopulation` sits at 2.30 SE against a 3.00 SE tolerance on
+main today.** The next change that nudges population trips that gate **and will look like its own fault.**
+Anyone who lands a population change and sees horizon go red should check this row against `origin/main`
+before believing they caused it.
+
+Also from that pass: action 16 is legal on **0 ticks across all 14 pool strategies** at 60 and 240, first
+legal at world tick **276**, and at 600 `uniform-random-legal` submits it **4×** — a draw case grep misses.
+And `actionName(16)` returns `action-16`: `ACTION_NAMES` in `packages/scenario/src/strategy-audit.ts` still
+has sixteen entries.
+
+**Structural, from three red instances in a row:** the design-dashboard payload is committed, and
+`fileSeal`, the reachability findings, and now a merge conflict have each been fixed by projecting a field
+out of the equality. Three projections means **the shape is wrong, not the fields** — each one narrows what
+the pin proves while the guaranteed three-file merge conflict cost stays. Build the payload in CI and fail
+on a diff: same rot detection, no merge surface.
