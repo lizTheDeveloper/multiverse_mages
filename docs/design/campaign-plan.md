@@ -11981,3 +11981,50 @@ lie. Flagged under its own heading with the numbers present, so overruling *it* 
 **#183 should not merge as it stands.** Mastery rising is right in principle, its headline is real, and it
 carries an unfixed consequence that returns the knowledge model to a defect the frontier logic exists to
 prevent. **#186 should merge on its own** — green, positive, and wrongly implicated by my hypothesis.
+
+## W225 — #186 is mergeable and cannot merge: the gates are steps inside the required check
+
+PR #186 is `MERGEABLE` at `35ffb21a` with `verify:nosweeps` **exit 0 — 338 files, 4,698 tests, all
+passing**. It still cannot land, and the reason is W211 restated with line numbers.
+
+**The three balance gates are steps *inside* `Verify (pinned Node)`** — `ci.yml` lines 154–185 — not a job
+beside it, and `ci/hetzner-lint` runs them through `npm run verify`. **So "leave the gates red" and "`Verify`
+green" cannot both hold.** Confirmed in CI run `31886334146`: every step through `Test (unit + golden
+replay)` green, then the five-year gate refusing on both identity axes.
+
+**With a positive control on the gate's own arithmetic**: `canonicalHash` over the twelve-row table `main`
+still carries reproduces the baselines' `2bc5d131…` exactly. And a control on *where* it stops — `main`'s
+own head run has `Verify` **success**, so it reaches and clears those same steps there.
+
+### The decision this forces, and the recommendation already on record
+
+Unblocking needs the three baselines' provenance re-sealed. `main` now carries the tool for it
+(`packages/mc-harness/bin/reseal-baseline.mjs`, #184) — **and the re-seal verifies by measuring**, so it
+would surface Fix 3's real movement: `referenceNodesGained` / `referenceNodesKnown` **−22% at −25.03 SE**,
+which W217's correction says not to re-baseline over yet.
+
+**`sim-rigor-2026-08-15.md` §4.3 already recommends one re-seal after #170 and #185 land, not three.** That
+is the coherent plan: let the stream queue drain, then re-seal once. The cost of the current state is that
+every content-touching PR waits.
+
+### The merge itself was cleaner than expected, for a reason worth noting
+
+**Exactly one file conflicted** — `interning.test.ts`, the `contentRevision` ledger — because **#179 *is*
+the merge base** (`3b90089c`). The `ui/` deletions were already in this branch's history, so neither path
+appears in its diff at all. #190's float ban and #126's seventeen-action space auto-merged clean, and
+`packages/rules-raid/` is **byte-identical** across the merge.
+
+Resolved as a **union** in the file's own house style, since neither preimage contains the other; new
+revision **`3fa982e302f5b191c417d6bce36d1660`**, measured by running the test with a placeholder and
+reading the received value. Density **green, 25/25** after renumbering `detachment` 14 → 13 in all four
+places that must agree — **and the prose was rewritten rather than sed'd**, because two passages became
+*false* under 13 ("until #170 lands the density assertion is red", "the assignment is 13, 14, 15").
+
+`sim-rigor-2026-08-15.md` §4.3 states its ruling as a **dated measurement**, so it got a dated supersession
+note rather than a silent rewrite — the spec/record distinction applied without being asked.
+
+### And a grep trap now in `CLAUDE.md`
+
+**`packages/scenario/src/executor.ts` contains two literal NUL bytes** — an intentional memo-key separator,
+committed on `main` — so **`grep` treats all 880 lines as binary and prints nothing.** An empty result that
+means "skipped", not "absent". Same family as a pathspec matching no files, and it cost an agent a detour.

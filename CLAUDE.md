@@ -339,6 +339,17 @@ caught it only because it read the file back before pushing.
 wherever it lives. Put something unique in the name — the branch, the PR number, the task id — and **read
 a file back before acting on it** when anything else might have written there.
 
+## A source file with a NUL byte makes `grep` return nothing, silently
+
+`packages/scenario/src/executor.ts` carries two literal NUL bytes — an intentional memo-key separator,
+committed on `main`. `grep` therefore treats all 880 lines as **binary** and prints nothing at all rather
+than matching. An agent lost a detour to it.
+
+So a `grep` that comes back empty has two readings — *"not present"* and *"the file was skipped"* — and
+nothing distinguishes them. **Use `grep -a` when a negative matters**, or confirm with a positive control
+that the file is being read at all. This is the same failure as a pathspec that matches no files: an empty
+result that looks like an answer.
+
 ## A trailing `echo` throws away the exit code you were checking
 
 A compound command's status is its **last** command's status. So
