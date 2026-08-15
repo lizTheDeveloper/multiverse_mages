@@ -9,7 +9,7 @@ name: CI
 
 on:
   push:
-    branches: ['**']
+    branches: [main]
   pull_request:
   workflow_dispatch:
 
@@ -35,17 +35,65 @@ on:
 # named `main` would land in this repository's `main` group and could cancel a
 # real `main` run, leaving a merge commit with no green on record. With it, forks
 # get their own groups and `main` runs serialise instead of superseding each
-# other. Cancellation only ever hits the *older* run in a group, so the newest
-# check run for a given name always belongs to the survivor and a cancelled
-# `Verify (pinned Node)` can never mask a newer green one.
+# other.
 #
-# `push:` stays at '**' on purpose. Narrowing it to main would delete CI for
-# every branch pushed before its PR exists, which is most of them here, and would
-# save nothing on the branches that do have one. `pull_request:` must never be
-# narrowed at all: fork PRs generate no push event, and this workflow is the only
-# gate that may safely see a fork.
+# **A cancelled run's checks DO mask a green one, and this comment used to claim
+# otherwise.** An earlier version asserted that "the newest check run for a given
+# name always belongs to the survivor". It does not: GitHub's `filter=latest` is
+# per check *suite*, and one commit on a PR branch produced *two* suites — one per
+# event. The cancelled suite's `Verify (pinned Node)` stays attached to the commit
+# and stays `required=true`, so branch protection sees a required check in
+# CANCELLED state and refuses the merge. Observed on PR #42 with both contexts
+# green:
+#
+#     CHECK Verify (pinned Node) CANCELLED required=true
+#     CHECK Verify (pinned Node) SUCCESS   required=true
+#
+# `--admin` is unavailable (ruleset `bypass_actors: []`), so the only recovery was
+# rerunning the required job inside the dead suite by hand. Every push to a PR
+# branch reproduced it.
+#
+# So `push:` is narrowed to `main`, which achieves what the cancellation was for
+# — the duplicate was measured at four jobs and 1655 s of compute to produce one
+# 443 s required status, 26 of the last 100 runs — *without* minting a cancelled
+# required check. One event per commit, one suite, nothing to mask.
+#
+# The cost is real and smaller than it looks: a branch pushed before its PR exists
+# now gets no Actions run. It already got no `ci/hetzner-lint` either — the
+# self-hosted receiver's `WATCHED_BRANCHES` is `{main, production}` — so that
+# window was never gated by anything, and it is exactly the window where a gate
+# has nothing to protect. Once the PR exists, `pull_request` fires on every push
+# and both systems run.
+#
+# `pull_request:` must never be narrowed at all: fork PRs generate no push event,
+# and this workflow is the only gate that may safely see a fork.
+# ## Why `main` runs are grouped per commit and everything else per branch
+#
+# `cancel-in-progress` is false for `main` on purpose: a run on `main` must never
+# be killed mid-flight. But GitHub keeps **only one pending run per group**, so a
+# false `cancel-in-progress` does not mean "every commit is verified" — it means
+# every commit *queues*, and each queued run is cancelled by the next one to
+# arrive. Cancelled before it ever started, not interrupted.
+#
+# That is not hypothetical. Measured on 2026-08-14, `main`'s last eight runs held
+# three `cancelled` and exactly one `success`, and the tree went hours with no
+# confirmed `Verify` while every individual PR was green. `72d9538`, `fbb9dcb`
+# and `14155e7` were never verified at all.
+#
+# The cause is throughput. `Balance gate, two hundred world years` takes ~35
+# minutes and sits in this workflow, so the *run* holds the group for ~40 minutes
+# even though `Verify (pinned Node)` finishes in about eight. A second commit
+# inside that window queues; a third cancels the second. The comment on that job
+# says "nothing blocks on this job" — true of the merge gate, and false of the
+# next commit's verification, which is what this group made it block.
+#
+# Adding the SHA to the group for `main` gives every `main` commit its own group,
+# so none can cancel another and each is verified on its own merits. Branch and
+# PR runs keep the shared group and keep cancelling supersedes, which is what you
+# want there and costs nothing — this repository is public, so Actions minutes
+# are unmetered.
 concurrency:
-  group: ci-${{ github.workflow }}-${{ github.event.pull_request.head.repo.full_name || github.repository }}-${{ github.event.pull_request.head.ref || github.ref_name }}
+  group: ci-${{ github.workflow }}-${{ github.event.pull_request.head.repo.full_name || github.repository }}-${{ github.event.pull_request.head.ref || github.ref_name }}-${{ (github.event_name == 'push' && github.ref_name == 'main') && github.sha || '' }}
   cancel-in-progress: ${{ (github.event.pull_request.head.repo.full_name || github.repository) != github.repository || (github.event.pull_request.head.ref || github.ref_name) != 'main' }}
 
 permissions:
@@ -107,22 +155,25 @@ jobs:
         # measurements, and horizon-gate.test.ts fails if this step goes missing.
         run: npm run balance:gate:horizon
 
-      - name: Balance regression gate (two hundred world years)
-        # The third instrument, and the only one that can observe the win
-        # condition. Measured: 0 of 400 runs ascended at twenty world years and
-        # 10 of 80 at two hundred, so both gates above are structurally blind to
-        # the ending of the game they gate. This one runs the whole eight-strategy
-        # pool round-robin rather than the passive control, because a summit is
-        # something a strategy reaches. It is not the horizon gate with a bigger
-        # number and must not be merged into it — horizon-gate.test.ts fails if
-        # this step goes missing or if any of the three horizons collapses into
-        # another.
-        run: npm run balance:gate:ascension
+      - name: Balance regression gate (twenty world years, eight strategies)
+        # Same horizon as the step above and a different pool, which is the
+        # entire point. The two gates above run `passive-control` fixed, and
+        # `passive-control` declares an empty preference list — so between them
+        # their 400 runs submit no god intervention at all, and no change to any
+        # of the fifteen verbs in coordination/src/god/interventions.ts can move
+        # either of them by construction. That blind spot used to be covered
+        # only by the two-hundred-year gate below, the most expensive instrument
+        # here. This one covers it in about nine seconds. The single declared
+        # difference from the step above is the pool, so a divergence between
+        # them is attributable to god agency and to nothing else —
+        # horizon-gate.test.ts fails if that stops being true.
+        run: npm run balance:gate:agency
 
       # `check:consumption` is deliberately NOT here. It is expected to be red
       # until the effect pipeline is wired, so it runs in its own non-blocking
       # job at the bottom of this file. See that job for the condition under
-      # which it moves back into this one.
+      # which it moves back into this one. `check:reachability` is absent for
+      # the same reason and sits in the job below it.
 
   next-node:
     # Early warning only: a failure here means the next Node major may change
@@ -186,22 +237,103 @@ jobs:
         # measurements, and horizon-gate.test.ts fails if this step goes missing.
         run: npm run balance:gate:horizon
 
-      - name: Balance regression gate (two hundred world years)
-        # The third instrument, and the only one that can observe the win
-        # condition. Measured: 0 of 400 runs ascended at twenty world years and
-        # 10 of 80 at two hundred, so both gates above are structurally blind to
-        # the ending of the game they gate. This one runs the whole eight-strategy
-        # pool round-robin rather than the passive control, because a summit is
-        # something a strategy reaches. It is not the horizon gate with a bigger
-        # number and must not be merged into it — horizon-gate.test.ts fails if
-        # this step goes missing or if any of the three horizons collapses into
-        # another.
-        run: npm run balance:gate:ascension
+      - name: Balance regression gate (twenty world years, eight strategies)
+        # Same horizon as the step above and a different pool, which is the
+        # entire point. The two gates above run `passive-control` fixed, and
+        # `passive-control` declares an empty preference list — so between them
+        # their 400 runs submit no god intervention at all, and no change to any
+        # of the fifteen verbs in coordination/src/god/interventions.ts can move
+        # either of them by construction. That blind spot used to be covered
+        # only by the two-hundred-year gate below, the most expensive instrument
+        # here. This one covers it in about nine seconds. The single declared
+        # difference from the step above is the pool, so a divergence between
+        # them is attributable to god agency and to nothing else —
+        # horizon-gate.test.ts fails if that stops being true.
+        run: npm run balance:gate:agency
 
       # `check:consumption` is deliberately NOT here. It is expected to be red
       # until the effect pipeline is wired, so it runs in its own non-blocking
       # job at the bottom of this file. See that job for the condition under
-      # which it moves back into this one.
+      # which it moves back into this one. `check:reachability` is absent for
+      # the same reason and sits in the job below it.
+
+  ascension:
+    # The two-hundred-year balance gate, run on every commit and required at
+    # release rather than at merge.
+    #
+    # ## Why it is not in `verify` any more
+    #
+    # It measures the win condition, and it is the only instrument that can:
+    # 0 of 400 runs ascend at twenty world years and 46 of 64 at two hundred, so
+    # every other gate is structurally blind to the ending of the game. It is
+    # also, now, the entire cost of checking a commit. Measured 2026-08-12 on the
+    # merged tree: **830 s on a quiet eight-core machine and 1154 s while three
+    # sibling worktrees were building**, against 83 s for the same sweep a day
+    # earlier. The sweep did not change; the simulation got heavier — mean
+    # population 5,400 to 15,764, living mages 70 to 468.
+    #
+    # `balance/README.md` states this repository's own rule: *a gate that takes
+    # ten minutes gets deleted*, and a gate people route around is worse than no
+    # gate, because it still costs the time and no longer earns the trust. On the
+    # self-hosted runner it is worse than slow — that runner serialises, against a
+    # 2400 s timeout, so a twenty-minute `verify` is a queue hazard for every
+    # other pull request.
+    #
+    # So the win condition moves to where the claim it supports actually lives.
+    # `docs/design/release-plan.md` makes MINOR parity mean "even = Monte Carlo
+    # baselines committed and green" — a **release-time** claim — and this job is
+    # what substantiates it. Taking an even MINOR without this job green is
+    # precisely the failure the parity scheme exists to prevent, and the release
+    # checklist now says so by name.
+    #
+    # ## Why it is here and not merely per-release
+    #
+    # GitHub Actions is free and unmetered for this public repository, so running
+    # it on every commit costs nothing but wall clock nobody is waiting on. Held
+    # to release time only, a regression would surface weeks after the commit
+    # that caused it, with the bisect range to match.
+    #
+    # Measured here on 2026-08-13: **35m09s**, against 830 s on an eight-core
+    # laptop — a hosted runner has fewer cores and `--workers 4` oversubscribes
+    # them. That is fine and is not a thing to optimise: nothing blocks on this
+    # job, and trimming `--workers` or the replicate count would buy minutes
+    # nobody is waiting for at the cost of the sensitivity the sweep exists for.
+    # If it ever needs to be fast, `docs/devops/sweep-fanout.md` is the lever —
+    # but read why that is wrong for a *required* gate before reaching for it.
+    #
+    # ## Why it has no `continue-on-error`, unlike the two jobs below
+    #
+    # Those two are *expected* red and say so. This one is expected **green**, so
+    # a failure here is a real finding and must look like one. It is non-blocking
+    # because it is not in this repository's required status checks — which are
+    # `Verify (pinned Node)` and `ci/hetzner-lint`, and are configured in branch
+    # protection rather than here — and not because its result is soft. Red here
+    # means the win condition moved: read the delta, do not re-run until green.
+    name: Balance gate, two hundred world years (not required to merge)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node from .nvmrc
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - name: Install
+        run: npm ci
+
+      # `prebalance:gate:ascension` runs this too; naming it as its own step
+      # makes a build failure land on "Typecheck" rather than inside the gate,
+      # where it would read as a balance regression.
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Balance regression gate (two hundred world years)
+        # It needs no credentials, no network and no services — `npm ci`, a
+        # typecheck and a deterministic simulation — which is what makes it safe
+        # to run in the only job that may see a fork pull request.
+        run: npm run balance:gate:ascension
 
   consumption:
     # The measurement that says how much of the authored magic reaches the
@@ -258,3 +390,61 @@ jobs:
 
       - name: Primitive consumption (can knowledge move each primitive?)
         run: npm run check:consumption
+
+  reachability:
+    # The same question as `consumption`, one level down: `check:consumption`
+    # asks whether an authored *primitive* reaches the simulation; this asks
+    # whether a rules-path *symbol* is called by anything that is not a test.
+    #
+    # It exists because W85 found three university subsystems — `advanceConstruction`,
+    # `applyLibraryUpkeep` and `UNIVERSITY_STAFF` — that were built, tested,
+    # exported, discussed in prose, and never invoked. Two have since been wired
+    # (ef3bba9 and 9a3b6b5); the third has not. The lesson recorded there is the
+    # one this job mechanises: **"the symbol exists" and "a test covers it" are
+    # both compatible with "the game never runs it."**
+    #
+    # It is expected to be RED. At the time this job was added: 1 orphaned
+    # package, 94 exported values with no production caller, 10 called only by
+    # symbols that are themselves unreached, 1 component declared and never read
+    # or written, 3 god constants resolved and never consumed, and 6 read only
+    # by unreached code — 115 findings. That is the finding the check exists to
+    # publish, not a regression to be silenced, and it is far too large to hold
+    # inside `npm run verify`: a gate that cannot merge is a gate nobody sees.
+    #
+    # Non-blocking here also keeps `scripts/ci-check.sh` equivalent to
+    # `npm run verify`, because neither runs it. `check:consumption` is
+    # non-blocking for the same reason and by the same mechanism.
+    #
+    # ## When to make this blocking
+    #
+    # Move the step into the two jobs above — and into `verify` and
+    # `verify:nosweeps` in package.json, so the self-hosted runner picks it up
+    # through the same gate — when, and only when:
+    #
+    #   the finding count is small enough that a pull request adding one symbol
+    #   ahead of its caller is a conversation rather than a blockage
+    #
+    # A reasonable reading of that is "under ten", reached by wiring or deleting,
+    # never by lengthening `DECLARED_EXCLUSIONS` in the script. Every entry there
+    # is a finding the check will never make again, and each carries a written
+    # argument for exactly that reason.
+    name: Rules-path reachability (non-blocking)
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node from .nvmrc
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      # The check parses TypeScript sources with the compiler API and reads no
+      # build output, so there is no typecheck step here. `npm ci` is only for
+      # `typescript` itself.
+      - name: Install
+        run: npm ci
+
+      - name: Reachability (does anything call this?)
+        run: npm run check:reachability

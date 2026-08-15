@@ -101,6 +101,7 @@
   .gc[data-e="interdiction"]{border-color:var(--inter);background:color-mix(in srgb,var(--inter) 22%,var(--sunk));color:color-mix(in srgb, var(--loss) 45%, var(--ink));opacity:1}
   .gc .b{position:absolute;top:1px;right:2px;font:8px var(--mono)}
 
+  .fed{margin:0 0 1rem;font:11px/1.7 var(--mono);color:var(--faint);letter-spacing:.02em}
   .note{margin-top:2.6rem;border-top:1px solid var(--edge);padding-top:1.2rem}
   .note h2{font:400 1.4rem var(--serif);margin:0 0 .5rem}
   .note p{color:var(--soft);max-width:74ch;margin:0 0 .75rem}
@@ -118,6 +119,8 @@
   otherwise forbidden and an interdiction one whose axes are both permitted, so <b>an edict that would
   change nothing is masked rather than merely wasteful</b>. Click a cell in direction C to issue or revoke.</p>
 
+  <div id="srchost" style="margin:1.2rem 0 1.4rem"></div>
+
   <div class="bar">
     <span class="k">technique</span>
     <button class="pick" type="button" data-ax="intellego" aria-pressed="true">intellego</button>
@@ -131,9 +134,11 @@
     <span class="used">slots <b id="usedv">—</b> of 8</span>
   </div>
 
+  <div class="fed" id="fedhost"></div>
+
   <div class="dirs" id="dirs"></div>
 
-  <div class="note">
+  <div class="note mm-essay">
     <h2>What operating these settles</h2>
     <p><b class="hot">Only the slots direction makes the scarcity the object, and the scarcity is the
     mechanic.</b> Eight is a small number chosen on purpose, and the cost table prices revocation cheaply
@@ -294,4 +299,32 @@ render();
 <script type="module">
   import { floatThemeControl } from '../shared/theme.js';
   floatThemeControl();
+</script>
+
+<script type="module">
+  /* Where this page's data comes from, and — for the parts the read path
+     does not carry — which capability is missing and why. Sourced from
+     capabilities() rather than prose, so it cannot go stale quietly. */
+  import { mountSourceNote, openSession } from '../shared/session.js';
+  const s = await openSession({ recording: '../session.json' }).catch(() => null);
+  mountSourceNote(document.getElementById('srchost'), s, ['ruleset']);
+
+  /* The strip above says this page can be fed, and it can — `ruleset()` carries
+     all eight slots. It is not fed, and until this line existed the page did
+     not say so: the three edicts and the two forbidden axes below are a
+     scripted position, and the strip's "seed 20260813" read as a claim that
+     they came out of the run. They did not.
+     They are scripted on purpose. The question this page exists to answer is
+     what spending one of eight slots feels like, and the reference run issues
+     none, so the fed state is eight empty holders and answers nothing. That is
+     a fact about the run rather than about the page, so it is stated here from
+     the read path rather than asserted in prose that can rot. */
+  const host = document.getElementById('fedhost');
+  if (s !== null && host !== null) {
+    const spent = s.frame(s.frameCount - 1).ruleset().edicts.filter((e) => !e.empty).length;
+    host.textContent =
+      `The recorded run holds ${spent} edict${spent === 1 ? '' : 's'} at tick `
+      + `${s.frameCount - 1}. The position below is scripted: eight empty holders `
+      + `would show the budget and nothing being spent from it.`;
+  }
 </script>

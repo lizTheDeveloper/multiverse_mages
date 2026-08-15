@@ -118,12 +118,17 @@
 import type { ContentId, ContentRegistry, EffectRecord, PrimitiveRecord } from '@mm/content';
 import type { Fixed, RngStream } from '@mm/sim-core';
 import { FP_ONE, floorDiv, nextBounded } from '@mm/sim-core';
-import type { ClampCounters, EffectControl } from '@mm/primitives';
-import { combineControls, rollStackedProbability, stackMagnitudes } from '@mm/primitives';
+import type { AblationMask, ClampCounters, EffectControl } from '@mm/primitives';
+import {
+  combineControls,
+  neutralizedMagnitude,
+  rollStackedProbability,
+  stackMagnitudes,
+} from '@mm/primitives';
 import type { RulesetSnapshot } from '@mm/state';
 import { LOCATION_KIND, permits } from '@mm/state';
-import type { CastPolicy, CostPolicy, MagicGrid } from '@mm/rules-magic';
-import { castCost, expendOnCast, requireRegistryNode } from '@mm/rules-magic';
+import type { CastPolicy, ConsumptionRecorder, CostPolicy, MagicGrid } from '@mm/rules-magic';
+import { castCost, expendOnCast, nodeEffectRecords, requireRegistryNode } from '@mm/rules-magic';
 
 /** The primitive ids a cast can put on the battlefield. */
 export const COMBAT_PRIMITIVES = Object.freeze({
@@ -174,6 +179,7 @@ const NO_EFFECTS: CastEffects = Object.freeze({
 });
 
 /**
+
  * Whether an effect contributes at all right now — `when` absent or
  * `{kind:"always"}`. See the module docblock's "reveal/latent decision":
  * this file never activates a latent (`{kind:"revealed"}`) or conditional
@@ -323,6 +329,139 @@ export function enablesGate(effect: EffectRecord, primitiveId: string): boolean 
   );
 }
 
+/**
+ * Every combat primitive's authored node effects, fetched once and recorded.
+ *
+ * ## Why this exists at all, when the arbiter could read the registry
+ *
+ * It did, and the reading was correct — this index changes no magnitude and no
+ * dispatch. What it changes is **who asked**, and that is the whole point.
+ *
+ * `rules-magic`'s consumption check does not ask "does any code read this
+ * primitive"; it asks whether *the code that assembles a running simulation*
+ * fetched a primitive's node magnitudes. Registration is a side effect of the
+ * fetch, so it cannot be claimed by a maintainer and left untrue. An arbiter
+ * that read `registry.nodes` itself, inside a raid, at the bottom of a call
+ * stack the composition root never traverses at build time, registered nothing —
+ * and seven primitives that a mage can learn, hold, and work were reported as
+ * unreachable by knowledge while they were, in fact, reachable.
+ *
+ * So the index is built **at the composition root**, by `scenario`'s
+ * `worldDeps`, and handed to {@link CastArbiter} as a required constructor
+ * argument. Required, not optional: an arbiter that could build its own would
+ * let the wire from the composition root be deleted without a type error, and
+ * the check would stay green over a dead wire. That failure mode — a green
+ * light with nothing behind it — is precisely the one the consumption check was
+ * written to end.
+ *
+ * ## What the green means, stated so nobody has to infer it
+ *
+ * That the assembled simulation holds these magnitudes. **Not** that a raid
+ * happened: the check builds a universe and throws it away, and it opens no
+ * portal — exactly as it opens none for `portal` itself. Evidence that a mage
+ * who knows combat magic fights better is a measurement, and it is in
+ * `packages/rules-raid/test/unit/combat-knowledge.test.ts`.
+ */
+export interface CombatEffectIndex {
+  /**
+   * Authored effects per node, per combat primitive.
+   *
+   * Keyed by primitive id first because that is the shape the fetch produces,
+   * one recorded call per primitive, and a per-node shape would have to be
+   * assembled from the same seven calls anyway.
+   */
+  readonly byPrimitive: ReadonlyMap<string, ReadonlyMap<ContentId, readonly EffectRecord[]>>;
+}
+
+/**
+ * Fetches every combat primitive's node effects, registering each fetch.
+ *
+ * Seven calls, seven registrations, one per primitive in {@link COMBAT_PRIMITIVES}
+ * except `portal` — which is a world-scale presence gate already fetched by
+ * `coordination/god/interventions.portalPlan`, and a second registration for it
+ * would claim a second consumer that does not exist.
+ *
+ * The consumer address on each registration names the method that applies the
+ * magnitudes rather than this function, because a reader chasing a registration
+ * wants the place the number does something.
+ */
+export function combatEffectIndex(
+  registry: ContentRegistry,
+  recorder: ConsumptionRecorder,
+): CombatEffectIndex {
+  const byPrimitive = new Map<string, ReadonlyMap<ContentId, readonly EffectRecord[]>>();
+  for (const [primitiveId, consumer] of COMBAT_CONSUMERS) {
+    byPrimitive.set(primitiveId, nodeEffectRecords(registry, primitiveId, consumer, recorder));
+  }
+  return Object.freeze({ byPrimitive });
+}
+
+/**
+ * Where each combat primitive's magnitudes are applied, as `package/file.symbol`.
+ *
+ * Written out rather than derived from {@link COMBAT_PRIMITIVES} so that each
+ * address is the truth about one primitive: `ward` and `concealment` are read
+ * once at portal open and never cast, `knowledge-steal` is the theft intent's,
+ * and the other four are placed by a resolved cast. A single generic address
+ * would be shorter and would tell a reader chasing a failure nothing.
+ */
+const COMBAT_CONSUMERS: readonly (readonly [string, string])[] = Object.freeze([
+  [COMBAT_PRIMITIVES.directDamage, 'rules-raid/arbitration.CastArbiter.resolveCast'],
+  [COMBAT_PRIMITIVES.areaDenial, 'rules-raid/arbitration.CastArbiter.resolveCast'],
+  [COMBAT_PRIMITIVES.blink, 'rules-raid/arbitration.CastArbiter.resolveCast'],
+  [COMBAT_PRIMITIVES.summon, 'rules-raid/arbitration.CastArbiter.resolveCast'],
+  [COMBAT_PRIMITIVES.ward, 'rules-raid/arbitration.CastArbiter.passiveDefences'],
+  [COMBAT_PRIMITIVES.concealment, 'rules-raid/arbitration.CastArbiter.passiveDefences'],
+  [COMBAT_PRIMITIVES.knowledgeSteal, 'rules-raid/arbitration.CastArbiter.theftMagnitudes'],
+]);
+
+/** No authored effects, for a node the index has never heard of. */
+const NO_RECORDS: readonly EffectRecord[] = Object.freeze([]);
+
+/**
+ * What a cast of one node would put on the battlefield, as node selection needs
+ * to know it.
+ *
+ * **Derived from {@link CastArbiter}'s `#effectsOf` and from nothing else.** The
+ * selector and the applier answering the same question from two different reads
+ * of `node.effects` is exactly the drift this package's conformance test exists
+ * to prevent: a selector that believes a node does something the applier will
+ * not apply produces a combatant who declares a cast every tick and changes
+ * nothing.
+ */
+export interface CastProfile {
+  /**
+   * Whether a resolved cast places at least one effect.
+   *
+   * False for the two **passive** primitives — `ward` and `concealment` are read
+   * once at portal open by {@link CastArbiter.passiveDefences} and have no cast
+   * form, because §3 gives both a stacking rule and no trigger. False for
+   * `knowledge-steal`, which the theft intent owns and `resolveOneCast` does not
+   * apply. False for `portal`, which is a presence gate on raiding rather than
+   * something a combatant releases in a field. A node carrying only those is
+   * **not castable**, and making it castable would be the behavioural bug rather
+   * than the fix.
+   */
+  readonly placesEffects: boolean;
+  /**
+   * Whether resolution needs an acquired target.
+   *
+   * `direct-damage` is the only effect that cannot be placed without one. An
+   * area-denial field falls where the caster stands, a blink runs toward the
+   * portal, and a summon needs no geometry at all.
+   */
+  readonly requiresTarget: boolean;
+  /**
+   * Whether summoning is the *only* thing it would place.
+   *
+   * A summon over the per-side cap is a no-op and the cost is still charged, so
+   * a summon-only node held by a side at its cap spends vigor every tick and
+   * changes nothing. Selection asks this so that it can decline — the same
+   * reason the other three filters exist.
+   */
+  readonly summonOnly: boolean;
+}
+
 /** Why a cast produced nothing. `''` means it resolved. */
 export type CastRefusal =
   | ''
@@ -384,24 +523,45 @@ export class CastArbiter {
   readonly #hostRuleset: RulesetSnapshot;
   readonly #grid: MagicGrid;
   readonly #registry: ContentRegistry;
+  readonly #combat: CombatEffectIndex;
   readonly #tuning: { readonly castVigorBase: Fixed; readonly castVigorPerTier: Fixed };
   readonly #counters: ClampCounters | undefined;
+  readonly #ablation: AblationMask | undefined;
   readonly #faults: ArbitrationFaults;
+  readonly #castProfiles = new Map<ContentId, CastProfile>();
+  readonly #castEffects = new Map<ContentId, CastEffects>();
   #forbiddenCastsBlocked = 0;
 
   constructor(options: {
     readonly hostRuleset: RulesetSnapshot;
     readonly grid: MagicGrid;
     readonly registry: ContentRegistry;
+    /**
+     * The composition root's fetch of every combat primitive's node effects.
+     *
+     * Required. See {@link combatEffectIndex} for why an arbiter that could
+     * build its own would defeat the check this argument exists to satisfy.
+     */
+    readonly combat: CombatEffectIndex;
     readonly tuning: { readonly castVigorBase: Fixed; readonly castVigorPerTier: Fixed };
     readonly counters?: ClampCounters;
+    /**
+     * §9's mask for this arm, or absent for a control run.
+     *
+     * Absent rather than {@link NO_ABLATION} on purpose, matching
+     * `world-step.ts`: an absent mask takes the byte-identical branch every
+     * committed baseline and every golden fixture was recorded on.
+     */
+    readonly ablation?: AblationMask | undefined;
     readonly faults?: ArbitrationFaults;
   }) {
     this.#hostRuleset = options.hostRuleset;
     this.#grid = options.grid;
     this.#registry = options.registry;
+    this.#combat = options.combat;
     this.#tuning = options.tuning;
     this.#counters = options.counters;
+    this.#ablation = options.ablation;
     this.#faults = options.faults ?? {};
   }
 
@@ -530,13 +690,17 @@ export class CastArbiter {
       }
       if (instance.mastery < activationThreshold) continue;
       if (!this.#permitsNode(instance.nodeId)) continue;
-      const effects = requireRegistryNode(this.#registry, instance.nodeId).effects;
-
-      const ward = gatherPrimitive(effects, COMBAT_PRIMITIVES.ward);
+      const ward = gatherPrimitive(
+        this.#authored(COMBAT_PRIMITIVES.ward, instance.nodeId),
+        COMBAT_PRIMITIVES.ward,
+      );
       wardMagnitudes.push(...ward.magnitudes);
       wardControls.push(...ward.controls);
 
-      const concealment = gatherPrimitive(effects, COMBAT_PRIMITIVES.concealment);
+      const concealment = gatherPrimitive(
+        this.#authored(COMBAT_PRIMITIVES.concealment, instance.nodeId),
+        COMBAT_PRIMITIVES.concealment,
+      );
       concealmentMagnitudes.push(...concealment.magnitudes);
       concealmentControls.push(...concealment.controls);
     }
@@ -560,12 +724,41 @@ export class CastArbiter {
    * `@mm/primitives`' guarantee and not this file's: a control run and its
    * paired ablation run leave the stream in the same place.
    */
+  /**
+   * What a cast of this node would put on the field. Memoised per raid.
+   *
+   * Memoised because node selection asks this of every held node of every
+   * combatant on every tick, and `#effectsOf` allocates. The cache is keyed on a
+   * node id and the answer depends on nothing else — not on the ruleset, not on
+   * the tick — so a per-raid arbiter is exactly the right lifetime for it.
+   */
+  castProfile(nodeId: ContentId): CastProfile {
+    const cached = this.#castProfiles.get(nodeId);
+    if (cached !== undefined) return cached;
+    const effects = this.#effectsOf(nodeId);
+    const profile: CastProfile = Object.freeze({
+      placesEffects:
+        effects.directDamage.length > 0 ||
+        effects.areaDenial.length > 0 ||
+        effects.blink.length > 0 ||
+        effects.summon.length > 0,
+      requiresTarget: effects.directDamage.length > 0,
+      summonOnly:
+        effects.summon.length > 0 &&
+        effects.directDamage.length === 0 &&
+        effects.areaDenial.length === 0 &&
+        effects.blink.length === 0,
+    });
+    this.#castProfiles.set(nodeId, profile);
+    return profile;
+  }
+
   evades(concealment: Fixed, stream: RngStream): boolean {
     return rollStackedProbability(
       this.#primitive(COMBAT_PRIMITIVES.concealment),
       concealment > 0 ? [concealment] : [],
       stream,
-      this.#counters === undefined ? {} : { counters: this.#counters },
+      this.#stackOptions(),
     ).succeeded;
   }
 
@@ -601,7 +794,7 @@ export class CastArbiter {
       magnitudes,
       stream,
       {
-        ...(this.#counters === undefined ? {} : { counters: this.#counters }),
+        ...this.#stackOptions(),
         ...(controls.length > 0 ? { clamp: combineControls(controls) } : {}),
       },
     ).succeeded;
@@ -619,7 +812,7 @@ export class CastArbiter {
    */
   theftMagnitudes(nodeId: ContentId): readonly Fixed[] {
     return gatherPrimitive(
-      requireRegistryNode(this.#registry, nodeId).effects,
+      this.#authored(COMBAT_PRIMITIVES.knowledgeSteal, nodeId),
       COMBAT_PRIMITIVES.knowledgeSteal,
     ).magnitudes;
   }
@@ -632,7 +825,7 @@ export class CastArbiter {
    */
   theftControls(nodeId: ContentId): readonly EffectControl[] {
     return gatherPrimitive(
-      requireRegistryNode(this.#registry, nodeId).effects,
+      this.#authored(COMBAT_PRIMITIVES.knowledgeSteal, nodeId),
       COMBAT_PRIMITIVES.knowledgeSteal,
     ).controls;
   }
@@ -647,16 +840,64 @@ export class CastArbiter {
     return floorDiv(rawDamage * (FP_ONE - ward), FP_ONE);
   }
 
-  /** The effective, capped value of one primitive's sources, optionally clamped by `control` sources. */
-  #stack(primitiveId: string, magnitudes: readonly Fixed[], controls: readonly EffectControl[] = []): Fixed {
-    return stackMagnitudes(
-      this.#primitive(primitiveId),
-      magnitudes,
-      {
-        ...(this.#counters === undefined ? {} : { counters: this.#counters }),
-        ...(controls.length > 0 ? { clamp: combineControls(controls) } : {}),
-      },
+  /**
+   * The same ward multiply as {@link applyWardOnce}, **without** the clamp
+   * counters. For observation only.
+   *
+   * `action-economy.ts` has to ask what a tick would have done to a combatant
+   * had `concealment` not evaded a cast, or had the ward not been there. That is
+   * one more evaluation of the identical formula, and routing it through
+   * {@link applyWardOnce} would increment `ClampCounters` a second time for the
+   * same tick — moving `RaidOutcome.capClamps`, which is a behaviour change
+   * dressed as a measurement. A measurement that perturbs what it measures is
+   * the one thing this file may not ship.
+   */
+  observeWardApplication(rawDamage: Fixed, wardSources: readonly Fixed[]): Fixed {
+    const ward = stackMagnitudes(
+      this.#primitive(COMBAT_PRIMITIVES.ward),
+      wardSources,
+      this.#ablation === undefined ? {} : { ablation: this.#ablation },
     ).value;
+    return floorDiv(rawDamage * (FP_ONE - ward), FP_ONE);
+  }
+
+  /**
+   * The effective, capped value of one primitive's sources, optionally bounded
+   * by the `control` envelopes the same node authored.
+   *
+   * Two independent modifiers meet here and neither subsumes the other. §9's
+   * ablation mask comes from {@link #stackOptions} and answers *"is this
+   * primitive switched off for this arm"*; a `control` envelope comes from the
+   * content and answers *"what floor and ceiling did a Rego effect buy"*. An
+   * ablated primitive is neutralized upstream in {@link #authored}, so a clamp
+   * that survives here bounds a stack that is already zero — which is the
+   * correct reading, not a special case.
+   */
+  #stack(
+    primitiveId: string,
+    magnitudes: readonly Fixed[],
+    controls: readonly EffectControl[] = [],
+  ): Fixed {
+    return stackMagnitudes(this.#primitive(primitiveId), magnitudes, {
+      ...this.#stackOptions(),
+      ...(controls.length > 0 ? { clamp: combineControls(controls) } : {}),
+    }).value;
+  }
+
+  /**
+   * The options every stack and every roll in this file passes, so that §9's
+   * mask reaches `@mm/primitives` through **one** expression.
+   *
+   * Both fields are spread conditionally rather than passed as `undefined`,
+   * which keeps a control run's call byte-identical to what it was before the
+   * mask was threaded — the same discipline `world-step.ts` keeps at its three
+   * `deps.ablation === undefined` sites, and for the same reason: the baselines.
+   */
+  #stackOptions(): { counters?: ClampCounters; ablation?: AblationMask } {
+    return {
+      ...(this.#counters === undefined ? {} : { counters: this.#counters }),
+      ...(this.#ablation === undefined ? {} : { ablation: this.#ablation }),
+    };
   }
 
   #primitive(primitiveId: string): PrimitiveRecord {
@@ -680,30 +921,85 @@ export class CastArbiter {
   }
 
   /**
-   * A node's engagement-scale effects, grouped by primitive and mode-aware
-   * via {@link gatherPrimitive}/{@link gatherAreaDenial}.
+   * The authored effects one node carries for one primitive, **after** §9's
+   * mask, straight out of the composition root's index.
+   *
+   * ## An ablated magnitude is neutralized in place, never removed
+   *
+   * A neutralized effect keeps its slot in the list. That is not tidiness: the
+   * lists' *lengths* decide control flow that draws randomness. An empty
+   * `directDamage` skips the evasion roll on stream 8; an empty `blink` skips
+   * the displacement; `castProfile.placesEffects` is computed from the same
+   * lengths and decides whether a combatant declares a cast at all. Dropping
+   * the entries would give the ablation arm a different stream position from
+   * its paired control on the first cast, and every later draw in the raid
+   * would differ for a reason that has nothing to do with the primitive.
+   *
+   * So an ablated combatant selects the same node, pays the same vigor, spends
+   * the same preparation and draws the same numbers — and puts
+   * {@link neutralizedMagnitude} on the field, which for every combat primitive
+   * in §3's table is zero. That is what makes a win-rate delta attributable to
+   * the primitive rather than to the schedule.
+   *
+   * `durationTicks` is left alone. A zero-magnitude field that persists is
+   * still a field doing nothing; shortening it would be a second, unrelated
+   * change riding along inside the mask.
+   */
+  #authored(primitiveId: string, nodeId: ContentId): readonly EffectRecord[] {
+    const authored = this.#combat.byPrimitive.get(primitiveId)?.get(nodeId) ?? NO_RECORDS;
+    if (authored.length === 0) return authored;
+    if (this.#ablation?.neutralizes(primitiveId) !== true) return authored;
+    const neutral = neutralizedMagnitude(this.#primitive(primitiveId).stacking);
+    return authored.map((effect) => ({ ...effect, magnitude: neutral }));
+  }
+
+  /**
+   * A node's engagement-scale effects, grouped by primitive, mode-aware via
+   * {@link gatherPrimitive}/{@link gatherAreaDenial}. Memoised per raid.
+   *
+   * Memoised for the same reason {@link castProfile} is — selection asks for it
+   * once per held node per combatant per tick — and safely, because the answer
+   * depends on the index and the mask, both fixed for the arbiter's lifetime.
+   *
+   * The records come from {@link #authored}, so §9's mask has already been
+   * applied by the time the mode split runs. The two are orthogonal: ablation
+   * decides *whether a primitive contributes at all on this arm*, the mode
+   * decides *which of a node's authored effects were ever a magnitude for this
+   * primitive*. A `control`- or `reveal`-mode effect contributes none either
+   * way.
    *
    * `control` envelopes on these five primitives are read (so a `control`
-   * effect correctly contributes no magnitude here either) but not applied:
-   * unlike `ward`, `concealment` and `knowledge-steal`, none of
+   * effect correctly contributes no magnitude here) but not applied: unlike
+   * `ward`, `concealment` and `knowledge-steal`, none of
    * `direct-damage`/`area-denial`/`blink`/`summon` are stacked through
-   * `@mm/primitives` on the per-cast path — `raid.ts` ledgers damage and
-   * denial by hand and takes `blink`'s max and `summon`'s count at the point
-   * of use, which predates this change. So a `control`-mode effect on one of
-   * these correctly stops contributing a magnitude (the bug this file
-   * exists to close) but its clamp has no consumer yet; nothing in v1
-   * authors one, and wiring a clamp into raid.ts's hand-rolled damage ledger
-   * is a larger, separate change this task does not need.
+   * `@mm/primitives` on the per-cast path — `raid.ts` ledgers damage and denial
+   * by hand and takes `blink`'s max and `summon`'s count at the point of use.
+   * So a `control`-mode effect on one of these correctly stops contributing a
+   * magnitude but its clamp has no consumer yet; nothing in v1 authors one.
    */
   #effectsOf(nodeId: ContentId): CastEffects {
-    const effects = requireRegistryNode(this.#registry, nodeId).effects;
-    return {
-      directDamage: gatherPrimitive(effects, COMBAT_PRIMITIVES.directDamage).magnitudes,
-      areaDenial: gatherAreaDenial(effects),
-      blink: gatherPrimitive(effects, COMBAT_PRIMITIVES.blink).magnitudes,
-      summon: gatherPrimitive(effects, COMBAT_PRIMITIVES.summon).magnitudes,
-      knowledgeSteal: gatherPrimitive(effects, COMBAT_PRIMITIVES.knowledgeSteal).magnitudes,
+    const cached = this.#castEffects.get(nodeId);
+    if (cached !== undefined) return cached;
+
+    const effects: CastEffects = {
+      directDamage: gatherPrimitive(
+        this.#authored(COMBAT_PRIMITIVES.directDamage, nodeId),
+        COMBAT_PRIMITIVES.directDamage,
+      ).magnitudes,
+      areaDenial: gatherAreaDenial(this.#authored(COMBAT_PRIMITIVES.areaDenial, nodeId)),
+      blink: gatherPrimitive(this.#authored(COMBAT_PRIMITIVES.blink, nodeId), COMBAT_PRIMITIVES.blink)
+        .magnitudes,
+      summon: gatherPrimitive(
+        this.#authored(COMBAT_PRIMITIVES.summon, nodeId),
+        COMBAT_PRIMITIVES.summon,
+      ).magnitudes,
+      knowledgeSteal: gatherPrimitive(
+        this.#authored(COMBAT_PRIMITIVES.knowledgeSteal, nodeId),
+        COMBAT_PRIMITIVES.knowledgeSteal,
+      ).magnitudes,
     };
+    this.#castEffects.set(nodeId, effects);
+    return effects;
   }
 }
 

@@ -362,6 +362,53 @@ describe('contentRevision', () => {
     // reason the check is a digest over the preimage rather than a
     // hand-maintained list of file names.
     //
+    // 6973d2c55f6d7788bbaa6886e507bbde -> 162f80bf169296d0e5fd516cc3c5257a,
+    // when the founding-grant budget added three god constants — the starting
+    // allowance, the self-discovered nodes that earn another grant, and the
+    // ceiling. In the preimage for the reason every other god constant is: two
+    // universes that disagreed about how many nodes a god may seed would be
+    // playing different games while their revisions agreed they were
+    // compatible. Nothing existing changed a byte, and all three ship at values
+    // no run can reach, so this revision plays identically to the last one —
+    // which is the opposite of the ascension-constant move above, and the
+    // difference is worth reading: that one changed when a run ends, this one
+    // changes nothing until a sweep names a level.
+    //
+    // `2c67315a` is the digest W29 recorded on its own branch, which reached
+    // that point holding W6's, W8's and W17's constants and the material split
+    // but *not* the value edit below.
+    //
+    // 2c67315ae04ee6c74dfa204474af4eb6 -> ba7be8d68b582e2985e0360bbc7e11b0,
+    // when W29's tree met a `main` that had meanwhile brought
+    // `max-summons-per-side` down from 16 to 8 to agree with `primitive.json`'s
+    // `summon` cap — the same ceiling authored twice, disagreeing since both
+    // files existed. That edit is the first entry in this whole list that
+    // changes a *value* rather than adding a file, which is the point of a
+    // revision taken over the values: two universes that disagreed about how
+    // many summons a side may hold would fight two different battles, and the
+    // digest now says so instead of calling them compatible.
+    //
+    // `main` reached this merge asserting 6b18886a — W17's successor plus that
+    // value edit, taken there without W6's or W8's constants and without the
+    // material split. Neither 6b18886a nor 2c67315a is a competing claim about
+    // *this* tree: each is a claim about a smaller preimage, and this tree's
+    // preimage strictly contains both. ba7be8d6 is therefore the union
+    // arriving, not a disagreement being settled — the same situation the
+    // three-branch paragraph above describes, one level up.
+    //
+    // Union again: main's revision together with this branch's metis-from-use
+    // content. Neither literal is a digest over a preimage holding both.
+    //
+    // 162f80bf169296d0e5fd516cc3c5257a -> d4e3047657b4fa8a1a74e1d52f9f5c86,
+    // when `apply-magic` added two scalars to `autonomy-weight.json` — what a
+    // mage-month of applied magic makes, and what she eats while she makes it.
+    // In the preimage for the reason the god constants are: the two numbers
+    // decide how much of a universe's economy comes out of its mages rather than
+    // its fields, so two universes disagreeing about them would keep different
+    // populations while their revisions agreed they were compatible. Unlike the
+    // grant-budget move above, this one **does** change every run: applying
+    // magic is a goal a mage will choose, so a tick's materials and a tick's
+    // goal histogram both move from the first month.
     // ---- W64: the two lineages meet -------------------------------------
     //
     // 6973d2c55f6d7788bbaa6886e507bbde and e3d4613284f6d261cac90fe13e80c1a6
@@ -397,7 +444,32 @@ describe('contentRevision', () => {
     // 57 new content judgements. Nothing in the rules path reads
     // `knowledgeKind`, so this moves no metric today; what it defers is a
     // design claim, not a number.
-    expect(registry.contentRevision).toBe('542c55de64f8c9348ff6256e5e57bb61');
+    //
+    // ---- W64 arrives, and this is the merge that produced the literal below --
+    //
+    // Both lineages above met here. `main`'s chain (ending d4e30476) is a digest
+    // over a preimage holding the material split, the raid constants, the
+    // summons cap, the grant budget and `apply-magic`'s two scalars, and none of
+    // this branch's compositional nodes, `track.json`, `ritual.json` or the
+    // effect `mode`. This branch's chain (ending 542c55de) is the mirror image.
+    // This tree is the first holding both, so a third value is exactly what a
+    // digest over the union is supposed to produce, and it was **re-measured
+    // from the merged tree** rather than taken from either side.
+    //
+    // One authoring decision inside that union is recorded here rather than
+    // buried in the data, because it is a deferral and not a judgement. The
+    // merged `node.json` is 357 records: `main`'s 300, each keeping the
+    // `knowledgeKind` it was judged with — all twenty-nine `metis` calls in
+    // `docs/design/metis-authoring.md` survive this merge unmoved — plus this
+    // branch's 57 new compositional nodes, which are marked `episteme`
+    // **uniformly and mechanically, exactly as `d97caaaa`'s pass marked the
+    // original 300.** No probe in `metis-authoring.md` §1 was applied to any of
+    // the 57, and twenty of them are Intellego, where that document's first pass
+    // found 25 of its 29 calls — so the honest reading is that the mētis pass
+    // over W20's content has not been done, not that it was done and came back
+    // empty. Nothing in the rules path reads `knowledgeKind`, so this moves no
+    // metric today; what it defers is a design claim, not a number.
+    expect(registry.contentRevision).toBe('f7dd80543d8080cc0eee53ed27f1ab84');
   });
 
   it('is stable across loads of identical content', () => {

@@ -93,7 +93,12 @@ function main() {
           const options = {
             ...cell.options,
             ...(mask === undefined ? {} : { foundingSpeciesMask: mask }),
-            ...(fullGrid === 0 ? {} : { fullGridAtFounding: fullGrid }),
+            // `fullGridAtFounding` was W20's own one-bit knob and it is gone: the
+            // opening square (#72/#156) says the same thing and more, so the full
+            // grid is now "the largest square the content declares" rather than a
+            // second notion of enablement. 5 × 14 is the whole 70-cell grid; `0`
+            // still means the v1 rectangle, which is what `readCount` defaults to.
+            ...(fullGrid === 0 ? {} : { openingTechniqueCount: 5, openingFormCount: 14 }),
           };
           const run = runOne({
             content: resolved,
@@ -128,6 +133,7 @@ function main() {
             strategyId,
             foundingSpeciesMask: mask ?? null,
             fullGridAtFounding: fullGrid,
+            openingSquare: fullGrid === 0 ? 'v1-rectangle' : '5x14',
             worldTickCap,
             replicates,
             cells: CELLS,

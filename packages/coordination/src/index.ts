@@ -122,9 +122,10 @@ export * from './god/index.js';
  * of the wall.
  */
 export type { AblationMask } from '@mm/primitives';
-export { NO_ABLATION, neutralizing } from '@mm/primitives';
+export { NO_ABLATION, ablationMaskFor, neutralizing } from '@mm/primitives';
 
 export type {
+  AppliedNodeYield,
   UniverseEconomyBonuses,
   UniverseEconomyDeps,
   UniverseEffectIndex,

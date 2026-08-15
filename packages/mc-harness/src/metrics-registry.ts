@@ -64,6 +64,8 @@ import {
   collectLibraryDependence,
   collectPrestigeAdvantage,
   collectRaidInitiationCost,
+  collectCombatActionEconomy,
+  collectCombatThresholdEfficiency,
   collectRaidLengthDistribution,
   collectTimeToTierBySpecies,
   collectWinRateByPrimitive,
@@ -74,6 +76,8 @@ import {
   VERSATILITY_HEGEMONY_FRACTION,
   collectLossShockRecovery,
   collectRoleAssignmentDemographicCost,
+  OCCUPANCY_DEFINITION,
+  collectSpeciesCellOccupancy,
   collectSpeciesGridVersatility,
 } from './metrics-species-health.js';
 import type { ArmTelemetry, RunTelemetry } from './metrics-telemetry.js';
@@ -449,6 +453,44 @@ const DEFINITIONS: readonly BalanceMetricDefinition[] = Object.freeze([
       'separation actually lives.',
   },
   {
+    id: 'speciesCellOccupancy',
+    definition:
+      'Per species, the count of grid cells it actually occupies at run end — a cell is occupied ' +
+      'when a living mage of that species holds a knowledge instance of some node in it, in a ' +
+      'mind — reported over the full seventy and over the cells the ruleset permits. The per-run ' +
+      'scalar is the Gini coefficient over those per-species counts, so that "one species can ' +
+      'staff everything" is a number: 0 is an even spread and a rising value is a roster ' +
+      'collapsing onto one species. Living mages and distinct nodes held accompany each count, ' +
+      'so a zero can be read as "none alive" rather than as incapacity.',
+    scope: METRIC_SCOPE.perRun,
+    collectRun: collectSpeciesCellOccupancy,
+    // Max, not mean: the failure this guards against is a single run in which
+    // occupancy has collapsed onto one species, and averaging it against runs
+    // that stayed even is the arithmetic that would hide it.
+    aggregation: 'max',
+    unit: 'Gini coefficient over per-species occupied-cell counts',
+    definitionVersion: 1,
+    pinnedConstants: {
+      occupancyRule: OCCUPANCY_DEFINITION,
+      locationKinds: 'mind only; library and grimoire copies are excluded',
+      livingOnly: true,
+      scalar: 'Gini over per-species occupied-cell counts, the shared metrics-gini estimator',
+      enabledDenominator: 'cells permits() accepts, never a hardcoded twelve',
+      readingTick: 'run end',
+      assertsNoTarget:
+        'all six species are tuningStatus untuned; this metric measures the spread, it does not ' +
+        'declare what the spread should be, and no gate reads it',
+    },
+    thresholdOwner: 'mages-and-species',
+    disprovedBy:
+      'A species this metric scores as occupying a cell that `speciesGridVersatility` scores as ' +
+      'unstaffable by that species. The two are capability and outcome over one grid, and ' +
+      'versatility\'s own falsification test is stated over exactly this observation: the ' +
+      'predicted-staffable set must be a superset of the observed-occupied set. The weaker ' +
+      'reading is disproved too — if this reads a flat zero on every run whose species are alive ' +
+      'and holding nodes, it is counting something other than cells.',
+  },
+  {
     id: 'lossShockRecovery',
     definition:
       'World ticks a species roster takes to return to its pre-shock headcount after a ' +
@@ -504,6 +546,82 @@ const DEFINITIONS: readonly BalanceMetricDefinition[] = Object.freeze([
       'raids never deployed — that would mean the difference is coming from seed divergence ' +
       'between the arms rather than from the assignment. The pairing is what makes that ' +
       'checkable: identical seeds with no assignments must difference to exactly zero.',
+  },
+  {
+    id: 'combatActionEconomy',
+    definition:
+      'Combatant-ticks of enemy action denied per raid, over the combatant-ticks the raid ' +
+      'contained, pooled across the raids of a run. A combatant-tick is one combatant acting for ' +
+      'one engagement tick, and a raid contains, for every combatant, the ticks from its entry to ' +
+      'its removal or to resolution. Three channels are denied: a world-scale combatant reaching ' +
+      'zero hit points denies the ticks from that moment to resolution, credited across sources in ' +
+      "proportion to the hit points each removed over that combatant's whole life; a ward or " +
+      'concealment save turning a lethal tick into a survived one denies the attacker the ticks ' +
+      'its target went on to act for, at most one save per combatant-tick; and an attack spent on ' +
+      'a summon denies one combatant-tick. Summon removals are excluded from the numerator and ' +
+      'reported alongside. Overkill is excluded from the secondary hit-point vector. Channels the ' +
+      'engine has no code path for are declared rather than reported as zero.',
+    scope: METRIC_SCOPE.perRun,
+    collectRun: collectCombatActionEconomy,
+    aggregation: 'mean',
+    unit: "fraction of the raid's combatant-ticks",
+    definitionVersion: 1,
+    pinnedConstants: {
+      denominator: 'combatant-ticks the raid contained: entry to removal or resolution, every combatant',
+      removalDuration: 'removal tick to resolution tick',
+      killAttribution:
+        "proportional to the hit points each source removed over the target's life; floored, " +
+        'remainder to the largest, ties on ascending source id',
+      saveAttribution:
+        'one save per combatant-tick; concealment when the evaded magnitude was necessary, ' +
+        'otherwise ward; each save owns the span to the next save, the removal, or resolution',
+      decoyTicksPerAbsorbedAttack: 1,
+      summonRemovalsExcluded: true,
+      overkillExcluded: true,
+      unimplementedChannels: ['displacement'],
+      castAndIntrinsicSeparated: true,
+    },
+    thresholdOwner: 'raid-engagement',
+    disprovedBy:
+      'Ablate a combat primitive to zero magnitude and its credited combatant-ticks do not fall to ' +
+      'zero. A raid in which every combatant survives to resolution reports non-zero denial through ' +
+      'the removal channel. A raid credits more combatant-ticks to removals than the sum, over its ' +
+      'removed combatants, of the ticks between each removal and resolution — the attribution ' +
+      'conserves exactly, so any excess is double-counting. The metric ranks two primitives in the ' +
+      'same order as raw magnitude applied on every sweep, in which case it is damage in a hat and ' +
+      'the three channels are not doing the work claimed for them.',
+  },
+  {
+    id: 'combatThresholdEfficiency',
+    definition:
+      'Of the combat attempts that removed any hit points, the fraction that removed a target from ' +
+      'action on a tick they fed. An attempt is one resolved cast per primitive it carries, or one ' +
+      'intrinsic attack by a summon or soldier detachment; an area-denial field is one attempt for ' +
+      'its whole life, attributed to the cast that laid it. Attempts that landed nothing — evaded, ' +
+      'or warded to zero — are counted and excluded from both numerator and denominator. The ' +
+      'per-run scalar is the ratio pooled over every raid in the run; the per-source breakdown ' +
+      'accompanies it, with a null efficiency where a source had no landing attempt at all.',
+    scope: METRIC_SCOPE.perRun,
+    collectRun: collectCombatThresholdEfficiency,
+    aggregation: 'mean',
+    unit: 'fraction of landing attempts',
+    definitionVersion: 1,
+    pinnedConstants: {
+      attemptUnit: 'one resolved cast per primitive, or one intrinsic attack; a field is one attempt for its whole life',
+      numerator: 'attempts that damaged a combatant which reached zero hit points on a tick they fed',
+      denominator: 'removing plus hurting attempts',
+      spentAttemptsExcluded: true,
+      pooling: 'over every raid in the run',
+      undefinedEfficiencyIsNull: true,
+    },
+    thresholdOwner: 'raid-engagement',
+    disprovedBy:
+      'A run with no removals at all reports a non-zero ratio, or a run in which every landing ' +
+      'attempt removed its target reports below 1. A source whose attempts all landed reports a ' +
+      'null efficiency, or a source whose attempts were all evaded reports 0 rather than null. ' +
+      'Removing attempts exceed the removals the same raids reported, which is impossible unless an ' +
+      'attempt is being counted more than once — the case an area-denial field spanning forty ticks ' +
+      'would produce if its cast provenance were dropped.',
   },
 ]);
 

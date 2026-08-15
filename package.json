@@ -21,6 +21,7 @@
     "check:audio": "node packages/content/bin/validate-audio.mjs",
     "check:coverage": "node scripts/check-primitive-coverage.mjs",
     "check:consumption": "node scripts/check-primitive-consumption.mjs",
+    "check:reachability": "node scripts/check-reachability.mjs",
     "content:map": "node scripts/content-graph.mjs --format map",
     "content:graph": "node scripts/content-graph.mjs --format html",
     "audio:generate": "node scripts/generate-audio.mjs",
@@ -31,13 +32,18 @@
     "prebalance:gate": "npm run typecheck",
     "balance:gate:horizon": "node packages/mc-harness/bin/balance-gate.mjs --scenario ./packages/scenario/bin/scenario.mjs --sweep ./balance/sweeps/balance-gate-horizon.sweep.json --baseline ./balance/baselines/balance-gate-horizon-v1.baseline.json --workers 4",
     "prebalance:gate:horizon": "npm run typecheck",
+  "balance:gate:agency": "node packages/mc-harness/bin/balance-gate.mjs --scenario ./packages/scenario/bin/scenario.mjs --sweep ./balance/sweeps/balance-gate-agency.sweep.json --baseline ./balance/baselines/balance-gate-agency-v1.baseline.json --workers 4",
+  "prebalance:gate:agency": "npm run typecheck",
     "balance:gate:ascension": "node packages/mc-harness/bin/balance-gate.mjs --scenario ./packages/scenario/bin/scenario.mjs --sweep ./balance/sweeps/balance-gate-ascension.sweep.json --baseline ./balance/baselines/balance-gate-ascension-v1.baseline.json --workers 4",
     "prebalance:gate:ascension": "npm run typecheck",
     "test:watch": "vitest",
     "bench": "tsc -p packages/sim-core/bench/tsconfig.run.json && node scripts/bench.mjs",
     "verify:nosweeps": "npm run typecheck && npm run lint && npm run check:purity && npm run check:content && npm run check:audio && npm run check:coverage && npm run test",
-    "verify": "npm run typecheck && npm run lint && npm run check:purity && npm run check:content && npm run check:audio && npm run check:coverage && npm run test && npm run balance:gate && npm run balance:gate:horizon && npm run balance:gate:ascension",
-    "ui": "npx --yes http-server . -p 8200 --no-dotfiles -c-1"
+    "verify": "npm run typecheck && npm run lint && npm run check:purity && npm run check:content && npm run check:audio && npm run check:coverage && npm run test && npm run balance:gate && npm run balance:gate:horizon && npm run balance:gate:agency",
+  "verify:full": "npm run verify && npm run balance:gate:ascension",
+    "ui": "npx --yes http-server . -p 8200 --no-dotfiles -c-1",
+    "ui:record": "node scripts/record-session.mjs",
+    "ui:dashboard": "node scripts/build-design-dashboard.mjs"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.1",

@@ -73,6 +73,7 @@ export {
   createConsumptionRecorder,
   formatPrimitiveConsumptionReport,
   nodeEffectMagnitudes,
+  nodeEffectRecords,
   registerNonNodeConsumer,
 } from './consumption.js';
 

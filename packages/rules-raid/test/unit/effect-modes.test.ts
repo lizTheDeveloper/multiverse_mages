@@ -37,9 +37,11 @@ import { describe, expect, it } from 'vitest';
 import { FP_ONE, RNG_STREAM, createState, rngFromRootSeed } from '@mm/sim-core';
 import type { RulesetSnapshot } from '@mm/state';
 import { LOCATION_KIND, MAGE, attachRecord, defineWorldStateSchema } from '@mm/state';
+import { createConsumptionRecorder } from '@mm/rules-magic';
 import {
   CASTABLE_MASTERY,
   CastArbiter,
+  combatEffectIndex,
   contributesMagnitude,
   enablesGate,
   portalGate,
@@ -58,11 +60,19 @@ function permissiveRuleset(): RulesetSnapshot {
   });
 }
 
+/**
+ * The arbiter no longer reads the registry itself: `combatEffectIndex` is built
+ * at the composition root and handed in (#149's consumption argument), so a mode
+ * fixture has to build one over its own synthetic registry. The index is a
+ * per-primitive fetch, not a second opinion about the content — the mode rules
+ * under test still run inside the arbiter, on the records this hands it.
+ */
 function arbiterFor(fixture: ReturnType<typeof buildModeFixture>): CastArbiter {
   return new CastArbiter({
     hostRuleset: permissiveRuleset(),
     grid: fixture.grid,
     registry: fixture.registry,
+    combat: combatEffectIndex(fixture.registry, createConsumptionRecorder()),
     tuning: { castVigorBase: 0, castVigorPerTier: 0 },
   });
 }

@@ -31,6 +31,7 @@ import { CastArbiter, deployRaid, openPortal, portalGate, runRaid } from '@mm/ru
 import {
   ALL_FORMS,
   addMage,
+  combat,
   emptyWorld,
   grid,
   knowledgeFor,
@@ -175,6 +176,7 @@ describe('a host cannot make itself unraidable (task 2.8)', () => {
       ),
       registry,
       grid,
+      combat,
       tuning,
       raidSeed: 0xbeef,
     });
@@ -205,12 +207,14 @@ describe('legality gates casting, never possession (task 3.8)', () => {
       hostRuleset: ruleset({ permittedForms: ALL_FORMS & ~(1 << (ignem - 1)) }),
       grid,
       registry,
+      combat,
       tuning,
     });
     const permitting = new CastArbiter({
       hostRuleset: ruleset({}),
       grid,
       registry,
+      combat,
       tuning,
     });
 
