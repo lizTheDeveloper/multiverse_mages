@@ -12962,3 +12962,49 @@ The rule this run earns: **a fix that removes a defect and moves no outcome has 
 the defect was not the cause.** The temptation is to read a successful repair as a
 successful explanation, and those are different claims — W236's was the second while only
 the first was measured.
+
+## W243 — The constant I went to delete is not a defect, and I stopped
+
+[executed, 2026-08-15, `origin/main` @ edcaf591; `CANDIDATE_SLOTS`, `allocate-spread`'s
+two slot expressions, and the run records from W241]
+
+#199's write-up said `SPREAD_BLESS_SLOTS = 8` was "redundant rather than something to copy
+into two more strategies" and that removing it belonged in its own diff. I opened a branch
+to remove it. The arithmetic says not to.
+
+`allocate-spread` has **two** expressions that bypass `rotate` and read declared counts:
+
+    fundUniversity:  1 + (currentRound % (candidateSlotCount(11) - 1))   // 1..7 of a pinned 8
+    blessMage:       currentRound % SPREAD_BLESS_SLOTS                    // 0..7 of a pinned 32
+
+`CANDIDATE_SLOTS[blessMage]` is **32** and the live list is **13–18** early. The literal 8
+therefore sits *below* the live length: it never names a slot past the end. That is why
+`allocate-spread` recorded **zero** rejections in W236's table while `portal-rush` and
+`worship-maximizer` were at 0.483 and 0.201 — it was the control precisely because its
+hand-patch was conservative.
+
+**So this is not the same defect one file over.** `portal-rush` was naming targets that did
+not exist and losing the turn. `allocate-spread` names targets that do exist and simply
+never reaches past the eighth — it *under-uses* the list rather than overrunning it. The
+cost is reach, not legality, and reach is what the arm is *for*: its hypothesis says it
+"rotates across each list's full depth."
+
+Which makes changing it a **design change to a documented controlled comparison**, not a
+bug fix. The pair exists so that `allocate-spread` and `allocate-concentrate` differ in
+*where* they spend and not in *how much*, and the file argues the current constant at
+length with a measurement behind it — 13,497 gate rejections, and 8 chosen "strictly below
+the 13 the population floor was measured at". Widening spread's reach changes the contrast
+the pair was built to isolate. That is the author's call.
+
+Branch deleted unmade. Recorded instead:
+
+- `blessMage` reach is capped at 8 of 13–18 living mages, by a constant whose stated reason
+  ("the blessing list is shorter than its pinned k") no longer holds now that `rotate`
+  reads the live length.
+- `fundUniversity` rotates slots 1..7 of a pinned 8. It produced no rejections in the
+  measured runs — plausibly because the arm funds universities and grows its own candidate
+  list — but that is an inference from a zero, not a measurement of the list's length.
+
+The rule: **"the reason for this constant no longer holds" is an argument for re-examining
+it, not for deleting it.** The constant was doing a second job — keeping a paired
+comparison honest — that its comment mentions and its name does not.
