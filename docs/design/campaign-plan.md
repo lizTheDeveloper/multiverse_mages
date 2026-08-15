@@ -13008,3 +13008,71 @@ Branch deleted unmade. Recorded instead:
 The rule: **"the reason for this constant no longer holds" is an argument for re-examining
 it, not for deleting it.** The constant was doing a second job — keeping a paired
 comparison honest — that its comment mentions and its name does not.
+
+## W244 — A failed `cd` does not stop the next line, and I merged into the shared checkout
+
+[executed, 2026-08-15; recovered in full, `origin/plan-w18` unchanged]
+
+The rule this repo opens with is *never edit the shared checkout*. I broke it, and the
+mechanism is worth more than the apology.
+
+    cd .claude/worktrees/w176-retest && git branch --show-current
+    git merge origin/main -m "Merge main into w191"
+
+`git worktree add` had failed — the branch was already checked out in another worktree —
+so the directory never existed and the `cd` failed. The `&&` protected only the command on
+**its own line**. The `git merge` was a *separate line*, so it ran in the shell's existing
+directory: the shared checkout, sitting on `plan-w18`. It merged cleanly and committed
+`bb12d99a`.
+
+**Recovery, and why it was safe to take:**
+
+    origin/plan-w18 == 44a12868      (the prior local HEAD, so no divergence to preserve)
+    git status --untracked-files=no  ->  0 tracked modifications at risk
+    git reset --hard 44a12868
+
+`--hard` does not remove untracked files, and the two untracked paths in that tree —
+`console-live.png` and `docs/Grungeon Master/` — are **not mine**. They survived, which was
+the thing to check before running anything: the failure mode that matters here is not a
+lost commit of mine but a swept-up file of somebody else's.
+
+Two rules, and the first is the transferable one:
+
+- **Put the `cd` and the command that depends on it in the same `&&` chain, or use
+  `git -C <dir>`.** A guard on line 1 guards line 1. Every multi-line shell block in this
+  campaign that begins `cd <somewhere new>` has this hazard, and it fires exactly when the
+  setup step fails — which is when the following command is most dangerous.
+- **`git worktree add <path> <branch>` fails if that branch is checked out anywhere else.**
+  With ninety-odd worktrees in `.claude/worktrees/`, that is the common case, not the edge.
+  Use `-b <new-branch> origin/<branch>` to get an isolated branch off the same commit.
+
+## W245 — #176 is not one merge from green, and the conflict says why
+
+[executed, 2026-08-15, `origin/w191/anti-requisites-in-v1` (40 commits behind) merged
+against `origin/main` @ edcaf591 in an isolated worktree; merge aborted, nothing pushed]
+
+The wiring PRs were last tested against a `main` from before six merges landed, so the
+obvious question was whether any are simply stale-red. #176 was the candidate — its
+books-to-depth ratio of 6.5 sits *inside* the band `:426`'s comment blesses.
+
+It is not stale. The merge conflicts on `packages/content/test/unit/interning.test.ts`,
+and the conflict is a **`contentRevision` digest**: both sides moved the content preimage,
+so neither literal survives. The file already narrates this happening four separate times
+— *"a sixth value is what a digest over the union is supposed to produce — not a
+disagreement being settled"* — and the resolution is to keep both histories and recompute
+the digest over the merged tree.
+
+So unblocking #176 is **three stacked judgment calls on a branch I do not own**:
+
+1. resolve the content digest by recomputing it over the union,
+2. widen `:426` from 5 with a dated argument for why this change raises the ratio to 6.5,
+3. re-record two byte-pinned artifacts (`design-dashboard-payload`, `ui-recording`'s
+   `snapshotHash`).
+
+Each is defensible alone. Stacked, unattended, on someone else's PR, they are not — a
+fixture diff is a claim that behaviour changed on purpose, and three of them at once is a
+claim I would be making on the author's behalf. Aborted and recorded.
+
+The useful finding for whoever picks this up: **the four `:426` PRs are not blocked on the
+ratio.** They are blocked on being forty commits behind a `main` whose content revision has
+moved, and the ratio argument is the *second* thing each of them needs.
