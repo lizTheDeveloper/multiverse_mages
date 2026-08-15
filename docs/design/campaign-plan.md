@@ -9409,3 +9409,62 @@ name passes a length check while mislabelling every later row. Both modes confir
 No baseline regenerated and no `ui:dashboard` run, correctly: `NO_STANDING_ARMY` is `0`, so nothing here
 changes behaviour. All four golden suites pass, including `replays scribe-demand.json to the same
 digest`. `verify:nosweeps` 4,530/4,530.
+
+## W186 — an ablation test's population equality never had power, and the runner was not stuck
+
+Two things from landing #161, one about a test and one about a probe. Both are the same lesson.
+
+### `expect(ablated.population).toBe(control.population)` was a tautology
+
+`ablation-reaches-the-world-loop` asserted an equality that **nothing could break.** Probed by ablating
+every primitive in turn at 240 ticks: **six of seven come back byte-identical to the control**, and only
+`resource-yield` moves anything at all — and it moves *knowledge* (−728) and *grimoires* (−726), **not
+people**. The harshest lever the harness has, substituting `0` for `FP_ONE` in
+`additive-into-multiplier` so the arm's yield is multiplied by zero, **costs 97% of its grimoires and
+leaves population at 297 against a control's 298**, living mages unchanged at 67. The equality held
+because population is nearly decoupled from `resource-yield` at that horizon. A two-mage knock-on is what
+broke it.
+
+Replaced with a **one-sided floor** at 95% of control, in its own `it`, and documented in the file as a
+**backstop rather than a discriminator** — with the probe table and the plain statement that nothing the
+test can currently do trips it. Kept rather than deleted because the yield→demography coupling is real at
+2,400 ticks, and a backstop that says so is honest where a green equality was not.
+
+**And the negative control caught a trap worth naming:** the first attempt to sever the forwarding sites
+**built with a type error, so `dist` never updated and the test "passed" against a stale build.** Every
+swap afterwards checked the build's exit code. A negative control that runs against yesterday's `dist`
+proves nothing and looks like proof.
+
+### The runner was queued, not stuck — and the fix would have made it worse
+
+The report concluded `ci/hetzner-lint` was **stuck**: untouched for an hour at *"Queued — another CI run
+in progress"* while the same runner posted `success` for #159 and re-queued others. The proposed remedy
+was a re-trigger via empty commit or close/reopen.
+
+Checked before acting, across five PRs at once: **#161 had flipped to *"Running CI checks…"* sixty
+seconds earlier.** The runner is serial and was working a queue. An empty commit would have re-queued
+#161 **behind everything else** — the remedy would have caused the symptom it was diagnosing.
+
+The agent was right to decline to force it, and right not to use `--admin`: that check is a documented
+security guard, not a formality. **A pending check is usually a queue.** Confirm a probe is broken before
+believing it, and prefer the reading that a slow serial system is busy.
+
+### Two self-corrections in the report, both worth keeping
+
+A **fabricated measurement** — *"population 56"* — was written into a test comment before the test was
+run, then caught and replaced with the measured 297. And a claimed mechanism, *"the horizons are shifted
+by one rung"*, does not survive the ladder (60/240/240/2400): the second error is two rungs. Recorded as
+two independent errors **with no mechanism claimed**, which is the right way to leave it.
+
+**The agency headline was never wrong** — checked against `balance-gate-agency.sweep.json`, its "240
+ticks, 64 runs" matches exactly. The mislabelling was confined to the byte-identity table.
+
+### The anti-requisites finding survived the merge unchanged in shape
+
+**71 of 90 rows at zero.** The 19 that moved are the 9 pooled aggregates plus all 10
+`@permissive-breadth` rows **and nothing else**. Headline **68.63 → 42.50, −20.80 SE**.
+
+One earlier claim of the pair's is now false and is corrected: the reference gates are no longer
+byte-identical on the merged tree. **Proved to be #125's rather than the pair's by stripping the
+`excludes` arrays and reproducing every reference value byte-identically** — which is the control that
+turns "probably not us" into "not us".
