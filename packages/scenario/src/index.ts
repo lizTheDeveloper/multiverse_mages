@@ -36,16 +36,20 @@
  * quietly supplies what the rules do not.
  */
 
-export type { RulesetAxes } from './content-set.js';
+export type { OpeningSquareSize, RulesetAxes } from './content-set.js';
 export {
   acquireHookOf,
   catalogAndCells,
   contentCatalogue,
+  explicitOpeningAxes,
   foundingCandidates,
   primitiveNamed,
   scribingTraditionId,
+  seededOpeningAxes,
   shippedContent,
   speciesTable,
+  standardOpeningAxes,
+  standardOpeningOrder,
   storeHookOf,
   traditionIdNamed,
   v1RulesetAxes,
@@ -137,3 +141,40 @@ export {
   formatAudit,
 } from './strategy-audit.js';
 export { speciesCellOccupancy } from './species-occupancy.js';
+
+export type {
+  ChainVerdict,
+  ClaimRate,
+  PairSeparation,
+  SeedSetInput,
+  SeedSetSample,
+  SeparationInput,
+  SeparationReport,
+  SeparationVerdict,
+  SpeciesSetSample,
+  SpeciesSpread,
+} from './species-separation.js';
+export {
+  CHAIN_REFUTED_FRACTION,
+  DEFAULT_SET_COUNT,
+  ESTABLISHED_STANDARD_ERRORS,
+  MIN_SETS_FOR_REFUTATION,
+  LEGACY_SEED_SET,
+  REFUTED_STANDARD_ERRORS,
+  SEEDS_PER_SET,
+  SEPARATION_BASE_SEED,
+  SEPARATION_HORIZON_TICKS,
+  SEPARATION_ROOT_SWEEP_ID,
+  SEPARATION_RUN_SWEEP_ID,
+  chainVerdictOf,
+  claimRate,
+  formatPairSeparation,
+  formatSeparationReport,
+  measureSeedSet,
+  measureSpeciesSeparation,
+  separationOf,
+  separationRootSeed,
+  separationSpeciesIds,
+  separationRunSeeds,
+  verdictOf,
+} from './species-separation.js';

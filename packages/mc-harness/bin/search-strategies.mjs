@@ -38,6 +38,19 @@
  * `--rounds` flag, and there is deliberately no dead one: an option that is
  * parsed and ignored reads as a loop that ran.
  *
+ * ## `--opening TxF`
+ *
+ * The opening square every run in the archive is founded on, e.g. `--opening
+ * 2x3`. Absent is the v1 rectangle — today's universe — so an invocation
+ * written before this flag existed evaluates exactly what it always did.
+ *
+ * **It is part of `runId`**, and that is not cosmetic: the records directory is
+ * named for the whole experiment and the run refuses to add to one that already
+ * holds records. Two squares at one `--search-seed`, `--seeds` and `--ticks`
+ * would otherwise resolve to the same directory, and the second arm would stop
+ * rather than answer — or worse, on a tool that folded instead of refusing,
+ * silently mix two squares into one archive.
+ *
  * `--search-seed` is live and is the *sweep's* root seed, not a mutation seed.
  * When mutation lands its draws must come from a separate generator, not from
  * the simulation's streams — adding a stream there forces a re-baseline event
@@ -97,6 +110,23 @@ async function main() {
     );
   }
 
+  // The opening square, as factor levels. **One level each**, deliberately: a
+  // factor with two levels takes two cells, and `seed.ts` derives a run's seed
+  // from its cell index, so a two-level square factor would compare two squares
+  // *and* two sets of universes. One arm per invocation at a fixed
+  // `--search-seed` holds the universes common across arms.
+  const openingFactors = (() => {
+    if (args.opening === undefined) return [];
+    const match = /^(\d+)x(\d+)$/.exec(String(args.opening).trim());
+    if (match === null) {
+      throw new Error(`--opening must look like 2x3, received ${String(args.opening)}`);
+    }
+    return [
+      { id: 'openingTechniqueCount', levels: [Number(match[1])] },
+      { id: 'openingFormCount', levels: [Number(match[2])] },
+    ];
+  })();
+
   const harness = await import('../dist/index.js');
   const { BOT_POOL, NULL_LADDER, foldArchive } = harness;
 
@@ -144,7 +174,7 @@ async function main() {
     // baseline, so it takes the larger-sample kind and touches no baseline.
     kind: 'full',
     rootSeed: searchSeed,
-    factors: [{ id: 'foundingNodes', levels: [4] }],
+    factors: [{ id: 'foundingNodes', levels: [4] }, ...openingFactors],
     // `seeds` runs *per strategy*, not per sweep.
     //
     // Round-robin assignment deals replicates out across the pool, so
@@ -193,7 +223,9 @@ async function main() {
   // and the only symptom was a denominator that did not match the flag. So the
   // directory is named for the whole experiment and the run stops rather than
   // adding to a directory that already holds records.
-  const runId = `${SWEEP_ID}-seed${searchSeed}-n${seeds}-t${String(args.ticks)}`;
+  const runId =
+    `${SWEEP_ID}-seed${searchSeed}-n${seeds}-t${String(args.ticks)}` +
+    `-o${args.opening === undefined ? 'v1' : String(args.opening)}`;
   const recordsPath = `${dirname(out)}/records/${runId}`;
   mkdirSync(recordsPath, { recursive: true });
   const stale = readdirSync(recordsPath).filter((file) => file.endsWith('.ndjson'));

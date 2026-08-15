@@ -134,7 +134,9 @@
     font-family: var(--mono); font-size: 11.5px; color: var(--soft);
     letter-spacing: 0.02em;
   }
-  .ident .meta .sep { color: var(--rule-hi); }
+  /* Measured 1.99:1 on ink. A separator is still a text node, and the sheet
+     has a token for text that should recede. */
+  .ident .meta .sep { color: var(--faint); }
 
   .verbs { display: flex; flex-direction: column; gap: 8px; align-items: flex-start; }
   .verbrow { display: flex; gap: 6px; flex-wrap: wrap; }
