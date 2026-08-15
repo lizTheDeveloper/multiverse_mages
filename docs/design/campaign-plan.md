@@ -12301,3 +12301,35 @@ It belongs with the night's other instances of the same shape: a `git worktree a
 branch, a `grep` silenced by a NUL byte, a trailing `echo` swallowing an exit code, and a `pass`-line count
 that read one check twice. **Every one of them reported confidently about the wrong input.** This is the
 first where the wrong input reached `main`.
+
+## W231 — Eleven PRs fail, one invariant, and the library is what breaks
+
+[executed, 2026-08-15, on origin/main @ 457c8866 and the eleven open branch heads]
+
+#195 and #163 merged. `toAction`'s `kind >= 16` is gone from `main`; `inviteScholar` no
+longer 400s.
+
+Every remaining wiring PR was red — eleven of them, `Verify` and `ci/hetzner-lint` both.
+I read that as one shared cause, checked, **and was wrong about the cause but right that
+there is one.** The failing tests differ per branch. The *invariant* does not:
+
+    reference-long-run.test.ts:426   grimoires < 5 * libraryDepth
+
+| PR   | grimoires | ceiling | depth | books/node |
+|------|-----------|---------|-------|------------|
+| #176 | 156       | 120     | 24    | 6.5        |
+| #181 | 304       | 125     | 25    | 12.2       |
+| #185 | 133 / 606 | 45 / 41 | 9 / 8 | 14.8 / **73.9** |
+| #194 | 198       | 25      | 5     | **39.6**   |
+
+The test's own comment names the ceiling it was written against: *"ten would mean it is
+gone."* Four of these are past ten; one is past seventy.
+
+**This is not a pinned byte and it is not the test being stale.** It is a health check
+that says duplicates must not swamp distinct knowledge, and every wiring change trips it
+in the same direction: the scribes copy a shrinking set of nodes more and more times.
+Which is the same sentence as #194's title — *library depth 44 -> 5*.
+
+The rule this earns: **when N branches fail, the shared thing to look for is the
+invariant, not the test.** Same test across branches is a coincidence of surface. Same
+*direction* across branches is a defect upstream of all of them.
