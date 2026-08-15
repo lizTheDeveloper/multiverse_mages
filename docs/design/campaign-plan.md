@@ -10740,3 +10740,58 @@ claim that keeps coinciding with the truth is the hardest kind to catch.
 
 My warning about the stale `+110` was right and is now quantified: re-derived, `referencePopulation@
 permissive-breadth` is **−0.59 SE, inside tolerance.**
+
+## W207 — the pin was already blind, and the ratchet caught real drift within hours
+
+PR #179. `ui/session.json` and `ui/design-dashboard/data.json` are out of version control, gitignored, and
+built — with a new gate, `npm run check:generated`, wired into `verify` and named as a step in both
+full-suite Actions jobs.
+
+### The finding that justifies the change, and vindicates the reasoning behind it
+
+**The pin was already blind on `main`.** At `63f44ced` the committed dashboard payload disagreed with
+fresh output in **`examinedSymbolCount` (858 vs 864)**, **`productionFileCount` (309 vs 313)** and
+**`NO_DEMAND`'s line (84 vs 132)** — *exactly* the three fields the third projection had carved out.
+
+**The file the pin existed to keep current was stale, and the test was green over it.** W176 argued that
+three projections in a row meant the shape was wrong rather than the fields. The measurement is stronger
+than the argument: *"three projections in a row didn't just narrow the pin; they finished it."*
+
+### Controls, all actually run
+
+| control | expected | observed |
+|---|---|---|
+| clean tree | 0 | **0** |
+| `Date.now()` injected into provenance | 42 | **42** — and **both files came out the same length**, so a size check would have missed it |
+| generator throws | **1**, not 42 | **1** |
+| `git add -f ui/session.json` | 42 | **42** |
+| an upstream metric's `disprovedBy` emptied | payload changes, test red | **both**, failing with `winRateByPrimitive has no disprovedBy` |
+
+Each reverted with `git show <ref>:<path>`, never `git stash`. Determinism proven rather than assumed —
+both generators produce byte-identical output on a second run, neither payload contains an absolute path
+or machine string, and `check-reachability.mjs` sorts its emitted arrays so `readdir` order cannot reach
+the output. Scoped honestly: determinism is proven **same-machine**, which is the property this design
+needs, because the artifact is built fresh wherever it is read.
+
+### And it told me my brief asked for something incoherent
+
+I specified *"fail if the working tree is dirty afterwards."* That **cannot survive gitignoring the
+files** — the staleness failure mode is **removed by construction**, not preserved. Rather than
+implementing a check that would look like the one I asked for and test nothing, it gated the two
+properties removal depends on and **said so plainly in the code and the PR.** That is the correct response
+to a brief that contradicts itself.
+
+One assertion it wrote failed and was replaced, and the failure was the finding: **`primitives.unconsumed`
+is not the set of rows with `status: 'unconsumed'`** — 3 against 1 — *"and that difference is the finding
+the panel exists to show."*
+
+### The ratchet earned its place on day one
+
+`Rules-path reachability ratchet` is red on this PR and equally red on `main`'s own head: **129 reported
+against 125 pinned.** Three of the four are in `strategy-audit.ts` and predate the branch; the fourth,
+`characterFor`, **arrived with main's character-forge merge (#103)** — the merge that also regenerated
+`data.json`, a live instance of the coupling this PR removes.
+
+**The ratchet detected genuine new debt within hours of landing, and the agent left it red rather than
+re-pinning it** — *"accepting that debt belongs to the PR that incurred it."* That is precisely the
+behaviour the design intended: a ratchet that anyone may re-pin to make green is a counter, not a gate.
