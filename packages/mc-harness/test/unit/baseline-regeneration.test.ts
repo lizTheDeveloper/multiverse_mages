@@ -281,10 +281,14 @@ describe('the regeneration entrypoint is unreachable from anything automated (ta
     expect(gate).not.toMatch(/import[^;]*regenerate/);
     expect(gate).not.toMatch(/spawn|exec|fork/);
 
-    // The gate's own module writes run records and nothing else.
+    // The gate's own module writes run records and nothing else. Two commands
+    // in it write now — `regenerateCommand` and `resealCommand` — and the
+    // assertion that matters is unchanged: *every* write in this module goes to
+    // the baseline path a caller named, and none of them is in the gate.
     const cli = readRepoFile('packages/mc-harness/src/balance-cli.ts');
     const writes = [...cli.matchAll(/writeFileSync\(([^,]+),/g)].map((match) => match[1]?.trim());
-    expect(writes).toEqual(['args.baselinePath']);
+    expect(new Set(writes)).toEqual(new Set(['args.baselinePath']));
+    expect(writes).toHaveLength(2);
 
     // And that one write is inside the regeneration command, not the gate.
     const gateStart = cli.indexOf('export async function gateCommand');

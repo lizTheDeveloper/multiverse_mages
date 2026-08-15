@@ -2,9 +2,9 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://multiverse-mages.invalid/schema/god-cost.schema.json",
   "title": "god-cost.json",
-  "description": "What each action in contracts.md §4.2 costs the god in favor. One record per action id, 0 through 15, with no gaps and no additions — the loader checks that separately, because a schema can require a shape but not a covering. Every magnitude is an untuned placeholder awaiting the balance harness (god-agency design.md).",
+  "description": "What each action in contracts.md §4.2 costs the god in favor. One record per action id, 0 through 16, with no gaps and no additions — the loader checks that separately, because a schema can require a shape but not a covering. Every magnitude is an untuned placeholder awaiting the balance harness (god-agency design.md).",
   "type": "array",
-  "minItems": 16,
+  "minItems": 17,
   "items": { "$ref": "#/$defs/godCost" },
   "$defs": {
     "godCost": {
@@ -13,7 +13,7 @@
       "required": ["id", "actionId", "favorCost", "gloss", "tuningStatus"],
       "properties": {
         "id": { "$ref": "#/$defs/contentId" },
-        "actionId": { "type": "integer", "minimum": 0, "maximum": 15 },
+        "actionId": { "type": "integer", "minimum": 0, "maximum": 16 },
         "favorCost": { "$ref": "#/$defs/fp" },
         "gloss": { "type": "string", "minLength": 1, "maxLength": 400 },
         "tuningStatus": { "type": "string", "enum": ["untuned", "tuned"] }

@@ -287,6 +287,9 @@ export function buildRival(input: {
     // would confound "which species founded my universe" with "which species I am
     // fighting". Zero is also what this builder did before the field existed, so
     // no raid measured before it moves.
+    // `foundingPortalMagic: 0` for the same reason as the mask beside it: a
+    // rival that started holding portal magic would be a different opponent
+    // than every raid measured before the instrument existed.
     //
     // The opening-square counts are zero — the v1 rectangle — for that same
     // reason and one more: a rival drawn onto a *different* square from its host
@@ -298,6 +301,7 @@ export function buildRival(input: {
       foundingMages: 2,
       foundingNodes: 6,
       foundingSpeciesMask: 0,
+      foundingPortalMagic: 0,
       openingTechniqueCount: 0,
       openingFormCount: 0,
       // Unread with no counts, and pinned anyway so that a later default flip

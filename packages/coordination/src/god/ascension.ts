@@ -519,10 +519,17 @@ export function legacyGrant(prestige: Fixed, constants: GodConstants): LegacyGra
     materials: share(constants.legacyBaselineMaterials),
     // A count, not `fp`: a fifth of a person is not a person, and rounding a
     // headcount up would hand a fresh universe a free settler.
-    populace: Math.floor(share(constants.legacyBaselinePopulace * FP_ONE) / FP_ONE),
-    archiveNodes: Math.floor(
-      (constants.legacyArchiveNodes * FP_ONE * budget) / (FP_ONE * FP_ONE),
-    ),
+    //
+    // `floorDiv`, not `Math.floor(a / b)`. Both spell the same intent and this
+    // file already says so at `ascensionLoss` — *"integer arithmetic
+    // throughout: `floorDiv` over fixed point at 1/1024"* — but the two lines
+    // below were written in the float form and nothing in the repository
+    // objected, because `coordination` sat outside eslint's rules-path glob
+    // until W201 put it in. Float division of two integers is not merely
+    // untidy: the quotient is rounded to a double before the floor, so a true
+    // quotient just under an integer can round up across it.
+    populace: floorDiv(share(constants.legacyBaselinePopulace * FP_ONE), FP_ONE),
+    archiveNodes: floorDiv(constants.legacyArchiveNodes * FP_ONE * budget, FP_ONE * FP_ONE),
     archiveMaxTier: constants.legacyArchiveMaxTier,
   };
 }

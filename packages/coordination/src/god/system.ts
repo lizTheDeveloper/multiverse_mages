@@ -54,7 +54,7 @@
 import type { ComponentSpec, EntityHandle, SimState, System } from '@mm/sim-core';
 import { FP_ONE, TIME_MODE, eraOf } from '@mm/sim-core';
 import type { Fixed } from '@mm/sim-core';
-import type { PrimitiveRecord } from '@mm/content';
+import type { PrimitiveRecord, SpeciesRecord } from '@mm/content';
 import type { CellResolver, KnowledgeSubsystem, NodeCatalog } from '@mm/rules-magic';
 import type { ClampCounters } from '@mm/primitives';
 import {
@@ -103,6 +103,14 @@ import type { InterventionReport } from './interventions.js';
 import { resolveInterventions } from './interventions.js';
 import { edictBudgetFor, favorCapFor, laggedWorship, shockedTarget, worshipTarget } from './worship.js';
 
+/**
+ * A universe with no allies. Shared and frozen rather than rebuilt per tick:
+ * the empty roster is the overwhelmingly common case — every pre-`w109` world
+ * and every arm of the paired measurement's control side — and allocating a set
+ * per tick to represent "nothing" would put garbage in the hot path.
+ */
+const EMPTY_SPECIES_ROSTER: ReadonlySet<number> = Object.freeze(new Set<number>());
+
 /** Everything the god systems need beyond state. Resolved once, per run. */
 export interface GodDeps {
   readonly content: GodContent;
@@ -122,6 +130,18 @@ export interface GodDeps {
   readonly worshipYieldNodes: ReadonlyMap<number, readonly Fixed[]>;
   /** Node ids carrying the `portal` primitive. */
   readonly portalNodes: ReadonlySet<number>;
+  /**
+   * Species an allied realm would send a scholar from, by interned id.
+   *
+   * Optional, and absent means the empty set — a universe with no allies, which
+   * is what every world built before action 16 existed describes. That is the
+   * same "absence is a decision, not a default" shape `grantBudget` uses, and
+   * it is what lets the paired measurement switch the mechanic off by supplying
+   * nothing rather than by branching.
+   */
+  readonly invitableSpecies?: ReadonlySet<number>;
+  /** The species table, for the traits an arriving scholar is built from. */
+  readonly speciesOf?: (speciesId: number) => SpeciesRecord | undefined;
   /** Where `worship-yield` cap clamps are counted, when a caller keeps counters. */
   readonly clampCounters?: ClampCounters;
   /**
@@ -265,6 +285,9 @@ function interventionSystem(
         knowledge: deps.knowledgeFor(ctx.state),
         edictBudgetMax: EDICT_BUDGET_MAX,
         portalNodes: deps.portalNodes,
+        invitableSpecies: deps.invitableSpecies ?? EMPTY_SPECIES_ROSTER,
+        speciesOf: deps.speciesOf ?? (() => undefined),
+        rng: ctx.rng,
         requestEngagement: () => {
           ctx.requestEngagement();
         },
