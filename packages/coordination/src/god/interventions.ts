@@ -585,16 +585,24 @@ function revokePlan(
  * `permits` must return true for the node's cell.
  *
  * Granted at full mastery, because a grant at the research default would sit
- * below the teach threshold and could never leave the founder's head — which
- * would make founding knowledge a gift to one mage rather than to a universe.
+ * below the teach threshold — which, before `rules-magic`'s `practice` existed,
+ * meant it could never leave the founder's head at all, making founding
+ * knowledge a gift to one mage rather than to a universe. Practice gives a
+ * below-threshold instance an exit now, so the grant is no longer the *only*
+ * route above the threshold; it stays at full mastery anyway, because a
+ * founding gift that the founder had to spend a year drilling before she could
+ * pass it on is a delay rather than a gift.
  *
  * ## The fifth precondition: the budget
  *
  * Grants are **scarce, not weak**. The shape above is untouched — a full
- * instance at `grantMastery` — because `setMastery`'s only non-test caller is
- * the decay pass and it lowers, so a granted instance is the one source of
- * knowledge above the teach threshold this universe has. What is limited is the
- * count, through `canGrantFoundingKnowledge`, and a universe carrying no
+ * instance at `grantMastery`. When the budget was written, that shape was
+ * load-bearing for a second reason that has since gone: `setMastery`'s only
+ * non-test caller was the decay pass and it lowers, so a granted instance was
+ * the *one* source of knowledge above the teach threshold a universe had.
+ * `practice` is a second source now, and the argument for keeping grants strong
+ * is the one above rather than that scarcity. What is limited is the count,
+ * through `canGrantFoundingKnowledge`, and a universe carrying no
  * `grant-budget` row is unbounded exactly as it was before the row existed.
  *
  * The refusal is here **and** in `agent-api`'s candidate list, which is the same

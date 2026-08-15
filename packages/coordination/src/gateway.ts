@@ -141,6 +141,7 @@ import type {
   KnowledgeRng,
   KnowledgeSubsystem,
   NodeCatalog,
+  PracticeOutcome,
   StoreHook,
   StorePolicy,
 } from '@mm/rules-magic';
@@ -149,6 +150,8 @@ import {
   MASTERY_ACTIVATION_THRESHOLD,
   disownGrimoire,
   isRediscovery,
+  practice,
+  practiceCeiling,
   research,
   researchRequirement,
   scribe,
@@ -525,6 +528,73 @@ export class CoordinatingKnowledgeGateway implements KnowledgeGateway {
       best = nodeId;
     }
     return best;
+  }
+
+  /**
+   * Every node this mage could spend a month **improving**, ascending by id.
+   *
+   * Three gates, and the third is the one that is particular to practice:
+   *
+   * 1. she holds it in mind or palace (`#holdings` walks exactly those),
+   * 2. the cell is permitted **now** — practice is a use of magic and an
+   *    interdicted art cannot be used, which is the same gate `castableNodes`
+   *    applies,
+   * 3. her mastery is **below** `practiceCeiling(tier, depthCeiling)`.
+   *
+   * The third gate is why `practice` is never a month thrown away, and it is
+   * the population-level rule as well: a mage's list empties as she perfects
+   * what is well inside her reach, and what is left at the top of it she cannot
+   * improve at all. The depth filter is not a fourth gate, because it is
+   * already implied — a node above her `depthCeiling` gives headroom zero and a
+   * ceiling of `PRACTICE_CEILING_BASE`, which she is at or above whenever she
+   * could have acquired it. It is applied explicitly anyway, matching
+   * `teachableTo`'s use of the same trait, so that the list this returns cannot
+   * disagree with the frontier about what she may work on.
+   */
+  practicableNodes(mage: MageHandle): readonly ContentId[] {
+    const rates = this.#ratesOf(mage);
+    if (rates === undefined) return [];
+    const found: ContentId[] = [];
+    for (const [nodeId, mastery] of this.#holdings(mage)) {
+      const node = this.#deps.catalog.node(nodeId);
+      if (node === undefined || node.tier > rates.depthCeiling) continue;
+      if (!permits(this.#deps.ruleset, this.#deps.cells.cellOf(nodeId))) continue;
+      if (mastery >= practiceCeiling(node.tier, rates.depthCeiling)) continue;
+      found.push(nodeId);
+    }
+    return found.sort((a, b) => a - b);
+  }
+
+  /**
+   * Spends mage-months drilling a node she already holds.
+   *
+   * **No effort ledger, and that is the difference from every other
+   * contribution on this class.** Research, teaching and scribing are projects:
+   * they bank progress against an authored requirement and produce an instance
+   * on the tick the requirement is met, so the running total has to live
+   * somewhere between two calls. Practice has no completion — there is nothing
+   * to finish, only a mastery that is higher this month than it was last month
+   * — so the month is spent immediately and the state it moves is the
+   * instance's own `mastery` field. That is one fewer `EFFORT_PROGRESS` row per
+   * practising mage per node, and one fewer thing a save has to carry.
+   *
+   * A refusal — an interdicted cell, a node she has since lost — writes
+   * nothing, exactly as `contributeResearch`'s does.
+   */
+  contributePractice(mage: MageHandle, nodeId: ContentId, mageMonths: Fixed): PracticeOutcome | undefined {
+    const rates = this.#ratesOf(mage);
+    if (rates === undefined) return undefined;
+    return practice({
+      knowledge: this.#deps.knowledge,
+      catalog: this.#deps.catalog,
+      cells: this.#deps.cells,
+      ruleset: this.#deps.ruleset,
+      subject: mage,
+      nodeId,
+      effort: mageMonths,
+      learnRate: rates.learnRate,
+      depthCeiling: rates.depthCeiling,
+    });
   }
 
   scribableBy(mage: MageHandle, nodeId: ContentId): KnowledgeTarget | undefined {

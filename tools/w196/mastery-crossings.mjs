@@ -45,6 +45,15 @@
  * an answer. `CLAUDE.md`: a checker that answers about the wrong input is worse
  * than no checker, so there is a third exit for *the probe is broken*.
  *
+ * ## The outcome counters travel with the crossing count too
+ *
+ * A crossing is the mechanism firing; it is not yet the thing the mechanism is
+ * *for*. `lessonsTaught` — read off the world report, which is the production
+ * path's own count rather than a second one this file could get wrong — is what
+ * says the knowledge that became teachable was then taught. Reported beside
+ * `researchCompleted` and `grimoiresScribed` so that a rise in one that came
+ * out of the others is visible as such.
+ *
  * ## The goal histogram travels with the crossing count
  *
  * `goalTicks` counts `GOAL_COMMITMENT` rows by goal id every tick. Without it a
@@ -137,6 +146,11 @@ export function runOne(input) {
   let upwardCrossings = 0;
   let ticksObserved = 0;
   let peakTeachableInstances = 0;
+  let lessonsTaught = 0;
+  let researchCompleted = 0;
+  let grimoiresScribed = 0;
+  let magesApplying = 0;
+  let ticksWithoutReport = 0;
 
   const schema = probe
     ? defineWorld({
@@ -183,6 +197,19 @@ export function runOne(input) {
               for (const { row } of collectRecords(ctx.state, GOAL_COMMITMENT)) {
                 goalTicks.set(row.goalId, (goalTicks.get(row.goalId) ?? 0) + 1);
               }
+              // The production path's own counts, not a second derivation. See
+              // `tools/w49`: the `onReport` callback passed to
+              // `defineWorldSimulation` is silently dropped, so this reads the
+              // accessor and reports its own coverage.
+              const report = simulation.lastReport();
+              if (report === undefined) {
+                ticksWithoutReport += 1;
+              } else {
+                lessonsTaught += report.lessonsTaught;
+                researchCompleted += report.researchCompleted;
+                grimoiresScribed += report.grimoiresScribed;
+                magesApplying += report.magesApplying;
+              }
             },
           },
         ],
@@ -227,6 +254,11 @@ export function runOne(input) {
     bornTeachableNodes: bornTeachableNodes.size,
     teachableNodesEver: teachableNodesEver.size,
     peakTeachableInstances,
+    lessonsTaught,
+    researchCompleted,
+    grimoiresScribed,
+    magesApplying,
+    ticksWithoutReport,
     goalTicks: Object.fromEntries([...goalTicks].sort((a, b) => a[0] - b[0])),
   };
 }
@@ -319,6 +351,7 @@ function main() {
           `${pad(strategyId, 20)} cell=${String(cell.cellIndex)} rep=${String(replicateIndex)} ` +
             `ticks=${String(run.ticksRun)} crossings=${String(run.upwardCrossings)} ` +
             `nodesUp=${String(run.nodesCrossedUp)} born=${String(run.bornTeachableNodes)} ` +
+            `lessons=${String(run.lessonsTaught)} ` +
             `(${String(Date.now() - started)}ms)\n`,
         );
       }
@@ -340,6 +373,7 @@ function main() {
       totals.goalTicks.set(Number(goal), (totals.goalTicks.get(Number(goal)) ?? 0) + n);
   }
   const bornAnywhere = runs.reduce((acc, r) => acc + r.bornTeachableNodes, 0);
+  const sum = (key) => runs.reduce((acc, r) => acc + r[key], 0);
 
   process.stdout.write('\n');
   process.stdout.write(
@@ -357,6 +391,11 @@ function main() {
   );
   process.stdout.write(
     `goal (mage,tick) counts: ${[...totals.goalTicks].map(([g, n]) => `${String(g)}=${String(n)}`).join(' ')}\n`,
+  );
+  process.stdout.write(
+    `lessonsTaught=${String(sum('lessonsTaught'))} researchCompleted=${String(sum('researchCompleted'))} ` +
+      `grimoiresScribed=${String(sum('grimoiresScribed'))} magesApplying=${String(sum('magesApplying'))} ` +
+      `ticksWithoutReport=${String(sum('ticksWithoutReport'))}\n`,
   );
 
   if (bornAnywhere === 0) {
