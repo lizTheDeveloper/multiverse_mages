@@ -11724,3 +11724,71 @@ gaining the ban — each fail with the right message.
 **Stated rather than glossed:** the three balance gates were **not** run, because the pass is constrained
 against gates and sweeps. #190's body says so and asks a reviewer to run them before merge. **The
 equivalence sweep is offered in their place, not as a substitute for them.**
+
+## W221 — 27 mechanisms instrumented: ten fire zero times, eight fire and move nothing, none is content-scoped
+
+PR #191, measured at `08ca5368` with `dist/` built at that SHA. The hunt for the class no existing check
+can see — **wired, reachable, green, and inert.**
+
+| outcome | count |
+|---|--:|
+| fire **zero** times | **10** |
+| fire — tens of thousands of times — and **move nothing** | **8** |
+| move the world but nothing the record can see | 1 |
+| live | 8 |
+
+**Eighteen structural, zero content-scoped.** **No inert row would bind at a wider opening square** — which
+independently corroborates #173's *keep the twelve* and closes the last version of the widening argument.
+
+### 1. `affiliate` consumes 36.5% of all mage-life and accrues nothing
+
+**13,572 of 37,211 committed mage-ticks** go to the `affiliate` goal, and `workOne` falls through to
+`default: return undefined`. **Six affiliations happen in 600 ticks and none on a tick the mage was
+committed to the goal** — `assignStaff` does it, and does not read the goal.
+
+*"`check:reachability` already prints `completeAffiliation` as unreached. **What nothing names is the
+cost.**"* Over a third of every mage's working life, spent on a goal that cannot advance.
+
+### 2. Discovery cannot move the rates discovery is meant to move
+
+Over a no-action run: `researchBonusesFor` **19,285 calls**, `teachBonusesFor` **695**,
+`lifespanEffectsFor` **74,343** — each returns an **empty list on every call**. `scribe-rate` is handed
+the literal `NO_BONUSES`. **Only god constants feed any of them.**
+
+**And `content-set.ts` records this as a *non-node consumer registration*, which is exactly why
+`check:consumption` passes.** The blind spot is not an oversight in the checker; it is a registration
+shape that satisfies it.
+
+### 3. Every balance baseline is blind to the economy by construction
+
+**`resource-yield` moves materials −36.8% and is byte-identical across the entire committed run record.**
+`CensusSample` has no material field — and neither do the **eighteen §7 metrics** nor the **eleven
+`REFERENCE_MEASURES`.**
+
+Its mirror: **`build-rate` stacks 39 sources every tick for 2,400 ticks into a `buildProgressAdded` that
+is zero on all of them.**
+
+### Controls — and two of my numbers were never in the tree
+
+Reproduced exactly: six-of-seven primitives inert at 240 ticks; `constructionBacklog` 0, extended to 2,400.
+Reproduced at scale: combat attempts zero with `bySource: {}` over **121,167 combatant-ticks in 93 raids**.
+
+**But the 108/88,470 and 7/19,912 figures I have quoted all night appear nowhere in the tree.** The
+recorded figure is **61 raids / 80,615 ticks over 8 strategies at `b02892b`**, which scales cleanly to
+twelve. The finding is unaffected; the numbers I attached to it were not the repository's.
+
+**`lifespan`'s 1,594 contributions are driver-dependent** — 0 with no god, 3,401 under
+`worship-maximizer` — so that figure is a property of the arm, not of the wire.
+
+**And `teach-rate` is more inert than anyone reported: byte-identical at zero *and* at ×100.** Every
+earlier figure for it — mine included, four times over — was measuring something else.
+
+### The instrument caught itself twice, and both are now self-checks
+
+- **The snapshot hash moves on a content-only edit.** Amplifying `direct-damage` in a raidless driver moved
+  the hash while every behavioural counter was identical — **judged on the hash, all sixteen primitives
+  would have read live.**
+- **An arm can replace a policy with itself**, reporting a perfect byte-identical null that means nothing.
+
+Both now **refuse to print a table** rather than printing a wrong one. That is the right shape for an
+instrument whose whole job is to tell inert from live.
