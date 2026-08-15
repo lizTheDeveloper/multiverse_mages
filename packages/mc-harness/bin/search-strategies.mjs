@@ -399,6 +399,7 @@ async function main() {
   // new status, so this is display-only and cannot move a baseline. The archive
   // JSON already carries the rate, so an analyser can make the same distinction.
   const excluded = [];
+  // Drives the per-cell label only; the warning block below walks `candidates`.
   for (const cell of archive.cells) {
     const masked = cell.status !== 'occupied' && cell.elite.illegalActionRate > MAX_ELITE_ILLEGAL_RATE;
     if (masked) excluded.push(cell.elite);
@@ -419,7 +420,25 @@ async function main() {
   // that cannot submit a legal action is not evidence about balance in either
   // direction, and a sweep containing one has a smaller effective pool than its
   // own header claims.
-  for (const elite of excluded) {
+  // Scanned from `candidates` and not from `excluded`, which is built while
+  // printing the cells. A cell holds exactly one elite per coordinate, so a
+  // strategy that is both over the ceiling *and* loses its coordinate to a
+  // better elite is an elite of no cell and would be reported nowhere -- the
+  // first version of this block did exactly that and missed
+  // `worship-maximizer` at 0.201 while catching `portal-rush` at 0.483. The
+  // ceiling is a property of a candidate's own run, not of whether it won a
+  // coordinate, so the candidate list is the right thing to walk.
+  const overCeiling = candidates
+    .filter((candidate) => candidate.illegalActionRate > MAX_ELITE_ILLEGAL_RATE)
+    .sort((a, b) => b.illegalActionRate - a.illegalActionRate);
+  if (overCeiling.length > 0) {
+    process.stdout.write(
+      `[search] effective pool ${String(BOT_POOL.length - overCeiling.length)} of ` +
+        `${String(BOT_POOL.length)} -- ${String(overCeiling.length)} strategies could not hold a ` +
+        'cell regardless of play, so every width below is a width of the smaller pool.\n',
+    );
+  }
+  for (const elite of overCeiling) {
     process.stdout.write(
       `[search] WARNING: excluded -- ${elite.strategyId} was rejected on ` +
         `${(elite.illegalActionRate * 100).toFixed(1)}% of its submissions, over the ` +
