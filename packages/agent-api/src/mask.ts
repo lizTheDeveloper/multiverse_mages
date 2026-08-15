@@ -15,27 +15,49 @@
  * `docs/design/contracts.md` §4.2: *"Legality mask is mandatory. Every
  * observation carries a boolean mask over the action space."*
  *
- * ## The engagement rule, which is the whole point of this module
+ * ## The engagement rule, and its repeal
  *
- * > **Every action except no-op is masked during engagement.** The god acts
- * > only in world time. This covers the ruleset actions 1–7 and 13, and equally
- * > 8–12, 14, and 15: blessing a defender mid-raid, or declaring ascension to
- * > escape a losing one, violates frozen policy exactly as squarely as
- * > forbidding a technique does. Silence in an earlier draft of this table was
- * > not permission.
+ * This module used to open with the frozen-policy rule quoted as law:
  *
- * So {@link legalityMask} has exactly one branch at the top, and it is total:
- * in engagement mode the mask is `[1, 0, 0, …]` and nothing below it runs.
- * Written as an early return rather than as a per-action `&& !engaged` so that
- * an action added to §4.2 later is masked during engagement *by default* — the
- * failure mode this rule has already had once is an action that nobody
- * remembered to add to a list.
+ * > ~~**Every action except no-op is masked during engagement.** The god acts
+ * > only in world time.~~
  *
- * This is the vision's frozen-policy rule (§3), enforced in one place. It is
- * not the *only* enforcement: §1.1 has a raid evaluate legality against a
- * ruleset snapshot captured at portal open, precisely because `rules-raid` may
- * not depend on this package (§5) and a mask it cannot see would protect
- * nothing. The two are belt and braces on purpose.
+ * **`docs/design/raid-engagement.md` §1 repeals that**, and the docstring
+ * outlived the rule it quoted by long enough to be worth naming: the early
+ * return below stayed a total mask while `rules-raid` grew six raid verbs, a
+ * `RaidLock`, a revert surcharge and the `mid-raid-change` component — an
+ * entire mechanic whose whole premise is that the god *does* act under fire.
+ * `ui/raid/`'s framing question was *"every action is masked for the duration.
+ * What is a player actually **doing** while a raid runs?"* and the answer the
+ * mask gave was *nothing*.
+ *
+ * §4.2 now reads: during an engagement the **defender** may `permitTechnique`
+ * (1), `permitForm` (3), `forbidTechnique` (2) and `forbidForm` (4), each of
+ * which **locks** for the rest of the raid and leaves a mark that makes
+ * reverting it afterwards cost more than it did under fire. Everything else
+ * stays masked, and stays masked as an early-return default rather than as a
+ * list somebody has to remember to extend — {@link ENGAGEMENT_ACTIONS} is the
+ * allow-list, and an action added to §4.2 tomorrow is masked mid-raid unless it
+ * is put there deliberately.
+ *
+ * ## What this mask can and cannot know, and why a phase arrives as data
+ *
+ * A raid's verbs decay across three phases and none is legal in resolution.
+ * The phase is computable from `clock.engagementTick` — `rules-raid`'s
+ * `phaseOf` takes elapsed ticks and nothing else — but *"has contact
+ * happened"* and *"are all objectives resolved"* live in the engagement store,
+ * which is not the world and which this package cannot reach: §5 forbids
+ * `agent-api` from importing `rules-raid`, and the dependency runs one way only
+ * so that a rules package can never be made to depend on the agent boundary.
+ *
+ * So the phase arrives as **data on the input**, exactly as the cost table
+ * does — see {@link MaskInput.engagement}. Absent, the mask reports the four
+ * actions legal on structure alone, which is the same honest-silence rule the
+ * cost table follows: it says *"this action is well formed"* and stays silent
+ * on a phase it was not told. The authority remains `rules-raid`'s: the lock
+ * refuses a change the mask permitted, exactly as `permits()` refuses a cast,
+ * and that belt-and-braces arrangement is unchanged by this — only its
+ * *direction* is. The mask was refusing everything the rules allowed.
  *
  * ## What "legal" means at world scale
  *
@@ -89,6 +111,45 @@ import { ACTION_SPACE_SIZE, GOD_ACTION, PARAMETERIZED_ACTIONS } from './actions.
 import type { ActionCostTable, ContentCatalogue } from './catalogue.js';
 import type { CandidateLists } from './candidates.js';
 
+/**
+ * What a caller knows about the engagement in flight, when there is one.
+ *
+ * Distinct from `observation.ts`'s `EngagementView`, which carries the whole
+ * `Engagement` so the observation block can be laid out own-first. This one
+ * carries **two answers rather than a structure**, because the questions the
+ * mask asks — *"which side am I"* and *"does this phase still admit a ruleset
+ * change"* — are `rules-raid`'s to answer, and a structure would invite this
+ * package to answer them itself out of a store it should not be reading.
+ *
+ * Structural rather than a `Raid`, for the reason `phaseOf` takes structural
+ * inputs and `permits()` takes a `Ruleset`: the engine, a test, and a client
+ * projecting an observation should all be asking the same question, and only
+ * one of the three has a `Raid` to hand. Supplying it is what lets the mask
+ * follow a raid's phases down; omitting it is honest silence.
+ */
+export interface EngagementStance {
+  /**
+   * Which side this god is on. `0` attacker, `1` defender — `RAID_SIDE`'s
+   * values, carried as a number because `agent-api` may not import a rules
+   * package.
+   *
+   * Load-bearing rather than informational: forbidding is **defender-only**
+   * (`raid-engagement.md` §6.2), because under host arbitration an attacker
+   * closing her own cells changes nothing inside the universe she is standing
+   * in. An attacker therefore gets no ruleset verb at all.
+   */
+  readonly side: number;
+  /**
+   * Whether this phase still admits a ruleset change.
+   *
+   * One boolean and not a phase number, deliberately. The phase → verb table is
+   * `rules-raid`'s (`verbLegalIn`), and a second copy of it here is exactly the
+   * drift `revertSurcharge` is imported rather than reimplemented to avoid. The
+   * caller asks `rules-raid` and passes the answer.
+   */
+  readonly admitsRuleChange: boolean;
+}
+
 /** What {@link legalityMask} needs. */
 export interface MaskInput {
   readonly state: SimState;
@@ -99,7 +160,32 @@ export interface MaskInput {
    * reports structural legality only — see the module note.
    */
   readonly catalogue?: ContentCatalogue | undefined;
+  /**
+   * The engagement in flight, when the caller knows about one.
+   *
+   * Only read while `clock.mode` is engagement. Absent there means the mask
+   * reports {@link ENGAGEMENT_ACTIONS} on structure alone.
+   */
+  readonly engagement?: EngagementStance | undefined;
 }
+
+/**
+ * The §4.2 actions an engagement admits, ascending.
+ *
+ * An explicit allow-list against an early return, so that the default for any
+ * action added to §4.2 later is **masked** — which is the property the old
+ * total mask had and the one worth keeping out of it. All four are ruleset
+ * axis toggles, all four lock for the raid, and all four are the defender's.
+ */
+export const ENGAGEMENT_ACTIONS: readonly number[] = Object.freeze([
+  GOD_ACTION.permitTechnique,
+  GOD_ACTION.forbidTechnique,
+  GOD_ACTION.permitForm,
+  GOD_ACTION.forbidForm,
+]);
+
+/** `RAID_SIDE.defender`. Named here because `agent-api` may not import it. */
+const DEFENDER_SIDE = 1;
 
 /**
  * The mask, one byte per action id, `1` legal and `0` not.
@@ -119,7 +205,7 @@ export function legalityMask(input: MaskInput): Uint8Array {
   mask[GOD_ACTION.noop] = 1;
 
   if (inEngagement(state)) {
-    return mask;
+    return engagementMask(mask, input);
   }
 
   const universe = findUniverse(state);
@@ -315,6 +401,60 @@ function cheapestRevoke(state: SimState, costs: ActionCostTable, base: number): 
     if (price < cheapest) cheapest = price;
   }
   return cheapest === Number.POSITIVE_INFINITY ? base : cheapest;
+}
+
+/**
+ * The mask during an engagement: {@link ENGAGEMENT_ACTIONS}, gated.
+ *
+ * Four gates, in order, each of which is the mask agreeing with a rule that
+ * exists elsewhere rather than inventing one here:
+ *
+ * 1. **Nothing without an {@link EngagementStance}.** A caller that did not say
+ *    which side it is on or whether the phase admits a change gets the no-op
+ *    only. Silence is not permission — that is the same reading the repealed
+ *    rule's own docstring took, and the only part of it worth keeping.
+ * 2. **Defender only** (§6.2). An attacker's ruleset does not govern the
+ *    universe she is standing in.
+ * 3. **The phase still admits it** (§2). Resolution is watch-only.
+ * 4. **The bit is there to flip**, which is the same structural test world time
+ *    applies, read off the same universe row.
+ *
+ * Affordability is deliberately *not* applied. §3 prices a mid-raid change in
+ * the **raid purse** — the defender's favor as it stood at portal open, less
+ * what she has already spent inside this raid — and that purse is raid-scoped
+ * state this package cannot see. Pricing it against the live universe row would
+ * be a second, wrong copy of a rule `verbs.ts` owns: the row does not move
+ * during a raid, and every spend is settled at resolution. So the mask reports
+ * structural legality here and the lock refuses what the purse cannot buy —
+ * which is exactly the split the cost-table note describes for a catalogue that
+ * arrives without prices.
+ */
+function engagementMask(mask: Uint8Array, input: MaskInput): Uint8Array {
+  const { state, engagement } = input;
+  if (engagement === undefined) return mask;
+  if (engagement.side !== DEFENDER_SIDE) return mask;
+  if (!engagement.admitsRuleChange) return mask;
+
+  const universe = findUniverse(state);
+  if (universe === 0) return mask;
+
+  const record = readUniverse(state, universe);
+  // A terminated universe is a terminated universe mid-raid too. The world-time
+  // branch returns early on this and the reason carries over unchanged: the
+  // resolver refuses every submission against one, so reporting an action legal
+  // would be the mask disagreeing with the rules.
+  if (record.ascended !== 0 || record.terminalReason !== TERMINAL_REASON.none) return mask;
+
+  const techniqueMask = (1 << GRID_TECHNIQUE_COUNT) - 1;
+  const formMask = (1 << GRID_FORM_COUNT) - 1;
+
+  mask[GOD_ACTION.permitTechnique] =
+    (record.permittedTechniques & techniqueMask) === techniqueMask ? 0 : 1;
+  mask[GOD_ACTION.forbidTechnique] = (record.permittedTechniques & techniqueMask) === 0 ? 0 : 1;
+  mask[GOD_ACTION.permitForm] = (record.permittedForms & formMask) === formMask ? 0 : 1;
+  mask[GOD_ACTION.forbidForm] = (record.permittedForms & formMask) === 0 ? 0 : 1;
+
+  return mask;
 }
 
 /** Whether an action's mask entry is set. Out-of-range ids read as illegal. */
