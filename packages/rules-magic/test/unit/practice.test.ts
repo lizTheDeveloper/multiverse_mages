@@ -163,6 +163,23 @@ describe('practice — the ceiling that keeps a population stratified', () => {
     expect(practiceCeiling(7, 3)).toBe(PRACTICE_CEILING_BASE);
   });
 
+  it('lets her drill something beyond her reach, but only to barely-teachable', () => {
+    // A god's grant and raid theft both put a node in a mind without consulting
+    // the frontier, so "she holds a node above her `depthCeiling`" is reachable.
+    // `practice` does not refuse it — the gateway's candidate list is what
+    // applies the depth filter — and the clamp at zero headroom is what bounds
+    // it: she gets to exactly `PRACTICE_CEILING_BASE`, which one tick of decay
+    // takes away again.
+    const knowledge = fixture(DEFAULT_INITIAL_MASTERY);
+    let instance = 0;
+    for (let i = 0; i < 100; i += 1) {
+      const outcome = practice(inputs(knowledge, { depthCeiling: 0 }));
+      expect(outcome.refusal).toBeUndefined();
+      instance = outcome.instance;
+    }
+    expect(knowledge.read(instance).mastery).toBe(PRACTICE_CEILING_BASE);
+  });
+
   it('refuses to level a granted instance down to what she could have reached', () => {
     // A god grants at 1024. A mage at her limit has a ceiling of 512. Practice
     // must not take the difference away: it is an operation that raises.

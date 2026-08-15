@@ -173,7 +173,16 @@ export interface PracticeInputs {
   readonly depthCeiling: number;
   /** Defaults to {@link PRACTICE_GAIN_PER_MONTH}. */
   readonly gainPerMonth?: Fp;
-  /** Defaults to {@link DEFAULT_TEACH_THRESHOLD}; only reported against. */
+  /**
+   * Defaults to {@link DEFAULT_TEACH_THRESHOLD}.
+   *
+   * **Reported against only.** It decides
+   * {@link PracticeOutcome.crossedTeachThreshold} and nothing else — it does
+   * not move the ceiling, which comes from {@link PRACTICE_CEILING_BASE}. The
+   * two are equal in the shipped constants on purpose, so a caller who raises
+   * this one alone will get an outcome that can never report a crossing. Raise
+   * both or neither.
+   */
   readonly teachThreshold?: Fp;
 }
 

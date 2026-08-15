@@ -544,12 +544,24 @@ export class CoordinatingKnowledgeGateway implements KnowledgeGateway {
    * The third gate is why `practice` is never a month thrown away, and it is
    * the population-level rule as well: a mage's list empties as she perfects
    * what is well inside her reach, and what is left at the top of it she cannot
-   * improve at all. The depth filter is not a fourth gate, because it is
-   * already implied — a node above her `depthCeiling` gives headroom zero and a
-   * ceiling of `PRACTICE_CEILING_BASE`, which she is at or above whenever she
-   * could have acquired it. It is applied explicitly anyway, matching
-   * `teachableTo`'s use of the same trait, so that the list this returns cannot
-   * disagree with the frontier about what she may work on.
+   * improve at all.
+   *
+   * ## The depth filter is this method's, not `practice()`'s
+   *
+   * `node.tier > depthCeiling` is checked **here** and nowhere else, matching
+   * `teachableTo`'s use of the same trait so that the list a mage is offered
+   * cannot disagree with the frontier about what she may work on.
+   *
+   * `practice()` itself does **not** refuse an over-deep node, and that is a
+   * decision rather than an oversight. Two paths put a node above a mage's
+   * ceiling into her mind without consulting the frontier — a god's founding
+   * grant and raid theft — and for those `practiceCeiling` clamps headroom at
+   * zero, so she can drill something beyond her only as far as
+   * `PRACTICE_CEILING_BASE` and no further: barely held, teachable for a tick,
+   * gone by the next sweep unless she stays at it. That is the right shape for
+   * knowledge somebody handed her that she was never equipped for, and
+   * `practice.test.ts` pins it. What it is *not* is an implication of the
+   * ceiling arithmetic, which is what this comment used to claim.
    */
   practicableNodes(mage: MageHandle): readonly ContentId[] {
     const rates = this.#ratesOf(mage);
