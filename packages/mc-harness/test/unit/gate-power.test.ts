@@ -112,21 +112,10 @@ const BLIND_ARM_LINES: Readonly<Record<string, readonly string[]>> = {
   // whose arm sits close to zero will cross this threshold on any re-roll, in
   // either direction, and that is a fact about the strategy rather than about
   // the tolerance.
-  //
-  // **Two since `w187/effects-union`, down from three, and a shrink is a build
-  // failure for the same reason a growth is.** `referenceNodesKnown@denial-warden`
-  // moved 4.125 → 5.0 when node effects began driving the academic rates, and
-  // 4.69874 ÷ 5.0 is 94 %, so the line became sharp and left this list — the gate
-  // can now see a doubling of it where it could not, which is a change in the
-  // instrument even though it is the pleasant direction. Its sibling
-  // `referenceNodesGained@denial-warden` sits at 2.5 against the same tolerance,
-  // 188 %, and stays; `referenceNodesGainedFinalQuarter@permissive-breadth` stays
-  // for the reason #161 gave. Both crossings, in both directions, have now
-  // happened to the same pair of lines on the same strategy without anybody
-  // touching a tolerance.
   'balance/baselines/balance-gate-agency-v1.baseline.json': [
     'referenceNodesGained@denial-warden',
     'referenceNodesGainedFinalQuarter@permissive-breadth',
+    'referenceNodesKnown@denial-warden',
   ],
   // Ten since w107, up from seven, and the three that joined are all the same
   // shape: an arm whose *spread* widened rather than an arm that stopped

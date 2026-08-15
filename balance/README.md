@@ -257,31 +257,16 @@ proportional change in that metric the gate would report as `regressed`. Anythin
 
 | metric | 5-year gate | 20-year gate | 20-year agency gate | 200-year gate |
 |---|---|---|---|---|
-| `referenceGrimoires` | 5.8 % | 6.5 % | 12.4 % | 16.2 % |
-| `referenceKnowledgeInstances` | 2.3 % | 2.3 % | 5.9 % | 7.2 % |
-| `referenceLibraryDepth` | 17.5 % | 14.4 % | 26.5 % | 17.5 % |
-| `referenceLivingMages` | 0.8 % | 1.6 % | 3.7 % | 6.1 % |
-| `referenceNodesGained` | 2.5 % | 1.0 % | 2.7 % | 2.8 % |
-| `referenceNodesGainedFinalQuarter` | — | 7.3 % | 44.2 % | 26.4 % |
-| `referenceNodesKnown` | 2.2 % | 0.9 % | 2.6 % | 2.7 % |
-| `referencePeakPopulation` | 0.0 % | 18.0 % | 1.7 % | 1.4 % |
-| `referencePopulation` | 1.0 % | 1.8 % | 3.3 % | 8.1 % |
-| `referencePopulationChange` | 8.5 % | 5.7 % | 10.4 % | 8.2 % |
-
-**Re-recorded 2026-08-14 on `w187/effects-union`** (PR #169), which merges the two effect campaigns
-on top of #161. Three columns moved; the 200-year column did not, because that gate was not
-re-recorded. Four cells deserve a sentence, because three got *worse* and none is a mistake:
-
-- **`referenceNodesGainedFinalQuarter` 3.8 % → 7.3 % at twenty years**, and 25.7 % → 44.2 % on the
-  agency gate. The metric itself shrank — the frontier is reached sooner when research is faster —
-  and the MDE is a *proportion* of it, so the gate still sees the same absolute drift. A smaller
-  figure has a larger percentage tolerance around it.
-- **`referencePeakPopulation` 16.6 % → 18.0 % at twenty years**, and **8.2 % → 1.7 % on the agency
-  gate.** Opposite directions, same cause: peak population became more strategy-dependent, so the
-  spread within the round-robin pool grew while the single-strategy sweep's own variance did not.
-- **`referenceNodesGained` and `referenceNodesKnown` roughly halved their MDE on the agency gate**
-  (8.5 % → 2.7 %, 7.9 % → 2.6 %). That is the gate getting *sharper*, and it is the same event as
-  one arm line leaving `BLIND_ARM_LINES`.
+| `referenceGrimoires` | 5.5 % | 6.5 % | 12.4 % | 16.2 % |
+| `referenceKnowledgeInstances` | 2.4 % | 2.4 % | 5.6 % | 7.2 % |
+| `referenceLibraryDepth` | 16.0 % | 14.2 % | 22.4 % | 17.5 % |
+| `referenceLivingMages` | 0.8 % | 1.6 % | 3.3 % | 6.1 % |
+| `referenceNodesGained` | 3.0 % | 1.4 % | 8.5 % | 2.8 % |
+| `referenceNodesGainedFinalQuarter` | — | 3.8 % | 25.7 % | 26.4 % |
+| `referenceNodesKnown` | 2.5 % | 1.3 % | 7.9 % | 2.7 % |
+| `referencePeakPopulation` | 0.0 % | 16.6 % | 8.2 % | 1.4 % |
+| `referencePopulation` | 1.0 % | 1.9 % | 3.3 % | 8.1 % |
+| `referencePopulationChange` | 8.6 % | 5.8 % | 10.0 % | 8.2 % |
 | runs | 200 | 200 | 64 | 64 |
 | plays a god verb | no | no | **yes** | **yes** |
 | wall clock, 4 workers | 4 s | 27 s | **10 s** | **830–1154 s** |
