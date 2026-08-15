@@ -166,6 +166,17 @@ quietly dropped a workspace one side added. The failure then surfaces as a wall 
 the tree tells you. Three separate agents lost time to this in one session before it was written
 down.
 
+**The same auto-merge trap has a second shape, and it is worse: YAML.** Bringing `w59/gate-power`
+current, git auto-merged `.github/workflows/ci.yml` **without a conflict** and produced a *duplicate*
+`ascension:` job — main already carried that job verbatim. A duplicate mapping key is not a syntax
+error, so there is no conflict marker, no typecheck failure, and no test that fails. It lands directly
+in the workflow that gates `main`. `package-lock.json` at least breaks loudly on `npm ci`; a duplicate
+YAML key just silently takes one of the two definitions.
+
+So after any merge that touches `.github/workflows/`, **read the merged file** rather than trusting a
+clean `git merge`. When the other side is `main` and your branch's version is stale, take main's
+wholesale.
+
 The reason is concrete: more than one agent or person may be editing this repository at the same
 time. Files changing underneath a running command produce failures that look like real defects and
 are not, and `git stash` in a shared tree can sweep up someone else's uncommitted work.

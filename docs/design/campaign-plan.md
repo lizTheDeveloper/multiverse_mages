@@ -8909,3 +8909,35 @@ has sixteen entries.
 out of the equality. Three projections means **the shape is wrong, not the fields** — each one narrows what
 the pin proves while the guaranteed three-file merge conflict cost stays. Build the payload in CI and fail
 on a diff: same rot detection, no merge surface.
+
+
+## W177 — four of five harness branches were landed, not stale, and the proof is a byte-identical tree
+
+The harness/metrics cluster came back with a result worth the method: **four of five branches carry
+nothing `main` does not already have**, and that is *proven* — merging `origin/main` into each produces
+a tree byte-identical to `origin/main`, verified by diff rather than inferred from a squash-merge
+message. `combat-primitive-consumption` → #144. `w62/metrics-collector` → #67. `w59/gate-power` → #61
+plus the later re-recordings. `w56/combat-evaluator` → #145, whose premise was exactly right; its only
+unique executor lines were the blind-instrument placeholder #145 deleted. Three pushed current at 0
+behind; `w56` left alone by design. **All four are deletion candidates, not staleness.**
+
+`measure/assign-role-combatants` is the only branch with real content — a design doc and three `tmp-*`
+measurement harnesses, 577 lines — now current at 0 behind. `typecheck` exits 0, and the agent proved
+that check actually covers the test files by injecting a deliberate type error and confirming it was
+caught, because `scenario/tsconfig.json` only includes `src/**`. All four files collect clean under
+`vitest list`. Two harnesses did not finish: load average was **240–338** across the window and the
+vitest parent had accumulated 2.5 s of CPU in 22 minutes — **starved, not hung.**
+
+### The near-miss: YAML auto-merges into a duplicate key
+
+Git merged `.github/workflows/ci.yml` **with no conflict** and produced a *duplicate* `ascension:` job,
+because main already carried w59's 200-year-gate job verbatim, its 2026-08-13 `35m09s` measurement
+included. A duplicate mapping key is not a syntax error — no marker, no typecheck failure, no test —
+and it lands in the workflow that gates `main`. This is the `package-lock.json` class one level up and
+strictly worse, because the lock file at least fails loudly on `npm ci`. Rule added to `CLAUDE.md`:
+after any merge touching `.github/workflows/`, read the merged file; when your side is stale, take
+main's wholesale.
+
+**And no baselines were regenerated, which was correct rather than an omission** — main's agency and
+ascension baselines are the ones recorded against main's code, while w59's were 123 commits stale.
+Taking main's beats re-recording. `goldens:regen` was never run.
