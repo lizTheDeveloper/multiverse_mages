@@ -353,7 +353,15 @@ export function raidSystem(deps: RaidSystemDeps): System {
       // empty existence index, and a raid that destroyed an instance the index
       // had never seen would trip `NodeExistenceIndex.remove`'s divergence
       // guard on the first library it burned.
-      knowledge: KnowledgeSubsystem.fromState(state, input.content.deps.catalog.nodeCount),
+      // The exclusion resolver is passed here for the reason `rules-magic`'s
+      // `exclusions.test.ts` names: theft writes straight into a thief's mind,
+      // so a raid subsystem built without it would let a raider acquire the one
+      // school her own holdings forbid (`vision.md` §4b).
+      knowledge: KnowledgeSubsystem.fromState(
+        state,
+        input.content.deps.catalog.nodeCount,
+        input.content.deps.cells,
+      ),
       ruleset,
       // Host and home are the same tradition for the local side of an inbound
       // raid, and differ only if a rival ever holds another. Resolved through

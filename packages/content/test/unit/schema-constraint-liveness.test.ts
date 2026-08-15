@@ -135,6 +135,15 @@ const SHADOWED: readonly { readonly constraint: string; readonly why: string }[]
     }),
   ),
   {
+    constraint: 'cell.schema.json#/$defs/cell/properties/excludes maxItems',
+    why:
+      'maxItems is 8 beside uniqueItems, and violating it needs 9 distinct exclusion objects. ' +
+      'The generator builds distinct elements by varying one scalar, and an exclusion is an ' +
+      'object whose `cell` must resolve and whose `resolution` is a 2-member enum, so it cannot ' +
+      'produce nine of them. Unproven for want of a generator rather than shadowed by a sibling — ' +
+      'recorded here because the alternative is leaving it silently unchecked',
+  },
+  {
     constraint: 'cell.schema.json#/$defs/cell/properties/edicts maxItems',
     why:
       'maxItems is 2, the item enum has exactly 2 members, and uniqueItems is true — a third ' +
@@ -146,6 +155,7 @@ const SHADOWED: readonly { readonly constraint: string; readonly why: string }[]
   // something" stays true as written.
   ...[
     'cell.schema.json#/$defs/cell/properties/edicts/items',
+    'cell.schema.json#/$defs/exclusion/properties/resolution',
     'node.schema.json#/$defs/node/properties/knowledgeKind',
     'node.schema.json#/$defs/node/properties/tuningStatus',
     'node.schema.json#/$defs/effect/properties/target',
