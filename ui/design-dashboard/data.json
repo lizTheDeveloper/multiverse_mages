@@ -3,13 +3,13 @@
     "generatedBy": "scripts/build-design-dashboard.mjs",
     "command": "npm run ui:dashboard",
     "pinnedBy": "packages/content/test/unit/design-dashboard-payload.test.ts",
-    "contentRevision": "d4e3047657b4fa8a1a74e1d52f9f5c86",
+    "contentRevision": "f7dd80543d8080cc0eee53ed27f1ab84",
     "contentCounts": {
       "techniques": 5,
       "forms": 14,
       "cells": 70,
       "v1Cells": 12,
-      "nodes": 300,
+      "nodes": 357,
       "species": 6,
       "traditions": 3,
       "primitives": 16,
@@ -17,7 +17,9 @@
       "godCosts": 16,
       "godConstants": 72,
       "raidConstants": 46,
-      "autonomyWeights": 38
+      "autonomyWeights": 38,
+      "tracks": 7,
+      "rituals": 2
     },
     "metricRegistrySize": 18,
     "note": "This payload is a pure function of the repository contents and a test asserts it, so it is a statement about the commit you are reading it on. Figures lifted from a document carry that document's own stated date and ref, and are labelled as historical."
@@ -458,12 +460,14 @@
         "classicalLabels": [
           "divination"
         ],
-        "nodeCount": 4,
+        "nodeCount": 9,
         "tierCounts": {
           "1": 1,
-          "2": 1,
-          "3": 1,
-          "4": 1
+          "2": 2,
+          "3": 2,
+          "4": 2,
+          "5": 1,
+          "6": 1
         }
       },
       {
@@ -474,11 +478,14 @@
         "classicalLabels": [
           "divination"
         ],
-        "nodeCount": 4,
+        "nodeCount": 9,
         "tierCounts": {
           "1": 1,
-          "2": 1,
-          "3": 2
+          "2": 2,
+          "3": 2,
+          "4": 2,
+          "5": 1,
+          "7": 1
         }
       },
       {
@@ -539,12 +546,14 @@
         "classicalLabels": [
           "divination"
         ],
-        "nodeCount": 4,
+        "nodeCount": 9,
         "tierCounts": {
           "1": 1,
-          "2": 1,
-          "3": 1,
-          "4": 1
+          "2": 2,
+          "3": 2,
+          "4": 2,
+          "5": 1,
+          "6": 1
         }
       },
       {
@@ -555,12 +564,14 @@
         "classicalLabels": [
           "divination"
         ],
-        "nodeCount": 4,
+        "nodeCount": 9,
         "tierCounts": {
           "1": 1,
-          "2": 1,
-          "3": 1,
-          "4": 1
+          "2": 2,
+          "3": 2,
+          "4": 2,
+          "5": 1,
+          "7": 1
         }
       },
       {
@@ -895,13 +906,14 @@
         "form": "mentem",
         "enabled": true,
         "classicalLabels": [],
-        "nodeCount": 5,
+        "nodeCount": 9,
         "tierCounts": {
           "1": 1,
-          "2": 1,
-          "3": 1,
-          "4": 1,
-          "5": 1
+          "2": 2,
+          "3": 2,
+          "4": 2,
+          "5": 1,
+          "7": 1
         }
       },
       {
@@ -910,12 +922,14 @@
         "form": "terram",
         "enabled": true,
         "classicalLabels": [],
-        "nodeCount": 4,
+        "nodeCount": 9,
         "tierCounts": {
           "1": 1,
-          "2": 1,
-          "3": 1,
-          "4": 1
+          "2": 2,
+          "3": 2,
+          "4": 2,
+          "5": 1,
+          "6": 1
         }
       },
       {
@@ -970,12 +984,14 @@
         "classicalLabels": [
           "abjuration"
         ],
-        "nodeCount": 4,
+        "nodeCount": 9,
         "tierCounts": {
           "1": 1,
-          "2": 1,
-          "3": 1,
-          "4": 1
+          "2": 2,
+          "3": 2,
+          "4": 2,
+          "5": 1,
+          "7": 1
         }
       },
       {
@@ -984,12 +1000,14 @@
         "form": "nomen",
         "enabled": true,
         "classicalLabels": [],
-        "nodeCount": 4,
+        "nodeCount": 9,
         "tierCounts": {
           "1": 1,
-          "2": 1,
-          "3": 1,
-          "4": 1
+          "2": 2,
+          "3": 2,
+          "4": 2,
+          "5": 1,
+          "6": 1
         }
       },
       {
@@ -1101,12 +1119,14 @@
         "classicalLabels": [
           "enchantment"
         ],
-        "nodeCount": 4,
+        "nodeCount": 9,
         "tierCounts": {
           "1": 1,
-          "2": 1,
-          "3": 1,
-          "4": 1
+          "2": 2,
+          "3": 2,
+          "4": 2,
+          "5": 1,
+          "6": 1
         }
       },
       {
@@ -1115,12 +1135,14 @@
         "form": "terram",
         "enabled": true,
         "classicalLabels": [],
-        "nodeCount": 4,
+        "nodeCount": 9,
         "tierCounts": {
           "1": 1,
-          "2": 1,
-          "3": 1,
-          "4": 1
+          "2": 2,
+          "3": 2,
+          "4": 2,
+          "5": 1,
+          "7": 1
         }
       },
       {
@@ -1177,13 +1199,14 @@
         "classicalLabels": [
           "abjuration"
         ],
-        "nodeCount": 5,
+        "nodeCount": 9,
         "tierCounts": {
           "1": 1,
-          "2": 1,
-          "3": 1,
-          "4": 1,
-          "5": 1
+          "2": 2,
+          "3": 2,
+          "4": 2,
+          "5": 1,
+          "6": 1
         }
       },
       {
@@ -1194,12 +1217,14 @@
         "classicalLabels": [
           "incantation"
         ],
-        "nodeCount": 5,
+        "nodeCount": 9,
         "tierCounts": {
           "1": 1,
           "2": 2,
-          "3": 1,
-          "4": 1
+          "3": 2,
+          "4": 2,
+          "5": 1,
+          "7": 1
         }
       }
     ],
@@ -1217,8 +1242,8 @@
     "totals": {
       "cells": 70,
       "enabledCells": 12,
-      "nodes": 300,
-      "nodesInEnabledCells": 51
+      "nodes": 357,
+      "nodesInEnabledCells": 108
     }
   },
   "primitives": {
@@ -1231,14 +1256,14 @@
     "ok": false,
     "registrationCount": 15,
     "unconsumed": [
+      "lifespan",
       "research-rate",
       "scribe-rate",
       "teach-rate"
     ],
     "starved": [],
     "exclusions": [
-      "fertility",
-      "lifespan"
+      "fertility"
     ],
     "rows": [
       {
@@ -1253,10 +1278,10 @@
           "rules-raid/arbitration.CastArbiter.resolveCast"
         ],
         "excluded": false,
-        "effectCount": 38,
-        "nodeCount": 38,
-        "enabledEffectCount": 6,
-        "enabledNodeCount": 6
+        "effectCount": 47,
+        "nodeCount": 46,
+        "enabledEffectCount": 15,
+        "enabledNodeCount": 14
       },
       {
         "id": "blink",
@@ -1270,10 +1295,10 @@
           "rules-raid/arbitration.CastArbiter.resolveCast"
         ],
         "excluded": false,
-        "effectCount": 9,
-        "nodeCount": 9,
-        "enabledEffectCount": 2,
-        "enabledNodeCount": 2
+        "effectCount": 16,
+        "nodeCount": 16,
+        "enabledEffectCount": 9,
+        "enabledNodeCount": 9
       },
       {
         "id": "build-rate",
@@ -1287,10 +1312,10 @@
           "coordination/universe-effects.universeEconomyBonuses"
         ],
         "excluded": false,
-        "effectCount": 33,
-        "nodeCount": 33,
-        "enabledEffectCount": 5,
-        "enabledNodeCount": 5
+        "effectCount": 42,
+        "nodeCount": 42,
+        "enabledEffectCount": 14,
+        "enabledNodeCount": 14
       },
       {
         "id": "concealment",
@@ -1304,10 +1329,10 @@
           "rules-raid/arbitration.CastArbiter.passiveDefences"
         ],
         "excluded": false,
-        "effectCount": 48,
-        "nodeCount": 48,
-        "enabledEffectCount": 5,
-        "enabledNodeCount": 5
+        "effectCount": 64,
+        "nodeCount": 64,
+        "enabledEffectCount": 21,
+        "enabledNodeCount": 21
       },
       {
         "id": "direct-damage",
@@ -1321,10 +1346,10 @@
           "rules-raid/arbitration.CastArbiter.resolveCast"
         ],
         "excluded": false,
-        "effectCount": 37,
-        "nodeCount": 37,
-        "enabledEffectCount": 11,
-        "enabledNodeCount": 11
+        "effectCount": 47,
+        "nodeCount": 47,
+        "enabledEffectCount": 21,
+        "enabledNodeCount": 21
       },
       {
         "id": "fertility",
@@ -1355,27 +1380,27 @@
           "rules-raid/arbitration.CastArbiter.theftMagnitudes"
         ],
         "excluded": false,
-        "effectCount": 6,
-        "nodeCount": 6,
-        "enabledEffectCount": 4,
-        "enabledNodeCount": 4
+        "effectCount": 15,
+        "nodeCount": 15,
+        "enabledEffectCount": 13,
+        "enabledNodeCount": 13
       },
       {
         "id": "lifespan",
         "unit": "additive-months",
         "scale": "world",
-        "stacking": "additive",
+        "stacking": "diminishing",
         "cap": 512,
         "capKind": "fraction-of-species-base",
         "status": "non-node",
         "consumers": [
           "coordination/god/effects.lifespanEffectsFor (blessing + curse constants)"
         ],
-        "excluded": true,
-        "effectCount": 17,
-        "nodeCount": 17,
-        "enabledEffectCount": 0,
-        "enabledNodeCount": 0
+        "excluded": false,
+        "effectCount": 20,
+        "nodeCount": 20,
+        "enabledEffectCount": 3,
+        "enabledNodeCount": 3
       },
       {
         "id": "portal",
@@ -1406,10 +1431,10 @@
           "coordination/god/effects.researchMultiplierFor (blessing + encouragement constants)"
         ],
         "excluded": false,
-        "effectCount": 55,
-        "nodeCount": 55,
-        "enabledEffectCount": 7,
-        "enabledNodeCount": 7
+        "effectCount": 56,
+        "nodeCount": 56,
+        "enabledEffectCount": 8,
+        "enabledNodeCount": 8
       },
       {
         "id": "resource-yield",
@@ -1423,10 +1448,10 @@
           "coordination/universe-effects.universeEconomyBonuses"
         ],
         "excluded": false,
-        "effectCount": 59,
-        "nodeCount": 59,
-        "enabledEffectCount": 5,
-        "enabledNodeCount": 5
+        "effectCount": 68,
+        "nodeCount": 68,
+        "enabledEffectCount": 14,
+        "enabledNodeCount": 14
       },
       {
         "id": "scribe-rate",
@@ -1438,10 +1463,10 @@
         "status": "unconsumed",
         "consumers": [],
         "excluded": false,
-        "effectCount": 19,
-        "nodeCount": 19,
-        "enabledEffectCount": 4,
-        "enabledNodeCount": 4
+        "effectCount": 21,
+        "nodeCount": 21,
+        "enabledEffectCount": 6,
+        "enabledNodeCount": 6
       },
       {
         "id": "summon",
@@ -1455,10 +1480,10 @@
           "rules-raid/arbitration.CastArbiter.resolveCast"
         ],
         "excluded": false,
-        "effectCount": 10,
-        "nodeCount": 10,
-        "enabledEffectCount": 2,
-        "enabledNodeCount": 2
+        "effectCount": 11,
+        "nodeCount": 11,
+        "enabledEffectCount": 3,
+        "enabledNodeCount": 3
       },
       {
         "id": "teach-rate",
@@ -1472,10 +1497,10 @@
           "coordination/god/effects.teachMultiplierFor (blessing constants)"
         ],
         "excluded": false,
-        "effectCount": 19,
-        "nodeCount": 19,
-        "enabledEffectCount": 5,
-        "enabledNodeCount": 5
+        "effectCount": 27,
+        "nodeCount": 27,
+        "enabledEffectCount": 13,
+        "enabledNodeCount": 13
       },
       {
         "id": "ward",
@@ -1489,10 +1514,10 @@
           "rules-raid/arbitration.CastArbiter.passiveDefences"
         ],
         "excluded": false,
-        "effectCount": 39,
-        "nodeCount": 39,
-        "enabledEffectCount": 3,
-        "enabledNodeCount": 3
+        "effectCount": 49,
+        "nodeCount": 49,
+        "enabledEffectCount": 13,
+        "enabledNodeCount": 13
       },
       {
         "id": "worship-yield",
@@ -1506,10 +1531,10 @@
           "coordination/god/system.yieldSources"
         ],
         "excluded": false,
-        "effectCount": 11,
-        "nodeCount": 11,
-        "enabledEffectCount": 2,
-        "enabledNodeCount": 2
+        "effectCount": 12,
+        "nodeCount": 12,
+        "enabledEffectCount": 3,
+        "enabledNodeCount": 3
       }
     ]
   },
@@ -1552,7 +1577,12 @@
         "rediscoveryAffinity": 1024,
         "mageAptitude": 512,
         "laborAffinity": 1024,
-        "affinities": {},
+        "affinities": {
+          "nomen": 1280,
+          "limen": 1152,
+          "mentem": 1024,
+          "terram": 960
+        },
         "tuningStatus": "untuned"
       },
       {
@@ -1572,7 +1602,9 @@
         "laborAffinity": 768,
         "affinities": {
           "herbam": 1536,
-          "mentem": 1280
+          "mentem": 1280,
+          "limen": 1152,
+          "nomen": 1024
         },
         "tuningStatus": "untuned"
       },
@@ -1593,7 +1625,9 @@
         "laborAffinity": 1280,
         "affinities": {
           "terram": 1536,
-          "ignem": 1152
+          "ignem": 1152,
+          "nomen": 1280,
+          "limen": 960
         },
         "tuningStatus": "untuned"
       },
@@ -1615,7 +1649,9 @@
         "affinities": {
           "ignem": 1792,
           "vim": 1536,
-          "nomen": 1280
+          "nomen": 1280,
+          "mentem": 1152,
+          "limen": 896
         },
         "tuningStatus": "untuned"
       },
@@ -1636,7 +1672,10 @@
         "laborAffinity": 768,
         "affinities": {
           "imaginem": 1408,
-          "vim": 1280
+          "vim": 1280,
+          "mentem": 1344,
+          "limen": 1088,
+          "nomen": 896
         },
         "tuningStatus": "untuned"
       },
@@ -1657,7 +1696,9 @@
         "laborAffinity": 1536,
         "affinities": {
           "terram": 1280,
-          "corpus": 1280
+          "corpus": 1280,
+          "limen": 1088,
+          "nomen": 896
         },
         "tuningStatus": "untuned"
       }
@@ -2543,8 +2584,8 @@
       "scripts/check-reachability.mjs --json"
     ],
     "ok": false,
-    "findingCount": 125,
-    "examinedSymbolCount": 855,
+    "findingCount": 128,
+    "examinedSymbolCount": 874,
     "examinedPackages": [
       "content",
       "coordination",
@@ -2556,7 +2597,7 @@
       "sim-core",
       "state"
     ],
-    "productionFileCount": 309,
+    "productionFileCount": 314,
     "orphanPackages": [],
     "unreached": [
       {
@@ -2579,7 +2620,7 @@
       },
       {
         "file": "packages/content/src/source.ts",
-        "line": 87,
+        "line": 105,
         "name": "memorySource",
         "kind": "function"
       },
@@ -2645,7 +2686,7 @@
       },
       {
         "file": "packages/primitives/src/stacking.ts",
-        "line": 221,
+        "line": 326,
         "name": "applyWard",
         "kind": "function"
       },
@@ -2669,7 +2710,7 @@
       },
       {
         "file": "packages/rules-magic/src/effects/stack.ts",
-        "line": 119,
+        "line": 245,
         "name": "stackContributions",
         "kind": "function"
       },
@@ -2705,7 +2746,7 @@
       },
       {
         "file": "packages/rules-magic/src/instances/outcomes.ts",
-        "line": 115,
+        "line": 142,
         "name": "describeRefusal",
         "kind": "function"
       },
@@ -2720,6 +2761,18 @@
         "line": 71,
         "name": "STANDARD_STORE",
         "kind": "const"
+      },
+      {
+        "file": "packages/rules-magic/src/rituals/casters.ts",
+        "line": 247,
+        "name": "ritualAvailable",
+        "kind": "function"
+      },
+      {
+        "file": "packages/rules-magic/src/rituals/casters.ts",
+        "line": 261,
+        "name": "ritualsFromRegistry",
+        "kind": "function"
       },
       {
         "file": "packages/rules-magic/src/traditions/acquire.ts",
@@ -2795,7 +2848,7 @@
       },
       {
         "file": "packages/rules-raid/src/arbitration.ts",
-        "line": 716,
+        "line": 1018,
         "name": "drawBelow",
         "kind": "function"
       },
@@ -2831,7 +2884,7 @@
       },
       {
         "file": "packages/rules-raid/src/raid.ts",
-        "line": 1205,
+        "line": 1212,
         "name": "BURNABLE_LOCATION_KINDS",
         "kind": "const"
       },
@@ -2897,7 +2950,7 @@
       },
       {
         "file": "packages/rules-world/src/economy/carrying-capacity.ts",
-        "line": 222,
+        "line": 223,
         "name": "NO_TERRITORY",
         "kind": "const"
       },
@@ -2921,7 +2974,7 @@
       },
       {
         "file": "packages/rules-world/src/economy/materials.ts",
-        "line": 128,
+        "line": 135,
         "name": "NO_YIELD_BONUSES",
         "kind": "const"
       },
@@ -3219,6 +3272,14 @@
         "name": "usableHolding",
         "via": [
           "prerequisiteStatusFor"
+        ]
+      },
+      {
+        "file": "packages/rules-magic/src/rituals/casters.ts",
+        "line": 202,
+        "name": "ritualCasters",
+        "via": [
+          "ritualAvailable"
         ]
       },
       {
