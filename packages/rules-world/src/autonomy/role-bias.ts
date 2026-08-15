@@ -126,13 +126,38 @@ function row(entries: Partial<Record<GoalId, Fixed>>): RoleBiasRow {
  *   thing here that is wrong for a student; `world-step.ts` says where the fix
  *   belongs and why it is not made on this branch.
  *
- * `apply-magic` is the ninth goal and **no role is for it**, which is a
- * statement rather than an omission: the god's four roles are all about
- * knowledge, and the one that leans toward applied work is the warden, because
- * standing watch and turning a hillside into a quarry are the same instinct
- * about doing something with what the academy already has rather than adding to
- * it. The professor leans hardest away — her month is worth more in a
- * classroom.
+ * - **populace** is the sixth row and the answer to the note below about
+ *   `apply-magic`. *"You need low-level spellcasters to stay in the population
+ *   to continuously cast — identify objects, so they can keep the economy
+ *   running"*: she is the mage who casts what she has at the world, every month,
+ *   forever. `apply-magic` is the only goal she is raised toward, and it is
+ *   raised as hard as the student's `seek-teaching`, because a populace mage
+ *   with nothing pulling her toward applied work would drift into the same
+ *   research the academy already does.
+ *
+ *   She leans **away from teaching and warding** — those are institutional
+ *   duties and she is not in the institution — but only mildly away from
+ *   research, at `-128`, the same figure the student row uses and for the same
+ *   reason: discouraged, never forbidden. A populace mage who stumbles onto
+ *   something is one of the few ways knowledge enters a universe from outside
+ *   its universities, and a hard `-384` would have closed that door in the name
+ *   of tidiness. `affiliate` is left at zero: joining a university is exactly
+ *   the escape hatch out of the base of the pyramid, and pricing it here would
+ *   have made the god's action 10 the only route.
+ *
+ *   **This row is not a penalty box.** *"My mages are all very advanced"* is
+ *   meant to be as legible a failure as *"my mages are all novices"*, so the
+ *   populace mage is employed rather than idled, and the measurement that says
+ *   so is her `apply-magic` share rather than her count.
+ *
+ * `apply-magic` was the ninth goal and, until W197, **no role was for it** —
+ * which was a statement rather than an omission: the god's four roles are all
+ * about knowledge, and the one that leaned toward applied work was the warden,
+ * because standing watch and turning a hillside into a quarry are the same
+ * instinct about doing something with what the academy already has rather than
+ * adding to it. The professor leans hardest away — her month is worth more in a
+ * classroom. The populace row is what that paragraph was describing the absence
+ * of.
  */
 export const ROLE_BIAS: Readonly<Record<MageRoleValue, RoleBiasRow>> = {
   [MAGE_ROLE.researcher]: row({
@@ -161,6 +186,15 @@ export const ROLE_BIAS: Readonly<Record<MageRoleValue, RoleBiasRow>> = {
     [GOAL.wardDuty]: 128,
     [GOAL.scribe]: -128,
     [GOAL.teach]: -64,
+  }),
+  [MAGE_ROLE.populace]: row({
+    [GOAL.applyMagic]: 384,
+    [GOAL.researchNode]: -128,
+    [GOAL.rediscoverNode]: -128,
+    [GOAL.teach]: -256,
+    [GOAL.wardDuty]: -256,
+    [GOAL.raidReadiness]: -192,
+    [GOAL.seekTeaching]: -64,
   }),
   [MAGE_ROLE.student]: row({
     [GOAL.seekTeaching]: 384,

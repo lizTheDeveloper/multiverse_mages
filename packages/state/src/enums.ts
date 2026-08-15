@@ -56,6 +56,34 @@ export const EDICT_BUDGET_MAX = 8;
 /**
  * `contracts.md` §1.2: a mage's role.
  *
+ * ## `populace` is the sixth, and it is the base of the pyramid
+ *
+ * *"Not all mages are the same or should be created equal. You need low-level
+ * spellcasters to stay in the population to continuously cast — identify
+ * objects, so they can keep the economy running"* —
+ * `docs/design/magical-prevalence.md`, which names **populace mage** as one of
+ * the taxonomy's end states and warns that whoever implements it must
+ * *"reconcile the two lists deliberately rather than appending"*.
+ *
+ * The reconciliation, W197: the four standing roles are all *institutional* —
+ * they describe what a mage does inside a university, and every one of them is
+ * a career academic in the sense the author drew. `populace` is the other half,
+ * the graduate who leaves and casts for a living, and there was no role that
+ * meant it. `researcher` was doing the job by default, which is why *"my mages
+ * are all very advanced"* was not a state the simulation could reach or report.
+ *
+ * **This is not a failure state.** A universe with no populace mages has nobody
+ * doing the small continuous work; the design wants the *shape of the pyramid*
+ * managed, not maximised.
+ *
+ * Like `student` it is **absent from {@link GOD_ASSIGNABLE_MAGE_ROLES}**, and
+ * the asymmetry is the design rather than an oversight: graduation sorts mages
+ * down into the populace, and the god's action 10 is how he pulls one back out
+ * — *"the interesting question becomes who gets to keep going, which is a
+ * decision a god makes with limited seats"*. A one-way valve the god opens, at
+ * no cost to action 10's candidate space, which every trained policy is sized
+ * against.
+ *
  * ## `student` is the fifth, and it is not the god's to assign
  *
  * *"Students are immediately mages. They're just student mages until they
@@ -82,6 +110,11 @@ export const MAGE_ROLE = {
   raider: 3,
   /** Enrolled at a university and not yet graduated. Written by enrolment only. */
   student: 4,
+  /**
+   * Graduated, and casting for a living rather than for an institution. Written
+   * by graduation's career sort only; cleared by the god's action 10.
+   */
+  populace: 5,
 } as const;
 
 export type MageRoleValue = (typeof MAGE_ROLE)[keyof typeof MAGE_ROLE];
@@ -95,6 +128,11 @@ export type MageRoleValue = (typeof MAGE_ROLE)[keyof typeof MAGE_ROLE];
  * student role existed both wrote `Object.values(MAGE_ROLE)`, which was correct
  * only for as long as every role was assignable. A list that has to be derived
  * the same way in two places is a list that eventually is not.
+ *
+ * **Still four after W197 added `populace`.** The god may assign a populace mage
+ * *into* any of these — that is the "who gets to keep going" lever — but he may
+ * not assign `populace` itself, so action 10's candidate space is exactly the
+ * width it was before either role was appended.
  */
 export const GOD_ASSIGNABLE_MAGE_ROLES: readonly MageRoleValue[] = [
   MAGE_ROLE.researcher,

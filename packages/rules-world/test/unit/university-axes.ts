@@ -142,6 +142,10 @@ function weights(researcher: number, warden: number, professor: number, raider: 
     // would put students in a harness that has no enrolment to have produced
     // them.
     [MAGE_ROLE.student]: 0,
+    // Zero for the same reason, and one more: W197's `populace` role is written
+    // by graduation's career sort against a species aptitude, so a weight here
+    // would seed the *outcome* of a draw this lab never takes.
+    [MAGE_ROLE.populace]: 0,
   };
 }
 

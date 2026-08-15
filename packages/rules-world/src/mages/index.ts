@@ -71,6 +71,22 @@ export {
   prevalenceOf,
 } from './enrolment.js';
 
+export type { CareerOutcome } from './careers.js';
+export {
+  ACADEMIC_CAREER_ROLE,
+  ACADEMIC_CHANCE_CEILING,
+  ACADEMIC_CHANCE_FLOOR,
+  ACADEMIC_CHANCE_MIDPOINT,
+  ACADEMIC_CHANCE_PULL,
+  ACADEMIC_SCHOOLING_NUDGE,
+  CAREER_TUNING_STATUS,
+  POPULACE_CAREER_ROLE,
+  SCHOOLING_FULL_MARKS,
+  academicChance,
+  schoolingNudge,
+  sortGraduateCareer,
+} from './careers.js';
+
 export type { PromotionOutcome } from './promotion.js';
 export { maxPromotableCount, promoteStudentCohort } from './promotion.js';
 
@@ -85,5 +101,6 @@ export {
   changeAffiliation,
   graduate,
   isMageRole,
+  isPopulaceMage,
   isStudent,
 } from './roles.js';

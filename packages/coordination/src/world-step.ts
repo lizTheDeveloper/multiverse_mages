@@ -175,6 +175,7 @@ import {
   readCommitment,
   rollMortality,
   scribingThroughput,
+  sortGraduateCareer,
   stepMageAutonomy,
   stepPopulace,
   STUDENT_MAGE_ROLE,
@@ -507,15 +508,37 @@ export interface WorldStepReport {
    */
   readonly unseated: number;
   /**
-   * Students who finished their university's curriculum this tick and became
-   * researchers.
+   * Students who finished their university's curriculum this tick.
    *
    * The metric `teach-rate` can move, and could not before: graduation used to be
    * `age >= maturityMonths`, so no rate that made lessons land faster could
    * change when a mage started working. Measured on `main`, a doubled `teach-rate`
    * moved lessons `+0.1%` and living mages not at all.
+   *
+   * Equal to {@link graduatedAcademic} plus {@link graduatedPopulace} by
+   * construction. It no longer means *"became researchers"*: since W197 roughly
+   * half of a class does not.
    */
   readonly magesGraduated: number;
+  /**
+   * Of this tick's graduates, how many the career draw put on the academic
+   * track — the `researcher` role, and through the god's action 10 the pool that
+   * professors, wardens and raiders come out of.
+   */
+  readonly graduatedAcademic: number;
+  /**
+   * Of this tick's graduates, how many joined the populace: mages who cast for a
+   * living rather than for an institution.
+   *
+   * **Reported beside its counterpart rather than derived from it**, because the
+   * ratio is the thing being claimed. *"Something for the other half of people
+   * to do"* is a statement about this number relative to
+   * {@link graduatedAcademic}, and a reader who has to subtract to find it will
+   * eventually subtract the wrong thing. A run where this is zero is as much a
+   * signal as one where it is everything — *"my mages are all very advanced"* is
+   * meant to be a legible failure.
+   */
+  readonly graduatedPopulace: number;
   /**
    * Students whose university has nothing left to teach them and who hold
    * nothing — stuck, and holding a seat until they die.
@@ -931,7 +954,7 @@ export function worldSystem(
       // ---- 5g. Graduation ----------------------------------------------------
       // After the month is spent, so a student who completed her last lesson this
       // tick leaves this tick. `graduateStudents` says why the lag would matter.
-      const graduation = graduateStudents(state, gatewayFor());
+      const graduation = graduateStudents(state, gatewayFor(), { rng, deps });
 
       // ---- 5a. What the mages who cast at the world made ----------------------
       // Banked through the phase and settled once, so that a mage adding vellum
@@ -1132,6 +1155,8 @@ export function worldSystem(
         latentUnactivated: enrolment.latentUnactivated,
         unseated: enrolment.unseated,
         magesGraduated: graduation.graduated,
+        graduatedAcademic: graduation.academics,
+        graduatedPopulace: graduation.populace,
         studentsStalled: graduation.stalled,
         studentMages: countStudentMages(state),
         births,
@@ -1887,7 +1912,11 @@ function enrolMaturedStudents(
       phase.rng,
       entry.cohort,
       entry.count,
-      enrolmentFraction(prevalenceOf(species), species.mageAptitude),
+      // `prevalence` alone since W197. Aptitude used to be the second factor
+      // here and decided *whether* a student became a mage at all; it now
+      // decides what kind of mage a graduate becomes, in `careers.ts`. Two
+      // gates on one pipe is why living mages halved when prevalence went live.
+      enrolmentFraction(prevalenceOf(species)),
     );
 
     // **Seats are claimed before the cohort is touched, and the whole cohort's
@@ -2024,7 +2053,16 @@ function claimSeat(seats: { university: EntityHandle; free: number }[]): EntityH
 }
 
 /**
- * Graduates every student whose university has run out of things to teach her.
+ * Graduates every student whose university has run out of things to teach her,
+ * and sorts her into a career.
+ *
+ * ## The career sort is one draw per graduate, and it is not a second gate
+ *
+ * `careers.ts` holds the arithmetic and the argument. What matters here is that
+ * **nothing in this function can refuse to graduate her for being weak** — a
+ * student who is magical and educated graduates, and `mageAptitude` decides only
+ * what she graduates *into*. The two guards below are about curriculum, not
+ * about talent.
  *
  * ## Why this runs after the work phase and not before it
  *
@@ -2053,7 +2091,8 @@ function claimSeat(seats: { university: EntityHandle; free: number }[]): EntityH
 function graduateStudents(
   state: SimState,
   gateway: CoordinatingKnowledgeGateway,
-): { graduated: number; stalled: number } {
+  phase: { rng: StepRng; deps: WorldStepDeps },
+): GraduationReport {
   const mages = componentOf(state, MAGE);
   const alive = mages.field('alive');
   const roles = mages.field('roleId');
@@ -2066,26 +2105,51 @@ function graduateStudents(
 
   let graduated = 0;
   let stalled = 0;
+  let academics = 0;
+  let populace = 0;
   for (const student of students) {
     if (gateway.hasCurriculumFor(student)) continue;
-    if (gateway.heldNodes(student).length === 0) {
+    const held = gateway.heldNodes(student).length;
+    if (held === 0) {
       stalled += 1;
       continue;
     }
     const row = readRecord(state, MAGE, student);
-    graduate(row);
+    const species = phase.deps.speciesOf(row.speciesId);
+    // A graduate whose species record has gone missing is a content fault, not
+    // a career: she takes the default rather than being left a student forever,
+    // which is what `?? DEFAULT` on the aptitude would have hidden.
+    const career =
+      species === undefined
+        ? undefined
+        : sortGraduateCareer(phase.rng, student, species.mageAptitude, held);
+    graduate(row, career?.role);
     mages.set(student, 'roleId', row.roleId);
     graduated += 1;
+    if (career?.academic === false) populace += 1;
+    else academics += 1;
   }
-  return { graduated, stalled };
+  return { graduated, stalled, academics, populace };
+}
+
+/** What one graduation phase did, and how it sorted the class. */
+interface GraduationReport {
+  /** Students who finished their curriculum this tick. */
+  readonly graduated: number;
+  /** Students with nothing left to learn and nothing held. See {@link WorldStepReport.studentsStalled}. */
+  readonly stalled: number;
+  /** Of those, how many the career draw put on the academic track. */
+  readonly academics: number;
+  /** Of those, how many joined the populace. */
+  readonly populace: number;
 }
 
 /**
  * People of school age who could become mages at all, summed over cohorts.
  *
- * `count × prevalence × mageAptitude`, per species, in the fixed-point product
- * `enrolmentFraction` composes — so this is the same quantity the enrolment
- * phase will actually realise, computed one phase earlier and universe-wide. It
+ * `count × prevalence`, per species — and `prevalence` alone since W197, so
+ * this is still the same quantity the enrolment phase will actually realise,
+ * computed one phase earlier and universe-wide. It
  * feeds `computeOccupationDemand`, which is the fix for *intake is seats*: see
  * `demand.ts`'s `latentMagicUsers`.
  *
@@ -2127,7 +2191,7 @@ function latentMagicUsers(cohorts: CohortStore, deps: WorldStepDeps, worldTick: 
  * the event.
  */
 function latentInCohort(count: number, species: SpeciesRecord): number {
-  return floorDiv(count * enrolmentFraction(prevalenceOf(species), species.mageAptitude), FP_ONE);
+  return floorDiv(count * enrolmentFraction(prevalenceOf(species)), FP_ONE);
 }
 
 interface BirthPhase {

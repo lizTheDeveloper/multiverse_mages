@@ -20,13 +20,15 @@ import type { StepRng } from './rng.js';
 /**
  * ## The one place a person crosses from the aggregate into the individual
  *
- * **W193 moved *when* that crossing happens, not how.** It used to happen at
- * graduation: a cohort spent `maturityMonths` in the `student` occupation and
- * `mageAptitude` decided, at the end, which fraction of it had been worth
- * teaching. It now happens at **enrolment**, and the fraction is
- * `enrolmentFraction(prevalence, mageAptitude)` — see `enrolment.ts` for why
- * those are two stages of one pipeline rather than two overlapping gates. The
- * arithmetic below is untouched, because it was never the part that was wrong.
+ * **W193 moved *when* that crossing happens; W197 fixed *what decides it*.** It
+ * used to happen at graduation, with `mageAptitude` deciding at the end which
+ * fraction of a cohort had been worth teaching. It now happens at **enrolment**,
+ * and the fraction is `enrolmentFraction(prevalence)` alone — aptitude is no
+ * longer a gate on existence at either end of the pipe, because deciding *what
+ * kind* of mage a graduate becomes is the job it was designed for. See
+ * `enrolment.ts` for the removal and `careers.ts` for where it went. The
+ * arithmetic below is untouched through both changes, because it was never the
+ * part that was wrong.
  *
  * `docs/design/contracts.md` §1.3 is normative and blunt: *"Only mages are
  * individuals; everyone else is a counted cohort."* It calls this a
@@ -76,7 +78,7 @@ export interface PromotionOutcome {
    * visible omission rather than an invisible one.
    *
    * Since W193 these are the **latent-but-unactivated**: people the species
-   * ceiling or the aptitude gate kept out of a seat. `magical-prevalence.md`
+   * ceiling kept out of a seat, or for whom no seat existed. `magical-prevalence.md`
    * wants that gap legible — *"12,000 people, 1,200 latent, 340 found"* — and
    * this number is one half of it.
    */
@@ -129,9 +131,11 @@ export function maxPromotableCount(eligibleFraction: Fixed): number {
  * with it.
  * @param count - Members of the cohort that have reached `maturityMonths`.
  * @param eligibleFraction - The fraction of them who reach a seat, in fixed
- * point. `enrolment.ts`'s `enrolmentFraction(prevalence, mageAptitude)` since
- * W193; a bare `mageAptitude` before it, which is why the parameter is named for
- * its role and not for the trait that used to fill it.
+ * point. `enrolment.ts`'s `enrolmentFraction(prevalence)` since W197,
+ * `enrolmentFraction(prevalence, mageAptitude)` on W193 and a bare
+ * `mageAptitude` before that — three different fillings in three refs, which is
+ * why the parameter is named for its role and not for whichever trait currently
+ * supplies it.
  */
 export function promoteStudentCohort(
   rng: StepRng,

@@ -251,12 +251,27 @@ describe('prevalence and class capacity are content, and the absences are meanin
     expect(PREVALENCE_WHEN_UNAUTHORED).toBeLessThan(1024);
   });
 
-  it('composes prevalence and aptitude into one fraction, never above either', () => {
+  it('is prevalence and nothing else — aptitude does not gate existence', () => {
     for (const { record } of registry().species) {
-      const fraction = enrolmentFraction(prevalenceOf(record), record.mageAptitude);
+      const fraction = enrolmentFraction(prevalenceOf(record));
       expect(fraction).toBeGreaterThan(0);
-      expect(fraction).toBeLessThanOrEqual(prevalenceOf(record));
-      expect(fraction).toBeLessThanOrEqual(record.mageAptitude);
+      // **Equal, not merely bounded.** W193 had this composing two traits; W197
+      // took `mageAptitude` out, because a mage's talent decides what kind of
+      // mage she becomes and never whether she exists. An assertion that only
+      // bounded the fraction would still pass if somebody multiplied a second
+      // trait back in, which is exactly the regression this line exists for.
+      expect(fraction).toBe(prevalenceOf(record));
+    }
+  });
+
+  it('leaves the enrolment gate blind to aptitude, across the whole species table', () => {
+    // Orc aptitude is 192 and draconic 896 — a 4.7x spread that used to be a
+    // 4.7x spread in *how many mages existed*. It now shows up nowhere in this
+    // pipeline at all.
+    for (const { record } of registry().species) {
+      const raised = { ...record, mageAptitude: 1024 } as typeof record;
+      const lowered = { ...record, mageAptitude: 1 } as typeof record;
+      expect(enrolmentFraction(prevalenceOf(raised))).toBe(enrolmentFraction(prevalenceOf(lowered)));
     }
   });
 

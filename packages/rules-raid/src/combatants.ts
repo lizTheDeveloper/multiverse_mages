@@ -323,12 +323,28 @@ export const RAIDING_ROLES: ReadonlySet<number> = new Set<number>([MAGE_ROLE.rai
  * and undefended"* in a new way — a great many enrolled students and few
  * graduates is a soft target. That is a strategic shape, not a bug, and the god
  * closes it by building enough curriculum to graduate them.
+ *
+ * ## Populace mages *are* on this list, and that omission would have been a
+ * silent balance move
+ *
+ * W197 sorts roughly half of each graduating class into `populace` — mages who
+ * before it would have been researchers, and researchers are on this list. So
+ * leaving `populace` off would have cut the defender pool by about half as a
+ * *side effect* of a change about careers, which is precisely the shape of
+ * regression this repository keeps finding months later. Including it holds the
+ * defender count where it was.
+ *
+ * It is also the reading `magical-prevalence.md` gives: *"people who are able to
+ * defend at any given random time"* is one of its named end states, and
+ * `DEFENDING_ROLES` being all four standing roles is how the document describes
+ * the code today. A populace mage is a graduate with a job, not a child.
  */
 export const DEFENDING_ROLES: ReadonlySet<number> = new Set<number>([
   MAGE_ROLE.warden,
   MAGE_ROLE.professor,
   MAGE_ROLE.researcher,
   MAGE_ROLE.raider,
+  MAGE_ROLE.populace,
 ]);
 
 /** The side a participant fights on, spelled out so call sites do not guess. */

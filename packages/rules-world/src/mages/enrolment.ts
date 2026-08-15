@@ -18,24 +18,33 @@
  * plainly that **the gap between them is the game**:
  *
  * ```
- * population                                        <- already modelled
- * latent     = population × prevalence[species]      <- content; the species ceiling
- * discovered = latent × mageAptitude[species]        <- "some never get discovered
- *                                                       because their skills are weak"
- * enrolled   = min(discovered, free seats)           <- state; the god's to move
+ * population                                   <- already modelled
+ * latent   = population × prevalence[species]  <- content; the species ceiling
+ * enrolled = min(latent, free seats)           <- state; the god's to move
  * ```
  *
  * Before this module there was **one** stage and it was in the wrong place.
  * `populace/demand.ts` asked for exactly `universityCapacity` students — intake
  * was *seats*, not population — and `promotion.ts` then applied `mageAptitude`
  * at **graduation**, so ninety percent of a human intake spent a childhood in a
- * seat and came out as nothing. Aptitude was gating the wrong end of the pipe.
+ * seat and came out as nothing.
  *
- * So `prevalence` and `mageAptitude` are **not** two spellings of one idea and
- * are not two overlapping gates. They answer different questions — *born able?*
- * and *strong enough to be noticed?* — they multiply, and they are both applied
- * at **enrolment**, where a fraction of a population belongs. Nothing applies a
- * fraction at graduation any more; see `roles.ts` for what decides that instead.
+ * ## `mageAptitude` is not in this file, and its absence is the point
+ *
+ * **W197 removed it.** W193 had moved it here, multiplied into `prevalence`, on
+ * the reading that *"some never get discovered because their skills are weak"*
+ * was a second gate on the same pipe. The owner's design says otherwise:
+ *
+ * > *"The mage aptitude was really just supposed to be like the very best mages
+ * > become battle mages and professors, and mages that are only okay just go and
+ * > participate in the economy… The point of the mage aptitude was to create
+ * > something for the other half of people to do."*
+ *
+ * So aptitude decides **what kind of mage a graduate becomes**, never whether
+ * she becomes one — see `careers.ts`. Two gates on one pipe was also the reason
+ * living mages fell by roughly half when prevalence went live: `prevalence` is
+ * the count knob, alone, and *"you can always raise the prevalence to get the
+ * right number of mages"*. A student who is magical and educated graduates.
  *
  * ## The two absences, and why they are absences
  *
@@ -83,28 +92,25 @@ export function prevalenceOf(species: SpeciesRecord): Fixed {
 }
 
 /**
- * The fraction of a matured cohort that reaches a seat: born able **and** found.
+ * The fraction of a matured cohort that reaches a seat: **born able, and
+ * nothing else**.
  *
- * One product, deliberately, because {@link promoteStudentCohort} takes exactly
- * one draw on the combined remainder. Two multiplications applied in sequence
- * would invite two draws — one per gate — and the draw count is the thing
- * `contracts.md` §1.3's performance contract is actually about. See
- * `promotion.ts`, whose `draws: 1` is asserted rather than commented.
+ * A named function over a bare field read, because the *shape* of this stage is
+ * the thing W197 changed and a reader arriving from a baseline needs somewhere
+ * for the change to be written down. It was
+ * `enrolmentFraction(prevalence, mageAptitude)`; the second factor is gone, and
+ * `promotion.ts`'s parameter is still called `eligibleFraction` rather than
+ * `prevalence` precisely so that what fills it can change without the arithmetic
+ * pretending to be about one trait.
  *
- * Both inputs are fractions of one, so the product is too, and the result never
- * exceeds either factor. It **can** floor to zero for an orc (`51 × 192 / 1024`
- * is 9, not 0) but never does at the shipped numbers; the remainder draw is what
- * keeps a small fraction from truncating a rare species out of existence
- * entirely, which is `promotion.ts`'s own argument.
+ * One factor also means one draw, which is what `contracts.md` §1.3's
+ * performance contract is actually about: two gates applied in sequence invite
+ * two remainder draws, one per gate. See `promotion.ts`, whose `draws: 1` is
+ * asserted rather than commented.
  */
-export function enrolmentFraction(prevalence: Fixed, mageAptitude: Fixed): Fixed {
+export function enrolmentFraction(prevalence: Fixed): Fixed {
   assertFraction(prevalence, 'prevalence');
-  if (!Number.isInteger(mageAptitude) || mageAptitude <= 0) {
-    throw new RangeError(
-      `mageAptitude must be a positive fixed-point integer, received ${String(mageAptitude)}`,
-    );
-  }
-  return Math.max(1, floorDiv(prevalence * mageAptitude, FP_ONE));
+  return prevalence;
 }
 
 function assertFraction(value: Fixed, role: string): void {

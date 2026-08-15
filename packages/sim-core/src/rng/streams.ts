@@ -59,6 +59,19 @@ export const RNG_STREAM = {
    * the mages'.
    */
   openingSquare: 12,
+  /**
+   * The career sort at graduation: whether a graduate takes the academic track
+   * or joins the populace (`magical-prevalence.md`, "Not all mages should be
+   * equal").
+   *
+   * Its own id rather than `mageBirth`'s, which is where every other decision
+   * about *who this mage is* is drawn. The two are taken from different ends of
+   * a life but from the same subsystem in spirit, and sharing a cursor would
+   * mean that adding a graduate this tick re-rolled the personality of every
+   * mage enrolled in it — the insertion-variance defect that §6's per-actor
+   * streams exist to remove, arriving through the stream registry instead.
+   */
+  career: 13,
 } as const;
 
 /** Any ID in the permanent registry. */
