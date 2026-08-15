@@ -10908,3 +10908,63 @@ been made, rather than making it by accident in an encoder.
 - **`observable-trait-inventory.md` amended at the head, not rewritten**, because *"its tables are a
   measurement taken at `be446a6` and belong to that tree."* That is the discipline this whole campaign has
   been trying to establish, applied without being asked.
+
+## W210 — students are entities, the cost is negative, and two gates now do one job twice
+
+PR #181. Students become `MAGE` entities in a **student role** — the owner's own *"students are immediately
+mages, they're just student mages"* — so they hold knowledge, read shelves, and graduate on curriculum.
+
+### The cost inverted the worry the brief was written around
+
+I commissioned this expecting entity growth to be the risk. Measured at 1,200 ticks over two seeds, the
+same probe against both refs:
+
+| | change |
+|---|---|
+| entities | **−13 to −27%** |
+| snapshot | **−19 to −29%** |
+| step time | **−15 to −25%** |
+| populace | **+29%** |
+
+**Students-as-entities makes the world cheaper**, because the same gate that produces fewer mages produces
+fewer *entities* — an unseated student stays a cheap number in a cohort. (If the magnitudes below are
+retuned, this table inverts and must be re-taken.)
+
+**And it cost no schema revision and no new RNG stream**: `roleId` is an existing uint8 with `student`
+appended as value 4, and the single stream-1 draw is unchanged. So `rngRegistryHash` holds and **every
+baseline delta is a behaviour delta rather than an identity invalidation** — which is exactly what the
+no-baselines rule needs to stay legible.
+
+### The finding that needs a ruling: `prevalence × mageAptitude` is a double gate
+
+Living mages fall **~55%**. The agent split the gap measurement rather than guessing at it, and
+**`unseated` — cleared the species gate, found no chair — is zero on every tick of a 1,200-tick run.
+Seats never bind.** The entire collapse is the *product* of the two gates.
+
+| species | effect |
+|---|---|
+| human | **512 → 51**, an order of magnitude |
+| dwarf, gnome, orc | same shape |
+| elf, draconic | **no cost** — prevalence 1024 |
+
+Both gates are in the design and both are now built. But **the shipped `mageAptitude` values were tuned as
+the only gate**, so for four species they now do that job twice. **The mechanism is right; the magnitudes
+are content and belong to the author.**
+
+**The second-order effect argues the direction is correct:** lessons **+28%**, research **−64%**. *"A
+smaller schooled population teaches far more, which is what a university is."*
+
+### Two things it declined to do on someone else's branch
+
+- **#170 composes without an edit** — it folds the shelf into `seek-teaching`, and the `student` bias row
+  already points there at +384. But **#170 tries teacher-first, shelf-second, which is backwards for the
+  owner's *"it's not just in your class."*** Noted in code, not changed on another branch.
+- Twelve tests left red, all pinned literals over the reference universe. **Re-recording them before the
+  magnitude decision would pin numbers about to move again.**
+
+### And one test was moved rather than deleted, correctly
+
+The defect-4 assertion failed in `coordination` and **was right to fail**: that fixture graduates students
+almost as fast as it seats them, so the claim was true and *unshowable*. It now lives in `scenario`, where
+the reference run records **3,060 student-tick holdings and one student reaching 48 nodes.** A test that
+cannot express its claim in its own fixture is in the wrong package, not wrong.
