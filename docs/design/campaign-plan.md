@@ -8523,3 +8523,95 @@ built-and-never-reached symbol, mid-task, is new.**
 
 **So the opposing term the campaign wanted is a content term, not a price**, and the pricing sweep's
 value is that it closes the other door with a reason rather than leaving it open as an untried idea.
+
+## W170 — wartime forbidding, and a contract the code has not caught up with
+
+The owner's design:
+
+> *"When a raid starts, you focus on the raid, and you can turn things off or on during the raid. The
+> fiction is that everyone understands you sometimes have to turn off unmaking during a raid — so
+> nobody can unmake your walls, and the trash collectors can't unmake your trash. **Everyone's cool
+> with that as long as nobody dies.** But if you go doing it willy-nilly to get extra power, everyone's
+> going to be mad — once you have a big civilization that depends on your magic."*
+
+**Half of this is already specified, and the specified half is not implemented.**
+
+### What `contracts.md` §4.2 already says
+
+The paragraph reads *"Most actions are masked during engagement, and four are not"*, and records that
+the earlier *"every action except no-op is masked"* rule **was repealed** by `raid-engagement.md`:
+
+| action | during engagement |
+| --- | --- |
+| permit technique *(1)*, permit form *(3)* | **legal, and locks** |
+| forbid technique *(2)*, forbid form *(4)* | **legal for the defender only, and locks** |
+| edicts *(5, 6, 7)* | masked |
+| everything else | masked |
+
+**The lock is the mechanic**: a cell permitted mid-raid may not be forbidden again before the raid
+resolves, so *"every mid-raid change is a commitment under uncertainty rather than a reaction knob."*
+`raid-engagement.md` §1: *"Without the lock, mid-raid policy is a reaction knob and the correct play is
+to counter whatever you last saw."*
+
+### What `mask.ts` on `main` actually does
+
+```ts
+if (inEngagement(state)) {
+  return mask;          // [1, 0, 0, …] — no-op only
+}
+```
+
+Its docstring still quotes the **repealed** rule verbatim: *"Every action except no-op is masked during
+engagement."* **The contract was amended and the implementation was not.** That is the eleventh
+instance of this campaign's documentation-versus-code drift, and the first where the *document* is
+ahead.
+
+### And it has been invisible because nothing reaches it
+
+Two earlier findings explain why nobody noticed:
+
+- **The engagement branch is evaluated zero times.** Instrumented, four strategies: raids resolve
+  inside one world step and nothing asks the agent. An earlier claim that unmasking these four would
+  move every baseline was **measured and found false** for exactly this reason.
+- **`submit()` runs a whole world step synchronously** (W164), so a raid opens and resolves *between
+  two observations*. **A player cannot act during a raid today, at all.**
+
+So the design the owner is describing — *focus on the raid, toggle during it* — needs the raid to
+become interactive first. **That is the "raids are the RTS action game" half of the vision, and it does
+not exist.** The contract, the lock rule and the four legal actions are all waiting on it.
+
+### The genuinely new part: consent is conditional on outcome
+
+The mechanic the owner adds is **not** in the contract, and it is the interesting one:
+
+- **Wartime forbidding is tolerated.** Turning off unmaking during a raid is understood — the enemy
+  cannot unmake your walls, and the trash collectors going idle is an accepted cost.
+- **Tolerance is conditional: *as long as nobody dies*.** The same action is forgiven or resented
+  depending on how the raid ends. That makes it a bet, not a toggle, and it pairs exactly with the
+  lock — you commit under uncertainty and are judged on the outcome.
+- **Peacetime forbidding is resented**, and **the resentment scales with dependence.** *"Once you have
+  this big civilization that depends on your magic."*
+
+**This is the drain the owner asked for, in social form.** The macro-model ask (W-prev, PR #160) wanted
+consistent drains on favor; here the drain is *worship*, its rate is a function of *how much the
+economy leans on what you just switched off*, and it is **waived by winning**. That is a far better
+shape than a flat upkeep: it is a cost that only bites when you are careless, which is what makes it a
+lever a player learns rather than a tax they pay.
+
+It also closes the loop the campaign already has half-built and inert: **#63** measures daily-relevant
+magic at **+48.8%** worship against spectacle's **+23.0%**, so the game already knows how to price
+*usefulness*. **Resentment is that same term with the sign flipped**, and it needs the same content to
+exist — something worth casting at the bottom of the tree.
+
+### What this implies about ordering
+
+The parts stack, and the bottom two are already the campaign's blockers:
+
+1. Something worth casting daily (content — the `resource-yield`-routes-only-to-stone problem).
+2. A raid the player can act *inside* (multi-step engagement; the vision's RTS layer).
+3. The four actions actually unmasked, matching the contract.
+4. Conditional consent — tolerated in war, resented in peace, waived by winning, scaled by dependence.
+
+**Nothing above step 2 can be measured until step 2 exists**, and step 2 is the same missing piece as
+*"no raider ever comes home"* and *"the observation boundary cannot see an engagement."* Three separate
+findings, one cause.
