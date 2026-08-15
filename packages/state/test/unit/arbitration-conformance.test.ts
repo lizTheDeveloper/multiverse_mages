@@ -433,6 +433,14 @@ describe('ruleset legality is computed in exactly one place', () => {
     expect([...new Set(cleared)]).toEqual([
       'packages/agent-api/src/mask.ts',
       'packages/agent-api/src/observation.ts',
+      // `encodePlayerState` expands the two ruleset bitfields into the nineteen
+      // §4.1 axis flags, one bit per slot. Axis-scoped for the same reason
+      // `observation.ts` is, and it is the *same* expansion — `player-state.ts`
+      // is the named projection of the vector `observation.ts` encodes
+      // positionally, so both halves ask "is this axis permitted" and neither
+      // asks "is this cell permitted". Nothing here decides legality; the
+      // universe is arbitrated by `permits()` exactly as before.
+      'packages/agent-api/src/player-state.ts',
       // `v1RulesetAxes` runs the arithmetic in the other direction: it *builds*
       // a starting ruleset by OR-ing the axes of the cells content flags `v1`,
       // rather than asking whether a ruleset permits a cell. Nothing there

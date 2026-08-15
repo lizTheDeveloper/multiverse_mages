@@ -68,6 +68,7 @@ import {
   componentOf,
 } from '@mm/state';
 
+import type { ExclusionResolver } from './catalog.js';
 import type { KnowledgeLossEvent } from './outcomes.js';
 
 /**
@@ -148,6 +149,16 @@ export class KnowledgeSubsystem {
    * for a metric whose only job is to warn.
    */
   #instanceOfGrimoire = new Map<Handle, Handle>();
+  /**
+   * The authored anti-requisites, or `undefined` when content declares none.
+   *
+   * Optional so that every existing construction site — and every hand-built
+   * test world — keeps the behaviour it was written against. An absent resolver
+   * is not "no exclusions found", it is "this subsystem was built by a caller
+   * that does not know about exclusions", and the two must not be told apart by
+   * a silent default that starts destroying instances.
+   */
+  #exclusions: ExclusionResolver | undefined;
 
   /**
    * Who holds what, in mind or memory palace: holder, to node id, to how many
@@ -180,9 +191,10 @@ export class KnowledgeSubsystem {
    * @param state - The world state. Must carry `@mm/state`'s §1 components.
    * @param nodeCount - Node ids the loaded content declares, `1..nodeCount`.
    */
-  constructor(state: SimState, nodeCount: number) {
+  constructor(state: SimState, nodeCount: number, exclusions?: ExclusionResolver) {
     this.#state = state;
     this.#existence = new NodeExistenceIndex(nodeCount);
+    this.#exclusions = exclusions;
   }
 
   /**
@@ -192,8 +204,12 @@ export class KnowledgeSubsystem {
    * snapshot written by an older build, or by a build with a bug in this file,
    * loads correctly and is repaired by the act of loading.
    */
-  static fromState(state: SimState, nodeCount: number): KnowledgeSubsystem {
-    const subsystem = new KnowledgeSubsystem(state, nodeCount);
+  static fromState(
+    state: SimState,
+    nodeCount: number,
+    exclusions?: ExclusionResolver,
+  ): KnowledgeSubsystem {
+    const subsystem = new KnowledgeSubsystem(state, nodeCount, exclusions);
     subsystem.rebuild();
     return subsystem;
   }
@@ -336,6 +352,14 @@ export class KnowledgeSubsystem {
     }
     const disagreement = this.#holderDisagreement(spec);
     if (disagreement !== '') throw new RangeError(disagreement);
+
+    // `vision.md` §4b, at the one place all five acquisition paths meet. See
+    // `test/unit/exclusions.test.ts` for why it is here and not on the frontier:
+    // raid theft writes straight into a thief's mind and would otherwise
+    // launder the exclusion.
+    const conflicting = this.#conflictingHoldings(spec);
+    if (conflicting === 'refused') return 0;
+    for (const instance of conflicting) this.destroyInstance(instance, spec.acquiredTick);
 
     const handle = this.#state.entities.create();
     attachRecord(this.#state, KNOWLEDGE_INSTANCE, handle, {
@@ -687,6 +711,46 @@ export class KnowledgeSubsystem {
       if (matches(view)) found.push(handle);
     });
     return found;
+  }
+
+  /**
+   * What this acquisition conflicts with, per `vision.md` §4b.
+   *
+   * Returns `'refused'` when the acquisition may not happen at all, and
+   * otherwise the instances that must be destroyed for it to proceed — empty in
+   * the ordinary case, which is every acquisition in a universe whose content
+   * authors no exclusions.
+   *
+   * **Only held locations are checked.** §4b excludes what a *mage* may hold; a
+   * library is an institution, and a civilization keeping both books is the
+   * thing §4b says a civilization is *for*. Checking shelves would make the
+   * first authored exclusion start burning archives nobody ever learned from.
+   */
+  #conflictingHoldings(spec: InstanceSpec): readonly Handle[] | 'refused' {
+    const resolver = this.#exclusions;
+    if (resolver === undefined) return [];
+    if (!isHeldLocation(spec.locationKind)) return [];
+
+    const held = this.#heldByHolder.get(spec.locationId);
+    if (held === undefined || held.size === 0) return [];
+
+    const excluded = resolver.excludedBy(resolver.cellOf(spec.nodeId));
+    if (excluded.length === 0) return [];
+
+    const doomed: Handle[] = [];
+    for (const exclusion of excluded) {
+      for (const nodeId of held.keys()) {
+        if (resolver.cellOf(nodeId) !== exclusion.cell) continue;
+        if (exclusion.resolution === 'refused') return 'refused';
+        // Every instance of the excluded body of magic this holder carries, not
+        // merely the first: an exclusion that left her a second copy of the
+        // school she just gave up would not be an exclusion.
+        doomed.push(...this.instancesHeldBy(spec.locationId).filter(
+          (instance) => this.read(instance).nodeId === nodeId,
+        ));
+      }
+    }
+    return doomed;
   }
 
   #holdNode(holder: Handle, nodeId: ContentId): void {
