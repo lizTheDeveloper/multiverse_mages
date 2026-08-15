@@ -11867,3 +11867,54 @@ mage-months against 93 affiliations, one month per move, no churn.**
   that have no `workOne` arm** — dormant on `main`, **live on #134**, where `raid-readiness` runs 0.3–1.4%
   and is mislabelled. And `gainedWhileCommittedToAffiliate` is **blind by construction**: it samples at end
   of tick, after autonomy re-selects. Both reported back to #191.
+
+## W223 — mastery rising kills scribing on vellum, and #186 authored the fix before anyone knew
+
+Diagnosing why the four world-animating PRs cannot merge. **The answer is not uniform, and assuming it was
+would have been the mistake.**
+
+`Verify` on #183 (mastery rises) fails on six assertions, and they are three different kinds:
+
+| assertion | kind |
+|---|---|
+| **`scribing died of the economy again — vellum ran out, not just food: expected 0 to be greater than 0`** | **a tripwire firing on a real consequence** |
+| `expected 9 to be 12`, `expected 0.186 to be close to 0.0473`, `expected ['perdo-limen', …] to deeply equal […]` | pinned literals that moved |
+| **`gnome and dwarf now overlap in every seed set… Re-measure with --sets 12 and re-record this, in both files.`** | **a test naming its own remedy** |
+
+### The tripwire is the finding
+
+**Mastery rising makes mages scribe more; more scribing exhausts vellum; scribing then dies of the
+economy.** That is a genuine causal chain, and the tripwire exists precisely to catch it.
+
+**And #186 authored the fix before this was known.** W215: *"no **magical** vellum source existed in v1"* —
+five of 59 `resource-yield` effects are in v1 cells and **all five are `*-terram`**, so vellum came only
+from territory labour. #186 adds one at `rn-call-by-name`, **tier 1, because the sink runs from tick zero.**
+
+**So #183 and #186 need each other**, and neither branch knows it. That is the fourth producer/consumer
+pair of the campaign — after scribe-demand × cohort-valve, #170's reachability × w23, and student-entities
+× the reading edge — and the first found by a tripwire rather than by a person.
+
+### The species-spread pin, third correction
+
+`expected 0.186 to be close to 0.0473`. W188 read a move to **0.0729** as a 9.9 lead; W205 showed the pin
+is **one seed from a distribution with mean 0.117** and retired it as noise. **0.186 is outside even that
+distribution's mean**, so mastery rising moves species spread substantially — but after two wrong readings
+of this exact number, **it wants the twelve-set re-measure the sibling test is asking for, not a third
+interpretation.**
+
+### And one test names its own remedy
+
+*"Re-measure with `--sets 12` and re-record this, in both files."* A failing assertion that says what would
+settle it, and in which files. That is what a pin should do when it moves, and it is the difference
+between a red test and a red test that costs an investigation.
+
+### Why this blocks merging, and what it is not
+
+`Verify (pinned Node)` is a **required** context and runs the unit suite, so a PR that leaves pins red
+cannot merge. The standing no-baselines rule was aimed at **sweeps and baseline re-records** — hours of
+compute, and a merge conflict for every branch touching `balance/`. **Re-pinning a unit-test literal from a
+measured run is neither**: no sweep, no `balance/` file, no gate. It is the same distinction agents have
+drawn all night between a `contentRevision` re-pin and a baseline re-record.
+
+The vellum tripwire is the exception and must **not** be re-pinned — it is reporting a real regression whose
+fix is sitting in another PR.
