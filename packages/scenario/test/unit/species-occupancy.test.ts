@@ -163,30 +163,54 @@ describe('twenty world years in', () => {
   });
 
   it('has three species at the ruleset ceiling and three below it', () => {
-    // **Orc dropped from 12 to 11 when `apply-magic` shipped, and it is the
-    // only entry that moved.** `speciesTerm` reads `laborAffinity` for that
-    // goal and orc's is the highest in the content set at `fp(1536)`, so an orc
-    // mage spends months applying magic that she used to spend reaching into a
-    // twelfth cell. That is a species behaving like its own traits say it
-    // should, and it costs it a cell of breadth — which is the trade the goal
-    // is supposed to create and the reason this pin is re-recorded rather than
-    // widened.
+    // **Re-measured on the merge of `main` (5a1ce6c) into
+    // `w108/university-fidelity`, 2026-08-14.** Not inherited from either side:
+    // both sides of that merge re-recorded this block for different reasons and
+    // *neither side's numbers survived the combination*. `main` had
+    // `12/12/11/10/10/8` (dwarf, human, orc, draconic, elf, gnome) and the
+    // branch had `12/9/12/10/10/9`; the merged run reads none of those. Taking
+    // either hunk verbatim would have pinned a number no build produces.
+    //
+    // Two causes compose here, and neither is a balance decision:
+    //
+    // 1. **`apply-magic` (#127).** `speciesTerm` reads `laborAffinity` for that
+    //    goal, so species with high labor affinity spend months casting that
+    //    they used to spend reaching into another cell. That is the trade the
+    //    goal is supposed to create.
+    // 2. **The staffing rule this branch wires.** `UNIVERSITY_STAFF` link rows
+    //    are entities, and `contracts.md` §6 splits the RNG per entity handle,
+    //    so creating them shifts every handle allocated afterwards and re-rolls
+    //    every handle-keyed draw in the run. The branch verified this rather
+    //    than assuming it: a control build that creates the link rows and keeps
+    //    the old global-pool scribing reproduces the branch run byte for byte,
+    //    and the reference universe has exactly **one** university, where
+    //    owning every scribe cohort and sharing the universe's pool are
+    //    arithmetically the same thing — 142 books over 36 ticks on both.
+    //
+    // The composition is not the sum of the parts, and that is the honest
+    // reading of it: orc fell to 11 on `main` under `apply-magic` and is back
+    // at 12 here, while draconic and elf each gained a cell they held at 10 on
+    // both sides. A re-roll moves things in both directions. What the staffing
+    // rule actually *changes* needs more than one university to see, and is
+    // measured in `coordination/test/unit/university-staffing.test.ts` — not
+    // here.
     expect(bySpecies('dwarf').occupiedCells).toBe(12);
     expect(bySpecies('human').occupiedCells).toBe(12);
-    expect(bySpecies('orc').occupiedCells).toBe(11);
-    expect(bySpecies('draconic').occupiedCells).toBe(10);
-    expect(bySpecies('elf').occupiedCells).toBe(10);
-    expect(bySpecies('gnome').occupiedCells).toBe(8);
+    expect(bySpecies('orc').occupiedCells).toBe(12);
+    expect(bySpecies('draconic').occupiedCells).toBe(11);
+    expect(bySpecies('elf').occupiedCells).toBe(11);
+    expect(bySpecies('gnome').occupiedCells).toBe(9);
   });
 
   it('measures a spread that is neither flat nor a hegemony', () => {
     const entry = collectSpeciesCellOccupancy(telemetryFor(sample));
     expect(entry.status).toBe('measured');
-    // 0.0714 at this horizon, down from 0.0729 before `apply-magic`: one orc
-    // cell fewer makes the occupancy spread very slightly flatter. Pinned to
-    // four places: the point of the metric is that this number moves, and a
-    // test that only asserted "greater than zero" would let it move to anything.
-    expect((entry as { value: number }).value).toBeCloseTo(0.0714, 4);
+    // 0.0473 at this horizon, re-measured on the merge described above — was
+    // 0.0729 before either change, 0.0714 on `main` alone and 0.0645 on the
+    // branch alone. Pinned to four places: the point of the metric is that this
+    // number moves, and a test that only asserted "greater than zero" would let
+    // it move to anything.
+    expect((entry as { value: number }).value).toBeCloseTo(0.0473, 4);
     expect(entry).toMatchObject({ detail: { everySpeciesEqual: false, everySpeciesZero: false } });
   });
 
@@ -201,16 +225,32 @@ describe('twenty world years in', () => {
   });
 
   it('names which cells each species is missing, not just how many', () => {
-    // **The reading a count cannot give.** Gnome is four cells short at this
-    // horizon and the four have a shape: no Perdo Mentem, Terram or Limen, and
-    // no Rego Terram. A count of 8 says "behind"; this says "behind in Perdo",
-    // which is the difference between a species that is slow and a species that
-    // is locked out of a technique.
+    // **The reading a count cannot give.** Gnome is three cells short at this
+    // horizon and the three have a shape: two of the three are Perdo. A count of
+    // 9 says "behind"; this says "mostly behind in Perdo", which is the
+    // difference between a species that is slow and a species that is locked out
+    // of a technique.
+    //
+    // **Re-derived on the merge described above, 2026-08-14, and the branch's
+    // claim about it did not survive.** The branch recorded
+    // `perdo-limen/mentem/terram` and argued the shape had got *cleaner* —
+    // `rego-terram` having dropped out — and called that "the strongest evidence
+    // yet that it is about Perdo and not about the seed". The merged run reads
+    // `perdo-mentem`, `perdo-terram`, `rego-terram`: gnome picked up Perdo Limen
+    // and lost Rego Terram again. So the shortfall is three cells of which two
+    // are Perdo, on both `main`'s numbers and these, but *which* three is not
+    // stable across a re-roll.
+    //
+    // That is worth stating rather than quietly re-pinning, because it is
+    // evidence against the branch's own argument: a set that reorders under a
+    // pure re-roll of handle-keyed draws is partly a seed artifact. The durable
+    // reading is "gnome is short, and disproportionately short in Perdo"; the
+    // exact membership is a pin, not a finding, and the next agent to see it
+    // move should not read the movement as a defect.
     const cellName = new Map(content.registry.cells.map((e) => [e.contentId, e.record.id]));
     const held = new Set(bySpecies('gnome').occupiedCellIds.map((id) => cellName.get(id)));
     const dwarfHeld = bySpecies('dwarf').occupiedCellIds.map((id) => cellName.get(id));
     expect(dwarfHeld.filter((cell) => !held.has(cell)).sort()).toEqual([
-      'perdo-limen',
       'perdo-mentem',
       'perdo-terram',
       'rego-terram',
