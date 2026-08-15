@@ -126,6 +126,31 @@ const REGISTERED: ReadonlyMap<string, string> = new Map([
       'the intent, this is the line that says so.',
   ],
 
+  // ---- Floored, and there is nothing to stall. ----
+  [
+    'terms:shareOfDeviation',
+    'An appeal term, not a stock. `shareOfDeviation(value, d)` is ' +
+      '`floorDiv(value - FP_ONE, d)` — how far a trait sits from neutral, ' +
+      'divided down — and the sample the sentinel catches is ' +
+      '`floorDiv(2, 4) -> 0` on 5 of 240 ticks (persistence 0.021). ' +
+      '**The numerator can only be a rolled personality axis, and that is a ' +
+      'proof rather than a guess:** every species trait in `species.json` is a ' +
+      'multiple of 128, so a species deviation is a multiple of 128 and cannot ' +
+      'floor to zero under a divisor of 2 or 4 unless it is already zero, which ' +
+      'the recorder does not count. `personalityTerm` reads `curiosity`, ' +
+      '`ambition` and `caution` as *rolled* per-mage values, and a mage whose ' +
+      'roll landed 2/1024 from neutral gets no shading on a goal whose divisor ' +
+      'is 4. Nothing is carried forward and nothing accumulates: the score is ' +
+      'recomputed from the outlook every tick, and the mage still has a full ' +
+      'utility score from the other five terms. A stall would require the ' +
+      'floored quantity to be the input to its own next value, and an appeal ' +
+      'term never is. Registered rather than fixed, because rounding a ' +
+      'two-thousandth of a bounded term away is the arithmetic behaving. ' +
+      '**Seen only on the composition:** neither `w196/mastery-rises` nor ' +
+      '`w200/layer-one-fixes` reaches it alone (both arms green on this file, ' +
+      'measured 2026-08-15), so it is a reachability change and not a new floor.',
+  ],
+
   // ---- Handled at the site. ----
   [
     'worship:laggedWorship',
