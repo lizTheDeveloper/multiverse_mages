@@ -10596,3 +10596,66 @@ That is now **five documents** found asserting stale claims in the present tense
 `vision-audit.md`, `magic-projection.md`, `reachability-triage.md`, `invariants.md`, `hard-magic.md`.
 `docs/` is not a ref, and the corollary is sharper than the rule: **the freshest-looking document is
 usually the one that has rotted, because it is the one people keep citing.**
+
+## W205 — it was never the width, and three of my recorded findings were wrong
+
+PR #173. 168 runs across 14 squares, 12 → 70 cells. **Recommendation: keep the twelve.** And the sweep
+refuted the premise I commissioned it on.
+
+### Two of my three motivating mechanisms do not bind
+
+| my claim (W192) | measured |
+|---|---|
+| *"`teach-rate`'s multiplier is live only above tier 3; v1's 51 nodes sit below it"* | **False.** The twelve hold **11 tier-4 and 2 tier-5 nodes**, reach mean deepest tier **3.89**, and carry **5 of the grid's 19 `teach-rate` sources**. `teach-rate` is live at width twelve. |
+| *"the 1.25× multiplier"* | **Mis-identified.** It is `LIBRARY_CONTRIBUTION`'s fp-256 knot at **24 shelved nodes** — not a tier gate at all. |
+
+And the knot exposes a different variable entirely: the twelve reach **49.0 shelved nodes** under the
+scenario's default founding position against **7.3** under `LONG_RUN_OPTIONS` — **same square, same
+seeds.** *"It's a founding-position question."* Anti-requisites were the only sound argument for widening,
+and W202 closed that by authoring a pair inside the twelve.
+
+### The frontier is two curves, and neither is "cells"
+
+1. **Slowdown tracks reachable *nodes*, not cells** — 1.00× at 51, 0.97× at 67, 1.87× at 75, 4.45× at 101,
+   13.03× at 170, **17.40× at 223**. Knee at **~75 nodes**.
+2. **Censoring is a step function caused by one `destructive` anti-requisite.** Ten arms with no live pair
+   censor **1.4–4.2%** with no trend; four arms with one censor **18.1–75.0%**. **No overlap.** Ablated:
+   the whole grid goes **75.0% → 13.9%** on removing a single form.
+
+**So #137's collapse is roughly four-fifths an anti-requisite effect, not dilution** — and that is measured
+by ablation, which outranks W201's derivation from reading the loot selector. **Both may contribute; the
+ablation is the stronger evidence and W201 should be read as a second, unquantified cause rather than
+*the* cause.**
+
+### If widening anyway
+
+**`{creo, intellego, perdo, rego} × {limen, mentem, nomen, terram}`** — 16 cells, 67 nodes, **0.97×**
+time-to-tier, **4.2%** censoring. *"The only free widening, and the only one that's a sentence rather than
+an alphabetical prefix."*
+
+### My instrument-blindness concern was answered by a control, not an argument
+
+I warned that the four flat arms not moving might mean the instrument was blind. **All four moved, at
+6.1–10.0 SE** — and `passive-control` and `worship-maximizer` moved **down** (−21 and −24 shelved nodes).
+The known positive control, `permissive-breadth`, also moved (+2.7 SE). *"A flat result with a flat control
+would have meant blindness; that's the discriminator, and it didn't trigger."*
+
+### W188's task-9.9 lead was noise, and I should not have recorded it as a lead
+
+**`species-occupancy`'s pinned `0.0473` is one seed from a distribution whose mean is `0.117`.** The
+history I quoted as a trend — 0.0729 → 0.0714 → 0.0645 → 0.0473 — **is a walk inside one seed's noise
+band.** So W188's *"a tenth goal moves spread 54%"* is not a 9.9 lead; it is a seed. **Criterion 3 cannot
+see the opening square at all** — every square within ~1 SE.
+
+That leaves **W180's finding as the only surviving structural lead on 9.9**: a mage cannot learn to learn.
+And W203 now says why that could not have worked anyway — nothing she discovers is ever teachable.
+
+### Two more results worth keeping
+
+- **The founding-grant hypothesis is refuted with the sign backwards:** forcing v1's grant onto a wide
+  square makes censoring *worse*, 18.1 → 44.4% and 75.0 → 93.1%.
+- **W202's pair should land** — swapped in as data and probe-confirmed, censoring goes 2.8% → 6.9%, with
+  five of six species arriving at *exactly* the same tick and the entire cost falling on draconic (2 → 5
+  censored). Two orders of magnitude cheaper than the `creo` pair. **And a warning for its reviewer: two
+  pairs with the same `destructive` resolution cost 4.1 and 15.3 points, with nothing in the content
+  predicting which.**
