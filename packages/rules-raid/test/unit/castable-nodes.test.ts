@@ -29,10 +29,10 @@ import { describe, expect, it } from 'vitest';
 
 import { CastArbiter } from '@mm/rules-raid';
 
-import { grid, nodeId, registry, ruleset, tuning } from './raid-fixture.js';
+import { combat, grid, nodeId, registry, ruleset, tuning } from './raid-fixture.js';
 
 function arbiterFor(): CastArbiter {
-  return new CastArbiter({ hostRuleset: ruleset({}), grid, registry, tuning });
+  return new CastArbiter({ hostRuleset: ruleset({}), grid, registry, combat, tuning });
 }
 
 describe('what a cast is, after the selector stopped asking only about damage', () => {
@@ -152,6 +152,7 @@ describe('concealment is raid-scale only, whatever its record declares', () => {
       hostRuleset: ruleset({ permittedForms: 0 }),
       grid,
       registry,
+      combat,
       tuning,
     });
     expect(

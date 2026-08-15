@@ -342,12 +342,49 @@ describe('contentRevision', () => {
     // difference is worth reading: that one changed when a run ends, this one
     // changes nothing until a sweep names a level.
     //
-    // `6973d2c55f6d7788bbaa6886e507bbde -> 5ab771101485e49068f7f94648fa2bc3`
-    // gave five effects on the four `rego-terram` nodes an optional
-    // `displacement` — the first cost any effect in the shipped set has ever
-    // carried. Every other effect in `node.json` is untouched and the field is
-    // absent from all of them, which is the whole design: absence means "pure
-    // bonus", the reading three hundred nodes were authored under.
+    // `2c67315a` is the digest W29 recorded on its own branch, which reached
+    // that point holding W6's, W8's and W17's constants and the material split
+    // but *not* the value edit below.
+    //
+    // 2c67315ae04ee6c74dfa204474af4eb6 -> ba7be8d68b582e2985e0360bbc7e11b0,
+    // when W29's tree met a `main` that had meanwhile brought
+    // `max-summons-per-side` down from 16 to 8 to agree with `primitive.json`'s
+    // `summon` cap — the same ceiling authored twice, disagreeing since both
+    // files existed. That edit is the first entry in this whole list that
+    // changes a *value* rather than adding a file, which is the point of a
+    // revision taken over the values: two universes that disagreed about how
+    // many summons a side may hold would fight two different battles, and the
+    // digest now says so instead of calling them compatible.
+    //
+    // `main` reached this merge asserting 6b18886a — W17's successor plus that
+    // value edit, taken there without W6's or W8's constants and without the
+    // material split. Neither 6b18886a nor 2c67315a is a competing claim about
+    // *this* tree: each is a claim about a smaller preimage, and this tree's
+    // preimage strictly contains both. ba7be8d6 is therefore the union
+    // arriving, not a disagreement being settled — the same situation the
+    // three-branch paragraph above describes, one level up.
+    //
+    // Union again: main's revision together with this branch's metis-from-use
+    // content. Neither literal is a digest over a preimage holding both.
+    //
+    // 162f80bf169296d0e5fd516cc3c5257a -> d4e3047657b4fa8a1a74e1d52f9f5c86,
+    // when `apply-magic` added two scalars to `autonomy-weight.json` — what a
+    // mage-month of applied magic makes, and what she eats while she makes it.
+    // In the preimage for the reason the god constants are: the two numbers
+    // decide how much of a universe's economy comes out of its mages rather than
+    // its fields, so two universes disagreeing about them would keep different
+    // populations while their revisions agreed they were compatible. Unlike the
+    // grant-budget move above, this one **does** change every run: applying
+    // magic is a goal a mage will choose, so a tick's materials and a tick's
+    // goal histogram both move from the first month.
+    //
+    // Union once more, and this is the merge that produced the literal below:
+    // `main`'s chain above met this branch's optional `displacement` term on an
+    // effect — five effects on the four `rego-terram` nodes, the first cost any
+    // effect in the shipped set has ever carried. Every other effect in
+    // `node.json` is untouched and the field is absent from all of them, which
+    // is the whole design: absence means "pure bonus", the reading three
+    // hundred nodes were authored under.
     //
     // It belongs in the preimage for the plainest possible reason: it changes
     // what a universe *produces*. Two universes agreeing on their revisions
@@ -356,10 +393,11 @@ describe('contentRevision', () => {
     // arbitration that reads the host's ruleset would be arbitrating between
     // two different games.
     //
-    // And once more: the first tree holding main's revision together with the
-    // optional displacement term on an effect. Neither literal is a digest
-    // over a preimage containing both.
-    expect(registry.contentRevision).toBe('b6a577ddbb1777bd581eeaf05e937ff4');
+    // Neither side's literal — this branch's 5ab77110/b6a577dd, nor `main`'s
+    // d4e30476 — is a digest over a preimage containing both, so the value
+    // below was **re-measured from the merged tree** rather than taken from
+    // either side.
+    expect(registry.contentRevision).toBe('ac4f330ba6e07d288e45213493745acf');
   });
 
   it('is stable across loads of identical content', () => {

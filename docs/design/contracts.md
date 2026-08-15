@@ -912,12 +912,92 @@ Any layer accepting actions across a trust boundary (`server`, and `gym-bridge` 
 remotely) MUST apply its own admission policy — rate limiting, disconnection — *before* the action
 reaches the core. The core does not defend itself; the boundary does.
 
-**Every action except no-op is masked during engagement.** The god acts only in world time. This
-covers the ruleset actions 1–7 and 13, and equally 8–12, 14, and 15: blessing a defender mid-raid,
-or declaring ascension to escape a losing one, violates frozen policy exactly as squarely as
-forbidding a technique does. Silence in an earlier draft of this table was not permission.
+**Most actions are masked during engagement, and four are not.** This paragraph previously read
+*"every action except no-op is masked"*, enforcing vision §3's frozen-policy sentence. **That
+sentence was repealed** by `raid-engagement.md`, and vision §3 now reads: *"Rules changes may be made
+during a raid, and every change locks until the raid ends."* This table is what every implementation
+reads, so it is amended here rather than left to disagree with the vision of record.
 
-This is the vision's frozen-policy rule (§3), enforced in one place.
+| Action | During engagement |
+|---|---|
+| permit technique *(1)*, permit form *(3)* | **legal**, and locks |
+| forbid technique *(2)*, forbid form *(4)* | **legal for the defender only**, and locks |
+| edicts *(5, 6, 7)* | masked — see the open question below |
+| every other action *(0, 8–15)* | masked |
+
+*Action ids are given in italics here rather than as a leading column, because the
+enumeration above is the one `god-conformance.test.ts` parses — it counts rows beginning with an
+id and asserts there are exactly sixteen, and a second such table is indistinguishable from four
+more actions.*
+
+**The lock is the whole point and it is a mask rule, not a cost rule.** A cell permitted mid-raid
+MUST NOT be forbidden again before the raid resolves, and one forbidden mid-raid MUST NOT be
+permitted again. So the mask entry for the inverse action on that axis goes false for the remainder
+of the engagement, which makes every mid-raid change a commitment under uncertainty rather than a
+reaction knob. `raid-engagement.md` §1: *"Without the lock, mid-raid policy is a reaction knob and
+the correct play is to counter whatever you last saw."*
+
+**Forbidding is defender-only**, ruled in `raid-engagement.md` §6.2: under §3 the host's ruleset
+governs, so an attacker forbidding their own cells would change nothing inside the host universe.
+Making it defender-only turns a dead verb into a deliberate asymmetry.
+
+**Reverting after the raid costs more than the change did.** That multiplier is untuned content and
+is not fixed here.
+
+**Two things this amendment deliberately does not settle**, because `raid-engagement.md` does not
+and `CLAUDE.md` says to stop rather than invent a rule:
+
+- **Edicts (5–7) are unstated.** §3 of that document names *"forbid and permit, which carry over
+  from world time under the locking rule"* and says nothing about single-cell exceptions. An edict
+  is a ruleset change, so the vision's amended sentence arguably reaches it; the raid document's
+  enumeration does not. They stay masked until someone rules, and this row exists so the silence is
+  visible rather than inherited.
+**Not yet implemented, and the gap is named rather than left to be discovered.** This amendment
+changes what the contract *says*; it changes no code. Three places still enforce the repealed rule
+and each is a deliberate follow-up, not an oversight:
+
+- `packages/agent-api/src/mask.ts` quotes the old paragraph verbatim and returns `[1, 0, 0, …]` from
+  a single early return in engagement mode. That shape was chosen so a newly added action is masked
+  *by default*; unmasking four actions means the branch stops being total, and the reason it was
+  written that way — *"the failure mode this rule has already had once is an action that nobody
+  remembered to add to a list"* — applies with more force after this change, not less.
+- `openspec/specs/observation-action-space/spec.md` carries a released requirement, *"Rules changes
+  are masked during engagement"*, with a scenario asserting every action except no-op is masked.
+- `openspec/changes/god-agency/specs/interventions/spec.md` requires *"Every intervention is
+  world-time only"* and has scenarios refusing blessing and ascension mid-raid. Those two remain
+  correct under this amendment; the technique and form scenarios do not.
+
+**Unmasking these four costs nothing to run, and that is measured rather than assumed.** The first
+draft of this note claimed the change would move every committed balance baseline. It would not.
+`legalityMask` was instrumented and four strategies were run for 600 world ticks on seed 20260813:
+
+| strategy | raids | engagement ticks | mask evaluated in engagement |
+|---|---|---|---|
+| `passive-control` | 2 | 159 | **0** |
+| `uniform-random-legal` | 7 | 440 | **0** |
+| `portal-rush` | 9 | 489 | **0** |
+| `denial-warden` | 1 | 65 | **0** |
+
+**The engagement branch of `legalityMask` is unreachable in the current architecture.** A raid
+resolves atomically inside a single world step: `rules-raid`'s `runRaid(raid)` takes a `Raid` and
+nothing else, loops to termination, and returns before the agent is asked for another action. The
+clock genuinely enters engagement mode — `enterEngagement` is called on both participants — but no
+observation is ever taken while it is there, so the mask is never computed and the god is never
+offered the choice.
+
+So the mask is not what stops a god acting mid-raid. **Nothing asks.** Changing the four entries
+would be a no-op against every baseline, and it would also not deliver the design: what
+`raid-engagement.md` §2 describes — verbs whose agency decays across three phases, a mid-raid forbid
+the player later regrets — requires the engagement loop to yield to the agent between ticks, which
+is a change to `runRaid`'s shape rather than to a mask. That is the real prerequisite, and it is
+larger than this table.
+
+- **The raid verb set is not in this table.** `raid-engagement.md` §3 gives raids *"their own verbs,
+  live only inside an engagement, distinct from §4's world-time verbs"*, with the defender spending
+  favor and the attacker spending Vis and exposure. Those are not enumerated here and have no action
+  ids. Whoever specifies them must decide whether they extend this space or form a second one — and
+  note that Vis collides with a shipped requirement, `mages-and-species`'s economy spec, which
+  forbids a fourth resource.
 
 ### 4.3 Reward and episode boundaries
 
@@ -938,6 +1018,102 @@ reason, era, and the balance-metric deltas since the previous step. The `agent-a
 - **A raid is inside an episode, not its own episode.** The clock changes mode; the episode does
   not end. One agent plays both scales — which is exactly what the fixed-shape observation with its
   zero-filled engagement block exists to support.
+
+**Amendment: the outcome record must also carry events.** The record above answers *what is true
+now* and *what moved since the last step*. Three specified consumers need a third thing — *what
+happened* — and none of them can be built without it.
+
+An **event record** accompanies each observation: a list, possibly empty, of the discrete things
+that occurred during the step. Each entry carries at minimum:
+
+- **a class**, from a closed enumeration, so a consumer can apply a per-class rule to it;
+- **the entity or content it concerns**, at the granularity the thing itself has — a node id, a mage
+  handle, a cell id — not the aggregate the observation buckets it into;
+- **whether the event *ended* that thing** — this step took the last instance of a node, the last
+  member of a species, the last mage who could teach a tier. A **transition, not a property**; the
+  difference is argued below and is the whole of what this field adds.
+
+The class enumeration, the wire format and the per-class payload are **not fixed here**. They belong
+to `agent-interface` at 0.5.0, in the same way §4.4 fixes that candidate lists are slot-indexed and
+leaves `k` to a per-action constant. What this section fixes is that the events exist, that they are
+emitted alongside the observation rather than on request, and that terminality is carried rather
+than left to be inferred.
+
+**Why inference does not serve, stated carefully, because the first version of this argument was
+wrong.** It is tempting to claim the last-instance bit cannot be reconstructed downstream. It can be,
+partially: §4.1's `nodesKnown` channel is derived from `count(instances) > 0`, so a decrement is a
+node leaving the universe, and a consumer holding two consecutive frames will see it. In the
+reference run it happens once, at tick 274 — `perdo-mentem`, `nodesKnown` 3 → 2, instances 10 → 7 —
+in the same step that the last Human dies. The claim of impossibility was refuted by the first
+attempt to derive it.
+
+What a frame diff genuinely cannot recover is everything that makes the event *usable*:
+
+- **Identity.** The knowledge block is per cell. Three instances went and one node ended; whether
+  that was one node held in three places or three unrelated losses, one of which happened to be a
+  last copy, the aggregate does not distinguish.
+- **Vessel.** A node can be lost from a mind, a memory palace, a grimoire or a library, and vision
+  §5 makes those four different kinds of loss. The *observation vector* has no vessel channel — but
+  `agent-api` already computes one. See the note below, because it narrows this requirement more
+  than anything else here.
+- **Causation.** A diff of two frames says a death and a loss both fell in the same interval. It
+  cannot say the loss followed from the death. `sound-design.md` §6.5 builds its cue on precisely
+  that link — a death mark, a pause, then loss, where *"the pause between the two is the sound of
+  finding out"* — and a consumer that cannot attribute the loss cannot place the pause.
+- **Anything that nets.** A count cannot distinguish a step with one gain and one loss from a step
+  with neither. This has not been observed; it is a property of counting and does not need to be.
+
+So the requirement is not that the information is unobtainable. It is that recovering it from
+aggregates costs every consumer the same reconstruction, each of them differently wrong, to
+approximate something the core knows exactly at the moment it happens.
+
+**Much of this is already computed, and the gap is one level up.** `agent-api` exports
+`knowledgeCensus(state)`, a second projection alongside the observation vector, and it carries by
+name most of what the paragraphs above ask for: `whereKept` splits every instance across mind,
+grimoire, library and palace; `byNode` gives the same split per node with a `distinctLocations`
+count; `fragileNodeIds` is documented as *"nodes at exactly one instance — the last copy"*, which is
+terminality with node identity attached; `unwrittenNodeIds` is every node held only in minds and
+palaces. Run against the reference scenario at tick 0 it returns
+`whereKept {mind: 1, grimoire: 0, library: 0, palace: 0}` and `fragileNodeIds [99]`.
+
+**`AgentSession` exposes none of it.** The session offers `reset`, `observe`, `legalActions`,
+`candidates`, `submit`, `status`, `outcome`, `accounting`, `illegalActionCount`, `rng` and
+`snapshotHash` — and not `knowledgeCensus`, not `AgentView.raw`, not the `ExplainProjection` §4.4
+describes. Three projections the package computes and exports, none of them reachable through the
+only door a client has.
+
+That reshapes this amendment. **Vessel and node identity do not need a new event field; they need
+the session to expose a projection that already exists**, which is an `agent-api` surface decision
+rather than a change to this contract. What remains genuinely absent, and what the requirement above
+is therefore *for*, is narrower and worth stating exactly:
+
+- **Terminality as a transition.** Struck as a *property*, kept as an *event*. `fragileNodeIds` is
+  a **stock** — the nodes standing at one copy at this tick. The cue fires on a **flow** — the node
+  that went from one to zero *in this step*. Every field of that census is a stock at a
+  `worldTick`: no delta, no "since last", no per-tick count anywhere in the type. Turning the first
+  into the second means holding the previous census and differencing it, which is frame-diffing one
+  projection over, discarding the same causation. This is the narrowest field in the amendment and
+  the one most likely to be struck later as redundant by someone who has read the census and not
+  the difference.
+- **Causation.** Nothing links a death to the loss it caused. Two censuses a step apart show both;
+  neither says one followed from the other.
+- **Per-step counts by class.** §0.4's threshold needs to know how many events of a class fell in
+  this step. A census is a stock, not a flow, and differencing stocks nets.
+- **Being told rather than having to look.** Every consumer diffing two censuses writes the same
+  reconstruction, and they will not all write it the same way.
+
+**Three consumers, one capability, and they should be answered together.** `sound-design.md` §0.4's
+density rule needs an events-per-tick count *per class* to decide whether a class plays as discrete
+sounds or as a continuous texture, and forbids any class being discrete without a stated threshold.
+§6.5 needs the vessel — available from the census the moment a session exposes it — plus two things
+that are not: the moment a node's last copy goes, and the causal link between a death and the loss
+that followed it. It pins loss at a threshold of 1 so that it is never aggregated away. §10 needs classified per-tick events to build an arrangement at all. An answer
+shaped for any one of these alone will be relitigated by the other two.
+
+*This amendment states a requirement and deliberately does not design the schema. The cost of
+deciding it late is the reason it is written now: the format is cheap to change before policies and
+committed baselines depend on it, and a format change after that is a retrofit with a version bump
+attached.*
 
 ### 4.4 Parameterized actions and the explain channel
 
@@ -1106,6 +1282,15 @@ invalidates every committed balance baseline.**
 | 9 | knowledge theft |
 | 10 | objective and raid generation |
 | 11 | terrain generation and combatant deployment |
+| 12 | the opening square — which techniques and forms a universe is founded holding |
+
+**Stream 12 is the first append since the baselines were committed, and it is what taught us that
+appending is not free.** The gate compares `provenance.rngRegistryHash` as a block-level refusal,
+and that hash is taken over this whole table — so adding a row invalidates every committed
+baseline *by identity*, before a single number has moved. That is conservative rather than wrong,
+but it means **any** future subsystem addition forces a re-baseline event, and the cost belongs in
+the plan for one rather than being discovered in a red gate. See
+`docs/design/opening-square.md` §4.
 
 Draws key on `(rootSeed, stream, tick, actorKey, drawOrdinal)` where `actorKey` is stable identity,
 never array index. This gives **insertion invariance**: adding a combatant, or adding a draw,
@@ -1137,6 +1322,16 @@ the capability that owns the mechanic owns its *threshold value* — `worshipSno
 to `raid-engagement`. A definition without a threshold is unfalsifiable; a threshold without a
 pinned definition is unmeasurable.
 
+**Two combat metrics measure what a node buys, not what it does.** `winRateByPrimitive` and
+`RaidOutcome.primitiveApplication` both describe combat in units of *magnitude put on the field*,
+and measured raids say that is the wrong quantity: over twenty seeds the share of hit points removed
+ran roughly half to `area-denial`, roughly half to summons and soldier detachments, and under two
+percent to cast `direct-damage`, while survival-regret measured zero on every seed because the
+raider took the objectives and left. What a combat node is *for* is enemy action that does not
+happen, so `combatActionEconomy` measures that directly and `combatThresholdEfficiency` asks how
+often a source crosses the threshold from hurting to removing. Damage is still reported — inside
+both metrics' details — and is no longer primary.
+
 **A metric whose mechanic does not yet exist reports `{status: "unavailable", reason:
 "mechanic-absent"}`.** It is never absent from the output. This is what lets `0.5.0` claim that
 every metric is reported two milestones before raids exist: a missing key is a harness failure, an
@@ -1160,6 +1355,8 @@ unavailable status is an honest answer.
 | `speciesCellOccupancy` | cells of the seventy a species **actually occupies** — a living mage of that species holding a knowledge instance of some node in the cell, in a mind — over the full grid and over the permitted cells separately, with *which* cells carried beside the count. The scalar is the Gini coefficient across species, so "one species staffs everything" is a number; 0 is an even spread. The outcome counterpart to `speciesGridVersatility`'s capability, and the observation its falsification test is stated over |
 | `lossShockRecovery` | world ticks a species roster takes to regain its pre-shock headcount after a deterministic cull, per species, right-censored. Asserts that long-lived species recover *worse* rather than assuming fertility handles it |
 | `roleAssignmentDemographicCost` | fall in a species' share of the roster under role assignment into lossy roles, against a paired arm that assigned none. Makes action 10 a demographic lever with a price rather than a free choice |
+| `combatActionEconomy` | combatant-ticks of enemy action a combat primitive denies, over the combatant-ticks a raid contains — **the primary measure for combat nodes**; damage is secondary |
+| `combatThresholdEfficiency` | of the combat attempts that landed, the fraction that removed a target rather than merely hurting one |
 
 ---
 

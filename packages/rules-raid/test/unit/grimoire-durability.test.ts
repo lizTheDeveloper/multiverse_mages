@@ -37,6 +37,7 @@ import { openPortal, runRaid } from '../../src/raid.js';
 import {
   addMage,
   addUniversity,
+  combat,
   emptyWorld,
   grid,
   knowledgeFor,
@@ -97,6 +98,7 @@ function raidOn(durability: number, seed: number): { survivors: number; looted: 
     host: participant(hostWorld, hostKnowledge, hostSnapshot, hostSnapshot.traditionId),
     registry,
     grid,
+    combat,
     tuning,
     raidSeed: seed,
   });
