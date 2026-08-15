@@ -10058,3 +10058,62 @@ on w23 landing.** That is the third producer/consumer pair identified tonight.
 **And the corrupt intent fires zero times in every committed sweep, because no strategy arms a raider** —
 the test says so rather than leaving it to be discovered. The only above-noise in-world evidence is the
 20-year gate's `referenceNodesGained` and `referenceNodesKnown`, both **+0.365 at 2.10 SE**.
+
+## W196 — the per-cohort floor is a third instance, and three of four demand ports were dead
+
+Two findings from the reallocation work, the second of which reframes the first.
+
+### The fragmentation trap is live in `rules-raid`, not merely analogous
+
+I described the `detachment-strength` case in W185 as a *trap worth recording*. The agent went and checked
+rather than taking it on trust, and it is real. `packages/rules-raid/src/portal.ts:219-236`, verified
+verbatim on `origin/main`:
+
+```
+for (const cohort of eligibleCohorts(participant.world)) {
+  let remaining = cohort.record.count;
+  while (remaining >= tuning.detachmentStrength && sideHasRoom(roster, tuning)) {
+```
+
+**The `while` is inside the `for`.** `detachment-strength` is an authored **100**, so **a cohort of
+fewer than a hundred fields no detachment at all** — and cohorts are keyed species × occupation × birth
+decade, which is exactly the fragmentation that defeats it.
+
+It is invisible today only because `standingSoldierTarget: 0` holds `soldier` at zero for the whole
+reference run: **there is nobody to field, so nothing to notice.** Recorded as a non-fix. Whoever raises
+that target first will field zero detachments and pay full subsistence for the army that did not deploy.
+
+**That is three instances of one pattern**, which is what makes it a finding about the model rather than
+three bugs:
+
+| instance | per-cohort threshold | effect |
+|---|---|---|
+| scribe reallocation | `floorDiv(count × rate, FP_ONE)`, `1/rate` = 16 | every budget floors to zero — fixed on `w185` |
+| affiliated mages | capacity bounds, PR #134 | 6 → 5 → 4 → 3 → 2 → 1 over 200 years |
+| **soldier detachments** | `detachment-strength` = 100 | **zero detachments, latent** |
+
+**Any threshold applied per cohort is applied to a population shattered far below it.** That belongs in
+the cohort model's own documentation, not in three separate bug reports.
+
+### And three of the four occupation demand ports were dead
+
+`world-step.ts:797` passes four inputs to `computeOccupationDemand`, and I verified the call site:
+
+| port | value | status |
+|---|---|---|
+| `scribingQueueDepth` | literal **`0`** | dead — `w23` replaces it with `unwrittenNodeCount(state)` |
+| `standingSoldierTarget` | **`0`** | zero **by citation**, `ages-of-magic.md` §2b: *"There is no separate military."* Honest, and the detachment floor above means a non-zero value would not work anyway |
+| `constructionBacklog` | a real function at `world-step.ts:1936` | **the agent measured it returning 0 on every tick — I have not verified that at runtime**, and it is a measurement claim rather than a code-reading one |
+| `universityCapacity` | `completedCapacity(state)` | live, and it is the university pump — the only port with a pulse, and it drains other occupations into `student` |
+
+So the occupation system has **one live input, and that input is the pathological one.** That is the
+framing that makes the combined `w23` + `w185` PR read as deliberate scope rather than as half a fix: it
+is not "unhardcode a literal", it is "the demand side of the populace model was inert."
+
+### Method note worth keeping
+
+The agent wrote a **generator** for `balance/README.md`'s power table rather than hand-computing forty
+cells, *"since stale hand-arithmetic is how that table rotted before"* — and gave it a **positive
+control**: its branch's ascension baseline is still main's, and the generated 200-year column reproduces
+the committed README exactly across all ten rows. So the cells that changed are ones that moved rather
+than ones it miscomputed. That is the right shape for any table a human would otherwise retype.
