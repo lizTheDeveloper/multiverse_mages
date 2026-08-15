@@ -72,6 +72,7 @@ function summary(result) {
   let combatantTicks = 0;
   let attempts = 0;
   let objectivesTaken = 0;
+  let directives = 0;
   const lengths = [];
   const sources = new Set();
   const victors = [0, 0];
@@ -84,6 +85,7 @@ function summary(result) {
     stranded += raid.raidersStranded;
     combatantTicks += raid.totalCombatantTicks;
     objectivesTaken += raid.nodesTakenByAttacker;
+    directives += raid.directivesApplied;
     lengths.push(raid.engagementTicks);
     for (const row of raid.combatSources) {
       sources.add(row.source);
@@ -100,6 +102,7 @@ function summary(result) {
     combatantTicks,
     attempts,
     objectivesTaken,
+    directives,
     sources: [...sources].sort(),
     attackerWins: victors[0],
     defenderWins: victors[1],
@@ -124,6 +127,7 @@ let all = {
   attackerWins: 0,
   defenderWins: 0,
   objectivesTaken: 0,
+  directives: 0,
 };
 const reasonTotals = new Map();
 const sources = new Set();
@@ -155,6 +159,7 @@ console.log(
   `TOTAL raids=${all.raids} fielded=${all.fielded} withdrew=${all.withdrawn} ` +
     `stranded=${all.stranded} killed=${all.killed}  ` +
     `withdrawalRate=${(rate / 10).toFixed(1)}%  nodesLooted=${all.objectivesTaken} ` +
+    `midRaidChanges=${all.directives} ` +
     `combatAttempts=${all.attempts} ` +
     `combatSources=${JSON.stringify([...sources].sort())}`,
 );

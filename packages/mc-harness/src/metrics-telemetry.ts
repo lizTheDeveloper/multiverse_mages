@@ -225,6 +225,9 @@ export interface RaidObservation {
   readonly raidersStranded: number;
   /** Nodes the attacking side carried out of the host universe. */
   readonly nodesTakenByAttacker: number;
+  /** Mid-raid ruleset changes this god made, and the raid favor they cost. */
+  readonly directivesApplied: number;
+  readonly directiveFavorSpent: number;
 
   /**
    * Who won, and why it ended. `RAID_SIDE` and `RAID_END_REASON` values,

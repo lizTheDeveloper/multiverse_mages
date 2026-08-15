@@ -260,7 +260,7 @@
   },
   {
     "id": "withdraw-after-ticks",
-    "value": 40,
+    "value": 56,
     "unit": "ticks",
     "gloss": "Engagement ticks a raider stays before she starts scoring withdrawal above everything else. Elapsed ticks, not remaining portal stability: measured, the portal opens with 2,411-3,577 ticks of life against raids of p50 64 and max 148, so the old fp(400) remaining-stability window opened thousands of ticks after every raid had ended - 0 of 169 raiders withdrew across 97 raids. Retuning could not fix it; portal jitter alone is +/-600 ticks. See scripts/w182-withdrawal.mjs.",
     "tuningStatus": "untuned"
