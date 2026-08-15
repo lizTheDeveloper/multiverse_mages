@@ -1152,8 +1152,6 @@ export const WORLD_COMPONENTS = [
   BLESSING,
   UPHEAVAL,
   ERA_EVALUATION,
-  TERRITORY_HOLDING,
-  UNIVERSITY_SITE,
   // Appended last, though it is universe state and reads as if it belongs
   // beside `UNIVERSE`. Section order in a snapshot is this list's order, so a
   // component inserted anywhere but the end lines every older save's sections
@@ -1164,6 +1162,14 @@ export const WORLD_COMPONENTS = [
   // after `material-stock` and so goes after it, however much both of them
   // read as if they belonged beside `UNIVERSE`.
   GRANT_BUDGET,
+  // And once more, for `university-siting`. It was written as revision 5, where
+  // it would have sat above `MATERIAL_STOCK`; the branch was brought current
+  // after `main` had taken 5 and 6, so it is revision 7 and it goes at the end.
+  // Section order is this list's order, and a renumbered migration whose
+  // sections stayed where the old number put them would line every older save
+  // against the wrong layouts — the exact failure the note above describes.
+  TERRITORY_HOLDING,
+  UNIVERSITY_SITE,
 ] as const satisfies readonly ComponentSpec<ComponentFields>[];
 
 /** Engagement-scale components, in snapshot order. */
