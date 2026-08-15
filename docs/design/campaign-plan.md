@@ -10187,3 +10187,63 @@ tick can both pay and one gets nothing — now a written decision rather than an
   four different tables** in `balance/README.md`. The committed tool locates the table by heading and by
   the `| runs |` row that ends it. This is `CLAUDE.md`'s *"an aggregator that locates input by shape rather
   than by name eventually finds the wrong input"*, committed by an agent who had read that rule.
+
+## W198 — the raid seam is closed: a god acts mid-raid, and 87% of raiders come home
+
+PR #171. Both halves of the seam W178 identified as *"one seam, much smaller than the design implies"* —
+and the estimate held.
+
+### What was built
+
+- **Unmasked** `agent-api/src/mask.ts` actions **1–4 for the defender only**, in a phase that admits a
+  change, behind a new `ENGAGEMENT_ACTIONS` allow-list that keeps everything else masked **by default**.
+  **Phase arrives as data** (`EngagementStance`) because §5 forbids `agent-api` → `rules-raid` — the
+  dependency rule respected rather than worked around. No stance supplied → no-op only, so every existing
+  caller is unchanged.
+- **Routes to `applyDirective`** through a new `scenario/src/raid-directives.ts`, `scenario` being the only
+  package permitted to see both sides.
+- **Built the caller** the brief anticipated: `runRaidWithPolicy` is `runRaid`'s loop with the gap open,
+  and with no policy it is behaviourally identical.
+
+### The measurements
+
+**Does a god action mid-raid change a raid? Yes.** Four seeds, all four moved: 3 directives applied,
+18,432 favor paid per seed, **nodes looted 12→0, 17→0, 9→1, 23→0.**
+
+**Withdrawal, the hole W178 called "no raider comes home":**
+
+| | before | after |
+|---|--:|--:|
+| raiders withdrawing | **0.0%** (0 of 169, 97 raids) | **87.0%** (859 of 987, 208 raids) |
+| nodes looted | 32 | **246** |
+
+`withdraw-after-ticks = 56`, chosen by sweep where wins are nearest even (101 vs 107) *and* loot peaks —
+not by picking a number that made the rule fire.
+
+**Combat attempts: still zero, and honestly reported.** Better, it is now *pinned*: the ablation control
+moved from by-seed to **by-primitive**, so "six of seven move nothing" becomes an assertion that **fails
+when someone closes that gap** rather than a fact someone has to remember.
+
+### Three findings, and the first is a design trap
+
+1. **The `ctx.actions` design fails silently.** The world-scale resolver consumes the submission first,
+   draining every technique bit by tick 100 — so the same action offered mid-raid is then *correctly*
+   judged `not-a-change` and refused. **The agent's first implementation did exactly this and every
+   directive was silently refused.** An action that is legal, submitted, accepted and then correctly
+   determined to be a no-op is indistinguishable from one that worked.
+2. **Two latent defects surfaced only once raiders tried to leave**: terrain could roll impassable
+   **under the portal**, and unreachable-portal raids ran to collapse — a **3,199-tick tail against a p50
+   of 65**. Both were unreachable while nobody withdrew.
+3. **A fixture bug that flattered the result**: `warband.ts` keyed briefs on bare handles, so one roster
+   overwrote the other and it reported 173 alive / 58 withdrawn out of 180 — **115 mages who "survived
+   being stranded."**
+
+### And it complied with the standing rule, with a fact worth keeping
+
+It killed its running regeneration and **reverted** the baselines and UI artifacts it had committed, so
+gates go red on `provenance.contentHash` and `ui-recording.test.ts` is knowingly red.
+
+**But before reverting it had run all four gates, and every metric was within tolerance — largest move
+1.24 SE.** So the red is provenance, not regression: **closing the raid seam does not move balance.**
+That is exactly the kind of fact the "stop re-recording" rule risks losing, and it is worth having in
+writing before someone re-derives it in a week.
