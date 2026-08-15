@@ -327,9 +327,18 @@ export function academicRateBonuses(
       if (!PERSONAL_TARGETS.has(contribution.target)) continue;
       if (!ACADEMIC_PRIMITIVES.has(contribution.primitiveId)) continue;
       // A zero magnitude is authored content saying "nothing", and pushing it
-      // would inflate `contributingNodes` without moving a rate. The economy
-      // drops non-positive magnitudes at the same point and for the same reason.
-      if (contribution.magnitude <= 0) continue;
+      // would inflate `contributingNodes` without moving a rate.
+      //
+      // **Zero, not non-positive.** This read `<= 0` while magnitudes were
+      // unsigned, when the two were the same test. They are not any more: a
+      // negative magnitude is a node expressing a *cost*, which is the whole
+      // point of signed magnitudes, and dropping it here would make an authored
+      // opposing term validate, ship, read correctly in its gloss, and do
+      // nothing — the exact "reads as a rule and behaves as a comment" failure
+      // `check:consumption` exists to catch, reintroduced one layer up. The
+      // floor that keeps a stacked rate sane belongs in `@mm/primitives`, where
+      // every consumer shares one, not in each consumer inventing its own.
+      if (contribution.magnitude === 0) continue;
       contributingNodes += 1;
       if (held === undefined) {
         held = { research: [], teach: [], scribe: [] };

@@ -344,7 +344,10 @@ export function universeEconomyBonuses(
     contributingNodes += 1;
 
     if (contribution.primitiveId === 'build-rate') {
-      if (contribution.magnitude > 0) buildRate.push(contribution.magnitude);
+      // Zero, not positive — see the note in `academic-effects.ts`. A negative
+      // `build-rate` is a node that makes building *slower*, and it has to reach
+      // the shared stacking to be bounded there.
+      if (contribution.magnitude !== 0) buildRate.push(contribution.magnitude);
       continue;
     }
 
@@ -352,7 +355,10 @@ export function universeEconomyBonuses(
     if (form === undefined) continue;
     const routed = routeYieldByForm(form, contribution.magnitude);
     for (const kind of MATERIAL_KINDS) {
-      if (routed[kind] > 0) resourceYield[kind].push(routed[kind]);
+      // Zero, not positive: a negative routed amount is a cost this node
+      // imposes on that material kind, and dropping it here would undo
+      // `routeYieldByForm`'s sign handling one line downstream.
+      if (routed[kind] !== 0) resourceYield[kind].push(routed[kind]);
     }
   }
 
