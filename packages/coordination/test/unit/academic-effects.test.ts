@@ -45,8 +45,15 @@
  * | primitive | v1 nodes | tiers | Σ magnitude | `(1 + Σ)` |
  * | --- | ---: | --- | ---: | ---: |
  * | `research-rate` | 7 | 1,1,1,2,3,3,4 | 1600 | ×2.5625 |
- * | `teach-rate` | 5 | 1,2,2,4,4 | 1152 | ×2.1250 |
+ * | `teach-rate` | 6 | 1,2,2,4,4,4 | 960 | ×1.9375 |
  * | `scribe-rate` | 4 | 2,2,3,4 | 960 | ×1.9375 |
+ *
+ * The `teach-rate` row moved when magnitudes became signed: `pn-the-nameless`
+ * joined the set carrying **−192**, the first authored cost in the grid, which
+ * both adds a tier-4 node to the treatment arm and removes one from the inert
+ * pool the control arm draws from. A smaller `Σ` for a larger set is what an
+ * opposing term looks like, and it is the reason the teaching claim below is
+ * stated as *"no completion-count gain"* rather than as a magnitude.
  *
  * The control set is drawn, tier for tier, from the v1 nodes whose every effect
  * names a primitive **nothing consumes** — `ward`, `direct-damage`,
@@ -557,9 +564,17 @@ describe('the magnitudes reach the mage, in a universe that has been running', (
     }[primitive];
     const carrying = mages.filter((mage) => magnitudesOf(mage).length > 0);
     expect(carrying.length).toBeGreaterThan(0);
-    // Every magnitude is a positive `fp` the content authored, not a placeholder.
+    // Every magnitude is an `fp` the content authored, not a placeholder.
+    //
+    // **Nonzero rather than positive.** This read `toBeGreaterThan(0)` while
+    // `node.schema.json` said `"minimum": 1` and no node could express a cost.
+    // A negative magnitude is now authorable on the three rate primitives and
+    // `pn-the-nameless` carries one, so "positive" would assert the absence of
+    // exactly the feature this file's seam was widened to carry. The loader is
+    // what refuses a zero — see `content/test/unit/signed-magnitudes.test.ts` —
+    // and this is the assertion that the wire does not invent one.
     for (const mage of carrying) {
-      for (const magnitude of magnitudesOf(mage)) expect(magnitude).toBeGreaterThan(0);
+      for (const magnitude of magnitudesOf(mage)) expect(magnitude).not.toBe(0);
     }
   });
 });

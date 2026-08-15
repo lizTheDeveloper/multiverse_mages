@@ -49,7 +49,14 @@ import { FP_ONE } from '@mm/sim-core';
 import type { Fixed } from '@mm/sim-core';
 import { loadContent, shippedContentSource } from '@mm/content';
 import type { ContentRegistry, PrimitiveRecord } from '@mm/content';
-import { ClampCounters, additive, additiveIntoMultiplier, stackMagnitudes } from '@mm/primitives';
+import {
+  ClampCounters,
+  additive,
+  additiveIntoMultiplier,
+  applyWard,
+  multiplicativeOnRemainder,
+  stackMagnitudes,
+} from '@mm/primitives';
 
 const registry: ContentRegistry = loadContent(shippedContentSource());
 
@@ -148,6 +155,18 @@ describe('a rate multiplier never goes negative', () => {
     counters.reset();
     expect(counters.floorTotal()).toBe(0);
     expect(counters.floorEntries()).toEqual([]);
+  });
+
+  it('never lets a negative prevented fraction amplify damage', () => {
+    // The sign-inversion, not a rounding question: `applyWard(1000, -200)`
+    // returned 1195 before a negative fraction was refused outright — more damage than
+    // no ward at all, through a bound that only exists as a ceiling. Content
+    // cannot author it; a raid under a host's ruleset supplies magnitudes this
+    // package cannot re-validate, which is why the arithmetic holds it too.
+    expect(() => multiplicativeOnRemainder([-200])).toThrow(RangeError);
+    expect(() => multiplicativeOnRemainder([-200, 512])).toThrow(RangeError);
+    // The positive control: an ordinary ward still prevents what it always did.
+    expect(applyWard(1000, multiplicativeOnRemainder([512]))).toBe(500);
   });
 
   it('does not floor a rule that has no zero to cross', () => {

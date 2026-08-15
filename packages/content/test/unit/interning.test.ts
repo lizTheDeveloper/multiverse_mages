@@ -377,7 +377,14 @@ describe('contentRevision', () => {
     // grant-budget move above, this one **does** change every run: applying
     // magic is a goal a mage will choose, so a tick's materials and a tick's
     // goal histogram both move from the first month.
-    expect(registry.contentRevision).toBe('d4e3047657b4fa8a1a74e1d52f9f5c86');
+    //
+    // d4e30476... -> 2644913b..., when magnitudes became signed and
+    // `pn-the-nameless` took the first authored **cost** in the grid: a
+    // `teach-rate` of −192 beside its concealment. One authored value, and the
+    // revision is a digest over the values, so this is the ordinary case rather
+    // than a union of branches. It changes every run in which any mage learns
+    // The Nameless — which is the point of the change, not a side effect of it.
+    expect(registry.contentRevision).toBe('2644913b17fe046e21d3e61e765bd381');
   });
 
   it('is stable across loads of identical content', () => {

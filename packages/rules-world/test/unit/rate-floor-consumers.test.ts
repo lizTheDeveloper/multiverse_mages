@@ -42,7 +42,9 @@ import { describe, expect, it } from 'vitest';
 import { FP_ONE } from '@mm/sim-core';
 import { ClampCounters } from '@mm/primitives';
 
-import type { BirthInput, UniversityRecord } from '../../src/index.js';
+import type { UniversityRecord } from '@mm/state';
+
+import type { BirthInput } from '../../src/index.js';
 import {
   BUILD_COMPLETE,
   SCRIBE_MONTHS_PER_SCRIBE,

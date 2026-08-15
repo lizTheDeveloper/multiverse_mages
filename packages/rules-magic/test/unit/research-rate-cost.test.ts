@@ -69,6 +69,7 @@ function inputs(overrides: Partial<ResearchInputs> = {}): ResearchInputs {
     effort: FP_ONE,
     learnRate: FP_ONE,
     researchRate: FP_ONE,
+    rediscoveryAffinity: FP_ONE,
     clampCounter: createRediscoveryClampCounter(),
     ...overrides,
   };
