@@ -12028,3 +12028,70 @@ note rather than a silent rewrite — the spec/record distinction applied withou
 **`packages/scenario/src/executor.ts` contains two literal NUL bytes** — an intentional memo-key separator,
 committed on `main` — so **`grep` treats all 880 lines as binary and prints nothing.** An empty result that
 means "skipped", not "absent". Same family as a pathspec matching no files, and it cost an agent a detour.
+
+## W226 — the morning handoff
+
+**Read this first. Everything below it in this document is detail.**
+
+### To play it
+
+```
+git checkout demo/playable-wired
+npm ci && npm run play          # → http://localhost:8300/
+```
+
+**Use the demo branch, not `main`.** Both run, but `main`'s world is the inert one — the four PRs that
+animate it are still queued. The demo branch also already carries the `actionSpaceSize` fix that `main` is
+waiting on as #193, verified: **17 verbs, zero occurrences of the hardcoded 16.**
+
+What differs, same seed, `main` → demo:
+
+| | t=200 | t=400 |
+|---|---|---|
+| library depth | 9 → **24** | 9 → **38** |
+| grimoires | 176 → **367** | 341 → **583** |
+| species alive | 6 → 6 | **5 → 6** |
+
+On `main` the library reaches depth 9 by tick 200 **and never moves again**, and by t=400 a species — the
+only one that ever reaches the deepest tier — is **extinct**.
+
+**Honest limits:** the raid is **not** playable (`openPortal` never reaches engagement across 795 frames,
+measured with a positive control on the scanner); #134's *"affiliated 1 → 64"* is **not observable** because
+the institutions block has no affiliated-mages slot; and mastery is invisible under no-op play — you have
+to act.
+
+### Two decisions waiting
+
+**1. The re-seal, and it is circular as documented.** Every remaining PR fails `Verify` because the three
+balance gates are steps *inside* it (`ci.yml` 154–185). `sim-rigor` §4.3 recommends one re-seal *after*
+#170 and #185 land — **but they cannot land while the gate refuses.** Allowing **one** re-seal on one
+branch breaks the loop, and #184's tool **refuses if any metric actually moved**, so it cannot launder a
+regression. That is the recommendation.
+
+**2. Should practice compete with discovery?** #183 makes mastery rise — headline confirmed, **0 → 67
+crossings, 12/12 runs** — and concentrates knowledge onto **five nodes**, library depth **44 → 5**,
+draconic censored in **69 of 72 runs**. Drilling what you know currently beats finding what you do not.
+**That is a design question, not a tuning one**, and it is the last thing between the mastery fix and
+`main`.
+
+### What changed structurally
+
+- **The world loop is lint-enforced deterministic.** Adding `coordination/src` to the float ban exposed
+  **four live violations in a file that cites the rule against them at line 228.**
+- **"Built but never called" is a ratchet**, not a report, and caught real drift within hours.
+- **Generated artifacts are built, not committed** — after the byte-pin was found to have *already gone
+  blind* on three fields.
+- **`monthsByGoal` exists**, so a goal consuming a third of mage-life no longer looks like one nobody picks.
+- **Five documents repaired**, including a health warning that was itself the rot.
+
+### The number that should shape what comes next
+
+**27 mechanisms instrumented: ten fire zero times, eight fire tens of thousands of times and move nothing,
+and *none* is content-scoped** — no inert mechanism would bind at a wider opening square. Of 170 audit
+rows, **99 distinct defects**, **86 remaining** after subtracting what tonight closes, sequenced in five
+layers in `docs/design/audit-sequence.md`.
+
+**And every balance baseline is blind to the economy by construction**: `CensusSample`, the eighteen §7
+metrics and the eleven `REFERENCE_MEASURES` have **no material field**, so `resource-yield` moves materials
+−36.8% and is byte-identical across the entire committed run record. That is not a bug to fix — it is an
+apparatus that cannot observe something the design cares about.
