@@ -95,7 +95,6 @@ export {
   canDiscoverCorruption,
   corruptionReadBar,
   fidelityAt,
-  fidelityFractionOf,
   fidelityOf,
   generationStep,
   isCorruptionValue,

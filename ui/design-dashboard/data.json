@@ -2560,8 +2560,8 @@
       "scripts/check-reachability.mjs --json"
     ],
     "ok": false,
-    "findingCount": 125,
-    "examinedSymbolCount": 889,
+    "findingCount": 128,
+    "examinedSymbolCount": 896,
     "examinedPackages": [
       "content",
       "coordination",
@@ -2573,7 +2573,7 @@
       "sim-core",
       "state"
     ],
-    "productionFileCount": 314,
+    "productionFileCount": 320,
     "orphanPackages": [],
     "unreached": [
       {
@@ -2592,6 +2592,12 @@
         "file": "packages/content/src/audio.ts",
         "line": 140,
         "name": "audioSelect",
+        "kind": "function"
+      },
+      {
+        "file": "packages/content/src/character.ts",
+        "line": 73,
+        "name": "characterFor",
         "kind": "function"
       },
       {
@@ -2700,12 +2706,6 @@
         "file": "packages/rules-magic/src/grid.ts",
         "line": 175,
         "name": "heldNodes",
-        "kind": "function"
-      },
-      {
-        "file": "packages/rules-magic/src/instances/fidelity.ts",
-        "line": 382,
-        "name": "fidelityFractionOf",
         "kind": "function"
       },
       {
@@ -2974,7 +2974,7 @@
       },
       {
         "file": "packages/rules-world/src/populace/demand.ts",
-        "line": 84,
+        "line": 132,
         "name": "NO_DEMAND",
         "kind": "const"
       },
@@ -3112,14 +3112,26 @@
       },
       {
         "file": "packages/scenario/src/strategy-audit.ts",
-        "line": 368,
+        "line": 663,
+        "name": "auditFounding",
+        "kind": "function"
+      },
+      {
+        "file": "packages/scenario/src/strategy-audit.ts",
+        "line": 649,
         "name": "auditPool",
         "kind": "function"
       },
       {
         "file": "packages/scenario/src/strategy-audit.ts",
-        "line": 401,
+        "line": 746,
         "name": "formatAudit",
+        "kind": "function"
+      },
+      {
+        "file": "packages/scenario/src/strategy-audit.ts",
+        "line": 703,
+        "name": "formatFounding",
         "kind": "function"
       },
       {
@@ -3281,7 +3293,15 @@
       },
       {
         "file": "packages/scenario/src/strategy-audit.ts",
-        "line": 396,
+        "line": 420,
+        "name": "FOUNDING_PROBE",
+        "via": [
+          "auditFounding"
+        ]
+      },
+      {
+        "file": "packages/scenario/src/strategy-audit.ts",
+        "line": 691,
         "name": "actionName",
         "via": [
           "formatAudit"
@@ -3289,9 +3309,10 @@
       },
       {
         "file": "packages/scenario/src/strategy-audit.ts",
-        "line": 280,
+        "line": 494,
         "name": "auditStrategy",
         "via": [
+          "auditFounding",
           "auditPool"
         ]
       },

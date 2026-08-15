@@ -377,8 +377,3 @@ export function setFidelity(
   });
   return merged;
 }
-
-/** The mētis fraction an instance still carries. Convenience over the two above. */
-export function fidelityFractionOf(state: SimState, instance: Handle): Fp {
-  return fidelityAt(fidelityOf(state, instance).copyGeneration);
-}
