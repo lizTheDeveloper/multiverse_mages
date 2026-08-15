@@ -60,6 +60,7 @@
 
 import { spawn } from 'node:child_process';
 import { mkdirSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
+import { execFileSync } from 'node:child_process';
 import { dirname, join } from 'node:path';
 import process from 'node:process';
 import { fileURLToPath, pathToFileURL } from 'node:url';
@@ -336,6 +337,7 @@ async function main() {
   const archive = foldArchive(axes, candidates, nulls);
   const payload = {
     searchSeed, sweepId: SWEEP_ID, runId, ticks: Number(args.ticks), seeds, axes, ladder: NULL_LADDER,
+    provenance: measuredRef(),
     nulls, candidates, archive,
     status: archive.cells.length === 0 ? 'no-observations' : 'measured',
   };
@@ -388,4 +390,67 @@ if (import.meta.url === pathToFileURL(process.argv[1] ?? '').href) {
     process.stderr.write(`${String(error?.stack ?? error)}\n`);
     process.exitCode = 1;
   });
+}
+
+/**
+ * The ref this archive is a measurement **of**.
+ *
+ * `scripts/build-design-dashboard.mjs` argues at length against exactly this —
+ * no clock, no `git rev-parse` — and that argument is right *there* and wrong
+ * *here*, for one reason. The dashboard payload is a **pure function of the
+ * repository contents**, byte-checked by `check:generated`; stamping it would
+ * make CI's dashboard differ from yours, and the tree is already its own
+ * provenance. A search archive is not a function of the tree. It is a
+ * measurement of how the simulation **behaved**, and the same command run on
+ * two commits produces two different archives that are both correct. Without
+ * the ref there is no way to say which world a result describes.
+ *
+ * That is not hypothetical. `smoke-600.json` reported `shape: dead` —
+ * "nothing beats doing nothing" — with no commit, branch or date in it. It was
+ * read a day later as evidence about the *wired* game when it had been measured
+ * on the unwired one, which inverts the causal claim it was being used to
+ * support. See `docs/design/campaign-plan.md` W232.
+ *
+ * Everything here is best-effort and never throws: a tarball, a shallow CI
+ * checkout, or no `git` at all yields `unknown` rather than failing a sweep that
+ * has already done the expensive part. `dirty` is the load-bearing field — a
+ * measurement taken on uncommitted edits is not reproducible from the ref alone,
+ * and silently reporting the base commit for a dirty tree would be a worse lie
+ * than reporting nothing.
+ */
+/**
+ * `status --porcelain` rather than `diff --quiet` because the question is
+ * whether this archive is reproducible from `commit` alone, and an untracked
+ * content file changes the answer exactly as much as a modified one — `diff`
+ * does not see untracked files at all. Errors report `unknown`, never `false`:
+ * "I could not tell" and "the tree is clean" must not collapse into each other,
+ * which is the checker-that-answers-about-the-wrong-input shape CLAUDE.md names.
+ */
+function isDirty() {
+  try {
+    const out = execFileSync('git', ['status', '--porcelain'], {
+      encoding: 'utf8',
+      stdio: ['ignore', 'pipe', 'ignore'],
+    });
+    return out.trim().length > 0;
+  } catch {
+    return 'unknown';
+  }
+}
+
+function measuredRef() {
+  const git = (cmd) => {
+    try {
+      return execFileSync('git', cmd, { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] }).trim();
+    } catch {
+      return '';
+    }
+  };
+  const commit = git(['rev-parse', 'HEAD']);
+  if (!commit) return { commit: 'unknown', branch: 'unknown', dirty: 'unknown' };
+  return {
+    commit,
+    branch: git(['rev-parse', '--abbrev-ref', 'HEAD']) || 'unknown',
+    dirty: isDirty(),
+  };
 }
