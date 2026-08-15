@@ -10103,7 +10103,7 @@ the cohort model's own documentation, not in three separate bug reports.
 |---|---|---|
 | `scribingQueueDepth` | literal **`0`** | dead — `w23` replaces it with `unwrittenNodeCount(state)` |
 | `standingSoldierTarget` | **`0`** | zero **by citation**, `ages-of-magic.md` §2b: *"There is no separate military."* Honest, and the detachment floor above means a non-zero value would not work anyway |
-| `constructionBacklog` | a real function at `world-step.ts:1936` | **the agent measured it returning 0 on every tick — I have not verified that at runtime**, and it is a measurement claim rather than a code-reading one |
+| `constructionBacklog` | a real function at `world-step.ts:1936` | **0 at all 601 ticks** — since confirmed in W199 by an agent that ran it on the merged tree at a named ref, rather than carried from another branch |
 | `universityCapacity` | `completedCapacity(state)` | live, and it is the university pump — the only port with a pulse, and it drains other occupations into `student` |
 
 So the occupation system has **one live input, and that input is the pathological one.** That is the
@@ -10247,3 +10247,55 @@ gates go red on `provenance.contentHash` and `ui-recording.test.ts` is knowingly
 1.24 SE.** So the red is provenance, not regression: **closing the raid seam does not move balance.**
 That is exactly the kind of fact the "stop re-recording" rule risks losing, and it is worth having in
 writing before someone re-derives it in a week.
+
+## W199 — the scribing loop runs for the first time, and neither half alone does anything
+
+PR #172, carrying `w23/populace-and-record` and `w185/cohort-source` as **one** change, which is what the
+owner's producer/consumer instruction was for.
+
+### Neither half works alone. That was the whole question, and it is answered unambiguously.
+
+Merged tree, seeds `0x00090001` / `0x000900ff`, 600 ticks, three arms each rebuilt with one half removed
+and the build's exit code checked every time:
+
+| arm | scribe cohort, t=0 → 600 |
+|---|---|
+| `w185` only (the valve) | 24 → **9** / 24 → 16 — *it shrinks* |
+| `w23` only (the demand) | 24 → **14** / 24 → 24 |
+| **both** | 24 → **46** / 24 → **54** (peak) → 33 |
+
+**And the sharpest result is the one that shows the subsystem working**, at seed `0x000900ff`: both single
+halves leave the unwritten queue sitting at 44 → 38/35, while **the pair drains it 40 → 18 → 0** and takes
+library instances **24 → 180**. Books get written. That is the first time the scribing loop has closed.
+
+**The demand was there the whole time.** Measured on `main`: 30–88 unwritten nodes at every tick, and the
+literal `0` discarded all of it.
+
+**An honest counter-reading, reported rather than spun:** at seed 1 the pair peaks higher (582 vs 514) and
+finishes *lower* at 600 (186 vs 320).
+
+### Third independent confirmation that pooled sweeps cannot see this work
+
+Cited **pre-record**, on the `w23`-only tree, and flagged in a blockquote in the PR so nobody reads PASS as
+describing the PR: `balance-gate-v1` **0 of 9 rows moved**, `horizon` **0 of 10**, `agency` **4 of 90 at a
+maximum of 0.39 SE** against a 3 SE tolerance.
+
+**A change that takes an occupation's demand from 0 to 88 is invisible to all three pooled gates.** After
+`balance-gate-v1` at delta 0.00000 with the scribing change in the tree, and the raid seam moving no metric
+by more than 1.24 SE, that is three separate confirmations in one night. The instruction to stop
+sweep-per-change is now the best-evidenced process decision of the campaign.
+
+### Two corrections it made against itself
+
+- The brief's premise was wrong: *"expect the three baselines to conflict."* They did not — **`w23` never
+  touched `balance/`**; only `main` did, so they merged clean. The real conflicts were `demand.ts`,
+  `world-step.ts` and `data.json`, resolved by keeping both sides (`NO_STANDING_ARMY` **and**
+  `materialsObligation` at the call site).
+- It re-measured `constructionBacklog` itself rather than carrying W196's figure from another branch —
+  **0 at all 601 ticks**, at a named ref. W196's caveat is upgraded accordingly. *"Fixed by measuring
+  rather than hedging"* is the right response to being caught overreaching.
+
+It also **killed a 45-minute ascension gate mid-run** when the no-baselines rule landed, rather than let it
+measure a tree nobody ships. `verify:nosweeps` 4,634/4,636, with both reds classified rather than patched:
+a **third** `snapshotHash` on `ui-recording` (stale fixture, layout digest unchanged), and `god-loop` at
+**95,466 ms under load 220 against 8,492 ms alone at load 93** — the box, proven rather than asserted.
