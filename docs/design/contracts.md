@@ -821,6 +821,16 @@ six per-term bounds, the appeal ceiling, and the role × primitive table. Added 
 deliberate extension of this section for the reason §2.8, §2.9 and §2.10 are — a number a balance
 sweep turns belongs in content and inside `contentRevision`.
 
+**Two scalars here are about a different choice**, and they are named `goal-*` rather than
+`target-*` for it: `goal-affiliate-first-opportunity` and `goal-affiliate-transfer-opportunity`
+price the `affiliate` goal itself. They are two rather than one because the rules name two
+operations — `completeAffiliation` and `changeAffiliation` — and only the first unlocks anything:
+an unaffiliated mage may neither scribe nor ward, so getting a first university is a capability
+gate, while moving between universities is a preference about library depth. The loader requires
+the first to be **strictly the larger**, so the design statement survives a tuning edit. The rest of
+goal scoring is still the tables in `rules-world`'s `terms.ts`; these two are content because they
+are the two the balance harness will turn first.
+
 **Two kinds of record share the file.** A **scalar** declares neither `role` nor `primitive` and is
 read by name; the set of scalar ids is structural exactly as in §2.9, so the loader fails a set
 omitting a weight the rules read and equally one declaring a weight nothing reads. A **role-appeal

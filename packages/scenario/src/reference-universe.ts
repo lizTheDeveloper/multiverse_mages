@@ -653,42 +653,8 @@ export function buildReferenceState(input: {
     vellum: STARTING_MATERIALS,
   });
 
-  const library = state.entities.create();
-  attachRecord(state, LIBRARY, library, { foundedTick: 0 });
-  const university = state.entities.create();
-  attachRecord(state, UNIVERSITY, university, {
-    libraryId: library,
-    capacity: ACADEMY_CAPACITY,
-    // Complete at tick zero, and still the right call now that construction is
-    // built. The sentence that used to be here — *the construction mechanic that
-    // would finish it is not built* — was true when it was written and is not
-    // any more: laborers raise buildings from the world loop as of W29. What
-    // stands is the other half of the argument. An academy still under
-    // construction would carry no students and no scriptorium, so a universe
-    // founded on one would spend its first years unable to teach or write, and
-    // every knowledge measurement in the reference run would be measuring the
-    // opening delay instead of the mechanism.
-    //
-    // A universe therefore builds nothing at all unless the god funds a site.
-    // That is not a gap: it is what gives `fundUniversity` a marginal value it
-    // did not have when nothing could finish what it founded.
-    buildProgress: FP_ONE,
-  });
-  // The academy stands in a *kind of country* — a relationship, which is what
-  // `vision.md` §7a says world scale is made of, and not a coordinate, which is
-  // what it forbids. Sited here rather than left to the first tick because a
-  // starting position is exactly the thing a scenario owns, and because
-  // `academySiteKind` has to be able to differ between two otherwise identical
-  // universes for the divergence this change claims to be measurable at all.
-  //
-  // `defaultSiteKind` is handed the *endowment* rather than the holdings: the
-  // first world tick has not run, so no `territory-holding` row exists yet, and
-  // the endowment is what those rows will be materialized from.
-  const siteKind =
-    options.academySiteKind !== 0
-      ? options.academySiteKind
-      : defaultSiteKind(content.deps.territoryKinds, content.deps.territoryKinds);
-  if (siteKind !== 0) siteUniversity(state, university, siteKind);
+  // W183 REMOVAL PROBE: the founding academy is deleted. Not for merge.
+  void LIBRARY; void UNIVERSITY; void defaultSiteKind; void siteUniversity; void ACADEMY_CAPACITY;
 
   const { speciesOf, ids } = speciesTable(content.registry);
   // Zero means every species; see DEFAULT_FOUNDING_SPECIES_MASK. Refused rather
@@ -727,7 +693,7 @@ export function buildReferenceState(input: {
         state,
         MAGE,
         mage,
-        createMage(rng, mage, species, speciesId, -species.maturityMonths, university),
+        createMage(rng, mage, species, speciesId, -species.maturityMonths, 0 as EntityHandle),
       );
       founders.push(mage);
     }

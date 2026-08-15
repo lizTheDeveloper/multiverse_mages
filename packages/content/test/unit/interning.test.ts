@@ -395,7 +395,26 @@ describe('contentRevision', () => {
     //
     // Neither side's literal is a digest over a preimage holding both, so the
     // value below was **re-measured from the merged tree**.
-    expect(registry.contentRevision).toBe('158fa287ad4ac368546cd65060968024');
+    //
+    //
+    // 162f80bf169296d0e5fd516cc3c5257a -> f49b406d509a1d0e0ed4e152f7b90fb5 (on this branch,
+    // before the merge below: b37b15fc7f882af127057304f72a7522),
+    // when `affiliate` stopped being priced with one number. Two autonomy
+    // weights were added — the opportunity a mage with no university sees in
+    // getting one, and the much smaller opportunity a mage who has one sees in
+    // moving to a deeper one. In the preimage for the plainest possible reason:
+    // they change which goal a mage picks, and two universes that disagreed
+    // about whether their mages join institutions would not be playing the same
+    // game for five minutes. Unlike the god constants above, this one **does**
+    // change every run from its first year, and the balance baselines it moves
+    // are reported in the change that added it rather than regenerated.
+    //
+    // Union again, and the third one in this list: `apply-magic`'s two scalars
+    // and W116's two affiliation weights were authored on separate branches and
+    // meet here. Neither literal above is a digest over a preimage holding both
+    // pairs, so neither is a competing claim about this tree — the value below
+    // is the union arriving.
+    expect(registry.contentRevision).toBe('PROBE');
   });
 
   it('is stable across loads of identical content', () => {

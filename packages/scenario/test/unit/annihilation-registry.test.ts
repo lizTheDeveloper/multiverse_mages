@@ -126,6 +126,17 @@ const REGISTERED: ReadonlyMap<string, string> = new Map([
       'the intent, this is the line that says so.',
   ],
 
+  [
+    'capital:applyLibraryUpkeep',
+    'A genuine floor with no banking, declared at the site: "a shortfall ' +
+      'smaller than one instance\'s worth costs nothing this tick", because ' +
+      'banking it would need a pending-degradation field §1.5 does not have. ' +
+      'DEGRADATION_PER_SHORTFALL is 32, so that is the threshold. **Newly ' +
+      'reached rather than newly written** — W116 gave `completeAffiliation` a ' +
+      'caller, and a universe whose mages actually join universities is the ' +
+      'first one to keep libraries deep enough to owe upkeep it cannot pay.',
+  ],
+
   // ---- Handled at the site. ----
   [
     'worship:laggedWorship',

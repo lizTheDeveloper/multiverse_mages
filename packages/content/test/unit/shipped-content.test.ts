@@ -79,7 +79,12 @@ describe('shipped content', () => {
       // — they price what applied work makes and eats, not what a role wants —
       // and both are in `REQUIRED_AUTONOMY_WEIGHTS`, so the loader checks the
       // set in both directions exactly as it does for the target weights.
-      autonomyWeights: 38,
+      //
+      // Forty since W116 added the two `goal-affiliate-*` opportunities beside
+      // them. Both pairs are scalars in the same file for the same reason, and
+      // they arrived on separate branches — see `interning.test.ts` for the
+      // revision digest that union produces.
+      autonomyWeights: 40,
     });
   });
 
