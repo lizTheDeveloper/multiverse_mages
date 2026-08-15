@@ -672,10 +672,16 @@ function chooseIntent(
 
   // 1. Leave, while leaving is still possible. The stranded-raider rule makes
   //    this the difference between a live mage and a dead one.
-  if (
-    isAttacker &&
-    raid.engagement.raid.portalStability <= raid.tuning.withdrawStabilityMargin
-  ) {
+  //
+  // Keyed on **how long she has been here**, not on what is left of the portal.
+  // The stability form was measured dead: a portal opens with 2,411–3,577
+  // engagement ticks of life and the longest raid observed is 148, so the
+  // window opened thousands of ticks after every raid had ended. Over 97 raids
+  // on four seeds, 169 raiders went out, **0 came back and 169 were stranded**.
+  // Retuning the old threshold could not have fixed it — `portalStabilityJitter`
+  // is ±600 ticks, so any absolute remaining-stability figure fires at a tick
+  // that varies by twelve hundred, which is longer than any raid runs.
+  if (isAttacker && tick >= raid.tuning.withdrawAfterTicks) {
     return { kind: 'withdraw', goal: raid.portal };
   }
 
@@ -1165,9 +1171,24 @@ export function resolveRaid(raid: Raid, reason: RaidOutcome['reason']): RaidOutc
   const exposures = exposedNodes(raid.host, raid.exposure);
   movements.push(...exposureMovements(exposures));
 
+  // The three counts `RaidOutcome` documents. Summed in the walk below rather
+  // than in a second pass, so they cannot describe a different roster than the
+  // casualties do.
+  let raidersFielded = 0;
+  let raidersWithdrawn = 0;
+  let raidersStranded = 0;
+
   for (const roster of raid.rosters) {
     for (const brief of roster.briefs) {
       const dead = !isAlive(raid, brief);
+      if (
+        brief.side === RAID_SIDE.attacker &&
+        brief.sourceKind === COMBATANT_SOURCE_KIND.mage
+      ) {
+        raidersFielded += 1;
+        if (brief.withdrawn && !dead) raidersWithdrawn += 1;
+        else if (!dead) raidersStranded += 1;
+      }
       // The stranded-raider rule. An attacker still on the field when the
       // portal collapses is lost with it, and takes everything she was carrying.
       //
@@ -1227,6 +1248,9 @@ export function resolveRaid(raid: Raid, reason: RaidOutcome['reason']): RaidOutc
     primitiveApplication: raid.ledger.primitiveApplication(),
     actionEconomy: raid.economy.report(engagementTickOf(raid)),
     peakCombatants: raid.ledger.peakCombatants,
+    raidersFielded,
+    raidersWithdrawn,
+    raidersStranded,
     favorSpentByDefender: raid.purse.defenderSpent,
     visSpentByAttacker: raid.purse.attackerSpent,
     // Unspent Vis is captured when the raiders do not come home with it, and
@@ -1325,10 +1349,9 @@ export function currentPhase(raid: Raid): EngagementPhaseValue {
   return phaseOf({
     engagementTick: engagementTickOf(raid),
     contactTick: raid.contactTick,
-    portalStability: raid.engagement.raid.portalStability,
     allObjectivesResolved: allObjectivesResolved(raid.objectives),
     musterCeilingTicks: raid.tuning.musterCeilingTicks,
-    resolutionStabilityMargin: raid.tuning.resolutionStabilityMargin,
+    resolutionOnsetTicks: raid.tuning.resolutionOnsetTicks,
   });
 }
 

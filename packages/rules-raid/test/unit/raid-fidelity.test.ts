@@ -321,7 +321,7 @@ describe('under the shipped constants, no raider comes home', () => {
       defenders: [{ name: 'Warden', nodes: [FIRE] }],
       hostShelves: [SHELVED, FIRE],
       seed: 42,
-      tuningOverride: { withdrawStabilityMargin: 4_000_000 },
+      tuningOverride: { withdrawAfterTicks: 0 },
     });
 
     expect(result.fates.some((fate) => fate.withdrew)).toBe(true);

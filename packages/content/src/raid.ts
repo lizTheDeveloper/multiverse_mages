@@ -113,7 +113,7 @@ export const REQUIRED_RAID_CONSTANTS: readonly string[] = Object.freeze([
   'portal-margin',
   'portal-stability-initial',
   'portal-stability-jitter',
-  'resolution-stability-margin',
+  'resolution-onset-ticks',
   'rival-foreign-book-count',
   'rival-raider-count',
   'rival-raider-node-count',
@@ -138,7 +138,7 @@ export const REQUIRED_RAID_CONSTANTS: readonly string[] = Object.freeze([
   'verb-ward-cost',
   'verb-ward-magnitude',
   'victory-threshold-fraction',
-  'withdraw-stability-margin',
+  'withdraw-after-ticks',
 ]);
 
 /** Radii that must fit inside the spatial index's cell, so a query stays nine cells. */

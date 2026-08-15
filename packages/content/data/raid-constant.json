@@ -31,7 +31,7 @@
     "id": "max-summons-per-side",
     "value": 8,
     "unit": "count",
-    "gloss": "Summons one side may hold at once. A summon over the cap is a no-op, never a queued request — a queue is an unbounded structure wearing a cap's clothes. MUST EQUAL primitive.json's `summon` cap, which clamps the stacked magnitude while this bounds the roster; the loader refuses a set where they disagree. They read 16 and 8 until 0.4.0. Both now say 8, the lower — no spec names a number, and too tight reads as weak summoning while too loose reads as a raid nobody can follow.",
+    "gloss": "Summons one side may hold at once. A summon over the cap is a no-op, never a queued request \u2014 a queue is an unbounded structure wearing a cap's clothes. MUST EQUAL primitive.json's `summon` cap, which clamps the stacked magnitude while this bounds the roster; the loader refuses a set where they disagree. They read 16 and 8 until 0.4.0. Both now say 8, the lower \u2014 no spec names a number, and too tight reads as weak summoning while too loose reads as a raid nobody can follow.",
     "tuningStatus": "untuned"
   },
   {
@@ -259,10 +259,10 @@
     "tuningStatus": "untuned"
   },
   {
-    "id": "withdraw-stability-margin",
-    "value": 409600,
-    "unit": "raw",
-    "gloss": "Remaining portal stability below which a raider starts scoring withdrawal above everything else. fp(400) of raw stability, about 400 ticks at the authored decay. The stranded-raider rule makes this the difference between a live mage and a dead one, and it is the number most likely to need softening.",
+    "id": "withdraw-after-ticks",
+    "value": 40,
+    "unit": "ticks",
+    "gloss": "Engagement ticks a raider stays before she starts scoring withdrawal above everything else. Elapsed ticks, not remaining portal stability: measured, the portal opens with 2,411-3,577 ticks of life against raids of p50 64 and max 148, so the old fp(400) remaining-stability window opened thousands of ticks after every raid had ended - 0 of 169 raiders withdrew across 97 raids. Retuning could not fix it; portal jitter alone is +/-600 ticks. See scripts/w182-withdrawal.mjs.",
     "tuningStatus": "untuned"
   },
   {
@@ -329,10 +329,10 @@
     "tuningStatus": "untuned"
   },
   {
-    "id": "resolution-stability-margin",
-    "value": 614400,
-    "unit": "raw",
-    "gloss": "Portal stability at or below which the engagement is in its resolution phase and the player has no verbs left. fp(600), so the last six hundred ticks of a two-to-three-thousand tick raid. Deliberately a separate constant from withdraw-stability-margin even though both are stability thresholds: one decides when a raider runs for the door, the other decides when the god stops being able to help, and tying them would make a balance change to either silently retune the other.",
+    "id": "resolution-onset-ticks",
+    "value": 96,
+    "unit": "ticks",
+    "gloss": "Engagement tick at or after which the raid is in its resolution phase and the player has no verbs left. Elapsed ticks for the same reason withdraw-after-ticks is, and it carried the same falsehood: fp(600) of remaining stability glossed as the last six hundred ticks of a two-to-three-thousand tick raid, against raids of p50 64. Resolution was a phase no raid entered. Kept a separate constant so a change to either does not silently retune the other.",
     "tuningStatus": "untuned"
   },
   {

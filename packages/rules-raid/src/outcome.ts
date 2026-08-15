@@ -178,6 +178,31 @@ export interface RaidOutcome {
   readonly peakCombatants: readonly [number, number];
 
   /**
+   * **Did anybody come home?** Mage raiders only — summons and detachments are
+   * not people this universe gets back.
+   *
+   * Three counts rather than one rate, because the interesting failure is a
+   * denominator: `raidersFielded` is what the attacker sent, `raidersWithdrawn`
+   * is what reached the portal alive, and `raidersStranded` is what
+   * `raid.ts`'s stranded-raider rule took. The remainder — fielded less the
+   * other two — is what died fighting, which is a different kind of loss and
+   * must not be folded in with the ones the timer killed.
+   *
+   * Added because the withdrawal rule was measured as **dead** and nothing in
+   * the record could show it: `localCasualties` counted the bodies without
+   * distinguishing a mage killed in a fight from a mage the portal ate, so a
+   * withdrawal threshold that never once fired read exactly like one that fired
+   * and was survived. That is the same shape as the `bySource: {}` blindness
+   * `RaidRecord.actionEconomy` was added to close — a live mechanic and an
+   * instrument structurally incapable of seeing it.
+   */
+  readonly raidersFielded: number;
+  /** Mage raiders that reached the portal alive and went home. */
+  readonly raidersWithdrawn: number;
+  /** Mage raiders alive at resolution but not withdrawn, and therefore lost. */
+  readonly raidersStranded: number;
+
+  /**
    * Favor the defending god spent on raid verbs (`raid-engagement.md` §3).
    *
    * Settled here rather than debited during the raid, for the reason every

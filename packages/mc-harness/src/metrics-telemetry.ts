@@ -212,6 +212,19 @@ export interface RaidObservation {
   readonly attackerTempoCostWorldTicks: number;
 
   /**
+   * The attacking side's mages: sent, brought home, and lost to the timer.
+   *
+   * Attacker-relative whichever side the observing universe was on, matching
+   * {@link RaidObservation.combatSources}. Three counts and not a rate: a
+   * withdrawal rule that never fires and one that fires and is survived produce
+   * the same casualty total, and telling them apart is the whole reason these
+   * are here.
+   */
+  readonly raidersFielded: number;
+  readonly raidersWithdrawn: number;
+  readonly raidersStranded: number;
+
+  /**
    * Per-primitive action economy, ascending by `source`.
    *
    * Required rather than optional, for the reason the module opens with:

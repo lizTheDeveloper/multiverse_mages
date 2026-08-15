@@ -134,6 +134,17 @@ export interface RaidRecord {
   readonly reason: number;
   /** Mages this universe lost, permanently. */
   readonly localCasualties: number;
+  /**
+   * The attacking side's mages: sent, brought home, and lost to the timer.
+   *
+   * **Raid-relative, not local-relative**, for the same reason
+   * {@link RaidRecord.actionEconomy} is: they are the attacker's numbers
+   * whichever side this universe was on, and re-orienting them here would put
+   * arithmetic on a record whose job is to carry numbers unmodified.
+   */
+  readonly raidersFielded: number;
+  readonly raidersWithdrawn: number;
+  readonly raidersStranded: number;
   /** Nodes that left this universe entirely — every instance destroyed. */
   readonly nodesLostLocally: number;
   /** Nodes this universe's raiders carried home. */
@@ -470,6 +481,9 @@ function resolveOneRaid(input: {
     victor: outcome.victor,
     reason: outcome.reason,
     localCasualties,
+    raidersFielded: outcome.raidersFielded,
+    raidersWithdrawn: outcome.raidersWithdrawn,
+    raidersStranded: outcome.raidersStranded,
     // `nodesLostByHost` is the host's loss and `nodesGainedByRaider` the
     // attacker's gain, both computed by the write-back rather than by
     // `resolveRaid`, which hardcodes both to `[]`.

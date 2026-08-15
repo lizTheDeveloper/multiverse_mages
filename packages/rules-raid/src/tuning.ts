@@ -73,14 +73,21 @@ export interface RaidTuning {
   readonly objectiveInteractionRadius: Fixed;
   readonly objectiveProgressPerTick: Fixed;
   readonly portalMargin: Fixed;
-  /** Remaining stability below which withdrawal outscores everything. Raw. */
-  readonly withdrawStabilityMargin: number;
+  /**
+   * Engagement ticks a raider stays before withdrawal outscores everything.
+   *
+   * Elapsed ticks, not remaining stability. The stability form was measured dead
+   * — see the constant's gloss and `scripts/w182-withdrawal.mjs` — because the
+   * portal outlives the raid by a factor of twenty and its jitter is wider than
+   * any raid is long.
+   */
+  readonly withdrawAfterTicks: number;
 
   // ---- The engagement's three phases (`raid-engagement.md` §2). ----
   /** Engagement tick muster ends on regardless of contact. Ticks. */
   readonly musterCeilingTicks: number;
-  /** Stability at or below which the raid is watch-only. Raw. */
-  readonly resolutionStabilityMargin: number;
+  /** Engagement tick at or after which the raid is watch-only. Ticks. */
+  readonly resolutionOnsetTicks: number;
 
   // ---- The raid verb set (`raid-engagement.md` §3). All fp. ----
   /** Favor the defender pays to forbid mid-raid. */
@@ -173,10 +180,10 @@ export function readRaidTuning(source: RaidConstantSource): RaidTuning {
     objectiveInteractionRadius: at('objective-interaction-radius'),
     objectiveProgressPerTick: at('objective-progress-per-tick'),
     portalMargin: at('portal-margin'),
-    withdrawStabilityMargin: at('withdraw-stability-margin'),
+    withdrawAfterTicks: at('withdraw-after-ticks'),
 
     musterCeilingTicks: at('muster-ceiling-ticks'),
-    resolutionStabilityMargin: at('resolution-stability-margin'),
+    resolutionOnsetTicks: at('resolution-onset-ticks'),
 
     verbForbidCost: at('verb-forbid-cost'),
     verbPermitCost: at('verb-permit-cost'),
