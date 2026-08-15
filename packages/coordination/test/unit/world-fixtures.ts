@@ -34,7 +34,7 @@ import {
   attachRecord,
   createUniverse,
 } from '@mm/state';
-import type { AcquirePolicy, CellResolver, NodeCatalog, StorePolicy } from '@mm/rules-magic';
+import type { AcquirePolicy, ExclusionResolver, NodeCatalog, StorePolicy } from '@mm/rules-magic';
 import {
   KnowledgeSubsystem,
   MagicGrid,
@@ -112,7 +112,7 @@ export function scribingTraditionId(): number {
 }
 
 /** The node catalog and the grid's node-to-cell addressing. */
-export function catalogAndCells(): { catalog: NodeCatalog; cells: CellResolver } {
+export function catalogAndCells(): { catalog: NodeCatalog; cells: ExclusionResolver } {
   const grid = MagicGrid.from(registry());
   return { catalog: catalogFromRegistry(registry()), cells: grid };
 }
