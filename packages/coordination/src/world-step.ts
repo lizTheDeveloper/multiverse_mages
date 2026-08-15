@@ -178,6 +178,8 @@ import {
 
 import type { UniverseEconomyBonuses, UniverseEffectIndex } from './universe-effects.js';
 import { NO_ECONOMY_BONUSES, universeEconomyBonuses } from './universe-effects.js';
+import type { VitalityBonuses, VitalityIndex } from './knowledge-vitality.js';
+import { NO_VITALITY_BONUSES, lifespanBonusesFor, vitalityBonuses } from './knowledge-vitality.js';
 import type { LibraryCapital } from './capital.js';
 import { libraryCapital } from './capital.js';
 import { EffortLedger } from './effort-store.js';
@@ -279,6 +281,17 @@ export interface WorldStepDeps {
    * a thing a test can assert against rather than a silent degradation.
    */
   readonly universeEffects?: UniverseEffectIndex | undefined;
+  /**
+   * The wire from knowledge to bodies: `lifespan` and `fertility`.
+   *
+   * Sibling of {@link WorldStepDeps.universeEffects} and optional for the same
+   * reason — a world built for a knowledge test need not supply one, and its
+   * absence is exactly the inert behaviour this wire replaced, which is a thing
+   * a test can assert against rather than a silent degradation. Absent means
+   * `fertilityBonuses: []` and a mage's `lifespan` coming from god blessings
+   * alone, which is what every build before it did.
+   */
+  readonly vitality?: VitalityIndex | undefined;
   /**
    * What a month of applied magic makes and what it eats, read from content.
    *
@@ -410,6 +423,19 @@ export interface WorldStepReport {
    * bonus list nobody noticed was empty for three releases.
    */
   readonly economicNodes: number;
+  /**
+   * Contributions that reached a **body** this tick: `lifespan` and `fertility`
+   * magnitudes from castable, permitted knowledge.
+   *
+   * The sibling of {@link WorldStepReport.economicNodes}, emitted for the same
+   * reason. Both primitives were declared exclusions in the consumption check
+   * until `knowledge-vitality.ts`, and under v1 content this figure is **zero**
+   * on every tick — every node authoring either sits outside the twelve enabled
+   * cells, so `permits()` refuses it. A zero here and a zero in the birth rate
+   * therefore mean different things, and without this counter they would look
+   * the same.
+   */
+  readonly vitalityContributions: number;
   /**
    * `build-rate` magnitudes reaching construction this tick.
    *
@@ -675,6 +701,15 @@ export function worldSystem(
               ruleset,
             });
 
+      // The same shape, one primitive pair over: what the universe's castable,
+      // permitted knowledge is worth to its bodies rather than to its economy.
+      // Read here, beside the economy, because both are functions of the tick's
+      // ruleset and both are memoized on the state object.
+      const vitality: VitalityBonuses =
+        deps.vitality === undefined
+          ? NO_VITALITY_BONUSES
+          : vitalityBonuses(state, { index: deps.vitality, cells: deps.cells, ruleset });
+
       // Labour is exclusive between the fields and the building sites, so the
       // split is decided once, here, before either phase spends it.
       // The opening stone is read before production because a crew is hired at
@@ -810,6 +845,7 @@ export function worldSystem(
         gateway: gatewayFor(),
         efforts,
         deps,
+        vitality,
       });
 
       // ---- 4. Promotion -----------------------------------------------------
@@ -861,7 +897,7 @@ export function worldSystem(
             worldTick,
             speciesOf: deps.speciesOf,
             effectiveLifespanOf: (handle, record, species) =>
-              lifespanMonths(state, handle, record, species, deps),
+              lifespanMonths(state, handle, record, species, deps, vitality),
             materials: stockAtDecisionTime,
             scribeThroughputOf: (universityId) =>
               scribeThroughputFor(state, universityId, staffedBy, cohorts, deps),
@@ -936,6 +972,7 @@ export function worldSystem(
         worldTick,
         brake: fertilityBrake(cohorts.totalCount(), capacity),
         deps,
+        fertility: vitality.fertility,
       });
 
       // ---- 8a. Construction ---------------------------------------------------
@@ -1003,6 +1040,7 @@ export function worldSystem(
         remainingByKind: closing,
         shortKinds: consumption.shortKinds,
         economicNodes: economy.contributingNodes,
+        vitalityContributions: vitality.contributingNodes,
         buildRateSources: economy.buildRate.length,
         buildRateMagnitudes: economy.buildRate,
         buildProgressAdded: construction.progressAdded,
@@ -1336,6 +1374,17 @@ interface MortalityPhase {
   readonly gateway: CoordinatingKnowledgeGateway;
   readonly efforts: EffortLedger;
   readonly deps: WorldStepDeps;
+  /**
+   * This tick's `lifespan` contributions from knowledge, gathered once at the
+   * top of the step under the tick's ruleset.
+   *
+   * Passed rather than re-read, so that a hazard roll cannot be taken against a
+   * different reading from the one the rest of the tick saw — `vitalityBonuses`
+   * memoizes on the state and would agree, but a value that is *handed over*
+   * cannot disagree, and a mage's death is the worst place to discover that it
+   * could.
+   */
+  readonly vitality: VitalityBonuses;
 }
 
 /**
@@ -1357,7 +1406,7 @@ function killTheDead(
     if (row.alive === 0) continue;
     const species = phase.deps.speciesOf(row.speciesId);
     if (species === undefined) continue;
-    const months = lifespanMonths(state, handle, row, species, phase.deps);
+    const months = lifespanMonths(state, handle, row, species, phase.deps, phase.vitality);
     const dies = rollMortality(phase.rng, handle, {
       worldTick: phase.worldTick,
       birthTick: row.birthTick,
@@ -1786,6 +1835,14 @@ interface BirthPhase {
   readonly worldTick: number;
   readonly brake: Fixed;
   readonly deps: WorldStepDeps;
+  /**
+   * `fertility` magnitudes from castable, permitted knowledge, unstacked.
+   *
+   * Handed in rather than gathered here, because the gather is memoized on the
+   * state and the same reading is the one the rest of the tick saw. Empty is
+   * the ordinary case and the only case under v1 content.
+   */
+  readonly fertility: readonly Fixed[];
 }
 
 /**
@@ -1815,7 +1872,7 @@ function deliverBirths(cohorts: CohortStore, phase: BirthPhase): number {
       count: entry.count,
       fertility: species.fertility,
       fertilityPrimitive: phase.deps.primitives.fertility,
-      fertilityBonuses: [],
+      fertilityBonuses: phase.fertility,
       brake: phase.brake,
     });
     if (count > 0) {
@@ -1857,6 +1914,7 @@ function lifespanMonths(
   row: MageRecord,
   species: SpeciesRecord,
   deps: WorldStepDeps,
+  vitality: VitalityBonuses,
 ): number {
   return effectiveLifespan({
     species,
@@ -1864,10 +1922,26 @@ function lifespanMonths(
     birthTick: row.birthTick,
     rootSeed: state.rootSeed,
     lifespanPrimitive: deps.primitives.lifespan,
-    // `god-agency` issues these now — a blessing contributes to `lifespan`
-    // through the shared stacking arithmetic — but only when a god was
-    // installed. Empty stays the ordinary case for a world without one.
-    effectMagnitudes: deps.lifespanEffectsFor?.(state, state.clock.worldTick, mage) ?? [],
+    // Two sources, **one list**, because `contracts.md` §3's cap bounds the
+    // stack rather than each contributor: a god's blessing and a mage's own
+    // extension magic share one `additive` fold and one
+    // `fraction-of-species-base` ceiling. Capping them separately would be two
+    // ceilings on one quantity, which is the arithmetic
+    // `mages-and-species/design.md` rejects by name.
+    //
+    // `god-agency` issues the first — a blessing contributes to `lifespan` —
+    // but only when a god was installed. The second is `knowledge-vitality.ts`:
+    // `target: "self"` nodes the mage can cast, plus `target: "universe"` ones
+    // anybody in the universe can. Both are empty in the ordinary case, and the
+    // second is empty in every v1 universe, because no v1 node authors the
+    // primitive.
+    //
+    // `vitalityBonuses` is memoized on the state object, so this is the same
+    // reading the birth phase took and costs one `WeakMap` hit.
+    effectMagnitudes: [
+      ...(deps.lifespanEffectsFor?.(state, state.clock.worldTick, mage) ?? []),
+      ...lifespanBonusesFor(vitality, mage),
+    ],
   }).months;
 }
 
