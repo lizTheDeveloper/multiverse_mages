@@ -9004,3 +9004,62 @@ Probed on the merged tree at the 2400-tick reference horizon:
 **So the remaining work is one seam, and it is much smaller than the design implies:** unmask actions
 1–4 during engagement and route them to `applyDirective`. That closes the repealed-§4.2 hole and the
 `ui/raid` synthetic-trace hole together.
+
+## W179 — main's required checks are green; the run says `failure` because three non-required jobs fail
+
+**Correction, and it is the exact trap this document has a section about.** I read `gh run list`'s
+run-level conclusion for `main` — `failure` at `be446a6` and at the two commits before it — and said
+main's Verify was failing. It is not. **`Verify (pinned Node)` passed.** So did `Next Node major`. The
+run conclusion is `failure` because three jobs that are deliberately *not required to merge* fail:
+
+| job | result |
+|---|---|
+| `Verify (pinned Node)` — **required** | **success** |
+| `ci/hetzner-lint` — **required** | (separate runner) |
+| Primitive consumption (non-blocking) | FAIL |
+| Rules-path reachability (non-blocking) | FAIL — **125** findings |
+| Balance gate, two hundred world years (not required) | FAIL |
+
+A run-level conclusion answers *"did every job pass"*, and the question was *"is main mergeable and
+sound"*. Those differ by design here — the non-blocking jobs exist precisely so they can be red
+without stopping work. **Read the required contexts, never the run conclusion.**
+
+### And a second probe that would have reported the opposite of the truth
+
+`gh api repos/…/branches/main/protection` returns **404 Branch not protected**. That is not what it
+means. Protection is implemented as a **ruleset** (`20666431`, "main protection", `enforcement=active`),
+which the classic branch-protection endpoint does not see. The positive control settled it — the token
+reports `admin: true`, so 404 is not a scope failure — and the ruleset carries exactly what
+`CLAUDE.md` claims: rules `deletion`, `non_fast_forward`, `pull_request`, `required_status_checks`,
+with required contexts **`Verify (pinned Node)`** and **`ci/hetzner-lint`**. `CLAUDE.md` is accurate;
+the obvious way to check it is not. **Query the rulesets endpoint.**
+
+### What is actually failing, and it is W176 coming true
+
+`balance-gate-ascension-v1` FAILs on four rows:
+
+| row | delta | SE |
+|---|---|---|
+| `referencePeakPopulation@passive-control` | +398.0 | **6.41** |
+| `referenceKnowledgeInstances@worship-maximizer` | −193.1 | −5.61 |
+| `referenceLivingMages@worship-maximizer` | −5.50 | −4.07 |
+| `referenceKnowledgeInstances@passive-control` | +187.1 | 3.27 |
+
+W176 recorded `referencePeakPopulation` sitting 2.30 SE from a 3.00 tolerance and predicted the next
+population nudge would trip it and look like its own fault. It tripped. **And the arm that moved most
+is `passive-control`** — a strategy that submits nothing. A passive arm moving is not a strategy
+result; it is the *world* changing underneath a baseline that was not re-recorded. #125 changed
+`world-step.ts` and re-recorded only the agency baseline, so ascension is measuring #125's drift and
+attributing it to nothing.
+
+**The fix is a re-record of `balance-gate-ascension-v1` against main's current code, not an
+investigation.** Held tonight: load average is **298** across 24 sessions, and a 200-world-year gate
+under that is a measurement of the machine.
+
+### The consumption failure names three primitives, and they are the three that matter
+
+`research-rate`, `scribe-rate`, `teach-rate` — **no node-driven consumer.** Those three govern the
+entire discover → teach → record loop, which is the loop the whole design is about. Nothing in 300
+authored nodes moves any of them. That is Task 12's shape (*a lever exists and nothing drives it*) at
+the centre of the game rather than at its edges, and it belongs ahead of any further balance work,
+because a baseline over a loop whose three rates are inert is a baseline over a constant.
