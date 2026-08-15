@@ -115,7 +115,6 @@ function stateHolding(
     locationId: holder,
     mastery: overrides.mastery ?? FP_ONE,
     acquiredTick: 0,
-    lastUsedTick: 0,
   });
   return state;
 }
@@ -262,7 +261,6 @@ function runWith(
         locationId: mage,
         mastery: FP_ONE,
         acquiredTick: 0,
-        lastUsedTick: 0,
       });
     }
   }
@@ -420,6 +418,50 @@ describe('vision §4b: buying life never makes a species’ own lifespan irrelev
       expect(bought[index] as number).toBeGreaterThan(bought[index - 1] as number);
       expect(plain[index] as number).toBeGreaterThan(plain[index - 1] as number);
     }
+  });
+
+  /**
+   * ## What a negative magnitude means, decided rather than left to fall out
+   *
+   * Signed effect magnitudes are being built in parallel, so a negative
+   * authored `lifespan` is a thing that will exist. `contracts.md` §3 caps this
+   * primitive above and deliberately not below, and `caps.ts` states the
+   * consequence in as many words: *"a magnitude below it — including a negative
+   * one from a debuff — is left exactly as it is."*
+   *
+   * The decision, written down here because it is the kind of rule that is
+   * easier to assert than to rediscover: **a curse is not bounded by the
+   * ceiling that bounds a blessing.** A blessing may buy half a species' base
+   * again and no more; a curse may take a mage's whole life. The only floor is
+   * `MIN_EFFECTIVE_LIFESPAN_MONTHS`, and it exists to keep `perLifespanRate`'s
+   * division defined, not to protect anybody — a mage cursed past her own base
+   * dies next month, which is what a curse is.
+   *
+   * This is asymmetric on purpose and the asymmetry is the design: §4b's
+   * argument is about *buying* life, and nothing in it says that unmaking a
+   * life should be equally hard.
+   */
+  it('does not clamp a curse, and floors it only where the arithmetic breaks', () => {
+    const human = speciesNamed('human');
+
+    // Half the base again, negated. The ceiling is one-sided, so it does not
+    // touch this — the mage simply loses half her life.
+    const cursed = bonusFor('human', [-1024 * 480]);
+    expect(cursed.clamped).toBe(false);
+    expect(cursed.bonusMonths).toBe(-480);
+    expect(cursed.months).toBe(human.lifespanMonths - 480 + cursed.varianceMonths);
+    expect(cursed.floored).toBe(false);
+
+    // Past her whole base, and the floor is the only thing that catches it.
+    const doomed = bonusFor('human', [-1024 * 100_000]);
+    expect(doomed.floored).toBe(true);
+    expect(doomed.months).toBe(1);
+
+    // And a blessing and a curse still share one additive fold, so they cancel
+    // rather than each getting its own channel.
+    const bothWays = bonusFor('human', [1024 * 300, -1024 * 300]);
+    expect(bothWays.bonusMonths).toBe(0);
+    expect(bothWays.months).toBe(human.lifespanMonths + bothWays.varianceMonths);
   });
 
   it('records what the shipped content actually buys, which is two months', () => {
