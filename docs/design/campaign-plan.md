@@ -9178,3 +9178,67 @@ outside their own tests. The reachability check reports **125 findings** and is 
 **The mechanisms are built. The wiring is not.** That is the whole of the integration debt, and it is why
 baselines taken now describe a game that is mostly not running — a measurement over an inert subsystem
 is a measurement of a constant. Fixing callers outranks refining numbers until the count comes down.
+
+## W182 — two campaigns were building the same wire, and w24 is the piece w119 needed
+
+**A second campaign is running, and it is ahead of mine on the same ground.** Branches
+`campaign/signed-magnitudes`, `campaign/combined` and `campaign/breaker` already carry
+`packages/coordination/src/academic-effects.ts` — the node-driven consumer W180 said was missing —
+plus `libraryRateMultiplier` and the `self` / `single` / `universe` routing. I had launched an agent to
+build it; it was redirected to review and land instead. **Check the worktree list before commissioning
+work.** Fifty-odd worktrees exist and `git worktree list` sorted by last commit answers *"is someone
+already on this"* in one command.
+
+That campaign also **corrects W180's phrasing**: `research-rate` and `teach-rate` *were* consumed, via
+`coordination/god/effects`. What was missing is a **node-driven** consumer specifically, which is what
+`check:consumption` measures and what its failure text says. W180's headline holds — a mage could not
+learn to research, teach or scribe better — but "reach nothing" was looser than the evidence.
+
+### Its breaker found two bugs in the new wire, and one author decision
+
+- `academicRateBonuses` filtered `magnitude <= 0` rather than `=== 0`, silently dropping negative
+  magnitudes. Fixed at `4d836d2`.
+- **`universe-effects.ts` still guards `if (contribution.magnitude > 0)`** — the identical bug in the
+  sibling, untouched by that commit, so a negative `build-rate` is still swallowed.
+- **Author decision, not a defect:** `rules-world`'s `routeYieldByForm` clamps `Math.max(0, magnitude)`
+  before `resource-yield` reaches material routing, and `economy-kinds.test.ts` asserts negatives are
+  *"ignored rather than credited"*. That assertion predates signed magnitudes. Now that a node can
+  express a **cost**, a negative `resource-yield` is meaningful content colliding with a test written
+  when it was not.
+
+### w24 is the piece a start-with-no-university universe needs
+
+Checked rather than inferred: `coordination/src/god/interventions.ts:818` calls `siteUniversity` inside
+`fundPlan`'s `universityId === 0` branch — the god's found-a-university verb. `w24/university-siting`
+sites from `territoryHoldings` first and the **endowment** second, and its own comment names the W181
+case exactly: *"a university founded on the very first tick of a fresh universe is founded before the
+holdings materialize."* Without w24, that university **stands nowhere** — which the same comment says
+*"would make founding the one way to escape terrain entirely."*
+
+### Eight content/world branches current; three carry decisions, not merges
+
+`w27` and `w26` are **byte-identical to main** after merging it — superseded, deletion candidates.
+`w77`, `w78`, `w28` merged green. Three carry live decisions:
+
+- **`w20/compositional-content`: a direct invariant collision.** w20 gives four tier-1 Rego nodes
+  prerequisites for its track model; main's #82 asserts tier-1 ⟺ prerequisite-free. Also 7 failures
+  where w20's rule — *a `mode: 'control'` effect is a clamp, never a source* — means `rl-step-across`
+  (blink) and `rn-call-by-name` (summon) place nothing, which `castable-nodes`, `combat-knowledge` and
+  `raid-fidelity` all contradict. Either w20's fix or a content-authoring gap. **Not a merge decision.**
+- **`w24`** renumbered its migration 4→5 into 6→7 and moved `TERRITORY_HOLDING`/`UNIVERSITY_SITE` to the
+  end of `WORLD_COMPONENTS` — the union had left them where revision 5 would put them while their
+  migration said 7, which lines every older save against the wrong layouts. `WORLD_SCHEMA_VERSION` is 7.
+- **`w23` shipped two reconstructions, one in the rules path.** `materialsObligation` was rebuilt as
+  `subsistenceDemand(total) + upkeepOwed`, dropping w23's `applicationRationsOwed` term — **a number no
+  side ever ran, in the deterministic path.** Sent back to recover the real formula.
+
+**And the best catch in the batch, worth generalising:** on `w78` the agent first took main's `5×`
+books-to-depth bound, then noticed both sides had widened the same ratio by different mechanisms cutting
+the same denominator. Measured on the merged tree: **164 books / 25 distinct nodes = 6.56** — failing
+main's `5×` *and* w78's `6×`. Set to `8×` from the measurement. **Neither side's literal was right, and
+taking either would have shipped green and wrong.** That is W178's rule paying out.
+
+**Four branches moved `contentRevision`** (`w77 ac4f330b`, `w20 f7dd8054`, `w24 158fa287`,
+`w28 6ba14f8f`), so all three gates will fail on all four with a digest mismatch. Expected — but
+**nobody has confirmed the failure is the digest rather than something worse**, and that confirmation is
+owed before any of them lands.
