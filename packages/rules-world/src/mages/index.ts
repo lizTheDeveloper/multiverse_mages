@@ -63,15 +63,27 @@ export {
   rollPersonality,
 } from './personality.js';
 
+export {
+  BASE_CLASS_CAPACITY,
+  PREVALENCE_WHEN_UNAUTHORED,
+  classCapacityOf,
+  enrolmentFraction,
+  prevalenceOf,
+} from './enrolment.js';
+
 export type { PromotionOutcome } from './promotion.js';
 export { maxPromotableCount, promoteStudentCohort } from './promotion.js';
 
 export type { StepRng } from './rng.js';
 
 export {
+  ASSIGNABLE_MAGE_ROLES,
   DEFAULT_MAGE_ROLE,
   MAGE_ROLE_VALUES,
+  STUDENT_MAGE_ROLE,
   assignRole,
   changeAffiliation,
+  graduate,
   isMageRole,
+  isStudent,
 } from './roles.js';

@@ -23,15 +23,20 @@
 import type { ContentRegistry, PrimitiveRecord, SpeciesRecord } from '@mm/content';
 import { loadContent, shippedContentSource } from '@mm/content';
 import type { EntityHandle, SimState } from '@mm/sim-core';
-import { createState, rngFromRootSeed } from '@mm/sim-core';
+import { FP_ONE, createState, rngFromRootSeed } from '@mm/sim-core';
 import type { WorldSchema } from '@mm/sim-core';
 import {
+  KNOWLEDGE_INSTANCE,
+  LIBRARY,
+  LOCATION_KIND,
   MAGE,
   MAGE_ROLE,
   MATERIAL_STOCK,
   OCCUPATION,
   POPULACE_COHORT,
+  UNIVERSITY,
   attachRecord,
+  componentOf,
   createUniverse,
 } from '@mm/state';
 import type { AcquirePolicy, ExclusionResolver, NodeCatalog, StorePolicy } from '@mm/rules-magic';
@@ -195,11 +200,28 @@ export interface SeedOptions {
    * Art of Memory — see {@link scribingTraditionId} before assuming otherwise.
    */
   readonly traditionId?: number;
+  /**
+   * Whether to found one completed university with a library, seeded with a
+   * tier-1 book so that it has a curriculum.
+   *
+   * **Off by default, and the default is the conservative choice rather than the
+   * right one.** Since W193 enrolment requires a seat at a university that has
+   * something to teach — a universe with no university produces no new mages at
+   * all, which is the design (*"the more universities you have, the more latent
+   * magic users you can activate"*) turned into a hard edge. So a fixture with
+   * no university no longer exercises the enrolment phase.
+   *
+   * It is opt-in because most files in this package found their own
+   * institutions and a second, invisible one would change what they are
+   * measuring. `world-step.test.ts` asks for it, because its claim is that every
+   * phase reports work.
+   */
+  readonly withUniversity?: boolean;
 }
 
 /**
  * A universe with every shipped species present as laborers, students and
- * scribes, plus a handful of mages.
+ * scribes, plus a handful of mages — and, on request, one university.
  *
  * Deliberately not the group 9 reference scenario: that one is committed,
  * seeded with zero player input, and run for 200 world years. This is the
@@ -284,6 +306,46 @@ export function seededWorld(
         alive: 1,
       });
       mages.push(mage);
+    }
+  }
+
+  if (options.withUniversity === true) {
+    const library = state.entities.create();
+    attachRecord(state, LIBRARY, library, { foundedTick: 0 });
+    const university = state.entities.create();
+    attachRecord(state, UNIVERSITY, university, {
+      libraryId: library,
+      capacity: 64,
+      buildProgress: FP_ONE,
+    });
+    // The founding mages are its faculty. Without an affiliation the university
+    // has nobody who could teach, `hasCurriculum` is false, and enrolment
+    // refuses at the door — which is correct behaviour and a useless fixture.
+    const store = componentOf(state, MAGE);
+    store.forEach((_row, handle) => {
+      store.set(handle, 'universityId', university);
+    });
+
+    // **And one book, because faculty who hold nothing teach nothing.** The
+    // seeded mages arrive holding no knowledge instances at all, so the faculty
+    // half of `hasCurriculum` is false at tick zero and would stay false until
+    // somebody finished a research project — by which time the student cohorts
+    // have aged out of nothing in particular. An endowed shelf is what an
+    // institution is founded with, and it is the cheapest honest way to give
+    // this fixture a curriculum.
+    const { catalog } = catalogAndCells();
+    let endowed = 0;
+    for (let nodeId = 1; nodeId <= catalog.nodeCount && endowed < 1; nodeId += 1) {
+      if (catalog.node(nodeId)?.tier !== 1) continue;
+      const instance = state.entities.create();
+      attachRecord(state, KNOWLEDGE_INSTANCE, instance, {
+        nodeId,
+        locationKind: LOCATION_KIND.library,
+        locationId: library,
+        acquiredTick: 0,
+        mastery: 1024,
+      });
+      endowed += 1;
     }
   }
 

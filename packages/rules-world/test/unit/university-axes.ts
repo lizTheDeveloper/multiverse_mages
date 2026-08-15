@@ -136,6 +136,12 @@ function weights(researcher: number, warden: number, professor: number, raider: 
     [MAGE_ROLE.warden]: warden,
     [MAGE_ROLE.professor]: professor,
     [MAGE_ROLE.raider]: raider,
+    // Zero, always. W193 added `student` to `MAGE_ROLE`, and this lab seeds a
+    // university's *resident faculty* — a student is enrolled by the world loop
+    // against a seat, never allocated by a weight, and a non-zero entry here
+    // would put students in a harness that has no enrolment to have produced
+    // them.
+    [MAGE_ROLE.student]: 0,
   };
 }
 

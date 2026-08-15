@@ -104,6 +104,28 @@ function row(entries: Partial<Record<GoalId, Fixed>>): RoleBiasRow {
  *   negative on `scribe`. Somebody has to be unwilling to sit still, or the
  *   universe has no one to send through a portal.
  *
+ * - **student** is the fifth row and the sharpest one in the table. A student's
+ *   month is `seek-teaching` and nothing else worth naming: it is the only goal
+ *   she is raised toward, and every goal that would have her *produce* rather
+ *   than *receive* is pushed down — she does not teach, does not stand watch,
+ *   does not prepare for a raid, and does not spend the month casting at the
+ *   world. Self-directed research is discouraged but **not forbidden**, and the
+ *   asymmetry is deliberate: a student at a university whose faculty have
+ *   nothing left to give her should work it out for herself rather than idle,
+ *   and `-128` against `seek-teaching`'s `+384` says the classroom wins whenever
+ *   the classroom has anything to offer. `affiliate` leans negative because
+ *   graduation is what her transfer decision is supposed to wait for.
+ *
+ *   **Reading is inside `seek-teaching` and is not visible as a separate row.**
+ *   *"Reading books should be part of going through school. That's how you
+ *   learn. It's not just in your class."* The archive half of that arrives on
+ *   `w190/scribing-fidelity` (#170), which folds the shelf into `seek-teaching`
+ *   rather than taking a tenth goal id — so this row is already pointed at both
+ *   halves, and no bias entry changes when it lands. What #170 makes the shelf
+ *   is a **fallback** behind a living teacher, and that ordering is the one
+ *   thing here that is wrong for a student; `world-step.ts` says where the fix
+ *   belongs and why it is not made on this branch.
+ *
  * `apply-magic` is the ninth goal and **no role is for it**, which is a
  * statement rather than an omission: the god's four roles are all about
  * knowledge, and the one that leans toward applied work is the warden, because
@@ -139,6 +161,17 @@ export const ROLE_BIAS: Readonly<Record<MageRoleValue, RoleBiasRow>> = {
     [GOAL.wardDuty]: 128,
     [GOAL.scribe]: -128,
     [GOAL.teach]: -64,
+  }),
+  [MAGE_ROLE.student]: row({
+    [GOAL.seekTeaching]: 384,
+    [GOAL.researchNode]: -128,
+    [GOAL.rediscoverNode]: -128,
+    [GOAL.teach]: -384,
+    [GOAL.scribe]: -256,
+    [GOAL.wardDuty]: -384,
+    [GOAL.raidReadiness]: -384,
+    [GOAL.applyMagic]: -256,
+    [GOAL.affiliate]: -128,
   }),
 };
 

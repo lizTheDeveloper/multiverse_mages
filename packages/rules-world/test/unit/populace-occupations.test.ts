@@ -287,12 +287,13 @@ describe('allocation order is deterministic', () => {
   });
 });
 
-describe('demand comes from the four sources the spec names', () => {
+describe('demand comes from the sources the spec names', () => {
   it('turns construction backlog, the scribing queue, capacity, and the soldier target into headcount', () => {
     const demand = computeOccupationDemand({
       constructionBacklog: FP_ONE * 2,
       scribingQueueDepth: 7,
       universityCapacity: 60,
+      latentMagicUsers: 10_000,
       standingSoldierTarget: 25,
     });
 
@@ -302,11 +303,46 @@ describe('demand comes from the four sources the spec names', () => {
     expect(demand[OCCUPATION.soldier]).toBe(25);
   });
 
+  // W193. The defect this replaces was `[OCCUPATION.student]: universityCapacity`
+  // — intake was seats, so a universe's mage production was a property of its
+  // buildings and not of its people, and doubling the population changed nothing.
+  it('asks for the smaller of the seats it has and the people who could fill them', () => {
+    const seatBound = computeOccupationDemand({
+      constructionBacklog: 0,
+      scribingQueueDepth: 0,
+      universityCapacity: 60,
+      latentMagicUsers: 10_000,
+      standingSoldierTarget: 0,
+    });
+    expect(seatBound[OCCUPATION.student]).toBe(60);
+
+    const peopleBound = computeOccupationDemand({
+      constructionBacklog: 0,
+      scribingQueueDepth: 0,
+      universityCapacity: 60,
+      latentMagicUsers: 9,
+      standingSoldierTarget: 0,
+    });
+    expect(peopleBound[OCCUPATION.student]).toBe(9);
+  });
+
+  it('asks for no students at all in a population with none who could be mages', () => {
+    const demand = computeOccupationDemand({
+      constructionBacklog: 0,
+      scribingQueueDepth: 0,
+      universityCapacity: 1_000,
+      latentMagicUsers: 0,
+      standingSoldierTarget: 0,
+    });
+    expect(demand[OCCUPATION.student]).toBe(0);
+  });
+
   it('never demands idle — it is the residual, not a job', () => {
     const demand = computeOccupationDemand({
       constructionBacklog: FP_ONE,
       scribingQueueDepth: 3,
       universityCapacity: 10,
+      latentMagicUsers: 10,
       standingSoldierTarget: 4,
     });
     expect(demand[OCCUPATION.idle]).toBe(0);
@@ -318,6 +354,7 @@ describe('demand comes from the four sources the spec names', () => {
         constructionBacklog: 0,
         scribingQueueDepth: 0,
         universityCapacity: 0,
+        latentMagicUsers: 0,
         standingSoldierTarget: 0,
       }),
     ).toEqual(NO_DEMAND);
@@ -329,6 +366,7 @@ describe('demand comes from the four sources the spec names', () => {
         constructionBacklog: -1,
         scribingQueueDepth: 0,
         universityCapacity: 0,
+        latentMagicUsers: 0,
         standingSoldierTarget: 0,
       }),
     ).toThrow(RangeError);

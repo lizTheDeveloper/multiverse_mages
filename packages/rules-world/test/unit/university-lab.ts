@@ -589,6 +589,7 @@ export function runLab(scenario: LabScenario): LabReport {
     constructionBacklog: 0,
     scribingQueueDepth: 0,
     universityCapacity: 0,
+    latentMagicUsers: 0,
     standingSoldierTarget: world.standingSoldierTarget,
   });
 
@@ -693,6 +694,11 @@ export function runLab(scenario: LabScenario): LabReport {
       constructionBacklog: Math.max(0, FP_ONE - row.buildProgress),
       scribingQueueDepth: scribeQueueDepth(world, state, library, residentHandles, counts),
       universityCapacity: effectiveCapacity(row),
+      // W193's fifth input. This lab has no populace to count a latent
+      // magic-user population out of, so the seat term binds exactly as it did
+      // before — which is what keeps the recorded axes comparable across the
+      // change rather than measuring a new bound nobody asked for.
+      latentMagicUsers: Number.MAX_SAFE_INTEGER,
       standingSoldierTarget: world.standingSoldierTarget,
     });
 

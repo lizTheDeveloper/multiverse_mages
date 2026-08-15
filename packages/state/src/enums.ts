@@ -53,15 +53,60 @@ export type EdictKindValue = (typeof EDICT_KIND)[keyof typeof EDICT_KIND];
  */
 export const EDICT_BUDGET_MAX = 8;
 
-/** `contracts.md` §1.2: a mage's role. */
+/**
+ * `contracts.md` §1.2: a mage's role.
+ *
+ * ## `student` is the fifth, and it is not the god's to assign
+ *
+ * *"Students are immediately mages. They're just student mages until they
+ * become battle mages, populace mages"* — `docs/design/magical-prevalence.md`.
+ * A student is therefore **a mage in an early role, not a new entity kind**,
+ * which is the whole of why she can hold knowledge instances, be taught, read a
+ * shelf and be affiliated: she has a handle, and everything that takes a mage
+ * handle already works.
+ *
+ * It is appended rather than inserted, because the numbering is §1.2's listing
+ * order and it is read out of a `uint8` in every save.
+ *
+ * **`student` is deliberately absent from {@link GOD_ASSIGNABLE_MAGE_ROLES}.**
+ * The god's assign-role action moves a mage between the four *standing* roles;
+ * un-graduating somebody is not one of the levers §7 gives him, and admitting it
+ * would also have widened the action-10 candidate space that every trained
+ * policy is sized against. Enrolment writes this role and graduation clears it,
+ * and those are the only two writers.
+ */
 export const MAGE_ROLE = {
   researcher: 0,
   warden: 1,
   professor: 2,
   raider: 3,
+  /** Enrolled at a university and not yet graduated. Written by enrolment only. */
+  student: 4,
 } as const;
 
 export type MageRoleValue = (typeof MAGE_ROLE)[keyof typeof MAGE_ROLE];
+
+/**
+ * The four roles the god's action 10 may assign, ascending.
+ *
+ * Exported from `@mm/state` rather than from a rules package because **two
+ * independent call sites need the same answer** — `@mm/agent-api`'s candidate
+ * enumeration and `@mm/coordination`'s intervention validator — and before the
+ * student role existed both wrote `Object.values(MAGE_ROLE)`, which was correct
+ * only for as long as every role was assignable. A list that has to be derived
+ * the same way in two places is a list that eventually is not.
+ */
+export const GOD_ASSIGNABLE_MAGE_ROLES: readonly MageRoleValue[] = [
+  MAGE_ROLE.researcher,
+  MAGE_ROLE.warden,
+  MAGE_ROLE.professor,
+  MAGE_ROLE.raider,
+];
+
+/** Whether the god's assign-role action may write this role. */
+export function isGodAssignableRole(value: number): value is MageRoleValue {
+  return GOD_ASSIGNABLE_MAGE_ROLES.includes(value as MageRoleValue);
+}
 
 /** `contracts.md` §1.3: what a populace cohort spends its months doing. */
 export const OCCUPATION = {

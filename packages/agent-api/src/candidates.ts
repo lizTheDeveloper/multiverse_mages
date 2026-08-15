@@ -54,10 +54,10 @@
 import type { EntityHandle, SimState } from '@mm/sim-core';
 import {
   ENCOURAGED_CELL,
+  GOD_ASSIGNABLE_MAGE_ROLES,
   GRID_CELL_COUNT,
   KNOWLEDGE_INSTANCE,
   MAGE,
-  MAGE_ROLE,
   UNIVERSITY,
   readRulesetForObservation,
   canGrantFoundingKnowledge,
@@ -271,7 +271,12 @@ function blessCandidates(state: SimState): Candidate[] {
  * the harness reports.
  */
 function assignRoleCandidates(state: SimState): Candidate[] {
-  const roles = Object.values(MAGE_ROLE).sort((a, b) => a - b);
+  // `GOD_ASSIGNABLE_MAGE_ROLES`, not every value in `MAGE_ROLE`. W193 appended
+  // `student`, which the god may not assign; deriving the list from the enum
+  // would have widened action 10's candidate space by one slot per mage and
+  // moved every trained policy's action distribution for a role that would then
+  // have been refused by `interventions.ts` anyway.
+  const roles = [...GOD_ASSIGNABLE_MAGE_ROLES].sort((a, b) => a - b);
   const found: Candidate[] = [];
   for (const mage of livingMages(state)) {
     for (const roleId of roles) {

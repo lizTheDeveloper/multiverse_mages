@@ -212,6 +212,23 @@ export interface SpeciesRecord {
   readonly scribeAffinity: Fp;
   readonly rediscoveryAffinity: Fp;
   readonly mageAptitude: Fp;
+  /**
+   * The fraction of this species born able to do magic at all
+   * (`docs/design/magical-prevalence.md`), in fixed point, at most `FP_ONE`.
+   *
+   * **Optional, and the absence is the point.** The author gave four of the
+   * six — *"all dragons learn magic, all elves learn magic, few orcs learn
+   * magic, one in ten humans"* — and left dwarf and gnome unstated on the
+   * grounds that inventing them *"would put an author's number and a machine's
+   * number in the same table with nothing to tell them apart"*. So they are
+   * absent rather than guessed, and `@mm/rules-world`'s
+   * `PREVALENCE_WHEN_UNAUTHORED` is the one greppable place a stand-in lives.
+   *
+   * Distinct from {@link mageAptitude}, which is the *next* stage of the same
+   * pipeline: prevalence is who is born able, aptitude is who is strong enough
+   * to be found. See `mages/enrolment.ts`.
+   */
+  readonly prevalence?: Fp;
   readonly laborAffinity: Fp;
   readonly affinities: Readonly<Record<string, Fp>>;
   readonly personality?: {

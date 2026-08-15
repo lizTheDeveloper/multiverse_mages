@@ -1,5 +1,5 @@
 /*
- * Multiverse Mages — promotion of student cohorts into individual mages.
+ * Multiverse Mages — enrolment: where a cohort member becomes an individual.
  * Copyright (C) 2026 Ann Kelner
  *
  * This program is free software: you can redistribute it and/or modify it under
@@ -19,6 +19,14 @@ import type { StepRng } from './rng.js';
 
 /**
  * ## The one place a person crosses from the aggregate into the individual
+ *
+ * **W193 moved *when* that crossing happens, not how.** It used to happen at
+ * graduation: a cohort spent `maturityMonths` in the `student` occupation and
+ * `mageAptitude` decided, at the end, which fraction of it had been worth
+ * teaching. It now happens at **enrolment**, and the fraction is
+ * `enrolmentFraction(prevalence, mageAptitude)` — see `enrolment.ts` for why
+ * those are two stages of one pipeline rather than two overlapping gates. The
+ * arithmetic below is untouched, because it was never the part that was wrong.
  *
  * `docs/design/contracts.md` §1.3 is normative and blunt: *"Only mages are
  * individuals; everyone else is a counted cohort."* It calls this a
@@ -40,7 +48,7 @@ import type { StepRng } from './rng.js';
  * tens of thousands — the exact cost §1.3 exists to forbid, arriving through a
  * mechanism nobody thinks of by that name.
  *
- * So the count is arithmetic: `floor(count × mageAptitude / fp(1024))`, plus one
+ * So the count is arithmetic: `floor(count × eligibleFraction / fp(1024))`, plus one
  * more if a **single** draw on stream 1 falls below the fixed-point remainder.
  * The expected value is preserved exactly, and the draw count is `O(cohorts)`
  * rather than `O(people)`.
@@ -54,7 +62,7 @@ import type { StepRng } from './rng.js';
  * of a floor.
  */
 
-/** The outcome of promoting one student cohort, with the arithmetic left inspectable. */
+/** The outcome of enrolling from one cohort, with the arithmetic left inspectable. */
 export interface PromotionOutcome {
   /** Mages to create. `integerPart`, plus one if the remainder draw succeeded. */
   readonly promoted: number;
@@ -66,9 +74,14 @@ export interface PromotionOutcome {
    * the populace layer's, because occupation is a cohort field and this module
    * does not own one. Returned explicitly so that "the caller forgot" is a
    * visible omission rather than an invisible one.
+   *
+   * Since W193 these are the **latent-but-unactivated**: people the species
+   * ceiling or the aptitude gate kept out of a seat. `magical-prevalence.md`
+   * wants that gap legible — *"12,000 people, 1,200 latent, 340 found"* — and
+   * this number is one half of it.
    */
   readonly notPromoted: number;
-  /** `floor(count × mageAptitude / fp(1024))`. */
+  /** `floor(count × eligibleFraction / fp(1024))`. */
   readonly integerPart: number;
   /** The fixed-point remainder the single draw was compared against, in `[0, fp(1024))`. */
   readonly remainder: Fixed;
@@ -88,19 +101,20 @@ export interface PromotionOutcome {
  * The largest cohort this arithmetic can promote at a given aptitude.
  *
  * Two ceilings bind, and the smaller wins: the count itself must survive
- * `fromInt` (`FP_INT_MAX`), and the product `count × mageAptitude` must stay
+ * `fromInt` (`FP_INT_MAX`), and the product `count × eligibleFraction` must stay
  * inside the 32-bit fixed-point domain. At the highest aptitude the schema
  * permits, the result is still over a million people in one decade bucket of
  * one species — far above anything the carrying-capacity brake allows — and
  * refusing loudly beats overflowing into a plausible smaller number.
  */
-export function maxPromotableCount(mageAptitude: Fixed): number {
-  if (!Number.isInteger(mageAptitude) || mageAptitude <= 0) {
+export function maxPromotableCount(eligibleFraction: Fixed): number {
+  if (!Number.isInteger(eligibleFraction) || eligibleFraction <= 0) {
     throw new RangeError(
-      `mageAptitude must be a positive fixed-point integer, received ${String(mageAptitude)}`,
+      'eligibleFraction must be a positive fixed-point integer, received ' +
+        String(eligibleFraction),
     );
   }
-  return Math.min(FP_INT_MAX, floorDiv(FP_MAX, mageAptitude));
+  return Math.min(FP_INT_MAX, floorDiv(FP_MAX, eligibleFraction));
 }
 
 /**
@@ -114,22 +128,26 @@ export function maxPromotableCount(mageAptitude: Fixed): number {
  * cohort behind it — insertion invariance lost, and every committed baseline
  * with it.
  * @param count - Members of the cohort that have reached `maturityMonths`.
- * @param mageAptitude - The species' trait, in fixed point.
+ * @param eligibleFraction - The fraction of them who reach a seat, in fixed
+ * point. `enrolment.ts`'s `enrolmentFraction(prevalence, mageAptitude)` since
+ * W193; a bare `mageAptitude` before it, which is why the parameter is named for
+ * its role and not for the trait that used to fill it.
  */
 export function promoteStudentCohort(
   rng: StepRng,
   cohort: EntityHandle,
   count: number,
-  mageAptitude: Fixed,
+  eligibleFraction: Fixed,
 ): PromotionOutcome {
   if (!Number.isInteger(count) || count < 0) {
     throw new RangeError(`a cohort count must be a non-negative integer, received ${String(count)}`);
   }
-  const limit = maxPromotableCount(mageAptitude);
+  const limit = maxPromotableCount(eligibleFraction);
   if (count > limit) {
     throw new RangeError(
       `cohort of ${String(count)} exceeds the ${String(limit)} this arithmetic can promote at ` +
-        `aptitude ${String(mageAptitude)} without leaving the fixed-point domain. A cohort this ` +
+        `fraction ${String(eligibleFraction)} without leaving the fixed-point domain. A cohort ` +
+        'this ' +
         'large means the carrying-capacity brake is not doing its job; splitting the cohort here ' +
         'would hide that.',
     );
@@ -143,7 +161,7 @@ export function promoteStudentCohort(
   const expected = applySpeciesTrait(
     SPECIES_TRAIT_REGISTRY.mageAptitude,
     fromInt(count),
-    mageAptitude,
+    eligibleFraction,
   );
   const integerPart = floorDiv(expected, FP_ONE);
   const remainder = expected - integerPart * FP_ONE;

@@ -531,8 +531,16 @@ prerequisite has a higher `tier`.
   "rediscoveryAffinity": 768,       // fp DIVISOR against rediscoveryMultiplier. Higher is better,
                                     // uniform with every other trait -- so this dwarf is a
                                     // below-average rediscoverer, and gnomes lead (vision §5)
-  "maturityMonths": 600,            // before which a mage cannot be promoted from a student cohort
-  "mageAptitude": 448,              // fp; share of matured students who become mages at all
+  "maturityMonths": 600,            // before which a person cannot enrol from a populace cohort
+  "mageAptitude": 448,              // fp; share of the LATENT who are strong enough to be found
+                                    // and seated. Stage two of magical-prevalence.md's pipeline;
+                                    // applied at enrolment, never at graduation
+  "prevalence": 512,                // OPTIONAL fp <= 1024; share of this species born able to do
+                                    // magic at all (magical-prevalence.md). ABSENT IS MEANINGFUL:
+                                    // the author authored four of the six species and left dwarf
+                                    // and gnome unstated rather than mix an author's number with
+                                    // a machine's. An absent value reads as rules-world's
+                                    // PREVALENCE_WHEN_UNAUTHORED, which is not authored content
   "laborAffinity": 1280,            // fp multiplier on non-magical labour productivity
   "affinities": { "terram": 1536, "ignem": 1152 },  // by form or by cell id
   "personality": { "curiosity": 512, "ambition": 1024, "caution": 1024 },  // optional; means, each

@@ -81,7 +81,14 @@ describe('a seeded universe advances through every phase', () => {
 
   it('reports work in every phase it claims to run', () => {
     const simulation = defineWorldSimulation(worldDeps(traditionId()));
-    const { state } = seededWorld(simulation.schema, { rootSeed: ROOT_SEED });
+    // `withUniversity`, because W193 made enrolment require a seat at a school
+    // that has something to teach. Without one this test asserted that mages
+    // appear from nowhere, which was true before the change and is a defect
+    // rather than a property.
+    const { state } = seededWorld(simulation.schema, {
+      rootSeed: ROOT_SEED,
+      withUniversity: true,
+    });
     const source = sourceFor(ROOT_SEED);
 
     let current = state;
