@@ -134,6 +134,7 @@ export {
 } from './long-run.js';
 
 export type {
+  FoundingAudit,
   StrategyAudit,
   StrategyAuditOptions,
   VerbAudit,
@@ -142,11 +143,14 @@ export type {
 export {
   AUDIT_RUN_SEED,
   AUDIT_WORLD_TICK_CAP,
+  FOUNDING_PROBE,
   VERB_VERDICT,
   actionName,
+  auditFounding,
   auditPool,
   auditStrategy,
   formatAudit,
+  formatFounding,
 } from './strategy-audit.js';
 export { speciesCellOccupancy } from './species-occupancy.js';
 
