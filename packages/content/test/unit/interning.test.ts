@@ -395,10 +395,21 @@ describe('contentRevision', () => {
     // raid magnitudes but neither the material split, the summon cap, the two
     // `node.json` passes, the grant budget nor `apply-magic`'s two scalars;
     // `main` asserted d4e30476 over a preimage holding all of those and none of
-    // the raid magnitudes. This tree is the first holding both, and the value
-    // below was **measured from this merged tree** rather than carried from
-    // either side.
-    expect(registry.contentRevision).toBe('fd8ce7ef5fded0b0a23fc85f8006f595');
+    // the raid magnitudes. This tree is the first holding both, and fd8ce7ef
+    // was measured from that merged tree.
+    //
+    // **And it moves again here, deliberately.** Two raid constants were
+    // renamed, re-valued and re-united: `withdraw-stability-margin` (409,600
+    // raw) became `withdraw-after-ticks` (56 ticks) and
+    // `resolution-stability-margin` (614,400 raw) became
+    // `resolution-onset-ticks` (96 ticks). Both were thresholds on *remaining
+    // portal stability* against a portal that outlives the raid by a factor of
+    // twenty, so neither could ever fire — 0 of 169 raiders withdrew across 97
+    // raids, and resolution was a phase no raid entered. An id, a value and a
+    // unit are all in the preimage, which is exactly right: two universes that
+    // disagreed about when a raider runs for the door would be playing
+    // different games while their revisions claimed compatibility.
+    expect(registry.contentRevision).toBe('b6e0866220a71930e3846b01f6c03b34');
   });
 
   it('is stable across loads of identical content', () => {
