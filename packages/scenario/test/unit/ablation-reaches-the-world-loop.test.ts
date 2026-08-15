@@ -288,7 +288,11 @@ const RUN_TIMEOUT_MS = 300_000;
  * baseline records the same mechanism at gate scale, where it is not seed
  * anecdote: `referenceNodesKnown@permissive-breadth` **42.5 → 36.625** when
  * these wires land on top of `#161`, against `#161` itself having taken it from
- * 68.63 to 42.50.
+ * 68.63 to 42.50. **That delta was read off a baseline re-record that has since
+ * been reverted** — no baseline in this tree was regenerated, by standing rule —
+ * so it is a measurement someone took once and not a number this repository
+ * currently commits. Re-derive it before quoting; the six-seed instrumentation
+ * above is the evidence that does live in the tree.
  *
  * **Three separate mechanics now meet on `permissive-breadth` and are invisible
  * everywhere else**, which is a fact about the opening square rather than about
