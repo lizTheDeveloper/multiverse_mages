@@ -10,6 +10,20 @@
 whose two commits above `be446a6` are `docs/design/observation-entitlement.md` and nothing else —
 no package under `packages/` differs.
 
+> **Amended 2026-08-14 on `w190/scribing-fidelity`, +2 traits.** World-schema revision 7 added
+> `knowledge-fidelity` (`copyGeneration`, `corruption`), so the totals below read **110 traits
+> across 21 world components**, with `not-yet-decided` at **72**. Every other row and every
+> narrative section below was read at `be446a6` and is unamended. The amendment is stated here
+> rather than by silently editing the tables, because the tables are a measurement and a
+> measurement belongs to the tree it was taken on — and the two new rows were classified in
+> `entitlement.ts`, not merely counted.
+>
+> `corruption` is left `undecided()` deliberately and is the more interesting of the two. A
+> channel carrying *"this book is wrong"* would delete the mechanic, whose whole design is that
+> corruption is hidden until a reader fails against it; a channel carrying *"a reader has marked
+> it"* would be legitimate and does not exist. Those are two entitlement questions wearing one
+> field, and `docs/design/scribing-fidelity.md` decides neither.
+
 This is step 0 of `docs/design/observation-entitlement.md`: every `(component, field)` trait in
 the world, classified against what the encoder in `packages/agent-api/src/observation.ts`
 actually writes. **Every row was read off the encoder, not inferred from the field name.**
@@ -22,8 +36,8 @@ above, re-run the tally before believing a row.
 
 | | |
 |---|---|
-| Components | 20 world + 3 engagement = 23 |
-| **Total `(component, field)` traits** | **108** |
+| Components | 20 world + 3 engagement = 23 (21 world at the amendment above) |
+| **Total `(component, field)` traits** | **108** (110 at the amendment above) |
 | OBSERVABLE | 12 |
 | AGGREGATED | 19 |
 | WITHHELD | 76 |
@@ -35,7 +49,7 @@ WITHHELD, broken down by the reason given:
 
 | Reason | Rows |
 |---|---|
-| not-yet-decided | 70 |
+| not-yet-decided | 70 (72 at the amendment above) |
 | internal bookkeeping | 6 |
 | derived from something already observable | 0 |
 | hidden-from-opponent | 0 |

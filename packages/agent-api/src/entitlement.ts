@@ -204,6 +204,21 @@ export const TRAIT_CLASSIFICATION: Readonly<
     // a fully mastered one.
     mastery: undecided(),
   },
+  // The telephone problem, and it is invisible for the same reason `mastery`
+  // above is. No channel carries either field, so an agent sees a library's
+  // *count* of instances and can learn nothing about whether they are worth
+  // reading: a shelf of pristine first copies and a shelf of exhausted
+  // fifth-generation ones are the same number in `institutions[331]`.
+  //
+  // `corruption` is the sharper case and is deliberately left `undecided()`
+  // rather than argued either way. Hiddenness is the mechanic — a corrupted
+  // book is indistinguishable from a sound one until a reader fails against it
+  // — so an observation channel carrying it would delete the design, while an
+  // observation channel carrying *whether a reader has marked it* would be
+  // legitimate and does not exist. Those are two different entitlement
+  // questions wearing one field, and `docs/design/scribing-fidelity.md` decides
+  // neither. See {@link CORRUPTION} in `@mm/rules-magic` for the three states.
+  'knowledge-fidelity': { copyGeneration: undecided(), corruption: undecided() },
   // The entire rediscovery signal. An agent cannot distinguish a node never
   // discovered from one discovered and lost, which are the two states with the
   // most different expected value in the knowledge model.
