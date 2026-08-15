@@ -194,10 +194,23 @@ describe('twenty world years in', () => {
     // rule actually *changes* needs more than one university to see, and is
     // measured in `coordination/test/unit/university-staffing.test.ts` — not
     // here.
+    // **Re-measured 2026-08-14 on the rebase of `campaign/integrated` onto
+    // `main` (245e04f1), and neither side's numbers survived — again.** This
+    // block's own history says a re-roll moves things in both directions, and
+    // it did: `12/12/12/11/11/9` became `12/12/11/9/11/9`. Orc lost one and
+    // draconic lost two.
+    //
+    // The cause is the same class the comment above names and is not a balance
+    // decision. `contracts.md` §6 splits the RNG per entity handle, so any
+    // change that allocates a handle earlier re-rolls every handle-keyed draw
+    // after it. This tree adds entity-allocating work on both sides of that
+    // line: the campaign's knowledge-vitality wire, and `main`'s own merges.
+    // Taking either hunk verbatim would pin a number no build produces, which
+    // is exactly what the conflict resolution had to avoid.
     expect(bySpecies('dwarf').occupiedCells).toBe(12);
     expect(bySpecies('human').occupiedCells).toBe(12);
-    expect(bySpecies('orc').occupiedCells).toBe(12);
-    expect(bySpecies('draconic').occupiedCells).toBe(11);
+    expect(bySpecies('orc').occupiedCells).toBe(11);
+    expect(bySpecies('draconic').occupiedCells).toBe(9);
     expect(bySpecies('elf').occupiedCells).toBe(11);
     expect(bySpecies('gnome').occupiedCells).toBe(9);
   });
@@ -210,7 +223,7 @@ describe('twenty world years in', () => {
     // branch alone. Pinned to four places: the point of the metric is that this
     // number moves, and a test that only asserted "greater than zero" would let
     // it move to anything.
-    expect((entry as { value: number }).value).toBeCloseTo(0.0473, 4);
+    expect((entry as { value: number }).value).toBeCloseTo(0.0625, 4);
     expect(entry).toMatchObject({ detail: { everySpeciesEqual: false, everySpeciesZero: false } });
   });
 
@@ -250,10 +263,15 @@ describe('twenty world years in', () => {
     const cellName = new Map(content.registry.cells.map((e) => [e.contentId, e.record.id]));
     const held = new Set(bySpecies('gnome').occupiedCellIds.map((id) => cellName.get(id)));
     const dwarfHeld = bySpecies('dwarf').occupiedCellIds.map((id) => cellName.get(id));
+    // Re-pinned 2026-08-14 on the rebase onto `main` (245e04f1): `rego-terram`
+    // out, `perdo-limen` in. Which is precisely what the paragraph above says
+    // to expect — the set reorders under a handle-keyed re-roll, the durable
+    // reading is *"gnome is short, and disproportionately short in Perdo"*, and
+    // that reading is unchanged: all three are still Perdo but one.
     expect(dwarfHeld.filter((cell) => !held.has(cell)).sort()).toEqual([
+      'perdo-limen',
       'perdo-mentem',
       'perdo-terram',
-      'rego-terram',
     ]);
   });
 

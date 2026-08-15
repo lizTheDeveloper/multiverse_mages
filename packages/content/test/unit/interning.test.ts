@@ -464,7 +464,7 @@ describe('contentRevision', () => {
     // revision is a digest over the values, so this is the ordinary case rather
     // than a union of branches. It changes every run in which any mage learns
     // The Nameless — which is the point of the change, not a side effect of it.
-    expect(registry.contentRevision).toBe("PENDING");
+    expect(registry.contentRevision).toBe('e9511403d956c7cc67660d03dbd9cc2e');
   });
 
   it('is stable across loads of identical content', () => {

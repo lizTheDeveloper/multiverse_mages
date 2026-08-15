@@ -182,7 +182,6 @@ import type { UniverseEconomyBonuses, UniverseEffectIndex } from './universe-eff
 import { NO_ECONOMY_BONUSES, universeEconomyBonuses } from './universe-effects.js';
 import type { AcademicEffectIndex, AcademicRateBonuses } from './academic-effects.js';
 import { NO_ACADEMIC_BONUSES, academicRateBonuses } from './academic-effects.js';
-export type {
 import type { VitalityBonuses, VitalityIndex } from './knowledge-vitality.js';
 import { NO_VITALITY_BONUSES, lifespanBonusesFor, vitalityBonuses } from './knowledge-vitality.js';
 import type { LibraryCapital } from './capital.js';
