@@ -10,6 +10,13 @@
 whose two commits above `be446a6` are `docs/design/observation-entitlement.md` and nothing else —
 no package under `packages/` differs.
 
+**Updated 2026-08-14 on `w182/raid-seam`**, where `w37/raid-playable`'s `mid-raid-change` component
+met this inventory for the first time — the two were built on separate branches, so neither was
+wrong and the merged tree is the first holding both. **Five traits added, all `not-yet-decided`:
+108 → 113 total, 70 → 75 undecided.** No existing row was reclassified. The per-component table
+below is otherwise as measured at `be446a6`; where a row cites a line number, treat a mismatch as
+the cheapest available signal that it has rotted.
+
 This is step 0 of `docs/design/observation-entitlement.md`: every `(component, field)` trait in
 the world, classified against what the encoder in `packages/agent-api/src/observation.ts`
 actually writes. **Every row was read off the encoder, not inferred from the field name.**
@@ -22,11 +29,11 @@ above, re-run the tally before believing a row.
 
 | | |
 |---|---|
-| Components | 20 world + 3 engagement = 23 |
-| **Total `(component, field)` traits** | **108** |
+| Components | 21 world + 3 engagement = 24 |
+| **Total `(component, field)` traits** | **113** |
 | OBSERVABLE | 12 |
 | AGGREGATED | 19 |
-| WITHHELD | 76 |
+| WITHHELD | 81 |
 | AMBIGUOUS | 1 |
 | Observation slots | 400 |
 | `OBSERVATION_LAYOUT_DIGEST` | `46182c35d829b205` |
@@ -35,7 +42,7 @@ WITHHELD, broken down by the reason given:
 
 | Reason | Rows |
 |---|---|
-| not-yet-decided | 70 |
+| not-yet-decided | 75 |
 | internal bookkeeping | 6 |
 | derived from something already observable | 0 |
 | hidden-from-opponent | 0 |
@@ -46,7 +53,7 @@ anything to be hidden from. The category becomes live when `pvp-server` ships, a
 marked `not-yet-decided` is a row that will have to be re-read then.
 
 `not-yet-decided` is used honestly and it dominates. It is not a placeholder for "we thought about
-it": 70 of 108 traits have no artifact anywhere in the repository that says whether a
+it": 75 of 113 traits have no artifact anywhere in the repository that says whether a
 player should see them. That number is the point of the exercise.
 
 ## Slots per block

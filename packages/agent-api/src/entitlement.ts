@@ -267,6 +267,27 @@ export const TRAIT_CLASSIFICATION: Readonly<
     grantsUsed: undecided(),
     seededNodes: undecided(),
   },
+  // `raid-engagement.md` §1's durable mark: a ruleset change made under fire,
+  // and what it cost then. The whole point of the row is that it survives the
+  // raid to price a later revert, so it is state the god is **subject to** and
+  // — like `grant-budget` above, in exactly the same shape — cannot currently
+  // see. §4.1's observation has no channel for it.
+  //
+  // Classified when `w37/raid-playable` met `main`'s trait inventory: the two
+  // landed on separate branches, so neither side was wrong and the merged tree
+  // is the first on which this component and this classifier coexist. That is
+  // the mechanism working — a component added to `@mm/state` without a row here
+  // turns `unclassifiedTraits` red rather than being silently unobservable.
+  'mid-raid-change': {
+    scope: undecided(),
+    targetId: undecided(),
+    changeKind: undecided(),
+    // The surcharge base. An agent that could read it could price its own
+    // walk-back exactly; one that cannot is guessing, and `revertSurcharge`
+    // being deterministic means that guess is recoverable from the action log.
+    paidCost: undecided(),
+    markedTick: undecided(),
+  },
   combatant: {
     sourceKind: undecided(),
     sourceId: undecided(),

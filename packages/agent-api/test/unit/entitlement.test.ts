@@ -138,13 +138,20 @@ describe('unclassifiedTraits (step 2)', () => {
    * The inventory's headline number, asserted rather than described. If this
    * moves, `docs/design/observable-trait-inventory.md` is stale and its date and
    * ref line are lying about the tree.
+   *
+   * **108 at `be446a6` → 113 on `w182/raid-seam`.** The five are
+   * `mid-raid-change`'s, which arrived with `w37/raid-playable` on a branch this
+   * inventory had never seen; the merged tree is the first on which the
+   * component and the classifier coexist. All five are `not-yet-decided`, so the
+   * undecided count below moves by the same five and no existing row was
+   * reclassified to absorb them.
    */
-  it('covers the 108 traits the inventory counted at be446a6', () => {
+  it('covers the 113 traits the inventory counts on the merged tree', () => {
     let traits = 0;
     for (const spec of [...WORLD_COMPONENTS, ...ENGAGEMENT_COMPONENTS]) {
       traits += Object.keys(spec.fields).length;
     }
-    expect(traits).toBe(108);
+    expect(traits).toBe(113);
 
     let classified = 0;
     for (const rows of Object.values(TRAIT_CLASSIFICATION)) {
@@ -168,7 +175,7 @@ describe('unclassifiedTraits (step 2)', () => {
         byReason.set(reason, (byReason.get(reason) ?? 0) + 1);
       }
     }
-    expect(byReason.get('not-yet-decided')).toBe(70);
+    expect(byReason.get('not-yet-decided')).toBe(75);
     expect(byReason.get('internal-bookkeeping')).toBe(6);
     // Unused until there is an opponent-facing projection to hide anything
     // from. Asserted at zero so that the day it stops being zero is a diff.
