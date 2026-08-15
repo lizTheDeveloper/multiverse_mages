@@ -92,7 +92,9 @@ import {
 import type { DeepestByCell } from './ascension.js';
 import {
   deepestNodesByCell,
+  eraBoundaryPassed,
   libraryDependence,
+  masteredCellCount,
   prestigeEarned,
   qualifyingPath,
   stepStagnation,
@@ -167,6 +169,24 @@ export interface GodTickReport {
   readonly interventions: InterventionReport;
   readonly ascensionPath: number;
   readonly terminalReason: number;
+  /**
+   * What each ascension conjunct read this tick.
+   *
+   * Added because both paths now gate on quantities the god's play produces, and
+   * a report that cannot say *which* conjunct refused makes every calibration a
+   * guess. These are projections of the tick, never state: nothing hashes them
+   * and no rule reads them back.
+   */
+  readonly ascensionProgress: {
+    /** Permitted cells standing at their floor — Path A's achievement. */
+    readonly masteredCells: number;
+    /** Distinct nodes held. Path B's first breadth conjunct. */
+    readonly nodesKnown: number;
+    /** Distinct cells the canon spans. Path B's second. */
+    readonly cellsKnown: number;
+    /** Universities at full `buildProgress`; only the god's funding creates one. */
+    readonly completedUniversities: number;
+  };
 }
 
 /** The pair of systems, plus the last tick's report. Built once per run. */
@@ -388,7 +408,8 @@ function outcomeSystem(
       let god = godState(state, universe);
 
       // ---- 1–3. Worship ------------------------------------------------------
-      const target = worshipTarget(worshipSources(state, ctx.tick), constants);
+      const sources = worshipSources(state, ctx.tick);
+      const target = worshipTarget(sources, constants);
       const shocked = shockedTarget(
         target.target,
         activeUpheavals(state, ctx.tick).map((entry) => entry.factor),
@@ -465,12 +486,25 @@ function outcomeSystem(
       const lost = deps.nodesLostThisTick?.(ctx.tick) ?? 0;
       god = { ...god, eraNodesLost: god.eraNodesLost + lost };
 
+      // Distinct cells the canon spans. Counted here rather than carried in
+      // state: it is a projection of what is known, and a derived count kept in
+      // a component would be one more thing two peers could disagree about
+      // while every rule that read it still looked right.
+      const knownCells = new Set<number>();
+      for (const nodeId of known) knownCells.add(deps.cells.cellOf(nodeId));
+
       const era = eraOf(ctx.tick);
       if (era > god.lastEraRecorded) {
         const dependence = libraryDependence(known.length, knowledge.singleInstanceNodes().length);
-        const passed =
-          dependence <= constants.ascensionDependenceMax &&
-          god.eraNodesLost <= constants.ascensionLossMax;
+        const passed = eraBoundaryPassed(
+          {
+            nodesKnown: known.length,
+            cellsKnown: knownCells.size,
+            dependence,
+            eraNodesLost: god.eraNodesLost,
+          },
+          constants,
+        );
         recordEra(state, era, dependence, god.eraNodesLost, passed);
         god = {
           ...god,
@@ -483,19 +517,15 @@ function outcomeSystem(
       // ---- 7. Ascension eligibility, recomputed so it can lapse ---------------
       deepest ??= deepestNodesByCell(deps.catalog, (nodeId) => deps.cells.cellOf(nodeId));
       const ruleset = readRulesetForObservation(state, universe);
-      const path = qualifyingPath(
-        {
-          heldByLivingMage: nodesHeldByLivingMages(state),
-          instanceCount: (nodeId) => knowledge.instanceCount(nodeId),
-          permitsCell: (cellId) => permits(ruleset, cellId),
-          cellOf: (nodeId) => deps.cells.cellOf(nodeId),
-          deepest,
-          worshipTier,
-        },
-        god,
-        ctx.tick,
-        constants,
-      );
+      const apotheosisFacts = {
+        heldByLivingMage: nodesHeldByLivingMages(state),
+        instanceCount: (nodeId: number) => knowledge.instanceCount(nodeId),
+        permitsCell: (cellId: number) => permits(ruleset, cellId),
+        cellOf: (nodeId: number) => deps.cells.cellOf(nodeId),
+        deepest,
+        worshipTier,
+      };
+      const path = qualifyingPath(apotheosisFacts, god, ctx.tick, constants);
       god = {
         ...god,
         ascensionPath: path,
@@ -620,6 +650,12 @@ function outcomeSystem(
         interventions,
         ascensionPath: path,
         terminalReason,
+        ascensionProgress: {
+          masteredCells: masteredCellCount(apotheosisFacts, constants.ascensionSummitCopies),
+          nodesKnown: known.length,
+          cellsKnown: knownCells.size,
+          completedUniversities: sources.completedUniversities,
+        },
       });
     },
   };

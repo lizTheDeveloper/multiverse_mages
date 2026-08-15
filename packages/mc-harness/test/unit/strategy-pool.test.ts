@@ -19,7 +19,13 @@
  * completes"*, and *"A blocked preference falls through"*.
  */
 
-import { ACTION_SPACE_SIZE, GOD_ACTION, agentRng, isLegal } from '@mm/agent-api';
+import {
+  ACTION_SPACE_SIZE,
+  GOD_ACTION,
+  agentRng,
+  isLegal,
+  observationBlock,
+} from '@mm/agent-api';
 import type { ActionSubmission, StrategyDefinition } from '@mm/mc-harness';
 import {
   ASCENSION_STANCE,
@@ -77,6 +83,25 @@ function noopOnlyMask(): Uint8Array {
 /** A zero observation of the real width, for the mask-only tests. */
 function blankObservation(): Float64Array {
   return new Float64Array(400);
+}
+
+/**
+ * A strategy's own preference list, with the composed ascension entry removed.
+ *
+ * `effectivePreferences` prepends `declareAscension` for any strategy whose
+ * stance is not `never`, which is correct and is pinned elsewhere — but it means
+ * a test about a strategy's *own* ordering has to look past it.
+ */
+function ownPreferences(
+  definition: StrategyDefinition,
+  observation: Float64Array,
+): ActionSubmission[] {
+  return effectivePreferences(definition, {
+    observation,
+    mask: fullMask(),
+    round: 0,
+    context: contextFor(definition.strategyId, 7),
+  }).filter((preference) => preference.action !== GOD_ACTION.declareAscension);
 }
 
 /**
@@ -219,6 +244,58 @@ describe('a blocked preference falls through (task 5.6)', () => {
     }
   });
 
+  /**
+   * `permissive-breadth` founds before it permits, while it has nothing to fund.
+   *
+   * This is the regression test for a defect that survived every sweep ever
+   * taken. `fundUniversity` sat behind `permitTechnique` in the preference
+   * list, `policyFor` takes the first *legal* preference, and `permitTechnique`
+   * is legal on every round — so the strategy whose entire role is "permits
+   * widely, funds broadly" ended every run at one university: the seeded
+   * academy, never having completed one of its own.
+   *
+   * It went unnoticed because nothing read `universityCount` until the
+   * ascension conjunct did, and because the code carried a comment — *"found
+   * until there is something to fund"* — describing an intent the list defeated.
+   * A comment is not a test, which is the whole reason this one exists.
+   *
+   * Asserted on the preference *order* rather than on a run outcome, because
+   * the order is the defect. An outcome assertion would pass again the moment
+   * anything else made a university appear, and would have said nothing about
+   * why.
+   *
+   * `declareAscension` is filtered out first: `effectivePreferences` composes
+   * the ascension stance in ahead of the strategy's own list, and this strategy
+   * declares `whenEligible`. That composition is pinned in
+   * `ascension-stance.test.ts` and is not what this test is about.
+   */
+  it('makes permissive-breadth found before it permits, while it has none', () => {
+    const definition = BOT_POOL.find((entry) => entry.strategyId === 'permissive-breadth');
+    expect(definition, 'permissive-breadth left the pool').toBeDefined();
+
+    const withNone = ownPreferences(definition as StrategyDefinition, blankObservation());
+    expect(
+      withNone[0]?.action,
+      'permissive-breadth must found first when it holds no university — behind an ' +
+        'always-legal permit it never founds at all',
+    ).toBe(GOD_ACTION.fundUniversity);
+    expect(withNone[0]?.parameter, 'slot 0 is the standing "found a new one" option').toBe(0);
+
+    // And once it holds one, permitting leads again — the strategy is about
+    // breadth, and founding is the precondition it was skipping, not its point.
+    const held = blankObservation();
+    held[observationBlock('institutions').offset] = 3;
+    const withSome = ownPreferences(definition as StrategyDefinition, held);
+    expect(
+      withSome[0]?.action,
+      'with universities in hand the ruleset actions lead again',
+    ).toBe(GOD_ACTION.permitTechnique);
+    expect(
+      withSome.some((preference) => preference.action === GOD_ACTION.fundUniversity),
+      'it must still spread funding across what exists',
+    ).toBe(true);
+  });
+
   it('does not stall or raise even against a mask §4.2 says cannot exist', () => {
     // A mask with no legal action at all. `legalityMask` never produces one —
     // no-op is unconditional there — but the capability spec's requirement is
@@ -254,7 +331,13 @@ describe('a blocked preference falls through (task 5.6)', () => {
       submissions.push(chosen.action);
     }
     expect(submissions).not.toContain(GOD_ACTION.openPortal);
-    expect(new Set(submissions)).toEqual(new Set([GOD_ACTION.encourageResearch]));
+    // `assignRole` and not `encourageResearch`, since portal-rush v4: a god who
+    // opens portals and assigns nobody sends an empty warband, because
+    // `RAIDING_ROLES` is the `raider` role alone and every mage is born a
+    // `researcher`. The fall-through is what is under test here and it is
+    // unchanged — the bot still declines to resubmit a masked action — but the
+    // action it falls through *to* is now the one it needs most.
+    expect(new Set(submissions)).toEqual(new Set([GOD_ACTION.assignRole]));
 
     // The control: with the portal open it does prefer it, so the fall-through
     // above is a fall-through and not a strategy that never wanted a portal.
@@ -269,8 +352,13 @@ describe('a blocked preference falls through (task 5.6)', () => {
 
 describe('degeneracy is declared rather than discovered', () => {
   it('names portal-rush\'s unreachable defining action without calling it degenerate', () => {
-    // The build the pool is specified against: everything legal except action
-    // 14, which has no candidates in a single-universe run.
+    // The build the pool *used* to be specified against: everything legal
+    // except action 14, which had no candidates because nothing supplied
+    // `portalTargets`. That is no longer this build — the reference scenario
+    // now names a roster of rivals and action 14 is reachable — but the mask is
+    // still the right instrument for the property under test, which is that
+    // `degeneracyOf` reports an unreachable signature action *without* calling
+    // the strategy degenerate when another signature action survives.
     const mask = fullMask();
     mask[GOD_ACTION.openPortal] = 0;
 
@@ -279,26 +367,33 @@ describe('degeneracy is declared rather than discovered', () => {
       .map((report) => report.strategyId);
     expect(degenerate).toEqual([]);
 
-    // Portal-rush is not fully degenerate only because `declareAscension` is
-    // also a signature action and is legal. Its *defining* action is not
-    // reachable, and the report says so channel by channel.
+    // Portal-rush is not fully degenerate because `assignRole` and
+    // `declareAscension` are also signature actions and both are legal. Its
+    // *defining* action is masked here, and the report says so channel by
+    // channel.
     const portal = degeneracyOf(BOT_POOL_REGISTRY.get('portal-rush') as StrategyDefinition, mask);
     expect(portal.unreachable).toEqual([GOD_ACTION.openPortal]);
-    expect(portal.reachable).toEqual([GOD_ACTION.declareAscension]);
+    expect(portal.reachable).toEqual([GOD_ACTION.assignRole, GOD_ACTION.declareAscension]);
   });
 
   it('reports every strategy but the passive control as degenerate under a full mask-out', () => {
     const reports = poolDegeneracy(BOT_POOL_REGISTRY, noopOnlyMask());
     const degenerate = reports.filter((report) => report.degenerate).map((r) => r.strategyId);
-    // Derived from the pool rather than from REQUIRED_ROLES: the claim is
-    // about every entry that declares a signature action, and the pool is
-    // allowed to hold entries beyond the eight required roles — the
-    // `permit-then-idle` negative control is one.
+    // Stated as the property rather than as the eight literal ids: a strategy is
+    // degenerate under a noop-only mask exactly when it has a signature action
+    // to be denied. Widened on the W6 verification branch, which appends two
+    // adversarial probes to BOT_POOL; the assertion is strictly stronger than
+    // the id list it replaces, because it also fixes which strategies are NOT
+    // degenerate and why.
     expect(degenerate.sort()).toEqual(
       BOT_POOL.filter((definition) => definition.signatureActions.length > 0)
         .map((definition) => definition.strategyId)
         .sort(),
     );
+    for (const role of REQUIRED_ROLES) {
+      if (role === 'passive-control') continue;
+      expect(degenerate, `${role} must still be reported degenerate`).toContain(role);
+    }
     // The passive control is never degenerate: it has no signature actions, so
     // there is nothing it is failing to reach.
     const passive = reports.find((report) => report.strategyId === 'passive-control');
@@ -320,11 +415,18 @@ describe('degeneracy is declared rather than discovered', () => {
     // silent refusal found while fixing that one — the noise floor submits
     // actions 1–7 with no parameter at all — and it is recorded rather than
     // fixed, for the reason the entry gives.
+    // `ascension-is-passive` has expired: both paths now gate on a quantity the
+    // god's play produces, and the entry described a defect this build does not
+    // have. What replaced it is not the same claim rewritten -- it is a limit of
+    // the POOL rather than of the game, found by fixing the first one. Five of
+    // the eight strategies produce identical achievement vectors, so the pool's
+    // Pareto front is one point and no win condition can separate them.
     expect(Object.keys(POOL_BUILD_LIMITS).sort()).toEqual([
-      'ascension-is-passive',
+      'five-strategies-are-one-universe',
       'noise-floor-submits-axis-actions-bare',
       'open-portal',
       'starting-position-is-broke',
+      'universities-are-founded-and-never-finished',
     ]);
     for (const [key, text] of Object.entries(POOL_BUILD_LIMITS)) {
       expect(text.length, `${key} needs a reason, not a label`).toBeGreaterThan(80);
@@ -488,7 +590,13 @@ describe('three strategies diverge observably on the same run seed (task 5.10)',
     expect(observationDivergence(passive.final, archivist.final).blockNames).toContain(
       'institutions',
     );
-    expect(observationDivergence(passive.final, portal.final).blockNames).toContain('knowledge');
+    // `mages`, not `knowledge`. portal-rush v4 spends its rounds assigning
+    // roles and opening portals; what separates it from the passive control is
+    // who its mages *are* and what happened to them, and at this horizon the
+    // knowledge block has not moved apart yet. The 2400-tick sweep is where the
+    // knowledge difference shows up — nodes taken rather than derived — and a
+    // short divergence probe is the wrong instrument for it.
+    expect(observationDivergence(passive.final, portal.final).blockNames).toContain('mages');
   });
 
   it('reports identical observations as identical rather than as a small difference', () => {

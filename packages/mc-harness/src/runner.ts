@@ -71,6 +71,33 @@ export type SweepExecution =
       readonly mode: 'inline';
       /** Runs in this thread, one after another. The reproduction path. */
       readonly execute: RunExecutor;
+    }
+  | {
+      /**
+       * Runs somewhere else — other processes, other machines. W11's fan-out.
+       *
+       * The mode exists so that distribution can change **only** which process
+       * called the executor. Everything below this line in {@link runSweep} —
+       * building records, sorting canonically, opening the output, folding the
+       * aggregates, assembling the summary — is the same code the local path
+       * runs, so byte-identical results are structural rather than a property
+       * that has to be tested and hoped for.
+       *
+       * `dispatch` is handed the complete task map, already built and already
+       * seeded, and must answer for **every** task id in it. It may not choose
+       * seeds, renumber tasks, or return results for tasks it was not given;
+       * `mergeShardResults` in `shard.ts` is what enforces that on the way in.
+       */
+      readonly mode: 'distributed';
+      readonly dispatch: (
+        tasks: ReadonlyMap<number, RunTask>,
+      ) => Promise<Map<number, PoolResult>>;
+      /**
+       * What to record in the summary's performance section. The count of
+       * parallel executors, however they are provisioned — containers times
+       * their workers, for the Modal backend.
+       */
+      readonly workerCount: number;
     };
 
 /** Everything {@link runSweep} needs. */
@@ -151,6 +178,10 @@ function recordFor(task: RunTask, result: PoolResult | undefined, fallback: Prov
     ...(outcome.armContribution === undefined
       ? {}
       : { armContribution: outcome.armContribution }),
+    ...(outcome.godSpendByAction === undefined
+      ? {}
+      : { godSpendByAction: outcome.godSpendByAction }),
+    ...(outcome.censusTrace === undefined ? {} : { censusTrace: outcome.censusTrace }),
   });
 }
 
@@ -185,6 +216,33 @@ function armMetricsFor(
 }
 
 /**
+ * The one place execution mode is branched on.
+ *
+ * Kept out of {@link runSweep} so that adding a mode cannot accidentally add a
+ * second opinion about what happens *after* dispatch — which is the whole
+ * contract the three modes share.
+ */
+async function dispatchTasks(
+  tasks: Map<number, RunTask>,
+  execution: SweepExecution,
+  perRunTimeoutMs: number,
+): Promise<Map<number, PoolResult>> {
+  switch (execution.mode) {
+    case 'inline':
+      return await runTasksInline(tasks, execution.execute);
+    case 'distributed':
+      return await execution.dispatch(tasks);
+    default:
+      return await runTasksOnPool(tasks, {
+        workerUrl: execution.workerUrl,
+        workerCount: execution.workerCount,
+        perRunTimeoutMs,
+        ...(execution.workerData === undefined ? {} : { workerData: execution.workerData }),
+      });
+  }
+}
+
+/**
  * Runs a sweep end to end.
  *
  * @throws Error if the sweep specification does not validate, if the supplied
@@ -208,15 +266,7 @@ export async function runSweep(options: RunSweepOptions): Promise<SweepResult> {
   const now = options.now ?? (() => performance.now());
 
   const startedAt = now();
-  const results =
-    execution.mode === 'inline'
-      ? await runTasksInline(tasks, execution.execute)
-      : await runTasksOnPool(tasks, {
-          workerUrl: execution.workerUrl,
-          workerCount: execution.workerCount,
-          perRunTimeoutMs: spec.termination.perRunTimeoutMs,
-          ...(execution.workerData === undefined ? {} : { workerData: execution.workerData }),
-        });
+  const results = await dispatchTasks(tasks, execution, spec.termination.perRunTimeoutMs);
   const wallClockMs = now() - startedAt;
 
   const records = sortCanonically(
@@ -272,7 +322,7 @@ export async function runSweep(options: RunSweepOptions): Promise<SweepResult> {
         wallClockMs,
         runsPerSecond: seconds > 0 ? records.length / seconds : 0,
         worldTicksPerSecond: seconds > 0 ? ticks / seconds : 0,
-        workerCount: execution.mode === 'workers' ? execution.workerCount : 1,
+        workerCount: execution.mode === 'inline' ? 1 : execution.workerCount,
         totalWorldTicks: ticks,
         ...(options.referenceRunsPerSecond === undefined
           ? {}

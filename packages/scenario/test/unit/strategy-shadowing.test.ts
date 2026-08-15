@@ -1,0 +1,190 @@
+/*
+ * Multiverse Mages — no strategy silently fails to use a verb it asks for.
+ * Copyright (C) 2026 Ann Kelner
+ *
+ * This program is free software: you can redistribute it and/or modify it under
+ * the terms of the GNU Affero General Public License as published by the Free
+ * Software Foundation, either version 3 of the License, or (at your option) any
+ * later version. See the LICENSE file at the repository root, or
+ * <https://www.gnu.org/licenses/>.
+ *
+ * SPDX-License-Identifier: AGPL-3.0-or-later
+ */
+
+/**
+ * The standing check behind `strategy-audit.ts`. Two incidents made the class:
+ * `permissive-breadth` never founded a university in any sweep ever taken, and
+ * `narrow-depth` never asked for `grantFoundingKnowledge`. Both were found by
+ * reading a preference list by hand, months apart. This is the thing that finds
+ * the third one.
+ *
+ * ## Why it is born with an allowlist, and what each entry costs
+ *
+ * Three verbs are shadowed on this build. **Fixing them here is forbidden**, and
+ * the reason is the reason PR #70 exists as its own change: a strategy edited in
+ * the same branch as the check that found it measures the edit rather than the
+ * rule, and a preference-order change moves every balance baseline. So each is
+ * named, with the finding, and the check fails on anything that is *not* named.
+ *
+ * The allowlist is checked in both directions. A stale entry — a verb listed
+ * here that is no longer shadowed — fails too, because an allowlist that
+ * outlives its finding is how a fixed defect goes back to being invisible. It is
+ * the same discipline `POOL_BUILD_LIMITS` states for its own entries: *"delete
+ * an entry when the mechanic lands."*
+ *
+ * ## The audit must not change the run it audits
+ *
+ * `auditPolicy` walks `effectivePreferences` exactly as `policyFor` does. That
+ * is a claim about code, and several of these strategies draw randomness inside
+ * `preferences`, so a second tallying call would have advanced the agent
+ * generator and produced a different universe. The first test below is what
+ * holds the claim to account: the two policies must produce the same run, hash
+ * for hash.
+ */
+
+import { describe, expect, it } from 'vitest';
+
+import { BOT_POOL_REGISTRY, adaptAgentSession, policyFor, runEpisode } from '@mm/mc-harness';
+import { agentRng, createSession } from '@mm/agent-api';
+
+import {
+  AUDIT_RUN_SEED,
+  AUDIT_WORLD_TICK_CAP,
+  VERB_VERDICT,
+  actionName,
+  auditPool,
+  formatAudit,
+  referenceContent,
+  referenceScenario,
+} from '../../src/index.js';
+
+/**
+ * Verbs known to be shadowed on this build, each with the finding that owns it.
+ *
+ * Keyed `strategyId/action`. Delete an entry when the strategy is fixed; the
+ * check fails on a stale one.
+ */
+const KNOWN_SHADOWED: Readonly<Record<string, string>> = Object.freeze({
+  'portal-rush/1':
+    'permitTechnique is portal-rush\'s tempo move and sits fourth, behind openPortal, assignRole ' +
+    'and encourageResearch. assignRole is legal on all but one tick of a run, so the tempo line ' +
+    'is never reached and the technique the strategy names is never permitted by it. Its own ' +
+    'version-4 note predicted this for the version-3 build and it is still true at version 4: ' +
+    '"it sits third, behind openPortal and encourageResearch". Not a signature action, which is ' +
+    'why degeneracyOf reports the strategy healthy.',
+  'portal-rush/12':
+    'encourageResearch sits third, behind assignRole, which is legal on 599 of 600 ticks. The ' +
+    'comment above it calls it "tempo while the portal is unreachable" — the portal is reachable ' +
+    'on 384 of 600 ticks now, and on the other 216 assignRole takes the slot instead. So the ' +
+    'strategy has no tempo behaviour at all, and the cell it claims to push is pushed by nobody.',
+  'worship-maximizer/11':
+    'fundUniversity is a signature action and is never submitted. Both of its entries sit behind ' +
+    'blessMage: the first inside the `worship < favor` branch and the second after it, and ' +
+    'blessMage is legal on 598 of 600 ticks. So the strategy whose thesis is that worship is ' +
+    'bought with "blessings and buildings" buys only blessings, and the buildings half of its ' +
+    'hypothesis has never been measured. This is exactly permissive-breadth\'s incident ' +
+    '(w73/pool-build-order, PR #70) in a second strategy.',
+});
+
+const audits = auditPool();
+
+describe('the pool audit does not disturb the pool', () => {
+  it('produces the same run policyFor produces, hash for hash', () => {
+    // One strategy is enough and it has to be this one: uniform-random-legal is
+    // the only member of the pool that draws randomness on every round, so it is
+    // the only one where a duplicated `preferences` call would show up as a
+    // different universe rather than as nothing at all. Every other strategy's
+    // `preferences` is a pure function of the observation, and would agree here
+    // even if the audit called it twice.
+    const strategyId = 'uniform-random-legal';
+    const definition = BOT_POOL_REGISTRY.get(strategyId);
+    expect(definition).toBeDefined();
+
+    const { scenario } = referenceScenario(referenceContent());
+    const control = createSession({ scenario, agentSlotIndex: 0, strategyId });
+    runEpisode({
+      session: adaptAgentSession(control),
+      runSeed: AUDIT_RUN_SEED,
+      scenarioConfig: { worldTickCap: AUDIT_WORLD_TICK_CAP, options: {} },
+      policies: [
+        // `policyFor` verbatim — the production path, with nothing wrapped
+        // around it and nothing counted.
+        policyFor(definition!, {
+          runSeed: AUDIT_RUN_SEED,
+          agentSlotIndex: 0,
+          rng: agentRng({ runSeed: AUDIT_RUN_SEED, agentSlotIndex: 0, strategyId }),
+        }),
+      ],
+      worldTickCap: AUDIT_WORLD_TICK_CAP,
+    });
+
+    const audited = audits.find((audit) => audit.strategyId === strategyId);
+    expect(audited?.ticks).toBe(AUDIT_WORLD_TICK_CAP);
+    // The assertion the module note claims: the instrumented walk produced the
+    // *same universe*, not merely a plausible one. An audit that had drawn one
+    // extra number from the agent generator would diverge here on the first
+    // round and never reconverge.
+    expect(audited?.snapshotHash).toBe(control.snapshotHash());
+  });
+});
+
+describe('every verb a strategy asks for is a verb it can reach', () => {
+  it('reports the whole pool, so the inventory exists whatever the verdict', () => {
+    // Printed on purpose. The table is a deliverable in its own right: it is the
+    // only place in the build that says, per strategy and per verb, how often
+    // the mask allowed it against how often the strategy got to use it.
+    console.log(`\n${formatAudit(audits)}\n`);
+    expect(audits).toHaveLength(BOT_POOL_REGISTRY.definitions.length);
+  });
+
+  it('finds no shadowed verb that is not a known finding', () => {
+    const found = audits
+      .flatMap((audit) => audit.shadowed)
+      .map((verb) => ({
+        key: `${verb.strategyId}/${String(verb.action)}`,
+        detail:
+          `${verb.strategyId} listed ${actionName(verb.action)} (action ` +
+          `${String(verb.action)}) and never submitted it, though the mask allowed it on ` +
+          `${String(verb.ticksLegal)} ticks. Something ahead of it in its preference list is ` +
+          'legal every time it is.',
+      }));
+
+    const surprises = found.filter((verb) => KNOWN_SHADOWED[verb.key] === undefined);
+    expect(surprises.map((verb) => verb.detail)).toEqual([]);
+  });
+
+  it('holds the known-shadowed list to its own findings', () => {
+    const shadowed = new Set(
+      audits.flatMap((audit) =>
+        audit.shadowed.map((verb) => `${verb.strategyId}/${String(verb.action)}`),
+      ),
+    );
+    // A stale entry is worse than a missing one: it says a defect is known and
+    // accepted when it is in fact gone, and the next reader trusts it.
+    const stale = Object.keys(KNOWN_SHADOWED).filter((key) => !shadowed.has(key));
+    expect(stale).toEqual([]);
+  });
+
+  it('never lets a masked verb be mistaken for a shadowed one', () => {
+    // The two look identical in a run record — the strategy did not do the
+    // thing — and the fixes are opposite: a shadowed verb is a preference-order
+    // defect in the pool, an unreachable one is the build not offering the
+    // action at all. `openPortal` under portal-rush was the case that made the
+    // distinction matter, and `declareAscension` is the standing one.
+    for (const audit of audits) {
+      for (const verb of audit.verbs) {
+        if (verb.verdict === VERB_VERDICT.unreachable) expect(verb.ticksLegal).toBe(0);
+        if (verb.verdict === VERB_VERDICT.shadowed) {
+          expect(verb.ticksLegal).toBeGreaterThan(0);
+          expect(verb.timesListed).toBeGreaterThan(0);
+          expect(verb.timesSubmitted).toBe(0);
+        }
+      }
+    }
+  });
+
+  it('keeps the passive control with nothing to be shadowed on', () => {
+    const control = audits.find((audit) => audit.strategyId === 'passive-control');
+    expect(control?.verbs).toEqual([]);
+  });
+});

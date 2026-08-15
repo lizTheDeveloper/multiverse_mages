@@ -32,7 +32,7 @@
 
 import { describe, expect, it } from 'vitest';
 
-import type { RaidConstantRecord } from '@mm/content';
+import type { PrimitiveRecord, RaidConstantRecord } from '@mm/content';
 import {
   ContentValidationError,
   MAX_ENGAGEMENT_TICKS,
@@ -49,6 +49,10 @@ const registry = loadContent(shippedContentSource());
 
 function shippedRaidConstants(): RaidConstantRecord[] {
   return shippedDocuments()['raid-constant.json'] as unknown as RaidConstantRecord[];
+}
+
+function shippedPrimitives(): PrimitiveRecord[] {
+  return shippedDocuments()['primitive.json'] as unknown as PrimitiveRecord[];
 }
 
 /** Every diagnostic message a broken content set produced, joined for matching. */
@@ -174,7 +178,7 @@ describe('the loader refuses a raid table that is missing or overgrown', () => {
     const records = shippedRaidConstants();
     const duplicate = records.find((record) => record.id === 'cast-range');
     if (duplicate === undefined) throw new Error('fixture drifted');
-    const problems = checkRaidConstants([...records, duplicate]);
+    const problems = checkRaidConstants([...records, duplicate], shippedPrimitives());
     expect(problems.map((entry) => entry.message).join('\n')).toContain('declared twice');
   });
 });
@@ -216,6 +220,55 @@ describe('the loader refuses caps that would not bind', () => {
       setValue(documents, 'max-summons-per-side', registry.raidConstant('max-combatants-per-side') + 1);
     });
     expect(message).toContain('is decorative');
+  });
+
+  /**
+   * The summon ceiling is written down in two files, and it disagreed with
+   * itself.
+   *
+   * `raid-constant.json`'s `max-summons-per-side` bounds the roster
+   * (`rules-raid/combatants.ts`); `primitive.json`'s `summon` cap clamps the
+   * stacked magnitude (`@mm/primitives/caps.ts`). They read 16 and 8 for as long
+   * as both have existed, and nothing compared them — which was survivable only
+   * because `summon` has no node-driven consumer yet, so one of the two numbers
+   * was inert. The check is symmetric: neither file is authoritative, and
+   * whichever one an author edits, the loader names the other.
+   */
+  it('rejects a summon cap that disagrees with the primitive table', () => {
+    const raidSide = refusalFor((documents) => {
+      setValue(documents, 'max-summons-per-side', 7);
+    });
+    expect(raidSide).toContain('the same ceiling written down twice');
+
+    const primitiveSide = refusalFor((documents) => {
+      const summon = recordById(documents as never, 'primitive.json', 'summon') as {
+        cap: { kind: string; value: number };
+      };
+      summon.cap = { kind: 'count-per-side', value: 7 };
+    });
+    expect(primitiveSide).toContain('the same ceiling written down twice');
+  });
+
+  it('rejects a summon cap the arithmetic would read as a fixed-point value', () => {
+    // `caps.ts`: *"A cap of 8 read as an fp value would be eight
+    // one-thousand-and-twenty-fourths of a combatant, i.e. an effective ban on
+    // summoning."* Silent, and it looks like balance.
+    const message = refusalFor((documents) => {
+      const summon = recordById(documents as never, 'primitive.json', 'summon') as {
+        cap: { kind: string; value: number };
+      };
+      summon.cap = { kind: 'fp', value: 8 };
+    });
+    expect(message).toContain("wearing a cap's clothes");
+  });
+
+  it('agrees with itself in the shipped content set', () => {
+    // The positive control for the two above, read off the shipped files rather
+    // than restated: a check that only ever sees mutated input proves nothing
+    // about what ships.
+    const summon = registry.primitives.find((entry) => entry.record.id === 'summon');
+    expect(summon?.record.cap).toEqual({ kind: 'count-per-side', value: 8 });
+    expect(registry.raidConstant('max-summons-per-side')).toBe(8);
   });
 
   it('rejects a victory threshold outside 1..fp(1024)', () => {

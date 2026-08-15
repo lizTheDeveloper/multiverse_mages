@@ -49,7 +49,7 @@ import {
   worshipShareOfRegeneration,
 } from '../../src/index.js';
 
-import { constants, costs, worshipYieldPrimitive } from './god-fixtures.js';
+import { constants, costs, worshipMax, worshipYieldPrimitive } from './god-fixtures.js';
 
 const C = constants();
 const COSTS = costs();
@@ -75,14 +75,14 @@ describe('regeneration scales with worship and never reaches zero', () => {
   });
 
   it('spreads regeneration between a bare universe and one at the worship ceiling', () => {
-    const top = bare(C.worshipMax);
-    expect(top).toBe(C.favorRegenBase + mul(C.worshipMax, C.favorPerWorship));
+    const top = bare(worshipMax());
+    expect(top).toBe(C.favorRegenBase + mul(worshipMax(), C.favorPerWorship));
     expect(top).toBeGreaterThan(bare(0));
   });
 
   it('is monotonic in worship', () => {
     let previous = bare(0);
-    for (const worship of [512, 2048, 4096, C.worshipMax]) {
+    for (const worship of [512, 2048, 4096, worshipMax()]) {
       const next = bare(worship);
       expect(next).toBeGreaterThanOrEqual(previous);
       previous = next;
@@ -94,8 +94,8 @@ describe('regeneration scales with worship and never reaches zero', () => {
     // coefficient taken over a quantity with a large constant in it measures
     // mostly the constant.
     expect(worshipShareOfRegeneration(bare(0), C)).toBe(0);
-    expect(worshipShareOfRegeneration(bare(C.worshipMax), C)).toBe(
-      mul(C.worshipMax, C.favorPerWorship),
+    expect(worshipShareOfRegeneration(bare(worshipMax()), C)).toBe(
+      mul(worshipMax(), C.favorPerWorship),
     );
   });
 });

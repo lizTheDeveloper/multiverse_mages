@@ -1,0 +1,2963 @@
+<!doctype html>
+<html lang="en">
+<!--
+  Multiverse Mages — the engagement: every spell gets a moment in the world.
+  Copyright (C) 2026 Ann Kelner
+  SPDX-License-Identifier: AGPL-3.0-or-later
+
+  ============================================================================
+  WHAT THIS REPLACES, AND WHY
+  ============================================================================
+  The previous ui/raid/ prototype asked "every action is masked for the
+  duration — what is a player actually *doing* while a raid runs?" and answered
+  "nothing". docs/design/raid-engagement.md §0 (author, 2026-08-12) rules that
+  the masking was the bug, and §1 repeals vision §3's frozen-policy sentence:
+
+      The ruleset MAY be changed during a raid, and every change LOCKS until
+      the raid ends. Reverting afterwards costs substantially more favor.
+
+  So the old prototype's premise is gone and it has been replaced rather than
+  kept alongside — a prototype arguing from a repealed rule is a trap, and git
+  history holds it (72ce640, "proto: watching a raid you cannot touch"). Its
+  one durable finding survives here: sound-design §7.2's claim that portal
+  stability is the most important number in a raid, which is why the stability
+  bar sits directly under the field and nothing competes with it for that spot.
+
+  Its one design defect is also fixed. The old page drew the player's own
+  combatants in --god cyan. ui/glow/ rules that cyan is the god's own light and
+  the fourteen form hues stay the world's; a mage is of the world, not of the
+  god, so a cyan mage breaks the rule at the exact moment it matters most. Here
+  cyan appears only on the god's own affordances — live verbs, the muster
+  clock, the constitution's switches, the lock chrome, focus rings — and every
+  drawn spell wears its cell's form hue and nothing else.
+
+  ============================================================================
+  THE BID IS GONE — raid-engagement.md §11 supersedes it
+  ============================================================================
+  Until now, clicking a mage STOPPED THE ACTION and charged for it: 25 favor on
+  a rising ladder, a 20-Vis raider counter-bid on its own, a 40-Vis floor, 2.6 s
+  of deliberation. The author (2026-08-12): "Never mind about pause at any
+  point. I think you should just be able to re-look — rewind to view, but not to
+  act. Like at the end, you should be able to replay it."
+
+  A currency, an escalation ladder, a floor, a deliberation window and an
+  opponent model, deleted rather than retuned; git holds them (w39/raid-polish).
+  One rule replaces all of it:
+
+      YOU CANNOT STOP THE CLOCK. YOU CAN ALWAYS LOOK AT WHAT ALREADY HAPPENED.
+
+  The scaffolding "Pause trace" button went with the bid — a page claiming the
+  clock cannot be stopped must not ship a button that stops it. The load-bearing
+  half is §11's: "Any directive issued while looking back applies to *now* ... or
+  it is refused. If that is ever ambiguous in the interface, the interface is
+  wrong." So a directive issued from the record lands on the LIVE tick, snaps
+  the view back to it, and logs both ticks — you cannot be looking at the past
+  at the moment a change of yours lands.
+
+  And it is NEARLY FREE, which is the point worth taking away. sim-core already
+  ships deterministic replay, versioned snapshots and golden replay fixtures,
+  and step(state, actions, rng) -> state is pure. A raid replay is therefore A
+  CAPABILITY TO EXPOSE, NOT A FEATURE TO BUILD: seed plus action log re-runs an
+  engagement identically, which is what the goldens assert on every commit. §4b
+  below is the miniature of exactly that, built the same way rather than faked.
+
+  ============================================================================
+  KNOWN COST — read this before believing anything on screen
+  ============================================================================
+  raid-engagement.md §5: "A raid view that animates plausible-looking magic
+  unconnected to what the engine decided is worse than no raid view, because it
+  will be believed."
+
+  THIS PAGE IS NOT LIVE AGAINST THE SIMULATION. packages/rules-raid is imported
+  by no package; there is nothing to be live against. The engagement here is a
+  SYNTHETIC TRACE generated inside this file by a seeded PRNG, and the page
+  says so in its own interface, not only here. What it does have going for it:
+
+    REAL, baked from packages/content/data at commit 95b37fc —
+      · the twelve v1 cells (cell.json, `"v1": true`), which is exactly the
+        3-technique x 4-form rectangle contracts.md §2.2 declares
+      · all 51 nodes in those cells: id, display name, tier, and every
+        engagement-scale effect with its authored magnitude and durationTicks
+      · every stacking rule and cap from primitive.json
+      · every constant in raid-constant.json — field extent, terrain cell size
+        and the three terrain chances, deployment depth, movement per tick,
+        cast range, area-denial radius, theft range, objective radii and
+        progress, hit points, cast vigor base and per-tier, portal stability,
+        its jitter and decay, the withdraw margin, and the victory fraction
+
+    MIRRORED from packages/rules-raid/src/arbitration.ts, not imported —
+      · the seven-primitive dispatch of CastArbiter#effectsOf
+      · the two-layer legality check, and forbiddenCastsBlocked as a counter
+      · applyWardOnce: damage summed, then exactly ONE ward application
+      · passiveDefences for ward and concealment
+      · the cast order: legality, then cost, then expenditure, then effects
+
+    AUTHORED HERE and in no content file, flagged on the page as such —
+      · the muster duration, the cast cooldown, vigor regeneration, the intent
+        policy that chooses a target and a node, mage rosters and their held
+        nodes, objective instance counts, and the damage viewing multiplier
+      · line of sight is sampled along the segment rather than walked with
+        geometry.ts's supercover trace
+      · THE PLAYBACK RATE, which is a viewing rate and not a rule. The
+        engagement tick is 100 ms; contact and resolution are played at 400 ms
+        a tick, a quarter of engagement time, so that a cast can be read.
+        Muster is played 1:1 and is deliberately not slowed — its clock is the
+        pressure, and the author praised exactly that.
+
+    AHEAD OF THE ENGINE, deliberately, and the likeliest thing to be believed —
+      · arbitration.ts computes the legal mask ONCE from a frozen snapshot and
+        says so in its own comments. The lock-don't-freeze behaviour animated
+        here is raid-engagement.md §1, which W37 is implementing on
+        w37/raid-playable. This page shows the design, not the shipped code.
+      · Vis and exposure exist in no package. They are §3 proposals, drawn as
+        proposals.
+      · the raid verb set DOES now exist, on w37/raid-playable, as six verb-*
+        costs in raid-constant.json — forbid, permit, levy, ward, mend,
+        conceal. None of them is in this tree, and the four drawn here are an
+        older, different set. THIS PAGE'S "levy" HAS BEEN RENAMED to "call up
+        the reserve" rather than left to collide: w37's levy is a detachment
+        that does not fight, this one's is a detachment that does, and one word
+        over two mechanics is how a merge silently picks the wrong one. The gap
+        is named in the provenance panel rather than resolved — w37 is unmerged
+        and guessing at its semantics would be worse than the collision.
+      · vision §7's "the god issues no orders" is NOT repealed. Every verb here
+        is god-shaped: permit, forbid, and favor spent on a standing condition.
+        Nothing on this page targets or moves a combatant — inspecting one is
+        not commanding her, and looking at the record of one is not either.
+
+  Two open questions in §6 are deliberately not answered here: the muster clock
+  runs on engagement time because something had to be picked (§6.5 open), and
+  the exposure ledger counts what the host's academics OBSERVED rather than
+  what they learned, because §6.6 has not been ruled.
+
+  ============================================================================
+  WHAT IT DEPENDS ON — two files, both in this repository
+  ============================================================================
+  No CDN, no webfont, no network call, no build step. It does depend on two
+  siblings, and this is the one thing that changed about how to open it:
+
+    ../shared/theme.css   ALL themed colour. This page declares three themed
+                          tokens of its own — host, raider, brass — plus two
+                          that are deliberately NOT themed, because they are
+                          laid over the field, which is dark in both themes. It
+                          used to carry a private copy of the whole palette,
+                          which is how a prototype silently opts out of a
+                          contrast fix landed in the shared sheet: on vellum the
+                          twelve grid switches read 1.47:1 here, against 5.28:1
+                          for the same control anywhere else in ui/.
+    ../shared/theme.js    the light / system / dark control, remembered per
+                          browser rather than per prototype.
+
+  Opened from file:// with the repository tree intact, the stylesheet resolves
+  and both themes render, following the OS. The theme *control* does not mount
+  there: it is an ES module, and a module load from a file origin fails the CORS
+  check in every current browser. That is a missing button, not a broken page,
+  and it is the same everywhere in ui/. Over http:// — `npm run ui`, then
+  http://localhost:8200/ui/raid/ — everything mounts.
+
+  Copied out on its own, without ../shared/, this file is NOT self-contained and
+  will render unstyled. Publishing it as a single artifact therefore has to
+  inline theme.css first; nothing in this repository does that today.
+
+  To regenerate the baked content block below:
+    node -e "const c=require('./packages/content/data/cell.json'),n=Object.fromEntries(require('./packages/content/data/node.json').map(x=>[x.id,x])),P=new Set(['direct-damage','ward','area-denial','blink','summon','concealment','knowledge-steal','portal']);console.log(JSON.stringify(c.filter(x=>x.v1).map(x=>({id:x.id,t:x.technique,f:x.form,n:x.nodes.map(i=>({id:i,name:n[i].name,tier:n[i].tier,e:n[i].effects.filter(e=>P.has(e.primitive)).map(e=>({p:e.primitive,m:e.magnitude,d:e.durationTicks}))}))}))))"
+-->
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Multiverse Mages — the engagement</title>
+<link rel="stylesheet" href="../shared/theme.css">
+<style>
+/* ==========================================================================
+   TOKENS
+   Colour lives in ui/shared/theme.css. This page used to restate that palette
+   locally — it was copied out of ui/glow/index.html before the shared sheet
+   existed — and a copied palette is how a prototype drifts without anyone
+   seeing it: the sheet takes a contrast fix, the copy keeps the old value, and
+   nothing in the repository compares them by eye. So the copy is gone, and the
+   values below are the sheet's wherever the two disagreed.
+
+   The sheet is also where the colour *rule* is enforced rather than merely
+   restated. ui/glow/ argues it: cyan is the god's own light, the fourteen form
+   hues stay the world's — and on vellum the god's light is DARK, because a
+   cyan bright enough to read measures 1.01:1 against latent. That inversion is
+   the sheet's job. A local copy of the light-mode palette would have quietly
+   opted this page out of it.
+
+   What remains here is only what the shared sheet has no name for: the two
+   sides of an engagement, and the brass that marks a number authored on this
+   page rather than baked from content. Three tokens, declared in all three
+   theme states, because a token declared only inside a dark block falls back
+   to its light value when a viewer *chooses* dark.
+
+   Two tokens went out unreplaced rather than moved, because nothing referenced
+   them: --god-deep, and a --shadow that no rule on this page ever spent.
+   ========================================================================== */
+:root {
+  --host:    #4A5F6B;   /* the defending universe. A cold slate, never cyan. */
+  --raider:  #A2331F;   /* the attacking universe. The deny family. */
+  --brass:   #6B4C05;   /* authored here, not baked from content. */
+
+  /* The engagement field is a dark plate in BOTH themes — .fieldwrap paints
+     #090D0E and the canvas is drawn from the on-ink palette either way, because
+     you are looking into the world rather than at a page. So anything laid over
+     it must NOT follow the theme, and this is declared once and never
+     redefined below. The muster clock is the case that proves it: it briefly
+     read var(--god-lit), which on vellum resolves to #04454E and put the
+     largest, most load-bearing number on the page at 1.83:1 against black.
+     The rest of the on-field chrome is literal hex for the same reason. */
+  --field-god:      #6FF0FA;
+  --field-god-glow: #12B8C6;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --host:    #8FB4C4;
+  --raider:  #DE7059;
+  --brass:   #C9A034;
+}}
+:root[data-theme="dark"] {
+  --host:    #8FB4C4;
+  --raider:  #DE7059;
+  --brass:   #C9A034;
+}
+
+/* box-sizing, the reduced-motion override and the body rule below all come
+   from the shared sheet too. body is restated here and only here because the
+   host paints its own ground behind the page: an inherited background is not
+   the same claim as an explicit one. */
+body{
+  margin:0; background:var(--ground); color:var(--ink);
+  font:15px/1.55 var(--sans); -webkit-font-smoothing:antialiased;
+}
+.wrap{max-width:94rem;margin:0 auto;padding:1.6rem 1.15rem 4rem}
+:focus-visible{outline:2px solid var(--god);outline-offset:2px}
+
+/* ---- the two utility styles everything else is built from ---- */
+.lab{font:10px var(--mono);letter-spacing:.15em;text-transform:uppercase;color:var(--faint)}
+.num{font-family:var(--mono);font-variant-numeric:tabular-nums;letter-spacing:-.01em}
+code{font:12.5px var(--mono);color:var(--soft)}
+
+/* ============================== LETTERHEAD ============================== */
+.head{display:flex;align-items:flex-end;gap:1.1rem;flex-wrap:wrap;margin-bottom:.55rem}
+.head .titles{flex:1 1 32rem;min-width:0}
+.eyebrow{font:11px var(--mono);letter-spacing:.16em;text-transform:uppercase;color:var(--god)}
+h1{font:400 clamp(1.7rem,3.2vw,2.4rem)/1.06 var(--serif);margin:.3rem 0 .45rem;letter-spacing:-.015em;text-wrap:balance}
+.lede{color:var(--soft);max-width:66ch;margin:0}
+.lede b{color:var(--ink);font-weight:600}
+.lede em{font-style:italic;color:var(--ink)}
+
+.chips{display:flex;gap:.4rem;flex-wrap:wrap;align-items:center}
+.chip{
+  font:10px var(--mono);letter-spacing:.11em;text-transform:uppercase;
+  padding:.4rem .6rem;border:1px solid var(--line);border-radius:2px;
+  background:var(--panel);color:var(--soft);cursor:pointer
+}
+.chip:hover{border-color:var(--rule-hi)}
+.chip.synthetic{
+  border-color:var(--brass);color:var(--brass);cursor:default;
+  background:color-mix(in srgb,var(--brass) 6%,var(--panel))
+}
+
+/* ============================== PHASE RAIL ============================== */
+.rail{
+  display:grid;grid-template-columns:repeat(3,1fr);gap:1px;margin:1.3rem 0 1rem;
+  background:var(--line);border:1px solid var(--line);border-radius:3px;overflow:hidden
+}
+.ph{background:var(--panel);padding:.7rem .85rem .75rem;display:flex;flex-direction:column;gap:.3rem;min-width:0}
+.ph .top{display:flex;align-items:baseline;gap:.5rem}
+.ph .nm{font:400 1.02rem var(--serif);color:var(--faint)}
+.ph .agency{margin-left:auto;font:9.5px var(--mono);letter-spacing:.1em;text-transform:uppercase;color:var(--faint)}
+.ph .what{font-size:.83rem;color:var(--faint);line-height:1.45}
+.ph .bar{height:3px;background:var(--sunk);border-radius:2px;overflow:hidden}
+.ph .bar i{display:block;height:100%;width:0;background:var(--rule-hi)}
+.ph[data-live="1"]{background:color-mix(in srgb,var(--god) 9%,var(--panel))}
+.ph[data-live="1"] .nm{color:var(--god);font-weight:500}
+.ph[data-live="1"] .agency{color:var(--god)}
+.ph[data-live="1"] .what{color:var(--soft)}
+.ph[data-live="1"] .bar i{background:var(--god);box-shadow:0 0 10px -2px var(--god)}
+.ph[data-done="1"] .bar i{width:100%!important;background:var(--rule-hi);box-shadow:none}
+
+/* ============================== THE PANEL ============================== */
+/* Three columns for as long as three columns fit. The old middle breakpoint
+   dropped the record column below the fold at any width under 88rem, which is
+   most laptops, and that is how a log that exists becomes a log nobody finds. */
+.panel{display:grid;grid-template-columns:18.5rem minmax(0,1fr) 21.5rem;gap:.9rem;align-items:start}
+@media (max-width:76rem){
+  /* the god's affordances go full width across the top; field and record keep
+     their side-by-side relationship, because the record is read WHILE watching */
+  .panel{grid-template-columns:minmax(0,1fr) 21rem}
+  .panel > .stack:first-child{grid-column:1/-1;flex-direction:row;flex-wrap:wrap}
+  .panel > .stack:first-child > .card{flex:1 1 21rem}
+}
+@media (max-width:54rem){
+  .panel{grid-template-columns:minmax(0,1fr)}
+  .panel > .stack:first-child{flex-direction:column}
+}
+
+.card{border:1px solid var(--line);border-radius:3px;background:var(--panel);display:flex;flex-direction:column;min-width:0}
+/* a class-level display beats [hidden]'s UA display:none. Every hideable
+   element on this page needs its own rule, and the dossier is a .card. */
+.card[hidden]{display:none}
+.card > h2{
+  margin:0;padding:.55rem .75rem;border-bottom:1px solid var(--line);
+  font:10px var(--mono);letter-spacing:.15em;text-transform:uppercase;color:var(--faint);font-weight:500;
+  display:flex;align-items:center;gap:.45rem
+}
+.card > h2 .side{margin-left:auto;font-size:9px;letter-spacing:.09em}
+.card .body{padding:.7rem .75rem .8rem;display:flex;flex-direction:column;gap:.7rem;min-width:0}
+.stack{display:flex;flex-direction:column;gap:.7rem}
+
+/* ---- meters ---- */
+.meter{display:flex;flex-direction:column;gap:.25rem}
+.meter .row{display:flex;align-items:baseline;gap:.4rem;font:10px var(--mono);letter-spacing:.11em;text-transform:uppercase;color:var(--faint)}
+.meter .row b{margin-left:auto;font-family:var(--mono);font-variant-numeric:tabular-nums;font-weight:600;letter-spacing:0;font-size:12px}
+.meter .track{height:6px;background:var(--sunk);border-radius:3px;overflow:hidden;border:1px solid var(--line)}
+.meter .track i{display:block;height:100%;width:0;transition:width 140ms linear}
+.meter.favor .track i{background:var(--god)}
+.meter.favor .row b{color:var(--god)}
+.meter.vis .track i{background:var(--raider)}
+.meter.vis .row b{color:var(--raider)}
+.meter.expo .track i{background:var(--mentem)}
+.meter.expo .row b{color:var(--mentem)}
+.meter .note{font:9.5px var(--mono);color:var(--faint);line-height:1.5}
+
+/* ---- the constitution: twelve switches ---- */
+.consti{display:flex;flex-direction:column;gap:.35rem}
+/* display: on a class beats [hidden]'s UA display:none, so every element the
+   collapse hides needs its own rule or it stays on screen and grows the card */
+.consti[hidden]{display:none}
+.crow[hidden]{display:none}
+.crow{display:grid;grid-template-columns:4.6rem repeat(4,1fr);gap:.25rem;align-items:center}
+.crow .tech{font:9.5px var(--mono);letter-spacing:.09em;text-transform:uppercase;color:var(--faint);text-align:right;padding-right:.15rem}
+.chead .form{font:9px var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--faint);text-align:center}
+.cell{
+  appearance:none;border:1px solid var(--line);border-radius:2px;background:var(--sunk);
+  color:var(--god);font:9.5px var(--mono);letter-spacing:.06em;text-transform:uppercase;
+  padding:.34rem .1rem;cursor:pointer;text-align:center;min-width:0;overflow:hidden;white-space:nowrap
+}
+.cell[data-state="permitted"]{
+  border-color:color-mix(in srgb,var(--god) 55%,var(--line));
+  background:color-mix(in srgb,var(--god) 13%,var(--sunk));
+  box-shadow:0 0 9px -3px color-mix(in srgb,var(--god) 70%,transparent)
+}
+.cell[data-state="forbidden"]{
+  border-color:color-mix(in srgb,var(--deny) 50%,var(--line));
+  background:color-mix(in srgb,var(--deny) 12%,var(--sunk));color:var(--deny);
+  box-shadow:none
+}
+.cell[data-locked="1"]{cursor:not-allowed;border-style:dashed}
+.cell[data-locked="1"]::after{content:" \2022";font-size:11px;line-height:0}
+.cell:disabled{opacity:.5;cursor:not-allowed;box-shadow:none}
+.cell:not(:disabled):hover{border-color:var(--god-lit)}
+
+/* ---- a section that can no longer be used gets out of the field's way, but
+       it does NOT vanish: a change you made under pressure and cannot take
+       back must not read as though it never happened ---- */
+.csum{
+  display:flex;align-items:baseline;gap:.3rem;flex-wrap:wrap;
+  font:9.5px var(--mono);letter-spacing:.05em;color:var(--faint);
+  padding:.1rem .1rem;border-bottom:1px dashed color-mix(in srgb,var(--line) 75%,transparent)
+}
+.csum[hidden]{display:none}
+.csum .tk{color:var(--soft);text-transform:uppercase;letter-spacing:.1em}
+.csum .lk{color:var(--god)}
+.csum .shut{color:var(--deny)}
+.csum .open{color:var(--god)}
+.cclosed{
+  font:9.5px var(--mono);line-height:1.7;letter-spacing:.04em;color:var(--soft);
+  border:1px dashed color-mix(in srgb,var(--god) 40%,var(--line));border-radius:2px;
+  padding:.45rem .55rem;background:color-mix(in srgb,var(--god) 6%,var(--sunk))
+}
+.cclosed[hidden]{display:none}
+.cclosed b{color:var(--god);font-weight:600}
+.cclosed .shut{color:var(--deny)}
+.cmini{align-self:flex-start;font-size:9px;padding:.24rem .45rem}
+.cmini[hidden]{display:none}
+
+/* ---- the one rule that must not be fudged, said in the place you would act ----
+   While you are looking at the record, every switch and every verb in this card
+   still lands at the tick the engagement has actually reached. So the card says
+   so, in brass, immediately above the switches. ---- */
+.nowbar{
+  font:9.5px var(--mono);line-height:1.6;letter-spacing:.04em;padding:.42rem .5rem;border-radius:2px;
+  border:1px solid color-mix(in srgb,var(--brass) 55%,var(--line));color:var(--brass);
+  background:color-mix(in srgb,var(--brass) 10%,var(--sunk))
+}
+.nowbar[hidden]{display:none}
+.nowbar b{font-weight:600;color:var(--brass)}
+
+/* ---- verbs ---- */
+.verbs{display:flex;flex-direction:column;gap:.35rem}
+.verb{
+  display:grid;grid-template-columns:1fr auto;gap:.3rem .5rem;align-items:center;
+  border:1px solid var(--line);border-radius:2px;background:var(--sunk);
+  padding:.42rem .55rem;cursor:pointer;text-align:left;color:var(--ink);font:inherit;font-size:.88rem
+}
+.verb .cost{font:10px var(--mono);color:var(--god);letter-spacing:.05em}
+.verb .sub{grid-column:1/-1;font:9.5px var(--mono);color:var(--faint);line-height:1.45}
+.verb:not(:disabled){border-color:color-mix(in srgb,var(--god) 42%,var(--line))}
+.verb:not(:disabled):hover{background:color-mix(in srgb,var(--god) 10%,var(--sunk));border-color:var(--god)}
+.verb:disabled{cursor:not-allowed;opacity:.44;border-style:dashed}
+.verb:disabled .cost{color:var(--faint)}
+.verb[data-spent="1"]{opacity:.55;border-style:solid;border-color:var(--line)}
+.verb[data-spent="1"] .cost{color:var(--ok)}
+.verb[data-dead="1"] .sub{display:none}
+.verb[data-dead="1"]{padding:.3rem .55rem;opacity:.5}
+
+.deadbar{
+  border:1px dashed var(--line);border-radius:2px;padding:.5rem .6rem;
+  font:10px var(--mono);line-height:1.6;color:var(--faint);letter-spacing:.04em
+}
+
+/* ---- the field ---- */
+.fieldwrap{position:relative;background:#090D0E;border-bottom:1px solid var(--line)}
+.fieldwrap canvas{display:block;width:100%;height:auto;aspect-ratio:1}
+.overlay{position:absolute;inset:0;pointer-events:none;display:flex;flex-direction:column;padding:.55rem .6rem}
+.mclock{margin:auto;text-align:center;pointer-events:none}
+.mclock .n{
+  font:400 clamp(3rem,7vw,5.2rem)/1 var(--serif);font-variant-numeric:tabular-nums;letter-spacing:-.03em;
+  color:var(--field-god);text-shadow:0 0 42px color-mix(in srgb,var(--field-god-glow) 60%,transparent)
+}
+.mclock .n.urgent{color:#FFD27A;text-shadow:0 0 46px rgba(255,180,60,.55)}
+.mclock .u{font:10px var(--mono);letter-spacing:.2em;text-transform:uppercase;color:#7FD9E1;margin-top:.2rem}
+.mclock[hidden]{display:none}
+.fieldnote{
+  position:absolute;left:.6rem;bottom:.5rem;font:9px var(--mono);letter-spacing:.07em;color:#93A9AB
+}
+.fieldtag{
+  position:absolute;right:.6rem;top:.5rem;font:9px var(--mono);letter-spacing:.11em;text-transform:uppercase;
+  color:#8A7A46;border:1px solid #4A421F;background:rgba(20,16,6,.72);padding:.22rem .4rem;border-radius:2px
+}
+
+/* ---- the dossier ----
+   Cyan on the card head and on the selection ring, and that is the rule rather
+   than an exception to it: a focus ring is the god's own light. Inspecting a
+   mage stops nothing and costs nothing, in every phase. When the dossier is
+   reading the record rather than the present it wears brass, which is this
+   page's colour for "authored, or not now". ---- */
+.dossier > h2{color:var(--god)}
+.dossier .body{gap:.5rem}
+.say{margin:0;font-size:.85rem;line-height:1.5;color:var(--soft)}
+.say b{color:var(--ink)}
+.asof{
+  font:9.5px var(--mono);line-height:1.55;letter-spacing:.04em;padding:.4rem .5rem;border-radius:2px;
+  border:1px solid var(--line);color:var(--faint);background:var(--sunk)
+}
+.asof b{font-weight:600}
+.asof[data-rec="1"]{border-color:color-mix(in srgb,var(--brass) 55%,var(--line));color:var(--brass);
+  background:color-mix(in srgb,var(--brass) 10%,var(--sunk))}
+.dsrows{display:grid;grid-template-columns:1fr auto;gap:.1rem .5rem;font:10px var(--mono);color:var(--faint)}
+.dsrows b{color:var(--ink);font-variant-numeric:tabular-nums;text-align:right}
+.dsnodes{display:flex;flex-wrap:wrap;gap:.22rem}
+.nd{
+  font:9.5px var(--mono);padding:.16rem .3rem;border-radius:2px;border:1px solid var(--line);
+  background:var(--sunk);color:var(--soft);letter-spacing:.02em
+}
+.nd[data-legal="0"]{border-style:dashed;color:var(--deny);text-decoration:line-through;opacity:.8}
+.nd[data-reaching="1"]{border-color:var(--god);color:var(--god);background:color-mix(in srgb,var(--god) 12%,var(--sunk))}
+.dsract{display:flex;gap:.35rem;flex-wrap:wrap;margin-top:.1rem}
+.dsract .btn[data-live="1"]{border-color:var(--god);color:var(--god)}
+
+/* ---- the record ribbon. Brass, never cyan: you are not acting, and the god's
+       light means the god can do something here. It sits ACROSS THE TOP of the
+       field rather than over the middle of it, because the whole point of
+       looking back is to look at the field. ---- */
+.recbar{
+  align-self:stretch;text-align:center;font:10px var(--mono);letter-spacing:.09em;text-transform:uppercase;
+  color:#E7C063;border:1px solid #7A5C13;background:rgba(38,28,4,.9);padding:.32rem .55rem;border-radius:2px;
+  line-height:1.75;max-width:100%;
+  /* clears the synthetic-trace tag rather than running under it: that tag is
+     the page's other standing warning and must not be crowded by this one */
+  margin-top:1.45rem
+}
+.recbar[hidden]{display:none}
+.recbar b{color:#FFE9A8;font-weight:600}
+.recbar .live{display:block;color:#9FC2CB;text-transform:none;letter-spacing:.03em}
+.recbar .live b{color:#DBEFF3}
+
+.stability{padding:.6rem .75rem .7rem;display:flex;flex-direction:column;gap:.3rem;border-bottom:1px solid var(--line)}
+.stability .row{display:flex;align-items:baseline;gap:.5rem;font:10px var(--mono);letter-spacing:.13em;text-transform:uppercase;color:var(--faint)}
+.stability .row b{margin-left:auto;font-size:15px;letter-spacing:0;color:var(--limen);font-variant-numeric:tabular-nums}
+.stability .track{height:10px;background:var(--sunk);border:1px solid var(--line);border-radius:2px;overflow:hidden;position:relative}
+.stability .track i{position:absolute;inset:0 auto 0 0;background:linear-gradient(90deg,color-mix(in srgb,var(--limen) 45%,transparent),var(--limen))}
+.stability .track u{position:absolute;top:0;bottom:0;width:1px;background:var(--brass);text-decoration:none}
+.stability.crit .track i{background:linear-gradient(90deg,color-mix(in srgb,var(--deny) 45%,transparent),var(--deny))}
+.stability.crit .row b{color:var(--deny)}
+.stability .legendline{font:9.5px var(--mono);color:var(--faint);display:flex;gap:.8rem;flex-wrap:wrap}
+
+/* ---- the record strip: the one new control on the page ----
+   Directly under the stability bar and above the viewing controls, because it
+   belongs to the field it scrubs and not to the playback rate. It is built out
+   of .btn, .lab and .num like everything else here; the only new element is the
+   range input, and the only new colour is brass, which the page already uses
+   for "authored, or not now". ---- */
+.rec{
+  padding:.5rem .75rem .55rem;display:flex;gap:.45rem;align-items:center;flex-wrap:wrap;
+  border-bottom:1px solid var(--line)
+}
+.rec .scrub{flex:1 1 9rem;min-width:7rem;accent-color:var(--faint);height:1.1rem}
+.rec[data-rec="1"] .scrub{accent-color:var(--brass)}
+.rec .read{white-space:nowrap}
+.rec[data-rec="1"]{background:color-mix(in srgb,var(--brass) 9%,var(--panel))}
+.rec[data-rec="1"] .lab{color:var(--brass)}
+.rec .btn[data-live="1"]{border-color:var(--brass);color:var(--brass);
+  background:color-mix(in srgb,var(--brass) 14%,var(--sunk))}
+/* the record chrome is scoped to what is showing the past — the field and the
+   number under it. The viewing controls below stay ordinary, because playback
+   rate is a live setting whichever tick you are looking at. */
+.card[data-rec="1"] .fieldwrap{box-shadow:inset 0 0 0 2px var(--brass)}
+.card[data-rec="1"] .stability{background:color-mix(in srgb,var(--brass) 9%,var(--panel))}
+
+.controls{padding:.55rem .75rem .65rem;display:flex;gap:.4rem;align-items:center;flex-wrap:wrap}
+.controls .lab{margin-right:.1rem}
+.btn{
+  font:10px var(--mono);letter-spacing:.1em;text-transform:uppercase;padding:.38rem .6rem;
+  border:1px solid var(--line);border-radius:2px;background:var(--sunk);color:var(--soft);cursor:pointer
+}
+.btn:hover{border-color:var(--rule-hi);color:var(--ink)}
+.btn:disabled{opacity:.4;cursor:not-allowed}
+.btn:disabled:hover{border-color:var(--line);color:var(--soft)}
+.btn[aria-pressed="true"]{border-color:var(--god);color:var(--god);background:color-mix(in srgb,var(--god) 12%,var(--sunk))}
+.seed{
+  font:11px var(--mono);width:6.5rem;padding:.34rem .45rem;background:var(--sunk);color:var(--ink);
+  border:1px solid var(--line);border-radius:2px
+}
+
+/* ---- the legend strip: always dark, because it swatches canvas ink ---- */
+.legend{background:#0B0F10;border-top:1px solid var(--line);padding:.55rem .7rem;display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(9.5rem,1fr));gap:.3rem .8rem}
+.lg{display:flex;align-items:center;gap:.4rem;font:9.5px var(--mono);color:#8A9799;letter-spacing:.04em}
+.lg svg.k{width:20px;height:20px;flex:none}
+.lg b{color:#C6D2D3;font-weight:500}
+
+/* ---- the record column: ledger over log, held in the viewport ---- */
+.record{align-self:stretch;min-width:0}
+/* a definite height, not a max: the log must not resize under the reader as
+   rows arrive, and a sticky column that grows is a column that jumps */
+.recinner{position:sticky;top:.6rem;display:flex;flex-direction:column;gap:.9rem;height:calc(100vh - 1.2rem)}
+.recinner .ledger{flex:0 0 auto;max-height:27rem;overflow:hidden}   /* never shrunk to nothing */
+.recinner .ledger .body{overflow-y:auto;gap:.55rem;min-height:0}
+.recinner .logcard{flex:1 1 0;min-height:8rem;overflow:hidden}     /* takes exactly what is left */
+.recinner .log{flex:1 1 auto;max-height:none}
+/* only once the record stops being a column beside the field does it stop
+   being sticky — at every width where it sits next to the canvas it is pinned */
+@media (max-width:54rem){
+  .recinner{position:static;height:auto}
+  .recinner .ledger{max-height:none}
+  .recinner .log{max-height:24rem}
+}
+
+/* ---- the log. Three columns, and the third one wraps: the detail is the
+       thing worth reading and the old nowrap table pushed it off the side. ---- */
+.log{overflow-y:auto;background:var(--sunk);border-top:1px solid var(--line)}
+.log table{border-collapse:collapse;width:100%;table-layout:fixed}
+.log td{
+  font:10px var(--mono);line-height:1.5;padding:.28rem .35rem;
+  border-bottom:1px solid color-mix(in srgb,var(--line) 55%,transparent);
+  vertical-align:top;overflow-wrap:anywhere
+}
+.log td.t{color:var(--faint);text-align:right;font-variant-numeric:tabular-nums;width:2.7rem;white-space:nowrap}
+.log td.who{width:2.1rem;white-space:nowrap}
+.log .ttl{color:var(--ink);font-weight:600}
+.log .dot{display:inline-block;width:6px;height:6px;border-radius:50%;margin-right:.32rem;vertical-align:.5px}
+.log .r{float:right;margin-left:.45rem;color:var(--faint);font-variant-numeric:tabular-nums;font-weight:400}
+.log .dt{display:block;color:var(--soft)}
+.log .obs{
+  display:inline-block;margin-top:.18rem;padding:0 .28rem;border-radius:2px;
+  color:var(--mentem);border:1px solid color-mix(in srgb,var(--mentem) 45%,transparent);
+  background:color-mix(in srgb,var(--mentem) 9%,transparent);letter-spacing:.03em
+}
+.log .obs.first{font-weight:600;background:color-mix(in srgb,var(--mentem) 18%,transparent)}
+.log tr[data-kind="refused"] .dt{color:var(--deny);opacity:.95}
+.log tr[data-kind="refused"] .r{color:var(--deny)}
+.log tr[data-kind="evaded"] .r{color:var(--brass)}
+.log tr[data-kind="steal"] .r{color:var(--mentem)}
+.log tr[data-god="1"] .dt{color:var(--god)}
+.log tr[data-god="1"] td.who{color:var(--god)}
+.log .side-a{color:var(--raider)} .log .side-d{color:var(--host)}
+.log .empty{padding:.9rem .6rem;font:10px var(--mono);color:var(--faint);line-height:1.6}
+/* rows the moment you are looking at has not reached yet. They are not hidden —
+   it is all record, and a log that hides what you already own would be a lie —
+   but they read as ahead of you, and a brass line marks where you are. */
+.log tr.after td{opacity:.3}
+.log tr.nowline td{
+  padding:.2rem .35rem;font:9px var(--mono);letter-spacing:.11em;text-transform:uppercase;
+  color:var(--brass);border-top:1px solid var(--brass);border-bottom:0;background:color-mix(in srgb,var(--brass) 10%,transparent)
+}
+.log tr.nowline[hidden]{display:none}
+
+.ledblk{display:flex;flex-direction:column;gap:.28rem}
+.expolist{max-height:7rem;overflow-y:auto;display:flex;flex-direction:column;gap:.16rem}
+.ex{display:grid;grid-template-columns:1fr auto;gap:.4rem;font:10px var(--mono);color:var(--soft);
+  padding:.2rem .3rem;border-bottom:1px solid color-mix(in srgb,var(--line) 45%,transparent)}
+.ex b{color:var(--mentem);font-variant-numeric:tabular-nums;white-space:nowrap}
+.ex .tier{color:var(--faint)}
+.ex .empty{color:var(--faint)}
+.lootlist .ex b{color:var(--brass)}
+
+.tally{display:grid;grid-template-columns:1fr auto;gap:.15rem .5rem;font:10px var(--mono);color:var(--faint)}
+.tally b{color:var(--ink);font-variant-numeric:tabular-nums;text-align:right}
+.tally .bad{color:var(--deny)}
+.tally .sec{
+  grid-column:1/-1;margin-top:.35rem;padding-top:.3rem;border-top:1px solid color-mix(in srgb,var(--line) 60%,transparent);
+  font:9.5px var(--mono);letter-spacing:.13em;text-transform:uppercase;color:var(--faint)
+}
+.tally .sec:first-child{margin-top:0;padding-top:0;border-top:0}
+.tally .good{color:var(--ok)}
+.tally .expo{color:var(--mentem)}
+.tally .brass{color:var(--brass)}
+
+.outcome{
+  margin-top:.2rem;padding:.55rem .6rem;border:1px solid var(--brass);border-radius:2px;
+  background:color-mix(in srgb,var(--brass) 10%,var(--panel));font-size:.86rem;line-height:1.5
+}
+.outcome[hidden]{display:none}
+.outcome .h{font:10px var(--mono);letter-spacing:.13em;text-transform:uppercase;color:var(--brass);display:block;margin-bottom:.25rem}
+
+/* ============================== PROVENANCE ============================== */
+.prov{margin-top:1.6rem;border:1px solid var(--line);border-radius:3px;background:var(--panel)}
+.prov > h2{margin:0;padding:.6rem .85rem;border-bottom:1px solid var(--line);
+  font:10px var(--mono);letter-spacing:.15em;text-transform:uppercase;color:var(--brass);font-weight:500}
+.prov .inner{padding:.9rem .85rem 1.1rem;display:grid;grid-template-columns:repeat(auto-fit,minmax(19rem,1fr));gap:1.1rem}
+.prov h3{font:400 1.02rem var(--serif);margin:0 0 .35rem}
+.prov h3 .k{font:9px var(--mono);letter-spacing:.12em;text-transform:uppercase;padding:.16rem .34rem;
+  border-radius:2px;margin-right:.4rem;vertical-align:.12em}
+.k.real{color:var(--ok);border:1px solid var(--ok)}
+.k.mirror{color:var(--nomen);border:1px solid var(--nomen)}
+.k.made{color:var(--brass);border:1px solid var(--brass)}
+.k.ahead{color:var(--deny);border:1px solid var(--deny)}
+.prov ul{margin:.2rem 0 0;padding-left:1.05rem;font-size:.85rem;color:var(--soft);line-height:1.55}
+.prov li{margin-bottom:.22rem}
+.prov li b{color:var(--ink);font-weight:600}
+.prov .inner.ahead{grid-template-columns:1fr;padding-top:0}
+.prov .inner.ahead > div{border-top:1px dotted var(--line);padding-top:.9rem}
+.findings{border-top:1px solid var(--line);padding:.9rem .85rem 1.1rem}
+.findings h3{font:400 1.05rem var(--serif);margin:0 0 .5rem}
+.findings ol{margin:0;padding-left:1.15rem;font-size:.88rem;color:var(--soft);line-height:1.6;max-width:88ch}
+.findings li{margin-bottom:.5rem}
+.findings li b{color:var(--ink)}
+.findings code{background:var(--sunk);padding:.05rem .22rem;border-radius:2px}
+@media (min-width:68rem){
+  .prov .inner.ahead ul{columns:2;column-gap:2.2rem}
+  .prov .inner.ahead li{break-inside:avoid}
+  .findings ol{columns:2;column-gap:2.6rem;max-width:none}
+  .findings li{break-inside:avoid}
+}
+
+.foot{margin-top:1.4rem;font:10px var(--mono);line-height:1.7;color:var(--faint);max-width:86ch}
+.foot a{color:var(--soft)}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="head">
+    <div class="titles">
+      <div class="eyebrow">ui/raid · raid-engagement.md §4</div>
+      <h1>Every spell gets a moment in the world</h1>
+      <p class="lede">A raid, watched from inside the universe being raided. Agency is
+        <b>front-loaded</b>: you spend the raid verb set under a clock, intervene less and less
+        sharply once the two sides touch, and by the end you have earned the right to
+        <em>only watch</em>. <b>You cannot stop the clock — you can always look at what already
+        happened.</b> Click any mage to inspect her; scrub the record back to any tick and the
+        engagement keeps running underneath, because <em>rewind is to view, never to act</em>.
+        Every spell drawn on the field is a node in <code>packages/content/data</code> dispatched
+        through the seven effect primitives <code>arbitration.ts</code> knows.</p>
+    </div>
+    <div class="chips">
+      <span class="chip synthetic" title="rules-raid is imported by no package. There is nothing to be live against.">Synthetic trace</span>
+      <!-- ui/shared/theme.js mounts the light/system/dark control here. It is
+           the shared one so the choice carries between prototypes; this page
+           used to ship a private cycling button that remembered nothing. -->
+      <span id="theme-host"></span>
+    </div>
+  </header>
+
+  <div id="srchost" style="margin:1.2rem 0 1.4rem"></div>
+
+  <div class="rail" id="rail">
+    <div class="ph" data-phase="muster">
+      <div class="top"><span class="nm">Muster</span><span class="agency">agency: full</span></div>
+      <div class="what">Portal open, contact has not happened. Spend the verb set. Real decisions, under a clock.</div>
+      <div class="bar"><i></i></div>
+    </div>
+    <div class="ph" data-phase="contact">
+      <div class="top"><span class="nm">Contact</span><span class="agency">agency: narrowing</span></div>
+      <div class="what">Combatants engage; spells resolve. Fewer, sharper interventions. Ruleset changes still possible, still locking.</div>
+      <div class="bar"><i></i></div>
+    </div>
+    <div class="ph" data-phase="resolution">
+      <div class="top"><span class="nm">Resolution</span><span class="agency">agency: none</span></div>
+      <div class="what">The outcome is set — a side is nearly gone, or the portal is nearly down. It plays out to a termination condition. You watch.</div>
+      <div class="bar"><i></i></div>
+    </div>
+  </div>
+
+  <div class="panel">
+
+    <!-- ============================ LEFT: THE GOD'S VERBS ============================
+      The dossier sits directly above the constitution on purpose. Looking at a
+      mage and then forbidding the cell she was reaching for is one motion, and
+      it is the motion the whole verb set is for.
+
+      Everything in this column is LIVE, always, whatever tick the field is
+      showing. That is the §11 rule made structural: the record is over there,
+      the verbs are over here, and a directive lands at the live tick.
+    ============================================================================ -->
+    <div class="stack">
+      <section class="card dossier" id="dossier" hidden>
+        <h2><span id="dsr-who">—</span><span class="side" id="dsr-side"></span></h2>
+        <div class="body">
+          <div class="asof" id="dsr-when"></div>
+          <span class="lab" id="dsr-doing-lab">What she is doing</span>
+          <p class="say" id="dsr-why">—</p>
+          <div class="dsrows" id="dsr-rows"></div>
+          <span class="lab">What she can reach for</span>
+          <div class="dsnodes" id="dsr-nodes"></div>
+          <div class="dsract">
+            <button class="btn" id="dsr-close" type="button">Close</button>
+          </div>
+        </div>
+      </section>
+      <section class="card">
+        <h2>Your constitution <span class="side" style="color:var(--host)">host · you</span></h2>
+        <div class="body">
+          <div class="meter favor">
+            <div class="row"><span>Favor</span><b id="favor">—</b></div>
+            <div class="track"><i id="favor-bar"></i></div>
+            <div class="note">Worship, and the defender's only spend. Regenerates at fp(1)/tick here.</div>
+          </div>
+          <div class="nowbar" id="nowbar" hidden></div>
+          <div class="consti" id="consti"></div>
+          <div class="cclosed" id="cclosed" hidden></div>
+          <button class="btn cmini" id="consti-toggle" type="button" hidden>Show all twelve</button>
+          <div class="note lab" id="lockline" style="line-height:1.6;letter-spacing:.04em">
+            Forbidding is defender-only. Every change locks until the raid ends.
+          </div>
+          <div class="verbs" id="verbs"></div>
+          <div class="deadbar" id="deadbar" hidden>
+            Every verb is masked for the remainder. Resolution is the phase the old prototype
+            thought the whole raid was.
+          </div>
+        </div>
+      </section>
+
+      <section class="card">
+        <h2>Their expedition <span class="side" style="color:var(--raider)">raider · not yours</span></h2>
+        <div class="body">
+          <div class="meter vis">
+            <div class="row"><span>Vis carried</span><b id="vis">—</b></div>
+            <div class="track"><i id="vis-bar"></i></div>
+            <div class="note">A portable, lootable stock spent per resolved cast. Running out is what ends
+              an over-extended raid. Proposal — Vis exists in no package.</div>
+          </div>
+          <div class="meter expo">
+            <div class="row"><span>Exposure to you</span><b id="expo">—</b></div>
+            <div class="track"><i id="expo-bar"></i></div>
+            <div class="note">Every spell they cast is cast in front of your academics. Counted as
+              <em>observed</em>: §6.6 has not ruled whether it teaches a node or raises a weight.
+              Node by node, with the deepest tier they have shown you, in the ledger.</div>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <!-- ============================ CENTRE: THE FIELD ============================ -->
+    <section class="card" id="fieldcard">
+      <h2>The engagement <span class="side" id="fieldsub">200 m × 200 m · 100 ms engagement tick</span></h2>
+      <div class="fieldwrap">
+        <canvas id="field" width="900" height="900" tabindex="0"
+          aria-label="The battlefield. Click any combatant to inspect her; inspecting stops nothing and costs nothing, in every phase. With the keyboard: left and right arrows step through the combatants, Escape closes the dossier, comma and full stop scrub the record ten ticks back and forward, and L returns to the live tick. Rewind shows the record and never takes a directive: anything you do lands at the live tick. A textual cast log to the right carries the same events."></canvas>
+        <div class="overlay">
+          <div class="recbar" id="recbar" hidden></div>
+          <div class="mclock" id="mclock">
+            <div class="n num" id="mclock-n">30.0</div>
+            <div class="u">until contact</div>
+          </div>
+        </div>
+        <div class="fieldtag">synthetic trace</div>
+        <div class="fieldnote" id="fieldnote">terrain from seed · 20 × 20 cells of 10 m</div>
+      </div>
+      <div class="stability" id="stability">
+        <div class="row"><span>Portal stability</span><b><span id="stab">—</span> ticks</b></div>
+        <div class="track"><i id="stab-bar"></i><u id="stab-margin"></u></div>
+        <div class="legendline">
+          <span>tick <b class="num" id="tick">0</b></span>
+          <span>brass mark = withdraw margin, fp(400)</span>
+          <span id="alive">—</span>
+        </div>
+      </div>
+      <div class="rec" id="rec" data-rec="0">
+        <span class="lab" id="rec-lab">Record</span>
+        <button class="btn" id="rec-back" type="button"
+          title="Look ten ticks back. The engagement does not stop — it never does.">⟲ 10 t</button>
+        <input class="scrub" id="scrub" type="range" min="0" max="0" value="0" step="1"
+          aria-label="Scrub the record. Moving it shows an earlier tick of this engagement; the engagement keeps running, and any directive you issue still lands at the live tick.">
+        <button class="btn" id="rec-play" type="button" aria-pressed="false"
+          title="Freeze the record you are reading. This never freezes the engagement — nothing on this page does.">Hold the record</button>
+        <button class="btn" id="rec-live" type="button"
+          title="Jump the view back to the tick the engagement has actually reached.">Live ▸</button>
+        <span class="lab num read" id="rec-read">live</span>
+      </div>
+      <div class="controls">
+        <span class="lab">Trace</span>
+        <input class="seed" id="seed" value="hollow-gate" aria-label="Trace seed" spellcheck="false">
+        <button class="btn" id="restart" type="button">Restart</button>
+        <button class="btn" id="skip" type="button">Skip muster</button>
+        <span class="lab" style="margin-left:.4rem">Speed</span>
+        <button class="btn spd" data-spd="1" type="button" title="2.5 ticks a second — a quarter of engagement time, and the default. Muster is never slowed.">1×</button>
+        <button class="btn spd" data-spd="4" type="button" title="10 ticks a second — 1:1 with the 100 ms engagement tick, which is the rate this page used to run at.">4×</button>
+        <button class="btn spd" data-spd="16" type="button" title="40 ticks a second — four times engagement time, for skipping ahead.">16×</button>
+        <span class="lab num" id="pace" title="Playback only. It changes nothing the trace decides.">2.5 t/s · ¼ speed</span>
+        <span class="lab" style="margin-left:.4rem">Damage</span>
+        <button class="btn dmg" data-dmg="1" type="button" title="the authored magnitudes, unscaled — the default">×1 authored</button>
+        <button class="btn dmg" data-dmg="24" type="button" title="a viewing multiplier on node-driven damage — not content">×24</button>
+      </div>
+      <div class="legend" id="legend"></div>
+    </section>
+
+    <!-- ============================ RIGHT: THE RECORD ============================
+      The ledger and the cast log, held in the viewport for the whole raid. The
+      author watched a raid and could not find either of them: they were real,
+      they were on the page, and they were somewhere you had to go looking. So
+      this column is sticky, the ledger sits on top because it is short and must
+      never be pushed off, and the log takes whatever height is left and scrolls
+      itself. Neither may sit directly under the field — sound-design §7.2 gives
+      that spot to the portal stability bar and nothing competes with it.
+    ============================================================================ -->
+    <div class="stack record">
+      <div class="recinner">
+        <section class="card ledger">
+          <h2>Ledger <span class="side" id="ledger-side">what it has cost, both ways</span></h2>
+          <div class="body">
+            <div class="tally" id="tally"></div>
+            <div class="ledblk">
+              <span class="lab">Observed — what they have taught you</span>
+              <div class="expolist" id="expolist"></div>
+            </div>
+            <div class="ledblk">
+              <span class="lab">Taken out through the portal</span>
+              <div class="expolist lootlist" id="lootlist"></div>
+            </div>
+            <div class="outcome" id="outcome" hidden><span class="h">Termination</span><span id="outcome-t"></span></div>
+          </div>
+        </section>
+        <section class="card logcard">
+          <h2>Cast log <span class="side">who · what · what it did</span></h2>
+          <div class="log" id="logwrap"><table><tbody id="log"><tr><td class="empty" colspan="3">Nothing cast yet. The portal is open; contact has not happened.</td></tr></tbody></table></div>
+        </section>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================ PROVENANCE ============================ -->
+  <section class="prov">
+    <h2>What drives this, and what it is not</h2>
+    <div class="inner">
+      <div>
+        <h3><span class="k real">real</span>Baked from content</h3>
+        <ul>
+          <li>The <b>twelve v1 cells</b> — <code>cell.json</code>'s <code>"v1": true</code> flag, which is
+            exactly contracts §2.2's 3-technique × 4-form rectangle: intellego / perdo / rego over
+            limen / mentem / nomen / terram.</li>
+          <li>All <b>51 nodes</b> in those cells, with their real ids, display names, tiers, and every
+            engagement-scale effect at its authored magnitude and duration.</li>
+          <li>Every <b>stacking rule and cap</b> from <code>primitive.json</code>: ward and concealment
+            multiplicative-on-remainder at fp(922) and fp(870), blink and knowledge-steal by max,
+            area-denial and summon additive.</li>
+          <li>Every constant in <b><code>raid-constant.json</code></b> — extent, terrain chances,
+            deployment depth, movement, cast and theft range, hit points, cast vigor, portal
+            stability and its decay, the withdraw margin, the victory fraction.</li>
+        </ul>
+      </div>
+      <div>
+        <h3><span class="k mirror">mirrored</span>Copied from arbitration.ts</h3>
+        <ul>
+          <li>The <b>seven-primitive dispatch</b> of <code>CastArbiter#effectsOf</code>, switch arm for
+            switch arm.</li>
+          <li>Both legality layers, and <b><code>forbiddenCastsBlocked</code></b> as a counter that
+            could have been non-zero.</li>
+          <li><b><code>applyWardOnce</code></b> — damage summed, then exactly one ward application,
+            <code>floor(raw × (1024 − ward) / 1024)</code>. Never per source.</li>
+          <li>The cast order: legality, then cost, then the host's <code>cast</code> hook, then effects.
+            An unaffordable cast keeps its preparation.</li>
+          <li><b>Not imported.</b> <code>@mm/rules-raid</code> is a TypeScript workspace with no browser
+            build; this is a hand-copy and can drift from it.</li>
+        </ul>
+      </div>
+      <div>
+        <h3><span class="k made">authored here</span>In no content file</h3>
+        <ul>
+          <li>The <b>muster duration</b> (300 engagement ticks), the cast cooldown, vigor regeneration,
+            and the intent policy that picks a target and a node.</li>
+          <li><b>The playback rate, which is a viewing rate and not a rule.</b> The engagement tick is
+            100 ms, so a trace played at 100 ms a tick runs 1:1 with the world. Contact and resolution
+            are played at <b>400 ms a tick — 2.5 ticks a second, a quarter of engagement time</b> — so
+            that a cast can be read. <b>Muster is not slowed</b>, because its clock is the pressure.
+            The speed control is rebased on the slow pace: 1× is the default, 4× is 1:1, 16× is for
+            skipping ahead. Nothing about it changes what the trace decides.</li>
+          <li><b>Mage rosters and their held nodes</b> — drawn from the seed. There is no world state
+            behind them.</li>
+          <li>Objective instance counts, and therefore objective values.</li>
+          <li>The <b>damage multiplier</b>. It defaults to <b>×1 — the authored magnitudes</b>;
+            ×24 is a viewing multiplier on <code>direct-damage</code> and <code>area-denial</code>
+            only, there to show what a world where spells decide fights would look like.</li>
+          <li>Line of sight is <b>sampled</b> along the segment, not walked with
+            <code>geometry.ts</code>'s supercover trace, and the endpoints' own cells are excluded
+            from it — see finding 4.</li>
+          <li>Movement follows a <b>breadth-first flow field</b> over the 400 terrain cells,
+            standing in for <code>navigation.ts</code>, which this page cannot import.</li>
+        </ul>
+      </div>
+    </div>
+    <!-- The fourth kind is an essay, not a list, and it ran three times the
+         length of the other three. Left inside the four-up grid it stranded a
+         1050 x 820 void beside itself — a whole screen of nothing, which reads
+         as a pane that failed to render. It gets its own full-width block, set
+         in two columns so the measure stays readable. -->
+    <div class="inner ahead">
+      <div>
+        <h3><span class="k ahead">ahead of the engine</span>Design, not shipped code</h3>
+        <ul>
+          <li><b>Mid-raid forbidding.</b> <code>arbitration.ts</code> computes the legal mask once from a
+            <em>frozen</em> snapshot. The lock-don't-freeze behaviour animated here is
+            raid-engagement.md §1, which W37 is implementing on <code>w37/raid-playable</code>. This is
+            the single most believable untruth on the page, which is why it is named here.</li>
+          <li><b>Rewind is not a verb anywhere either — but it is the one thing here that is nearly
+            free.</b> <code>packages/sim-core</code> already ships deterministic replay, versioned
+            snapshots and golden replay fixtures, and <code>step(state, actions, rng) → state</code>
+            is pure: no wall-clock reads, no <code>Math.random</code>, no floating point in the rules
+            path. <b>A raid replay is a capability to expose, not a feature to build</b> — seed plus
+            action log re-runs an engagement identically, which is exactly the property the golden
+            fixtures assert on every commit. This page generates its engagement from a seed, so it
+            already holds the record. Rewinding here keeps <b>no snapshots at all</b>: it re-runs the
+            engagement into a copy from the seed and an append-only log of every directive and the tick
+            it landed on. A whole raid re-runs in about <b>7 ms</b>, half a frame, which is why that is
+            affordable. The live state is never touched, so looking back <b>cannot desync
+            anything</b>. It is one of the
+            few places where this prototype's honest limitation and the engine's actual capability
+            point the same way — and in the real game, seed plus action log is also small enough to
+            hand to someone else, which makes a raid a shareable artifact for disputes and study.</li>
+          <li><b>What was here before, and is now deleted.</b> Until this pass, clicking a mage
+            <em>stopped the action</em> and charged for it — 25 favor on a rising ladder, a raider
+            counter-bid of 20 Vis on its own ladder, a 40-Vis floor and 2.6 s of deliberation.
+            raid-engagement.md §11 supersedes that outright, and the replacement needs <b>no currency,
+            no escalation rule and no opponent model</b>. The scaffolding pause button went with it: a
+            page claiming the clock cannot be stopped must not ship a button that stops it. You can
+            freeze the <em>record</em> you are reading; you can never freeze the engagement.</li>
+          <li><b>Vis and exposure</b> exist in no package. §3 proposals, drawn as proposals. Vis is also
+            a spec collision — economy spec §250 forbids a fourth resource. With the bid gone, Vis is
+            spent on casting and nothing else.</li>
+          <li><b>The raid verb set no longer "exists in no package" — and this page's four are not
+            it.</b> <code>w37/raid-playable</code>'s <code>raid-constant.json</code> now carries six
+            verb costs: <code>verb-forbid</code>, <code>verb-permit</code>, <code>verb-levy</code>,
+            <code>verb-ward</code>, <code>verb-mend</code> and <code>verb-conceal</code> — four for the
+            defender and two for the attacker. None of them is in <em>this</em> tree, and the four
+            drawn here are an older, different set. <b>One word covered two mechanics, so this page
+            renamed its own rather than collide</b>: w37's <code>levy</code> is one detachment out of a
+            cohort that does <em>not</em> fight — its gloss says a second soldier detachment "could
+            never fire", because the opening deployment already commits every one a soldier cohort can
+            field — and this page's was a detachment that walks up and fights. It is now <b>call up the
+            reserve</b>. The gap is named, not resolved: <code>w37/raid-playable</code> is unmerged, and
+            guessing at its semantics would be worse than the collision was. Read the verbs here as a
+            sketch that has been overtaken, not as the shipped set.</li>
+          <li><b>The god still issues no orders.</b> vision §7 is not repealed. Every verb here is
+            permit, forbid, or favor spent on a standing condition; nothing targets a combatant.</li>
+          <li><b>Open questions left open.</b> The muster clock runs on engagement time because
+            something had to be picked (§6.5). Exposure counts what was <em>observed</em>, not what
+            was learned (§6.6).</li>
+        </ul>
+      </div>
+    </div>
+    <div class="findings">
+      <h3>Five things this prototype found, which is what a prototype is for</h3>
+      <ol>
+        <li><b><code>direct-damage</code> is the one engagement primitive the authored magnitudes
+          leave inert.</b> Measured over twenty seeds at the authored magnitudes — the ×1 default —
+          of every hit point removed in a raid: <b>area-denial 49.7%</b>, <b>summoned servants and
+          soldier detachments 48.4%</b>, and <b><code>direct-damage</code> 1.9%</b>. The arithmetic
+          is visible inside a single node. <code>pm-the-empty-room</code>, tier 5, the deepest
+          working in the v1 rectangle, carries <code>direct-damage: 768</code> —
+          <code>fp(0.75)</code> against a mage's <code>fp(64)</code> of hit points — and
+          <code>area-denial: 192</code> for 40 ticks, which is <code>fp(7.5)</code>: the same
+          node's field does ten times its own bolt. Meanwhile <code>summon-damage</code> is
+          <code>fp(2)</code> <em>per tick</em>. A per-cast primitive is competing with per-tick ones
+          and losing by two orders of magnitude. Every node is <code>tuningStatus: untuned</code>,
+          so this is a gap waiting on the balance harness rather than a bug — but it is exactly the
+          gap <code>winRateByPrimitive</code> exists to catch, and it is catchable now.</li>
+        <li><b>Every damaging node in the v1 rectangle is Perdo. All fourteen of them.</b> Which
+          makes raid-engagement.md §1's sharpest case sharper than it says, and different in kind:
+          forbidding Perdo mid-raid does not quiet the field, it changes what the war is made of.
+          Forbid all four Perdo cells and, over the same twenty seeds, the share of damage done by
+          summons and soldiers goes from <b>48.4% to 87.2%</b> while cast volume barely moves —
+          119 casts a raid becomes 103, because mages fall back to the Rego workings they can still
+          use and the field fills with wards, blinks and called servants instead.
+          <code>forbiddenCastsBlocked</code> comes off zero immediately and reaches about
+          <b>58 a raid</b>, every one of them your own defender reaching for something you took
+          away. You have not stopped the war; you have traded a war of unmaking for a war of
+          summoned servants, and you cannot trade back. Try it: forbid the whole Perdo row and
+          watch the ledger.</li>
+        <li><b>The portal timer, which sound-design §7.2 calls the most important information in a
+          raid, currently decides nothing.</b> Median contact lasts <b>162 engagement ticks</b>
+          against a portal authored to stand for <b>3,000</b>. Across twenty seeds not one raid
+          reached <code>withdraw-stability-margin</code>, so the stranded-raider rule — the number
+          most likely to need softening, by its own gloss — never fired once. Either combatants are
+          far too fragile for the portal's lifetime or the portal is authored for a much longer
+          engagement than the rest of the constants produce, and those are different fixes.</li>
+        <li><b>The authored terrain is harsher about sight than about ground, and both bite.</b>
+          <code>terrain-blocking-chance</code> is <code>fp(154)</code> on top of an 8% impassable
+          roll, so a sight-blocker sits in about a fifth of the 400 cells and a <code>fp(50)</code>
+          cast crosses enough of them that most long shots have no line: closing is the dominant
+          move, and that falls out of the constants rather than out of any policy here. Two
+          consequences bit this page hard enough to be worth passing on. <b>A supercover trace must
+          exclude the endpoints' own cells</b>, or two enemies who walk into the same wood cannot
+          see each other, neither can cast, and both stand there until the portal shuts — which is
+          precisely what happened here, in four seeds out of sixteen, and looked exactly like a
+          pathfinding bug. And <b>8% impassable is enough to make concave pockets</b>: a greedy step
+          oscillates in front of one for the rest of the raid, so this page ended up with a
+          breadth-first flow field. That is an argument for plugging <code>navigation.ts</code> in
+          rather than approximating it.</li>
+        <li><b>Two content files disagree about the summon cap.</b>
+          <code>primitive.json</code> caps <code>summon</code> at <code>count-per-side: 8</code>;
+          <code>raid-constant.json</code>'s <code>max-summons-per-side</code> is <code>16</code>.
+          This page uses 16 as the alive-cap and 8 as the per-stack cap, which is one reading of
+          two, and nothing appears to enforce either against the other.</li>
+      </ol>
+    </div>
+  </section>
+
+  <p class="foot">
+    Prototype, not the client. <code>ui/README.md</code> states what these are allowed to do.
+    Design of record: <code>docs/design/raid-engagement.md</code> §4.
+    Event vocabulary: <code>packages/rules-raid/src/arbitration.ts</code>.
+    Content baked at <code>95b37fc</code>; the regeneration command is in this file's source comment.
+    Colour rule: <code>ui/glow/index.html</code> — cyan is the god's own light, the form hues stay
+    the world's. Copyright © 2026 Ann Kelner · AGPL-3.0-or-later.
+  </p>
+</div>
+
+<script>
+'use strict';
+/* ==========================================================================
+   1. CONTENT, baked from packages/content/data at 95b37fc.
+      Twelve v1 cells; every node id, name and tier; every engagement-scale
+      effect at its authored magnitude (fp, scale 1/1024) and durationTicks.
+   ========================================================================== */
+const CELLS =
+[
+{"id":"intellego-mentem","t":"intellego","f":"mentem","n":[
+  {"id":"im-weigh-the-attention","name":"Weigh the Attention","tier":1,"e":[]},
+  {"id":"im-follow-the-thought","name":"Follow the Thought","tier":2,"e":[]},
+  {"id":"im-read-the-surface","name":"Read the Surface","tier":3,"e":[{"p":"knowledge-steal","m":192,"d":0}]},
+  {"id":"im-open-the-locked-room","name":"Open the Locked Room","tier":4,"e":[{"p":"knowledge-steal","m":384,"d":0}]}
+]},
+{"id":"intellego-terram","t":"intellego","f":"terram","n":[
+  {"id":"it-taste-the-soil","name":"Taste the Soil","tier":1,"e":[]},
+  {"id":"it-survey-the-strata","name":"Survey the Strata","tier":2,"e":[]},
+  {"id":"it-find-the-deep-seam","name":"Find the Deep Seam","tier":3,"e":[]},
+  {"id":"it-read-the-fault","name":"Read the Fault","tier":3,"e":[]}
+]},
+{"id":"intellego-limen","t":"intellego","f":"limen","n":[
+  {"id":"il-sense-the-seam","name":"Sense the Seam","tier":1,"e":[]},
+  {"id":"il-count-the-doors","name":"Count the Doors","tier":2,"e":[]},
+  {"id":"il-read-the-binding","name":"Read the Binding","tier":3,"e":[]},
+  {"id":"il-stand-in-the-doorway","name":"Stand in the Doorway","tier":4,"e":[{"p":"concealment","m":256,"d":0}]}
+]},
+{"id":"intellego-nomen","t":"intellego","f":"nomen","n":[
+  {"id":"in-hear-the-name-spoken","name":"Hear the Name Spoken","tier":1,"e":[]},
+  {"id":"in-spell-the-lesser-name","name":"Spell the Lesser Name","tier":2,"e":[]},
+  {"id":"in-derive-the-true-name","name":"Derive the True Name","tier":3,"e":[]},
+  {"id":"in-catalogue-of-names","name":"The Catalogue of Names","tier":4,"e":[]}
+]},
+{"id":"perdo-mentem","t":"perdo","f":"mentem","n":[
+  {"id":"pm-blunt-the-edge","name":"Blunt the Edge","tier":1,"e":[{"p":"direct-damage","m":96,"d":0}]},
+  {"id":"pm-the-misplaced-hour","name":"The Misplaced Hour","tier":2,"e":[{"p":"direct-damage","m":192,"d":0}]},
+  {"id":"pm-scatter-the-lesson","name":"Scatter the Lesson","tier":3,"e":[{"p":"area-denial","m":128,"d":20}]},
+  {"id":"pm-unmake-the-mind","name":"Unmake the Mind","tier":4,"e":[{"p":"direct-damage","m":512,"d":0}]},
+  {"id":"pm-the-empty-room","name":"The Empty Room","tier":5,"e":[{"p":"direct-damage","m":768,"d":0},{"p":"area-denial","m":192,"d":40}]}
+]},
+{"id":"perdo-terram","t":"perdo","f":"terram","n":[
+  {"id":"pt-crumble","name":"Crumble","tier":1,"e":[{"p":"direct-damage","m":128,"d":0}]},
+  {"id":"pt-open-the-ground","name":"Open the Ground","tier":2,"e":[{"p":"area-denial","m":96,"d":40}]},
+  {"id":"pt-pull-down-the-arch","name":"Pull Down the Arch","tier":3,"e":[{"p":"direct-damage","m":448,"d":0}]},
+  {"id":"pt-the-swallowed-hall","name":"The Swallowed Hall","tier":4,"e":[{"p":"area-denial","m":224,"d":60},{"p":"direct-damage","m":256,"d":0}]}
+]},
+{"id":"perdo-limen","t":"perdo","f":"limen","n":[
+  {"id":"pl-fray-the-edge","name":"Fray the Edge","tier":1,"e":[{"p":"direct-damage","m":128,"d":0}]},
+  {"id":"pl-unhinge","name":"Unhinge","tier":2,"e":[{"p":"direct-damage","m":256,"d":0}]},
+  {"id":"pl-the-open-wound","name":"The Open Wound","tier":3,"e":[{"p":"area-denial","m":96,"d":30}]},
+  {"id":"pl-nothing-holds","name":"Nothing Holds","tier":4,"e":[{"p":"area-denial","m":192,"d":50},{"p":"direct-damage","m":192,"d":0}]}
+]},
+{"id":"perdo-nomen","t":"perdo","f":"nomen","n":[
+  {"id":"pn-mispronounce","name":"Mispronounce","tier":1,"e":[{"p":"concealment","m":96,"d":0}]},
+  {"id":"pn-shed-the-use-name","name":"Shed the Use-Name","tier":2,"e":[{"p":"concealment","m":192,"d":0}]},
+  {"id":"pn-unsay-the-name","name":"Unsay the Name","tier":3,"e":[{"p":"direct-damage","m":320,"d":0}]},
+  {"id":"pn-the-nameless","name":"The Nameless","tier":4,"e":[{"p":"concealment","m":320,"d":0}]}
+]},
+{"id":"rego-mentem","t":"rego","f":"mentem","n":[
+  {"id":"rm-hold-the-attention","name":"Hold the Attention","tier":1,"e":[]},
+  {"id":"rm-the-patient-lesson","name":"The Patient Lesson","tier":2,"e":[]},
+  {"id":"rm-kindle-devotion","name":"Kindle Devotion","tier":3,"e":[]},
+  {"id":"rm-the-shared-mind","name":"The Shared Mind","tier":4,"e":[]}
+]},
+{"id":"rego-terram","t":"rego","f":"terram","n":[
+  {"id":"rt-set-the-stone","name":"Set the Stone","tier":1,"e":[]},
+  {"id":"rt-raise-the-course","name":"Raise the Course","tier":2,"e":[]},
+  {"id":"rt-quarry-without-hands","name":"Quarry Without Hands","tier":3,"e":[]},
+  {"id":"rt-the-vaulted-hall","name":"The Vaulted Hall","tier":4,"e":[]}
+]},
+{"id":"rego-limen","t":"rego","f":"limen","n":[
+  {"id":"rl-hold-the-door","name":"Hold the Door","tier":1,"e":[{"p":"ward","m":128,"d":0}]},
+  {"id":"rl-step-across","name":"Step Across","tier":2,"e":[{"p":"blink","m":4096,"d":0}]},
+  {"id":"rl-seal-the-way","name":"Seal the Way","tier":3,"e":[{"p":"ward","m":256,"d":0}]},
+  {"id":"rl-open-the-portal","name":"Open the Portal","tier":4,"e":[{"p":"portal","m":1024,"d":0}]},
+  {"id":"rl-the-standing-gate","name":"The Standing Gate","tier":5,"e":[{"p":"portal","m":1024,"d":0},{"p":"blink","m":8192,"d":0},{"p":"ward","m":320,"d":0}]}
+]},
+{"id":"rego-nomen","t":"rego","f":"nomen","n":[
+  {"id":"rn-call-by-name","name":"Call by Name","tier":1,"e":[{"p":"summon","m":1024,"d":0}]},
+  {"id":"rn-write-the-name-down","name":"Write the Name Down","tier":2,"e":[]},
+  {"id":"rn-keep-the-name-close","name":"Keep the Name Close","tier":2,"e":[{"p":"concealment","m":160,"d":0}]},
+  {"id":"rn-compel-by-name","name":"Compel by Name","tier":3,"e":[{"p":"knowledge-steal","m":256,"d":0}]},
+  {"id":"rn-the-bound-servant","name":"The Bound Servant","tier":4,"e":[{"p":"summon","m":2048,"d":0},{"p":"knowledge-steal","m":384,"d":0}]}
+]}
+];
+
+/* Stacking and caps, from primitive.json.
+   `clamps` below is a counter, not a rule — it rides on the state rather than
+   on the module so that a re-run counts into the copy and not the live ledger. */
+const PRIM = {
+  'direct-damage':  { stack: 'sum',  cap: 0 },
+  'ward':           { stack: 'mul',  cap: 922 },
+  'area-denial':    { stack: 'sum',  cap: 0 },
+  'blink':          { stack: 'max',  cap: 0 },
+  'summon':         { stack: 'sum',  cap: 8 * 1024 },
+  'concealment':    { stack: 'mul',  cap: 870 },
+  'knowledge-steal':{ stack: 'max',  cap: 0 },
+};
+
+/* Every one of these is raid-constant.json, unmodified. fp scale 1024. */
+const K = {
+  FP: 1024,
+  extent: 204800, cellSize: 10240, cellsPerSide: 20,
+  impassable: 82, blocking: 154, rough: 205, roughCost: 512,
+  deployDepth: 40960, movePerTick: 4096,
+  castRange: 51200, areaDenialRadius: 12288, theftRange: 16384,
+  objectiveRadius: 8192, objectiveProgress: 256,
+  mageHp: 65536, hpPerTier: 8192,
+  summonHp: 24576, summonDamage: 2048,
+  detachHp: 49152, detachDamage: 3072, detachRange: 8192, detachStrength: 100,
+  stabilityInitial: 3072000, stabilityJitter: 614400, stabilityDecay: 1024,
+  withdrawMargin: 409600, portalMargin: 8192,
+  maxPerSide: 32, maxSummons: 16, maxObjectives: 6,
+  castVigorBase: 2048, castVigorPerTier: 1024,
+  baseConcealment: 0,
+  objValuePerInstance: 1024, objValuePerTier: 256,
+  archmageValue: 4096, universityValue: 2048,
+  victoryFraction: 512,
+};
+
+/* PLAYBACK, which is a viewing rate and not a rule. The engagement tick is
+   100 ms in the design, so a trace played at 100 ms a tick runs at 1:1 with the
+   world. Contact and resolution are played at 400 ms a tick — 2.5 ticks a
+   second, a QUARTER of engagement time — because at 1:1 a cast is over before
+   it can be read, and this page's whole claim is that every spell gets a moment
+   in the world (author, after watching: "it needs to be slowed down to like 25%
+   of its current speed, so that you can really watch, once the raid actually
+   starts").
+
+   MUSTER IS NOT SLOWED, deliberately. Its clock is the pressure — you have a
+   few minutes to decide what to forbid and you were not ready — and stretching
+   it four-fold would spend the one thing about the pacing that already worked.
+   The speed control is rebased on the new pace: 1× is the watching default,
+   4× is exactly the rate this page used to run at, 16× is for skipping ahead. */
+const PACE = { musterMs: 100, engagementMs: 400, tickMs: 100 };
+
+/* AUTHORED HERE — in no content file. Flagged on the page. */
+const A = {
+  musterTicks: 300,      // 30 s at the 100 ms engagement tick. §6.5 is open.
+  castCooldown: 9,       // ticks between casts by one mage
+  mageVigor: 49152,      // fp(48)
+  vigorRegen: 288,       // fp per tick. There is no authored regeneration; this
+                         // is set so a mage casts on roughly her cooldown
+                         // rather than starving, which is a pacing choice.
+  magesPerSide: 6,
+  detachmentsAttacker: 2,
+  detachmentsDefender: 3,
+  favorStart: 260, favorMax: 320, favorRegen: 1,
+  visStart: 480,
+  visPerCast: 4,
+};
+
+/* Canvas ink. The field well is dark in BOTH themes — ui/glow's ground B, taken
+   as a verdict rather than re-argued. So these are lifted for a dark ground and
+   are not read from the CSS tokens. */
+const HUE = { limen:'#A692EC', mentem:'#46A98D', nomen:'#7099D8', terram:'#CC8450' };
+const GOD = '#12B8C6', GOD_LIT = '#6FF0FA';
+const SIDE = { a: '#DE7059', d: '#8FB4C4' };  // raider, host. Shape carries it first.
+
+const NODE = new Map();   // nodeId -> { id, name, tier, cell, form, effects }
+const CELL = new Map();   // cellId -> { id, technique, form, nodes[] }
+for (const c of CELLS) {
+  CELL.set(c.id, { id: c.id, technique: c.t, form: c.f, nodes: c.n.map(n => n.id) });
+  for (const n of c.n) {
+    NODE.set(n.id, { id: n.id, name: n.name, tier: n.tier, cell: c.id, form: c.f,
+                     effects: n.e.map(e => ({ primitive: e.p, magnitude: e.m, durationTicks: e.d })) });
+  }
+}
+const TECHS = ['intellego', 'perdo', 'rego'];
+const FORMS = ['limen', 'mentem', 'nomen', 'terram'];
+const CELL_IDS = CELLS.map(c => c.id);
+
+/* ==========================================================================
+   2. Fixed-point helpers and the PRNG.
+      floorDiv rounds toward negative infinity, as sim-core's does.
+   ========================================================================== */
+const floorDiv = (a, b) => Math.floor(a / b);
+
+/* stackMagnitudes, mirroring @mm/primitives' three classes and the caps. */
+function stack(primitiveId, mags) {
+  const p = PRIM[primitiveId];
+  if (!p || mags.length === 0) return 0;
+  let v;
+  if (p.stack === 'sum') v = mags.reduce((s, m) => s + m, 0);
+  else if (p.stack === 'max') v = mags.reduce((s, m) => Math.max(s, m), 0);
+  else { let rem = K.FP; for (const m of mags) rem = floorDiv(rem * (K.FP - m), K.FP); v = K.FP - rem; }
+  if (p.cap > 0 && v > p.cap) { clamps[primitiveId] = (clamps[primitiveId] || 0) + 1; v = p.cap; }
+  return v;
+}
+/* Where cap clamps are counted. Pointed at whichever state is being stepped —
+   the live one, or the copy a rewind is re-running. */
+let clamps = {};
+
+/* A seeded stream. Not sim-core's splittable PRNG — this is a prototype, and
+   the honest claim is only that the same seed gives the same trace — which is
+   the whole of what the record needs. */
+function streamOf(seedText, salt) {
+  let h = 2166136261 >>> 0;
+  const s = String(seedText) + '/' + salt;
+  for (let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619) >>> 0; }
+  return () => { h += 0x6D2B79F5; let t = h; t = Math.imul(t ^ (t >>> 15), t | 1);
+                 t ^= t + Math.imul(t ^ (t >>> 7), t | 61); return ((t ^ (t >>> 14)) >>> 0) / 4294967296; };
+}
+const below = (rng, n) => Math.floor(rng() * n);
+const pick = (rng, arr) => arr[below(rng, arr.length)];
+
+/* ==========================================================================
+   3. The world: terrain, roster, objectives.
+   ========================================================================== */
+function makeTerrain(seedText) {
+  const n = K.cellsPerSide, cells = new Array(n * n);
+  for (let r = 0; r < n; r++) for (let c = 0; c < n; c++) {
+    const rng = streamOf(seedText, 'terrain/' + (r * n + c));
+    const impassable = below(rng, K.FP) < K.impassable;
+    const blocks = impassable || below(rng, K.FP) < K.blocking;
+    const rough = !impassable && below(rng, K.FP) < K.rough;
+    cells[r * n + c] = { passable: !impassable, blocks, moveCost: rough ? K.roughCost : K.FP, rough };
+  }
+  return {
+    at(col, row) {
+      if (col < 0 || row < 0 || col >= n || row >= n) return { passable: false, blocks: true, moveCost: K.FP, rough: false };
+      return cells[row * n + col];
+    },
+    atPoint(x, y) { return this.at(Math.min(n - 1, Math.max(0, floorDiv(x, K.cellSize))),
+                                  Math.min(n - 1, Math.max(0, floorDiv(y, K.cellSize)))); },
+    cells,
+  };
+}
+
+/**
+ * Sampled line of sight. `geometry.ts` walks a supercover; this samples, and
+ * says so on the page.
+ *
+ * The endpoints' own cells are excluded, which is not a shortcut — a
+ * sight-blocking cell is *cover*, and cover you are standing in must not blind
+ * you to the combatant standing beside you in it. Including them deadlocks two
+ * enemies who have walked into the same wood: neither can see the other,
+ * neither can cast, and both stand there for three thousand ticks.
+ */
+function hasLineOfSight(terrain, a, b) {
+  const from = cellIndex(a), to = cellIndex(b), steps = 24;
+  for (let i = 1; i < steps; i++) {
+    const x = a.x + floorDiv((b.x - a.x) * i, steps), y = a.y + floorDiv((b.y - a.y) * i, steps);
+    const cell = cellIndex({ x, y });
+    if (cell === from || cell === to) continue;
+    if (terrain.atPoint(x, y).blocks) return false;
+  }
+  return true;
+}
+
+const sqDist = (a, b) => (a.x - b.x) * (a.x - b.x) + (a.y - b.y) * (a.y - b.y);
+const inRange = (a, b, r) => sqDist(a, b) <= r * r;
+
+/* Nodes usable by a combatant: held, in mind, at mastery, and permitted by the
+   HOST's ruleset. arbitration.ts computes this once because the ruleset is
+   frozen. It is recomputed here on every ruleset change, which is exactly the
+   §1 amendment and exactly where this page runs ahead of the engine. */
+function legalNodes(held, permitted) {
+  return held.filter(id => permitted.has(NODE.get(id).cell));
+}
+
+function buildRaid(seedText, damageMultiplier) {
+  const terrain = makeTerrain(seedText);
+  const rng = streamOf(seedText, 'roster');
+  const combatants = [];
+  let key = 0;
+
+  const deploy = (side, ordinal) => {
+    const band = K.deployDepth;
+    const along = floorDiv(K.extent * (ordinal * 2 + 1), 2 * 12);
+    const depth = floorDiv(band * (1 + (ordinal % 3)), 5);
+    return toPassable(terrain, side === 'a' ? { x: along, y: depth } : { x: along, y: K.extent - depth });
+  };
+
+  const makeMage = (side, ordinal) => {
+    const r = streamOf(seedText, 'mage/' + side + '/' + ordinal);
+    // A raider leans on what it brought to break things with; a host holds its
+    // whole rectangle. Both are authored here — there is no world behind them.
+    const pool = side === 'a'
+      ? [...NODE.keys()].filter(id => r() < (NODE.get(id).cell.startsWith('perdo') ? 0.72 : 0.34))
+      : [...NODE.keys()].filter(() => r() < 0.46);
+    const held = pool.length ? pool : [pick(r, [...NODE.keys()])];
+    const deepest = held.reduce((t, id) => Math.max(t, NODE.get(id).tier), 1);
+    const pos = deploy(side, ordinal);
+    return {
+      key: key++, kind: 'mage', side, pos: { ...pos }, prev: { ...pos },
+      hp: K.mageHp + K.hpPerTier * deepest, maxHp: K.mageHp + K.hpPerTier * deepest,
+      vigor: A.mageVigor, maxVigor: A.mageVigor, held, deepest,
+      cooldown: below(r, A.castCooldown), ward: 0, concealment: 0, blessing: 0,
+      alive: true, withdrawn: false, stolen: [], name: (side === 'a' ? 'R' : 'H') + (ordinal + 1),
+      why: 'mustered, and waiting for contact', reaching: null, lastCast: null,
+    };
+  };
+  const makeUnit = (side, ordinal, kind) => {
+    const pos = deploy(side, ordinal);
+    const hp = kind === 'detachment' ? K.detachHp : K.summonHp;
+    return {
+      key: key++, kind, side, pos: { ...pos }, prev: { ...pos }, hp, maxHp: hp,
+      vigor: 0, maxVigor: 0, held: [], deepest: 0, cooldown: 0, ward: 0, concealment: 0, blessing: 0,
+      alive: true, withdrawn: false, stolen: [], why: 'mustered, and waiting for contact', reaching: null, lastCast: null,
+      damage: kind === 'detachment' ? K.detachDamage : K.summonDamage,
+      range: kind === 'detachment' ? K.detachRange : K.castRange,
+      name: (side === 'a' ? 'r' : 'h') + (kind === 'detachment' ? 'd' : 's') + ordinal,
+    };
+  };
+
+  for (let i = 0; i < A.magesPerSide; i++) combatants.push(makeMage('a', i));
+  for (let i = 0; i < A.magesPerSide; i++) combatants.push(makeMage('d', i));
+  for (let i = 0; i < A.detachmentsAttacker; i++) combatants.push(makeUnit('a', A.magesPerSide + i, 'detachment'));
+  for (let i = 0; i < A.detachmentsDefender; i++) combatants.push(makeUnit('d', A.magesPerSide + i, 'detachment'));
+
+  /* Six objectives in the host's half. Values by objectives.ts's formulae. */
+  const objRng = streamOf(seedText, 'objectives');
+  const objectives = [];
+  const specs = [
+    { kind: 'library', label: 'Library' }, { kind: 'university', label: 'University' },
+    { kind: 'library', label: 'Library' }, { kind: 'university', label: 'University' },
+    { kind: 'library', label: 'Library' }, { kind: 'archmage', label: 'Archmage' },
+  ];
+  for (let i = 0; i < specs.length; i++) {
+    const instances = 4 + below(objRng, 9), tierSum = instances * (1 + below(objRng, 4));
+    const value = specs[i].kind === 'library' ? instances * K.objValuePerInstance + tierSum * K.objValuePerTier
+                : specs[i].kind === 'university' ? K.universityValue : K.archmageValue;
+    let x, y, guard = 0;
+    do { x = floorDiv(K.extent * (1 + below(objRng, 8)), 10);
+         y = floorDiv(K.extent * (11 + below(objRng, 7)), 20); guard++; }
+    while (!terrain.atPoint(x, y).passable && guard < 40);
+    objectives.push({ ...specs[i], pos: { x, y }, value, instances, progress: 0, taken: false, key: i });
+  }
+
+  const jitterRng = streamOf(seedText, 'portal');
+  const stability = K.stabilityInitial - K.stabilityJitter + below(jitterRng, 2 * K.stabilityJitter);
+  const portal = { x: floorDiv(K.extent, 2), y: floorDiv(K.deployDepth, 3) };
+
+  return {
+    seed: seedText, terrain, combatants, objectives, portal,
+    permitted: new Set(CELL_IDS), locked: new Set(),
+    /* termination.ts computes the ceiling from initial PLUS jitter, so jitter
+       can never make a raid outlast its declared ceiling. */
+    stability, maxTicks: floorDiv(K.stabilityInitial + K.stabilityJitter, K.stabilityDecay),
+    tick: 0, phase: 'muster', damage: damageMultiplier, damage0: damageMultiplier,
+    favor: A.favorStart, favorSpent: 0, vis: A.visStart, exposure: new Map(),
+    clamps: {},
+    /* how many entries of the directive log this state has consumed. The live
+       state always has them all; a re-run applies from here. */
+    acts: 0,
+    forbiddenCastsBlocked: 0, casts: 0, refusals: 0, evades: 0, thefts: 0,
+    fx: [], fields: [], log: [], summonsAlive: { a: 0, d: 0 }, flow: new Map(),
+    ended: null, spent: new Set(), takenValue: 0,
+    totalValue: objectives.reduce((s, o) => s + o.value, 0),
+    rngs: { combat: streamOf(seedText, 'combat'), theft: streamOf(seedText, 'theft'), move: streamOf(seedText, 'move') },
+  };
+}
+
+/* ==========================================================================
+   4. THE STEP. Mirrors arbitration.ts's dispatch; nothing else.
+   ========================================================================== */
+function passiveDefences(c, permitted) {
+  const wards = [], conceals = K.baseConcealment > 0 ? [K.baseConcealment] : [];
+  for (const id of legalNodes(c.held, permitted)) {
+    for (const e of NODE.get(id).effects) {
+      if (e.primitive === 'ward') wards.push(e.magnitude);
+      else if (e.primitive === 'concealment') conceals.push(e.magnitude);
+    }
+  }
+  if (c.blessing) wards.push(c.blessing);
+  return { ward: stack('ward', wards), concealment: stack('concealment', conceals) };
+}
+
+/* CastArbiter#effectsOf, switch arm for switch arm. */
+function effectsOf(nodeId) {
+  const out = { directDamage: [], areaDenial: [], blink: [], summon: [], knowledgeSteal: [] };
+  for (const e of NODE.get(nodeId).effects) {
+    switch (e.primitive) {
+      case 'direct-damage':   out.directDamage.push(e.magnitude); break;
+      case 'area-denial':     out.areaDenial.push({ magnitude: e.magnitude, durationTicks: e.durationTicks }); break;
+      case 'blink':           out.blink.push(e.magnitude); break;
+      case 'summon':          out.summon.push(e.magnitude); break;
+      case 'knowledge-steal': out.knowledgeSteal.push(e.magnitude); break;
+      default: break;   // ward and concealment are passive; world primitives do nothing here
+    }
+  }
+  return out;
+}
+const castPrice = (tier) => K.castVigorBase + K.castVigorPerTier * tier;
+const applyWardOnce = (raw, ward) => floorDiv(raw * (K.FP - ward), K.FP);
+
+/**
+ * `expo` is the exposure this row bought the host, or null. It rides on the row
+ * rather than being looked up at paint time because a refusal names a node it
+ * did NOT cast, and a lookup would credit it with a sighting that never
+ * happened. Exposure is the mechanic that makes a restrained raid a strategy —
+ * winning with cheap workings preserves your edge, winning with deep ones
+ * spends it — so it has to be right in the one place a player reads it.
+ *
+ * The log is NOT trimmed. It used to shift past 600 entries while the paint
+ * cursor kept counting up, so the log silently stopped updating at exactly the
+ * moment a long raid got interesting. A raid is bounded at ~3,500 ticks; the
+ * DOM is bounded in paintLog, which is where a bound belongs.
+ */
+function logRow(S, kind, actor, nodeId, detail, right, expo) {
+  S.log.push({ tick: S.tick, kind, side: actor ? actor.side : 'd', who: actor ? actor.name : '—',
+               god: !actor, nodeId, detail, right, expo: expo || null });
+}
+
+function step(S) {
+  if (S.ended) return;
+  /* every cap clamp counted below lands on THIS state, which is what makes a
+     rewind a read: re-stepping a copy cannot move the live ledger */
+  clamps = S.clamps;
+  S.tick++;
+  S.favor = Math.min(A.favorMax, S.favor + A.favorRegen);
+
+  if (S.phase === 'muster') {
+    if (S.tick >= A.musterTicks) S.phase = 'contact';
+    for (const c of S.combatants) { c.prev = { ...c.pos }; }
+    return;   // portal open, contact has not happened
+  }
+
+  S.stability -= K.stabilityDecay;
+  /* Resolution begins when the outcome is set. The portal reason is authored —
+     withdraw-stability-margin is the tick from which a raider scores withdrawal
+     above everything else, so from there the raid is over in every sense but
+     the arithmetic. The strength reason is authored HERE, because the authored
+     intrinsic damage decides most raids long before the portal does (finding 5),
+     and without it the third phase would almost never be reached. */
+  if (S.phase === 'contact') {
+    const a = S.combatants.filter(c => c.alive && !c.withdrawn && c.side === 'a').length;
+    const d = S.combatants.filter(c => c.alive && c.side === 'd').length;
+    if (S.stability <= K.withdrawMargin || a <= 2 || d <= 2) S.phase = 'resolution';
+  }
+
+  const living = S.combatants.filter(c => c.alive && !c.withdrawn);
+  for (const c of living) { c.prev = { ...c.pos }; const d = passiveDefences(c, S.permitted); c.ward = d.ward; c.concealment = d.concealment; }
+
+  /* ---- persistent area-denial fields, contracts §3: hp per tick within radius ---- */
+  for (const f of S.fields) {
+    f.remaining--;
+    for (const t of living) {
+      if (t.side === f.side) continue;
+      if (!inRange(t.pos, f.pos, K.areaDenialRadius)) continue;
+      const applied = applyWardOnce(f.magnitude * S.damage, t.ward);
+      t.hp -= applied;
+      if (t.hp <= 0) kill(S, t, f.owner);
+    }
+  }
+  S.fields = S.fields.filter(f => f.remaining > 0);
+
+  /* ---- combatants, in key order ---- */
+  for (const c of living) {
+    if (!c.alive) continue;
+    const foes = S.combatants.filter(t => t.alive && !t.withdrawn && t.side !== c.side);
+
+    /* the stranded-raider rule: below the withdraw margin a raider runs */
+    const withdrawing = c.side === 'a' && S.stability <= K.withdrawMargin;
+    if (withdrawing) {
+      c.why = 'running for the portal — stability is below the withdraw margin, and getting home now scores above anything else here';
+      moveToward(S, c, S.portal);
+      if (inRange(c.pos, S.portal, K.portalMargin)) { c.withdrawn = true; logRow(S, 'note', c, null, 'withdrew through the portal', ''); }
+      continue;
+    }
+
+    let target = null, best = Infinity;
+    for (const t of foes) { const d = sqDist(c.pos, t.pos); if (d < best) { best = d; target = t; } }
+
+    if (c.kind !== 'mage') {
+      if (target && inRange(c.pos, target.pos, c.range) && hasLineOfSight(S.terrain, c.pos, target.pos)) {
+        c.why = 'striking ' + target.name + ' with its intrinsic damage — no node, no vigor, nothing the ruleset governs';
+        const applied = applyWardOnce(c.damage, target.ward);
+        target.hp -= applied;
+        S.fx.push({ kind: 'intrinsic', t0: S.tick, life: 2, from: { ...c.pos }, to: { ...target.pos }, side: c.side });
+        if (target.hp <= 0) kill(S, target, c);
+      } else if (target) { c.why = 'closing on ' + target.name; moveToward(S, c, target.pos); }
+      continue;
+    }
+
+    /* mages: objectives if a raider stands on one, otherwise the nearest foe */
+    c.vigor = Math.min(c.maxVigor, c.vigor + A.vigorRegen);
+    if (c.cooldown > 0) c.cooldown--;
+
+    /* A working needs range AND sight. The authored terrain is harsh about the
+       second — terrain-blocking-chance is fp(154) on top of an 8% impassable
+       roll, so about a fifth of the field blocks sight and a 50 m shot crosses
+       enough cells that most long shots are blind. Closing is therefore the
+       dominant move, which is a property of the authored constants and not a
+       choice made here. */
+    const canShoot = target && inRange(c.pos, target.pos, K.castRange)
+      && hasLineOfSight(S.terrain, c.pos, target.pos);
+
+    /* The raider holds the initiative and chose the engagement, so she walks
+       toward what she came for; the host stands on her own ground and closes
+       only when she has no shot. Movement and casting both happen in a tick —
+       this is an authored intent policy, not rules-raid's. */
+    if (c.side === 'a') {
+      const obj = nearestObjective(S, c);
+      if (obj && inRange(c.pos, obj.pos, K.objectiveRadius)) {
+        /* objective-progress-per-tick is authored per combatant in contact.
+           Contesting it — a defender standing in the same radius cancelling a
+           raider's tick — is authored here; objectives.ts declares no such
+           rule, and without one an objective simply cannot be defended. */
+        const held = S.combatants.filter(t => t.alive && !t.withdrawn && t.side === 'd' && inRange(t.pos, obj.pos, K.objectiveRadius)).length;
+        c.why = held === 0
+          ? 'working the ' + obj.label.toLowerCase() + ' — ' + Math.round(100 * Math.min(1, obj.progress / K.FP)) + '% carried out, worth ' + (obj.value / K.FP).toFixed(1)
+          : 'standing on the ' + obj.label.toLowerCase() + ' but it is contested — ' + held + ' of yours inside the radius, and a contested objective makes no progress';
+        if (held === 0) obj.progress += K.objectiveProgress;
+        /* Standing on a contested objective with no line of sight is a
+           stalemate that lasts the rest of the raid — the first version of this
+           page did exactly that. If she cannot work and cannot shoot, she goes
+           to find whoever is holding it. */
+        else if (!canShoot && target) moveToward(S, c, target.pos);
+        if (obj.progress >= K.FP && !obj.taken) {
+          obj.taken = true; S.takenValue += obj.value;
+          logRow(S, 'note', c, null, obj.label.toLowerCase() + ' taken', '+' + (obj.value / K.FP).toFixed(1) + ' val');
+        }
+      } else if (obj) { c.why = 'crossing to the ' + obj.label.toLowerCase() + ' — she came for it, and she holds the initiative'; moveToward(S, c, obj.pos); }
+      else if (target) { c.why = 'closing on ' + target.name + ' — nothing left of yours to carry out'; moveToward(S, c, target.pos); }
+    } else if (!canShoot) {
+      /* the host stands on her own ground: hold the nearest unresolved
+         objective, and close on a raider only when she has no shot from it */
+      const unresolved = S.objectives.filter(o => !o.taken);
+      const guard = unresolved.length ? unresolved[c.key % unresolved.length] : null;  // spread the watch
+      if (guard && !inRange(c.pos, guard.pos, floorDiv(K.objectiveRadius, 2))) {
+        c.why = 'holding the ' + guard.label.toLowerCase() + ' — she stands on her own ground and closes only when she has no shot';
+        moveToward(S, c, guard.pos);
+      } else if (target) { c.why = 'closing on ' + target.name + ' — no line of sight from where she stands'; moveToward(S, c, target.pos); }
+    } else if (canShoot && target) c.why = 'in range of ' + target.name + ' with a line of sight';
+
+    if (c.cooldown > 0) continue;
+    if (!canShoot) { attemptTheft(S, c, foes); continue; }
+
+    /* ---- choose a node. The intent policy is authored here; rules-raid's own
+       intent scoring is not in this file. Call the servant if none stands, then
+       the deepest affordable working that does something at this range. ---- */
+    const affordable = legalNodes(c.held, S.permitted).filter(id => castPrice(NODE.get(id).tier) <= c.vigor);
+    let reached = null;
+    const servant = affordable.find(id => NODE.get(id).effects.some(e => e.primitive === 'summon'));
+    if (servant && S.summonsAlive[c.side] === 0) reached = servant;
+    if (!reached) reached = affordable
+      .filter(id => NODE.get(id).effects.some(e => ['direct-damage', 'area-denial', 'blink'].includes(e.primitive)))
+      .sort((x, y) => NODE.get(y).tier - NODE.get(x).tier)[0] || null;
+
+    /* Layer 1 is the mask above. Layer 2 below is redundant BY CONSTRUCTION —
+       that is arbitration.ts's whole argument, and the counter is why a claim
+       of zero is worth anything. When the ruleset no longer permits anything
+       she can use, a mage still reaches for what she knows, and the counter
+       moves. That is exactly what a mid-raid forbid does to your own side. */
+    if (!reached) reached = c.held.find(id => NODE.get(id).effects.some(e => e.primitive === 'direct-damage')) || null;
+    if (!reached) { attemptTheft(S, c, foes); continue; }
+
+    c.reaching = reached;
+    if (!S.permitted.has(NODE.get(reached).cell)) {
+      S.forbiddenCastsBlocked++; S.refusals++;
+      c.why = 'reached for ' + NODE.get(reached).name + ' and found it gone — ' + NODE.get(reached).cell +
+              ' is forbidden, and she is inside your universe too';
+      c.cooldown = A.castCooldown;
+      logRow(S, 'refused', c, reached, 'forbidden — ' + NODE.get(reached).cell, 'blocked');
+      continue;
+    }
+    const price = castPrice(NODE.get(reached).tier);
+    if (price > c.vigor) {
+      S.refusals++; c.cooldown = 3;
+      c.why = 'wants ' + NODE.get(reached).name + ' and cannot pay for it — ' + (price / K.FP).toFixed(0) +
+              ' vigor against ' + (c.vigor / K.FP).toFixed(0) + ' in hand';
+      logRow(S, 'refused', c, reached, 'unaffordable — needs ' + (price / K.FP).toFixed(0) + ' vigor', 'refused');
+      continue;
+    }
+    if (c.side === 'a' && S.vis < A.visPerCast) {
+      S.refusals++; c.cooldown = 6;
+      c.why = 'out of Vis — the expedition brought ' + A.visStart + ' and has spent it, so nothing she knows can be paid for';
+      logRow(S, 'refused', c, reached, 'no Vis left in the expedition', 'refused');
+      continue;
+    }
+
+    c.vigor -= price; c.cooldown = A.castCooldown; S.casts++;
+    c.why = 'casting ' + NODE.get(reached).name + ' — tier ' + NODE.get(reached).tier + ', ' +
+            NODE.get(reached).cell + ', the deepest working she can still afford at this range';
+    c.lastCast = reached;
+    let expo = null;
+    if (c.side === 'a') { S.vis = Math.max(0, S.vis - A.visPerCast); expo = recordExposure(S, c, reached); }
+    applyCast(S, c, target, reached, expo);
+  }
+
+  /* ---- objectives resolved, or a side gone, or the portal shut ---- */
+  const liveA = S.combatants.filter(c => c.alive && !c.withdrawn && c.side === 'a').length;
+  const liveD = S.combatants.filter(c => c.alive && c.side === 'd').length;
+  if (S.stability <= 0) end(S, 'portal collapsed');
+  else if (liveA === 0) end(S, 'attacking side eliminated or withdrawn');
+  else if (liveD === 0) end(S, 'defending side eliminated');
+  else if (S.objectives.every(o => o.taken)) end(S, 'objectives resolved');
+  else if (S.tick >= S.maxTicks + A.musterTicks) end(S, 'engagement ceiling reached');
+}
+
+/**
+ * knowledge-steal, at fp(16) — closer than a cast, because reading a mind is an
+ * intimacy. Raiders only: outcome.ts records `nodesGainedByRaider` and
+ * `nodesLostByHost`, and theft runs one way along the attack.
+ *
+ * It is the *fallback* intent rather than the first one. Made first, a raider
+ * standing beside a defender reads her forever and never casts, which starves
+ * the whole point of the screen. That priority is authored here.
+ */
+function attemptTheft(S, c, foes) {
+  if (c.side !== 'a' || c.kind !== 'mage' || c.cooldown > 0) return false;
+  if (c.stolen.length >= 6) return false;   // a raiding party carries only so much
+  const victim = foes.find(t => t.kind === 'mage' && inRange(c.pos, t.pos, K.theftRange));
+  if (!victim) return false;
+  const thiefNode = legalNodes(c.held, S.permitted)
+    .find(id => NODE.get(id).effects.some(e => e.primitive === 'knowledge-steal'));
+  if (!thiefNode) return false;
+  const mags = NODE.get(thiefNode).effects.filter(e => e.primitive === 'knowledge-steal').map(e => e.magnitude);
+  const p = stack('knowledge-steal', mags);
+  c.why = 'reading ' + victim.name + '’s mind at ' + (K.theftRange / K.FP).toFixed(0) +
+          ' m — closer than a cast, because reading a mind is an intimacy. This is her fallback, not her first intent.';
+  const hit = below(S.rngs.theft, K.FP) < p;
+  const prize = victim.held.length ? victim.held[below(S.rngs.theft, victim.held.length)] : null;
+  S.fx.push({ kind: 'steal', t0: S.tick, life: 9, from: { ...c.pos }, to: { ...victim.pos },
+              form: NODE.get(thiefNode).form, hit });
+  c.cooldown = A.castCooldown;
+  if (hit && prize) { c.stolen.push(prize); S.thefts++; }
+  /* A theft that misses was still cast in front of your academics, so it still
+     exposes the node. The failure is the raider's, not the observation's. */
+  const expo = recordExposure(S, c, thiefNode);
+  logRow(S, hit ? 'steal' : 'refused', c, thiefNode,
+         'knowledge-steal p=' + (p / K.FP * 100).toFixed(0) + '% → ' + victim.name,
+         hit ? 'took ' + (prize ? NODE.get(prize).name : '—') : 'failed', expo);
+  return true;
+}
+
+function recordExposure(S, caster, nodeId) {
+  if (caster.side !== 'a') return null;   // exposure runs backwards along the attack
+  const n = (S.exposure.get(nodeId) || 0) + 1;
+  S.exposure.set(nodeId, n);
+  S.fx.push({ kind: 'mote', t0: S.tick, life: 26, from: { ...caster.pos }, form: NODE.get(nodeId).form });
+  return { n, tier: NODE.get(nodeId).tier };
+}
+
+function applyCast(S, caster, target, nodeId, expo) {
+  const node = NODE.get(nodeId), form = node.form, e = effectsOf(nodeId);
+  const parts = [];
+
+  /* --- blink: stacked by max; the caster displaces --- */
+  if (e.blink.length) {
+    const d = stack('blink', e.blink);
+    const from = { ...caster.pos };
+    const dx = target.pos.x - caster.pos.x, dy = target.pos.y - caster.pos.y;
+    const norm = Math.max(1, Math.round(Math.sqrt(dx * dx + dy * dy)));
+    const nx = clampField(caster.pos.x + floorDiv(dx * d, norm)), ny = clampField(caster.pos.y + floorDiv(dy * d, norm));
+    if (S.terrain.atPoint(nx, ny).passable) { caster.pos = { x: nx, y: ny }; }
+    S.fx.push({ kind: 'blink', t0: S.tick, life: 10, from, to: { ...caster.pos }, form });
+    parts.push('blink ' + (d / K.FP).toFixed(0) + ' m');
+  }
+
+  /* --- summon: floor(magnitude / 1024) combatants from a template --- */
+  if (e.summon.length) {
+    const total = stack('summon', e.summon);
+    let n = Math.max(0, floorDiv(total, K.FP));
+    const room = Math.min(K.maxSummons - S.summonsAlive[caster.side],
+                          K.maxPerSide - S.combatants.filter(c => c.alive && c.side === caster.side).length);
+    n = Math.max(0, Math.min(n, room));
+    for (let i = 0; i < n; i++) {
+      const ang = (i / Math.max(1, n)) * Math.PI * 2;
+      const p = { x: clampField(caster.pos.x + Math.round(Math.cos(ang) * 5120)),
+                  y: clampField(caster.pos.y + Math.round(Math.sin(ang) * 5120)) };
+      S.combatants.push({
+        key: 10000 + S.combatants.length, kind: 'summon', side: caster.side, pos: p, prev: { ...caster.pos },
+        hp: K.summonHp, maxHp: K.summonHp, vigor: 0, maxVigor: 0, held: [], deepest: 0, cooldown: 0,
+        ward: 0, concealment: 0, blessing: 0, alive: true, withdrawn: false, stolen: [],
+        why: 'called by name, and bound to the side that called it', reaching: null, lastCast: null,
+        damage: K.summonDamage, range: K.castRange, name: (caster.side === 'a' ? 'r' : 'h') + 's',
+      });
+      S.summonsAlive[caster.side]++;
+      S.fx.push({ kind: 'summon', t0: S.tick, life: 12, at: p, form });
+    }
+    parts.push('summon ×' + n);
+  }
+
+  /* --- area-denial: a field of fp(12) radius, additive, for its own ticks --- */
+  if (e.areaDenial.length) {
+    const magnitude = stack('area-denial', e.areaDenial.map(a => a.magnitude));
+    const dur = e.areaDenial.reduce((m, a) => Math.max(m, a.durationTicks), 0);
+    S.fields.push({ pos: { ...target.pos }, magnitude, remaining: dur, total: dur, side: caster.side, form, owner: caster });
+    S.fx.push({ kind: 'field-open', t0: S.tick, life: 8, at: { ...target.pos }, form });
+    parts.push('area-denial ' + (magnitude / K.FP).toFixed(2) + '/tick × ' + dur);
+  }
+
+  /* --- direct-damage: summed, ONE ward application, after one evasion roll --- */
+  if (e.directDamage.length) {
+    const raw = stack('direct-damage', e.directDamage) * S.damage;
+    const evaded = target.concealment > 0 && below(S.rngs.combat, K.FP) < target.concealment;
+    S.fx.push({ kind: 'bolt', t0: S.tick, life: 7, from: { ...caster.pos }, to: { ...target.pos },
+                form, evaded, ward: target.ward });
+    if (evaded) {
+      S.evades++;
+      logRow(S, 'evaded', caster, nodeId, 'direct-damage → ' + target.name + ' evaded, conceal ' +
+             (target.concealment / K.FP * 100).toFixed(0) + '%', 'evaded', expo);
+      return;
+    }
+    const applied = applyWardOnce(raw, target.ward);
+    target.hp -= applied;
+    parts.push('damage ' + (raw / K.FP).toFixed(2) + ' × (1−' + (target.ward / K.FP).toFixed(2) + ') = ' + (applied / K.FP).toFixed(2));
+    if (target.hp <= 0) kill(S, target, caster);
+  }
+
+  if (parts.length) logRow(S, 'cast', caster, nodeId, parts.join(' · '), '−' + (castPrice(node.tier) / K.FP).toFixed(0) + ' vig', expo);
+}
+
+const clampField = (v) => Math.max(0, Math.min(K.extent, v));
+
+const NEIGHBOURS = [[1,0],[-1,0],[0,1],[0,-1],[1,1],[1,-1],[-1,1],[-1,-1]];
+const cellIndex = (p) => {
+  const n = K.cellsPerSide;
+  return Math.min(n - 1, Math.max(0, floorDiv(p.y, K.cellSize))) * n
+       + Math.min(n - 1, Math.max(0, floorDiv(p.x, K.cellSize)));
+};
+
+/**
+ * A breadth-first distance field over the 400 terrain cells, memoised per goal
+ * cell for the raid's duration because terrain is fixed once generated.
+ *
+ * `rules-raid` has a whole `navigation.ts` and this page cannot import it, so
+ * something had to stand in. A greedy step was tried first and is not adequate:
+ * at the authored 8% impassable chance the field has concave pockets, and a
+ * combatant that walks into one oscillates in front of the wall for the
+ * remaining three thousand ticks. That is finding 4, and this is the cheapest
+ * honest answer to it — 400 cells is nothing, and it is memoised anyway.
+ */
+function flowField(S, goal) {
+  const n = K.cellsPerSide, key = cellIndex(goal);
+  const cached = S.flow.get(key);
+  if (cached) return cached;
+  const dist = new Int32Array(n * n).fill(-1);
+  const queue = [key];
+  dist[key] = 0;
+  for (let head = 0; head < queue.length; head++) {
+    const cur = queue[head], cx = cur % n, cy = (cur - cx) / n;
+    /* Eight-connected, because movement is. A four-connected field disconnects
+       regions that a combatant can in fact walk between diagonally, and an
+       unreachable goal is a combatant that never moves again. */
+    for (let i = 0; i < NEIGHBOURS.length; i++) {
+      const nx = cx + NEIGHBOURS[i][0], ny = cy + NEIGHBOURS[i][1];
+      if (nx < 0 || ny < 0 || nx >= n || ny >= n) continue;
+      const ni = ny * n + nx;
+      if (dist[ni] !== -1 || !S.terrain.at(nx, ny).passable) continue;
+      dist[ni] = dist[cur] + 1;
+      queue.push(ni);
+    }
+  }
+  if (S.flow.size > 512) S.flow.clear();   // bounded, like everything else here
+  S.flow.set(key, dist);
+  return dist;
+}
+
+/** One tick of movement: downhill on the flow field, then straight in-cell. */
+function moveToward(S, c, to) {
+  const n = K.cellsPerSide;
+  const here = cellIndex(c.pos), goal = cellIndex(to);
+  let aim = to;
+  if (here !== goal) {
+    const dist = flowField(S, to);
+    const cx = here % n, cy = (here - cx) / n;
+    let best = dist[here] === -1 ? Infinity : dist[here], bestCell = -1;
+    for (const [dx, dy] of NEIGHBOURS) {
+      const nx = cx + dx, ny = cy + dy;
+      if (nx < 0 || ny < 0 || nx >= n || ny >= n) continue;
+      if (!S.terrain.at(nx, ny).passable) continue;
+      const d = dist[ny * n + nx];
+      if (d !== -1 && d < best) { best = d; bestCell = ny * n + nx; }
+    }
+    if (bestCell >= 0) {
+      const bx = bestCell % n, by = (bestCell - bx) / n, half = floorDiv(K.cellSize, 2);
+      aim = { x: bx * K.cellSize + half, y: by * K.cellSize + half };
+    }
+  }
+  const dx = aim.x - c.pos.x, dy = aim.y - c.pos.y;
+  const span = Math.max(1, Math.round(Math.sqrt(dx * dx + dy * dy)));
+  const cost = S.terrain.atPoint(c.pos.x, c.pos.y).moveCost;
+  const stepLen = Math.min(floorDiv(K.movePerTick * cost, K.FP), span);
+  const ex = floorDiv(dx * stepLen, span), ey = floorDiv(dy * stepLen, span);
+  /* The flow field decides the direction; these fallbacks only matter when the
+     goal is unreachable at cell resolution, and they must actually displace —
+     an earlier version accepted a slide that resolved to the combatant's own
+     square, which deadlocks silently and reads as a pathfinding bug. */
+  for (const [mx, my] of [[ex, ey], [ex, 0], [0, ey], [-ey, ex], [ey, -ex]]) {
+    const nx = clampField(c.pos.x + mx), ny = clampField(c.pos.y + my);
+    if ((nx === c.pos.x && ny === c.pos.y) || !S.terrain.atPoint(nx, ny).passable) continue;
+    c.pos = { x: nx, y: ny };
+    return;
+  }
+}
+
+/** Nudges a deployment point onto passable ground, spiralling outward. */
+function toPassable(terrain, p) {
+  if (terrain.atPoint(p.x, p.y).passable) return p;
+  for (let r = 1; r <= 6; r++) for (const [dx, dy] of [[1,0],[-1,0],[0,1],[0,-1],[1,1],[-1,1],[1,-1],[-1,-1]]) {
+    const q = { x: clampField(p.x + dx * r * K.cellSize), y: clampField(p.y + dy * r * K.cellSize) };
+    if (terrain.atPoint(q.x, q.y).passable) return q;
+  }
+  return p;
+}
+
+function nearestObjective(S, c) {
+  let best = null, bd = Infinity;
+  for (const o of S.objectives) { if (o.taken) continue; const d = sqDist(c.pos, o.pos); if (d < bd) { bd = d; best = o; } }
+  return best;
+}
+
+function kill(S, victim, by) {
+  if (!victim.alive) return;
+  victim.alive = false; victim.hp = 0;
+  if (victim.kind === 'summon') S.summonsAlive[victim.side]--;
+  S.fx.push({ kind: 'fell', t0: S.tick, life: 14, at: { ...victim.pos }, side: victim.side });
+  logRow(S, 'note', by, null, victim.name + ' felled', victim.kind);
+}
+
+function end(S, reason) {
+  const won = S.takenValue * K.FP >= S.totalValue * K.victoryFraction;
+  S.ended = { reason, victor: won ? 'raider' : 'host', tick: S.tick };
+}
+
+/* ==========================================================================
+   4b. THE RECORD — rewind to view, never to act. raid-engagement.md §11.
+
+   Seed plus action log, which is how sim-core already replays. Two pieces:
+     · ACTIONS — every god directive, with the tick it landed on. Append-only.
+     · viewAt  — re-run the engagement INTO A COPY, up to the tick you asked for.
+
+   The live state is never touched by any of this, which is what makes looking
+   back safe in live PvP: it cannot desync anything, because it re-runs a record
+   instead of mutating the engagement.
+   ========================================================================== */
+let ACTIONS = [];      // [{ tick, k, ..., seen }] — the record, with the seed
+
+/**
+ * Apply a recorded directive to a state. UNCONDITIONAL, deliberately: whether
+ * you could afford it, whether the phase allowed it, whether the cell was
+ * already locked — all of that is decided ONCE, when you act, and is never
+ * re-decided. A replay that re-ran the rules would not be a replay, and the
+ * first thing it would get wrong is a verb you could afford then and cannot
+ * afford now.
+ */
+function applyAction(S, act) {
+  const where = act.seen === null ? '' : ' — issued while looking back at tick ' + act.seen;
+  if (act.k === 'cell') {
+    if (S.permitted.has(act.id)) { S.permitted.delete(act.id); logRow(S, 'note', null, null, 'FORBADE ' + act.id + ' — locked for the raid' + where, 'constitution'); }
+    else { S.permitted.add(act.id); logRow(S, 'note', null, null, 'PERMITTED ' + act.id + ' — locked for the raid' + where, 'constitution'); }
+    S.locked.add(act.id);
+  } else if (act.k === 'verb') {
+    const v = VERBS.find(x => x.id === act.id);
+    S.favor -= v.cost; S.favorSpent += v.cost; S.spent.add(v.id);
+    const defenders = S.combatants.filter(c => c.side === 'd' && c.alive);
+    if (v.id === 'bless') for (const c of defenders) c.blessing = 256;
+    if (v.id === 'veil') for (const c of defenders) c.held = c.held.concat(['pn-shed-the-use-name']);
+    if (v.id === 'wind') for (const c of defenders) c.vigor = c.maxVigor;
+    if (v.id === 'reserve') {
+      const p = { x: floorDiv(K.extent, 2), y: K.extent - floorDiv(K.deployDepth, 2) };
+      S.combatants.push({ key: 20000 + S.combatants.length, kind: 'detachment', side: 'd', pos: p, prev: { ...p },
+        hp: K.detachHp, maxHp: K.detachHp, vigor: 0, maxVigor: 0, held: [], deepest: 0, cooldown: 0,
+        ward: 0, concealment: 0, blessing: 0, alive: true, withdrawn: false, stolen: [],
+        why: 'called up out of a cohort that does not fight', reaching: null, lastCast: null,
+        damage: K.detachDamage, range: K.detachRange, name: 'hd+' });
+    }
+    logRow(S, 'note', null, null, v.name + ' — ' + v.cost + ' favor' + where, 'spent');
+  } else if (act.k === 'damage') {
+    S.damage = act.n;
+  }
+}
+
+/** Directives issued at tick t belong to the state at tick t, not to t + 1. */
+function catchUpActions(V) {
+  while (V.acts < ACTIONS.length && ACTIONS[V.acts].tick <= V.tick) applyAction(V, ACTIONS[V.acts++]);
+}
+
+/**
+ * The state at tick `t`, re-derived rather than remembered.
+ *
+ * There is no snapshot store here and there does not need to be one: a whole
+ * raid re-runs in about seven milliseconds, half a frame, because the seed
+ * fixes the terrain, the rosters and every stream, and ACTIONS fixes everything
+ * the god did. That is the sim-core claim taken literally — SEED PLUS ACTION
+ * LOG, and nothing else kept. It also means there is no second copy of the
+ * state shape to rot when someone adds a field to it.
+ *
+ * The one thing carried across is the memoised flow fields, which are a pure
+ * function of terrain, which is a pure function of the seed. Stepping FORWARD
+ * reuses the copy, so playing the record costs one step a tick.
+ */
+let viewCache = null;
+function viewAt(live, t) {
+  let V = viewCache;
+  if (!V || V.tick > t) { V = buildRaid(live.seed, live.damage0); V.flow = live.flow; }
+  let guard = 0;
+  while (V.tick < t && !V.ended && guard++ < 5000) { catchUpActions(V); step(V); }
+  catchUpActions(V);
+  clamps = live.clamps;   /* hand the counter back: the live ledger reads it every frame */
+  viewCache = V;
+  return V;
+}
+
+/* ==========================================================================
+   5. THE CANVAS. Seven primitives, seven treatments.
+   ========================================================================== */
+const canvas = document.getElementById('field');
+const ctx = canvas.getContext('2d');
+const REDUCED = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+let PX = 900;
+
+function sizeCanvas() {
+  const rect = canvas.getBoundingClientRect();
+  const dpr = Math.min(2, window.devicePixelRatio || 1);
+  PX = Math.max(360, Math.round(rect.width));
+  canvas.width = Math.round(PX * dpr); canvas.height = Math.round(PX * dpr);
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+}
+const toPx = (v) => (v / K.extent) * PX;
+
+function draw(S, alpha) {
+  const a = REDUCED ? 1 : alpha;
+  ctx.clearRect(0, 0, PX, PX);
+  ctx.fillStyle = '#090D0E'; ctx.fillRect(0, 0, PX, PX);
+
+  /* --- terrain: impassable filled, sight-blocking hatched, rough stippled --- */
+  const cs = PX / K.cellsPerSide;
+  for (let r = 0; r < K.cellsPerSide; r++) for (let c = 0; c < K.cellsPerSide; c++) {
+    const t = S.terrain.at(c, r), x = c * cs, y = r * cs;
+    if (!t.passable) { ctx.fillStyle = '#151D1F'; ctx.fillRect(x, y, cs, cs);
+      ctx.strokeStyle = '#1E282A'; ctx.lineWidth = 1; ctx.strokeRect(x + .5, y + .5, cs - 1, cs - 1); }
+    else if (t.blocks) { ctx.strokeStyle = 'rgba(60,84,88,.55)'; ctx.lineWidth = 1; ctx.beginPath();
+      for (let i = -cs; i < cs; i += 5) { ctx.moveTo(x + i, y + cs); ctx.lineTo(x + i + cs, y); }
+      ctx.save(); ctx.rect(x, y, cs, cs); ctx.clip(); ctx.stroke(); ctx.restore(); }
+    else if (t.rough) { ctx.fillStyle = 'rgba(52,72,76,.42)';
+      for (let i = 0; i < 4; i++) ctx.fillRect(x + 4 + (i % 2) * 11, y + 5 + Math.floor(i / 2) * 11, 2, 2); }
+  }
+  ctx.strokeStyle = 'rgba(38,54,57,.5)'; ctx.lineWidth = 1;
+  ctx.beginPath();
+  for (let i = 0; i <= K.cellsPerSide; i++) { const p = Math.round(i * cs) + .5;
+    ctx.moveTo(p, 0); ctx.lineTo(p, PX); ctx.moveTo(0, p); ctx.lineTo(PX, p); }
+  ctx.stroke();
+
+  /* --- deployment bands, for the muster read --- */
+  ctx.fillStyle = 'rgba(222,112,89,.05)'; ctx.fillRect(0, 0, PX, toPx(K.deployDepth));
+  ctx.fillStyle = 'rgba(143,180,196,.05)'; ctx.fillRect(0, PX - toPx(K.deployDepth), PX, toPx(K.deployDepth));
+
+  /* --- objectives --- */
+  for (const o of S.objectives) {
+    const x = toPx(o.pos.x), y = toPx(o.pos.y), rr = toPx(K.objectiveRadius);
+    ctx.strokeStyle = o.taken ? 'rgba(222,112,89,.75)' : 'rgba(201,160,52,.5)';
+    ctx.setLineDash(o.taken ? [] : [3, 3]); ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.arc(x, y, rr, 0, Math.PI * 2); ctx.stroke(); ctx.setLineDash([]);
+    ctx.fillStyle = o.taken ? '#DE7059' : '#C9A034';
+    ctx.beginPath();
+    if (o.kind === 'archmage') { ctx.moveTo(x, y - 6); ctx.lineTo(x + 6, y); ctx.lineTo(x, y + 6); ctx.lineTo(x - 6, y); }
+    else if (o.kind === 'university') ctx.rect(x - 5, y - 5, 10, 10);
+    else ctx.rect(x - 6, y - 4, 12, 8);
+    ctx.fill();
+    if (!o.taken && o.progress > 0) {
+      ctx.strokeStyle = '#C9A034'; ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.arc(x, y, rr + 3, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * Math.min(1, o.progress / K.FP)); ctx.stroke();
+    }
+  }
+
+  /* --- the portal --- */
+  const px = toPx(S.portal.x), py = toPx(S.portal.y);
+  const stabFrac = Math.max(0, S.stability / (K.stabilityInitial + K.stabilityJitter));
+  ctx.strokeStyle = 'rgba(166,146,236,' + (0.3 + 0.5 * stabFrac) + ')'; ctx.lineWidth = 2;
+  ctx.beginPath(); ctx.ellipse(px, py, 13, 18, 0, 0, Math.PI * 2); ctx.stroke();
+  ctx.strokeStyle = 'rgba(166,146,236,.25)'; ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.ellipse(px, py, 13 * stabFrac + 3, 18 * stabFrac + 3, 0, 0, Math.PI * 2); ctx.stroke();
+
+  /* --- 3. AREA-DENIAL: a persistent disc with a depleting arc --- */
+  for (const f of S.fields) {
+    const x = toPx(f.pos.x), y = toPx(f.pos.y), rr = toPx(K.areaDenialRadius);
+    const hue = HUE[f.form];
+    const g = ctx.createRadialGradient(x, y, 0, x, y, rr);
+    g.addColorStop(0, hexA(hue, .26)); g.addColorStop(.7, hexA(hue, .13)); g.addColorStop(1, hexA(hue, 0));
+    ctx.fillStyle = g; ctx.beginPath(); ctx.arc(x, y, rr, 0, Math.PI * 2); ctx.fill();
+    ctx.strokeStyle = hexA(hue, .5); ctx.setLineDash([2, 4]); ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.arc(x, y, rr, 0, Math.PI * 2); ctx.stroke(); ctx.setLineDash([]);
+    ctx.strokeStyle = hexA(hue, .95); ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.arc(x, y, rr - 2, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * (f.remaining / Math.max(1, f.total))); ctx.stroke();
+  }
+
+  /* --- combatants --- */
+  for (const c of S.combatants) {
+    if (!c.alive || c.withdrawn) continue;
+    const ix = REDUCED ? c.pos.x : c.prev.x + (c.pos.x - c.prev.x) * a;
+    const iy = REDUCED ? c.pos.y : c.prev.y + (c.pos.y - c.prev.y) * a;
+    const x = toPx(ix), y = toPx(iy);
+    const col = SIDE[c.side];
+    const size = c.kind === 'mage' ? 6 : c.kind === 'detachment' ? 6 : 4;
+
+    /* 2. WARD: a shell arc, opacity by effective ward against the fp(922) cap */
+    if (c.ward > 0) {
+      ctx.strokeStyle = hexA(HUE.limen, .28 + .6 * (c.ward / 922));
+      ctx.lineWidth = 1.6;
+      ctx.beginPath(); ctx.arc(x, y, size + 5, 0, Math.PI * 2); ctx.stroke();
+      ctx.strokeStyle = hexA(HUE.limen, .14 + .3 * (c.ward / 922));
+      ctx.beginPath(); ctx.arc(x, y, size + 8, -0.8, 2.1); ctx.stroke();
+    }
+    /* 6. CONCEALMENT: the outline goes dashed and the fill drops out */
+    const concealed = c.concealment > 0;
+    ctx.beginPath();
+    if (c.side === 'a') { ctx.moveTo(x, y - size); ctx.lineTo(x + size, y); ctx.lineTo(x, y + size); ctx.lineTo(x - size, y); ctx.closePath(); }
+    else if (c.kind === 'detachment') { ctx.rect(x - size, y - size * .7, size * 2, size * 1.4); }
+    else ctx.arc(x, y, size, 0, Math.PI * 2);
+    if (concealed) {
+      ctx.fillStyle = hexA(col, .16); ctx.fill();
+      ctx.setLineDash([2.5, 2.5]); ctx.strokeStyle = hexA(col, .5 + .4 * (c.concealment / 870));
+      ctx.lineWidth = 1.4; ctx.stroke(); ctx.setLineDash([]);
+    } else { ctx.fillStyle = col; ctx.fill(); }
+    /* health, as a thinning of the mark rather than a bar over everything */
+    if (c.hp < c.maxHp) {
+      ctx.strokeStyle = 'rgba(255,255,255,.75)'; ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.moveTo(x - size, y + size + 3.5); ctx.lineTo(x - size + 2 * size * (c.hp / c.maxHp), y + size + 3.5); ctx.stroke();
+      ctx.strokeStyle = 'rgba(255,255,255,.16)';
+      ctx.beginPath(); ctx.moveTo(x - size + 2 * size * (c.hp / c.maxHp), y + size + 3.5); ctx.lineTo(x + size, y + size + 3.5); ctx.stroke();
+    }
+  }
+
+  /* --- effects, newest last --- */
+  for (const f of S.fx) {
+    const age = (S.tick - f.t0 + (REDUCED ? 0 : a)) / f.life;
+    if (age < 0 || age > 1) continue;
+    const hue = f.form ? HUE[f.form] : SIDE[f.side] || '#8FB4C4';
+    if (f.kind === 'bolt') {
+      /* 1. DIRECT-DAMAGE: a tapering bolt, then an impact ring */
+      const x1 = toPx(f.from.x), y1 = toPx(f.from.y), x2 = toPx(f.to.x), y2 = toPx(f.to.y);
+      const head = Math.min(1, age * 2.6);
+      ctx.strokeStyle = hexA(hue, (1 - age) * .95); ctx.lineWidth = 3.2 * (1 - age * .6);
+      ctx.beginPath(); ctx.moveTo(x1, y1);
+      ctx.lineTo(x1 + (x2 - x1) * head, y1 + (y2 - y1) * head); ctx.stroke();
+      ctx.strokeStyle = hexA('#FFFFFF', (1 - age) * .35); ctx.lineWidth = 1;
+      ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x1 + (x2 - x1) * head, y1 + (y2 - y1) * head); ctx.stroke();
+      if (age > .38) {
+        const k = (age - .38) / .62;
+        if (f.evaded) {   /* concealment: the bolt passes through and is struck out */
+          ctx.strokeStyle = hexA('#C9A034', (1 - k) * .9); ctx.lineWidth = 1.6;
+          ctx.beginPath(); ctx.moveTo(x2 - 7, y2 - 7); ctx.lineTo(x2 + 7, y2 + 7); ctx.stroke();
+        } else {
+          ctx.strokeStyle = hexA(hue, (1 - k) * .8); ctx.lineWidth = 2 * (1 - k) + .5;
+          ctx.beginPath(); ctx.arc(x2, y2, 3 + k * 13, 0, Math.PI * 2); ctx.stroke();
+          if (f.ward > 0) {   /* 2. WARD flares white where it absorbed */
+            ctx.strokeStyle = hexA('#FFFFFF', (1 - k) * .5 * (f.ward / 922)); ctx.lineWidth = 2;
+            ctx.beginPath(); ctx.arc(x2, y2, 9, 0, Math.PI * 2); ctx.stroke();
+          }
+        }
+      }
+    } else if (f.kind === 'blink') {
+      /* 4. BLINK: dashed after-images along the displacement */
+      const x1 = toPx(f.from.x), y1 = toPx(f.from.y), x2 = toPx(f.to.x), y2 = toPx(f.to.y);
+      for (let i = 0; i <= 6; i++) {
+        const t = i / 6, x = x1 + (x2 - x1) * t, y = y1 + (y2 - y1) * t;
+        ctx.strokeStyle = hexA(hue, (1 - age) * (0.15 + 0.8 * t));
+        ctx.lineWidth = 1.3;
+        ctx.beginPath(); ctx.arc(x, y, 5.5 - t * 2, 0, Math.PI * 2); ctx.stroke();
+      }
+    } else if (f.kind === 'summon') {
+      /* 5. SUMMON: a burst that settles into a mark */
+      const x = toPx(f.at.x), y = toPx(f.at.y);
+      ctx.strokeStyle = hexA(hue, 1 - age); ctx.lineWidth = 1.6;
+      for (let i = 0; i < 3; i++) {
+        const r = 3 + age * (11 + i * 5);
+        ctx.beginPath();
+        for (let k = 0; k < 3; k++) { const A2 = -Math.PI / 2 + k * 2.094 + i;
+          const px2 = x + Math.cos(A2) * r, py2 = y + Math.sin(A2) * r;
+          k === 0 ? ctx.moveTo(px2, py2) : ctx.lineTo(px2, py2); }
+        ctx.closePath(); ctx.stroke();
+      }
+    } else if (f.kind === 'steal') {
+      /* 7. KNOWLEDGE-STEAL: a beaded filament, and a glyph that comes back */
+      const x1 = toPx(f.from.x), y1 = toPx(f.from.y), x2 = toPx(f.to.x), y2 = toPx(f.to.y);
+      ctx.strokeStyle = hexA(hue, (1 - age) * .7); ctx.lineWidth = 1;
+      ctx.setLineDash([1.5, 3]); ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke(); ctx.setLineDash([]);
+      if (f.hit) {
+        const t = 1 - age, x = x2 + (x1 - x2) * (1 - t), y = y2 + (y1 - y2) * (1 - t);
+        ctx.fillStyle = hexA(hue, Math.min(1, t * 1.6)); ctx.fillRect(x - 2.5, y - 2.5, 5, 5);
+      } else {
+        ctx.strokeStyle = hexA('#7E7563', (1 - age) * .8); ctx.lineWidth = 1.4;
+        ctx.beginPath(); ctx.moveTo(x2 - 5, y2); ctx.lineTo(x2 + 5, y2); ctx.stroke();
+      }
+    } else if (f.kind === 'field-open') {
+      const x = toPx(f.at.x), y = toPx(f.at.y);
+      ctx.strokeStyle = hexA(hue, 1 - age); ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.arc(x, y, toPx(K.areaDenialRadius) * age, 0, Math.PI * 2); ctx.stroke();
+    } else if (f.kind === 'intrinsic') {
+      const x1 = toPx(f.from.x), y1 = toPx(f.from.y), x2 = toPx(f.to.x), y2 = toPx(f.to.y);
+      ctx.strokeStyle = hexA(SIDE[f.side], (1 - age) * .5); ctx.lineWidth = 1;
+      ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke();
+    } else if (f.kind === 'fell') {
+      const x = toPx(f.at.x), y = toPx(f.at.y);
+      ctx.strokeStyle = hexA(SIDE[f.side], (1 - age) * .7); ctx.lineWidth = 1;
+      ctx.beginPath(); ctx.arc(x, y, 4 + age * 10, 0, Math.PI * 2); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(x - 5, y - 5); ctx.lineTo(x + 5, y + 5); ctx.moveTo(x + 5, y - 5); ctx.lineTo(x - 5, y + 5); ctx.stroke();
+    } else if (f.kind === 'mote') {
+      /* EXPOSURE: a spark of the attacker's own magic drifting to the host's edge */
+      const x = toPx(f.from.x), y = toPx(f.from.y) + (PX - toPx(f.from.y)) * age;
+      ctx.fillStyle = hexA(hue, (1 - age) * .55);
+      ctx.beginPath(); ctx.arc(x, y, 1.6, 0, Math.PI * 2); ctx.fill();
+    }
+  }
+  S.fx = S.fx.filter(f => S.tick - f.t0 <= f.life);
+
+  /* --- inspection. A ring and a name, and nothing else: the 30% dim that used
+     to come with it was the HELD-MOMENT treatment, and with nothing held there
+     is nothing to dim for. Dimming a field that is still moving fights the one
+     thing this page is for. The ring is cyan because a focus ring is the god's
+     own light, the same as the muster clock and the constitution's switches —
+     not because the mage is hers. --- */
+  if (INSPECT !== null) {
+    const sel = S.combatants.find(x => x.key === INSPECT);
+    if (sel && sel.alive && !sel.withdrawn) {
+      const x = toPx(REDUCED ? sel.pos.x : sel.prev.x + (sel.pos.x - sel.prev.x) * a);
+      const y = toPx(REDUCED ? sel.pos.y : sel.prev.y + (sel.pos.y - sel.prev.y) * a);
+      ctx.strokeStyle = hexA(GOD_LIT, .95); ctx.lineWidth = 1.4;
+      ctx.beginPath(); ctx.arc(x, y, 13, 0, Math.PI * 2); ctx.stroke();
+      ctx.strokeStyle = hexA(GOD, .5);
+      ctx.beginPath(); ctx.arc(x, y, 17, 0, Math.PI * 2); ctx.stroke();
+      ctx.beginPath();
+      for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
+        ctx.moveTo(x + dx * 19, y + dy * 19); ctx.lineTo(x + dx * 25, y + dy * 25);
+      }
+      ctx.stroke();
+      ctx.fillStyle = hexA(GOD_LIT, .95);
+      ctx.font = '11px ui-monospace, Menlo, monospace';
+      ctx.textAlign = 'center';
+      ctx.fillText(sel.name, x, y - 24);
+      ctx.textAlign = 'left';
+    }
+  }
+}
+
+function hexA(hex, alpha) {
+  const n = parseInt(hex.slice(1), 16);
+  return 'rgba(' + ((n >> 16) & 255) + ',' + ((n >> 8) & 255) + ',' + (n & 255) + ',' + Math.max(0, Math.min(1, alpha)).toFixed(3) + ')';
+}
+
+/* ==========================================================================
+   6. THE INTERFACE.
+   ========================================================================== */
+const el = (id) => document.getElementById(id);
+/* S is the LIVE engagement and nothing else ever writes to it. V is what the
+   page is currently DRAWING — the same object when you are watching live, a
+   re-stepped copy when you are looking back. Every read below is deliberate
+   about which of the two it wants, and the rule is simple enough to state:
+   the field and the dossier follow V, everything you can act with follows S. */
+let S = null, V = null, speed = 1, damage = 1, acc = 0, last = 0, logDrawn = 0;
+let INSPECT = null;          // combatant key, or null. Not part of any state.
+let CURSOR = null;           // tick being looked at, or null for live
+let recPlaying = true, recAcc = 0;
+
+/* --- the constitution: twelve switches, forbidding is defender-only --- */
+function buildConstitution() {
+  const host = el('consti');
+  host.innerHTML = '';
+  const head = document.createElement('div');
+  head.className = 'crow chead';
+  head.innerHTML = '<span class="tech"></span>' + FORMS.map(f => '<span class="form">' + f.slice(0, 4) + '</span>').join('');
+  host.append(head);
+  for (const t of TECHS) {
+    const sec = document.createElement('div');
+    sec.className = 'csec'; sec.dataset.tech = t;
+    const row = document.createElement('div');
+    row.className = 'crow';
+    row.innerHTML = '<span class="tech">' + t + '</span>';
+    for (const f of FORMS) {
+      const id = t + '-' + f;
+      const b = document.createElement('button');
+      b.type = 'button'; b.className = 'cell'; b.dataset.cell = id;
+      b.addEventListener('click', () => toggleCell(id));
+      row.append(b);
+    }
+    const sum = document.createElement('div');
+    sum.className = 'csum'; sum.hidden = true;
+    sec.append(row, sum);
+    host.append(sec);
+  }
+}
+const SHORT = (f) => f.slice(0, 4);
+
+/**
+ * THE ONE RULE THAT MUST NOT BE FUDGED (§11): a directive issued while looking
+ * back applies to NOW. So every directive goes through here, which stamps the
+ * LIVE tick on it, records which tick you were looking at, and RETURNS THE VIEW
+ * TO LIVE — you cannot end up looking at the past at the moment a change of
+ * yours lands, because acting moves you to the present. The log row names both
+ * ticks, so it is unambiguous afterwards too.
+ */
+function issue(act) {
+  act.tick = S.tick;
+  act.seen = CURSOR === null ? null : CURSOR;
+  ACTIONS.push(act);
+  applyAction(S, act);
+  S.acts = ACTIONS.length;
+  goLive();
+}
+function toggleCell(id) {
+  /* eligibility is decided HERE, once, and never re-decided on replay */
+  if (!S || S.locked.has(id) || S.phase === 'resolution' || S.ended) return;
+  issue({ k: 'cell', id });
+  constiSig = '';
+  paintConstitution();
+}
+/**
+ * Author: "once there's no ability to use that section, it should disappear so
+ * that we have... more real estate to work with."
+ *
+ * Two collapses, and neither is a disappearance. A technique row every one of
+ * whose four cells is locked becomes one line; and once the phase has moved
+ * past the constitution entirely — resolution, or the raid over — the whole
+ * grid becomes a short statement of what you changed. A locked switch is the
+ * whole design of the mid-raid amendment: it is a decision you made under
+ * pressure and cannot take back, and it must still read as locked and as
+ * yours. So the summary names the cells, keeps the lock glyph and the cyan,
+ * and there is always a way back to all twelve.
+ */
+let constiSig = '', constiExpanded = false;
+function paintConstitution() {
+  const dead = S.phase === 'resolution' || !!S.ended;
+  const sig = CELL_IDS.map(id => (S.permitted.has(id) ? 'p' : 'f') + (S.locked.has(id) ? 'l' : ''))
+    .join('') + '|' + dead + '|' + constiExpanded;
+  if (sig === constiSig) return;
+  constiSig = sig;
+
+  for (const b of document.querySelectorAll('.cell')) {
+    const id = b.dataset.cell, open = S.permitted.has(id);
+    b.dataset.state = open ? 'permitted' : 'forbidden';
+    b.dataset.locked = S.locked.has(id) ? '1' : '0';
+    /* the label carries the state in words, so the grid is not colour alone —
+       and the column header already says which form, so repeating it here was
+       twelve cells of nothing */
+    b.textContent = open ? 'open' : 'shut';
+    b.setAttribute('aria-pressed', String(open));
+    b.disabled = S.locked.has(id) || S.phase === 'resolution' || !!S.ended;
+    b.title = S.locked.has(id)
+      ? id + ' — locked until the raid ends. Reverting afterwards costs substantially more favor.'
+      : id + ' — ' + (S.permitted.has(id) ? 'permitted; forbid it and nobody inside your universe may use it, including you'
+                                          : 'forbidden; permit it and the raider may use it too');
+  }
+  /* ---- collapse what can no longer be used ---- */
+  const changed = [...S.locked].sort();
+  let sectionsCollapsed = 0;
+  for (const sec of document.querySelectorAll('.csec')) {
+    const t = sec.dataset.tech, ids = FORMS.map(f => t + '-' + f);
+    const allLocked = ids.every(id => S.locked.has(id));
+    const collapse = !constiExpanded && !dead && allLocked;
+    sec.querySelector('.crow').hidden = collapse;
+    const sum = sec.querySelector('.csum');
+    sum.hidden = !collapse;
+    if (collapse) {
+      sectionsCollapsed++;
+      const shut = ids.filter(id => !S.permitted.has(id)), open = ids.filter(id => S.permitted.has(id));
+      /* terse on purpose: the four switches are already dense, and a summary
+         that wraps to two lines costs more room than the row it replaced */
+      sum.innerHTML = '<span class="tk">' + t + '</span><span class="lk">• locked</span>' +
+        (shut.length ? '<span class="shut">' + shut.length + ' shut</span>' : '') +
+        (open.length ? '<span class="open">' + open.length + ' open</span>' : '');
+      sum.title = t + ' — every cell in this row is locked for the raid, so there is nothing left to decide here. ' +
+        (shut.length ? 'Shut: ' + shut.join(', ') + '. ' : '') + (open.length ? 'Open: ' + open.join(', ') + '. ' : '') +
+        'Reverting afterwards costs substantially more favor than the change did.';
+    }
+  }
+  /* the column heads label switches; with every switch collapsed they label nothing */
+  document.querySelector('.chead').hidden = sectionsCollapsed === 3 || (dead && !constiExpanded);
+
+  const wholeCollapsed = dead && !constiExpanded;
+  el('consti').hidden = wholeCollapsed;
+  el('cclosed').hidden = !wholeCollapsed;
+  if (wholeCollapsed) {
+    el('cclosed').innerHTML = changed.length
+      ? 'Constitution closed for the raid. <b>' + changed.length + ' change' + (changed.length === 1 ? '' : 's') +
+        '</b>, locked, and yours:<br>' + changed.map(id =>
+          '<span class="' + (S.permitted.has(id) ? 'open' : 'shut') + '">' + id.replace('-', ' · ') + ' ' +
+          (S.permitted.has(id) ? 'opened' : 'shut') + '</span>').join(', ') +
+        '.<br>Reverting afterwards costs substantially more favor than the changes did.'
+      : 'Constitution closed for the raid. The twelve cells stand exactly as you left them — <b>you changed nothing</b> while it ran.';
+  }
+  const toggle = el('consti-toggle');
+  toggle.hidden = !(wholeCollapsed || sectionsCollapsed > 0 || constiExpanded);
+  toggle.textContent = constiExpanded ? 'Collapse what is spent' : 'Show all twelve';
+  toggle.title = constiExpanded
+    ? 'Fold the rows that can no longer be used back down, and give the field the room.'
+    : 'Every switch, including the ones locked for the duration.';
+
+  el('lockline').hidden = wholeCollapsed;
+  el('lockline').textContent = S.locked.size === 0
+    ? 'Forbidding is defender-only. Every change locks until the raid ends.'
+    : S.locked.size + ' cell' + (S.locked.size === 1 ? '' : 's') + ' locked for the duration. Reverting afterwards costs substantially more favor than the change did.';
+}
+
+/* --- the verbs. Muster has four; contact has one; resolution has none. --- */
+const VERBS = [
+  { id: 'bless',  phase: 'muster',  cost: 90, name: 'Bless the standing',
+    sub: 'fp(0.25) ward on every defender for the raid — a favor spend that resolves in seconds and visibly saves a library.' },
+  /* RENAMED from "call the levy". w37/raid-playable's raid-constant.json has a
+     verb-levy that means something else — a detachment that does not fight —
+     and one word over two mechanics is how a merge picks the wrong one
+     silently. Named in the provenance panel rather than resolved: that branch
+     is unmerged, and guessing at its semantics would be worse. */
+  { id: 'reserve', phase: 'muster', cost: 70, name: 'Call up the reserve',
+    sub: 'One more soldier detachment on the field, at detachment-max-hp. Not w37’s levy — see provenance.' },
+  { id: 'veil',   phase: 'muster',  cost: 60, name: 'Veil the halls',
+    sub: 'fp(0.20) concealment on every defender. Concealment is an evasion roll, not a damage reduction.' },
+  { id: 'wind',   phase: 'contact', cost: 110, name: 'Second wind',
+    sub: 'Vigor restored to every living defender. The one intervention left once the sides have touched.' },
+];
+function buildVerbs() {
+  const host = el('verbs'); host.innerHTML = '';
+  for (const v of VERBS) {
+    const b = document.createElement('button');
+    b.type = 'button'; b.className = 'verb'; b.dataset.verb = v.id;
+    b.innerHTML = '<span>' + v.name + '</span><span class="cost">' + v.cost + ' favor</span><span class="sub">' + v.sub + '</span>';
+    b.addEventListener('click', () => spendVerb(v));
+    host.append(b);
+  }
+}
+function spendVerb(v) {
+  /* Eligibility against the LIVE state, whatever tick you happen to be looking
+     at — a verb you could afford at tick 200 is not a verb you can afford now. */
+  if (!S || S.ended || S.spent.has(v.id) || S.favor < v.cost) return;
+  if (v.phase === 'muster' && S.phase !== 'muster') return;
+  if (v.phase === 'contact' && S.phase === 'resolution') return;
+  issue({ k: 'verb', id: v.id });
+  paintVerbs();
+}
+function paintVerbs() {
+  for (const v of VERBS) {
+    const b = document.querySelector('[data-verb="' + v.id + '"]');
+    const liveNow = !S.ended && S.phase !== 'resolution' &&
+      (v.phase === 'muster' ? S.phase === 'muster' : S.phase === 'contact');
+    b.disabled = !liveNow || S.spent.has(v.id) || S.favor < v.cost;
+    b.dataset.spent = S.spent.has(v.id) ? '1' : '0';
+    /* the same rule as the constitution's: a verb whose phase has passed keeps
+       its line and loses its paragraph. It still says what it was and whether
+       you spent it — a verb you paid for must not read as one you never had */
+    b.dataset.dead = (!liveNow || S.spent.has(v.id)) && !constiExpanded ? '1' : '0';
+    b.querySelector('.cost').textContent = S.spent.has(v.id) ? 'spent'
+      : liveNow ? v.cost + ' favor'
+      : v.phase === 'muster' ? 'muster only — gone' : 'gone';
+  }
+  el('deadbar').hidden = !(S.phase === 'resolution' || S.ended);
+}
+
+/* --- the log.
+   Three columns, and the third one wraps. The node's DISPLAY name leads, with
+   a dot in its cell's form hue so a row ties to the mark that just crossed the
+   field, and the raw id stays in the tooltip because the id is the auditable
+   thing. Exposure gets its own badge, with the tier in it: a raider who wins on
+   tier-1 workings has told you nothing, and one who wins on The Empty Room has
+   handed you a tier 5. --- */
+let logRows = [];          // [{ tick, el }], in step with the tbody's children
+let logBoundary = -1;      // how many rows the moment you are looking at has reached
+const nowline = document.createElement('tr');
+nowline.className = 'nowline';
+nowline.innerHTML = '<td colspan="3">▲ the tick you are looking at · below is what happened after</td>';
+
+function paintLog() {
+  const body = el('log');
+  if (S.log.length === 0) return;
+  if (logDrawn === 0) { body.innerHTML = ''; logRows = []; }
+  for (let i = logDrawn; i < S.log.length; i++) {
+    const r = S.log[i], tr = document.createElement('tr');
+    tr.dataset.kind = r.kind;
+    /* a row that arrives while you are looking back is, by definition, after
+       the moment you are looking at */
+    if (CURSOR !== null) tr.classList.add('after');
+    if (r.god) tr.dataset.god = '1';
+    const node = r.nodeId ? NODE.get(r.nodeId) : null;
+    const title = node ? node.id + ' · tier ' + node.tier + ' · ' + node.cell : '';
+    const head = node
+      ? '<span class="ttl" title="' + title + '"><i class="dot" style="background:' + HUE[node.form] + '"></i>' +
+        node.name + '</span>'
+      : '';
+    const right = r.right ? '<b class="r">' + r.right + '</b>' : '';
+    const obs = r.expo
+      ? '<span class="obs' + (r.expo.n === 1 ? ' first' : '') + '" title="Every working they cast is cast in front of your academics.">' +
+        'observed · tier ' + r.expo.tier + ' · ' + (r.expo.n === 1 ? 'first sighting' : '×' + r.expo.n) + '</span>'
+      : '';
+    tr.innerHTML =
+      '<td class="t">' + r.tick + '</td>' +
+      '<td class="who ' + (r.side === 'a' ? 'side-a' : 'side-d') + '">' + r.who + '</td>' +
+      '<td class="e">' + right + head + '<span class="dt">' + r.detail + '</span>' + obs + '</td>';
+    body.append(tr);
+    logRows.push({ tick: r.tick, el: tr });
+  }
+  logDrawn = S.log.length;
+  while (logRows.length > 400) { const g = logRows.shift(); g.el.remove(); if (logBoundary > 0) logBoundary--; }
+  const w = el('logwrap');
+  /* only follow the tail while you are watching the present. Yanking the log to
+     the bottom under a reader who deliberately went back would undo the one
+     thing they asked for. */
+  if (CURSOR === null && w.scrollTop + w.clientHeight > w.scrollHeight - 120) w.scrollTop = w.scrollHeight;
+}
+
+/**
+ * Mark where in the log the moment you are looking at falls. Nothing is hidden
+ * — it is all record, and hiding rows you already own would be a different lie
+ * from the one this is fixing — but everything after the cursor reads as ahead
+ * of you, with a brass line at the boundary.
+ */
+function paintLogCursor(cur, scrollTo) {
+  let want = logRows.length;
+  if (cur !== null) { want = 0; while (want < logRows.length && logRows[want].tick <= cur) want++; }
+  if (want === logBoundary) return;
+  const from = logBoundary === -1 ? logRows.length : logBoundary;
+  if (want < from) for (let i = want; i < from; i++) logRows[i].el.classList.add('after');
+  else for (let i = from; i < want; i++) logRows[i].el.classList.remove('after');
+  logBoundary = want;
+  if (cur === null || want >= logRows.length) nowline.remove();
+  else {
+    el('log').insertBefore(nowline, logRows[want].el);
+    /* scrolled by hand rather than with scrollIntoView, which would also scroll
+       the page and throw the field out of view — the opposite of the ask */
+    if (scrollTo) {
+      const w = el('logwrap');
+      w.scrollTop += nowline.getBoundingClientRect().top - w.getBoundingClientRect().top - w.clientHeight / 2;
+    }
+  }
+}
+
+/* ==========================================================================
+   6b. LOOKING — at a mage, and at a tick that has already gone past.
+
+   Inspecting costs nothing and STOPS NOTHING, in every phase: muster already
+   worked that way, deliberately, and this is that behaviour extended rather
+   than a second mechanism beside it. The record cursor works identically while
+   the raid runs and once it has ended, so there is no separate replay mode.
+   ========================================================================== */
+function pickCombatant(clientX, clientY) {
+  const rect = canvas.getBoundingClientRect();
+  const fx = (clientX - rect.left) / rect.width * K.extent;
+  const fy = (clientY - rect.top) / rect.height * K.extent;
+  const tol = K.extent * 15 / rect.width;   // 15 css px, whatever the canvas scale
+  let best = null, bd = tol * tol;
+  /* picked out of what is DRAWN, which while you are looking back is the record
+     — you click the mark you can see, not the one that has since moved */
+  for (const c of V.combatants) {
+    if (!c.alive || c.withdrawn) continue;
+    const d = (c.pos.x - fx) * (c.pos.x - fx) + (c.pos.y - fy) * (c.pos.y - fy);
+    if (d <= bd) { bd = d; best = c; }
+  }
+  return best;
+}
+
+/* ---- the cursor. null means live; any other value is a tick you are reading. ---- */
+function goLive() {
+  if (CURSOR === null) return;
+  CURSOR = null; recPlaying = true; recAcc = 0;
+  viewCache = null;
+  paintRecord(true);
+}
+function seek(tick, keepPlaying) {
+  const t = Math.max(0, Math.min(S.tick, Math.round(tick)));
+  if (t >= S.tick) { goLive(); return; }
+  CURSOR = t;
+  if (keepPlaying === false) recPlaying = false;
+  recAcc = 0;
+  paintRecord(true);
+}
+
+/** The strip, the ribbon, and the line in the god's column.
+    Runs inside the rAF loop, so it is signature-guarded like the ledger: an
+    innerHTML every frame is a layout thrash in exchange for nothing. */
+let recSig = '';
+function paintRecord(scrollLog) {
+  const rewound = CURSOR !== null;
+  const sig = [rewound, CURSOR, S.tick, recPlaying, !!S.ended, V ? V.phase : '', S.stability].join('|');
+  if (sig === recSig && !scrollLog) return;
+  recSig = sig;
+  const scrub = el('scrub'), bar = el('recbar'), strip = el('rec');
+  scrub.max = String(Math.max(0, S.tick));
+  if (document.activeElement !== scrub) scrub.value = String(rewound ? CURSOR : S.tick);
+  strip.dataset.rec = rewound ? '1' : '0';
+  el('fieldcard').dataset.rec = rewound ? '1' : '0';
+  el('rec-play').dataset.live = rewound && !recPlaying ? '1' : '0';
+  el('rec-play').setAttribute('aria-pressed', String(rewound && !recPlaying));
+  el('rec-play').textContent = rewound && !recPlaying ? 'Play the record' : 'Hold the record';
+  el('rec-live').disabled = !rewound;
+  el('rec-live').dataset.live = rewound ? '1' : '0';
+  el('rec-lab').textContent = S.ended ? 'Replay' : 'Record';
+
+  const ticksLeft = Math.max(0, floorDiv(S.stability, K.stabilityDecay));
+  el('rec-read').textContent = rewound
+    ? 'tick ' + CURSOR + ' of ' + S.tick
+    : (S.ended ? 'the whole engagement, scrubbable' : 'live · tick ' + S.tick);
+  el('rec-read').style.color = rewound ? 'var(--brass)' : '';
+
+  bar.hidden = !rewound;
+  if (rewound) {
+    bar.innerHTML = 'You are looking at the record — <b>tick ' + CURSOR + '</b>, ' + V.phase +
+      (recPlaying ? '' : ' · held') +
+      (S.ended
+        ? '<span class="live">The raid is over at tick <b>' + S.ended.tick + '</b>. Nothing here can be changed; this is a reading.</span>'
+        : '<span class="live">The engagement has not stopped: it is at tick <b>' + S.tick +
+          '</b>, portal <b>' + ticksLeft + '</b> ticks. Anything you do lands there.</span>');
+  }
+  const nb = el('nowbar');
+  nb.hidden = !rewound || !!S.ended;
+  if (!nb.hidden) {
+    nb.innerHTML = 'You are looking at tick <b>' + CURSOR + '</b>. The engagement is at tick <b>' + S.tick +
+      '</b> — <b>every switch and every verb below lands at ' + S.tick + '</b>, and using one brings you back to it.';
+  }
+  el('ledger-side').textContent = rewound ? 'the live account, not the record' : 'what it has cost, both ways';
+  el('ledger-side').style.color = rewound ? 'var(--brass)' : '';
+  paintLogCursor(CURSOR, !!scrollLog);
+}
+
+function onFieldClick(ev) {
+  if (!S) return;
+  const c = pickCombatant(ev.clientX, ev.clientY);
+  if (!c) return;
+  /* Looking. It costs nothing, it stops nothing, and it is the same in every
+     phase — which is what muster already did, extended rather than replaced. */
+  INSPECT = c.key;
+  paintDossier();
+}
+
+let dossierSig = '';
+function paintDossier() {
+  const card = el('dossier');
+  const c = INSPECT === null ? null : V.combatants.find(x => x.key === INSPECT);
+  if (!c) { card.hidden = true; dossierSig = ''; return; }
+  card.hidden = false;
+  const rewound = CURSOR !== null;
+  const sig = [c.key, c.hp, c.vigor, c.cooldown, c.why, c.alive, c.stolen.length,
+               V.phase, !!V.ended, V.locked.size, rewound, V.tick, S.tick].join('|');
+  if (sig === dossierSig) return;
+  dossierSig = sig;
+
+  const mine = c.side === 'd';
+  el('dsr-who').textContent = c.name + ' · ' + (c.kind === 'mage' ? 'mage' : c.kind);
+  const side = el('dsr-side');
+  side.textContent = mine ? 'host · yours' : 'raider · not yours';
+  side.style.color = mine ? 'var(--host)' : 'var(--raider)';
+
+  /* The dossier follows the FIELD, so while you are looking back it is a report
+     on a tick that has gone, and it says so and changes tense. A panel that read
+     the present next to a field showing the past is the exact ambiguity §11
+     calls an interface bug. */
+  const when = el('dsr-when');
+  when.dataset.rec = rewound ? '1' : '0';
+  when.innerHTML = rewound
+    ? 'As she was at <b>tick ' + V.tick + '</b>. This is a record: it is now tick <b>' + S.tick +
+      '</b>, and nothing here can be acted on.'
+    : 'Live, at <b>tick ' + V.tick + '</b>. Looking at her costs nothing and stops nothing.';
+  el('dsr-doing-lab').textContent = rewound ? 'What she was doing' : 'What she is doing';
+
+  el('dsr-why').innerHTML = c.alive
+    ? c.why.charAt(0).toUpperCase() + c.why.slice(1) + '.'
+    : '<b>Felled.</b> Nothing more from her this raid.';
+
+  const rows = [
+    ['hit points', (c.hp / K.FP).toFixed(1) + ' / ' + (c.maxHp / K.FP).toFixed(1)],
+    ...(c.kind === 'mage' ? [
+      ['vigor', (c.vigor / K.FP).toFixed(1) + ' / ' + (c.maxVigor / K.FP).toFixed(1)],
+      ['next cast in', c.cooldown + ' ticks'],
+      ['her deepest tier', c.deepest],
+      ['nodes held', c.held.length],
+    ] : [['intrinsic damage', (c.damage / K.FP).toFixed(1) + ' a tick']]),
+    ['ward', c.ward ? (100 * c.ward / K.FP).toFixed(0) + '% of damage absorbed' : 'none'],
+    ['concealment', c.concealment ? (100 * c.concealment / K.FP).toFixed(0) + '% chance to evade' : 'none'],
+    ...(c.side === 'a' && c.kind === 'mage' ? [['carrying out', c.stolen.length + ' instances']] : []),
+  ];
+  el('dsr-rows').innerHTML = rows.map(([k, v]) => '<span>' + k + '</span><b>' + v + '</b>').join('');
+
+  const nodes = el('dsr-nodes');
+  if (c.kind !== 'mage') nodes.innerHTML = '<span class="nd">No nodes. It fights because it was called, not because it knows anything.</span>';
+  else {
+    const held = c.held.slice().sort((x, y) => NODE.get(y).tier - NODE.get(x).tier).slice(0, 12);
+    nodes.innerHTML = held.map(id => {
+      /* legality as it stood at the tick being shown — a cell you forbade at
+         tick 300 was not forbidden at tick 200, and the record must not
+         backdate your own decisions */
+      const n = NODE.get(id), legal = V.permitted.has(n.cell);
+      return '<span class="nd" data-legal="' + (legal ? 1 : 0) + '" data-reaching="' + (c.reaching === id ? 1 : 0) +
+        '" title="' + id + ' · ' + n.cell + ' · tier ' + n.tier + (legal ? '' : ' · FORBIDDEN by your constitution') + '">' +
+        n.name + ' <span style="color:' + HUE[n.form] + '">t' + n.tier + '</span></span>';
+    }).join('') + (c.held.length > 12 ? '<span class="nd">+' + (c.held.length - 12) + ' more</span>' : '');
+  }
+}
+
+/* --- the ledger.
+   Four questions the page could already answer and never showed anyone while
+   they were watching: what have I spent, what have they spent, what have they
+   learned from me, and what is leaving through the portal. Exposure is the one
+   that decides strategy, so it carries the deepest tier observed — a raid won
+   on tier-1 workings costs the raider nothing in secrets, and one won on a
+   tier 5 hands the defender the deepest thing they had.
+
+   Rebuilt only when a number moves. paintChrome runs inside the rAF loop, and
+   an innerHTML every frame is a layout thrash in exchange for nothing. --- */
+let ledgerSig = '';
+function paintLedger() {
+  const expoTotal = [...S.exposure.values()].reduce((a, b) => a + b, 0);
+  const deepest = [...S.exposure.keys()].reduce((t, id) => Math.max(t, NODE.get(id).tier), 0);
+  const loot = new Map();
+  for (const c of S.combatants) if (c.side === 'a') for (const id of c.stolen) loot.set(id, (loot.get(id) || 0) + 1);
+  const takenObjs = S.objectives.filter(o => o.taken);
+  const sig = [S.casts, S.refusals, S.forbiddenCastsBlocked, S.evades, S.thefts, S.fields.length,
+               S.takenValue, S.favor, S.favorSpent, S.vis, S.exposure.size, expoTotal,
+               Object.keys(S.clamps).length, takenObjs.length].join('|');
+  if (sig === ledgerSig) return;
+  ledgerSig = sig;
+
+  const rows = [
+    ['sec', 'Your favor'],
+    ['in hand', S.favor],
+    ['spent on verbs', S.favorSpent],
+    ['sec', 'Their Vis'],
+    ['left in the expedition', S.vis],
+    ['spent — ' + A.visPerCast + ' a cast', A.visStart - S.vis],
+    ['sec', 'Casts'],
+    ['resolved', S.casts],
+    ['refused', S.refusals],
+    ['forbiddenCastsBlocked', S.forbiddenCastsBlocked, S.forbiddenCastsBlocked > 0 ? 'bad' : ''],
+    ['evaded by concealment', S.evades],
+    ['area-denial fields live', S.fields.length],
+    ...Object.entries(S.clamps).map(([k, v]) => ['cap clamped · ' + k, v, 'brass']),
+    ['sec', 'Exposure accrued to you'],
+    ['nodes seen', S.exposure.size, 'expo'],
+    ['castings watched', expoTotal, 'expo'],
+    ['deepest seen', deepest ? 'tier ' + deepest : '—', 'expo'],
+    ['sec', 'Taken from you'],
+    ['knowledge instances stolen', S.thefts],
+    ['objectives taken', takenObjs.length + ' / ' + S.objectives.length],
+    ['objective value', (S.takenValue / K.FP).toFixed(1) + ' / ' + (S.totalValue / K.FP).toFixed(1),
+      S.takenValue * K.FP >= S.totalValue * K.victoryFraction ? 'bad' : ''],
+  ];
+  el('tally').innerHTML = rows.map(r => r[0] === 'sec'
+    ? '<span class="sec">' + r[1] + '</span>'
+    : '<span' + (r[2] ? ' class="' + r[2] + '"' : '') + '>' + r[0] + '</span>' +
+      '<b' + (r[2] ? ' class="' + r[2] + '"' : '') + '>' + r[1] + '</b>').join('');
+
+  const ex = el('expolist');
+  if (S.exposure.size === 0) ex.innerHTML = '<div class="ex"><span class="empty">Nothing observed yet. They have taught you nothing.</span></div>';
+  else {
+    ex.innerHTML = [...S.exposure.entries()]
+      .sort((a, b) => NODE.get(b[0]).tier - NODE.get(a[0]).tier || b[1] - a[1]).slice(0, 14)
+      .map(([id, n]) => '<div class="ex"><span title="' + id + ' · ' + NODE.get(id).cell + '">' +
+        NODE.get(id).name + ' <span class="tier">tier ' + NODE.get(id).tier + '</span></span><b>×' + n + '</b></div>').join('');
+  }
+
+  const lt = el('lootlist');
+  const lootRows = [
+    ...[...loot.entries()].sort((a, b) => b[1] - a[1]).map(([id, n]) =>
+      '<div class="ex"><span title="' + id + ' · ' + NODE.get(id).cell + '">' + NODE.get(id).name +
+      ' <span class="tier">stolen</span></span><b>×' + n + '</b></div>'),
+    ...takenObjs.map(o => '<div class="ex"><span>' + o.label + ' <span class="tier">' + o.instances +
+      ' instances</span></span><b>' + (o.value / K.FP).toFixed(1) + ' val</b></div>'),
+  ];
+  lt.innerHTML = lootRows.length ? lootRows.join('')
+    : '<div class="ex"><span class="empty">Nothing has gone back through the portal.</span></div>';
+}
+
+/* --- meters, rail, tallies.
+   The split is the whole design, so it is written out rather than implied:
+     V — the field, the muster clock, the portal bar, the tick, the head count,
+         the dossier. What you are LOOKING at.
+     S — the phase rail, favor, the constitution, the verbs, the ledger, the
+         outcome. What you can ACT on, and what it has cost.
+   The rail is deliberately on the S side: it says which phase your verbs are
+   in, not which phase the mark under your cursor was in. --- */
+function paintChrome() {
+  const musterLeft = Math.max(0, A.musterTicks - V.tick);
+  el('mclock').hidden = V.phase !== 'muster';
+  if (V.phase === 'muster') {
+    const n = el('mclock-n');
+    n.textContent = (musterLeft / 10).toFixed(1);
+    n.classList.toggle('urgent', musterLeft <= 60);
+  }
+  for (const p of document.querySelectorAll('.ph')) {
+    const ph = p.dataset.phase;
+    const live = ph === S.phase && !S.ended;
+    p.dataset.live = live ? '1' : '0';
+    const order = ['muster', 'contact', 'resolution'];
+    p.dataset.done = (order.indexOf(ph) < order.indexOf(S.phase) || S.ended) ? '1' : '0';
+    let frac = 0;
+    if (ph === 'muster') frac = Math.min(1, S.tick / A.musterTicks);
+    else if (ph === 'contact') frac = S.phase === 'muster' ? 0 : Math.min(1,
+      (K.stabilityInitial + K.stabilityJitter - S.stability) / Math.max(1, K.stabilityInitial + K.stabilityJitter - K.withdrawMargin));
+    else frac = S.phase === 'resolution' ? Math.min(1, 1 - S.stability / K.withdrawMargin) : 0;
+    p.querySelector('.bar i').style.width = (frac * 100).toFixed(1) + '%';
+  }
+
+  el('favor').textContent = S.favor;
+  el('favor-bar').style.width = (100 * S.favor / A.favorMax) + '%';
+  el('vis').textContent = S.vis;
+  el('vis-bar').style.width = (100 * S.vis / A.visStart) + '%';
+  const expoTotal = [...S.exposure.values()].reduce((a, b) => a + b, 0);
+  el('expo').textContent = S.exposure.size + ' node' + (S.exposure.size === 1 ? '' : 's') + ' · ' + expoTotal + ' castings';
+  el('expo-bar').style.width = Math.min(100, 100 * S.exposure.size / Math.max(1, NODE.size * 0.4)) + '%';
+
+  /* the portal bar follows the field, because a bar that disagreed with the
+     marks above it would be worse than either number alone. The LIVE portal
+     number is carried in the record ribbon, so the present is never lost. */
+  const ticksLeft = Math.max(0, floorDiv(V.stability, K.stabilityDecay));
+  el('stab').textContent = ticksLeft;
+  el('stab-bar').style.width = (100 * Math.max(0, V.stability) / (K.stabilityInitial + K.stabilityJitter)) + '%';
+  el('stab-margin').style.left = (100 * K.withdrawMargin / (K.stabilityInitial + K.stabilityJitter)) + '%';
+  el('stability').classList.toggle('crit', V.stability <= K.withdrawMargin);
+  el('tick').textContent = V.tick;
+  const la = V.combatants.filter(c => c.alive && !c.withdrawn && c.side === 'a').length;
+  const ld = V.combatants.filter(c => c.alive && c.side === 'd').length;
+  el('alive').innerHTML = 'raiders <b class="num">' + la + '</b> · host <b class="num">' + ld + '</b>';
+
+  paintLedger();
+  paintDossier();
+
+  if (S.ended) {
+    el('outcome').hidden = false;
+    el('outcome-t').innerHTML = 'Tick <b class="num">' + S.ended.tick + '</b> — ' + S.ended.reason +
+      '. The <b>' + S.ended.victor + '</b> takes it: ' + (S.takenValue / K.FP).toFixed(1) + ' of ' +
+      (S.totalValue / K.FP).toFixed(1) + ' objective value against a victory threshold of half. ' +
+      (S.locked.size ? S.locked.size + ' locked ruleset change' + (S.locked.size === 1 ? '' : 's') +
+        ' now cost substantially more favor to revert than they cost to make.' : 'The constitution came through unchanged.');
+  } else el('outcome').hidden = true;
+
+  paintVerbs();
+  paintConstitution();
+}
+
+/* --- legend, once --- */
+function buildLegend() {
+  /* The glyphs are drawn in a neutral canvas ink rather than a form hue, because
+     a coloured glyph beside a primitive name would imply a primitive-to-form
+     mapping that does not exist. The last row is the one that carries hue. */
+  const G = (inner) => '<svg class="k" viewBox="0 0 22 22" aria-hidden="true">' + inner + '</svg>';
+  const ink = 'stroke="#93A2A4" fill="none" stroke-width="1.4"';
+  const items = [
+    ['direct-damage', 'a bolt in the node’s form hue, then an impact ring',
+      G('<path d="M2 19 L14 8" ' + ink + '/><circle cx="16" cy="6" r="4" ' + ink + '/>')],
+    ['ward', 'a shell that flares white where it absorbed',
+      G('<circle cx="11" cy="11" r="7" ' + ink + '/><path d="M4 8 A8 8 0 0 1 18 8" ' + ink + ' opacity=".55"/>')],
+    ['area-denial', 'a fp(12) disc with a depleting duration arc',
+      G('<circle cx="11" cy="11" r="8" ' + ink + ' stroke-dasharray="2 3"/><path d="M11 3 A8 8 0 0 1 18 14" ' + ink + ' stroke-width="2.2"/>')],
+    ['blink', 'dashed after-images along the displacement',
+      G('<circle cx="4" cy="16" r="2.5" ' + ink + ' opacity=".3"/><circle cx="11" cy="11" r="3" ' + ink + ' opacity=".6"/><circle cx="18" cy="6" r="3.5" ' + ink + '/>')],
+    ['summon', 'a burst that settles into small marks',
+      G('<path d="M11 4 L17 15 L5 15 Z" ' + ink + '/><path d="M11 1 v2 M2 18 l2-2 M20 18 l-2-2" ' + ink + ' opacity=".6"/>')],
+    ['concealment', 'dashed outline; an evaded bolt is struck out',
+      G('<circle cx="11" cy="11" r="6.5" ' + ink + ' stroke-dasharray="2.5 2.5"/><path d="M5 17 L17 5" stroke="#C9A034" fill="none" stroke-width="1.4"/>')],
+    ['knowledge-steal', 'a beaded filament; a glyph returns on success',
+      G('<path d="M3 18 L19 5" ' + ink + ' stroke-dasharray="1.5 3"/><rect x="1" y="15" width="5" height="5" ' + ink + '/>')],
+    ['exposure', 'a mote of their magic drifting to your edge',
+      G('<circle cx="11" cy="17" r="2" fill="#93A2A4" stroke="none"/><circle cx="11" cy="11" r="1.4" fill="#93A2A4" opacity=".55" stroke="none"/><circle cx="11" cy="6" r="1" fill="#93A2A4" opacity=".3" stroke="none"/>')],
+  ];
+  el('legend').innerHTML = items.map(([k, d, g]) =>
+    '<span class="lg">' + g + '<span><b>' + k + '</b><br>' + d + '</span></span>').join('') +
+    '<span class="lg">' +
+    G(FORMS.map((f, i) => '<rect x="' + (1 + i * 5.2) + '" y="4" width="4" height="14" fill="' + HUE[f] + '" stroke="none"/>').join('')) +
+    '<span><b>hue = form, never side</b><br>' +
+    'the host’s ruleset governs both sides, so you cannot tell whose spell it is by its colour</span></span>';
+}
+
+/* --- the loop.
+   THE LIVE ENGAGEMENT STEPS EVERY FRAME, unconditionally, whatever the record
+   cursor is doing. There is no branch here that can stop it, by design. The
+   record plays at the same viewing rate the engagement advances at, so while
+   the raid runs a rewound view never catches up on its own — only "Live" does,
+   which is why that button is always there. Once the raid has ended the live
+   tick stands still, the record catches up, and the end-of-raid replay simply
+   finishes and hands you back. --- */
+function frame(now) {
+  requestAnimationFrame(frame);
+  if (!S) return;
+  if (!last) last = now;
+  const dt = Math.min(250, now - last); last = now;
+
+  /* Muster always runs at 1:1 with engagement time — the clock IS the pressure,
+     and the agency curve is encoded in the pacing rather than only stated in
+     the rail. Contact and resolution are played at a quarter of it. */
+  const perTick = S.phase === 'muster' ? PACE.musterMs : PACE.engagementMs / speed;
+  if (!S.ended) {
+    acc += dt;
+    let guard = 0;
+    while (acc >= perTick && guard++ < 40) { acc -= perTick; step(S); }
+  }
+
+  let alpha = Math.min(1, acc / perTick);
+  if (CURSOR !== null) {
+    const recTick = PACE.engagementMs / speed;
+    if (recPlaying) {
+      recAcc += dt;
+      let guard = 0;
+      while (recAcc >= recTick && guard++ < 40 && CURSOR < S.tick) { recAcc -= recTick; CURSOR++; }
+    }
+    alpha = recPlaying ? Math.min(1, recAcc / recTick) : 1;
+    if (CURSOR >= S.tick) goLive();
+  }
+  V = CURSOR === null ? S : viewAt(S, CURSOR);
+  /* The cursor follows the record rather than the other way round. It can only
+     disagree if a tick was asked for that the engagement never occupied, and
+     the honest answer to that is to show the nearest one that it did — never to
+     let the readout claim a tick the field is not drawing. */
+  if (CURSOR !== null && V.tick !== CURSOR) CURSOR = V.tick;
+
+  draw(V, alpha);
+  paintChrome();
+  paintLog();
+  paintRecord(false);
+}
+
+function restart() {
+  S = buildRaid(el('seed').value.trim() || 'hollow-gate', damage);
+  V = S;
+  ACTIONS = [];
+  viewCache = null; CURSOR = null; recPlaying = true; recAcc = 0;
+  INSPECT = null;
+  logDrawn = 0; ledgerSig = ''; dossierSig = ''; constiSig = ''; recSig = ''; constiExpanded = false;
+  logRows = []; logBoundary = 0; nowline.remove();
+  el('dossier').hidden = true; el('recbar').hidden = true;
+  el('log').innerHTML = '<tr><td class="empty" colspan="3">Nothing cast yet. The portal is open; contact has not happened.</td></tr>';
+  acc = 0; last = 0;
+  el('fieldnote').textContent = 'seed “' + S.seed + '” · 20 × 20 terrain cells of 10 m · ' +
+    S.combatants.length + ' combatants · ' + S.objectives.length + ' objectives';
+  sizeCanvas(); paintChrome(); paintRecord(false);
+}
+
+/* --- wiring --- */
+buildConstitution(); buildVerbs(); buildLegend();
+canvas.addEventListener('click', onFieldClick);
+/* A control that only works with a mouse is a defect, not an omission: the
+   arrows step through the living, Enter buys or releases the moment. */
+canvas.addEventListener('keydown', (ev) => {
+  const shown = V.combatants.filter(c => c.alive && !c.withdrawn);
+  if (ev.key === 'ArrowRight' || ev.key === 'ArrowLeft') {
+    if (!shown.length) return;
+    const at = shown.findIndex(c => c.key === INSPECT);
+    INSPECT = shown[(at + (ev.key === 'ArrowRight' ? 1 : shown.length - 1) + shown.length) % shown.length].key;
+  } else if (ev.key === 'Escape') { INSPECT = null; }
+  /* the record, from the keyboard: comma and full stop step it, L returns to
+     the live tick. A control that only works with a mouse is a defect. */
+  else if (ev.key === ',' || ev.key === '<') seek((CURSOR === null ? S.tick : CURSOR) - 10, false);
+  else if (ev.key === '.' || ev.key === '>') seek((CURSOR === null ? S.tick : CURSOR) + 10, false);
+  else if (ev.key === 'l' || ev.key === 'L') goLive();
+  else return;
+  ev.preventDefault();
+  paintDossier();
+});
+el('dsr-close').addEventListener('click', () => { INSPECT = null; paintDossier(); });
+el('consti-toggle').addEventListener('click', () => {
+  constiExpanded = !constiExpanded; constiSig = '';
+  paintConstitution(); paintVerbs();
+});
+el('restart').addEventListener('click', restart);
+el('seed').addEventListener('change', restart);
+/* Skipping muster RUNS the ticks rather than setting the counter past them.
+   The old version assigned S.tick and the record inherited a hole: three
+   hundred ticks the scrubber offered and the engagement had never occupied.
+   Stepping them for real costs nothing — a muster tick returns early — and it
+   keeps the one promise the record makes, which is that every tick on the
+   scrubber is a tick that happened. */
+el('skip').addEventListener('click', () => {
+  if (!S || S.phase !== 'muster' || S.ended) return;
+  let guard = 0;
+  while (S.phase === 'muster' && !S.ended && guard++ <= A.musterTicks) step(S);
+  acc = 0; goLive();
+});
+
+/* ---- the record's controls ---- */
+el('scrub').addEventListener('input', () => seek(Number(el('scrub').value), false));
+el('rec-back').addEventListener('click', () => seek((CURSOR === null ? S.tick : CURSOR) - 10, true));
+el('rec-live').addEventListener('click', goLive);
+el('rec-play').addEventListener('click', () => {
+  if (CURSOR === null) { seek(S.tick - 10, false); return; }   // nothing to hold at the live edge
+  recPlaying = !recPlaying; recAcc = 0;
+  paintRecord(false);
+});
+function paintPace() {
+  const perSecond = 1000 / (PACE.engagementMs / speed);
+  const ofReal = perSecond * PACE.tickMs / 1000;
+  el('pace').textContent = (perSecond % 1 ? perSecond.toFixed(1) : perSecond) + ' t/s · ' +
+    (ofReal < 1 ? '¼ speed' : ofReal === 1 ? '1:1 with engagement time' : ofReal + '× engagement time');
+}
+for (const b of document.querySelectorAll('.spd')) b.addEventListener('click', () => {
+  speed = Number(b.dataset.spd);
+  for (const o of document.querySelectorAll('.spd')) o.setAttribute('aria-pressed', String(Number(o.dataset.spd) === speed));
+  paintPace();
+});
+for (const b of document.querySelectorAll('.dmg')) b.addEventListener('click', () => {
+  damage = Number(b.dataset.dmg);
+  for (const o of document.querySelectorAll('.dmg')) o.setAttribute('aria-pressed', String(Number(o.dataset.dmg) === damage));
+  /* the viewing multiplier changes what the trace decides from here on, so it
+     is logged with its tick — otherwise the record would replay a raid fought
+     at a damage the player had already changed */
+  if (S && !S.ended) issue({ k: 'damage', n: damage });
+});
+document.querySelector('.spd[data-spd="1"]').setAttribute('aria-pressed', 'true');
+document.querySelector('.dmg[data-dmg="1"]').setAttribute('aria-pressed', 'true');
+paintPace();
+
+/* The three-state theme control — light / system / dark — is ui/shared/theme.js's
+   and not this page's, so the choice is remembered per browser rather than per
+   prototype. This file previously cycled `data-theme` from a private button that
+   remembered nothing, which is the same drift as a private palette wearing a
+   different hat.
+
+   Loaded by dynamic import, from inside this classic script, on purpose. A
+   module `<script>` does not execute at all under file:// — the browser treats
+   a file origin as opaque and the CORS check fails — and this page is meant to
+   open by double-click, so making the whole 1900-line script a module would
+   trade a missing toggle for a blank page. Dynamic import fails the same way,
+   but it fails HERE, where the failure costs only the control: theme.css is a
+   <link> and loads from file:// fine, so the page still renders in both themes
+   and still follows the OS. Served over http:// — `npm run ui`, then
+   /ui/raid/ — the control mounts and this branch never runs. */
+import('../shared/theme.js')
+  .then(({ mountThemeControl }) => mountThemeControl(el('theme-host')))
+  .catch(() => {
+    /* file://: no control, and no empty gap in the chip row where one was. */
+    el('theme-host').remove();
+  });
+
+window.addEventListener('resize', sizeCanvas);
+restart();
+requestAnimationFrame(frame);
+</script>
+</body>
+</html>
+
+<script type="module">
+  /* Where this page's data comes from, and — for the parts the read path
+     does not carry — which capability is missing and why. Sourced from
+     capabilities() rather than prose, so it cannot go stale quietly. */
+  import { mountSourceNote, openSession } from '../shared/session.js';
+  const s = await openSession({ recording: '../session.json' }).catch(() => null);
+  mountSourceNote(document.getElementById('srchost'), s, ['engagement', 'eventDeltas']);
+</script>

@@ -57,6 +57,8 @@ describe('the audio grid', () => {
   });
 
   it('gives every effect primitive a raid cue', () => {
+    // raid-world-pulse is raid-kind but not a primitive — it is §3.5's world
+    // clock heard from inside a raid — so it is exempt from this mapping.
     for (const { record } of registry.primitives) {
       if (!COMBAT_PRIMITIVES.includes(record.id)) continue;
       const cue = cues.find((c) => c.id === `raid-${record.id}`);
@@ -129,6 +131,7 @@ const UI_SUBJECTS = [
   'dispensation', 'interdiction', 'revoke-edict', 'grant-founding-knowledge',
   'bless-mage', 'assign-role', 'fund-university', 'encourage-research',
   'change-tradition', 'declare-ascension', 'favor-pulse',
+  'world-tempo',
   'research', 'discovery', 'teaching', 'scribing', 'grimoire-complete',
   'theft', 'rediscovery', 'mage-death',
 ];

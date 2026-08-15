@@ -47,11 +47,39 @@ import type { SpeciesRecord } from '@mm/content';
  *
  * ## Discovery and rediscovery are separated here
  *
- * `everKnown` decides which of the two lists a target lands in — a node this
- * universe has held before is a rediscovery, whatever the individual mage
- * knows. That is `contracts.md` §1.5's persisted record, and it is the input
- * that makes `rediscover-node` a distinct goal id rather than a flavour of
- * research.
+ * `KnowledgeGateway.rediscovery` decides which of the two lists a target lands
+ * in — a node this universe held once and has since *lost* is a rediscovery,
+ * whatever the individual mage knows. That is the input that makes
+ * `rediscover-node` a distinct goal id rather than a flavour of research.
+ *
+ * ## It used to ask `everKnown`, and that was the wrong half of §1.5
+ *
+ * The persisted ever-known mark is set by `createInstance` and never cleared,
+ * so it is true of every node anybody here has ever learned, including the ones
+ * still standing. Bucketing on it filed *held* nodes as rediscoveries, which is
+ * the same skew the research quote carried until `isRediscovery` replaced it
+ * there — except that here it moved a target between two goal ids rather than
+ * between two prices, so nothing in the cost path could see it.
+ *
+ * ## What it was worth, measured rather than argued
+ *
+ * Bucketing is not scoring, so the effect is indirect — `rediscover-node` is a
+ * separate goal id with its own appeal terms and its own commitment, and a mage
+ * who files a held node under it is choosing from the wrong list all the way
+ * down. It is not small. Lessons taught per 20-year window over the reference
+ * two hundred years, before and after:
+ *
+ * ```
+ * before  867 513 60  83  38   2 265 323 340 314
+ * after   446 337 34 112 113  16  51 588 323 124
+ * ```
+ *
+ * The total falls and the *thinnest window rises*, from 2 to 16, which is the
+ * direction that matters: `reference-long-run.test.ts` asserts teaching in every
+ * window, and the run it was asserting over was one bad tick away from a hole.
+ * On a tree carrying the economy wire the same correction lifts windows that had
+ * gone to nothing — `7 2 0` becomes `261 533 146` — while research over the last
+ * forty years rises from 176 completions to 487.
  */
 
 /**
@@ -163,7 +191,7 @@ export function gatherFrontier(
   const discovery: KnowledgeTarget[] = [];
   const rediscovery: KnowledgeTarget[] = [];
   for (const target of eligible) {
-    const bucket = gateway.everKnown(target.nodeId) ? rediscovery : discovery;
+    const bucket = gateway.rediscovery(target.nodeId) ? rediscovery : discovery;
     if (bucket.length < limit) bucket.push(target);
   }
   return { discovery, rediscovery };

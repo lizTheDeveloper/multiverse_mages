@@ -142,6 +142,10 @@ export async function reproduceRun(options: ReproduceOptions): Promise<Reproduct
       ...(outcome.armContribution === undefined
         ? {}
         : { armContribution: outcome.armContribution }),
+      ...(outcome.godSpendByAction === undefined
+        ? {}
+        : { godSpendByAction: outcome.godSpendByAction }),
+      ...(outcome.censusTrace === undefined ? {} : { censusTrace: outcome.censusTrace }),
     }),
   };
 }
