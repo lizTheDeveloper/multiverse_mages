@@ -12442,3 +12442,51 @@ and nothing failed — the mask rejects them and the run continues. Filed as its
 
 The rule: **a measurement whose horizon is a parameter must report that parameter next to
 its verdict, and a verdict at the boundary of a parameter is not a verdict.**
+
+## W234 — Width is 3 and climbing, and one strategy was never allowed to play
+
+[executed, 2026-08-15, `w233/stamp-the-search-archive` @ 9f967b94, clean tree,
+`search-strategies.mjs --seeds 4` at five horizons; `npm run verify` exit 0 on both commits]
+
+W233 bracketed the shape flip between 600 and 1500 at 2 seeds. Repeating it at 4 seeds
+gives a monotone curve rather than a threshold:
+
+| `--ticks` | shape | width | ascended runs |
+|-----------|-------|-------|---------------|
+| 900       | dead  | 0     | **0**         |
+| 1050      | wide  | 1     | 2             |
+| 1200      | wide  | 1     | 2             |
+| 1350      | wide  | 2     | 6             |
+| 1500      | wide  | **3** | 7             |
+
+**Width climbs with the horizon and has not plateaued at 1500.** So the answer to *"does
+the demo set have enough variety to be fun"* is not a single number — it is a function of
+how long a game runs, and every previous reading of this project's strategy pool as *dead*
+was a reading taken at 600 ticks, where `ascension-min-tick` is 600 and nothing can ascend
+by construction.
+
+**The guard falls out without a magic multiplier.** `dead` at 900 coincides exactly with
+*zero ascensions anywhere*. That is the discriminator: a `dead` verdict with zero
+ascensions is a statement about the horizon, not the game. `shapeOf` already has
+`unresolved` for "too few cells to judge"; this is the same idea one axis over. Not landed
+in #196 — it changes a shape enum that is typed, tested and feeds baselines, and it
+deserves its own diff.
+
+**And `portal-rush` was never allowed to play.** `illegalActionRate 0.483` — 48 times
+`MAX_ELITE_ILLEGAL_RATE`, whose own comment reads *"above this it is a mask bug"*.
+`clearsLadder` correctly refuses it the cell and then reports the refusal by reusing
+`failedRung`, so it printed as `(lost to rung 1)` — *weaker than doing nothing* — rather
+than *excluded*. A real defect was being retired as a balance result, in the tool built to
+stop exactly that. Now prints `MASK-BUG` with the rate, plus a trailing WARNING.
+
+Two consequences worth stating plainly:
+
+- **The effective pool is smaller than the header claims.** A sweep printing `pool 14`
+  that contains a mask-bugged strategy measured 13.
+- **`portal-rush` is the strategy the capability spec names `rego-limen` for.** The one
+  bot whose whole purpose is opening portals cannot legally act half the time, which is
+  why every raid-facing result this campaign has read was quieter than it should be.
+
+The rule: **when a checker has a category for "the input is broken", that category has to
+survive to the output.** Computing it and then printing it as the ordinary negative is the
+same defect as not computing it.
