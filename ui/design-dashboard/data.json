@@ -3,7 +3,7 @@
     "generatedBy": "scripts/build-design-dashboard.mjs",
     "command": "npm run ui:dashboard",
     "pinnedBy": "packages/content/test/unit/design-dashboard-payload.test.ts",
-    "contentRevision": "e8442af2c5f91ae6f80ad9a178e0e451",
+    "contentRevision": "3f23c8da6e51cfa31c2e07e5e4f90ab3",
     "contentCounts": {
       "techniques": 5,
       "forms": 14,
@@ -2543,8 +2543,8 @@
       "scripts/check-reachability.mjs --json"
     ],
     "ok": false,
-    "findingCount": 128,
-    "examinedSymbolCount": 858,
+    "findingCount": 131,
+    "examinedSymbolCount": 875,
     "examinedPackages": [
       "content",
       "coordination",
@@ -2556,7 +2556,7 @@
       "sim-core",
       "state"
     ],
-    "productionFileCount": 309,
+    "productionFileCount": 315,
     "orphanPackages": [],
     "unreached": [
       {
@@ -2615,7 +2615,7 @@
       },
       {
         "file": "packages/coordination/src/god/interventions.ts",
-        "line": 1047,
+        "line": 1051,
         "name": "tierDerivedValues",
         "kind": "function"
       },
@@ -2944,6 +2944,18 @@
         "kind": "function"
       },
       {
+        "file": "packages/rules-world/src/mages/roles.ts",
+        "line": 105,
+        "name": "ASSIGNABLE_MAGE_ROLES",
+        "kind": "const"
+      },
+      {
+        "file": "packages/rules-world/src/mages/roles.ts",
+        "line": 73,
+        "name": "isMageRole",
+        "kind": "function"
+      },
+      {
         "file": "packages/rules-world/src/populace/buckets.ts",
         "line": 107,
         "name": "MAX_LIVE_NORMALIZED_AGE",
@@ -2957,7 +2969,7 @@
       },
       {
         "file": "packages/rules-world/src/populace/demand.ts",
-        "line": 84,
+        "line": 149,
         "name": "NO_DEMAND",
         "kind": "const"
       },
@@ -3173,7 +3185,7 @@
       },
       {
         "file": "packages/state/src/enums.ts",
-        "line": 211,
+        "line": 256,
         "name": "OBJECTIVE_KIND_UNSPECIFIED",
         "kind": "const"
       },
@@ -3251,7 +3263,15 @@
       },
       {
         "file": "packages/rules-world/src/mages/roles.ts",
-        "line": 95,
+        "line": 64,
+        "name": "MAGE_ROLE_VALUES",
+        "via": [
+          "isMageRole"
+        ]
+      },
+      {
+        "file": "packages/rules-world/src/mages/roles.ts",
+        "line": 168,
         "name": "changeAffiliation",
         "via": [
           "completeAffiliation"

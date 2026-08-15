@@ -2076,12 +2076,33 @@ function latentMagicUsers(cohorts: CohortStore, deps: WorldStepDeps, worldTick: 
     const species = deps.speciesOf(key.speciesId);
     if (species === undefined) return;
     if (worldTick - key.birthTickBucket < species.maturityMonths) return;
-    latent += floorDiv(
-      count * enrolmentFraction(prevalenceOf(species), species.mageAptitude),
-      FP_ONE,
-    );
+    latent += latentInCohort(count, species);
   });
   return latent;
+}
+
+/**
+ * One cohort's contribution to {@link latentMagicUsers}.
+ *
+ * **A named function rather than the arrow it started as**, because
+ * `scenario`'s annihilation registry keys on the function name and reported it
+ * as `world-step:<anonymous>` — a site nobody could look up. The registry's own
+ * header says a name *"moves only when the function is renamed, which is a
+ * change worth a reviewer's attention anyway"*, and that argument works only if
+ * the function has one.
+ *
+ * **It floors to zero, on purpose and often.** `floorDiv(count × fraction,
+ * FP_ONE)` is zero for every cohort smaller than `1 / fraction` — at the shipped
+ * numbers an orc cohort under about 114 people contributes nobody. That is the
+ * design: a population too small or too mundane to yield a single mage should
+ * ask for no students, and rounding it up would have every hamlet demanding a
+ * seat. The remainder is *not* banked here, unlike `promoteStudentCohort`, and
+ * the asymmetry is deliberate — this is a demand signal read once per tick, and
+ * a draw taken to round it would be an RNG call in the controller rather than in
+ * the event.
+ */
+function latentInCohort(count: number, species: SpeciesRecord): number {
+  return floorDiv(count * enrolmentFraction(prevalenceOf(species), species.mageAptitude), FP_ONE);
 }
 
 interface BirthPhase {

@@ -15,12 +15,14 @@ import { describe, expect, it } from 'vitest';
 
 import { MAGE_ROLE } from '@mm/state';
 import {
+  ASSIGNABLE_MAGE_ROLES,
   BASE_MAX_VIGOR,
   DEFAULT_MAGE_ROLE,
   MAGE_ROLE_VALUES,
   assignRole,
   changeAffiliation,
   createMage,
+  graduate,
   isMageRole,
   newMageRecord,
 } from '@mm/rules-world';
@@ -46,14 +48,51 @@ describe('a newly promoted mage has a default role', () => {
   });
 
   it('takes the role constant from the state enumeration, not a literal', () => {
+    // Five since W193. `student` is a legal role — it is written into `roleId`,
+    // it has a `ROLE_BIAS` row, and a validator must accept it — and it is
+    // deliberately **not** in `ASSIGNABLE_MAGE_ROLES`, which is the separate
+    // list the god's action 10 enumerates. The next test asserts that split.
     expect(MAGE_ROLE_VALUES).toEqual([
       MAGE_ROLE.researcher,
       MAGE_ROLE.warden,
       MAGE_ROLE.professor,
       MAGE_ROLE.raider,
+      MAGE_ROLE.student,
     ]);
     expect(MAGE_ROLE_VALUES.every((role) => isMageRole(role))).toBe(true);
-    expect(isMageRole(4)).toBe(false);
+    expect(isMageRole(5)).toBe(false);
+  });
+
+  it('separates what is a legal role from what the god may assign', () => {
+    // The two lists differ by exactly one entry, and the difference is the point:
+    // enrolment writes `student` and graduation clears it, and the god's
+    // assign-role action does neither.
+    expect(ASSIGNABLE_MAGE_ROLES).toEqual([
+      MAGE_ROLE.researcher,
+      MAGE_ROLE.warden,
+      MAGE_ROLE.professor,
+      MAGE_ROLE.raider,
+    ]);
+    expect(ASSIGNABLE_MAGE_ROLES).not.toContain(MAGE_ROLE.student);
+    expect(isMageRole(MAGE_ROLE.student)).toBe(true);
+
+    const record = mageRow({ roleId: MAGE_ROLE.professor });
+    expect(() => assignRole(record, MAGE_ROLE.student)).toThrow(/not a role the god may assign/u);
+    expect(record.roleId).toBe(MAGE_ROLE.professor);
+  });
+
+  it('graduates a student into the default role, and refuses anyone else', () => {
+    const student = mageRow({ roleId: MAGE_ROLE.student, universityId: 100 });
+    graduate(student);
+    expect(student.roleId).toBe(DEFAULT_MAGE_ROLE);
+    // She keeps her school. Where she goes next is `affiliate`'s decision.
+    expect(student.universityId).toBe(100);
+
+    // Calling it on a standing mage would silently demote a professor to
+    // researcher, which is the god's write and not the world loop's.
+    const professor = mageRow({ roleId: MAGE_ROLE.professor });
+    expect(() => graduate(professor)).toThrow(/only a student graduates/u);
+    expect(professor.roleId).toBe(MAGE_ROLE.professor);
   });
 
   it('writes every field of the mage layout, leaving none at a plausible zero', () => {
@@ -104,8 +143,8 @@ describe('the role enumeration is closed', () => {
     // A mage with role 7 falls through every role-bias lookup to whatever the
     // default branch happens to be.
     const record = mageRow();
-    expect(() => assignRole(record, 7)).toThrow(/not a mage role/u);
-    expect(() => assignRole(record, -1)).toThrow(/not a mage role/u);
+    expect(() => assignRole(record, 7)).toThrow(/not a role the god may assign/u);
+    expect(() => assignRole(record, -1)).toThrow(/not a role the god may assign/u);
     expect(record.roleId).toBe(0);
   });
 });

@@ -409,7 +409,12 @@ describe('contentRevision', () => {
     // — the same situation the three-branch paragraph above describes, and the
     // reason the check is a digest over the preimage rather than a
     // hand-maintained list of files.
-    expect(registry.contentRevision).toBe('e8442af2c5f91ae6f80ad9a178e0e451');
+    //
+    // W193 moves it again, to `3f23c8da`, and the cause is one content edit:
+    // `prevalence` authored on four of the six species in `species.json`. The
+    // digest is over the preimage, so a field added to four records changes it
+    // exactly as a new node would — which is the check working, not a surprise.
+    expect(registry.contentRevision).toBe('3f23c8da6e51cfa31c2e07e5e4f90ab3');
   });
 
   it('is stable across loads of identical content', () => {

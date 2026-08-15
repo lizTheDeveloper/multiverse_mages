@@ -301,7 +301,29 @@ export function sideHasSummonRoom(roster: SideRoster, tuning: RaidTuning): boole
  */
 export const RAIDING_ROLES: ReadonlySet<number> = new Set<number>([MAGE_ROLE.raider]);
 
-/** Wardens lead the defence, and everyone else is there too. */
+/**
+ * Wardens lead the defence, and every **standing** mage is there too.
+ *
+ * ## Students are not on this list, and the omission is a decision
+ *
+ * W193 made a student a `MAGE` row, so *"everybody defends"* would now put
+ * children in a battle line by default — the set is enumerated rather than
+ * derived, so nothing changed silently, and this comment is the record of the
+ * choice rather than of an accident.
+ *
+ * Two reasons, and the second is the stronger one. The fiction: a first-year who
+ * knows one tier-1 node is not a combatant, and `magical-prevalence.md`'s
+ * taxonomy makes *"able to defend at any given random time"* an end state a
+ * student has not reached. And the measurement: a defender pool that grew by the
+ * whole student body the month enrolment landed would move every raid outcome in
+ * every committed baseline for a reason unrelated to raids, and W193 already has
+ * enough to answer for.
+ *
+ * The consequence is real and worth naming: a universe can be *"knowledge-rich
+ * and undefended"* in a new way — a great many enrolled students and few
+ * graduates is a soft target. That is a strategic shape, not a bug, and the god
+ * closes it by building enough curriculum to graduate them.
+ */
 export const DEFENDING_ROLES: ReadonlySet<number> = new Set<number>([
   MAGE_ROLE.warden,
   MAGE_ROLE.professor,

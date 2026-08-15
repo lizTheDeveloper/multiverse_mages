@@ -126,6 +126,35 @@ const REGISTERED: ReadonlyMap<string, string> = new Map([
       'the intent, this is the line that says so.',
   ],
 
+  // ---- W193: enrolment, and one site it reached by making the world poorer. ----
+  [
+    'world-step:latentInCohort',
+    'A genuine floor with no banking, and the design asks for it. ' +
+      '`count x prevalence x mageAptitude` is zero for every cohort smaller ' +
+      'than `1 / fraction` -- at the shipped numbers an orc cohort under about ' +
+      '114 people yields nobody -- and that is the intended reading: a ' +
+      'population too small or too mundane to produce a single mage should ask ' +
+      'for no students. Rounding it up would have every hamlet demanding a ' +
+      'seat. Fires on every tick of the reference run because the reference ' +
+      "universe's cohorts are small and fragmented by construction, which is " +
+      'the same fragmentation `reallocation:collectSources` above is about.',
+  ],
+  [
+    'capital:applyLibraryUpkeep',
+    'Floored and discarded, and the function says so at the line: "a shortfall ' +
+      'smaller than one instance\'s worth costs nothing this tick ... a library ' +
+      'that is one unit short every tick forever is a library whose universe ' +
+      'has a materials problem the economy layer will report." ' +
+      '**New to this registry in W193, and not because the function changed.** ' +
+      'It was already capable of flooring and the reference run never reached a ' +
+      'shortfall small enough; student mages eat subsistence, so the run now ' +
+      'goes marginally short on vellum on 17 of 240 ticks and the last unit ' +
+      'floors. That is the registry doing its job -- reporting a site the arm ' +
+      'newly reaches -- rather than a defect introduced. The consequence is ' +
+      'bounded by the same argument the function makes, and if it stops being ' +
+      'bounded the economy report is where it shows up.',
+  ],
+
   // ---- Handled at the site. ----
   [
     'worship:laggedWorship',
