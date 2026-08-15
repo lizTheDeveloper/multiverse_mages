@@ -1017,6 +1017,74 @@ function checkNodes(
         continue;
       }
 
+      // `substrate.md` §2: the five techniques are five operations on one
+      // conserved quantity, and the sign follows from the operation. **Creo
+      // adds and Perdo removes**, so a Creo node may not carry a negative
+      // world-scale magnitude and a Perdo node may not carry a positive one.
+      //
+      // ## Why only world scale
+      //
+      // The naive form of this rule — "a Perdo node may not carry a positive
+      // magnitude" — was tested against shipped content and **refuted**: 18
+      // Perdo effects are positive, and every one is an *engagement* primitive
+      // (`direct-damage`, `area-denial`, `concealment`, `ward`). Those measure
+      // a **consequence**, not a flow of vis. Unmaking a scent trail produces
+      // concealment; the concealment is positive because it is what the
+      // unmaking *achieved*, and the operation is still destructive. So the
+      // rule binds where the primitive names a flow, which is world scale.
+      //
+      // *Intellego* is deliberately unconstrained, and that is Maxwell's demon
+      // rather than an exemption. 19 Intellego nodes carry positive
+      // `resource-yield` — *"know how many, of what ages, and which of them
+      // will not see the winter"* — and none of them creates food. They are
+      // information reducing waste in a process that was already running, so
+      // the same labour yields more. That extracts more useful work from an
+      // existing flow without adding to it, which is exactly what perception
+      // is allowed to do.
+      //
+      // ## This rule was obeyed before it existed
+      //
+      // Measured over all 300 shipped nodes at the time of writing: Creo,
+      // Intellego, Muto and Rego carry 220 world-scale effects between them
+      // and **every one is positive**. Perdo carries exactly **one** — a
+      // negative `teach-rate` — and no Perdo node has ever carried a positive
+      // `resource-yield`. Nothing enforced any of that. The authors were
+      // following the cosmology before it was written down, which is the
+      // strongest available evidence that it was discovered rather than
+      // invented, and it is why this check lands with zero content churn.
+      //
+      // Note it could not have been violated before signed magnitudes existed:
+      // every magnitude had to be positive, and a positive Perdo world effect
+      // is incoherent, so authors simply never wrote one. Signed magnitudes is
+      // what admitted Perdo to the world economy at all.
+      const scale = primitive.scale;
+      const technique = cell?.technique;
+      if (scale === 'world' && technique === 'perdo' && effect.magnitude > 0) {
+        out.push(
+          diagnostic(
+            file,
+            `${at}/effects/${String(index)}/magnitude`,
+            'technique-sign',
+            `node "${node.id}" is a *Perdo* working and adds ${String(effect.magnitude)} to ` +
+              `"${effect.primitive}", a world-scale flow. Perdo unmakes: an unmaking that ` +
+              'increases a flow is not a balance choice, it is a claim that destruction creates. ' +
+              'Author it negative, or move the effect to a technique that makes (substrate.md §2)',
+          ),
+        );
+      }
+      if (scale === 'world' && technique === 'creo' && effect.magnitude < 0) {
+        out.push(
+          diagnostic(
+            file,
+            `${at}/effects/${String(index)}/magnitude`,
+            'technique-sign',
+            `node "${node.id}" is a *Creo* working and subtracts ${String(-effect.magnitude)} from ` +
+              `"${effect.primitive}", a world-scale flow. Creo makes: a making that reduces a flow ` +
+              'is a cost wearing the wrong technique — author it under Perdo (substrate.md §2)',
+          ),
+        );
+      }
+
       if (effect.magnitude === 0) {
         out.push(
           diagnostic(

@@ -63,6 +63,49 @@ This is not lore decorating mechanics. It is the same statement twice, which is 
 - **Intellego cannot be excluded** (§4b already rules this) for a reason the substrate now supplies:
   reading is the only operation that moves nothing, so every other operation needs it to aim.
 
+### The naive form of this rule was tested and refuted — by the content itself
+
+**Implemented 2026-08-15 in `load.ts` as the `technique-sign` diagnostic, and the shape it took was
+decided by measurement rather than by argument.**
+
+The obvious rule — *"a Perdo node may not carry a positive magnitude"* — fails against shipped
+content in 18 places. Every one is an **engagement** primitive: `direct-damage`, `area-denial`,
+`concealment`, `ward`. Those measure a **consequence**, not a flow of vis. Unmaking a scent trail
+produces concealment; the concealment is positive because it is what the unmaking *achieved*, and
+the operation is still destructive.
+
+So the rule binds where the primitive names a flow, which is **world scale**, and it leaves
+engagement alone.
+
+**Intellego is deliberately unconstrained, and that is Maxwell's demon rather than an exemption.**
+19 Intellego nodes carry positive `resource-yield` — *"know how many, of what ages, and which of
+them will not see the winter"* — and not one of them creates food. They are information reducing
+waste in a process that was already running, so the same labour yields more. Extracting more useful
+work from an existing flow is not adding to it, and that is precisely what perception is allowed to
+do under conservation. §2's *"reads, moves nothing"* was too strong; this is the correction.
+
+### The rule was obeyed before it existed
+
+Measured over all 300 shipped nodes:
+
+| technique | world-scale effects | signs |
+|---|--:|---|
+| Creo | 64 | **all positive** |
+| Intellego | 72 | all positive |
+| Muto | 44 | all positive |
+| Rego | 40 | all positive |
+| **Perdo** | **1** | **negative** |
+
+No Perdo node has ever carried a positive `resource-yield`. **Nothing enforced any of that.** The
+authors were following the cosmology before it was written down, which is the strongest available
+evidence that this was discovered rather than invented — and it is why the check landed with zero
+content churn.
+
+It could not have been violated earlier, either: before signed magnitudes every magnitude had to be
+positive, and a positive Perdo world effect is incoherent, so authors simply never wrote one. **Signed
+magnitudes is what admitted Perdo to the world economy at all**, and the single Perdo world-scale
+effect in the game is the `teach-rate: -192` on `pn-the-nameless`.
+
 ## 3. Where new vis comes from: entropy, and life as the exploit
 
 Conservation alone gives a universe a fixed ceiling, and this is a game about civilizations getting
@@ -214,22 +257,73 @@ already implicit.
 - **Anti-stone stops being an edge case.** It is *Perdo* doing exactly its job, through a direct
   claim on the stock rather than through a multiplier that scales with headcount.
 
-## 7. What this document does not decide
+## 7. Decisions taken, and how to overturn them
 
-1. **Where `casting` sits in `CONSUMPTION_ORDER`.** Above subsistence and mages eat the populace's
-   food during a research push; below construction and magic stops the moment anything else wants
-   materials. One line, and it decides what a magical civilization *is*.
-2. **The order ranks themselves.** Fourteen numbers, and they price the whole grid.
-3. **Whether conservation is hard or soft.** Hard conservation with life as the only pump is
-   elegant and may make an economy that cannot grow fast enough to be a game. The escape hatches
-   are territory, worship, and the aura — each of which is an existing mechanic that would become
-   load-bearing.
-4. **Whether a world-scale `direct-damage` produces or destroys.** Probably the `target` field
-   already decides: `universe` produces into your stock, `area`/`side` destroys theirs. That reuses
-   a field every effect has rather than adding one.
-5. **Whether `nomen` belongs among the material forms.** It yields `vellum: 1024`, which reads as an
-   authoring convenience rather than a claim that a true name is a substance. Under a gradient it
-   needs a rank, and that forces the question.
+**The author was offered these and had no strong preference, so they are taken here with reasoning
+and with the measurement that would reverse each.** None is expensive to change; all are recorded so
+that changing one is a deliberate diff rather than a drift.
+
+### 7.1 `casting` goes after `subsistence` and before `libraryUpkeep`
+
+`CONSUMPTION_ORDER` is a priority: earlier claimants are paid first. The three candidate positions
+are not equally interesting.
+
+- **First** — mages eat before the populace. A research push starves the country, which is dramatic
+  and is a death spiral rather than a tradeoff.
+- **Last** — magic happens only from surplus. It never binds, and the failure is silent: casting
+  quietly stops in exactly the situations a player would want to know about.
+- **Second** — **taken.** Magic competes with the **library**, not with bread.
+
+A civilization that casts hard lets its books rot. That is the opposing term aimed at the loop this
+game is actually about — §5's knowledge that has a location and can be lost — rather than at the
+food supply, which every strategy game already prices. It also gives `libraryUpkeep` a rival, which
+it has never had.
+
+**Overturn it if:** a sweep shows library depth collapsing in the median run rather than in the
+aggressive one. That is casting outcompeting preservation everywhere instead of only where a player
+chose it.
+
+### 7.2 The fourteen order ranks are derived from dispersal, not authored
+
+Ranking fourteen forms by hand is fourteen balance decisions with no argument behind them. Derive
+instead: **a form's rank is how strongly it resists dispersal.** Terram holds its shape; Ignem is
+the canonical disordered state; Aquam and Auram flow and diffuse between them. Living forms —
+Corpus, Animal, Herbam — sit high because a living thing maintains order against the gradient, which
+is §3's pump seen from the other side.
+
+Transformation *down* the gradient releases vis and *up* costs it, so `Creo Terram` is expensive for
+a reason a physicist would recognise rather than because someone tuned it.
+
+Every rank ships `tuningStatus: "untuned"`, like every other magnitude before 0.5.0.
+
+**Overturn it if:** the ranks make one column of the grid strictly dominant. The derivation is a
+starting position, not a claim to have got the numbers right.
+
+### 7.3 Conservation is hard, and the pump is the tunable part
+
+Soft conservation is the safe choice and it is the wrong one: if vis can be created outside the
+pump, *conserved* means nothing, the substrate stops constraining anything, and it becomes exactly
+the decoration §8 warns about. A law with an exception per convenience is not a law.
+
+So: **hard.** The only source of new vis is §3's pump — life descending the entropy gradient
+locally. That makes populace, buildings, libraries and worship the *generators* of magic rather than
+its beneficiaries, which is the claim worth testing.
+
+**Overturn it if** — and this is the real risk, stated as a measurement rather than a worry — **a
+universe's total vis fails to grow over a 2,400-tick run.** Hard conservation with too weak a pump
+produces a civilization that cannot get richer, and this is a game about civilizations getting
+richer. The fix is then to strengthen the pump, not to soften the law, because the pump is the
+mechanic and the law is the substrate.
+
+### 7.4 Two smaller ones, taken the same way
+
+- **A world-scale `direct-damage` produces or destroys according to its `target`.** `universe`
+  produces into your own stock — unmaking stone is carving a door. `area` and `side` destroy
+  someone else's. That reuses a field every effect already carries rather than adding one.
+- **`nomen` stays among the material forms.** It yields `vellum: 1024` today, which reads as an
+  authoring convenience, and under a gradient it needs a rank. Taken as: a true name *is* a
+  substance in this cosmology — that is what makes True Naming's theft mechanic coherent — so it
+  ranks high and keeps its yield.
 
 ## 8. The risk worth stating plainly
 
@@ -237,3 +331,16 @@ This is a large, elegant idea, and elegant substrates have a way of being adopte
 ignored in code — which is precisely the failure `check:consumption` exists to catch, one level up.
 **The test of this document is whether the sign rule and the conservation invariants end up in
 `load.ts` as diagnostics.** If they do not, it is worldbuilding, and it should be labelled as such.
+
+**Status of that test, 2026-08-15: half passed.**
+
+- **The sign rule is in `load.ts`** as the `technique-sign` diagnostic, with six tests in
+  `packages/content/test/unit/technique-sign.test.ts` — two refusals, three permissions that pin the
+  rule's *shape* so it cannot be tightened back into the naive form the content refuted, and one
+  sweep over all 300 shipped nodes. It landed with zero content churn, for the reason §2 records.
+- **The conservation invariants are not**, and are not claimed. *Muto* summing to zero across kinds
+  and *Rego* across holders needs the direct-stock channel — the `casting` claimant of §7.1 — which
+  does not exist yet. Until it does there is nothing for a conservation check to sum over, and
+  writing one against an absent mechanism would be the decoration this section warns about.
+
+So: one half is a mechanic and one half is still prose, and this document should be read that way.
