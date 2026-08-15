@@ -12892,3 +12892,58 @@ The rule: **an adapter that forwards "the methods we need" silently defines what
 callers may know.** `AgentSession` listed six of seven and nothing failed — no test, no
 lint, no reachability check — because a dropped capability is not a broken one. The
 symptom surfaced four layers away as a balance result about two strategies being weak.
+
+## W242 — The legality fix worked and changed no outcome, which is the finding
+
+[executed, 2026-08-15, `w241/candidates-reach-the-strategies`, `--ticks 1350 --seeds 4`,
+three `--search-seed`s]
+
+Every width this campaign has reported was a width of a **12**-strategy pool, because
+`portal-rush` and `worship-maximizer` were over the illegal-action ceiling. W241 restored
+them. Re-taking the measurement with all fourteen competing:
+
+| search seed | shape | width | margin | occupied |
+|-------------|-------|-------|--------|----------|
+| 20260813    | wide  | 2     | 2      | alliance-abstainer, permissive-breadth |
+| 40260901    | dead  | 0     | −2     | — |
+| 77771234    | wide  | 1     | 1      | permissive-breadth |
+
+**Identical to the 12-pool.** The two repaired strategies hold no cell on any seed. Their
+illegal rate is `0.000` everywhere, so the repair is real and confirmed — it simply was not
+what was holding them back.
+
+That is worth saying plainly against my own framing: W236 called the entitlement gap
+something that "invalidates" this campaign's raid-facing results. It invalidated the
+*reason* those results were quiet, not the results. The strategies wasted half their turns
+**and** would have lost anyway.
+
+**And the ascension counts say something much sharper:**
+
+    portal-rush          0/4   0/4   0/4
+    worship-maximizer    0/4   0/4   0/4
+    permit-then-idle     1/4   2/4   3/4     <- the only null that ever ascends
+
+`permit-then-idle` is the **degenerate-play probe**: permit the whole grid for the first
+stretch of the run, then stop acting. It outperforms two named strategies **outright, on
+every seed**, and it is the entire null bar — `passive-control`, `idle-then-declare` and
+`uniform-random-legal` ascend zero times between them across all three seeds.
+
+So the win condition discriminates in exactly one dimension: **did the god open the grid
+early.** `ascension-canon-cells` is 18 against a starting rectangle of 12, so the permits
+are load-bearing — and everything a strategy does *after* the permits is, on this evidence,
+worth nothing. Two bots that allocate, bless, fund and research for 1,350 ticks are beaten
+by one that stops playing after the opening.
+
+This is the campaign's stated goal — *make the win condition discriminating* — and it now
+has a replicated measurement rather than a suspicion. It is a design question and is
+stated, not answered. The obvious shapes an answer could take, none of them taken here:
+
+- price the permits, so opening the grid is a *cost* rather than a free opening move;
+- make Path B's era conjuncts test something that decays without attention, so holding
+  the canon requires acting rather than having acted;
+- or accept that the opening is the game and make the rest of the verbs serve it.
+
+The rule this run earns: **a fix that removes a defect and moves no outcome has told you
+the defect was not the cause.** The temptation is to read a successful repair as a
+successful explanation, and those are different claims — W236's was the second while only
+the first was measured.
