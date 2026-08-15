@@ -10,7 +10,7 @@ purpose, and they are not redundant.
 
 | | GitHub Actions (`.github/workflows/ci.yml`) | Self-hosted runner (`ci/hetzner-lint`) |
 |---|---|---|
-| Runs on | GitHub's throwaway VMs | `cto-tycoon-hel1`, alongside Coolify |
+| Runs on | GitHub's throwaway VMs | `multiverse-games-hel1` (SSH alias `games`) |
 | Cost | **Free** — Actions is unmetered for public repos | Hetzner box we already pay for |
 | Fork PRs | **Yes** — this is the only gate that sees them | **No, deliberately refused** |
 | Holds secrets | No | Yes: Coolify, Neon, GitHub, Matrix tokens |
@@ -32,9 +32,36 @@ GitHub user. Each one exists because the other cannot do its job.
 
 ## The self-hosted runner
 
-Lives at `/opt/ci-runner` on `cto-tycoon-hel1` (SSH alias `hetzner`). It is a small Python webhook
-receiver, shared with `themultiverse.school` — it is **not** specific to this repo, so changes to
-it affect that repo too.
+Lives at `/opt/ci-runner` on **`multiverse-games-hel1`** (SSH alias `games`), in a container named
+`ci-runner-webhook`. It is a small Python webhook receiver, shared with `themultiverse.school` — it
+is **not** specific to this repo, so changes to it affect that repo too.
+
+**Moved from `cto-tycoon-hel1` on 2026-08-13.** The status context is still `ci/hetzner-lint`,
+because that exact string is what the branch protection rule requires and renaming it would make
+every open PR unmergeable until the rule is edited to match. So the name records where the runner
+*was*, and this paragraph is the only thing that says where it *is*.
+
+**There are two receivers, and that is correct.** `cto-tycoon-hel1` runs the same
+`webhook_receiver.py` for **`themultiverse.school`**, and it stays there — its log is school builds
+and school staging deploys, with no `multiverse_mages` traffic. This repository's webhook goes to
+`multiverse-games-hel1`; the school's goes to `cto-tycoon-hel1`. One receiver per repository, on the
+box that repository deploys to.
+
+Do not "consolidate" them and do not stop one because the other exists — an earlier draft of this
+page called the second one a duplicate and suggested stopping whichever was not receiving this
+repo's webhook, which would have taken down the school's CI. Check which repository a receiver is
+serving before touching it:
+
+    ssh hetzner 'docker logs --tail 20 ci-runner-webhook'   # expect themultiverse.school
+    ssh games   'docker logs --tail 20 ci-runner-webhook'   # expect multiverse_mages
+
+**Serialisation is by design, and reads as a stall.** The receiver holds a per-repository
+`threading.Lock`, so a second push while a run is in flight gets a `pending` status reading
+*"Queued -- another CI run in progress"* and waits. With `npm run verify` at roughly twelve minutes
+a queued check can sit for half an hour and still be healthy. Read the container log before
+concluding the runner is down:
+
+    ssh games 'docker logs --tail 40 ci-runner-webhook'
 
 Flow for a push to `main` or a same-repo PR:
 
@@ -99,8 +126,9 @@ branch or else the pushed branch. Three things about it are load-bearing:
   leaving a merge commit with no green on record. Branch protection is evaluated pre-merge under a
   different group, so nothing is bypassed — but `CLAUDE.md`'s release discipline wants the record,
   and an untagged, unverified release is not a rollback target.
-- **`main` runs never cancel each other.** They serialise. Every one of them is a merge commit whose
-  green is part of the release record.
+- **`main` runs never cancel each other** — *this was believed, and it is false. See the section
+  below.* The intent is right and the record it protects is the point; the mechanism did not deliver
+  it.
 
 Cancellation only ever hits the *older* run in a group, so the newest check run for a given name
 always belongs to the survivor: a cancelled `Verify (pinned Node)` can never mask a newer green one,
@@ -120,7 +148,7 @@ It runs `scripts/ci-check.sh` per delivered webhook with a 600 s timeout, so a b
 times in a minute is checked three times, and concurrent branches serialise. Cancelling or skipping
 a queued job whose SHA is no longer its branch tip would cut that queue by roughly what the
 concurrency key cut on Actions. It is not done here because it needs production access to
-`cto-tycoon-hel1` and the receiver is **shared with `themultiverse.school`**, so a change there
+the runner host and the receiver is **shared with `themultiverse.school`**, so a change there
 affects another repository and wants owner sign-off.
 
 ## The third Actions job: primitive consumption, non-blocking
@@ -144,6 +172,44 @@ here so it is not only in a workflow comment: *every primitive has a node-driven
 remaining ones are declared exclusions.* Declared exclusions are `fertility` and `lifespan`, in
 `packages/rules-magic/src/effects/consumption.ts`. Lengthening that list to go green is the exact
 failure the check exists to catch; the number in the FAIL line going down is the progress.
+
+## The fourth Actions job: rules-path reachability, non-blocking
+
+`npm run check:reachability` parses every production source in the rules path with the TypeScript
+compiler API and asks, per exported value: **does anything that is not a test call this?** It is
+the code-shaped counterpart of `check:consumption`, which asks the same question about content.
+
+It exists because of W85. Three university subsystems — `advanceConstruction`, `applyLibraryUpkeep`
+and `UNIVERSITY_STAFF` — were built, unit-tested, exported, named in a design document and
+discussed at length in the world loop's own comments, and none of them was ever called. Two have
+since been wired (`ef3bba9`, `9a3b6b5`); the third has not. The general lesson is what the check
+mechanises: *"the symbol exists" and "a test covers it" are both compatible with "the game never
+runs it."*
+
+**It parses rather than greps, and that is the whole design.** This repository names symbols in
+prose constantly — `world-step.ts` discussed `advanceConstruction` before anything called it, and
+`mc-harness/src/strategies.ts` quotes the W85 finding inside a string literal. A grep would have
+counted both as callers and reported the flagship defect as reached. Comments, string literals,
+import and re-export specifiers, and `typeof` references in type positions are all excluded, each
+for a reason written in the script's header. `packages/sim-core/test/unit/reachability-check.test.ts`
+holds one controlled case per claim, run as a subprocess against a throwaway root.
+
+Like `consumption`, it runs as its own job — `Rules-path reachability (non-blocking)`,
+`continue-on-error: true` — and is **not** in `npm run verify`, so `scripts/ci-check.sh` does not
+run it either and the two gates stay equivalent.
+
+**Red is the correct current answer.** When the job was added, the count was 115: one orphaned
+package (`@mm/rules-raid`, which nothing depends on), 94 exported values with no production caller,
+10 called only by symbols that are themselves unreached, one component declared and never read or
+written (`UNIVERSITY_STAFF`), three god constants resolved and never consumed
+(`worship-max`, `legacy-archive-max-tier`, `legacy-reference-tick`), and six read only by unreached
+code (the `legacy-*` prestige set, behind `legacyGrant`).
+
+**The condition for making it blocking** is at the flip point in `ci.yml` and repeated here: when
+the finding count is small enough — under ten is a reasonable reading — that a pull request adding
+one symbol ahead of its caller is a conversation rather than a blockage. Reached by wiring or
+deleting, never by lengthening `DECLARED_EXCLUSIONS` in the script. Every entry there is a finding
+the check will never make again, which is why each carries a written argument rather than a name.
 
 ## The balance regression gates
 
@@ -349,3 +415,101 @@ detail lives in comments in `/opt/ci-runner` on the box, which is not public.
 Golden fixtures deserve a specific mention. `npm run goldens:regen` is never run to make a test
 pass — a fixture diff is a claim that behaviour changed on purpose. CI cannot detect intent, so
 that rule is enforced by review, which is why the PR requirement is not optional.
+
+## `main` runs did not serialise, they cancelled in the queue (2026-08-14)
+
+**The claim above was wrong**, and it cost the tree its release record for several hours.
+
+`cancel-in-progress` is false for `main`, so no `main` run is ever killed *while running*. That is
+not the same as "every `main` commit is verified", because **GitHub keeps only one pending run per
+concurrency group**. A second `main` commit inside the window queues; a third cancels the second
+before it has started. Not interrupted — never begun.
+
+Measured on 2026-08-14, `main`'s last eight runs:
+
+```
+384a2a5  pending
+72d9538  cancelled     <- never ran
+e73bea9  failure       (Verify (pinned Node) = success; the balance gate is what failed)
+474ccdf  failure
+b4333d0  failure
+fbb9dcb  cancelled     <- never ran
+14155e7  cancelled     <- never ran
+a1998f1  success
+```
+
+One confirmed-green `Verify` in eight, and three commits with no verification on record at all. This
+is also why the `ui/session.json` break survived four merges: **the signal was being destroyed about
+as fast as it was generated.**
+
+**The window is set by a job that is explicitly not required.** `Balance gate, two hundred world
+years` takes ~35 minutes and lives in this workflow, so the *run* holds the group for ~40 minutes
+even though `Verify (pinned Node)` finishes in about eight. That job's own comment in `ci.yml` says
+*"nothing blocks on this job"* — true of the merge gate, and false of the next commit's
+verification, which is exactly what the shared group made it block.
+
+**Fix applied:** the SHA is now part of the group for `main` pushes only, so each `main` commit gets
+its own group and none can cancel another. Branch and PR runs are untouched — same shared group,
+same supersede-cancelling, which is correct there and is what the section above is about. Actions
+minutes are unmetered on a public repository, so the cost is nil.
+
+`cancel-in-progress` is left exactly as it was: with per-commit groups it has nothing to cancel on
+`main`, and leaving the expression intact keeps PR and fork behaviour provably unchanged.
+
+**An alternative that would also work and was not taken:** move the balance gate into its own
+workflow. That is arguably cleaner, but it changes a check name and the shape this document
+describes, where the fix above is one line.
+
+## Known issue: the queue runs superseded commits (2026-08-13)
+
+**Symptom.** With several branches active, `ci/hetzner-lint` reports `pending — Queued, another CI run
+in progress` on every open PR for hours, while the runner works steadily and completes runs. Nothing is
+wedged; the queue is simply full of work that no longer matters.
+
+**Cause.** `run_ci` serialises per repository. A push while a run is in flight blocks a thread on
+`lock.acquire()` until its turn comes. With several agents pushing to their own branches, most of what
+eventually reaches the front of that queue is **a commit its branch has long since moved past**, and a
+run on a superseded commit cannot gate anything — no PR points at it. Measured on 2026-08-13:
+**43 queued threads against 7 completions.**
+
+**Fix, not yet applied.** Skip a queued run whose commit is no longer the head of its ref. In
+`/opt/ci-runner/webhook_receiver.py`, inside `run_ci`, immediately after the lock is held and before
+the `Running CI checks...` status is posted:
+
+```python
+if is_superseded(repo_full_name, sha, ref):
+    print(f"[ci] Superseded {sha[:8]} ({branch}) -- branch has moved on, skipping")
+    post_commit_status(repo_full_name, sha, "success",
+                       "Superseded -- a newer commit is the branch head")
+    return
+```
+
+with a helper that reads `GET /repos/{repo}/git/{ref}` and compares `object.sha`.
+
+Three properties that matter, and are easy to get wrong:
+
+- **The check must come *after* the lock, not before.** The branch can move while a thread waits, so
+  asking at enqueue time answers the wrong question.
+- **It must fail open.** Any error — token, network, rate limit — returns "not superseded" and the CI
+  runs. **A missed run is a broken gate; a redundant run is only slow.**
+- **Only `refs/heads/*`.** Anything else is never treated as superseded.
+
+Posting `success` rather than leaving `pending` is deliberate: a stale `pending` on a required check
+**blocks the merge of a PR whose current head is green**, which is the same trap
+`.github/workflows/ci.yml` documents for cancelled Actions runs.
+
+**Applying it needs a person.** Both the file edit and `docker restart ci-runner-webhook` are mutations
+to a live host, and agent tooling declines them. Back up first — the existing convention is
+`webhook_receiver.py.bak-before-<change>-<date>` — then:
+
+    ssh games
+    # edit /opt/ci-runner/webhook_receiver.py
+    python3 -c 'import ast; ast.parse(open("/opt/ci-runner/webhook_receiver.py").read())'
+    cd /opt/ci-runner && docker compose up -d --build
+
+The script is **baked into the image, not bind-mounted**, so a plain `docker restart` picks up no edit
+— it must be rebuilt. There is no systemd unit.
+
+**Meanwhile**, `docker restart ci-runner-webhook` drops the queue outright, which is safe: every
+dropped run leaves a `pending` status that a webhook redelivery re-triggers. Redeliver the
+`pull_request` event rather than the `push` one — pushes to non-`main` branches are ignored by design.

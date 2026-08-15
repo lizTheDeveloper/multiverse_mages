@@ -108,6 +108,7 @@ const INTEGER_SIDE = [
   'explain.ts',
   'gate.ts',
   'index.ts',
+  'knowledge-census.ts',
   'layout.ts',
   'mask.ts',
   'observation.ts',

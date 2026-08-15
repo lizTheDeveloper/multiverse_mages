@@ -526,7 +526,11 @@ const PERMISSIVE_BREADTH: StrategyDefinition = {
   // could never permit technique 5 or form 14 — a fifth of the technique axis
   // and a fourteenth of the form axis that the pool's widest ruleset never
   // opened.
-  version: 3,
+  // 4: `fundUniversity` moved ahead of the three ruleset actions while
+  // `universityCount` is zero. It sat behind always-legal `permitTechnique`, so
+  // the strategy that exists to fund broadly completed no university in any run
+  // of any sweep ever taken.
+  version: 4,
   hypothesis:
     'Whether breadth outruns the loss channel. A wide ruleset offers more nodes to discover and ' +
     'more institutions to hold them; §6a says knowledge decays and is lost, so breadth might ' +
@@ -551,17 +555,36 @@ const PERMISSIVE_BREADTH: StrategyDefinition = {
   ],
   preferences: ({ observation, round }) => {
     const universities = channel(observation, UNIVERSITY_COUNT);
-    const preferred: ActionSubmission[] = [
+    const preferred: ActionSubmission[] = [];
+    // Found *first* while there is nothing to fund, and only then permit.
+    //
+    // The order used to be the other way round, with the three ruleset actions
+    // ahead of this push and the comment below already claiming "found until
+    // there is something to fund" — which the order defeated. `policyFor` takes
+    // the first legal preference, `permitTechnique` is legal on every round, so
+    // this strategy never reached slot 0 and ended every run at `unis=1`: the
+    // seeded academy, never having completed a university. The comment
+    // described an intent the list did not implement.
+    //
+    // It went unnoticed because nothing read `universityCount` until the
+    // ascension conjunct did. A strategy that funds broadly and founds nothing
+    // still permitted widely, so it still produced the wide ruleset its
+    // hypothesis is about, and every metric anyone was looking at moved.
+    if (universities === 0) {
+      preferred.push({ action: GOD_ACTION.fundUniversity, parameter: 0 });
+    }
+    preferred.push(
       { action: GOD_ACTION.permitTechnique, parameter: technique(round) },
       { action: GOD_ACTION.permitForm, parameter: form(round) },
       { action: GOD_ACTION.issueDispensation, parameter: (round % 70) + 1 },
-    ];
-    // Found until there is something to fund, then spread across what exists.
-    preferred.push(
-      universities === 0
-        ? { action: GOD_ACTION.fundUniversity, parameter: 0 }
-        : { action: GOD_ACTION.fundUniversity, parameter: rotate(GOD_ACTION.fundUniversity, round) },
     );
+    // Then spread funding across what exists.
+    if (universities !== 0) {
+      preferred.push({
+        action: GOD_ACTION.fundUniversity,
+        parameter: rotate(GOD_ACTION.fundUniversity, round),
+      });
+    }
     // Slot 0 is the deepest permitted cell; rotating spreads encouragement
     // rather than compounding it, which is the whole difference from
     // narrow-depth below.
@@ -1417,14 +1440,18 @@ export function poolDegeneracy(
  */
 export const POOL_BUILD_LIMITS: Readonly<Record<string, string>> = Object.freeze({
   'open-portal':
-    'Action 14 is implemented and unreachable, which are different things and both are true. ' +
-    'coordination/src/god/interventions.ts has a portalPlan that finds a living mage holding a ' +
-    'portal-primitive node and enters engagement. But candidates.ts derives action 14\'s slot list ' +
-    'from a caller-supplied portalTargets, contracts.md §1.1 puts exactly one universe in a ' +
-    'simulation instance, and the reference scenario supplies no targets — so the list is empty and ' +
-    'the mask clears the action every tick. It is therefore permanently MASKED rather than inert, ' +
-    'which makes portal-rush the one strategy whose defining action degeneracyOf reports as ' +
-    'unreachable. Raids, and a second universe to point a portal at, land in 0.9.0.',
+    'STALE, corrected 2026-08-13. This entry said action 14 was permanently MASKED because the ' +
+    'reference scenario supplied no portalTargets. It supplies them: reference-universe.ts passes ' +
+    'portalTargets: portalTargetIds(constants), sourced from rival-universe.ts, and action 14 ' +
+    'resolves in measurement -- 16 of 100 elf runs and 17 of 100 gnome runs at 2400 ticks. ' +
+    'What is true is narrower and more interesting: reaching action 14 needs a living mage holding ' +
+    'a portal-primitive node, the portal nodes sit in rego-limen behind an intellego-limen ' +
+    'prerequisite, and whether a species gets there is monotonic in curiosity -- gnome 17, elf 16, ' +
+    'dwarf 3, orc 0, draconic 0 per hundred. So the gate is a curiosity gate wearing a ' +
+    'content-placement costume, and the two species least able to pass it are the two that most ' +
+    'need what lies beyond. That is a finding about species and content, not about a mask. ' +
+    'Retracted in place rather than deleted because this entry misled an agent into believing a ' +
+    'measurement was impossible, and the retraction is the useful part.',
   'five-strategies-are-one-universe':
     'Ascension eligibility now reads play: Path A counts permitted cells standing at their floor ' +
     'and Path B requires an era boundary to hold a canon of a stated size spread over a stated ' +

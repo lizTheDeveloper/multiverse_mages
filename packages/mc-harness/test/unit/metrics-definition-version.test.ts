@@ -55,6 +55,18 @@ const COMMITTED_PINS: DefinitionPins = {
     definitionVersion: 1,
     digest: '1afc93fe54fe9aed0bbe6ac2efc3ee52e82ea7cc82a54d451e22f0a6a463d688',
   },
+  // New at this change. Both are version 1 because neither renames or redefines
+  // an existing quantity — they add the one `contracts.md` §7 never had, a
+  // measure of a combat primitive in units of enemy action denied rather than
+  // magnitude applied. No baseline is invalidated by an addition.
+  combatActionEconomy: {
+    definitionVersion: 1,
+    digest: 'eb42ebb18cc29e41f45aac82b72b7e85b65085e5b18082891843560002c04513',
+  },
+  combatThresholdEfficiency: {
+    definitionVersion: 1,
+    digest: 'b23cd2e70e5ea3d0165c73821efe80e86d31189fb1c53b8a61994ccb3de339d5',
+  },
   illegalActionRate: {
     definitionVersion: 1,
     digest: 'e905fef1f73fd20a6544822a973aafd6d96e03b6674c3458029e29ec5d5aeee4',
@@ -90,6 +102,10 @@ const COMMITTED_PINS: DefinitionPins = {
   roleAssignmentDemographicCost: {
     definitionVersion: 1,
     digest: 'ffc68286151c84955578f99968bca6921cbab6bb51c6f048ac5898bd77cc3a84',
+  },
+  speciesCellOccupancy: {
+    definitionVersion: 1,
+    digest: '4a38c1e1ac75bf34317cc2bc0c0cb699dba03d739c82f5754e879f8759dfa39a',
   },
   speciesGridVersatility: {
     definitionVersion: 1,

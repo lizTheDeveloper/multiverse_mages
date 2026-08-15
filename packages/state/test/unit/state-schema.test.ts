@@ -170,6 +170,9 @@ describe('the world schema is stable in the way the snapshot format needs', () =
       // but section order is snapshot order, so it goes at the end like every
       // other addition, not where it would read most naturally.
       'material-stock',
+      // Appended by the founding-grant budget, as world-schema revision 6, and
+      // after `material-stock` for exactly the reason above.
+      'grant-budget',
     ]);
   });
 
