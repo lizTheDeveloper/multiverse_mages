@@ -102,9 +102,20 @@ describe('a cohort below detachment strength', () => {
     }
   });
 
-  it('fields nothing from an empty remainder below one detachment', () => {
-    // Zero people is zero detachments however the draw lands: the guard is on
-    // `remaining > 0`, not on the draw.
+  it('never fields a detachment standing for nobody', () => {
+    // The `remaining > 0` guard, exercised where it actually bites: at an exact
+    // multiple the remainder is zero, the draw is still taken — it must be, or
+    // the draw count would depend on the data — and `nextBounded(stream, 100)`
+    // can return 0, which is not less than 0. Without the guard a `0 < 0`
+    // slip would field a detachment of strength zero: a full-strength
+    // combatant on the field that costs its cohort nobody when it dies.
+    for (const seed of SEEDS) {
+      for (const strength of detachments(100, seed).strengths) {
+        expect(strength, `seed ${String(seed)}`).toBe(100);
+      }
+    }
+    // And a cohort of nobody is filtered before deployment ever sees it, by
+    // `eligibleCohorts`. Asserted here so the two reasons are not confused.
     for (const seed of SEEDS.slice(0, 20)) expect(detachments(0, seed).count).toBe(0);
   });
 
