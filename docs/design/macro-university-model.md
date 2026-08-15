@@ -62,6 +62,10 @@ Two terms thin it further, and they multiply: vision §4b's **per-mage breadth c
   tracked. This is the largest deliberate simplification and it is why the model can say "the
   portfolio needs 40 more instances" but never "you are missing *Rego Terram* specifically."
 - **Space, territory regions, and multiple universes.** One universe, one land.
+- **Realistic mortality.** Deaths occur only at the top age bin — cohorts advance through 20 bins
+  and then leave — so nobody dies young. This understates instance loss and therefore understates
+  the professor need; it is conservative in the direction that matters and is the first thing to
+  change if the teaching load is ever the headline.
 
 ## Parameters and their provenance
 
@@ -138,6 +142,12 @@ annual raid probability:
 
 *(universities required; the universe has 1. Fragile nodes are 0.00 in all thirty cells.)*
 
+**Read the flatness precisely.** The university row is *structurally* raid-independent in this
+model — seat demand is driven by the latent pool and raids do not touch it — so that row could not
+have moved. The load-bearing claim is the **third** table: fragility, which raids *can* reach, is
+also 0.00 in all thirty cells. The raid does not merely fail to change the binding need; at these
+constants **it fails to endanger a single node at any probability up to 55%.**
+
 Three content facts cause it, and each is checkable:
 
 1. **The cooldown is a hard ceiling on raid pressure.** `inbound-raid-cooldown-world-ticks` = 60
@@ -195,35 +205,49 @@ says how much of one is needed before a god has a retention problem to solve at 
 ## Which unwired subsystem most changes the answer
 
 `toggles` flips one subsystem at a time from the design's intent to what `main` does today.
+Reported on the **full grid**, because two of these toggles only touch deep teaching and a v1 run
+(max tier 4) cannot tell them apart.
 
-| flipped to broken | held | scribes needed | fragile | binding need |
-|---|---:|---:|---:|---|
-| *(baseline, all intended)* | 49.0 | 114 | 0 | universities: 39.7 |
-| **`scribingQueue` → 0** | 49.0 | **0.00** | 0 | universities: 39.7 |
-| `scribeCohortRefills` → drain-only | 49.0 | 12.2 | 0 | universities: 39.7 |
-| `affiliationCompletes` → never | 49.0 | 114 | 0 | universities: 39.7 |
-| `teachRateBites` → inert | 49.0 | 114 | 0 | universities: 39.7 |
-| `standingArmy` → 0 *(correct)* | 49.0 | 114 | 0 | universities: 39.7 |
+| flipped to broken | held | scribes needed | **fragile nodes** |
+|---|---:|---:|---:|
+| *(baseline, all intended)* | 284/284 | 115 | **0** |
+| **`affiliationCompletes` → never** | 284/284 | 163 | **284 — every node** |
+| `scribingQueue` → 0 | 284/284 | **0.00** | 0 |
+| `scribeCohortRefills` → drain-only | 284/284 | 12.3 | 0 |
+| `teachRateBites` → inert | 284/284 | 115 | 0 |
+| `standingArmy` → 0 *(correct)* | 284/284 | 115 | 0 |
+| **all five at once** | **240/284** | 72.5 | **170** |
 
-**`scribingQueue` is the answer, and it is the only one that changes anything at all.** It takes
-the written record from a universe that sustains ~903 books to one that holds **zero**, because
-`world-step.ts` passes `scribingQueueDepth: 0` and `demand.ts` multiplies by it — so the whole
-universe rests on living memory. `scribeCohortRefills` is a distant second (it caps the scribe pool
-at the drained floor of 14). The other three move **nothing**.
+**`completeAffiliation` is the answer.** It is the only toggle that moves the *retention* objective
+at all, and it moves it from "nothing is ever at risk" to **every node in the universe is one
+funeral from lost.** The mechanism: teaching happens *at* a university, `completeAffiliation` has no
+production caller, and the measured consequence is affiliated mages running **6 → 5 → 4 → 3 → 2 → 1
+over 200 world years while 189 universities stand and 81 complete.** A teaching corps of one cannot
+replace what mortality takes out of minds, so holders per node collapse and the whole portfolio
+becomes fragile. **189 buildings and one teacher is not a university system.**
 
-**Fix `scribingQueueDepth` first.** It is the only unwired subsystem that changes the shape of the
-answer, and it is the one that gives the raid something to destroy — a universe with no books
-cannot have its library burned, which is a second reason the raid axis reads flat.
+`scribingQueue` is second and different in kind: it takes the written record from ~903 books to
+**zero**, which does not by itself endanger anything (living memory is enough at these holder
+counts) but removes the entire backstop — and removes the only thing a raid could burn, which is a
+second reason the raid axis reads flat.
 
-### A correction to the record, while we are here
+**Fix `completeAffiliation` first, `scribingQueueDepth` second.** The first restores the teaching
+corps; the second gives the corps a record to fall back on and gives raids a target.
 
-**`teach-rate` is not inert. It is inert for tiers 1–3 only.** The completion gate is a bare
-`progress < required` with no partial-month carry: a solo teacher pushes 1024/tick, which already
-clears tier 1 (512) and exactly clears tier 2 (1024); a pair pushes 2048 and clears tier 3. Tier 4
-costs 4096, tier 5 8192, tier 6 16384 — **above tier 3 the multiplier is live.** `teach-rate` is a
-deep-teaching knob wearing a general one's clothes, and every measurement of it was taken on a
-universe that had not got past tier 3. The measured +0.1–0.2% is correct and the conclusion drawn
-from it is not.
+`teachRateBites` moves nothing while professors are plentiful and **does** move once they are
+scarce (fragile 284 vs 214 with affiliation broken) — consistent with it being a deep-teaching knob
+that only binds when teaching is the constraint. **The direction of that difference is not what I
+expected and I have not explained it**, so it is recorded as an observation rather than a finding.
+
+### A correction to the record
+
+**`teach-rate` is inert for tiers 1–3 only.** The completion gate is a bare `progress < required`
+with no partial-month carry: a solo teacher pushes 1024/tick, which already clears tier 1 (512) and
+exactly clears tier 2 (1024); a pair pushes 2048 and clears tier 3. Tier 4 costs 4096, tier 5 8192,
+tier 6 16384 — **above tier 3 the multiplier is live**, at `bless-teach-rate` = 256 fp giving 1.25×
+against a cap of 4×. It is a deep-teaching knob wearing a general one's clothes, and every
+measurement of it was taken on a universe that had not got past tier 3. The measured +0.1–0.2% is
+correct; the conclusion drawn from it is not.
 
 ## Other findings worth acting on
 
@@ -276,11 +300,14 @@ load. If content moves, the model fails loudly rather than describing a grid tha
 
 ## What to do next, in order
 
-1. **Wire `scribingQueueDepth`.** The only unwired subsystem that changes the answer, and the one
-   that gives raids something to destroy.
-2. **Decide the per-mage breadth cap** (vision §4b) and author exclusion pairs *inside* the enabled
+1. **Give `completeAffiliation` a production caller.** The only unwired subsystem that moves the
+   retention objective, and it moves it from "nothing is at risk" to "everything is". 189 buildings
+   and one teacher is not a university system.
+2. **Wire `scribingQueueDepth`.** Restores the written backstop, and gives a raid something to
+   destroy.
+3. **Decide the per-mage breadth cap** (vision §4b) and author exclusion pairs *inside* the enabled
    cells. Until then breadth is free where the game is played, and no node can ever be at risk.
-3. **Revisit the raid cooldown** if raids are meant to be an economic force. At 60 world ticks the
+4. **Revisit the raid cooldown** if raids are meant to be an economic force. At 60 world ticks the
    arrival rate cannot exceed 0.167/yr however the god plays, and the whole raid axis is inert.
-4. **Author tier-5+ content reachable by humans, or accept the ceiling.** Two v1 nodes are
+5. **Author tier-5+ content reachable by humans, or accept the ceiling.** Two v1 nodes are
    permanently out of a human universe's reach.

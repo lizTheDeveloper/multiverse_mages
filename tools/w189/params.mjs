@@ -279,6 +279,17 @@ export function defaultParams(overrides = {}) {
     /* --- teaching -------------------------------------------------------- */
     teachProgressPerProfessorMonth: { value: 2048, provenance: 'measured', note: 'The teaching pair pushing 2048/tick that makes teach-rate inert.' },
     professorFractionOfMages: { value: 0.15, provenance: 'invented', note: 'Share of activated mages standing in front of a class.' },
+    teachMultiplier: {
+      value: 1 + 256 / 1024,
+      provenance: 'content',
+      note: 'bless-teach-rate = 256 fp, stacking additive-into-multiplier on a 1024 base, so a blessed universe teaches at 1.25x. The primitive caps at fp 4096 (4x). This is what teachRateBites switches on, and it is why that toggle was a no-op until it had a value to apply.',
+    },
+    affiliatedMagesFloor: {
+      value: 1,
+      provenance: 'measured',
+      note: 'With completeAffiliation uncalled, affiliated mages run 6 -> 5 -> 4 -> 3 -> 2 -> 1 over 200 world years while 189 universities stand and 81 complete. Teaching capacity is bounded by mages actually AT a university, so the broken case decays toward this floor.',
+    },
+    affiliatedMagesStart: { value: 6, provenance: 'measured', note: 'The founding mages, one per species.' },
 
     /* --- research -------------------------------------------------------- */
     researchProgressPerResearcherMonth: { value: 512, provenance: 'invented', note: 'Set so a lone tier-1 researcher takes ~4 months, against teaching’s days.' },

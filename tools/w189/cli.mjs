@@ -197,23 +197,30 @@ function cmdSweep() {
 
 function cmdToggles() {
   console.log(bar('TOGGLES — how much each unwired subsystem changes the answer'));
-  console.log(`\nBaseline is all-intended. Each row flips ONE subsystem to what \`main\` does today.\n`);
-  const base = run({ toggles: toggleSet('intended') });
-  const report = (label, needs, gloss) => {
-    const b = needs.binding;
-    console.log(`  ${label.padEnd(24)} binding=${(b ? `${b.name}:${fmt(b.shortfall)}` : 'none').padEnd(22)} held=${fmt(needs.portfolio.held).padStart(6)}  books=${fmt(needs.needs.find((n) => n.name === 'scribes').required).padStart(7)} scribes needed  fragile=${fmt(needs.fragileNodes)}`);
+  console.log(`\nBaseline is all-intended. Each row flips ONE subsystem to what \`main\` does today.`);
+  console.log(`Reported on the FULL grid by default: tiers 5-6 exist there, and two of these`);
+  console.log(`toggles only touch deep teaching, so a v1 run cannot tell them apart.\n`);
+  const grid = flagStr('grid', 'full');
+  const base = run({ grid, toggles: toggleSet('intended') });
+  const report = (label, out, gloss) => {
+    const needs = out.needs;
+    const yrs = out.result.yearsToFullPortfolio;
+    console.log(
+      `  ${label.padEnd(26)} held=${fmt(needs.portfolio.held).padStart(6)}/${needs.portfolio.reachable}` +
+        `  full in=${(yrs === null ? 'never' : `${yrs}y`).padStart(6)}` +
+        `  books=${fmt(needs.needs.find((n) => n.name === 'scribes').required).padStart(7)} scribes` +
+        `  fragile=${fmt(needs.fragileNodes)}`,
+    );
     if (gloss) console.log(`    ${gloss}`);
   };
-  report('BASELINE (all intended)', base.needs, '');
+  report('BASELINE (all intended)', base, '');
   for (const key of Object.keys(TOGGLES)) {
     const t = toggleSet('intended');
     t[key] = TOGGLES[key].broken;
-    const { needs } = run({ toggles: t });
-    report(`broken: ${key}`, needs, TOGGLES[key].gloss);
+    report(`broken: ${key}`, run({ grid, toggles: t }), TOGGLES[key].gloss);
   }
   console.log(`\n  And all five broken at once — the game as it runs on main today:`);
-  const allBroken = run({ toggles: toggleSet('broken') });
-  report('ALL BROKEN', allBroken.needs, '');
+  report('ALL BROKEN', run({ grid, toggles: toggleSet('broken') }), '');
   console.log('');
 }
 
@@ -366,6 +373,36 @@ function cmdSelftest() {
   const rel = Math.abs(mcMean - closed) / Math.max(1, mcMean);
   ok('closed-form raid count matches Monte Carlo', rel < 0.25,
     `MC ${mcMean.toFixed(1)} vs closed form ${closed.toFixed(1)} over ${YEARS}y (rel ${(rel * 100).toFixed(1)}%)`);
+
+  /* 6b. EVERY toggle must move at least one reported output.
+   *
+   *     This control exists because the first draft of this model declared five
+   *     toggles and only WIRED two of them. `teachRateBites` had no multiplier
+   *     to apply and `affiliationCompletes` was never read, so the comparison
+   *     table dutifully reported "changes nothing" for both — a no-op wearing a
+   *     null result's clothes, which is the most expensive kind of wrong answer
+   *     this repository knows about. A toggle that cannot move anything is a
+   *     broken probe, not a finding.
+   *
+   *     `standingArmy` is exempt and only because BOTH its values are authored
+   *     zero: ages-of-magic 2b says there is no standing army on purpose. */
+  const fingerprint = (o) =>
+    `${o.needs.portfolio.held.toFixed(3)}|${o.needs.fragileNodes.toFixed(3)}|` +
+    `${o.needs.needs.map((x) => x.required.toFixed(3)).join(',')}|${String(o.result.yearsToFullPortfolio)}`;
+  for (const key of Object.keys(TOGGLES)) {
+    if (key === 'standingArmy') continue;
+    /* teach-rate only touches tiers >= 4 and only binds when professors are
+     * scarce, so it is exercised against a universe whose teaching corps is
+     * capped — otherwise a live knob would read as a dead one. */
+    const scarce = key === 'teachRateBites';
+    const baseT = toggleSet('intended');
+    if (scarce) baseT.affiliationCompletes = false;
+    const flipped = { ...baseT, [key]: TOGGLES[key].broken };
+    const a = fingerprint(run({ grid: 'full', toggles: baseT }));
+    const b = fingerprint(run({ grid: 'full', toggles: flipped }));
+    ok(`toggle "${key}" moves the answer`, a !== b,
+      scarce ? 'exercised under professor scarcity' : 'intended vs broken differ');
+  }
 
   /* 7. Determinism: the same seed must give the same answer. */
   const a = JSON.stringify(run({ toggles: toggleSet('intended') }).needs.census);

@@ -193,6 +193,7 @@ export function runModel(rawParams, world) {
 
   const raidRate = effectiveRaidRate(P);
   const trajectory = [];
+  let yearsToFullPortfolio = null;
   let cumulativeRaids = 0;
   let cumulativeLost = 0;
   let lastAnnual = null;
@@ -312,7 +313,23 @@ export function runModel(rawParams, world) {
     const effective = 1 - tempoLoss;
 
     /* --- 5. teaching -------------------------------------------------------- */
-    const professors = mages * P.professorFractionOfMages * effective;
+    let professors = mages * P.professorFractionOfMages * effective;
+
+    /**
+     * `completeAffiliation` has no production caller, so universities are built
+     * and never staffed. The measured consequence is that affiliated mages run
+     * 6 -> 5 -> 4 -> 3 -> 2 -> 1 over 200 world years while 189 universities
+     * stand. Teaching happens AT a university, so the broken case caps the
+     * teaching corps at the decaying founding cohort however many mages the
+     * universe has — which is the difference between a university system and a
+     * set of buildings.
+     */
+    if (!toggles.affiliationCompletes) {
+      const decayed =
+        P.affiliatedMagesFloor +
+        (P.affiliatedMagesStart - P.affiliatedMagesFloor) * Math.max(0, 1 - year / P.horizonYears);
+      professors = Math.min(professors, decayed);
+    }
     const professorProgress = professors * P.teachProgressPerProfessorMonth * 12;
 
     /**
@@ -327,7 +344,7 @@ export function runModel(rawParams, world) {
      * that never gets past tier 3 cannot tell the two settings apart.
      */
     const TEACH_RATE_FLOOR_TIER = 4;
-    const deepMultiplier = toggles.teachRateBites ? (P.teachMultiplier ?? 1) : 1;
+    const deepMultiplier = toggles.teachRateBites ? P.teachMultiplier : 1;
 
     /* Cohorts advance one depth at a time. The cost of advancing a cohort from
      * depth d to d+1 is (nodes held at tier d+1) x teachCost(d+1) per student,
@@ -513,6 +530,9 @@ export function runModel(rawParams, world) {
       seatsDemanded,
       breadthFraction,
     };
+    if (yearsToFullPortfolio === null && heldTotal >= portfolio.reachableCount - 1e-6) {
+      yearsToFullPortfolio = year;
+    }
     if (year % 10 === 0 || year === P.horizonYears - 1) trajectory.push(lastAnnual);
   }
 
@@ -524,6 +544,10 @@ export function runModel(rawParams, world) {
     cumulativeRaids,
     cumulativeLost,
     raidRate,
+    /** First year the universe held everything its ruleset and species permit.
+     *  `null` means it never got there — which is the shape most of the unwired
+     *  subsystems actually change, and none of the level metrics can see. */
+    yearsToFullPortfolio,
   };
 }
 
