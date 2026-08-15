@@ -17,17 +17,17 @@ is what happens when you skip that step.
 | `content` | 0 | 0 | 5 | 1 | 0 | 6 |
 | `coordination` | 13 | 2 | 0 | 1 | 0 | 16 |
 | `primitives` | 2 | 0 | 1 | 0 | 0 | 3 |
-| `rules-magic` | 17 | 5 | 1 | 4 | 0 | 27 |
+| `rules-magic` | 16 | 6 | 1 | 4 | 0 | 27 |
 | `rules-raid` | 5 | 0 | 0 | 2 | 0 | 7 |
 | `rules-world` | 19 | 6 | 3 | 12 | 0 | 40 |
 | `scenario` | 0 | 0 | 12 | 0 | 0 | 12 |
-| `sim-core` | 2 | 0 | 4 | 0 | 0 | 6 |
+| `sim-core` | 1 | 0 | 5 | 0 | 0 | 6 |
 | `state` | 5 | 0 | 0 | 3 | 0 | 8 |
-| **Total** | **63** | **13** | **26** | **23** | **0** | **125** |
+| **Total** | **61** | **14** | **27** | **23** | **0** | **125** |
 
-The headline: **63 of the 125 are integration debt** — mechanics that are built, mostly tested,
+The headline: **61 of the 125 are integration debt** — mechanics that are built, mostly tested,
 exported, and that nothing in a running universe calls. That is the number the raw count was hiding.
-The other 62 are noise of three different kinds.
+The other 64 are noise of three different kinds.
 
 ### The five categories
 
@@ -69,15 +69,15 @@ were moved to §3 and are not here.
 
 One more was dropped from this table on inspection: **`withdrawGrimoire`** is declared deliberately unused by `gateway.ts:107` — *"`withdrawGrimoire` is unused and stays unused"* — which is an accepted design decision rather than debt.
 
-That is 45 of the 63. The remaining 18 are integration debt of the ordinary kind — an economy input
+That is 45 of the 61. The remaining 16 are integration debt of the ordinary kind — an economy input
 list, a commitment predicate, a monoculture threshold, `speciesRediscoveryMultiplier`,
 `worshipShareOfRegeneration` — worth wiring, not worth a row.
 
 ---
 
-## 3. Superseded: 13 findings, and the trap they are
+## 3. Superseded: 14 findings, and the trap they are
 
-**This is the most useful thing in this document.** Thirteen findings look exactly like §2 — an
+**This is the most useful thing in this document.** Fourteen findings look exactly like §2 — an
 unreached mechanic in a rules package, well tested, obviously important — and are not, because the
 capability is live under a different name. A triage that read the symbol instead of the capability
 would have filed every one of them as a disabled subsystem, and each would have cost somebody an
@@ -90,6 +90,7 @@ investigation ending in "it already works".
 | `stackContributions` | `primitives`' `stackMagnitudes` is reached and is the live stacker; `universe-effects.ts` gathers contributions and stacks them per primitive itself. |
 | `worshipTierOf`, `tierDerivedValues` | `god/system.ts:380` computes the tier with `tierOf(worship, constants)`, and `interventions.ts:1052` derives the budget and cap with `edictBudgetFor` and `favorCapFor` directly. |
 | `createUniversity`, `readUniversity` | Universities are created with `attachRecord(state, UNIVERSITY, …)` in `god/interventions.ts:781` and read with `collectRecords(state, UNIVERSITY)` in `capital.ts`, `gateway.ts` and `agent-api`. |
+| `withdrawGrimoire` | Declared deliberately unused by `gateway.ts:107` — *"`withdrawGrimoire` is unused and stays unused"*. An accepted design decision. |
 | `POPULACE_STREAM` | A re-export of `RNG_STREAM.populace`, which is used directly at `economy/carrying-capacity.ts:488` and `populace/mortality.ts:229`. Constraint 3 is **not** at risk here. |
 
 Every one of these is safe to delete, and each deletion is also a decision about which of two
@@ -109,16 +110,17 @@ literal. *One-line aliases* (8): `drawBelow` (a rename of `nextBounded`), `fract
 live `gateway.heldNodes` method; plus `AGE_BANDS_IN_ORDER`, `UNCHANGED_MULTIPLIER`,
 `PRODUCTIVE_OCCUPATIONS`.
 
-**Tooling-only** is dominated by `scenario`, whose entire contribution of twelve is report and metric
+**Tooling-only** (27) is dominated by `scenario`, whose entire contribution of twelve is report and metric
 builders: `censusLine`, `longRunLines`, `longestOccupationAlternation`, `claimRate`,
 `speciesVersatility`, `actionName`, `auditPool`, `auditStrategy`, `formatAudit`,
 `AnnihilationRecorder`, `BALANCE_RUN_METRIC_IDS`, `REFERENCE_SWEEP`. `content` adds the audio and
 audition pipeline (`assetIdOf`, `mergeSelections`, `selectionCoverage`, `audioSelect`,
 `memorySource`); `sim-core` adds four probes and utilities (`valueSentinelInstalled`,
 `annihilationSentinelInstalled`, `cloneStream`, `rejectionThreshold`); and `ablationConformance`,
-`describeRefusal`, `AGE_BAND_NAMES`, `histogramCellCount`, `naivePerLifespanRate` make up the rest.
+`describeRefusal`, `AGE_BAND_NAMES`, `histogramCellCount`, `naivePerLifespanRate` and
+`ENGAGEMENT_TICK_MS` make up the rest.
 
-These 26 are the strongest candidates for `DECLARED_EXCLUSIONS` and **should still not go there in
+These 27 are the strongest candidates for `DECLARED_EXCLUSIONS` and **should still not go there in
 bulk.** The script's own note is right that an exclusion added to quiet output is a defect converted
 into silence, and the ratchet is now a better tool for the job: `scripts/reachability-baseline.json`
 pins them without claiming each has an argument nobody wrote.
@@ -133,7 +135,7 @@ to be the whole exercise:
 
 > Is the **capability** absent, or only this **accessor**?
 
-The first pass of this document answered that question by inspection and got it wrong thirteen
+The first pass of this document answered that question by inspection and got it wrong fourteen
 times, in both directions of confidence. It asserted that "nothing in the rules path reads a species
 fixed-point trait" (traits are read everywhere), that three of the four licensed tradition hook
 points had no caller (all four have reached implementations; it is the *secondary* policies that do
