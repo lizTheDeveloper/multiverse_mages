@@ -70,18 +70,21 @@ export const RNG_STREAM = {
    * would move the battlefield, and no committed raid baseline could be read as
    * a statement about either.
    *
-   * **14, assigned by merge order rather than chosen.** Three open PRs each
-   * appended a stream to a table that ends at 12: #170 (`corruption`), this one
-   * (`detachment`), and #185 (`career`). One id, three claimants. The ruling is
-   * #170 = 13, this = 14, #185 = 15, and there is no dodging it by picking a
-   * spare number — `rng-registry-append-only.test.ts` requires the table **dense
-   * from 1**, so an id *is* a merge position.
+   * **13, assigned by merge order rather than chosen — and it was 14 first.**
+   * Three open PRs each appended a stream to a table that ends at 12: #170
+   * (`corruption`), this one (`detachment`), and #185 (`career`). One id, three
+   * claimants, and the ruling at the time was #170 = 13, this = 14, #185 = 15.
+   * There is no dodging that by picking a spare number —
+   * `rng-registry-append-only.test.ts` requires the table **dense from 1**, so
+   * an id *is* a merge position.
    *
-   * The consequence is stated rather than hidden: **until #170 lands, this
-   * branch's registry reads 1..12, 14, and the density assertion is red.** That
-   * is the correct reading of a branch holding the second slot in a queue whose
-   * first slot has not arrived. It closes when #170 is merged in, and needs no
-   * edit here.
+   * That queue did not happen. #170 has not landed, `main`'s registry still
+   * ends at 12, and a branch holding 14 over a twelve-row table reads as a gap
+   * — `1..12, 14` — with the density assertion red. So this append is **13**,
+   * which is what the general rule below already required of it: the id was
+   * re-checked at merge rather than carried from the commit that authored it.
+   * #170 and #185 renumber behind it by the same rule, on their own branches,
+   * and nothing here has to be edited when they do.
    *
    * ## The general rule, because the case above is not one
    *
@@ -102,10 +105,11 @@ export const RNG_STREAM = {
    *    the next one, and renumber if it is not — which is cheap, because the
    *    `rngRegistryHash` refusal already forces a re-baseline either way.
    *
-   * Do not read "#170 lands 13, so this is 14" as an instruction. It is one
-   * queue's arithmetic, and it is wrong on any tree with a different queue.
+   * Do not read "this is 13" as an instruction either. It is one queue's
+   * arithmetic on one day, and it is wrong on any tree with a different queue —
+   * as the ruling that read "this is 14" already turned out to be.
    */
-  detachment: 14,
+  detachment: 13,
 } as const;
 
 /** Any ID in the permanent registry. */
