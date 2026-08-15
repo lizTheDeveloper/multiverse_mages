@@ -47,7 +47,7 @@ import type { GodConstantRecord, GodCostRecord } from './types.js';
 const FP_ONE = 1024;
 
 /** `contracts.md` §4.2 numbers the god's actions 0 through 15, inclusive. */
-export const GOD_ACTION_ID_MAX = 15;
+export const GOD_ACTION_ID_MAX = 16;
 
 /**
  * Every magnitude the `god-agency` rules read, by name.

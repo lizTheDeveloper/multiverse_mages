@@ -27,7 +27,7 @@
 import { describe, expect, it } from 'vitest';
 
 import type { Action, EntityHandle, SimState } from '@mm/sim-core';
-import { FP_ONE, createState } from '@mm/sim-core';
+import { FP_ONE, createState, rngFromRootSeed } from '@mm/sim-core';
 import { TIME_MODE } from '@mm/sim-core';
 import {
   BLESSING,
@@ -73,6 +73,19 @@ interface Bench {
   readonly engagementRequests: number;
 }
 
+/**
+ * A tick-bound RNG for the resolver, which needs one only for action 16's
+ * personality roll. Bound at tick 0: these benches resolve one action against a
+ * hand-built world, and the tick a draw is keyed on is not what any of them
+ * measures.
+ */
+const TEST_RNG = {
+  rootSeed: 1,
+  stream: (subsystemId: number) => rngFromRootSeed(1).stream(subsystemId, 0),
+  actorStream: (subsystemId: number, actorKey: number) =>
+    rngFromRootSeed(1).actorStream(subsystemId, 0, actorKey),
+};
+
 function bench(options: Parameters<typeof godWorld>[1] = {}): Bench {
   const world = godWorld(SCHEMA, { favor: 1_000_000, ...options });
   const { catalog, cells } = catalogAndCells();
@@ -84,6 +97,9 @@ function bench(options: Parameters<typeof godWorld>[1] = {}): Bench {
     knowledge: KnowledgeSubsystem.fromState(world.state, catalog.nodeCount),
     edictBudgetMax: 8,
     portalNodes: new Set(nodesCarrying('portal').keys()),
+    invitableSpecies: new Set<number>(),
+    speciesOf: () => undefined,
+    rng: TEST_RNG,
     requestEngagement: () => {
       counter.engagementRequests += 1;
     },
@@ -152,7 +168,7 @@ function gatedNode(): number {
 }
 
 describe('the dispatch owns exactly the action ids contracts.md §4.2 declares', () => {
-  it('names all sixteen, from the no-op to the declaration', () => {
+  it('names all seventeen, from the no-op to the invitation', () => {
     // Transcribed from §4.2 one by one rather than compared against a derived
     // sequence, for the reason `actions.ts` gives: these ids are serialized into
     // action logs and indexed by a trained policy's output layer, so a
@@ -174,11 +190,18 @@ describe('the dispatch owns exactly the action ids contracts.md §4.2 declares',
       changeTradition: 13,
       openPortal: 14,
       declareAscension: 15,
+      inviteScholar: 16,
     });
   });
 
   it('prices every one of them, with no gap a free action could hide in', () => {
-    expect(COSTS.byAction).toHaveLength(16);
+    // Seventeen since `w109`. This assertion is the one that caught the real
+    // defect the append produced: `ACTION_ID_MAX` was written as a literal `15`
+    // here in `coordination` *and* as `GOD_ACTION_ID_MAX` in `@mm/content`, only
+    // the second moved, and the cost table was built one entry short — so the
+    // new action was silently free. A length check is why that surfaced as a
+    // failure rather than as a balance number nobody could explain.
+    expect(COSTS.byAction).toHaveLength(17);
     for (const price of COSTS.byAction) expect(price).toBeGreaterThanOrEqual(0);
   });
 
@@ -194,11 +217,17 @@ describe('the dispatch owns exactly the action ids contracts.md §4.2 declares',
 });
 
 describe('every intervention is world-time only', () => {
-  it('refuses all fifteen during engagement, leaving nothing changed', () => {
+  it('refuses all sixteen during engagement, leaving nothing changed', () => {
+    // The bound is `inviteScholar` and not `declareAscension`, which is the
+    // whole point of walking the range rather than listing ids: §4.2 says
+    // silence in an earlier draft was not permission, and an action appended
+    // after this test was written must be covered by it without anyone
+    // remembering to come back. Inviting a foreign scholar mid-raid is a
+    // frozen-policy violation exactly as squarely as blessing a defender is.
     const b = bench({ mages: 2 });
     const favorBefore = favorOf(b.state, b.universe);
     const submissions: Action[] = [];
-    for (let kind = ACTION.permitTechnique; kind <= ACTION.declareAscension; kind += 1) {
+    for (let kind = ACTION.permitTechnique; kind <= ACTION.inviteScholar; kind += 1) {
       submissions.push({ kind, params: [1, 1] });
     }
     const before = b.state.illegalActionCount;
@@ -206,8 +235,8 @@ describe('every intervention is world-time only', () => {
     const report = resolve(b, submissions, 700, TIME_MODE.engagement);
 
     expect(report.applied).toBe(0);
-    expect(report.refused).toBe(15);
-    expect(b.state.illegalActionCount).toBe(before + 15);
+    expect(report.refused).toBe(16);
+    expect(b.state.illegalActionCount).toBe(before + 16);
     expect(favorOf(b.state, b.universe)).toBe(favorBefore);
     expect(readUniverse(b.state, b.universe).permittedTechniques).toBe(0b11111);
     expect(collectRecords(b.state, BLESSING)).toHaveLength(0);
@@ -766,6 +795,9 @@ describe('the state the dispatch is given is the only state it reads', () => {
       knowledge: KnowledgeSubsystem.fromState(empty, catalog.nodeCount),
       edictBudgetMax: 8,
       portalNodes: new Set(),
+      invitableSpecies: new Set<number>(),
+      speciesOf: () => undefined,
+      rng: TEST_RNG,
       requestEngagement: () => undefined,
     });
     expect(report.applied).toBe(0);

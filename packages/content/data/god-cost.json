@@ -110,5 +110,12 @@
     "favorCost": 0,
     "gloss": "Free, and gated. Charging for the ending would make a god who spent well unable to stop.",
     "tuningStatus": "untuned"
+  },
+  {
+    "id": "invite-scholar",
+    "actionId": 16,
+    "favorCost": 24576,
+    "gloss": "Half again a portal, because an alliance opens the same threshold and then asks somebody to walk through it and stay. Untuned, and deliberately dearer than every intervention except changing tradition: a scholar of a species you cannot breed is the only way some civilizations grow a faculty at all.",
+    "tuningStatus": "untuned"
   }
 ]
