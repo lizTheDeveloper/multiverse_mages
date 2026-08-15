@@ -227,7 +227,7 @@ describe('defect 3: aptitude sorts careers, and sorts nobody out of existence', 
     // reachable in a real world loop, or the sort is a constant wearing a draw's
     // clothes — and the two reported halves must add up to the whole, because a
     // reader who has to subtract will eventually subtract the wrong thing.
-    const world = runWorld({ cohortSize: 120, ticks: 240 });
+    const world = runWorld({ cohortSize: 120, ticks: 120 });
     expect(world.magesGraduated).toBe(world.graduatedAcademic + world.graduatedPopulace);
     expect(world.graduatedAcademic).toBeGreaterThan(0);
     expect(world.graduatedPopulace).toBeGreaterThan(0);

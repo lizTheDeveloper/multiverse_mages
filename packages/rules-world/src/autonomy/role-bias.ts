@@ -145,10 +145,33 @@ function row(entries: Partial<Record<GoalId, Fixed>>): RoleBiasRow {
  *   the escape hatch out of the base of the pyramid, and pricing it here would
  *   have made the god's action 10 the only route.
  *
- *   **This row is not a penalty box.** *"My mages are all very advanced"* is
- *   meant to be as legible a failure as *"my mages are all novices"*, so the
- *   populace mage is employed rather than idled, and the measurement that says
- *   so is her `apply-magic` share rather than her count.
+ *   **This row is not a penalty box, and the measurement says so — but not in
+ *   the way the row intends.** Instrumented over the reference universe, 1,200
+ *   ticks, seeds 589825 and 1234567 (2026-08-14, `w197/aptitude-sorts-careers`),
+ *   across ~35,000 populace goal decisions per seed:
+ *
+ *   | goal | populace | researcher |
+ *   | --- | ---: | ---: |
+ *   | `scribe` | **0.66 – 0.70** | 0.35 – 0.38 |
+ *   | `research-node` | 0.18 – 0.22 | 0.53 – 0.57 |
+ *   | **`apply-magic`** | **0.107 – 0.108** | 0.019 – 0.024 |
+ *   | `idle` | **0.000** | 0.000 |
+ *
+ *   So she is **employed** — `idle` never appears — and the row does work: she
+ *   casts at the world roughly **five times** as often as a researcher does.
+ *   But `apply-magic` is a tenth of her months rather than most of them, and she
+ *   spends two thirds of them **scribing**.
+ *
+ *   **That is a content gap, not a bias failure, and `magical-prevalence.md`
+ *   named it before this row existed**: *"five of 59 `resource-yield` effects
+ *   are in enabled cells and all five route to stone, and stone buys nothing
+ *   without a god action… nothing worth casting at the bottom of the tree."*
+ *   `apply-magic` scores highest for her and is simply infeasible most months,
+ *   so she falls through to the next thing worth doing. Raising the bias would
+ *   not change that — it would only make her idle when the goal masks out.
+ *   **The fix is low-tier nodes whose effects feed the economy, in cells a
+ *   starting universe can reach**; until those exist, this table is honest about
+ *   what it can and cannot move.
  *
  * `apply-magic` was the ninth goal and, until W197, **no role was for it** —
  * which was a statement rather than an omission: the god's four roles are all
