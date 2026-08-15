@@ -76,6 +76,24 @@ import {
 } from './world-fixtures.js';
 
 const ROOT_SEED = 0x0004_1000;
+
+/**
+ * Per-test budget, raised from vitest's 5 s default.
+ *
+ * Every test here steps a real universe for tens of world ticks, and there are
+ * thirteen of them in one file. Measured in isolation on a loaded machine the
+ * whole file takes about 110 s and individual tests 30-55 s, which is over the
+ * default by an order of magnitude — so what a default-budget failure reports is
+ * the machine's scheduler, not the loop.
+ *
+ * `knowledge-capital.test.ts` and `reference-time-to-tier.test.ts` both carry
+ * the same constant for the same reason, and both say the same thing about it:
+ * a timeout under load is a scheduling fact reported as a behaviour failure.
+ * This file had no budget at all until W116 added four affiliation tests to it
+ * and the two oldest ones began timing out — which is the shape that argument
+ * predicts, arriving in the file that had not yet taken the lesson.
+ */
+const TIMEOUT_MS = 120_000;
 /** Five world years, as `world-step.test.ts` uses. Group 9 owns the long run. */
 const TICKS = 60;
 
@@ -249,7 +267,7 @@ describe('mages join the institution nobody put them in', () => {
     const { living, affiliated } = affiliation(run.state);
     expect(living).toBeGreaterThan(0);
     expect(affiliated).toBeGreaterThan(0);
-  });
+  }, TIMEOUT_MS);
 
   it('writes books it could not have written, because scribing needs a university', () => {
     // The whole point of the goal, stated as the thing it unlocks. Before the
@@ -259,7 +277,7 @@ describe('mages join the institution nobody put them in', () => {
     const run = totals(TICKS, withAnEmptyAcademy);
     expect(run.grimoiresScribed).toBeGreaterThan(0);
     expect(componentOf(run.state, GRIMOIRE).size).toBeGreaterThan(0);
-  });
+  }, TIMEOUT_MS);
 
   it('refuses the third applicant rather than seating her, and says so', () => {
     // Both halves of `contracts.md` §1.4's bound, which is one bound and two
@@ -271,7 +289,7 @@ describe('mages join the institution nobody put them in', () => {
     expect(run.affiliationsRefused).toBeGreaterThan(0);
     expect(run.peakHosted).toBeLessThanOrEqual(SEATS);
     expect(affiliation(run.state).affiliated).toBeGreaterThan(0);
-  });
+  }, TIMEOUT_MS);
 
   it('does not leave the refused queueing outside it for the rest of the run', () => {
     // The livelock this bound could have introduced, asserted against. A mage
@@ -285,13 +303,13 @@ describe('mages join the institution nobody put them in', () => {
     // nothing. Two seats out of a whole population, and it still researches.
     const run = totals(TICKS, withTwoSeats);
     expect(run.researchCompleted).toBeGreaterThan(0);
-  });
+  }, TIMEOUT_MS);
 
   it('stays deterministic with affiliation in it', () => {
     const first = totals(20, withAnEmptyAcademy);
     const second = totals(20, withAnEmptyAcademy);
     expect(snapshotHash(second.state)).toBe(snapshotHash(first.state));
-  });
+  }, TIMEOUT_MS);
 });
 
 describe('a stepped universe finishes what its mages start', () => {
@@ -302,7 +320,7 @@ describe('a stepped universe finishes what its mages start', () => {
     // discarded it every tick would still complete research eventually and would
     // report nothing in flight at the end of any tick.
     expect(run.peakEfforts).toBeGreaterThan(0);
-  });
+  }, TIMEOUT_MS);
 
   it('teaches and scribes once the two missing preconditions are supplied', () => {
     const run = totals(TICKS, withAnAcademy);
@@ -311,7 +329,7 @@ describe('a stepped universe finishes what its mages start', () => {
     expect(run.grimoiresScribed).toBeGreaterThan(0);
     expect(run.materialsScribed).toBeGreaterThan(0);
     expect(componentOf(run.state, GRIMOIRE).size).toBeGreaterThan(0);
-  });
+  }, TIMEOUT_MS);
 
   it('holds no effort row for a mage who is not working', () => {
     // Every row names a living mage. A row for a dead one would be work nobody
@@ -324,7 +342,7 @@ describe('a stepped universe finishes what its mages start', () => {
       expect(mages.has(subject)).toBe(true);
       expect(alive[mages.rowOf(subject)]).not.toBe(0);
     }
-  });
+  }, TIMEOUT_MS);
 
   it('carries banked progress through a save, byte for byte', () => {
     // The claim the component exists for, at the loop's own scale: a run saved
@@ -336,7 +354,7 @@ describe('a stepped universe finishes what its mages start', () => {
     const simulation = defineWorldSimulation(worldDeps(scribingTraditionId()));
     const restored = loadWorldSnapshot(serializeState(run.state), simulation.schema);
     expect(snapshotHash(restored)).toBe(snapshotHash(run.state));
-  });
+  }, TIMEOUT_MS);
 });
 
 describe('the loop stays deterministic with work in it', () => {
@@ -346,12 +364,12 @@ describe('the loop stays deterministic with work in it', () => {
     expect(snapshotHash(second.state)).toBe(snapshotHash(first.state));
     expect(second.researchCompleted).toBe(first.researchCompleted);
     expect(second.lessonsTaught).toBe(first.lessonsTaught);
-  });
+  }, TIMEOUT_MS);
 
   it('names a real content revision, so the fixture is the shipped content', () => {
     // A guard on the fixture rather than on the loop: every claim above is about
     // the game's own species and node graph, and would be worth much less over
     // invented ones.
     expect(registry().contentRevision).toMatch(/^[0-9a-f]{32}$/);
-  });
+  }, TIMEOUT_MS);
 });
