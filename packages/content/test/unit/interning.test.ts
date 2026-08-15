@@ -409,7 +409,32 @@ describe('contentRevision', () => {
     // — the same situation the three-branch paragraph above describes, and the
     // reason the check is a digest over the preimage rather than a
     // hand-maintained list of files.
-    expect(registry.contentRevision).toBe('e8442af2c5f91ae6f80ad9a178e0e451');
+    //
+    // e8442af2c5f91ae6f80ad9a178e0e451 -> 7277d3f6f5829036f0cc85a4b10a0f49,
+    // when `rn-call-by-name` gained a second effect: `resource-yield`, magnitude
+    // 128, target `universe` — the tier-1 magnitude eighteen other yield nodes
+    // already carry, so no new number is authored here.
+    //
+    // It is in the preimage for the reason every value edit above is, and this
+    // one is emphatically **not** inert at ship. Before it, no node in the v1
+    // rectangle routed any yield to vellum at all: of the 300 nodes, 59 carry
+    // `resource-yield`, exactly five of those sit in a v1 cell, and all five are
+    // `*-terram`, whose form weights are `stone` — while library upkeep and
+    // scribing both *spend* vellum. The single nomen yield node in the corpus,
+    // `mn-call-it-iron-until-it-is`, is in `muto-nomen`, and `muto` is not a v1
+    // technique. So the opening square had a vellum sink, a labour source in
+    // `territory.json`, and no magical source whatsoever — a god could permit
+    // every cell she had and still not make a universe that could write books
+    // faster by doing magic.
+    //
+    // `rego-nomen` is a v1 cell and `nomen`'s `yieldWeights` are `vellum: 1024`,
+    // so the whole of a yield in it is vellum, and the node's own text already
+    // said so: *"Say a thing's name in the imperative and have it arrive."* The
+    // gloss's standing joke — that it does not specify in what condition — is
+    // why the magnitude is the tier-1 one rather than a generous one. Nothing
+    // was invented to fill the hole; a second effect was hung on the sentence
+    // that already implied it.
+    expect(registry.contentRevision).toBe('7277d3f6f5829036f0cc85a4b10a0f49');
   });
 
   it('is stable across loads of identical content', () => {
