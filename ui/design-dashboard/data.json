@@ -2543,8 +2543,8 @@
       "scripts/check-reachability.mjs --json"
     ],
     "ok": false,
-    "findingCount": 132,
-    "examinedSymbolCount": 879,
+    "findingCount": 130,
+    "examinedSymbolCount": 891,
     "examinedPackages": [
       "content",
       "coordination",
@@ -2556,7 +2556,7 @@
       "sim-core",
       "state"
     ],
-    "productionFileCount": 318,
+    "productionFileCount": 320,
     "orphanPackages": [],
     "unreached": [
       {
@@ -2951,15 +2951,9 @@
       },
       {
         "file": "packages/rules-world/src/mages/roles.ts",
-        "line": 105,
+        "line": 114,
         "name": "ASSIGNABLE_MAGE_ROLES",
         "kind": "const"
-      },
-      {
-        "file": "packages/rules-world/src/mages/roles.ts",
-        "line": 73,
-        "name": "isMageRole",
-        "kind": "function"
       },
       {
         "file": "packages/rules-world/src/populace/buckets.ts",
@@ -3191,7 +3185,7 @@
       },
       {
         "file": "packages/state/src/enums.ts",
-        "line": 256,
+        "line": 294,
         "name": "OBJECTIVE_KIND_UNSPECIFIED",
         "kind": "const"
       },
@@ -3269,15 +3263,7 @@
       },
       {
         "file": "packages/rules-world/src/mages/roles.ts",
-        "line": 64,
-        "name": "MAGE_ROLE_VALUES",
-        "via": [
-          "isMageRole"
-        ]
-      },
-      {
-        "file": "packages/rules-world/src/mages/roles.ts",
-        "line": 168,
+        "line": 198,
         "name": "changeAffiliation",
         "via": [
           "completeAffiliation"
@@ -3404,7 +3390,7 @@
       },
       {
         "id": "tuning-status",
-        "count": 8,
+        "count": 9,
         "reason": "Mirrors `@mm/content`'s `TuningStatus` for a table of magnitudes that release-plan.md records as untuned. It is an authored claim about balance provenance, asserted by the table's own tests. It is not an input to anything and must not become one."
       }
     ],

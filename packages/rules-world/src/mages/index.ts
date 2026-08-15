@@ -101,6 +101,5 @@ export {
   changeAffiliation,
   graduate,
   isMageRole,
-  isPopulaceMage,
   isStudent,
 } from './roles.js';

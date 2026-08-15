@@ -187,17 +187,6 @@ export function graduate(mage: MageRecord, career: MageRoleValue = DEFAULT_MAGE_
 export const STUDENT_MAGE_ROLE: MageRoleValue = MAGE_ROLE.student;
 
 /**
- * Whether this mage casts for a living rather than for an institution.
- *
- * The predicate exists for {@link isStudent}'s reason — *"is she in the
- * populace"* is asked by things that have nothing to do with each other, and
- * each is a place `=== 5` could be written the wrong way round exactly once.
- */
-export function isPopulaceMage(roleId: number): boolean {
-  return roleId === MAGE_ROLE.populace;
-}
-
-/**
  * Moves a mage to a different university, or to unaffiliated.
  *
  * Writes `universityId` and nothing else — in particular not `roleId`, which

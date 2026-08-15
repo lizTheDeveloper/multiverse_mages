@@ -75,6 +75,12 @@ const PERMANENT_IDS: Readonly<Record<string, number>> = {
   // and refuses on it, so all three baselines invalidated by identity before a
   // single measured number moved. See `docs/design/opening-square.md` §4.
   openingSquare: 12,
+  // Appended by `w197/aptitude-sorts-careers`. The second append, taken with the
+  // cost above known: the graduate career draw — academic track or populace
+  // mage — which has its own id rather than borrowing `mageBirth`'s because a
+  // shared cursor would have adding a graduate re-roll the personality of every
+  // mage enrolled in the same tick.
+  career: 13,
 };
 
 /**
@@ -107,6 +113,7 @@ const DOC_TEXT_BY_SUBSYSTEM: Readonly<Record<string, string>> = {
   objectives: 'objective and raid generation',
   terrain: 'terrain generation and combatant deployment',
   openingSquare: 'the opening square',
+  career: 'the career sort at graduation',
 };
 
 /** The consequence sentence every failure from this file has to carry. */

@@ -96,11 +96,24 @@ const REGISTERED: ReadonlyMap<string, string> = new Map([
     'Banked, same shape as births. The draw is taken before the early return ' +
       'so the stream advances identically whether or not anyone dies.',
   ],
-  [
-    'promotion:promoteStudentCohort',
-    'Banked. "How many mages a matured student cohort yields, and the single ' +
-      'draw that decides the fraction."',
-  ],
+  // `promotion:promoteStudentCohort` was here until W197, described as
+  // *"banked -- how many mages a matured student cohort yields, and the single
+  // draw that decides the fraction."* **It no longer floors anything, and the
+  // registry caught that from the direction it is unusual for a registry to
+  // catch anything: `registeredButUnseen`.**
+  //
+  // W197 spends the species gate once, in the demand controller, so the
+  // enrolment call passes `ENROLS_EVERY_LATENT_MEMBER` -- `FP_ONE` -- and the
+  // arithmetic is an identity: the integer part is the whole count and the
+  // remainder is always zero. The draw is still taken and still costs one, so
+  // the `draws: 1` contract is intact; there is simply nothing left for it to
+  // round. Deleting the row rather than leaving it is the registry's own rule,
+  // stated below: *"a registry that only grows is a registry that goes
+  // stale ... the entry is now describing something that does not happen, and
+  // the next reader will trust it."*
+  //
+  // If a fraction is ever restored to that call site, the row comes back with
+  // it.
 
   // ---- The floor *is* the meaning. ----
   //
@@ -130,14 +143,49 @@ const REGISTERED: ReadonlyMap<string, string> = new Map([
   [
     'world-step:latentInCohort',
     'A genuine floor with no banking, and the design asks for it. ' +
-      '`count x prevalence x mageAptitude` is zero for every cohort smaller ' +
-      'than `1 / fraction` -- at the shipped numbers an orc cohort under about ' +
-      '114 people yields nobody -- and that is the intended reading: a ' +
-      'population too small or too mundane to produce a single mage should ask ' +
-      'for no students. Rounding it up would have every hamlet demanding a ' +
-      'seat. Fires on every tick of the reference run because the reference ' +
-      "universe's cohorts are small and fragmented by construction, which is " +
-      'the same fragmentation `reallocation:collectSources` above is about.',
+      '`count x prevalence` -- and `prevalence` alone since W197 -- is zero for ' +
+      'every cohort smaller than `1 / prevalence`, at the shipped numbers about ' +
+      'ten people for a human cohort and twenty for an orc one, and that is the ' +
+      'intended reading: a population too small or too mundane to produce a ' +
+      'single mage should ask for no students. Rounding it up would have every ' +
+      'hamlet demanding a seat. Fires on every tick of the reference run because ' +
+      "the reference universe's cohorts are small and fragmented by " +
+      'construction, which is the same fragmentation ' +
+      '`reallocation:collectSources` above is about. ' +
+      '**W197 made this floor load-bearing in a way it was not.** It is now the ' +
+      'only place the species gate is applied at all, so it is also the only ' +
+      'thing standing between a rare species and never producing a mage. It ' +
+      'does not currently do that -- every shipped species still graduates on ' +
+      'every seed -- but if one ever truncates out of existence here, the ' +
+      "remainder draw `promotion.ts` carries for exactly this reason has to " +
+      'move into the demand path.',
+  ],
+
+  // ---- W197: two autonomy terms the arm newly reaches, neither of them new. ----
+  [
+    'terms:shareOfDeviation',
+    'Floored and discarded, and the site is a **deviation from unity halved or ' +
+      'quartered**: `floorDiv(value - FP_ONE, 2)` is zero for any species trait ' +
+      'within one fixed-point unit of `1024`, which is a trait that is by ' +
+      "definition saying \"average\". A term that reports \"no preference\" as " +
+      'zero is the term behaving correctly, not annihilating a live quantity. ' +
+      '**New to this registry in W197, and not because the function changed.** ' +
+      'The reference arm now carries roughly two and a half times as many ' +
+      'living mages, so goal scoring runs far more often and reaches trait ' +
+      'values within one unit of unity that it previously never sampled. That ' +
+      'is the registry doing its job -- reporting a site the arm newly reaches ' +
+      '-- rather than a defect introduced.',
+  ],
+  [
+    'target-appeal:personalityTargetTerm',
+    'Floored and discarded, on the same argument and for the same reason. ' +
+      '`floorDiv(ambition - FP_ONE, divisor)` is zero for a mage whose ambition ' +
+      'or caution is within a divisor of the species mean -- an unremarkable ' +
+      'personality having an unremarkable opinion -- and the bounded term it ' +
+      'feeds is *supposed* to be able to say nothing. **New to this registry in ' +
+      'W197 for the population reason above**: a larger and longer-lived mage ' +
+      'roster rolls more personalities near the mean, and the arm reaches the ' +
+      'floor on 16 of 240 ticks where it previously reached it on none.',
   ],
   [
     'capital:applyLibraryUpkeep',
