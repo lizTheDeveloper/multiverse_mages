@@ -12145,3 +12145,60 @@ in the paired arm (62, against 99 and 72).
 - **It audited the three silently auto-merged files for dropped test blocks**, because *"a green suite
   cannot detect that"* — `it(` counts match both parents at **23 / 13 / 6**. Nobody else checked this all
   night, and an auto-merge that drops a describe block is invisible to every gate we have.
+
+## W228 — the re-seal decision, measured and reduced to one command
+
+Ran #184's tool in **`--dry-run`** on #170's five-year baseline. It verifies by running the gate sweep and
+discarding every number, and it wrote nothing — `git status` clean afterwards.
+
+```
+Observed movement, none of it written (k = 3):
+  referenceGrimoires            −0.05 SE
+  referenceKnowledgeInstances   +0.35 SE
+  referenceLibraryDepth         +0.10 SE
+  referenceLivingMages          0.00 SE     referenceNodesGained   0.00 SE
+  referenceNodesKnown           0.00 SE     referencePopulation    0.00 SE
+  referencePopulationChange     0.00 SE     referencePeakPopulation  unmoved
+  provenance.contentHash      0dfdd5ef… → 5a876168…
+  provenance.rngRegistryHash  2bc5d131… → 3666e19c…
+```
+
+**Every metric inside noise against a k = 3 tolerance, five of nine at exactly 0.00 SE.** Only the two
+identity hashes move. **#170 is a genuine provenance-only case, verified rather than argued.**
+
+### The two PRs are now distinguishable by measurement, not by judgement
+
+| PR | verdict |
+|---|---|
+| **#170** | **safe to re-seal** — all metrics within noise; the gate would then compare *numbers* and pass |
+| **#172** | **not safe** — identity *matches*, and it refuses on **7 of 9 metrics**, `referenceLivingMages` at **−67.60 SE** |
+
+**That distinction is the whole reason #184 was worth building rather than just deciding.** A blanket
+"re-seal everything" or "move the gates out of the required check" would clear #170 correctly **and let
+#172's unaccepted behaviour change through unexamined.**
+
+### The command, if the answer is yes
+
+Run from a worktree on `w190/scribing-fidelity` at `db2410ad` (0 behind `main`), once per baseline:
+
+```
+node packages/mc-harness/bin/reseal-baseline.mjs \
+  --scenario ./packages/scenario/bin/scenario.mjs \
+  --sweep    ./balance/sweeps/balance-gate.sweep.json \
+  --baseline ./balance/baselines/balance-gate-v1.baseline.json \
+  --sealed-on 2026-08-15 --workers 4
+```
+
+It **refuses if any metric has actually moved**, so it cannot be used on #172 by accident — that is
+enforced by the tool, not by the operator remembering.
+
+### Why this was left undone
+
+By the distinction this document has drawn all night — *"re-pinning a unit-test literal from a measured
+run is not a sweep, not a `balance/` file, and not a gate"* — **a re-seal is a `balance/` file**, and that
+is the thing the owner stopped. The dry run converts the question from a judgement into a fact; **writing
+the seal is still a decision, and it is theirs.**
+
+`sim-rigor` §4.3's advice to re-seal once after #170 and #185 land is **circular** and should be read as
+superseded: they cannot land while the gate refuses. **One re-seal, on #170, breaks the loop** — and every
+later PR then re-seals against a `main` whose baselines already carry these hashes.
