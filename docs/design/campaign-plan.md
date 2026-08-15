@@ -5279,7 +5279,6 @@ the god-constant count, the metric count, the baselines, and this.
 
 **The general rule, now earned five times: when both sides of a conflict assert a count or a hash, ask
 the tree.** Neither literal describes a tree holding both.
-<<<<<<< HEAD
 
 ### W94 addendum 2 — the baseline stack, and two things that only a whole-object assertion catches
 
@@ -5606,8 +5605,6 @@ commits have touched `packages/` since, and both point at scratchpad paths that 
 neither can be bisected. **This run committed its 1,000 records (380 KB) so that it can be**, and every
 table recomputes from the CSV without re-running anything. That is the difference between a
 measurement and an anecdote, and it is worth the 380 KB.
-=======
->>>>>>> origin/main
 
 ---
 
