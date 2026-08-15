@@ -101,8 +101,8 @@ from the reference run; "ablation moves" is the decisive column.
 | **`teach-rate` from node effects** | `teachBonusesFor` called **695×** | **0 contributions**; 3 contributions in 256 calls under `worship-maximizer` | byte-identical at zero and at ×100 | **structural** | as above; `content-set.ts:679` |
 | **`lifespan` from node effects** | `lifespanEffectsFor` called **74,343×** | **0 contributions** with no god; 3,401 × fp 61,440 with one | zeroing the channel under `worship-maximizer` moves `livingMages` 21→20 on one of two seeds | **structural** for node effects; god-only otherwise | `channel-counter.mjs`; `episode-ablate.mjs` |
 | **`scribe-rate`** | stacked every scribing tick | `world-step.ts` passes the literal `NO_BONUSES` | byte-identical at zero and at ×100 | **structural** — nothing, node or god, can move it, and `content-set.ts` says so | `matrix-600`; `content-set.ts:691` |
-| **`fertility`** | species content only | 5 authored node effects, **0 of them inside the opening square** | byte-identical at zero and at ×100 | **content** for the node effects, **structural** for the channel | `reach.mjs`; `matrix-600` |
-| **`build-rate`** | **39 sources stacked, every tick** | real magnitudes, gathered and applied to nothing | byte-identical at zero; trace moves at ×100, no numeric report field does | **structural given the starting position** — nothing is ever under construction | `matrix-600`; `buildProgressAdded` Σ = 0 over 2,400 ticks |
+| **`fertility`** | species content only | 5 authored node effects, **0 of them inside the opening square** — and no consumer for them at any width | byte-identical at zero and at ×100 | **structural.** `ECONOMIC_PRIMITIVES` in `universe-effects.ts` is `{resource-yield, build-rate}` and nothing else; a fertility node effect has no fetch site to reach | `reach.mjs`; `matrix-600`; `universe-effects.ts:183` |
+| **`build-rate`** | **39 sources stacked, every tick** | real magnitudes, gathered and applied to nothing | byte-identical at zero; trace moves at ×100, no numeric report field does | **structural — a starting-position fact, not a content-width one.** It has a real node consumer; nothing is ever under construction for it to consume | `matrix-600`; `buildProgressAdded` Σ = 0 over 2,400 ticks |
 | **`resource-yield`** | live | −36.8% materials produced, −22.6% applied | **moves three fields, all of them materials, and nothing else** — and is byte-identical across the entire committed run record | live in code, **invisible to the record** | `matrix-600`; `episode-ablate.mjs`; `CensusSample` has no material field |
 | **`universeEffects` (applied magic)** | 11,263 non-zero yields | fp 128–512 | zeroing it removes every economic node and every build-rate source | **live** | `channel-counter.mjs`; `matrix-600` |
 | **god action 5, `issueDispensation`** | legal 1,168 ticks; **submitted 598×** pooled | — | **applied 0 times, by any strategy, on any seed** | **structural** — `edictPlan` refuses a dispensation on an already-permitted cell, and `permissive-breadth` submits it on 553 of 600 ticks | `verb-census.mjs` |
@@ -124,14 +124,26 @@ from the reference run; "ablation moves" is the decisive column.
 | **`deps.appeal`** | — | — | **moves** — applied materials −51.7% | live | `matrix-600` |
 | **`deps.god`** | — | — | trace moves; no numeric report field does | live, but through a non-numeric channel this instrument does not name | `matrix-600` |
 
-Twenty-eight mechanisms instrumented. **Nine fire zero times** (`issueDispensation` applied,
-`changeTradition`, `declareAscension`, all seven combat sources as one row, `blink`, the `soldier`
-occupation, `ward-duty`, `raid-readiness`, `idle`). **Eight fire — several of them tens of thousands
-of times — and move nothing** (`affiliate`, `research-rate`, `teach-rate`, `lifespan` from nodes,
-`scribe-rate`, `fertility`, `build-rate`, and `resource-yield` as far as the run record can tell).
-**Six are live.** The split is **fifteen structural to two content-scoped**: only `fertility`'s node
-effects and, arguably, `build-rate` would bind at a wider opening square. Everything else would
-still be inert with all seventy cells open, because the wire is missing rather than the content.
+**Twenty-seven rows, one per mechanism**, except *all seven combat sources*, which folds seven into
+one because they share a single cause and a single zero. They sort into four buckets that add up:
+
+- **Ten fire zero times.** `issueDispensation` (submitted 598×, applied never), `changeTradition`,
+  `declareAscension`, the seven combat sources, `blink`, the `soldier` occupation, the `scribe`
+  occupation demand, `ward-duty` and `raid-readiness`, `idle`, and `deps.hazard`.
+- **Eight fire — several of them tens of thousands of times — and move nothing.** `affiliate`,
+  `research-rate`, `teach-rate` and `lifespan` from node effects, `scribe-rate`, `fertility`,
+  `build-rate`, and Vancian's `cast`/`cost` hooks.
+- **One moves the world and nothing the record can see:** `resource-yield`.
+- **Eight are live:** `universeEffects`, `issueInterdiction`, `revokeEdict`, `knowledge-steal`,
+  true-naming's `acquire`, art-of-memory's `store`, `deps.appeal`, `deps.god`.
+
+**The content-versus-structural split is eighteen structural to zero content-scoped.** Not one of
+the inert rows would bind at a wider opening square. `fertility` looked like a content row until
+`universe-effects.ts` settled it — `ECONOMIC_PRIMITIVES` is `{resource-yield, build-rate}`, so those
+two are the *only* primitives with a node-effect fetch site, and a fertility node effect has nowhere
+to arrive however many cells are open. `build-rate`'s null is a starting-position fact for the same
+reason it is not a content one: it has a live consumer and nothing to consume. In every other case
+the wire is missing rather than the content thin.
 
 ## The three most dangerous
 
@@ -185,8 +197,11 @@ raid — an ablated run is **byte-identical to its control**, on both drivers an
 including with the long run's own starting position.
 
 The reason is one line of shape: `CensusSample` is `{worldTick, population, livingMages, nodesKnown,
-knowledgeInstances, libraryDepth, grimoires, saturated}`. **There is no material quantity in it.** A
-37% swing in the economy is not representable in the artefact the balance gate compares.
+knowledgeInstances, libraryDepth, grimoires, saturated}`. **There is no material quantity in it.**
+Nor is there one anywhere else a baseline could reach: **not one of the eighteen `contracts.md` §7
+metrics in `BALANCE_METRIC_REGISTRY`, and not one of the eleven `REFERENCE_MEASURES`, reads a
+material quantity.** A 37% swing in the economy is not representable in the artefact the balance
+gate compares.
 
 This is the dangerous one because it is a wire that never binds *in the instrument that guards the
 game*. Every balance baseline in `balance/baselines/` is blind to the economy by construction; a
