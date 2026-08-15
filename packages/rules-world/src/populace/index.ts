@@ -56,6 +56,7 @@ export {
 export type { ReallocationOptions, ReallocationReport } from './reallocation.js';
 export {
   TRANSFER_RATE_PER_TICK,
+  cohortShare,
   countByOccupation,
   mayTransitionTo,
   reallocateOccupations,

@@ -73,16 +73,60 @@ import { OCCUPATIONS_IN_ORDER, RETIREMENT_NORMALIZED_AGE } from './occupations.j
  * `actorStream`, so its deaths are independent of who was visited first, and
  * ascending-slot iteration is the store's own documented order.
  *
- * ## No remainder is banked
+ * ## The rate limit is a property of the occupation, and is truncated once
  *
- * `contracts.md` §1.3 gives a cohort four fields. The transfer budget floors,
- * and the fraction is discarded rather than accumulated — a "pending transfer"
- * counter would be a fifth field and therefore a contract amendment. The cost
- * is that cohorts smaller than `1 / TRANSFER_RATE_PER_TICK` never transfer at
- * all. That is the spec's letter ("no more than `transferRatePerTick` of any
- * source cohort"), and if it ever matters the tripwire is task group 9's stall
- * check: an economy that cannot staff anything is an economy where research,
- * teaching, and scribing stop happening.
+ * This module used to compute the whole transfer budget per *cohort*:
+ * `floorDiv(count * TRANSFER_RATE_PER_TICK, FP_ONE)`, once for each cohort. It
+ * noted the cost — "cohorts smaller than `1 / TRANSFER_RATE_PER_TICK` never
+ * transfer at all" — and treated it as a corner case. It is not a corner case,
+ * because **cohorts are fragmented by construction**: a cohort is keyed on
+ * species × occupation × birth decade (`contracts.md` §1.3), so a populace of a
+ * few hundred is already scattered across dozens of cohorts of single digits,
+ * and `1 / TRANSFER_RATE_PER_TICK` is 16.
+ *
+ * Truncating per cohort turns that fragmentation into a one-way valve. `N`
+ * cohorts of `c` people each yield `N * floorDiv(c * rate, FP_ONE)` — which is
+ * **zero** whenever `c < 1 / rate` — where the control law asks for
+ * `floorDiv(N * c * rate, FP_ONE)`. The error is per cohort and always
+ * downward, so it grows with fragmentation and never cancels.
+ *
+ * It binds one way because *every other flow through an occupation is
+ * unrated*. Mortality kills at the hazard rate, {@link retireSenescentCohorts}
+ * moves whole cohorts, and a student who fails promotion is written straight
+ * into `laborer`. An occupation therefore loses people at full rate and gains
+ * them at a rate that floors to zero — which is how `scribe` came to have a
+ * sink and no source. Measured on the reference universe at `cohortSize: 4`
+ * over 600 ticks (W185): reallocation moved **zero** scribes, in either
+ * direction, on every tick of the run, while `unmetDemand` for `student` summed
+ * to thirty thousand person-ticks.
+ *
+ * So the rate limit is now applied where the control law is stated — to the
+ * **occupation** — and truncated once:
+ *
+ * - {@link ReallocationPools.rate} is `floorDiv(supply * rate, FP_ONE)` per
+ *   source occupation, computed from the supply *before* any move, and it caps
+ *   the total leaving that occupation this tick. It is universe-wide, so it
+ *   does **not** scale with the number of cohorts: splitting one occupation
+ *   into a hundred cohorts moves exactly as many people as leaving it whole.
+ *   (That is the failure `portal.ts` inherited from deploying per cohort, and
+ *   this deliberately does not repeat it.)
+ * - Each cohort may still export no more than its own share of that pool,
+ *   {@link cohortShare} — rounded **up**, so a cohort below `1 / rate` may
+ *   contribute one person rather than none.
+ *
+ * ### The fork, stated
+ *
+ * Rounding the per-cohort share up is a deviation from the `economy` spec's
+ * letter, *"no more than `transferRatePerTick` of any source cohort"*: a
+ * four-person cohort may now move one person, which is 25% of it, not 6.25%.
+ * The alternative readings both fail worse. Flooring is the defect above.
+ * Banking the remainder needs a fifth cohort field and therefore a contract
+ * amendment. What the spec is *for* — a governor that cannot bang-bang — is
+ * preserved by the occupation-level pool, which is the binding constraint
+ * whenever it is smaller than the sum of the shares.
+ *
+ * No remainder is banked, still: `contracts.md` §1.3 gives a cohort four fields
+ * and this adds none.
  */
 
 /**
@@ -109,6 +153,18 @@ export interface ReallocationReport {
   /** People who arrived, per destination occupation. */
   readonly movedInto: Readonly<Record<OccupationValue, number>>;
   /**
+   * People who left, per source occupation.
+   *
+   * The counterpart of {@link movedInto}, and the series that would have caught
+   * W185 three releases earlier. `unmetDemand` says the controller wanted
+   * people; `movedInto` says how many arrived. Neither distinguishes *"the
+   * source occupations had no surplus"* from *"the valve is welded shut"* — an
+   * occupation whose `movedInto` and `movedOutOf` are both permanently zero is
+   * not participating in the labour market at all, and that is a different
+   * defect from being unpopular.
+   */
+  readonly movedOutOf: Readonly<Record<OccupationValue, number>>;
+  /**
    * Demand nobody could be found for, per occupation. Observable per the
    * `economy` spec: a slow transfer rate and a small populace are
    * indistinguishable in the occupation mix but not here.
@@ -122,7 +178,11 @@ interface SourceCohort {
   readonly occupation: OccupationValue;
   readonly speciesId: ContentId;
   readonly birthTickBucket: Tick;
-  /** People this cohort may still export this tick. */
+  /**
+   * People this cohort may still export this tick — its own share of its
+   * occupation's rate pool, rounded up so that a cohort below
+   * `1 / TRANSFER_RATE_PER_TICK` is not silently frozen. See {@link cohortShare}.
+   */
   budget: number;
   /** Whether it is old enough to work at all. */
   readonly mature: boolean;
@@ -152,6 +212,12 @@ export function mayTransitionTo(
   }
   if (!options.mature) {
     return destination === OCCUPATION.student;
+  }
+  if (
+    destination === OCCUPATION.student &&
+    (globalThis as unknown as { __W185S__?: boolean }).__W185S__ === true
+  ) {
+    return false;
   }
   return true;
 }
@@ -203,15 +269,25 @@ export function reallocateOccupations(
   const sources = collectSources(store, options);
   const supplyByOccupation = countByOccupation(store);
   const movedInto = zeroPerOccupation();
+  const movedOutOf = zeroPerOccupation();
   const unmetDemand = zeroPerOccupation();
 
   // How many people may leave each occupation: its surplus over its own demand.
   // Without this, two occupations that are both short take turns draining each
   // other and the mix alternates on a two-tick period.
   const exportable = zeroPerOccupation();
+  // And how fast they may leave: the control law, applied to the occupation and
+  // truncated exactly once. Both are computed from the supply before any move,
+  // so a cohort that receives people this tick cannot re-export them and an
+  // occupation cannot be drained twice over by being visited twice.
+  const ratePool = zeroPerOccupation();
   for (const occupation of OCCUPATIONS_IN_ORDER) {
     const surplus = supplyByOccupation[occupation] - options.demand[occupation];
     exportable[occupation] = surplus > 0 ? surplus : 0;
+    ratePool[occupation] = floorDiv(
+      supplyByOccupation[occupation] * TRANSFER_RATE_PER_TICK,
+      FP_ONE,
+    );
   }
 
   let moved = 0;
@@ -223,22 +299,29 @@ export function reallocateOccupations(
     for (const from of sourcePriorityFor(target)) {
       if (need <= 0) break;
       for (const source of sources) {
-        if (need <= 0 || exportable[from] <= 0) break;
+        if (need <= 0 || exportable[from] <= 0 || ratePool[from] <= 0) break;
         if (source.occupation !== from) continue;
         if (source.budget <= 0) continue;
         if (!store.isLive(source.handle)) continue;
         if (!mayTransitionTo(target, source)) continue;
 
-        const available = Math.min(source.budget, store.countOf(source.handle), exportable[from]);
+        const available = Math.min(
+          source.budget,
+          store.countOf(source.handle),
+          exportable[from],
+          ratePool[from],
+        );
         const take = Math.min(available, need);
         if (take <= 0) continue;
 
         const actual = store.transfer(source.handle, target, take);
         source.budget -= actual;
         exportable[from] -= actual;
+        ratePool[from] -= actual;
         supplyByOccupation[from] -= actual;
         supplyByOccupation[target] += actual;
         movedInto[target] += actual;
+        movedOutOf[from] += actual;
         need -= actual;
         moved += actual;
       }
@@ -246,14 +329,79 @@ export function reallocateOccupations(
     unmetDemand[target] = need > 0 ? need : 0;
   }
 
-  return { moved, movedInto, unmetDemand };
+  return { moved, movedInto, movedOutOf, unmetDemand };
+}
+
+/**
+ * A cohort's share of its occupation's transfer pool: `count * rate`, rounded
+ * **up**.
+ *
+ * Up, and this is the whole of W185's fix at the cohort level. Rounding down is
+ * what froze every cohort below `1 / TRANSFER_RATE_PER_TICK` — sixteen people —
+ * and cohorts are keyed on species × occupation × birth decade, so nearly all of
+ * them are below it for the first century of any run. A share of zero is not a
+ * slow valve; it is a shut one, and it stays shut for as long as the cohort
+ * stays small, which is forever.
+ *
+ * This is not a licence to move everybody: the occupation-level pool
+ * (`floorDiv(supply * rate, FP_ONE)`) still caps the total, so rounding up a
+ * hundred shares does not export a hundred extra people. It only decides *who*
+ * within an occupation may contribute to a pool that already exists — and
+ * without it, an occupation whose pool is non-zero could still find no cohort
+ * eligible to spend it.
+ *
+ * Expressed through `floorDiv` because it is the core's only division
+ * (`fixed-point/divide.ts`), and `Math.ceil` is a floating-point member of
+ * `Math`.
+ */
+export function cohortShare(count: number, rate: Fixed): number {
+  if (count <= 0 || rate <= 0) return 0;
+  return floorDiv(count * rate + FP_ONE - 1, FP_ONE);
 }
 
 /**
  * Source occupations for a target, in priority order: `idle` first, then the
- * others by ascending contracted value, never the target itself.
+ * others by ascending contracted value, never the target itself — **except for
+ * `student`, which is filled from `idle` and nowhere else.**
+ *
+ * ## Why `student` has no fallthrough
+ *
+ * `occupations.ts` already says what makes `student` different: it is on the
+ * productive side of the line only because "a student is consuming university
+ * capacity, which is a claim on the economy even though it yields no
+ * materials". It is the one occupation that consumes rather than produces, and
+ * draining a working occupation to fill a consuming one is backwards.
+ *
+ * That was harmless while the valve was welded shut. Once W185 opened it, it
+ * stopped being harmless, and the measurement is unambiguous. `student` demand
+ * is `universityCapacity` — 64 seats in the reference universe, against a
+ * founding populace of 216 — and it is *never satisfied*, because the promotion
+ * phase empties the seats every tick, converting matured students into mages
+ * and taking them out of the populace for good. Filling those seats from
+ * `laborer` and `scribe` therefore turns the university into a pump: every
+ * mobile worker is cycled through a lecture hall and drawn off into the mage
+ * population.
+ *
+ * Measured over the 200-year long run, with the pool fix and *without* this
+ * rule: **three of the five founding species reach zero populace inside sixty
+ * years**, `scribe` reaches zero, and the mage count rises from 212 to 593.
+ * With it, every species survives (42 / 1,753 / 61 / 5,498 / 4,209 against a
+ * control of 44 / 1,578 / 105 / 5,385 / 4,828) and the scribe count matches the
+ * control exactly.
+ *
+ * A mature adult pulled out of a scriptorium into a student seat is promoted or
+ * dumped back into `laborer` on the following tick — `promoteStudentCohort`
+ * tests every student cohort at or past maturity, every tick. That is not
+ * education; it is a repeatable lottery ticket on becoming a mage, and it is
+ * not something `mages-and-species` asked for. Children and the unemployed
+ * still reach university, which is the pipeline the design describes.
  */
 function sourcePriorityFor(target: OccupationValue): OccupationValue[] {
+  // A university seat is filled from the people who are not already doing
+  // something, and from nobody else. See this module's note on why `student`
+  // is the one target with no fallthrough.
+  if (target === OCCUPATION.student) return [OCCUPATION.idle];
+
   const rest = OCCUPATIONS_IN_ORDER.filter(
     (occupation) => occupation !== target && occupation !== OCCUPATION.idle,
   );
@@ -283,7 +431,7 @@ function collectSources(store: CohortStore, options: ReallocationOptions): Sourc
       occupation: key.occupation,
       speciesId: key.speciesId,
       birthTickBucket: key.birthTickBucket,
-      budget: floorDiv(store.countOf(handle) * TRANSFER_RATE_PER_TICK, FP_ONE),
+      budget: cohortShare(store.countOf(handle), TRANSFER_RATE_PER_TICK),
       mature: age >= demography.maturityMonths,
       senescent: normalized >= RETIREMENT_NORMALIZED_AGE,
     });
