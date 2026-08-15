@@ -241,8 +241,17 @@ export interface InstanceMastery extends KnowledgeInstanceRecord {
   /** Whether `teach()` would accept this instance's holder as a teacher now. */
   readonly teachable: boolean;
   /**
-   * World ticks until `teach()` starts refusing: `0` if it already does, and
-   * `null` if the floor sits at or above the threshold so it never will.
+   * World ticks until `teach()` starts refusing **under decay alone**: `0` if it
+   * already does, and `null` if the floor sits at or above the threshold so it
+   * never will.
+   *
+   * **A lower bound, not a date.** `rules-magic`'s `practice`
+   * (`w196/mastery-rises`) raises mastery, and this projection does not model it
+   * — it cannot, because whether a mage goes back to the desk next month is a
+   * decision the autonomy layer has not made yet. So an instance never stops
+   * being teachable *sooner* than this says and often stops later.
+   * `knowledge-census-marooning-agreement.test.ts` asserts exactly that
+   * asymmetry, and counts the deferrals so the bound is not vacuously exact.
    *
    * **This is one more than the tick mastery reaches the threshold**, and that
    * is deliberate. `teaching.ts` refuses on `teacherMastery < threshold`, so a
