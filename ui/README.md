@@ -116,6 +116,12 @@ holds one `AgentSession` in memory, and publishes it over HTTP in **the same doc
 recording has** — so the pages parse it without learning a second format and `no build step` is
 still true. Nothing was bundled and no dependency was added; the server is Node's own `http`.
 
+**It opens on tick 40, not tick 0**, and that is deliberate: the god starts with no favor and
+§4.2's mask folds affordability into the same bit as legality, so exactly *one* of sixteen actions
+is legal at tick 0 and thirteen are legal by tick 25. Those forty ticks are real — they are on the
+spine, in the action log, and replayed by the control like any others. `npm run play -- --warm 0`
+starts at the beginning instead.
+
 Only `console/` acts on it. It gets a cast panel — pick a verb, pick its parameter, cast — and the
 world on the page is the world after the action. Every other page reads the live document exactly as
 it read a recording, which is the point of keeping one shape. A page served without a live universe

@@ -89,6 +89,22 @@ const arg = (name, fallback) => {
 const PORT = Number(arg('port', '8300'));
 const DEFAULT_SEED = Number(arg('seed', '20260813'));
 const DEFAULT_CAP = Number(arg('ticks', '4000'));
+/**
+ * Ticks the universe runs before anyone can look at it. `--warm 0` for none.
+ *
+ * **Tick 0 is not a playable position, and pretending otherwise wastes the first
+ * minute of every session.** The god starts with no favor, `mask.ts` folds
+ * affordability into the same bit as legality, and measured on the reference
+ * scenario exactly **one** of sixteen actions is legal at tick 0 — the no-op.
+ * Twelve are legal by tick 10 and thirteen by tick 25. So the run opens on a
+ * world that has already been going a while, the way a god arriving at a
+ * universe would.
+ *
+ * These are **real ticks in the real run**: they are on the spine, they are in
+ * the action log, and the control replays them like any others. Nothing is
+ * skipped or fabricated to make the opening screen look better.
+ */
+const WARM = Math.max(0, Math.min(2000, Number(arg('warm', '40'))));
 
 /* ------------------------------------------------------------------ the run */
 
@@ -436,6 +452,10 @@ async function handle(req, res) {
     const cap = Math.max(1, Math.min(100000, Number(body?.ticks ?? DEFAULT_CAP)));
     run = newRun(seed, cap);
     observeInto(run);
+    // A restart that dropped the player back on the unplayable tick 0 would be a
+    // worse button than no button.
+    const warm = Math.max(0, Math.min(2000, Number(body?.warm ?? WARM)));
+    for (let i = 0; i < warm; i += 1) tick(run, { kind: GOD_ACTION.noop });
     json(res, 200, { ...header(run), frames: run.frames });
     return;
   }
@@ -472,14 +492,17 @@ async function handle(req, res) {
 
 run = newRun(DEFAULT_SEED, DEFAULT_CAP);
 observeInto(run);
+for (let i = 0; i < WARM; i += 1) tick(run, { kind: GOD_ACTION.noop });
 
 server.listen(PORT, () => {
-  const legal = run.frames[0].mask.reduce((n, m) => n + m, 0);
+  const at = run.frames.length - 1;
+  const legal = run.frames[at].mask.reduce((n, m) => n + m, 0);
   process.stderr.write(
     `\n  Multiverse Mages — a live universe, seed ${run.seed}, cap ${run.cap} ticks.\n\n` +
       `    http://localhost:${PORT}/\n\n` +
-      `  ${run.frames[0].obs.length} observation slots, layout ${OBSERVATION_LAYOUT_DIGEST.slice(0, 12)}…\n` +
-      `  ${legal} of 16 actions legal at tick 0. Advance time and more open up.\n` +
+      `  ${run.frames[at].obs.length} observation slots, layout ${OBSERVATION_LAYOUT_DIGEST.slice(0, 12)}…\n` +
+      `  Opened at tick ${at}${WARM > 0 ? ` — it ran ${WARM} ticks on its own first, because tick 0 is not a playable position` : ''}.\n` +
+      `  ${legal} of 16 actions legal right now. Advance time and more open up.\n` +
       '  Ctrl-C to end the universe.\n\n',
   );
 });
