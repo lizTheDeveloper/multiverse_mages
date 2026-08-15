@@ -11792,3 +11792,78 @@ earlier figure for it — mine included, four times over — was measuring somet
 
 Both now **refuse to print a table** rather than printing a wrong one. That is the right shape for an
 instrument whose whole job is to tell inert from live.
+
+## W222 — #134 was already the fix, and the freed third of mage-life went to scribing
+
+PR #192. I commissioned a fix for the `affiliate` goal on the premise that **#134 makes it worse**. That
+premise was **measurably wrong**, and falsifying it produced the better result.
+
+### #134 is the fix
+
+Its `spendTheMonth` collects `affiliate` commitments and hands them to `settleAffiliations` **before
+`workOne` is reached**, so the goal never falls through the switch at all. Proof, on #134 at seed 589825
+over 600 ticks: **99 observed `universityId` gains, of which Σ `report.magesAffiliated` = 93** — and the
+residual **6 equals `main`'s `assignStaff`-only total exactly.**
+
+So my *"those affiliations come through `assignStaff`, not through the goal"* was wrong, and I had extended
+W221's finding past what it measured.
+
+### Where a third of every mage's life went
+
+`tools/w204/goal-census.mjs` reused rather than rewritten. Reference universe, 600 ticks, no actions,
+three seeds. **Shares**, because #134 also runs a larger population:
+
+| goal | `main` | with #134 |
+|---|---|---|
+| research-node | 51.9 / 49.8 / 55.8 % | 53.2 / 53.1 / 51.5 % |
+| **scribe** | **4.4 / 3.3 / 3.8 %** | **34.2 / 34.3 / 41.5 %** |
+| **affiliate** | **36.5 / 38.3 / 34.4 %** | **0.2 / 0.3 / 0.2 %** |
+| apply-magic | 5.3 / 4.4 / 4.2 % | 7.8 / 7.6 / 3.9 % |
+
+**The freed months went to scribing, roughly eightfold in share** — and the mechanism is not incidental:
+**`scribeThroughputFor` returns zero for `universityId === 0`**, so the mages were queued on the one goal
+that unlocks the channel. Research barely moves.
+
+### The ablation #134's author did not have
+
+**Zeroing the four `ROLE_BIAS[*][affiliate]` literals on top of #134's wiring leaves the census
+essentially unchanged.** So **#134's headline — grimoires 90.5 → 411.7 — is carried *entirely* by
+`settleAffiliations`**, and the bias raise's real effect is **staffing only** (affiliations 67 → 93,
+mages-ever-affiliated 51 → 64).
+
+Which also retires my warning that #134 "increases a known waste." It does not.
+
+### Why nobody could see it
+
+`WorldStepReport` carried exactly one goal-shaped number — **`goalSwitches`, which counts *changes*** — and
+the per-tick `GoalHistogram` was read for that scalar and **dropped**. *"That is why a goal taking a third
+of mage-life looked exactly like a goal nobody picks."*
+
+#192 ships `WorldStepReport.monthsByGoal`, counted in `spendTheMonth` on a walk that already reads every
+commitment, **before `workOne` and unconditionally** — because *"a tally on the way out would count exactly
+the goals that work and miss exactly the ones that do not."* Its test is a **positive control**, verified
+against a deliberate break: moving the increment behind `workOne`'s early return fails two of five cases.
+
+### The design ruling, made on one sentence
+
+**Affiliation is a decision, not work — and it stays a selectable goal.** Both extremes lose on the
+`mage-autonomy` requirement quoted in `affiliation.ts`: *"WHEN a mage **selects** `affiliate` and the goal
+completes THEN its `universityId` changes **in that tick** with no intervening travel state."*
+
+A `workOne` accrual arm is a **duration**, and the module already notes that *"a duration is a distance
+divided by a speed"* — a position model `contracts.md` §0 and vision §7a rejected. Removing it from the
+commitment set dies on the word **selects**, and on `feasibility.ts:116` already gating it on
+`betterAffiliationAvailable` — machinery only a selectable goal needs.
+
+And `'complete'` versus `'infeasible'` settled as arithmetic rather than as a reading: **98 committed
+mage-months against 93 affiliations, one month per move, no churn.**
+
+### Two more corrections, one of them to the instrument that started this
+
+- **Gates are green, not red.** My brief said to expect a `contentHash` refusal; that assumed content
+  literals would move. **None did** — all three balance gates **PASS**, 337 files, 4,663 tests.
+- **W221's instrument has a defect that this inherited.** Its `NO_ACCRUAL` set holds `'wardDuty'` /
+  `'raidReadiness'` against **kebab-case** `GOAL_NAMES`, so the accrual column prints **"yes" for two goals
+  that have no `workOne` arm** — dormant on `main`, **live on #134**, where `raid-readiness` runs 0.3–1.4%
+  and is mislabelled. And `gainedWhileCommittedToAffiliate` is **blind by construction**: it samples at end
+  of tick, after autonomy re-selects. Both reported back to #191.
