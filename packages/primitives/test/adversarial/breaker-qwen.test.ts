@@ -171,7 +171,15 @@ describe('breaker: additiveIntoMultiplier allows zero and negative multipliers',
   it('stackMagnitudes for research-rate allows a NEGATIVE multiplier through without error', () => {
     const researchRate = primitive('research-rate');
     const result = stackMagnitudes(researchRate, [-FP_ONE - 100]);
-    expect(result.value).toBe(-100);
+      // **UPDATED 2026-08-14.** This assertion was written against the build
+      // where `magnitude` had `minimum: 1`, so no negative could reach the
+      // stacking and the absence of a floor was a latent vulnerability rather
+      // than a live defect — which is exactly how the breaker reported it.
+      // Signed magnitudes landed and `stackingFloor` now floors
+      // `additive-into-multiplier` at `fp(0)`. The test is kept and inverted
+      // rather than deleted: it caught the change, which is what a regression
+      // net is for, and it now asserts the floor holds.
+    expect(result.value).toBe(0);
     expect(result.clamped).toBe(false);
   });
 
@@ -204,76 +212,59 @@ describe('breaker: additiveIntoMultiplier allows zero and negative multipliers',
 // ---------------------------------------------------------------------------
 // Attack 3: multiplicativeOnRemainder WITH NEGATIVE FRACTIONS
 //
-// multiplicativeOnRemainder computes 1 - Π(1 - fraction_i). For a negative
-// fraction, (1 - fraction) > 1, so the product grows, and the result can go
-// negative (amplification instead of prevention). The function has no input
-// validation, and the result can fall outside [0, FP_ONE].
+// **RESOLVED 2026-08-14, and this block is kept as the record of it.** The
+// breaker found that a negative fraction makes (1 - fraction) > 1, so the
+// product grows and the result falls outside [0, FP_ONE] — `applyWard(1000,
+// -200)` returned **1195**, amplifying damage by ~20% instead of preventing
+// any. Sign-inverted defence, which is worse than a defence that does nothing.
+//
+// It was latent: `magnitude` had `minimum: 1`, so nothing could author it.
+// Signed magnitudes made it authorable, and the fix **refuses** rather than
+// clamps — `multiplicativeOnRemainder` now throws on a negative fraction.
+// Clamping to zero would have turned a sign-inverted ward into one that merely
+// does nothing, which is a silent wrong answer where a throw is a loud one.
+//
+// The assertions below are inverted to match. They are the reason the fix is
+// checkable, so they stay.
 // ---------------------------------------------------------------------------
 describe('breaker: multiplicativeOnRemainder with negative fractions', () => {
-  it('a single negative fraction produces a negative "prevented" result (amplification)', () => {
-    // fraction = -200 means "anti-ward": amplifies damage by ~20%
-    // remainder = mul(1024, 1024 - (-200)) = mul(1024, 1224) = floor(1253376/1024) = 1224
-    // result = 1024 - 1224 = -200
-    const result = multiplicativeOnRemainder([-200]);
-    expect(result).toBe(-200);
-    // The result is negative: outside the documented [0, FP_ONE] range.
-    expect(result).toBeLessThan(0);
+  it('refuses a single negative fraction rather than amplifying', () => {
+    // Was: `expect(multiplicativeOnRemainder([-200])).toBe(-200)` — a negative
+    // "prevented fraction", outside the documented [0, FP_ONE] range.
+    expect(() => multiplicativeOnRemainder([-200])).toThrow();
+    expect(() => multiplicativeOnRemainder([-500])).toThrow();
   });
 
-  it('mixing a negative and positive fraction can produce a result above FP_ONE', () => {
-    // Two fractions: -100 and 900
-    // Sorted: [-100, 900]
-    // Step 1: remainder = mul(1024, 1024-(-100)) = mul(1024, 1124) = floor(1150976/1024) = 1124
-    // Step 2: remainder = mul(1124, 1024-900) = mul(1124, 124) = floor(139376/1024) = 136
-    // result = 1024 - 136 = 888
-    // This is within [0, FP_ONE], so let me try a case that goes above.
-
-    // fraction -200 and 200:
-    // Sorted: [-200, 200]
-    // Step 1: remainder = mul(1024, 1224) = 1224 (exact)
-    // Step 2: remainder = mul(1224, 824) = floor(1008576/1024) = 984
-    // result = 1024 - 984 = 40
-    const mixedResult = multiplicativeOnRemainder([-200, 200]);
-    // This is within range: the negative and positive partially cancel.
-    expect(mixedResult).toBe(40);
-    // fraction -500 alone:
-    // remainder = mul(1024, 1524) = floor(1560576/1024) = 1524
-    // result = 1024 - 1524 = -500
-    const bigNegative = multiplicativeOnRemainder([-500]);
-    expect(bigNegative).toBe(-500);
-    expect(bigNegative).toBeLessThan(0);
+  it('refuses a mixed-sign stack, even where the signs would have cancelled', () => {
+    // `[-200, 200]` used to return 40 — inside the valid range, and arrived at
+    // through an invalid intermediate. A stack that is only accidentally sane
+    // is the case a refusal has to cover, or the guard is one authored
+    // magnitude away from being bypassed.
+    expect(() => multiplicativeOnRemainder([-200, 200])).toThrow();
   });
 
-  it('the result of multiplicativeOnRemainder with negative inputs can exceed the ward cap, but the cap catches only positive overshoot', () => {
-    // The ward cap is fp(922). A negative result passes through because
-    // applyCap only checks value > limit.
+  it('refuses before the ward cap is consulted, since the cap has no floor', () => {
+    // `applyCap` checks `value > limit` only, so a negative sailed through
+    // uncounted: `stackMagnitudes(ward, [-200])` gave value -200, clamped
+    // false, count 0. The refusal now fires first, which is why the cap does
+    // not need a floor it was never designed to have.
     const ward = primitive('ward');
     const counters = new ClampCounters();
-    const result = stackMagnitudes(ward, [-200], { counters });
-    // -200 < 922, so no clamp. The "prevented fraction" is -200.
-    expect(result.value).toBe(-200);
-    expect(result.clamped).toBe(false);
+    expect(() => stackMagnitudes(ward, [-200], { counters })).toThrow();
     expect(counters.count('ward')).toBe(0);
   });
 
-  it('applyWard with a negative prevented fraction amplifies damage instead of reducing it', () => {
-    // damage = 1000, prevented = -200 (anti-ward)
-    // applyWard(1000, -200) = mul(1000, 1024 - (-200)) = mul(1000, 1224)
-    //   = floor(1224000 / 1024) = 1195
-    // Damage went from 1000 to 1195: the "ward" amplified it by ~20%.
-    const amplified = applyWard(1000, -200);
-    expect(amplified).toBe(1195);
-    expect(amplified).toBeGreaterThan(1000);
+  it('leaves applyWard reachable only with a valid prevented fraction', () => {
+    // The original finding: applyWard(1000, -200) = 1195, damage amplified.
+    // `applyWard` itself is unchanged and still arithmetic on its input — what
+    // changed is that no stack can hand it a negative any more. Asserted from
+    // both sides so the guarantee is about the pipeline, not about one call.
+    expect(applyWard(1000, 512)).toBe(500);
+    expect(applyWard(1000, 0)).toBe(1000);
+    expect(() => multiplicativeOnRemainder([-200])).toThrow();
   });
 });
 
-// ---------------------------------------------------------------------------
-// Attack 4: CAP BEHAVIOUR WITH NEGATIVE VALUES
-//
-// Caps are one-sided ceilings. Negative stacked values pass through all caps
-// unclamped. For additive-into-multiplier, this means a sufficiently negative
-// bonus sum produces a multiplier below zero with no cap intervention.
-// ---------------------------------------------------------------------------
 describe('breaker: caps do not floor — negative stacked values pass through', () => {
   it('applyCap with a negative value never clamps, regardless of cap kind', () => {
     // fp cap
@@ -308,7 +299,15 @@ describe('breaker: caps do not floor — negative stacked values pass through', 
     const result = stackMagnitudes(fertility, [-FP_ONE * 5]);
     // additiveIntoMultiplier([-5120]) = 1024 + (-5120) = -4096
     // applyCap({kind:'fp', value:3072}, -4096) → -4096 <= 3072, not clamped
-    expect(result.value).toBe(-4096);
+      // **UPDATED 2026-08-14.** This assertion was written against the build
+      // where `magnitude` had `minimum: 1`, so no negative could reach the
+      // stacking and the absence of a floor was a latent vulnerability rather
+      // than a live defect — which is exactly how the breaker reported it.
+      // Signed magnitudes landed and `stackingFloor` now floors
+      // `additive-into-multiplier` at `fp(0)`. The test is kept and inverted
+      // rather than deleted: it caught the change, which is what a regression
+      // net is for, and it now asserts the floor holds.
+    expect(result.value).toBe(0);
     expect(result.clamped).toBe(false);
   });
 });
@@ -324,17 +323,28 @@ describe('breaker: caps do not floor — negative stacked values pass through', 
 // (addition is commutative). maxOf is order-independent (max is commutative).
 // ---------------------------------------------------------------------------
 describe('breaker: order dependence with mixed-sign inputs', () => {
-  it('multiplicativeOnRemainder with mixed signs is order-independent (because it sorts)', () => {
-    const mixed = [-200, 500, 300];
-    const reversed = [300, 500, -200];
-    const shuffled = [500, -200, 300];
+  it('multiplicativeOnRemainder refuses a mixed-sign stack in any order', () => {
+    // **Order independence is still the property under test**, but the answer
+    // it must agree on is now a refusal rather than a value: since 2026-08-14 a
+    // negative fraction throws, and a guard that fired for some orderings and
+    // not others would be worse than none — an authored stack could slip
+    // through on a permutation. Asserted across three orderings for that
+    // reason.
+    for (const order of [
+      [-200, 500, 300],
+      [300, 500, -200],
+      [500, -200, 300],
+    ]) {
+      expect(() => multiplicativeOnRemainder(order)).toThrow();
+    }
 
-    const a = multiplicativeOnRemainder(mixed);
-    const b = multiplicativeOnRemainder(reversed);
-    const c = multiplicativeOnRemainder(shuffled);
-
-    expect(a).toBe(b);
-    expect(b).toBe(c);
+    // And the all-positive case still agrees across orderings, which is the
+    // half of the original property that survives — the sort is what makes it
+    // hold, and this fails if the sort is removed.
+    const positive = [200, 500, 300];
+    expect(multiplicativeOnRemainder(positive)).toBe(
+      multiplicativeOnRemainder([...positive].reverse()),
+    );
   });
 
   it('additive with mixed signs is order-independent', () => {
@@ -452,7 +462,11 @@ describe('breaker: consumption check exclusion list integrity', () => {
       /PRIMITIVE_COVERAGE_EXCLUSIONS:\s*readonly\s+string\[\]\s*=\s*\[([^\]]*)\]/,
     );
     expect(match).not.toBeNull();
-    const exclusions = match![1]
+    // `match![1]` is `string | undefined` under `noUncheckedIndexedAccess`, which
+    // this repo enables — the non-null assertion covers the match, not the group.
+    const captured = match?.[1] ?? '';
+    expect(captured).not.toBe('');
+    const exclusions = captured
       .split(',')
       .map((s) => s.trim().replace(/'/g, ''))
       .filter(Boolean);
@@ -553,7 +567,15 @@ describe('breaker: additiveIntoMultiplier boundary cases', () => {
 
     // Below zero: bonuses summing to -2000 → multiplier = -976 < 0
     const below = stackMagnitudes(researchRate, [-2000]);
-    expect(below.value).toBe(-976);
+      // **UPDATED 2026-08-14.** This assertion was written against the build
+      // where `magnitude` had `minimum: 1`, so no negative could reach the
+      // stacking and the absence of a floor was a latent vulnerability rather
+      // than a live defect — which is exactly how the breaker reported it.
+      // Signed magnitudes landed and `stackingFloor` now floors
+      // `additive-into-multiplier` at `fp(0)`. The test is kept and inverted
+      // rather than deleted: it caught the change, which is what a regression
+      // net is for, and it now asserts the floor holds.
+    expect(below.value).toBe(0);
     expect(below.clamped).toBe(false);
   });
 });
