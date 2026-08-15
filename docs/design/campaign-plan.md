@@ -9680,3 +9680,71 @@ In the agent's own analysis: a git pathspec missing a trailing glob reported **z
 still happened; and `ui/design-dashboard/data.json` embeds the findings verbatim, so it matches every
 symbol name being searched for. The triage doc now carries **its own arithmetic test**, which promptly
 caught a table summing to 46 under a sentence claiming 45.
+
+## W190 — the macro model says fix affiliation first, the raid axis is flat, and three of my claims were wrong
+
+PR #168. `tools/w189/` plus `docs/design/macro-university-model.md`. Steps in world years, floating point,
+imports nothing from `@mm/*`, reads `packages/content/data` directly. **A 200-year universe runs in ~1ms**,
+which is the whole point — it can be swept where the simulation cannot.
+
+**32 parameters, each provenance-tagged: 15 `content`, 3 `measured`, 2 `authored`, 1 `derived, **11
+`invented`**.** The invented ones are named, and the most load-bearing is `raidMageCasualtyFraction` =
+0.15, which stands in for an entire engagement because **there is no casualty constant in `rules-raid` at
+all.** Dwarf and gnome prevalence are unauthored, and the model **throws rather than guessing** — the right
+behaviour, and rarer than it should be.
+
+### The needs
+
+The reference universe is short **39.7 universities** — it needs 40.7 and has 1. Access **13.1%**. Scribes,
+professors and vellum are all met. **And nothing is ever fragile**: every node has ~235 holders, because
+every mage holds everything her depth permits.
+
+### The raid axis is completely flat, and that is a finding about the raid
+
+**0% → 55% annual raid probability gives identical results in all thirty sweep cells.** Three causes, and
+all three are structural rather than tuning: the 60-tick cooldown makes arrivals a renewal process capped
+at **0.167/yr**; raids consume **zero world ticks**; casualties run ~**0.15 deaths/yr against 239 mages**.
+The universities row is *structurally* raid-independent, so the load-bearing output is the **fragility**
+table — which raids can reach, and which is **0.00 everywhere**.
+
+**The economic axis is the only live one, and it makes the need worse**: 0.5× → 2.5× raises universities
+required from **28 to 55**.
+
+**The missing term is vision §4b's per-mage cap.** Fragility needs a cap of ≤12 nodes *and* raids ≥20%/yr.
+Today the cap is unbounded and the effective rate is 3.7%/yr.
+
+### Anti-requisites cannot bite the default opening — verified independently
+
+The model reports that anti-requisites cannot reach it, and checking `cell.json` directly on `672f93c`:
+**the only two `excludes` entries are `creo-ignem` and `creo-umbra`**, and `creo` is not among the default
+opening's techniques (`intellego · perdo · rego`).
+
+So W186's headline — `permissive-breadth` **68.63 → 42.50**, −20.80 SE — is a statement about **a god who
+has permitted `creo`**, and that is exactly why 71 of 90 rows were byte-identical: only arms that open the
+grid moved. The mechanism is right and lands; **the content that exercises it sits outside the position
+every other strategy plays.** Authoring an excluded pair *inside* the twelve is the cheap next step.
+
+### The answer to the question the model was built to ask
+
+**`completeAffiliation`. Fix it first.** Once wired, affiliation is the **only** toggle that moves
+retention — from zero nodes at risk to **all 284 fragile**. `scribingQueue` is second (903 books → 0).
+In the agent's phrase: *189 buildings and one teacher is not a university system.*
+
+And a self-correction inside that result worth keeping: the first commit reported all three toggles as
+"changes nothing" — because the model **never read them**. A no-op wearing a null result's clothes, caught
+in review. That is the same defect class as W187's `teach-rate`: an unbound wire and an absent wire report
+identically.
+
+### Three claims of mine, corrected
+
+1. **`economy-flow-models.md` §6 does not pre-register the affordability-reserve and vellum-sink defects.**
+   I have repeated this at least twice. Checked: **zero matches for either term anywhere in `docs/`**, and
+   the doc has no §6 of that shape — its sections are *"THE FIVE IDEAS, UP FRONT"*, 1.1–1.4, 4.1. The
+   pre-registration I kept citing does not exist.
+2. **`teach-rate` is inert for tiers 1–3 only.** Above tier 3 its 1.25× multiplier is live, and **every
+   measurement of it was taken below tier 4.** W187's "wired and behaviourally inert" is true of the
+   measured range and false as stated.
+3. **`npm run verify:nosweeps` exits 1, not 0**, on both the branch and the pre-merge tree — vitest returns
+   non-zero on an unhandled worker-RPC timeout even when every test passes (`species-separation-spread`
+   passed at 276s and 314s, load 60–90). Several agents reported that command green tonight by reading its
+   summary line rather than its exit code. **Read the exit code, and expect it to be polluted under load.**
