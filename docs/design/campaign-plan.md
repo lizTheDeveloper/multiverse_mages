@@ -11138,3 +11138,75 @@ same shape and is currently the only way to clear `baseline-invalid` (W211).
 properly — the scriptorium stops after its founding cohorts, so **the copy chain closes only 1–3 times per
 run.** #172 fixes the literal. The agent left it there rather than pulling another branch's question into
 its own PR, which is the right boundary.
+
+## W213 — 99 distinct defects, 13 closed, 86 remaining — and the denominator was wrong
+
+PR #182, `docs/design/audit-sequence.md`. The five audits become a plan, and the first thing it did was
+refuse the number I gave it.
+
+### The base was wrong before dedup started
+
+**BUILT and SUPERSEDED are findings about *documents*, not defects** — so the defect base is
+PARTIAL + ABSENT, not the row total. And counting every table's status cells mechanically,
+**`audit-contracts.md`'s summary block disagrees with its own table body by two rows in each direction**:
+six BUILT and seventeen ABSENT, not eight and fifteen.
+
+So the corpus is **29 BUILT / 93 ABSENT**, base **119** — not the 91 I have been quoting.
+
+| step | count |
+|---|--:|
+| PARTIAL + ABSENT | **119** |
+| less 2 rows where two audits contradict a third and the two are right | 117 |
+| less 18 rows from **13 findings filed more than once** | **99 distinct defects** |
+| less **13 closed by in-flight PRs** | **86 remaining** |
+
+**The mastery hole surfaced in four audits, not three** — contracts §1.5, magic's missing `practice`,
+world's missing `publish`, and agent-interface's `ticksToUnteachable` computed with no door out. Four
+independent slices, four descriptions, one defect.
+
+### Every closure verified by reading the diff at the cited line
+
+#134 (`completeAffiliation` **called** at `world-step.ts:1678`), #169, #170, #171, #172, #176, #181, and
+`w196`. **#179 closes nothing in the base and is the unblocker for #172** — which is the distinction that
+makes a sequence useful.
+
+**And four residuals the diffs do *not* close, named so nobody assumes them done:**
+`scribeRateBonuses: []` survives on #169 **at a different site**; `PRIMITIVE_COVERAGE_EXCLUSIONS` is
+unchanged; `universityProfile` / `dominantCell` / `staffCohortsOf` are **still unreached on #134**; and
+**combat attempts are still zero on #171.**
+
+### The order, five layers
+
+**Layer 0** — #179 → #172, plus the re-seal ruling, since **#169 is blocked on a decision rather than on
+code**. **Layer 1** — twelve cheap unblocked fixes, including the loot-shelf re-key, a `permits()` in
+`yieldSources`, `check:consumption` into the gate, the remainder-draw idiom at its three missing sites,
+24 rotted doc rows, and a **v1 vellum source**. **Layer 2** — blocked-then-cheap. **Layer 3** — **arm a
+raider**, which gates six findings at once: the corpus's largest single unblocking and its most expensive
+item. **Layer 4** — structural: the §4.3 event record, `AgentSession`, prestige, discriminating ascension,
+enforced §7 values.
+
+### "Correctly absent" is three buckets, not one
+
+Unstarted future work (`sound-design.md` playback — **thirteen packages on `main`, none a client**);
+**deliberate, with the argument already in the tree** (terminated-universe hash, `permits()` at looting,
+`NO_STANDING_ARMY`); and **awaiting an owner ruling** (*Intellego Mentem*'s palace, portal arrival gating,
+`refused` vs `destructive`, #181's magnitudes, the baseline re-seal). Collapsing those three into "absent"
+is what would turn a plan back into 86 obligations.
+
+### Two operational flags, one of them urgent
+
+- **Neither `w196/mastery-rises` nor `w197/aptitude-sorts-careers` is on `origin`.** Both were found via
+  `git worktree list` and read with `git show` — never entered. Same durability exposure as
+  `w116/affiliation-capacity` and `content/deep-magic` earlier tonight. **And `w197` is currently
+  byte-identical to #181 with no work of its own.**
+- **`w196` moved mid-audit**: at `9d536263` its whole diff was an instrument and the mastery hole was
+  open; at `cac97dab` it carries **`practice.ts:237` raising mastery through an eleventh goal**. *"Both
+  readings were right about their ref"* — which is the campaign's own rule turned on a moving branch.
+
+### And it corrected me twice more
+
+The ratchet baseline is **125 on `main`**; my "124" was a fact about `pr/170`. And `audit-magic`'s
+top-ranked row is **downgraded**: W205's ablation attributes ~4/5 of #137's collapse to one `destructive`
+anti-requisite, so the loot-shelf re-key stays as a cheap real prerequisite but **a measurement outranks a
+derivation**. It did not edit the five audit docs; where one is wrong, the correction lives in the
+sequence.
