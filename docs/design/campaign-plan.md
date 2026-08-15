@@ -9759,3 +9759,51 @@ identically.
    suspect file returned **empty**, which reads as *"CI never hit this problem."* The real reason was
    `run … is still in progress; logs will be available when it is complete`. Caught only by putting a
    positive control on the probe before believing its negative.
+
+## W191 — correcting W189's `changeTradition` line: there are two implementations and the god uses the other one
+
+W189 recorded, from the triage, that **`changeTradition` (3 findings) means "the action space advertises a
+move the rules never make"** and called it *"a lie told to every agent that reads the mask."* I passed that
+on without checking. **It is overstated, and the truth is more specific.**
+
+Checked on `672f93c`, with a positive control (`fundUniversity`, same probe):
+
+- `agent-api/src/actions.ts:72` defines `changeTradition: 13`, and it is in both the god-action list and
+  the parameterised list.
+- `coordination/src/god/interventions.ts:336` **does** dispatch it — `case ACTION.changeTradition: return
+  traditionPlan(state, universe, params[0], worldTick, deps);` — with a cost at `:912`.
+
+**So the action is wired and the mask is not lying.** What the ratchet actually pins is different and
+worth more:
+
+| pinned entry | category |
+|---|---|
+| `rules-magic/src/traditions/change.ts:changeTradition` | **unreached** |
+| `rules-magic/src/traditions/change.ts:RESOLUTION` | reachedOnlyByUnreached |
+
+**There are two implementations of changing a tradition, and the god's path does not use the rules-layer
+one.** `coordination` has its own `traditionPlan`; `rules-magic`'s `changeTradition`, and the `RESOLUTION`
+policy beside it, are never called. That is not a dead action — it is a **second implementation of a rule**,
+which `CLAUDE.md` names as how rules drift, and it is exactly the defect `schema-duplication` caught in the
+entitlement work (*"step one of a second `permits()`"*).
+
+### And the tradition hooks are thinner than reported
+
+Fourteen of the 125 pinned findings sit in `rules-magic/src/traditions/`:
+
+`acquire.ts:UNCHANGED_MULTIPLIER` · `cast.ts:isCastable` · `cast.ts:prepare` · `cost.ts:assertCostHook` ·
+`cost.ts:costSplit` · `cost.ts:preparationCost` · `hook-for.ts:hooksOfTradition` ·
+`portal.ts:populatePreparedSpells` · `portal.ts:releaseAbroad` · `store.ts:palaceLibraryDepth` ·
+`store.ts:perishesWithHolder` · plus the two above.
+
+This sits **against** the triage's own `superseded` claim that *"all four tradition hook points do have
+reached implementations."* Both can be true — a hook entry point can fire while most of the machinery
+behind it does not — but the two statements cannot both be quoted as a summary of tradition's health, and
+the second is the one that reads reassuringly. **Traditions are the one licensed exception to
+content-not-code in this project** (four extension points: acquire, store, cast, cost). Fourteen unreached
+symbols across all four of them is a finding about the exception.
+
+`perishesWithHolder` and `palaceLibraryDepth` are the two worth naming: a memory palace that does not
+perish with its holder, and a palace depth nothing reads, are both *knowledge-retention* mechanics — the
+same subsystem the macro model just identified as the one that matters (W190: affiliation moves retention
+from zero at risk to all 284 fragile, and nothing else moves it at all).
