@@ -327,9 +327,19 @@ export function academicRateBonuses(
       if (!PERSONAL_TARGETS.has(contribution.target)) continue;
       if (!ACADEMIC_PRIMITIVES.has(contribution.primitiveId)) continue;
       // A zero magnitude is authored content saying "nothing", and pushing it
-      // would inflate `contributingNodes` without moving a rate. The economy
-      // drops non-positive magnitudes at the same point and for the same reason.
-      if (contribution.magnitude <= 0) continue;
+      // would inflate `contributingNodes` without moving a rate. The content
+      // loader refuses to author one at all, so this is a guard against a
+      // hand-built registry rather than against the shipped grid.
+      //
+      // **A negative one is a cost and belongs here.** This filter read
+      // `<= 0` for as long as `node.schema.json` said `"minimum": 1` — under
+      // which the two conditions were indistinguishable, so the wider one was
+      // free. It is not free now: dropping a negative here would let a node
+      // author a teaching cost that validates, ships, reads correctly in its
+      // gloss and moves no number, which is the same defect this module was
+      // written to end, one sign over. `stackMagnitudes` floors the `(1 + Σ)`
+      // at zero, so what arrives downstream is bounded whatever the sum is.
+      if (contribution.magnitude === 0) continue;
       contributingNodes += 1;
       if (held === undefined) {
         held = { research: [], teach: [], scribe: [] };
