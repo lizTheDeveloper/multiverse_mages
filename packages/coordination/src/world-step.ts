@@ -157,6 +157,7 @@ import {
   carryingCapacity,
   clearCommitment,
   cohortBirths,
+  completeAffiliation,
   computeOccupationDemand,
   affordableMageMonths,
   castingDemand,
@@ -668,6 +669,36 @@ export interface WorldStepReport {
    * count that doing nothing reaches.
    */
   readonly universitiesUnstaffed: number;
+  /**
+   * Mages who joined or changed university this tick.
+   *
+   * `completeAffiliation` had no caller outside its own tests until
+   * {@link settleAffiliations}, and the shape of that hole was a **falling**
+   * affiliated count: the founders the scenario seeds at tick 0, and nobody
+   * after them, ever. Over 600 ticks on `ad7f80c2` the reference universe made
+   * **zero** 0→non-zero `universityId` transitions while holding 43.6 % of every
+   * committed mage-month on the goal that was supposed to produce them.
+   *
+   * A run where this is zero for every tick after the first university completes
+   * is a run where the wire has come out again, and no other series here would
+   * say so: scribing would simply stop, which is also what a universe short of
+   * vellum does.
+   */
+  readonly magesAffiliated: number;
+  /**
+   * Mages whose first-choice university was full this tick.
+   *
+   * `contracts.md` §1.4's `capacity` had no reader that treated it as a bound
+   * until this change — `completedCapacity` reads the same `u16` as a *demand
+   * signal* for the labour market, which is the opposite direction, and the two
+   * are deliberately not arbitrated against each other. `capacity.ts` says why
+   * the refusal has to be visible rather than merely obeyed: *"a bound that is
+   * never observed to bind is a bound nobody can tune."*
+   *
+   * Not the complement of {@link magesAffiliated}: a mage refused at the deepest
+   * library and admitted at the second-deepest is in both.
+   */
+  readonly affiliationsRefused: number;
 }
 
 /** A world schema with the coordinating loop installed, and its last report. */
@@ -997,7 +1028,7 @@ export function worldSystem(
       const gateway = gatewayFor();
       // One scan of the shelves for the whole phase, not one per mage. See
       // `universityPreference`.
-      const preferredUniversityFor = universityPreference(state);
+      const preferredUniversityFor = universityPreference(state).preferredFor;
       const autonomy = stepMageAutonomy({
         state,
         worldTick,
@@ -1193,6 +1224,8 @@ export function worldSystem(
         staffAssigned: staffing.assigned.length,
         staffPruned: staffing.pruned,
         universitiesUnstaffed: staffing.unstaffed,
+        magesAffiliated: work.magesAffiliated,
+        affiliationsRefused: work.affiliationsRefused,
         materialsApplied: totalAmount(work.applied),
         appliedByKind: work.applied,
         magesApplying: work.applyingMages,
@@ -1610,6 +1643,10 @@ interface WorkPhaseOutcome {
   readonly applyingMages: number;
   /** Mage-months spent under each goal, indexed by goal id. */
   readonly monthsByGoal: readonly number[];
+  /** Mages whose `universityId` changed this tick. */
+  readonly magesAffiliated: number;
+  /** Mages whose first-choice university had no free seat. */
+  readonly affiliationsRefused: number;
 }
 
 /**
@@ -1709,6 +1746,7 @@ function spendTheMonth(
   const castingShare =
     researchMonths <= 0 ? FP_ONE : floorDiv(grantedMonths * FP_ONE, researchMonths);
 
+  const affiliating: Handle[] = [];
   mages.forEach((row, handle) => {
     if ((alive[row] as number) === 0) return;
     const commitment = readCommitment(state, handle);
@@ -1717,6 +1755,14 @@ function spendTheMonth(
     // without touching anything, and a tally taken on the way out would count
     // exactly the goals that are working and miss exactly the ones that are not.
     monthsByGoal[commitment.goalId] = (monthsByGoal[commitment.goalId] ?? 0) + 1;
+    // Collected, not applied here — and collected *after* the tally, because a
+    // month held on `affiliate` is still a month this phase consumed and
+    // `monthsByGoal` is the series that made its absence visible in the first
+    // place. See `settleAffiliations` for why the move happens after the walk.
+    if (commitment.goalId === GOAL.affiliate) {
+      affiliating.push(handle);
+      return;
+    }
     const cast = workOne(
       state,
       handle,
@@ -1734,7 +1780,8 @@ function spendTheMonth(
     for (const kind of MATERIAL_KINDS) applied[kind] += cast[kind];
   });
 
-  const completedBy = new Set<Handle>();
+  const affiliation = settleAffiliations(state, affiliating);
+  const completedBy = new Set<Handle>(affiliation.completed);
   let researchCompleted = 0;
   let lessonsTaught = 0;
   let grimoiresScribed = 0;
@@ -1755,18 +1802,145 @@ function spendTheMonth(
     applied,
     applyingMages,
     monthsByGoal,
+    magesAffiliated: affiliation.moved,
+    affiliationsRefused: affiliation.refused,
   };
+}
+
+/**
+ * Moves every mage who committed to `affiliate` into the university she prefers.
+ *
+ * ## This is the call that was missing, and its absence was not cosmetic
+ *
+ * `completeAffiliation` shipped with `mages-and-species` — task 5.12,
+ * *"instantaneous affiliation change on `affiliate` completion"*, ticked off —
+ * and had **no production caller** until this function. `check:reachability`
+ * printed it as unreached and that was the whole of the signal. The consequence
+ * is a rule nobody wrote down: no mage a universe promotes for itself is ever
+ * affiliated. Only founders are, and invited scholars, who arrive affiliated at
+ * creation. An unaffiliated mage may neither scribe — `scribeThroughputFor`
+ * returns zero for `universityId === 0` — nor ward, so the scribing channel of a
+ * whole universe ran on whoever happened to be founded into it and stopped when
+ * she died.
+ *
+ * Measured on `ad7f80c2`, 600 ticks of the reference universe, no actions:
+ * **17,712 of 40,659 committed mage-months — 43.6 % — were held on
+ * `affiliate`**, against **zero** 0→non-zero `universityId` transitions in the
+ * whole run. `monthsByGoal` is the series that says so, which is why it is the
+ * series a regression here would move.
+ *
+ * ## After the walk, and once for everybody
+ *
+ * Affiliation is **not work**: it accrues no months, which is why it is settled
+ * beside {@link workOne} rather than inside it. Settling it after the walk buys
+ * two properties that settling it during the walk would not have:
+ *
+ * - **One scan, and only when somebody moves.** `universityPreference` tallies
+ *   every knowledge instance in the universe to rank libraries by depth. That is
+ *   a scan no tick should pay for on a tick where nobody is affiliating, and
+ *   this function does not reach it when the list is empty.
+ * - **Every mover is quoted the same shelves.** Computed inside the walk, the
+ *   ranking would be taken at whichever slot the first affiliating mage occupies
+ *   and would therefore depend on how many grimoires the mages ahead of her in
+ *   the roster had finished that month. Deterministic, but a coupling between
+ *   two mages that nothing in the design asks for. Here every mover sees the
+ *   month's work already on the shelves — which is what `completeAffiliation`
+ *   means by *"the outlook from the tick the goal completed in"*.
+ *
+ * ## Seats are spent as the list is walked, not quoted from before it
+ *
+ * The shelf ranking is built once and that is right for the *shelves*. It is
+ * wrong for the *seats*: one reading would tell every mover in one tick about
+ * the same last free desk, and a bound a hundred mages can pass through
+ * simultaneously is not a bound. So each move is reported through `takeSeat` and
+ * the next mage is asked afresh.
+ *
+ * Ascending mage handle, which is the order `spendTheMonth`'s slot-ordered walk
+ * collected them in. `staff.ts` states the argument for the other end of the
+ * same question: which claimant gets the last unit of a shared resource must
+ * depend on the state and not on the destroy history that reached it. **No draw
+ * is taken** — the ordering is total — so no RNG stream moves and
+ * `contracts.md` §6's insertion invariance is untouched.
+ *
+ * A mage whose first choice is full is **refused** rather than truncated into
+ * it, counted, and then offered the deepest library that does have room. She
+ * does not queue: `preferredFor` filters full universities too, so at her next
+ * outlook `betterAffiliationAvailable` is false for a universe with no seats
+ * anywhere and she goes back to work rather than re-adopting a goal that cannot
+ * resolve. That filtering is load-bearing — a bound applied only here would
+ * leave her committed to `affiliate` for life, doing no work, which is strictly
+ * worse than the missing wire this function replaces.
+ *
+ * ## The record write is discarded on purpose
+ *
+ * `collectRecords` and `readRecord` hand back **detached** records, so
+ * `changeAffiliation`'s `mage.universityId = x` lands in a copy and not in the
+ * store — the same shape `killMage` has, which is why `killTheDead` follows it
+ * with `mages.set(handle, 'alive', 0)`. The record is passed anyway rather than
+ * bypassed, because `roles.ts` is where the one-field rule and its argument live
+ * — the `mage-lifecycle` spec requires a role to survive the move — and reaching
+ * around it is how a second writer of `roleId` eventually appears. What persists
+ * is the returned handle, written here.
+ *
+ * @returns The mages whose goal completed, how many moved, and how many were
+ * turned away from their first choice. Completing means they re-evaluate in the
+ * same tick rather than holding a commitment to a move they have already made —
+ * and the point of the move is that scribing and warding are now open to them. A
+ * mage who was refused everywhere completes too: she asked, the universe
+ * answered, and holding the goal for six more months would not change it.
+ */
+function settleAffiliations(
+  state: SimState,
+  affiliating: readonly Handle[],
+): { readonly completed: ReadonlySet<Handle>; readonly moved: number; readonly refused: number } {
+  const completed = new Set<Handle>();
+  if (affiliating.length === 0) return { completed, moved: 0, refused: 0 };
+
+  const standing = universityPreference(state);
+  const mages = componentOf(state, MAGE);
+  let moved = 0;
+  let refused = 0;
+  for (const handle of affiliating) {
+    const entity = handle as EntityHandle;
+    if (!mages.has(entity)) continue;
+    const record = readRecord(state, MAGE, entity);
+    const current = record.universityId;
+    const preferred = standing.preferredFor(current);
+    // Wanted somewhere she could not get into. Not the complement of `moved`: a
+    // mage refused at the deepest library and admitted at the second-deepest is
+    // counted in both, and that is the pair of facts capacity tuning needs.
+    // Without this reading the bound leaves no trace at all — `capacity.ts`:
+    // *"a bound that is never observed to bind is a bound nobody can tune."*
+    const unbounded = standing.unboundedFor(current);
+    if (unbounded !== current && unbounded !== preferred) refused += 1;
+
+    const destination = completeAffiliation(record, {
+      betterAffiliationAvailable: preferred !== current,
+      preferredUniversity: preferred,
+    });
+    if (destination !== current) {
+      standing.takeSeat(destination, current);
+      moved += 1;
+    }
+    mages.set(entity, 'universityId', destination);
+    completed.add(handle);
+  }
+  return { completed, moved, refused };
 }
 
 /**
  * One mage's month, routed to the accrual her goal names.
  *
- * A goal with no accrual behind it — `idle`, `affiliate`, `ward-duty`,
- * `raid-readiness` — falls through and spends nothing, which is honest: two of
- * those wait on capabilities that do not exist, and `affiliate` completes
- * through `completeAffiliation` rather than by accumulating months. A mage whose
- * committed goal needs a counterparty and has none this tick also spends
- * nothing; the feasibility mask moves her on at her next evaluation.
+ * A goal with no accrual behind it — `idle`, `ward-duty`, `raid-readiness` —
+ * falls through and spends nothing, which is honest: both of the latter wait on
+ * capabilities that do not exist. `affiliate` is not in that list because it
+ * never arrives here: it completes through {@link settleAffiliations}, which
+ * `spendTheMonth` routes it to before this function is reached — and note that
+ * a `case GOAL.affiliate:` added to the switch below would be dead code
+ * regardless, because the first two lines return on `targetNodeId === 0` and
+ * `affiliate` takes no target. A mage whose committed goal needs a counterparty
+ * and has none this tick also spends nothing; the feasibility mask moves her on
+ * at her next evaluation.
  *
  * `apply-magic` is the one arm that does not accrue anything, and that is what
  * makes it a different kind of goal rather than a fifth kind of project. There

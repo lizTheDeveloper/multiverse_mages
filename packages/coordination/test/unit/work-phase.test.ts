@@ -96,8 +96,11 @@ function totals(ticks: number, prepare?: (state: SimState) => void) {
     lessonsTaught: 0,
     grimoiresScribed: 0,
     materialsScribed: 0,
+    magesAffiliated: 0,
+    affiliationsRefused: 0,
   };
   let peakEfforts = 0;
+  let peakHosted = 0;
   for (let tick = 0; tick < ticks; tick += 1) {
     current = step(current, [], source);
     const report = simulation.lastReport() as WorldStepReport;
@@ -105,9 +108,12 @@ function totals(ticks: number, prepare?: (state: SimState) => void) {
     summed.lessonsTaught += report.lessonsTaught;
     summed.grimoiresScribed += report.grimoiresScribed;
     summed.materialsScribed += report.materialsScribed;
+    summed.magesAffiliated += report.magesAffiliated;
+    summed.affiliationsRefused += report.affiliationsRefused;
     peakEfforts = Math.max(peakEfforts, report.effortsInFlight);
+    peakHosted = Math.max(peakHosted, mostCrowded(current));
   }
-  return { state: current, ...summed, peakEfforts };
+  return { state: current, ...summed, peakEfforts, peakHosted };
 }
 
 /**
@@ -148,6 +154,145 @@ function withAnAcademy(state: SimState): void {
     mastery: FP_ONE,
   });
 }
+
+/**
+ * The same academy, with **nobody in it**.
+ *
+ * `withAnAcademy` affiliates every mage by hand, which was the only way any
+ * mage was ever affiliated: `completeAffiliation` had no production caller, so
+ * the `affiliate` goal completed nothing and a universe's own promotions stayed
+ * unaffiliated for life. This fixture is that one line removed, so the loop has
+ * to do it — and an unaffiliated mage may not scribe, so the shelves are the
+ * measurement.
+ */
+function withAnEmptyAcademy(state: SimState): void {
+  const library = state.entities.create();
+  attachRecord(state, LIBRARY, library, { foundedTick: 0 });
+  const university = state.entities.create();
+  attachRecord(state, UNIVERSITY, university, {
+    libraryId: library,
+    capacity: 64,
+    buildProgress: FP_ONE,
+  });
+
+  const roster: EntityHandle[] = [];
+  componentOf(state, MAGE).forEach((_row, handle) => {
+    roster.push(handle);
+  });
+  const founder = roster[0];
+  if (founder === undefined) throw new Error('the fixture seeded no mages');
+  const instance = state.entities.create();
+  attachRecord(state, KNOWLEDGE_INSTANCE, instance, {
+    nodeId: 1,
+    locationKind: LOCATION_KIND.mind,
+    locationId: founder,
+    acquiredTick: 0,
+    mastery: FP_ONE,
+  });
+}
+
+/** The largest number of living mages any one university holds. */
+function mostCrowded(state: SimState): number {
+  const hosted = new Map<number, number>();
+  let most = 0;
+  for (const { row } of collectRecords(state, MAGE)) {
+    if (row.alive === 0 || row.universityId === 0) continue;
+    const count = (hosted.get(row.universityId) ?? 0) + 1;
+    hosted.set(row.universityId, count);
+    if (count > most) most = count;
+  }
+  return most;
+}
+
+/**
+ * One academy with **two seats**, and nobody in it.
+ *
+ * The positive control for `contracts.md` §1.4's `capacity`. On every shipped
+ * position the bound is slack — the founding academy seats 64 against tens of
+ * mages, and a god-founded one seats 32 — so `affiliationsRefused` is zero in
+ * every run anybody will take, and a zero from a bound that never binds is
+ * indistinguishable from a bound nobody wired. Two seats makes it bind on the
+ * first tick anyone applies.
+ */
+function withTwoSeats(state: SimState): void {
+  const library = state.entities.create();
+  attachRecord(state, LIBRARY, library, { foundedTick: 0 });
+  const university = state.entities.create();
+  attachRecord(state, UNIVERSITY, university, {
+    libraryId: library,
+    capacity: SEATS,
+    buildProgress: FP_ONE,
+  });
+}
+
+/** Seats in the {@link withTwoSeats} academy. */
+const SEATS = 2;
+
+/** How many living mages belong to a university, and how many there are. */
+function affiliation(state: SimState): { living: number; affiliated: number } {
+  let living = 0;
+  let affiliated = 0;
+  for (const { row } of collectRecords(state, MAGE)) {
+    if (row.alive === 0) continue;
+    living += 1;
+    if (row.universityId !== 0) affiliated += 1;
+  }
+  return { living, affiliated };
+}
+
+describe('mages join the institution nobody put them in', () => {
+  it('affiliates a population that started unaffiliated', () => {
+    const before = totals(0, withAnEmptyAcademy);
+    expect(affiliation(before.state).affiliated).toBe(0);
+
+    const run = totals(TICKS, withAnEmptyAcademy);
+    const { living, affiliated } = affiliation(run.state);
+    expect(living).toBeGreaterThan(0);
+    expect(affiliated).toBeGreaterThan(0);
+  });
+
+  it('writes books it could not have written, because scribing needs a university', () => {
+    // The whole point of the goal, stated as the thing it unlocks. Before the
+    // call was wired this run produced zero grimoires and zero scribed
+    // materials, because `scribeThroughputFor` returns zero for
+    // `universityId === 0` and `isFeasible` masks `scribe` on it.
+    const run = totals(TICKS, withAnEmptyAcademy);
+    expect(run.grimoiresScribed).toBeGreaterThan(0);
+    expect(componentOf(run.state, GRIMOIRE).size).toBeGreaterThan(0);
+  });
+
+  it('refuses the third applicant rather than seating her, and says so', () => {
+    // Both halves of `contracts.md` §1.4's bound, which is one bound and two
+    // observations. `capacity.ts`: *"Admission beyond capacity MUST be refused
+    // rather than silently truncated, and the refused demand MUST be
+    // observable."* A run that reported no refusal and also never overfilled
+    // would be a run where nobody ever applied.
+    const run = totals(TICKS, withTwoSeats);
+    expect(run.affiliationsRefused).toBeGreaterThan(0);
+    expect(run.peakHosted).toBeLessThanOrEqual(SEATS);
+    expect(affiliation(run.state).affiliated).toBeGreaterThan(0);
+  });
+
+  it('does not leave the refused queueing outside it for the rest of the run', () => {
+    // The livelock this bound could have introduced, asserted against. A mage
+    // refused a seat must stop *wanting* one — `universityPreference` filters a
+    // full university out of her options, so `betterAffiliationAvailable` goes
+    // false and `affiliate` is masked — or she would re-adopt the goal every
+    // evaluation and spend her life applying to a building that is full.
+    //
+    // The measurement is the universe's *work*: a universe whose unaffiliated
+    // majority is queueing does no research, because `affiliate` accrues
+    // nothing. Two seats out of a whole population, and it still researches.
+    const run = totals(TICKS, withTwoSeats);
+    expect(run.researchCompleted).toBeGreaterThan(0);
+  });
+
+  it('stays deterministic with affiliation in it', () => {
+    const first = totals(20, withAnEmptyAcademy);
+    const second = totals(20, withAnEmptyAcademy);
+    expect(snapshotHash(second.state)).toBe(snapshotHash(first.state));
+  });
+});
 
 describe('a stepped universe finishes what its mages start', () => {
   it('completes research, and banks progress on what is still in flight', () => {
