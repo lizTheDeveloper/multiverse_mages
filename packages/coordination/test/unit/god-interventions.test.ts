@@ -847,7 +847,13 @@ describe('a verb that makes a thing spends the material it is made of', () => {
     expect(outcome.applied).toBe(1);
     const price = priceOf(ACTION.fundUniversity);
     expect(before.stone - stockOf(b, 'stone')).toBe(price['stone']);
-    expect(before.labor - stockOf(b, 'labor')).toBe(price['labor']);
+    // **And `labor` is untouched**, which is a claim about the table rather
+    // than about the deduction. Funding was priced in `labor` as well until the
+    // measurement in `god-cost.json`'s own gloss removed it: the world loop
+    // already spends that stock hiring the person-months, and charging it here
+    // too left action 11 legal on 8 ticks of 585.
+    expect(price['labor']).toBeUndefined();
+    expect(stockOf(b, 'labor')).toBe(before.labor);
   });
 
   it('leaves every other kind exactly alone', () => {

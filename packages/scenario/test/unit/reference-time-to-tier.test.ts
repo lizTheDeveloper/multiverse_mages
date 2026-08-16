@@ -319,7 +319,6 @@ describe('time to tier, by species', () => {
     };
 
     const gnome = interval('gnome');
-    const dwarf = interval('dwarf');
     const human = interval('human');
     const elf = interval('elf');
     const draconic = interval('draconic');
@@ -335,7 +334,7 @@ describe('time to tier, by species', () => {
     // | species | before | now |
     // |---|---|---|
     // | gnome    | [24, 25] | [20, 21] |
-    // | dwarf    | [25, 30] | **[22, 66]** |
+    // | dwarf    | [25, 30] | **[22, 66]** |   (no longer bound, see below)
     // | human    | [28, 37] | [24, 26] |
     // | elf      | [35, 58] | [37, 42] |
     // | orc      | [32, 51] | **[57, 177]** |
@@ -351,6 +350,11 @@ describe('time to tier, by species', () => {
     //
     // Nothing was tuned to make this pass. Every species magnitude still
     // carries `tuningStatus: "untuned"`.
+    //
+    // `dwarf` is no longer bound at all, for the reason the header already gives
+    // about `orc`: leaving the binding in place invites the next author to reach
+    // for it, and the interval it would name is one this file cannot state a
+    // rate about.
     const beforeElf = [gnome];
 
     // What separates strictly in **every one of twelve** independent seed sets:
