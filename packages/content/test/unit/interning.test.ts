@@ -538,7 +538,24 @@ describe('contentRevision', () => {
     // without the exclusion pair and without W35's four `stewardship-*`
     // constants; all three are on this tree. Re-measured from the merged tree
     // rather than taken from either side.
-    expect(registry.contentRevision).toBe('c96f4046f85b2fc5121e12690c20d810');
+    //
+    // c96f4046f85b2fc5121e12690c20d810 -> 1302bc6da218bf25a2bdc924774bc857,
+    // when `w191/anti-requisites-in-v1` authored the second exclusion pair:
+    // `perdo-nomen` and `rego-nomen` exclude one another, `destructive`. Unlike
+    // the first pair — both halves *creo*, both outside the v1 rectangle, and
+    // inert in every shipped baseline — this one is inside it, so it is the
+    // first exclusion the reference universe can actually reach.
+    //
+    // In the preimage for the same reason the first pair is, and now with
+    // consequences a run can see: `species-occupancy` measures one side of the
+    // pair driven to zero occupancy across the whole universe. Two universes
+    // disagreeing about that pair would disagree about what a mage may hold and
+    // about what she loses when she learns the other half.
+    //
+    // Recomputed on the merged tree, whose preimage also holds W35's
+    // stewardship constants and W77's displacement terms; the branch's own
+    // literal knows neither.
+    expect(registry.contentRevision).toBe('1302bc6da218bf25a2bdc924774bc857');
   });
 
   it('is stable across loads of identical content', () => {

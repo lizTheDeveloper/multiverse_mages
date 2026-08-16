@@ -184,6 +184,19 @@ describe('recovery, per species', () => {
     // species in the game into an invariant, and every branch that perturbed
     // the simulation at all tripped it — which is a test reporting its own
     // fragility, not a regression.
+    //
+    // **And it has now tripped a second time, one step further along the same
+    // fault.** On `w191/anti-requisites-in-v1` the cull reads
+    // `orc pre=1 killed=0`: orc has a roster of exactly one, and a proportional
+    // cull of one mage rounds to zero. So `withRoster.length` is 6 while
+    // `shockedSpecies.length` is 5, and the equality fails for a species that
+    // was *not* extinct and *did* have something to lose.
+    //
+    // The fix is the same one the paragraph above already argued for and did
+    // not go far enough with: **name the marginal case instead of asserting it
+    // away.** A roster too small to lose anybody is a finding about orc, not a
+    // regression in the cull, and it is reported below beside the extinct list
+    // rather than encoded as an invariant that every perturbing branch trips.
     const withRoster = detail.species.filter((row) => (row['preShock'] as number) > 0);
     // Every species the cull *reached* is one that had a roster — the direction
     // that says the cull is not inventing losses. The converse does not hold and
@@ -201,6 +214,17 @@ describe('recovery, per species', () => {
     // is five. Orc going from extinct to marginal is not a regression, and an
     // assertion that reads it as one is measuring orc's tuning rather than the
     // shock.
+    //
+    // **`w191/anti-requisites-in-v1` proposed a stricter shape here and it is
+    // false on this tree, measured rather than argued.** The branch replaced
+    // the two bounds below with *"every species holding two or more mages must
+    // lose one"*, on the reasoning that two is the smallest roster a
+    // proportional cull can be expected to reduce. On the Group D integration
+    // tree that assertion fails: a species reaches the cull with a roster the
+    // parity skips entirely, and loses nobody. `everyKth: 2` walks handles, not
+    // headcount, so there is no roster size above which the cull is guaranteed
+    // to bite — which is what the paragraph above already says, one mage
+    // further up. Main's bounds kept.
     expect(shockedSpecies.length).toBeGreaterThan(0);
     expect(shockedSpecies.length).toBeLessThanOrEqual(withRoster.length);
     const spared = withRoster
