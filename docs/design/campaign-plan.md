@@ -13269,3 +13269,47 @@ while `Verify` was green on every one.
 #202 lands a scheduled read-only watcher so a red non-required job produces a red *scheduled* run,
 away from a commit somebody already approved. It fixes none of the three. It makes them visible,
 which is the smaller half and the one that was missing.
+
+## W252 — A page you can play, and the two ways I trusted a stale state
+
+[executed, 2026-08-16; `ui/play/` #206, `w253/pin-201s-four` #204 merged, `w252` #203 pending]
+
+**The demo exists.** `npm run play`, then `/ui/play/`. It names what content can name — *Creo*,
+*Intellego Limen*, *Human* — and refuses to name what it cannot: `bless`, `assign`, `fund`,
+`grant` and `portal` take a handle of `(generation << 20) | index`, and §4.4's `Candidate` is
+`{params}` with no label anywhere on it, so those read *"3 of 19, by §4.4 ranking"* and say why.
+Every move prints a diff — `+205 grimoires (80 -> 285)`, `-2 mages (19 -> 17)`. It also draws
+`universityCount`, `universityCapacity` and `prestige`, which have been in §4.1's channels and
+decoded by `ui/shared/session.js` the whole time, and which no page drew.
+
+**Driven in a browser rather than asserted**, which found two bugs I would otherwise have shipped:
+`MAGES` read 0, and both edict verbs had empty pickers. The earlier claim that *"the game plays"*
+came from curling six JSON endpoints and never opening the page.
+
+Two failures in this stretch, and they are one failure:
+
+**1. A pull request that passed both required checks while changing nothing.** `git commit --amend`
+refused ("would make it empty"), and the follow-up `git commit` captured the **index as it stood**
+rather than the working tree — so #203 carried `main`'s original baseline while the regenerated one
+sat uncommitted beside it. Two commits, zero net diff, `Verify` and `ci/hetzner-lint` both green.
+Caught only by `gh pr view <n> --json files` returning an **empty list**.
+
+**2. Work duplicated because I branched and never looked again.** #201 landed
+`packages/coordination/src/academic-effects.ts` on `main` mid-session, wiring the three academic
+rates — more completely than the version I then spent an evening building on a branch cut before it.
+`Declared exclusions:` on `main` is now **empty**, so `fertility` and `lifespan` are wired too. The
+branch was deleted unmerged. It also retires a finding this log carries: those two primitives are no
+longer inert, and the `x100` result that found them was true when it was taken and is not now.
+
+Both are the same mistake: **a state established earlier in the session, trusted later without
+re-reading it.** Once it was the index, once it was `main`. The technical findings in this document
+are worth less than that sentence.
+
+The rules, mechanical because the failure is:
+
+- **After a `git commit --amend` that errors, re-stage before committing.** The index survives the
+  failure and the next commit will take it.
+- **`gh pr view <n> --json files` before every merge.** It costs one call, and it is now the second
+  distinct disaster it has caught — the first was a PR carrying someone else's images under my title.
+- **Re-fetch `main` before building anything substantial on a branch**, not only before merging. A
+  session long enough to be worth having is long enough for `main` to move underneath it.
