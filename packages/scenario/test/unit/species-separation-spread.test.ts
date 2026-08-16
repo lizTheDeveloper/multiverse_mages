@@ -207,17 +207,14 @@ const CLAIMED_SEPARATIONS: readonly {
     status: 'retired',
     verdict: 'refuted',
   },
-  // Established on W116 at 12/12 sets and 13.3 SE, replacing the row above as
-  // the sibling file's second `beforeElf` binding. `gnome < elf` was true before
-  // and is unchanged by this branch; it is listed now because it is asserted
-  // now.
-  {
-    faster: 'gnome',
-    slower: 'elf',
-    assertedAs: 'beforeElf.high < elf.low',
-    status: 'asserted',
-    verdict: 'established',
-  },
+  // W116 added a second `gnome < elf` row here, to replace the `dwarf < elf`
+  // row above as the sibling file's other `beforeElf` binding. On the Group F
+  // merge, 2026-08-16, that row is **dropped as a duplicate**: `gnome < elf` is
+  // already the first entry in this list on `main`, so the union of the two
+  // sides listed one claim twice and made `filter(status === 'asserted')` read
+  // three where the sibling file binds two. W116's finding is the *retirement*
+  // above, which stands; the replacement row was only needed on a tree where
+  // `gnome < elf` was not already here.
   {
     faster: 'gnome',
     slower: 'human',
@@ -362,6 +359,24 @@ describe('every strict separation this repository asserts, re-rolled', () => {
       `overlaps(gnome, dwarf) is false in ${String(pair.strictSets)}/` +
         `${String(pair.comparableSets)} sets — the sibling file asserts it true`,
     );
+    // **This assertion fails on `03d21899` (Group F combined, 2026-08-16) with
+    // `dwarf censored: 9`, and it is left failing on purpose.** Its premise —
+    // *"neither species is censored"* — is what licenses reading `strictSets`
+    // as the complement of the sibling file's overlap claim, so a censored
+    // dwarf does not move a number here, it removes the ground the whole test
+    // stands on. Re-pinning `0` to `9` would leave the reasoning above asserting
+    // something the data contradicts, and deleting the check would lose the one
+    // signal that says so.
+    //
+    // What it is telling you: dwarf fails to reach tier 3 at all in 9 of 12
+    // seed sets on the composed tree. `species-occupancy.test.ts` reads the same
+    // species at **2** occupied cells against 9-12 for the other five. Both are
+    // consequences of `completeAffiliation` gaining a production caller
+    // (`w204/affiliate-writer`) on top of W23's student pool and W116's seat
+    // bound — dwarf has the highest `scribeAffinity` in the content and now
+    // spends its months writing. That is a balance finding for the owner and not
+    // a merge artefact, and it needs a decision before this row can be honest
+    // again.
     for (const speciesId of ['gnome', 'dwarf']) {
       const spread = report.spreads.find((entry) => entry.speciesId === speciesId);
       expect(spread?.censored, `${speciesId} censored`).toBe(0);

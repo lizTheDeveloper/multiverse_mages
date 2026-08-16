@@ -255,12 +255,29 @@ describe('twenty world years in', () => {
     // it, and the honest alternative — that a re-roll happened to land on dwarf —
     // is not excluded by anything in this file. If the next agent sees dwarf
     // move back without anyone touching scribing, that alternative wins.
+    //
+    // **Re-measured once for the whole of Group F, on `03d21899`, 2026-08-16.**
+    // Not per merge: this row moved on four of the twelve and re-pinning it
+    // each time would have recorded four numbers no released tree ever holds.
+    // `12/12/11/12/12/9` for elf/orc/draconic/human/gnome/dwarf became
+    // `12/11/12/12/9/2`.
+    //
+    // **Dwarf is the finding and it is not a re-roll.** W116 predicted dwarf
+    // falling 12 → 5 when `completeAffiliation` gained a caller, because dwarf
+    // carries the highest `scribeAffinity` in the content and a month spent
+    // writing a node down is a month not spent reaching the next tier. On the
+    // composed tree it falls to **2**, further than either branch measured
+    // alone — W204's affiliate writer, W23's student pool and W116's seat bound
+    // all push the same way. `species-separation-spread.test.ts` reads the same
+    // species censored in 9 of 12 seed sets over the same change, which is two
+    // independent instruments agreeing on the mechanism rather than one pin
+    // moving.
     expect(bySpecies('elf').occupiedCells).toBe(12);
-    expect(bySpecies('orc').occupiedCells).toBe(12);
-    expect(bySpecies('draconic').occupiedCells).toBe(11);
-    expect(bySpecies('human').occupiedCells).toBe(10);
+    expect(bySpecies('orc').occupiedCells).toBe(11);
+    expect(bySpecies('draconic').occupiedCells).toBe(12);
+    expect(bySpecies('human').occupiedCells).toBe(12);
     expect(bySpecies('gnome').occupiedCells).toBe(9);
-    expect(bySpecies('dwarf').occupiedCells).toBe(5);
+    expect(bySpecies('dwarf').occupiedCells).toBe(2);
   });
 
   it('measures a spread that is neither flat nor a hegemony', () => {
@@ -301,7 +318,12 @@ describe('twenty world years in', () => {
     // rises when they diverge. Still neither flat nor a hegemony, which is what
     // this test is for — the concentration would have to reach 1 for one species
     // to own the grid.
-    expect((entry as { value: number }).value).toBeCloseTo(0.1271, 4);
+    //
+    // **0.1724 on `03d21899`, 2026-08-16**, re-measured with the row above and
+    // for the same reason. It rises because dwarf falls: the metric is a spread
+    // over occupancy, and one species at 2 against five between 9 and 12 is a
+    // wider spread than the arrangement either branch measured.
+    expect((entry as { value: number }).value).toBeCloseTo(0.1724, 4);
     expect(entry).toMatchObject({ detail: { everySpeciesEqual: false, everySpeciesZero: false } });
   });
 
