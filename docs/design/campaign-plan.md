@@ -12301,3 +12301,1155 @@ It belongs with the night's other instances of the same shape: a `git worktree a
 branch, a `grep` silenced by a NUL byte, a trailing `echo` swallowing an exit code, and a `pass`-line count
 that read one check twice. **Every one of them reported confidently about the wrong input.** This is the
 first where the wrong input reached `main`.
+
+## W231 — Eleven PRs fail, one invariant, and the library is what breaks
+
+[executed, 2026-08-15, on origin/main @ 457c8866 and the eleven open branch heads]
+
+#195 and #163 merged. `toAction`'s `kind >= 16` is gone from `main`; `inviteScholar` no
+longer 400s.
+
+Every remaining wiring PR was red — eleven of them, `Verify` and `ci/hetzner-lint` both.
+I read that as one shared cause, checked, **and was wrong about the cause but right that
+there is one.** The failing tests differ per branch. The *invariant* does not:
+
+    reference-long-run.test.ts:426   grimoires < 5 * libraryDepth
+
+| PR   | grimoires | ceiling | depth | books/node |
+|------|-----------|---------|-------|------------|
+| #176 | 156       | 120     | 24    | 6.5        |
+| #181 | 304       | 125     | 25    | 12.2       |
+| #185 | 133 / 606 | 45 / 41 | 9 / 8 | 14.8 / **73.9** |
+| #194 | 198       | 25      | 5     | **39.6**   |
+
+The test's own comment names the ceiling it was written against: *"ten would mean it is
+gone."* Four of these are past ten; one is past seventy.
+
+**This is not a pinned byte and it is not the test being stale.** It is a health check
+that says duplicates must not swamp distinct knowledge, and these four trip it in the
+same direction: the scribes copy a shrinking set of nodes more and more times. Which is
+the same sentence as #194's title — *library depth 44 -> 5*.
+
+**Scope, stated exactly, because the table above is four rows and the claim was eleven:**
+four PRs trip `:426`. #183 trips something else entirely — a `snapshotHash` byte-pin in
+`ui-recording.test.ts:98`. **Six are undiagnosed** (#134, #169, #170, #171, #172, #186):
+the grep that built this table matched vitest assertion output only, so `<no test line>`
+means *the failure was not an assertion*, not *the failure was this one*. Whether "one
+invariant" survives is a claim about those six, and it is not yet measured.
+
+And the ceiling has two bands, not one. `:426` has been re-argued upward three times with
+a measurement each time (≈1 → 3.3 → 4.33 → 5), against a stated *"ten would mean it is
+gone."* #185 at 73.9 and #194 at 39.6 are past that. **#176 at 6.5 is inside the band the
+comment blesses** — that one is a widening with an argument, which is this file's
+established practice, and not the same work as the other two.
+
+The rule this earns: **when N branches fail, the shared thing to look for is the
+invariant, not the test.** Same test across branches is a coincidence of surface. Same
+*direction* across branches is a defect upstream of all of them.
+
+## W232 — The six were a different failure entirely, and SHAPE DEAD runs backwards
+
+[executed, 2026-08-15, `gh api .../actions/jobs/<id> --jq '.steps[]|select(.conclusion=="failure").name'`]
+
+W231 asked whether "one invariant" survives the six undiagnosed PRs. **It does not.**
+`<no test line>` meant *the failure was not an assertion*, and reading the failing **step
+name** rather than the log body says what it was:
+
+    #134 #169 #170 #171 #172 #186  ->  Balance regression gate (five world years)
+    #176 #181 #185 #194            ->  Test (unit + golden replay)
+    #183                           ->  Test — snapshotHash byte-pin
+
+Three populations, not one, and they need three different decisions:
+
+1. **Balance gate (6).** Not a defect — a baseline comparison. #170 and #134 are already
+   measured provenance-only; #172 genuinely moves 7 of 9 metrics and needs an accept.
+2. **Library ratio (4).** #176 at 6.5 books/node is *inside* the band `:426`'s comment
+   blesses; #185 at 73.9 and #194 at 39.6 are past the stated *"ten would mean it is
+   gone."* Same test, opposite verdicts.
+3. **Byte-pin (1).** #183, plus two more deep-equal pins riding along on #176.
+
+**And the SHAPE DEAD result has no ref.** `smoke-600.json` records `searchSeed`, `seeds`,
+and `shape: dead` — and no commit, branch, or date. It was written 2026-08-14 01:35, when
+none of the eleven wiring PRs had landed. So *"nothing beats doing nothing"* is a
+measurement of the **unwired** world these PRs exist to fix, not a consequence of them.
+I had begun forming the causal story in the opposite direction.
+
+Two rules, both earned the same way:
+
+- **When N branches fail, read the failing step name before the log body.** The step name
+  is one API call and partitions the population; the log body tempts you into treating a
+  baseline comparison and a health invariant as the same finding.
+- **A harness that writes an archive without a ref has produced an anecdote.**
+  `search-strategies.mjs` should stamp the commit it measured. Until it does, every
+  archive it writes is unfalsifiable — and this one nearly inverted a causal claim.
+
+## W233 — "Nothing beats doing nothing" was the horizon, not the game
+
+[executed, 2026-08-15, on `w233/stamp-the-search-archive` @ d458d44c, clean tree,
+`search-strategies.mjs --seeds 2` at three horizons]
+
+W232 said `smoke-600.json` had no ref. Stamping one is a four-line fix, and doing it
+turned up why the missing ref mattered more than it looked.
+
+**The stamp.** `payload.provenance = {commit, branch, dirty}`, best-effort, never throws.
+`build-design-dashboard.mjs` argues *against* exactly this and is right — for its own
+artifact. That payload is a pure function of the tree and byte-checked by
+`check:generated`, so stamping would make CI's dashboard differ from yours and the tree is
+already its provenance. **A search archive is not a function of the tree.** It records how
+the simulation *behaved*; the same command on two commits yields two different archives
+that are both correct. Three controls, because a probe that reports the negative case has
+to be shown accepting the positive one:
+
+    dirty tree  -> dirty: true
+    clean tree  -> dirty: false
+    no git repo -> {commit: unknown, branch: unknown, dirty: "unknown"}
+
+`dirty` uses `status --porcelain`, not `diff --quiet`: untracked content breaks
+reproducibility exactly as much as modified content, and `diff` cannot see it. Failure
+reports `"unknown"`, never `false`, so *"could not tell"* and *"clean"* cannot collapse.
+
+**And then the real finding.** Re-running at three horizons:
+
+    --ticks  600   shape = dead
+    --ticks  900   shape = dead
+    --ticks 1500   shape = WIDE
+
+*"Nothing beats doing nothing"* was an artifact of the tick cap. The game has strategic
+variety; a 600-tick run cannot show it, because **`ascension-min-tick` is 600** — the
+horizon equals the earliest tick at which anything can ascend, so zero runs ascend by
+construction.
+
+The guard at line 107 rejects `--ticks < ascensionMinTick` and admits `==`. The file's own
+comment says *"a tick cap below `ascension-min-tick` measures content, not play"* — and a
+cap **equal** to it measures nothing at all. That is the repo's documented
+checker-answers-about-the-wrong-input shape, in the one place built to prevent it. The
+guard wants a margin, not a `<`. (Current `main` already prints a much better warning than
+the archive I was reading carried; the archive predates it.)
+
+**What the game actually looks like with room to finish**, at 1500 ticks, 8 strategies:
+
+    width 2   reachable-not-worth-playing 6   marginOverNull 1
+    occupied: alliance-abstainer (ascended 1/2), permissive-breadth (ascended 1/2)
+    archivist reaches libraryDepth 42, spendConcentration 1000 -- and still does not win
+
+So the answer to *"does the demo set have enough variety to be fun"* is **width 2 of 8**.
+Thin, but a number, and not zero. Every prior reading of this as *dead* was measuring a
+horizon.
+
+**One defect falls straight out:** `portal-rush` runs at `illegalActionRate 0.483`. A
+strategy in the shipped demo pool submits an illegal action **just under half the time**,
+and nothing failed — the mask rejects them and the run continues. Filed as its own thread.
+
+The rule: **a measurement whose horizon is a parameter must report that parameter next to
+its verdict, and a verdict at the boundary of a parameter is not a verdict.**
+
+## W234 — Width is 3 and climbing, and one strategy was never allowed to play
+
+[executed, 2026-08-15, `w233/stamp-the-search-archive` @ 9f967b94, clean tree,
+`search-strategies.mjs --seeds 4` at five horizons; `npm run verify` exit 0 on both commits]
+
+W233 bracketed the shape flip between 600 and 1500 at 2 seeds. Repeating it at 4 seeds
+gives a monotone curve rather than a threshold:
+
+| `--ticks` | shape | width | ascended runs |
+|-----------|-------|-------|---------------|
+| 900       | dead  | 0     | **0**         |
+| 1050      | wide  | 1     | 2             |
+| 1200      | wide  | 1     | 2             |
+| 1350      | wide  | 2     | 6             |
+| 1500      | wide  | **3** | 7             |
+
+**At `--search-seed 20260813`, width climbs with the horizon and has not plateaued at
+1500.** The seed is named because all five rows share it: they vary `--ticks` and nothing
+else, so this is one seed sampled five times, not five independent measurements. Read as a
+property of *the game* it would be the undated-present-tense claim `CLAUDE.md` says costs
+two agents an investigation each. Replication at two further search seeds is in W235.
+
+Subject to that, the answer to *"does the demo set have enough variety to be fun"* is not
+a single number — it is a function of how long a game runs, and every previous reading of
+this project's strategy pool as *dead* was a reading taken at 600 ticks, where
+`ascension-min-tick` is 600 and nothing can ascend by construction.
+
+**The guard falls out without a magic multiplier.** `dead` at 900 coincides exactly with
+*zero ascensions anywhere*. That is the discriminator: a `dead` verdict with zero
+ascensions is a statement about the horizon, not the game. `shapeOf` already has
+`unresolved` for "too few cells to judge"; this is the same idea one axis over. Not landed
+in #196, and the reason is concrete rather than caution: **`shapeOf(occupied,
+notWorthPlaying)` does not receive an ascension count.** Implementing the discriminator
+means changing that signature and every call site and test that pins it. That is the work
+item — naming it here so the next pass does not rediscover the boundary and stop at it
+again.
+
+**And `portal-rush` was never allowed to play.** `illegalActionRate 0.483` — 48 times
+`MAX_ELITE_ILLEGAL_RATE`. `clearsLadder` correctly refuses it the cell and then reports
+the refusal by reusing `failedRung`, so it printed as `(lost to rung 1)` — *weaker than
+doing nothing* — rather than *excluded*. A real defect was being retired as a balance
+result, in the tool built to stop exactly that. Now prints `EXCLUDED` with the rate, plus
+a trailing WARNING.
+
+**`EXCLUDED` and not `MASK-BUG`, though the constant's own comment says "above this it is
+a mask bug".** What is measured is a rejection *rate*; which component is wrong is a
+second question, and two live readings disagree. `strategies.ts`'s
+`noise-floor-submits-axis-actions-bare` records that a missing-parameter refusal lands on
+the core's `illegalActionCount` and **not** on the session counters `illegalActionRate`
+comes from — which would make a session-counted rejection a genuine mask disagreement.
+`session.ts` warns that an unresolvable slot index is *"recorded as an ordinary illegal
+action, hiding the bug"* — which would make it target-level, and the mask innocent. I had
+written `MASK-BUG` first. Naming a culprit the measurement does not identify is the same
+misreport the block exists to fix, one layer over.
+
+Two consequences worth stating plainly:
+
+- **The effective pool is smaller than the header claims.** A sweep printing `pool 14`
+  that contains a mask-bugged strategy measured 13.
+- **`portal-rush` is the strategy the capability spec names `rego-limen` for.** The one
+  bot whose whole purpose is opening portals cannot legally act half the time, which is
+  why every raid-facing result this campaign has read was quieter than it should be.
+
+The rule: **when a checker has a category for "the input is broken", that category has to
+survive to the output.** Computing it and then printing it as the ordinary negative is the
+same defect as not computing it.
+
+## W235 — The replication kills half of W234, and a null strategy ascends
+
+[executed, 2026-08-15, `w233/stamp-the-search-archive` @ 9f967b94, clean tree,
+`--seeds 4` at `--search-seed` 20260813 / 40260901 / 77771234]
+
+W234's five rows all shared one `--search-seed`. Repeating the two decisive horizons at
+two further seeds:
+
+| search seed | `--ticks 900`  | `--ticks 1350`          |
+|-------------|----------------|-------------------------|
+| 20260813    | dead, 0 asc    | wide, width **2**, 6 asc |
+| 40260901    | dead, 0 asc    | **dead, width 0**, 4 asc |
+| 77771234    | dead, 0 asc    | wide, width **1**, 6 asc |
+
+**What survives.** *Dead at 900 with zero ascensions* replicates 3 of 3. The horizon
+finding holds: a sweep at or near `ascension-min-tick` reports `dead` for a reason that is
+not about the strategies.
+
+**What does not.** W234 said *"width climbs with the horizon and has not plateaued."* At a
+**fixed** horizon of 1350, width is 2, 0 and 1 on three seeds. The curve in W234 was one
+seed's, and reading it as the game's was exactly the error the seed-qualification was
+added to guard against — the qualification named the risk correctly and I still had to run
+the seeds to learn the answer. **Naming a caveat is not measuring it.**
+
+**And the seed that disagrees says something worth more than the curve did.** Seed
+40260901 at 1350 is `dead` with **4 ascensions**. Runs *did* reach the win condition and
+still no cell was occupied — because occupancy requires beating the null ladder, and
+`clearsLadder` is strictly greater than the bar. So on that seed **a null ascended too**:
+`idle-then-declare` reached the win condition as often as the strategies did.
+
+That is a real balance finding and not a harness artifact. Ascension is priced at zero —
+`starting-position-is-broke` in `strategies.ts` says so directly — so *declare and wait*
+is a live strategy, and on one seed in three it is as good as playing. It also confirms
+the W234 discriminator is the right one and better than I argued: `dead` + 0 ascensions is
+a horizon; `dead` + n ascensions is the nulls matching the field, which is a genuine
+verdict. The two cases are distinguishable and currently print identically.
+
+The rule, again and more expensively: **a measurement that varies a single parameter has
+measured that parameter, not the system.** W234 varied `--ticks` five times and called the
+result a property of the game.
+
+## W236 — Two strategies are refused on 100% of their signature verb, and the cause is an entitlement gap
+
+[executed, 2026-08-15, run records under `--ticks 1500 --seeds 2`, `accounting.byActionId`;
+code read at `origin/main` @ 1873e9b7]
+
+W234 flagged `portal-rush` at 48% illegal and deliberately did **not** name a culprit.
+Naming it now, from the records rather than from reading:
+
+| strategy             | rate  | every rejection lands on   | favor spent on it |
+|----------------------|-------|----------------------------|-------------------|
+| portal-rush          | 0.48  | **14 `openPortal`**        | 2,850,816         |
+| worship-maximizer    | 0.20  | **9 `blessMage`**          | 335,872           |
+| uniform-random-legal | 0.13  | spread over 9,11,12,14,16  | —                 |
+| **allocate-spread**  | **0** | — (the repaired control)   | 425,984 on 9      |
+
+**Correction to the first draft of this entry, which said both were refused on 100% of
+their signature verb and that `portal-rush` never opens a portal.** Both are false, and
+the error was arithmetic rather than mechanism: `byActionId` says *all of the rejections
+were on action 14*, not *all of the action-14 submissions were rejected*. I read
+`712/712` off two numbers that share a numerator. `godSpendByAction` settles it —
+`portal-rush` spends **2.85M favor on `openPortal`**, so it opens plenty of portals.
+
+The true figure is roughly **half its submissions of that verb wasted**, which is what the
+mechanism below actually predicts. A diagnosis that predicted 50% while the doc asserted
+100% should have been caught by me, not by review: **when the mechanism and the
+measurement disagree by a factor of two, the reading is wrong before the mechanism is.**
+
+**It is not the mask.** `policyFor` submits the first preference the mask *permits*, so a
+mask that forbade action 14 would make portal-rush skip it and never be rejected at all.
+It submits and is refused, which means mask and dispatch disagree — and the disagreement
+is about the **parameter**, not the verb. `allocate-spread`'s **zero** rejections are the
+control: it is the one strategy whose rotation was narrowed to fit the live list, and it
+is the one strategy that never gets refused.
+
+- `mask.ts:160` — `mask[action] = (candidates.get(action)?.length ?? 0) > 0 ? 1 : 0`. The
+  mask is **per-kind**: one bit for *"is there at least one target"*. It never says how
+  many.
+- `candidateSlotCount(action)` returns `CANDIDATE_SLOTS[action]` — a **static declared
+  constant**, not the live list length.
+- `rotate(action, round)` cycles the slot index over that declared constant.
+- Grepped across `layout.ts`, `observation.ts`, `entitlement.ts` and `player-state.ts`:
+  **no observation slot exposes a candidate-list length.**
+
+So a bot must guess an index in `[0, declared)` with no way to learn the live length, and
+every index past the end is refused as *"an ordinary illegal action"*. `blessMage` is
+pinned at 32 against 13–18 living mages early in a run — the arithmetic gives roughly the
+observed rate.
+
+**The repo already found this once and repaired one instrument.** `SPREAD_BLESS_SLOTS`
+documents it exactly — *"a bot rotating over the declared 32 names a slot past the end of
+the list for most of the run… the gate refuses it and it buys nothing"* — measured at
+**13,497 gate rejections**, and fixed by hand-patching `allocate-spread` to a literal 8.
+`worship-maximizer` and `portal-rush` were never patched. A constant in one strategy is a
+workaround for a missing observation field, and it does not generalise, which is precisely
+why the same defect is still live in two others.
+
+**This is an entitlement defect, not a strategy defect.** A human at a UI picks a target
+from a list containing only real candidates. The agent cannot see that the list exists.
+It is strictly *less* informed than the player it stands in for — which makes every
+parameterized action a lottery and makes `illegalActionRate` a measure of list-length
+mismatch rather than of play.
+
+**Three results this invalidates, and one it explains:**
+
+- Raid-facing measurements taken through `portal-rush`, on the two runs measured here.
+  It wastes about half its portal attempts. Whether other strategies reached raids by
+  other paths is **not measured** — the first draft of this entry said "every raid-facing
+  measurement in this campaign", which is broader than anything I ran.
+- `worship-maximizer`'s standing as a weak strategy. It spends a quarter of its turns on
+  nothing.
+- Both are over `MAX_ELITE_ILLEGAL_RATE` — `portal-rush` 0.483, `worship-maximizer` 0.201
+  — so the effective pool was **12 of 14**, and W235's widths are widths of a pool missing
+  two members. This one checked out, and #197 now makes the tool print it rather than
+  leaving it asserted in a doc. Checking it also found that #196's own `EXCLUDED` report
+  walked `archive.cells`, so it caught `portal-rush` and **silently missed
+  `worship-maximizer`** — a cell holds one elite per coordinate, and a strategy that is
+  both over the ceiling and out-competed for its coordinate is an elite of nothing. The
+  fix meant to stop a defect being retired as a balance result was retiring one.
+- And it explains W235's `idle-then-declare` result. Doing nothing competes because
+  several strategies are *also* effectively doing nothing for a large share of their turns.
+
+**The fix is a design decision, so it is stated and not taken.** The honest repair is to
+expose live candidate counts in the observation — which moves `observationLayoutDigest`,
+and therefore the `snapshotHash` byte-pins in `ui-recording.test.ts`. The alternatives are
+worse: a per-slot mask multiplies the mask's width by the largest candidate list, and
+clamping the index at dispatch silently changes which target an agent named. Recommend
+exposing the counts and taking the digest change deliberately.
+
+The rule: **when a workaround is a literal constant in one caller, the defect is in what
+that caller could not ask.** Patching the second caller with a second constant is the
+error the first patch should have prevented.
+
+## W237 — The fix that retired a defect as a balance result, itself retired one
+
+[executed, 2026-08-15, `w237/report-every-excluded`; `npm run verify` exit 0]
+
+#196 made the report distinguish a strategy **excluded** for illegal actions from one that
+genuinely **lost** to the null ladder. It built that list while walking `archive.cells`.
+
+A cell holds exactly **one elite per coordinate**. So a strategy that is both over
+`MAX_ELITE_ILLEGAL_RATE` *and* out-competed for its coordinate is an elite of no cell —
+and was reported nowhere at all. At 1500 ticks `portal-rush` (0.483) was caught and
+**`worship-maximizer` (0.201) was silent.** The fix written to stop a defect being retired
+as a balance result was retiring one, in the same commit that named the pattern.
+
+The ceiling is a property of a candidate's own run, not of whether it won a coordinate, so
+the candidate list is what to walk. #197 also prints `effective pool 12 of 14`, which
+moves W236's pool correction out of a document and into the tool that computes it.
+
+The rule: **a fix that reads its input from the wrong collection is the defect it is
+fixing.** `archive.cells` answers *which strategy won each coordinate*; the question was
+*which strategies could not compete at all*, and those are different populations.
+
+## W238 — `horizon-bound`, and the seed where doing nothing wins by two
+
+[executed, 2026-08-15, `w238/horizon-bound-is-not-dead`; `npm run verify` exit 0]
+
+`shapeOf` returned `dead` for two unrelated situations — nothing beat the null ladder, and
+the run ended before anyone could ascend. `search-strategies.mjs` described the ambiguity
+in prose because the type could not express it. W232–W235 is what that costs.
+
+`shapeOf(occupied, notWorthPlaying, ascensions)` now returns `META_SHAPE.horizonBound`
+when no cell is occupied **and** nothing ascended anywhere. `ascensions` is **required
+rather than optional**: a default would let a caller keep the old conflation silently,
+which is the thing being fixed. Nulls count toward the total — if `idle-then-declare`
+reached the summit, the horizon was long enough, and a field that failed to is a result.
+
+The discriminator is the **ascension count, not a tick threshold**. That matters: a
+threshold would be a constant to keep in sync with content, and this is derived from the
+sweep itself. Zero ascensions at 900 replicates 3 of 3 search seeds.
+
+**And the case that now has a name is the interesting one.** Seed 40260901 at 1350 ticks:
+
+    SHAPE DEAD   width 0   margin-over-null -2
+
+**Corrected the same hour, from the archive rather than from the headline.** I first wrote
+that the null ladder outscored the field and that `idle-then-declare` was dominant. The
+nulls say otherwise:
+
+    idle-then-declare      ascended 0/4
+    passive-control        ascended 0/4
+    uniform-random-legal   ascended 0/4
+    permit-then-idle       ascended 2/4     <- the whole of the null bar
+
+    alliance-seeker        ascended 2/4
+    permissive-breadth     ascended 2/4
+
+`idle-then-declare` won **nothing**. And `−2` is not a defeat margin: `bestElite` is
+computed over *occupied* cells, width is 0, so the arithmetic is `0 − 2`. The two best
+strategies **tied** the bar at 2/4, and `clearsLadder` is strictly greater because *tying
+with doing nothing is not beating it*. Every occupied cell was therefore refused, which is
+what drove width to 0 and the shape to `dead`.
+
+**The real finding is better than the one I reported.** The null holding the bar is
+`permit-then-idle`, which is *not* doing nothing — it permits the whole grid for the first
+stretch of the run and then stops. `strategies.ts` calls it the **degenerate-play probe**
+and built it to test exactly this, because Path B's predicates are anchored on the
+argument that clearing them requires *"the god permitted an axis the universe did not
+start with"*. It does that once, early, and then never acts again — and it matches the
+best real strategy in the pool.
+
+So on this seed the game's answer to *"how do I win"* is: **open the grid in the first
+stretch and then stop playing.** `ascension-canon-cells` is 18 against a starting
+rectangle of 12, so the permits are load-bearing and the idling is free. Two strategies
+that spend the whole run allocating, blessing and funding buy exactly nothing over a
+single early burst of permits.
+
+That is the strongest balance finding of the night and it is a design question rather than
+a defect: **the second summit rewards an opening move and is indifferent to everything
+after it.** Stated here, not answered.
+
+The rule, and it cost a wrong sentence in a public doc: **a summary statistic is not the
+measurement.** `marginOverNull -2` had a name attached to it in my head — *the nulls beat
+the field* — and the archive it came from named a different null and a tie.
+
+## W239 — The prototype is playable on `main`, and it proves the entitlement gap
+
+[executed, 2026-08-15, clean worktree at `origin/main` @ e8ce6619, `npm ci` + `tsc --build`
++ `npm run play`, endpoints hit with curl]
+
+An end-to-end check of the thing the demo is for, on current `main` rather than on a
+branch:
+
+    npm run play  ->  http://localhost:8300/
+    "Opened at tick 40 - it ran 40 ticks on its own first, because tick 0 is not
+     a playable position."
+    400 observation slots, layout 46182c35d829
+
+- `GET /live/session.json` — `provenance.actionSpaceSize: 17`, and the `actions` array
+  has **17** entries. #195's fix is live: the client sees the whole space.
+- `POST /live/submit {"kind":16}` — **HTTP 200**, `{"admitted":false,"rejection":"masked"}`.
+  Previously this 400'd. The division is now right: the *server* accepts the verb and the
+  *game* declines it, which is the difference between a broken button and a disabled one.
+- `POST /live/submit {"kind":17}` — HTTP 400. The bound holds on the other side too.
+- `POST /live/advance {"count":5}` — HTTP 200. **And that line proves less than it looks
+  like, corrected in W246:** the handler reads `body?.ticks`, so `count` fell through to
+  the default and advanced **one** tick. It still returned 200. A 200 from that endpoint is
+  not evidence the requested tick count was honoured, and I recorded it as though it were.
+
+**And the frame settles W236's claim with direct evidence.** The response carries a
+`candidates` map alongside the mask:
+
+    mask:       [1,1,1,1,1,1,1,0,1,1,1,1,1,0,1,0,0]
+    candidates: {"8":[{params:[1048582,215]}, ...], "9":[19 entries], "16":[]}
+
+`inviteScholar` is masked **because its candidate list is empty**, and the UI is told so
+in the same breath. So a human at this prototype picks from a list of real targets, with
+the list's length in front of them.
+
+The agent's `observe()` returns 400 anonymous slots and **none of them carry a candidate
+list length** — W236 grepped `layout.ts`, `observation.ts`, `entitlement.ts` and
+`player-state.ts` for one and found nothing. The two paths are served by the same session.
+
+That is the asymmetry stated precisely, and it is no longer an inference from code: **the
+UI is handed the candidate lists; the agent is handed a per-kind bit.** Every strategy in
+`BOT_POOL` is therefore playing a strictly harder game than the human it stands in for,
+and `illegalActionRate` measures that handicap rather than the strategy.
+
+Which also means the repair has a shape the observation layout may not need to change for:
+the play server already computes these lists per tick from the session.
+
+**Superseded by W240, in the next entry.** The question I asked here — *whether the agent
+is entitled to them under §4.4* — has an answer already in the code, and it is yes. Tracing
+`session.candidates()` shows the agent-facing session exposes the lists and the harness
+adapter drops them. This paragraph inferred a design gap from a dev harness's behaviour
+without checking whether the sanctioned path already existed.
+
+## W240 — The fix W236 called a schema-version decision is a one-method passthrough
+
+[executed, 2026-08-15, `origin/main` @ e8ce6619; `agent-api/src/session.ts:250,419`,
+`mc-harness/src/session.ts`, `scripts/play-server.mjs:154`]
+
+W239 closed by saying the play server "already takes" a decision the agent path declines,
+and inferred that from the frames alone. Tracing where the server actually gets that map
+inverts the conclusion — the fifth time tonight, and the most consequential.
+
+`scripts/play-server.mjs:154` reads `session.candidates()`. Not raw state: a **public
+method on the session**. And on the agent-facing interface it sits here —
+
+    observe(): Float64Array;
+    legalActions(): Uint8Array;
+    /** §4.4's slot-indexed candidate lists, for the parameterized actions. */
+    candidates(): CandidateLists;
+    submit(action: Action): SubmitResult;
+
+— beside `observe`, `legalActions`, `submit`, `status`, `outcome` and `accounting`,
+implemented as `currentView().candidates`. **§4.4 already grants the agent the candidate
+lists.** There is no entitlement gap in the API at all.
+
+    grep candidates packages/agent-api/src/session.ts   ->  250, 419, 420
+    grep candidates packages/mc-harness/src/session.ts  ->  nothing
+
+**`mc-harness`'s adapter drops it.** `AgentSession` forwards `observe`, `legalActions`,
+`submit`, `status`, `terminalReason` and `accounting`, and simply does not carry
+`candidates` across. So every strategy in `BOT_POOL` guesses a slot index against a
+declared constant while the information it needed was one method away on the session it
+was already holding.
+
+**This retracts W236's recommendation, which I also gave the user as a decision they had
+to make.** W236 said the honest repair was exposing live candidate counts in the
+observation, moving `observationLayoutDigest` and the `snapshotHash` byte-pins with it,
+and called it a `WORLD_SCHEMA_VERSION`-class call. **It is none of those things.** The
+observation layout does not change. No digest moves. No byte-pin churn. The repair is:
+
+1. forward `candidates()` through the harness adapter,
+2. put the lists on the strategy context,
+3. rotate over the live length instead of `candidateSlotCount`'s declared constant.
+
+`allocate-spread`'s hand-patched literal 8 is then deletable rather than duplicable — it
+was a constant standing in for a lookup that was always available.
+
+**One consequence to state plainly:** doing this changes what every parameterized strategy
+submits, so it moves balance baselines. That is a real accept/reject, unlike the schema
+decision I wrongly escalated.
+
+The rule: **"the API does not expose X" is a claim about the API, and I checked the
+caller.** W236 grepped `layout.ts`, `observation.ts`, `entitlement.ts` and
+`player-state.ts` — the observation surface — concluded the agent could not see candidate
+lists, and never grepped `session.ts`, which is where the agent's other three inputs
+already come from. The absence was real in the place I looked and the thing was sitting in
+the place I did not.
+
+## W241 — The candidate lists reach the strategies, and a strategy starts doing its job
+
+[executed, 2026-08-15, `w241/candidates-reach-the-strategies`; `npm run verify` exit **0**,
+4,696 tests, 109 balance metrics all inside tolerance]
+
+W240 said the repair was three steps in `mc-harness` rather than the schema-version change
+W236 escalated. Taking them:
+
+1. forward `candidates()` through `AgentSession`, `ApiSessionLike`, the adapter and the
+   episode loop,
+2. put the lists on `PreferenceInput`,
+3. rotate over the live length instead of `candidateSlotCount`'s declared pin.
+
+Fifteen `rotate` call sites, two `scenario` consumers, five test doubles. `tsc` found every
+one — changing the signature rather than adding an optional parameter is what made the
+compiler the checker instead of me.
+
+**Measured at 1500 ticks:**
+
+| strategy               | before | after |
+|------------------------|--------|-------|
+| `portal-rush`          | 0.483  | **0** |
+| `worship-maximizer`    | 0.201  | **0** |
+| `uniform-random-legal` | 0.129  | 0.129 |
+| effective pool         | 12/14  | **14/14** |
+
+`uniform-random-legal` is unchanged deliberately — it draws its slot uniformly *by design*,
+and `strategies.ts` records that changing that distribution "is a design decision and not a
+bug fix". Its rejections are a property of what it is.
+
+**And I was wrong that this needs a baseline accept.** W240 said "doing this changes what
+every parameterized strategy submits, so it moves balance baselines… a real accept/reject."
+All 109 metrics pass; the largest move is `referenceGrimoires@portal-rush` at **0.31 SE
+against a tolerance of 106**. The wasted submissions were no-ops, so removing them changes
+what those turns *do* without moving the aggregates the gate watches. Sixth correction,
+and the only one in the optimistic direction.
+
+**Two tests changed, and both were load-bearing.**
+
+`balance-telemetry` used `portal-rush` as its positive control for *"illegalActionRate
+moves when the strategy submits something the mask refuses"*, on the stated reasoning that
+it "asks for action 14 whether or not it can afford one". True, and a defect. **A probe
+that only worked because the thing it probed was broken is not a probe** — this repo has a
+rule about giving a checker a positive control, and this is the inverse failure: a control
+whose validity depended on a bug. Replaced with `uniform-random-legal`.
+
+`founding-instrument` recorded that `permissive-breadth` *"completed no university in any
+run of any sweep ever taken"* and predicted the assertion would fail "the day the founding
+academy leaves the starting position". **The academy did not move.** The live
+`fundUniversity` list holds two entries — slot 0, "found a new one", and the one existing
+academy — so `round % 2` reaches slot 0 every other round and the strategy whose stated
+role is to fund broadly now founds. Before **0** submitted, after **3**.
+
+That is the part worth keeping: a strategy's stated role and its observed behaviour had
+come apart, the file said so in prose and pinned the gap as a measurement, and the gap
+closed from a direction nobody predicted. The prediction was wrong and the *instrument*
+was right, which is the whole argument for writing before-measurements down.
+
+The rule: **an adapter that forwards "the methods we need" silently defines what the
+callers may know.** `AgentSession` listed six of seven and nothing failed — no test, no
+lint, no reachability check — because a dropped capability is not a broken one. The
+symptom surfaced four layers away as a balance result about two strategies being weak.
+
+## W242 — The legality fix worked and changed no outcome, which is the finding
+
+[executed, 2026-08-15, `w241/candidates-reach-the-strategies`, `--ticks 1350 --seeds 4`,
+three `--search-seed`s]
+
+Every width this campaign has reported was a width of a **12**-strategy pool, because
+`portal-rush` and `worship-maximizer` were over the illegal-action ceiling. W241 restored
+them. Re-taking the measurement with all fourteen competing:
+
+| search seed | shape | width | margin | occupied |
+|-------------|-------|-------|--------|----------|
+| 20260813    | wide  | 2     | 2      | alliance-abstainer, permissive-breadth |
+| 40260901    | dead  | 0     | −2     | — |
+| 77771234    | wide  | 1     | 1      | permissive-breadth |
+
+**Width identical to the 12-pool; margin moved on one seed** — W235 recorded margins of
+2 / −2 / 2 and this run gives 2 / −2 / **1**. "Identical" would have been the wrong word,
+and it is the kind that gets quoted back. The two repaired strategies hold no cell on any
+seed. Their illegal rate is `0.000` everywhere, so the repair is real and confirmed — it
+simply was not what was holding them back.
+
+That is worth saying plainly against my own framing: W236 called the entitlement gap
+something that "invalidates" this campaign's raid-facing results. It invalidated the
+*reason* those results were quiet, not the results. The strategies wasted half their turns
+**and** would have lost anyway.
+
+**And the ascension counts say something much sharper:**
+
+    portal-rush          0/4   0/4   0/4
+    worship-maximizer    0/4   0/4   0/4
+    permit-then-idle     1/4   2/4   3/4     <- the only null that ever ascends
+
+`permit-then-idle` is the **degenerate-play probe**: permit the whole grid for the first
+stretch of the run, then stop acting. It outperforms two named strategies **outright, on
+every seed**, and it is the entire null bar — `passive-control`, `idle-then-declare` and
+`uniform-random-legal` ascend zero times between them across all three seeds.
+
+**And the ladder is not misconfigured — it is reporting, by design, exactly this.** The
+obvious objection is that `permit-then-idle` takes a real action and should not be a
+"null". `NULL_RUNG` answers it:
+
+    /** Lost to `permit-then-idle`: the ruleset is the whole game. */
+    rulesetOnly: 2,
+
+Losing to that rung is a **named diagnosis**, not an accident of pool membership. The
+ladder's own header records the precedent: *"`permit-then-idle` won 40/40 by permitting
+the grid for 140 of 2400 ticks and submitting nothing for the remaining 2260, beating a
+strategy that also funds, blesses and encourages."* This measurement says that has not
+changed — the instrument built to catch it is catching it.
+
+So the win condition discriminates in exactly one dimension: **did the god open the grid
+early.** `ascension-canon-cells` is 18 against a starting rectangle of 12, so the permits
+are load-bearing — and everything a strategy does *after* the permits is, on this evidence,
+worth nothing. Two bots that allocate, bless, fund and research for 1,350 ticks are beaten
+by one that stops playing after the opening.
+
+This is the campaign's stated goal — *make the win condition discriminating* — and it now
+has a replicated measurement rather than a suspicion. It is a design question and is
+stated, not answered. The obvious shapes an answer could take, none of them taken here:
+
+- price the permits, so opening the grid is a *cost* rather than a free opening move;
+- make Path B's era conjuncts test something that decays without attention, so holding
+  the canon requires acting rather than having acted;
+- or accept that the opening is the game and make the rest of the verbs serve it.
+
+The rule this run earns: **a fix that removes a defect and moves no outcome has told you
+the defect was not the cause.** The temptation is to read a successful repair as a
+successful explanation, and those are different claims — W236's was the second while only
+the first was measured.
+
+## W243 — The constant I went to delete is not a defect, and I stopped
+
+[executed, 2026-08-15, `origin/main` @ edcaf591; `CANDIDATE_SLOTS`, `allocate-spread`'s
+two slot expressions, and the run records from W241]
+
+#199's write-up said `SPREAD_BLESS_SLOTS = 8` was "redundant rather than something to copy
+into two more strategies" and that removing it belonged in its own diff. I opened a branch
+to remove it. The arithmetic says not to.
+
+`allocate-spread` has **two** expressions that bypass `rotate` and read declared counts:
+
+    fundUniversity:  1 + (currentRound % (candidateSlotCount(11) - 1))   // 1..7 of a pinned 8
+    blessMage:       currentRound % SPREAD_BLESS_SLOTS                    // 0..7 of a pinned 32
+
+`CANDIDATE_SLOTS[blessMage]` is **32** and the live list is **13–18** early. The literal 8
+therefore sits *below* the live length: it never names a slot past the end. That is why
+`allocate-spread` recorded **zero** rejections in W236's table while `portal-rush` and
+`worship-maximizer` were at 0.483 and 0.201 — it was the control precisely because its
+hand-patch was conservative.
+
+**So this is not the same defect one file over.** `portal-rush` was naming targets that did
+not exist and losing the turn. `allocate-spread` names targets that do exist and simply
+never reaches past the eighth — it *under-uses* the list rather than overrunning it. The
+cost is reach, not legality, and reach is what the arm is *for*: its hypothesis says it
+"rotates across each list's full depth."
+
+Which makes changing it a **design change to a documented controlled comparison**, not a
+bug fix. The pair exists so that `allocate-spread` and `allocate-concentrate` differ in
+*where* they spend and not in *how much*, and the file argues the current constant at
+length with a measurement behind it — 13,497 gate rejections, and 8 chosen "strictly below
+the 13 the population floor was measured at". Widening spread's reach changes the contrast
+the pair was built to isolate. That is the author's call.
+
+Branch deleted unmade. Recorded instead:
+
+- `blessMage` reach is capped at 8 of 13–18 living mages, by a constant whose stated reason
+  ("the blessing list is shorter than its pinned k") no longer holds now that `rotate`
+  reads the live length.
+- `fundUniversity` rotates slots 1..7 of a pinned 8. It produced no rejections in the
+  measured runs — plausibly because the arm funds universities and grows its own candidate
+  list — but that is an inference from a zero, not a measurement of the list's length.
+
+The rule: **"the reason for this constant no longer holds" is an argument for re-examining
+it, not for deleting it.** The constant was doing a second job — keeping a paired
+comparison honest — that its comment mentions and its name does not.
+
+## W244 — A failed `cd` does not stop the next line, and I merged into the shared checkout
+
+[executed, 2026-08-15; recovered in full, `origin/plan-w18` unchanged]
+
+The rule this repo opens with is *never edit the shared checkout*. I broke it, and the
+mechanism is worth more than the apology.
+
+    cd .claude/worktrees/w176-retest && git branch --show-current
+    git merge origin/main -m "Merge main into w191"
+
+`git worktree add` had failed — the branch was already checked out in another worktree —
+so the directory never existed and the `cd` failed. The `&&` protected only the command on
+**its own line**. The `git merge` was a *separate line*, so it ran in the shell's existing
+directory: the shared checkout, sitting on `plan-w18`. It merged cleanly and committed
+`bb12d99a`.
+
+**Recovery, and why it was safe to take:**
+
+    origin/plan-w18 == 44a12868      (the prior local HEAD, so no divergence to preserve)
+    git status --untracked-files=no  ->  0 tracked modifications at risk
+    git reset --hard 44a12868
+
+`--hard` does not remove untracked files, and the two untracked paths in that tree —
+`console-live.png` and `docs/Grungeon Master/` — are **not mine**. They survived, which was
+the thing to check before running anything: the failure mode that matters here is not a
+lost commit of mine but a swept-up file of somebody else's.
+
+Two rules, and the first is the transferable one:
+
+- **Put the `cd` and the command that depends on it in the same `&&` chain, or use
+  `git -C <dir>`.** A guard on line 1 guards line 1. Every multi-line shell block in this
+  campaign that begins `cd <somewhere new>` has this hazard, and it fires exactly when the
+  setup step fails — which is when the following command is most dangerous.
+- **`git worktree add <path> <branch>` fails if that branch is checked out anywhere else.**
+  With ninety-odd worktrees in `.claude/worktrees/`, that is the common case, not the edge.
+  Use `-b <new-branch> origin/<branch>` to get an isolated branch off the same commit.
+
+## W245 — #176 is not one merge from green, and the conflict says why
+
+[executed, 2026-08-15, `origin/w191/anti-requisites-in-v1` (40 commits behind) merged
+against `origin/main` @ edcaf591 in an isolated worktree; merge aborted, nothing pushed]
+
+The wiring PRs were last tested against a `main` from before six merges landed, so the
+obvious question was whether any are simply stale-red. #176 was the candidate — its
+books-to-depth ratio of 6.5 sits *inside* the band `:426`'s comment blesses.
+
+It is not stale. The merge conflicts on `packages/content/test/unit/interning.test.ts`,
+and the conflict is a **`contentRevision` digest**: both sides moved the content preimage,
+so neither literal survives. The file already narrates this happening four separate times
+— *"a sixth value is what a digest over the union is supposed to produce — not a
+disagreement being settled"* — and the resolution is to keep both histories and recompute
+the digest over the merged tree.
+
+So unblocking #176 is **three stacked judgment calls on a branch I do not own**:
+
+1. resolve the content digest by recomputing it over the union,
+2. widen `:426` from 5 with a dated argument for why this change raises the ratio to 6.5,
+3. re-record two byte-pinned artifacts (`design-dashboard-payload`, `ui-recording`'s
+   `snapshotHash`).
+
+Each is defensible alone. Stacked, unattended, on someone else's PR, they are not — a
+fixture diff is a claim that behaviour changed on purpose, and three of them at once is a
+claim I would be making on the author's behalf. Aborted and recorded.
+
+The useful finding for whoever picks this up: **the four `:426` PRs are not blocked on the
+ratio.** They are blocked on being forty commits behind a `main` whose content revision has
+moved, and the ratio argument is the *second* thing each of them needs.
+
+## W246 — The other half of the literal 16, and a 200 that meant nothing
+
+[executed, 2026-08-15, clean worktree at `origin/main` @ edcaf591, server run and endpoints
+curled; `npm run verify` exit 0, 4,698 tests]
+
+Re-verifying *"the game plays"* against the current head rather than the one it was first
+checked on, six merges earlier. Two things fell out, and only one was a defect.
+
+**The banner.** `#195` fixed `toAction`'s `kind >= 16`, which had made `inviteScholar` a
+dead button. It did not fix this:
+
+    `  ${legal} of 16 actions legal right now.`
+
+The first line an operator reads undercounts the action space by one and can never say more
+than "16 of 16". Now reads `run.session.actionSpaceSize`. Verified by running the server —
+`13 of 16` → `13 of 17` — rather than by reading the diff. #200.
+
+**And a correction to W239, which is the more useful half.** I recorded
+`POST /live/advance {"count":5}` → HTTP 200 as evidence the loop advances. The handler
+reads `body?.ticks`. `count` fell through to the default, so it advanced **one** tick and
+returned **200**. Testing it properly: `{"ticks":10}` moves the clock 43 → 53 and returns
+ten frames. The server was right and my probe was wrong — the seventh correction this
+session and the second where a green result concealed a bad test rather than a bad build.
+
+Nothing in `ui/` calls that endpoint, so no caller is affected and the parameter name is
+not worth changing.
+
+The rule, which this repo already has in another form: **a 2xx is a statement about the
+request being accepted, not about the parameters being read.** The existing entries warn
+about a checker that answers about the wrong input; this is the same shape from the client
+side — an endpoint that defaults a misspelled field is indistinguishable from one that
+honoured it, unless you measure the effect. `t0` and `t1` cost one extra call each and are
+the whole difference between "HTTP 200" and "it advanced ten ticks".
+
+## W247–W249 — Priced the ending; the cap was the wrong price
+
+[executed, 2026-08-15, `w248/price-the-ending`; ascension sweep 2400 ticks x 16 replicates]
+
+`discriminating-ascension` task 1.5 says price `declare-ascension` at 20480. Never applied —
+`main` still read `favorCost: 0`. That is why W242's `permit-then-idle` wins: the ending is free,
+so spending is optional.
+
+Applied it. Two short baselines re-sealed provenance-only, every metric 0.00 SE, because both
+gate sweeps run below `ascension-min-tick` 600 and no run in them can declare. The **ascension**
+sweep runs at 2400 and the re-seal tool **refused**:
+
+| metric | before | after | SE |
+|--------|--------|-------|-----|
+| referenceNodesKnown | 60.7 | 46.8 | **-25.6** |
+| referenceNodesGained@permissive-breadth | 201.8 | 96 | **-30.5** |
+| referencePopulation@permissive-breadth | 4,724 | 13,134 | +6.4 |
+| referencePopulation@portal-rush | 18,283 | 16,179 | -17.6 |
+
+**RETRACTED — none of that movement is mine.** The paragraph that stood here read the table as
+the price biting, and it was wrong. Two controls killed it:
+
+1. Re-priced 20480 -> 8192 and re-ran. **Byte-identical.** Every metric, every strategy, to the
+   decimal. A price that changes by 2.5x and moves nothing is not the cause.
+2. Ran the same sweep against the same baseline on **unmodified `main`**. **The identical 23
+   regressions.**
+
+So `balance-gate-ascension-v1` was already 23 metrics past tolerance before this branch existed,
+and pricing the ending is **behaviourally inert** in that sweep. I attributed pre-existing drift
+to my own one-line edit, in a document, in the present tense — the exact failure this file has a
+rule about, committed by the person who wrote the rule.
+
+The tell was free and I nearly walked past it: **two different inputs producing byte-identical
+output means neither input is the input.**
+
+**And the drift has a cause: nothing runs that gate.** `package.json` declares
+`balance:gate:ascension`; `.github/workflows/ci.yml` runs `balance:gate`, `balance:gate:horizon`
+and `balance:gate:agency` — and **not** ascension, on either runner. The one baseline covering the
+win condition is the one no gate checks, so it rotted silently. That is this repository's
+documented shape — a checker that is built and not wired — landing on the measurement that matters
+most to the release the campaign is for.
+
+What survives about the price: it is what `discriminating-ascension` task 1.5 asks for, it was
+never applied, the tests pass, and the two gated baselines re-seal provenance-only at 0.00 SE.
+What is **not** established is that it fixes anything. W242's `permit-then-idle` result came from
+`search-strategies` at 1350 ticks, a different harness and a different pool; whether a priced
+ending moves *that* is untested and is the next measurement, not an assumption.
+
+Two things worth keeping:
+
+- **The re-seal tool earned its keep.** It refused, named every moved metric with its SE, and said
+  why re-sealing would hide a real change. A provenance tool that cannot tell provenance from
+  behaviour would have sealed this silently.
+- **A price equal to a cap is a lockout wearing a price's clothes.** The gloss being replaced
+  argued zero was right because *"charging for the ending would make a god who spent well unable
+  to stop."* That argument was correct about the failure mode and wrong about the remedy — the
+  answer is a price below the cap, not no price.
+
+Also found, extending the `x100` amplification method:
+
+    worship-yield   0 mentions in any rules package   11 authored effects, no consumer
+    fertility       consumer exists, bonuses hardcoded []   5 effects dead
+    lifespan        consumer exists, god blessings only     17 effects dead
+
+`stackMagnitudes` reads a primitive's stacking rule and cap and **never its magnitude**, so an
+empty bonus list stacks to neutral. Amplifying an authored magnitude x100 cannot move a primitive
+whose bonus list nothing fills. That is why lifespan and fertility came back byte-identical.
+
+## W250 — Pricing the ending cannot work, and the reason is one sentence
+
+[executed, 2026-08-15, `w248/price-the-ending` @ 20480, `search-strategies --ticks 1350
+--seeds 4`, three search seeds — the same harness and seeds as W242]
+
+W249's retraction left one question open: the balance gate could not see the price, but W242's
+`permit-then-idle` result came from a different harness. Does a priced ending move *that*?
+
+    seed        width   margin   permit-then-idle
+    20260813    2       2        1        <- identical to unpriced
+    40260901    0      -2        2        <- identical to unpriced
+    77771234    1       1        3        <- identical to unpriced
+
+**No.** Byte-identical to W242's unpriced run on all three seeds.
+
+**And the reason is structural, not a tuning miss.** `permit-then-idle` permits the grid in the
+first stretch and then **submits nothing for the rest of the run**. It therefore holds a full
+favor pool at every tick after that, by construction. Any price it can be asked to pay, it can
+pay. A price on the ending is a tax on *spending*, and the strategy the ladder is measuring is
+the one that does not spend.
+
+So the lever is inverted: pricing the declaration **widens** the gap it was meant to close,
+penalising every strategy that funds, blesses and researches while costing the idler nothing.
+`discriminating-ascension` task 1.5 is spec-mandated, its tests pass, and it does not do what it
+was written to do.
+
+What would bite instead — stated, not taken, because it is a design decision:
+
+- **Make eligibility require having spent**, not merely having arrived. A conjunct the idler
+  cannot satisfy: prestige earned, universities completed, nodes taught rather than held.
+- **Make the canon decay without attention.** Path B already gestures at this; the passive
+  universe still passes because holding fifty-one nodes nobody reads counts as custodianship.
+- **Charge favor to *hold* eligibility**, not to declare it — an idler's full pool becomes the
+  thing being drained rather than the thing that guarantees the win.
+
+The rule: **a price only discriminates between strategies that spend.** Against a strategy whose
+whole method is not spending, any cost denominated in the currency it hoards is free.
+
+## W251 — The baseline nobody blocks on is the baseline nobody updates
+
+[executed, 2026-08-15, `origin/main` @ 93a6747a; job conclusions read from the GitHub API,
+baseline provenance read from the committed files, history from `git log -- <path>`]
+
+Six corrections in a row landed on one structure. Setting them out, because the errors are the
+evidence:
+
+1. *"`balance:gate:ascension` is never run."* **Wrong.** It is a deliberate release gate — 830–1154 s
+   against the other gates' ~40 s on a runner that serialises — and it runs on every commit in its
+   own non-required job, with `balance-ci-wiring.test.ts` asserting it cannot decay.
+2. *"`worship-yield` has no consumer."* **Wrong.** 11 nodes → `god/system.yieldSources`. I grepped
+   the wrong packages.
+3. *"Pricing the ending fixes the win condition."* **Wrong twice** — inert in the gate sweep and in
+   the search sweep, for the structural reason in W250.
+4. *"Pricing drove the 23 regressions."* **Wrong.** Clean `main` reproduces them exactly.
+
+**What the repository already knew, better than I did.** The primitive-consumption check on `main`
+prints:
+
+    FAIL: primitive(s) with no node-driven consumer: research-rate, scribe-rate, teach-rate
+    Declared exclusions: fertility, lifespan
+
+It asks *"can what the academics know change it"* rather than *"does anything read it"* — the
+sharper question — and `fertility` and `lifespan` are **declared exclusions**, known and recorded.
+An evening of hand-rediscovery produced a worse version of a check that was already failing in CI.
+
+**And the 23 regressions have a mundane cause.** Baseline provenance versus history:
+
+    balance-gate-v1            (gated)      last re-recorded by #126 alliances, #161 anti-requisites
+    balance-gate-ascension-v1  (not gated)  last re-recorded by #132 apply-magic, nothing since
+
+Its `contentHash` is `d4e30476`, which `interning.test.ts` names as the revision that *"has the
+applied-magic scalars and no exclusions"*. The ascension baseline is two content-changing PRs
+behind. #161's own title says *"the eighth loses 39% of its knowledge"* — and the largest
+regression is `permissive-breadth` knowledge instances 5,124 → 2,534. **The drift is that PR's
+intended, documented effect, propagated to the two gated baselines and not to the ungated one.**
+
+Nothing was broken. The merges were correct, the change was measured, the baselines that gate got
+updated. The one that does not gate did not, because nothing made it.
+
+The rule: **a gate's blocking status decides whether its baseline gets maintained.** Not policy,
+not diligence — the blocking one gets re-recorded because a red PR forces it, and the non-blocking
+one rots because nobody is ever stopped. Three jobs on `main` were red for six consecutive commits
+while `Verify` was green on every one.
+
+#202 lands a scheduled read-only watcher so a red non-required job produces a red *scheduled* run,
+away from a commit somebody already approved. It fixes none of the three. It makes them visible,
+which is the smaller half and the one that was missing.
+
+## W252 — A page you can play, and the two ways I trusted a stale state
+
+[executed, 2026-08-16; `ui/play/` #206, `w253/pin-201s-four` #204 merged, `w252` #203 pending]
+
+**The demo exists.** `npm run play`, then `/ui/play/`. It names what content can name — *Creo*,
+*Intellego Limen*, *Human* — and refuses to name what it cannot: `bless`, `assign`, `fund`,
+`grant` and `portal` take a handle of `(generation << 20) | index`, and §4.4's `Candidate` is
+`{params}` with no label anywhere on it, so those read *"3 of 19, by §4.4 ranking"* and say why.
+Every move prints a diff — `+205 grimoires (80 -> 285)`, `-2 mages (19 -> 17)`. It also draws
+`universityCount`, `universityCapacity` and `prestige`, which have been in §4.1's channels and
+decoded by `ui/shared/session.js` the whole time, and which no page drew.
+
+**Driven in a browser rather than asserted**, which found two bugs I would otherwise have shipped:
+`MAGES` read 0, and both edict verbs had empty pickers. The earlier claim that *"the game plays"*
+came from curling six JSON endpoints and never opening the page.
+
+Two failures in this stretch, and they are one failure:
+
+**1. A pull request that passed both required checks while changing nothing.** `git commit --amend`
+refused ("would make it empty"), and the follow-up `git commit` captured the **index as it stood**
+rather than the working tree — so #203 carried `main`'s original baseline while the regenerated one
+sat uncommitted beside it. Two commits, zero net diff, `Verify` and `ci/hetzner-lint` both green.
+Caught only by `gh pr view <n> --json files` returning an **empty list**.
+
+**2. Work duplicated because I branched and never looked again.** #201 landed
+`packages/coordination/src/academic-effects.ts` on `main` mid-session, wiring the three academic
+rates — more completely than the version I then spent an evening building on a branch cut before it.
+`Declared exclusions:` on `main` is now **empty**, so `fertility` and `lifespan` are wired too. The
+branch was deleted unmerged. It also retires a finding this log carries: those two primitives are no
+longer inert, and the `x100` result that found them was true when it was taken and is not now.
+
+Both are the same mistake: **a state established earlier in the session, trusted later without
+re-reading it.** Once it was the index, once it was `main`. The technical findings in this document
+are worth less than that sentence.
+
+The rules, mechanical because the failure is:
+
+- **After a `git commit --amend` that errors, re-stage before committing.** The index survives the
+  failure and the next commit will take it.
+- **`gh pr view <n> --json files` before every merge.** It costs one call, and it is now the second
+  distinct disaster it has caught — the first was a PR carrying someone else's images under my title.
+- **Re-fetch `main` before building anything substantial on a branch**, not only before merging. A
+  session long enough to be worth having is long enough for `main` to move underneath it.
+
+## W253 — The gates stopped blocking on the 14th; by the 16th all four baselines are stale
+
+[executed, 2026-08-16, `origin/main` @ ad7f80c2; provenance read from the committed baselines,
+content revision from `interning.test.ts`]
+
+W251 ended on a rule: **a gate's blocking status decides whether its baseline gets maintained.**
+That was written about one ungated baseline. It generalises worse than expected.
+
+    main content revision                8681bf84   (moved by #201)
+    balance-gate-v1                      0dfdd5ef
+    balance-gate-horizon-v1              0dfdd5ef
+    balance-gate-agency-v1               0dfdd5ef
+    balance-gate-ascension-v1            d4e30476
+
+**All four are baseline-invalid**, and `Balance gates (non-blocking)` is red on `main` for that
+reason rather than for a regression. `CLAUDE.md` records the change that caused it, with its
+argument intact: the three Monte Carlo gates left `npm run verify` on **2026-08-14** because they
+were the entire cost of checking a commit, the self-hosted runner serialises, and during a campaign
+every commit is sweep-bearing — so they queued every unrelated pull request behind a number that was
+moving on purpose. That reasoning is sound and the split is defended in `ci.yml`.
+
+**Two days later nothing forces a re-record, and nothing has been re-recorded.** The mechanism W251
+named is not specific to one ungated baseline: it is what *gating* was doing for all of them. A red
+PR is what made somebody re-record, and there are no red PRs now.
+
+This also supersedes **#203**. It re-records the ascension baseline to `0dfdd5ef`, which was
+`main`'s revision when the work started and is not `main`'s revision now. The re-record would need
+taking again against `8681bf84`, and the blind-metric finding it carries —
+`referenceNodesGainedFinalQuarter`, tolerance 3.034 against a value of 1.953 — would need
+re-measuring with it.
+
+Two green results worth recording beside that, both from tonight:
+
+    Primitive consumption (non-blocking)   failure -> SUCCESS    (#201)
+    Rules-path reachability ratchet        failure -> SUCCESS    (#204)
+
+So of the three red non-required jobs W251 found, two are fixed and the third turned out to be the
+visible end of a larger thing.
+
+The rule, sharpened: **moving a gate off the blocking path does not reduce it to "runs less often".
+It removes the only thing that was maintaining its baseline.** The split is still right — the queue
+argument is real — but it needs a replacement forcing function: a scheduled re-record, a release
+checklist item, or a gate that fails on provenance age rather than on a metric. #202's watcher makes
+the red visible; it does not make anybody re-record.
+
+## W254 — The watcher watched itself, and the third exit caught it
+
+[executed, 2026-08-16; #211 merged, #209 merged]
+
+#202 added a scheduled watcher so a red non-required job would be visible away from a commit
+somebody already approved. It had two bugs and it found the first one itself.
+
+**It read "the newest completed run for the branch".** Once its own scheduled workflow began
+running on `main`, that *was* the newest run — one job, none of the watched names:
+
+    Watching main @ ad7f80c2 (run 31938332487)
+    PROBE BROKEN: no job matches "Balance gate, two hundred world years"
+    EXIT=1
+
+**It exited 1, not 0.** That is the entire argument for the third exit, validated on its first
+real failure, against its own author. A watcher that reported green because it could not find the
+jobs would have been the sixth entry in this repository's list of checkers answering about the
+wrong input — and would have done it while claiming to be the thing that prevents them.
+
+I also read the resulting red on `main`'s check list as *the watcher working*. It was failing as a
+broken probe. Believing a red for the wrong reason is the same error as believing a green.
+
+**And it watched three of four.** The script is named *"are the non-required jobs green"* and
+listed three. The omitted one — `Next Node major` — was red and unread, and its own comment says
+why that matters: *"a failure here means the next Node major may change simulation behaviour,
+which we want to know about before it is pinned."* A determinism change arriving with a runtime
+upgrade is the thing a fixed-point core can least afford to learn late.
+
+## W255 — A one-second check for the thing the sweeps take minutes to discover
+
+[executed, 2026-08-16; #209 merged, `npm run check:baselines` live on `main`]
+
+W253 found all four baselines stale two days after the gates stopped blocking. #209 is the
+forcing signal, restored without the cost:
+
+    Shipped content revision: 8681bf84
+      STALE  balance-gate-agency-v1     0dfdd5ef
+      STALE  balance-gate-ascension-v1  d4e30476
+      STALE  balance-gate-horizon-v1    0dfdd5ef
+      STALE  balance-gate-v1            0dfdd5ef
+    4 of 4 baseline(s) were taken on different content.   EXIT=42
+
+A sweep is minutes; asking whether a baseline still names the current content revision is a file
+read. It answers a **strictly weaker** question — *is this baseline about this build*, never *did a
+metric move* — and that weaker question is the one that went unanswered for two days.
+
+Two traps avoided by reading the right thing: the **loader's** revision rather than
+`interning.test.ts`'s pinned literal (a stale test and a stale baseline would otherwise agree with
+each other and pass), and **`provenance.contentHash`** rather than the top-level tamper seal.
+
+Its own job rather than a step in `balance`: a `continue-on-error` step anywhere in that job makes
+`balance-ci-wiring` read the gates as softened, and they must not be. Not in `verify` while four of
+four are stale — that would block every unrelated pull request on a re-record nobody has scheduled,
+which is what the 2026-08-14 split was avoiding. The job comment carries the promotion condition.
+
+**It cannot re-record and must not.** `regenerate-baseline.mjs` and `reseal-baseline.mjs` are the
+only two things that write a baseline, neither is reachable from CI, and two tests assert that. A
+re-record is a claim that behaviour changed on purpose and needs a person to make it.
+
+## W256 — The slow test has nothing to optimise, measured rather than assumed
+
+[executed, 2026-08-16, `origin/main` @ f9184959, machine at load 5.06 — quiet]
+
+Three pull requests were held up today by `species-separation-spread.test.ts` timing out
+`ci/hetzner-lint` with a vitest **worker RPC** timeout. I twice said the remedy was
+infrastructure rather than the test, without measuring where the time went. Measuring it:
+
+    reads the same arrivals out of the same call    14,111 ms
+    the other 15 tests                              0-2 ms each
+    Duration                                       167.18 s
+
+**About 152 s of that is `beforeAll`** — the shared sweep, twelve seed sets of six seeds at
+720 ticks, seventy-two full runs. The assertions themselves cost nothing; the one 14-second
+test is the control that re-runs `runLongReference` to check the shared run is telling the
+truth.
+
+So the file is **already** structured the cheap way: one expensive setup, fifteen free
+assertions, one deliberate control. Splitting the control into its own file would save 14 s of
+167. There is no accidental cost to remove — the 152 s *is* the measurement.
+
+And it is **not load-dependent**: 167 s at load 5.06, 169 s at load 39. What load changes is
+whether the reporter channel survives it in a 349-file parallel run.
+
+So the options are exactly two, both of which are somebody's decision rather than a fix:
+
+- **fewer seed sets**, which weakens a measurement whose whole point is that twelve independent
+  sets agree; or
+- **isolate the file** — its own pool, or a vitest pool-timeout — which costs nothing except
+  configuration.
+
+The rule: **"the fix is elsewhere" is a claim, and it is cheap to check.** I said it twice
+before measuring, and the measurement happens to agree — but it agreed by luck until it was
+run, and a wrong version of that sentence would have sent someone rewriting a test that was
+already right.
