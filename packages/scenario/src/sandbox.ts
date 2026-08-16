@@ -337,13 +337,23 @@ export interface SandboxSpec {
   /**
    * Kinds held at or above a floor, every tick, **before any claimant runs**.
    *
-   * This is the "auto-balance a consumer" verb in its honest form. Note what it
-   * can and cannot promise: `consumeMaterials` tracks `remaining` **per kind**,
-   * so the claimant order only ranks claimants that *share* a kind. Holding
-   * vellum at a floor therefore satisfies `casting`, `libraryUpkeep` **and**
-   * `scribing` — there is no way to feed the third without feeding the first
-   * two, and a knob that implied otherwise would be lying about the economy.
-   * {@link SandboxSpec.satisfy} is the same knob expressed in claimant names.
+   * This is the "auto-balance a consumer" verb in its honest form. Two things
+   * it does not promise, both stated because a knob that implied otherwise
+   * would be lying about the economy:
+   *
+   * - **It is per kind, not per claimant.** `consumeMaterials` tracks
+   *   `remaining` per kind, so the claimant order only ranks claimants that
+   *   *share* a kind. Holding vellum at a floor therefore satisfies `casting`,
+   *   `libraryUpkeep` **and** `scribing`; there is no way to feed the third
+   *   without feeding the first two. {@link SandboxSpec.satisfy} is the same
+   *   knob expressed in claimant names, and inherits this exactly.
+   * - **It is a floor at the top of the tick, not a floor on the reading.** The
+   *   system runs ahead of the world loop, so the stock is at the floor when
+   *   phase 1 produces and phase 9 pays — which is where it has to be for the
+   *   claimants never to run short. By the time the tick ends they have spent,
+   *   so a reader sees the floor minus one tick's net. Measured on the
+   *   reference universe at `cohortSize: 4`, that gap is about `fp 3.3` after
+   *   150 ticks: small, real, and not a leak.
    */
   readonly materialFloor?: MaterialLevels;
   /**
@@ -353,6 +363,15 @@ export interface SandboxSpec {
    * mechanisms: vellum pinned at zero is how a person watches shelved knowledge
    * actually being destroyed, and food pinned at zero is how a person watches
    * the fertility brake bite.
+   *
+   * The same top-of-tick caveat, pointing the other way and worth reading
+   * before believing a starvation arm: the ceiling clears the **carry-over**,
+   * and phase 1's production for that tick still lands and is still spendable.
+   * A ceiling of zero is therefore *"this universe lives hand to mouth"* and
+   * not *"this universe has nothing"*. Measured on the reference universe,
+   * vellum production is around `fp 0.1` a tick against a demand orders of
+   * magnitude larger, so the shortfall bites — but that is a measurement, not a
+   * guarantee the knob makes.
    */
   readonly materialCeiling?: MaterialLevels;
   /**

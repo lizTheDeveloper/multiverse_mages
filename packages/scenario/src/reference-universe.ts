@@ -1073,8 +1073,17 @@ export function referenceScenario(
   const cheat = (state: SimState): SimState => {
     if (sandbox === undefined) return state;
     applyFoundingCheats(state, sandbox, {
-      allTechniques: content.registry.techniques.reduce((bits, { record }) => bits | record.bit, 0),
-      allForms: content.registry.forms.reduce((bits, { record }) => bits | record.bit, 0),
+      // `record.bit` is the axis's **index**, not its mask — `creo` is 0, not 1
+      // — and `permittedTechniques` is a bitmask over those indices. ORing the
+      // indices together instead of shifting them produced `0|1|2|3|4 = 7`,
+      // which is a legitimate-looking mask naming three techniques that are not
+      // the five the content declares. Caught by asserting the armed mask
+      // against the registry rather than against itself.
+      allTechniques: content.registry.techniques.reduce(
+        (bits, { record }) => bits | (1 << record.bit),
+        0,
+      ),
+      allForms: content.registry.forms.reduce((bits, { record }) => bits | (1 << record.bit), 0),
       nodeCount: content.deps.catalog.nodeCount,
     });
     return state;
