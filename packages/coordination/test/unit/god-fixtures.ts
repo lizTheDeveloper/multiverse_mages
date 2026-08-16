@@ -123,21 +123,8 @@ export function godDeps(): GodDeps {
     knowledgeFor: (state) => KnowledgeSubsystem.fromState(state, catalog.nodeCount),
     worshipYield: worshipYieldPrimitive(),
     worshipYieldNodes: nodesCarrying('worship-yield'),
-    cellRelevance: cellRelevance(),
-    libraryLegacy: primitiveNamed('library-legacy'),
     portalNodes: new Set(nodesCarrying('portal').keys()),
   };
-}
-
-/**
- * Every cell's authored `dailyRelevance`, the way `content-set.ts` builds it.
- *
- * Built from the shipped registry rather than stubbed flat, because a fixture
- * that neutralised the term would make every god test in this package agree
- * with a build in which the term had been deleted.
- */
-export function cellRelevance(): Map<number, Fixed> {
-  return new Map(registry().cells.map((entry) => [entry.contentId, entry.record.dailyRelevance]));
 }
 
 /** World deps with the god installed, and the three effect seams filled. */

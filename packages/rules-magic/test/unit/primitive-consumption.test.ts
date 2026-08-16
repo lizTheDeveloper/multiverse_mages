@@ -389,14 +389,7 @@ describe('the two checks no longer share one exclusion list', () => {
     // `lifespan` and `fertility` have a node-driven consumer *and* no v1 node
     // authoring them. One list cannot hold both answers, and this is the pair
     // of assertions that says so out loud.
-    // Three, not two, since `w60/daily-relevance` declared `library-legacy`: a
-    // primitive no node carries by design, because its magnitude is a property
-    // of the civilization rather than of a working. It is declared so that it
-    // can be *ablated* — you cannot neutralize a primitive id you never
-    // declared — and excluded from coverage for exactly that reason. This line
-    // auto-merged to main's two-element list while the constant next door took
-    // the branch's three; the pair is only consistent together.
-    expect([...PRIMITIVE_COVERAGE_EXCLUSIONS]).toEqual(['fertility', 'library-legacy', 'lifespan']);
+    expect([...PRIMITIVE_COVERAGE_EXCLUSIONS]).toEqual(['fertility', 'lifespan']);
     const { recorder, registry } = fullyConsumed();
     expect(checkPrimitiveConsumption(registry, recorder).consumed.map((e) => e.primitiveId)).toContain(
       'lifespan',
@@ -405,12 +398,6 @@ describe('the two checks no longer share one exclusion list', () => {
 
   it('states the exclusions in the formatted report, so a reader sees the gap', () => {
     const { recorder, registry } = fullyConsumed();
-    // Main's shape kept, deliberately. The branch called this with the default
-    // and expected `fertility, library-legacy, lifespan` — which is true of
-    // `PRIMITIVE_COVERAGE_EXCLUSIONS` on the merged tree and *not* of
-    // `PRIMITIVE_CONSUMPTION_EXCLUSIONS`, which the two assertions above pin
-    // empty and which is the campaign's exit condition. An explicit list is
-    // what this test is about: that the report states what it was given.
     const text = formatPrimitiveConsumptionReport(
       checkPrimitiveConsumption(registry, recorder, ['fertility', 'lifespan']),
     );

@@ -70,28 +70,18 @@ const GATES = [
  *
  * Committed as a list rather than tolerated by a threshold, because the honest
  * description of this instrument is "it can see everything except these
- * ten things" and a threshold would let an eleventh join them in silence.
+ * nine things" and a threshold would let a tenth join them in silence.
  * Growing the list is a build failure; shrinking it is a build failure too,
  * because a line that has become sharp is a change in what the gate can see and
  * belongs in a rationale.
  *
  * Every entry is an arm whose value sits near zero. `denial-warden` suppresses
- * discovery to almost nothing, so seven of the ten are its lines and a
+ * discovery to almost nothing, so seven of the nine are its lines and a
  * tolerance of a fraction of a node is a large multiple of the fraction of a
  * node it gains. That is a fact about the strategy, not a slack tolerance: the gate cannot
  * usefully police a proportional change in a quantity that is already almost
  * nothing, and widening the sample buys only √n against it. They are listed so
  * that nobody reads "the gate is fixed" as "the gate sees everything".
- *
- * `referenceNodesGainedFinalQuarter@portal-rush` is the one entry that is not a
- * fact about a strategy, and it is why this list is worth the trouble of
- * maintaining. It was sharp until `w60/daily-relevance` — 6.25 nodes in the
- * final quarter against a tolerance of 2.65 — and the merged tree measures
- * 0.75, a fall of 6.22 standard errors. It is blind because its own value
- * collapsed, not because anything widened its tolerance, so the 200-year gate
- * is now least able to police late-run discovery under precisely the strategy
- * in which late-run discovery just stopped. `balance/README.md` carries the
- * argument; this entry is the part a build fails over.
  */
 const BLIND_ARM_LINES: Readonly<Record<string, readonly string[]>> = {
   // **Three, and the history is the rationale**: the same threshold has now been

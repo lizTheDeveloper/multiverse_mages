@@ -153,13 +153,6 @@ export function gridContentFixture(options: FixtureOptions = {}): GridContent {
           technique,
           form,
           classicalLabels: [],
-          // The identity of the multiply. A fixture grid has no setting to be
-          // relevant to, and `rules-magic` never reads the field — the one
-          // consumer is `coordination`'s `yieldSources` — so any other value
-          // here would be a number this package's tests could not justify.
-          dailyRelevance: 1024,
-          relevanceGloss: `${id} (fixture)`,
-          tuningStatus: 'untuned',
           nodes: nodesByCell.get(id) ?? [],
           ...(v1.has(id) ? { v1: true } : {}),
         },

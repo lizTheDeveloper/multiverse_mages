@@ -74,8 +74,6 @@ export interface GodConstants {
   // Favor.
   readonly favorRegenBase: Fp;
   readonly favorPerWorship: Fp;
-  /** `library-legacy` magnitude per distinct node on a shelf. `0` disables the channel. */
-  readonly legacyYieldPerNode: Fp;
   readonly favorCapBase: Fp;
   readonly favorCapPerTier: Fp;
   readonly hysteresisDecayTicks: number;
@@ -249,7 +247,6 @@ export function resolveGodConstants(registry: ContentRegistry): GodConstants {
 
     favorRegenBase: value('favor-regen-base'),
     favorPerWorship: value('favor-per-worship'),
-    legacyYieldPerNode: value('legacy-yield-per-node'),
     favorCapBase: value('favor-cap-base'),
     favorCapPerTier: value('favor-cap-per-tier'),
     hysteresisDecayTicks: value('hysteresis-decay-ticks'),

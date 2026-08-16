@@ -464,21 +464,7 @@ describe('contentRevision', () => {
     // revision is a digest over the values, so this is the ordinary case rather
     // than a union of branches. It changes every run in which any mage learns
     // The Nameless — which is the point of the change, not a side effect of it.
-    //
-    // 8681bf846bd94be80fdabc447e6e01df -> f5f2b745fafc19149430e58817a14f9e,
-    // when `w60/daily-relevance` gave every cell an authored `dailyRelevance`,
-    // a `relevanceGloss` and a `tuningStatus`, declared the seventeenth
-    // primitive (`library-legacy`) and added the `legacy-yield-per-node`
-    // constant. Three content files move at once and all three belong in the
-    // preimage: the relevance share scales every `worship-yield` a cell's nodes
-    // carry, so two universes disagreeing about it would run different favor
-    // economies while their revisions called them compatible.
-    //
-    // Union, and recomputed rather than taken from a side: the branch's own
-    // literal is over a preimage with sixteen god costs, and `main` has
-    // seventeen since `w109` — so neither parent's value is a digest over this
-    // tree.
-    expect(registry.contentRevision).toBe('f5f2b745fafc19149430e58817a14f9e');
+    expect(registry.contentRevision).toBe('8681bf846bd94be80fdabc447e6e01df');
   });
 
   it('is stable across loads of identical content', () => {
