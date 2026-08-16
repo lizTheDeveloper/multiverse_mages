@@ -108,10 +108,10 @@ if [ "$docs_only" -eq 1 ]; then
   echo "Everything else in \`verify\` still runs. To force the full gate, unset"
   echo "the condition by touching any path outside docs/, openspec/, .claude/ or *.md."
   echo
-  echo "=== verify minus sweeps (typecheck, lint, purity, content, audio, coverage, tests) ==="
+  echo "=== verify minus sweeps (typecheck, lint, purity, content, audio, coverage, refs, tests) ==="
   npm run verify:nosweeps
 else
-  echo "=== verify (typecheck, lint, purity, content, audio, primitive coverage, tests, balance gates) ==="
+  echo "=== verify (typecheck, lint, purity, content, audio, primitive coverage, refs, tests, balance gates) ==="
   npm run verify
 fi
 

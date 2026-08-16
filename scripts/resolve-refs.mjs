@@ -14,7 +14,7 @@
  */
 
 /**
- * A comment that cites `spec.md:158` instead of restating §158 is shorter and
+ * A comment that cites `spec.md:NNN` instead of restating §NNN is shorter and
  * does not rot into a second, disagreeing copy. It has one cost: the reader has
  * to go and look, and the line number can drift under an edit that never
  * touched the comment. This resolves the first and detects the second.
@@ -31,14 +31,17 @@
  * - `1`  the probe itself failed: bad arguments, unreadable input, no refs found
  *        in a file the caller named
  *
- * Two ref shapes are recognised, both of which this repository already writes:
+ * Two ref shapes are recognised, both of which this repository already writes.
+ * Line numbers are written `NNN` here on purpose — a real number in this comment
+ * would be a live ref into whatever file the example names, and the tool would
+ * check its own documentation:
  *
- *     `universe-effects.ts:35`            an explicit basename or path
- *     `:158` position-free                a bare line, under a path named
- *                                         earlier in the same comment block
+ *     `some-module.ts:NNN`         an explicit basename, suffix, or full path
+ *     `:NNN` short-title           a bare line, under a path declared earlier
+ *                                  in the same comment block
  *
  * A ref that **opens a line** may carry an **anchor**: the words between it and
- * the first dash or comma, as in `` `:158` position-free ``. `--check` requires
+ * the first dash or comma. `--check` requires
  * those words within {@link ANCHOR_WINDOW} lines of the target, which is what
  * turns a drifted line number into a failure rather than a silently wrong
  * citation.
@@ -143,10 +146,13 @@ function refsIn(source) {
       let match;
       while ((match = pattern.exec(line)) !== null) {
         const bare = match[3] !== undefined;
+        // `worship.js:174:18` is a stack trace: the second number is a column,
+        // not a citation. A bare ref never follows a digit.
+        if (bare && /\d$/.test(line.slice(0, match.index))) continue;
         const cited = bare ? blockPath : match[1];
         const lineNo = Number(bare ? match[3] : match[2]);
         // An anchor is only read when the ref *opens* the line's content, which
-        // is where the convention puts a title: `- `:158` position-free — …`.
+        // is where the convention puts a title: `- `:NNN` short-title — …`.
         // A ref in the middle of a sentence is followed by prose, not by a
         // title, and reading that prose as an anchor invents a drift report.
         const before = line.slice(0, match.index).replace(/^\s*(?:\*|\/\/)?\s*(?:[-*]\s+)?/, '');
@@ -201,11 +207,26 @@ function inspect(ref) {
   };
 }
 
+/** Every tracked non-test source file. The scan a gate runs. */
+function defaultPaths() {
+  const out = [];
+  for (const [, paths] of trackedByBasename) {
+    for (const path of paths) {
+      if (/\.test\.[cm]?[jt]s$/.test(path)) continue;
+      if (/^(packages\/.+\/src\/.+\.ts|scripts\/.+\.mjs)$/.test(path)) out.push(path);
+    }
+  }
+  return out.sort();
+}
+
 function main(argv) {
   const check = argv.includes('--check');
-  const paths = argv.filter((arg) => arg !== '--check');
+  const named = argv.filter((arg) => arg !== '--check');
+  // No arguments means every tracked source file, so a gate can invoke this
+  // without maintaining a second list of what to scan beside the first.
+  const paths = named.length > 0 ? named : defaultPaths();
   if (paths.length === 0) {
-    process.stderr.write('usage: resolve-refs.mjs [--check] <path>...\n');
+    process.stderr.write('no tracked source files to scan\n');
     return 1;
   }
 
