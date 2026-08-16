@@ -75,6 +75,25 @@ const PERMANENT_IDS: Readonly<Record<string, number>> = {
   // and refuses on it, so all three baselines invalidated by identity before a
   // single measured number moved. See `docs/design/opening-square.md` §4.
   openingSquare: 12,
+  // Appended by `w200/layer-one-fixes` at **13**, and it was authored as 14.
+  // Three open PRs appended to a table ending at 12 — #170 (`corruption`), this
+  // one, and #185 (`career`) — and the ruling then was 13, 14, 15 in that order.
+  // #170 has not landed, `main`'s registry still ends at 12, and 14 over a
+  // twelve-row table is the gap `1..12, 14` with `is dense from 1` red.
+  //
+  // The renumber is therefore the assertion doing its job rather than being
+  // worked around: density is the only thing that would catch two of the three
+  // quietly shipping the same number, and the fix for a red one is to take the
+  // id the tree actually leaves free. Do not add a gap exemption to make it
+  // green.
+  //
+  // The general rule this is one instance of — an append's id is valid only
+  // once every id below it has landed, so an id is settled by merge position
+  // and not by authoring, and re-checking it belongs to merging — is argued in
+  // `streams.ts` beside the registry itself. Do not read the specific
+  // assignment here as an instruction; it is one queue's arithmetic, and the
+  // arithmetic already changed once.
+  detachment: 13,
 };
 
 /**
@@ -107,6 +126,7 @@ const DOC_TEXT_BY_SUBSYSTEM: Readonly<Record<string, string>> = {
   objectives: 'objective and raid generation',
   terrain: 'terrain generation and combatant deployment',
   openingSquare: 'the opening square',
+  detachment: 'the partial-detachment draw at portal open',
 };
 
 /** The consequence sentence every failure from this file has to carry. */

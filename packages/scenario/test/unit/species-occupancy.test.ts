@@ -122,6 +122,15 @@ describe('the founding position', () => {
     // count-only reading of this founding position is indistinguishable from
     // six species crowded into one cell, and those are different games.
     const sample = runTo(0);
+    // **Re-derived on `integration/group-e`, 2026-08-16, and the paragraph
+    // directly above is the fourth reading in a row to be overturned.** Gnome is
+    // three cells short again — `perdo-limen`, `perdo-mentem`, `perdo-terram` —
+    // so W200's "both remaining gaps are Terram" does not hold on the merged
+    // tree, and the Perdo-gap count has now gone 2, 3, 2, 1, 3 across five
+    // measurements. Whatever else this pin is, it is not a finding: it is a
+    // handle-keyed re-roll reported at four decimal places of confidence, and
+    // the block's own instruction — *"the next agent to see it move should not
+    // read the movement as a defect"* — is the durable part.
     const cellName = new Map(content.registry.cells.map((e) => [e.contentId, e.record.id]));
     expect(
       sample.species.map((entry) => [
@@ -207,10 +216,44 @@ describe('twenty world years in', () => {
     // line: the campaign's knowledge-vitality wire, and `main`'s own merges.
     // Taking either hunk verbatim would pin a number no build produces, which
     // is exactly what the conflict resolution had to avoid.
+    //
+    // **Re-measured on `w200/layer-one-fixes` merged with `main` (245e04f1),
+    // 2026-08-14.** One number moved and only one: gnome, 9 -> 10. Five of the
+    // six species are byte-identical to the block above, which is the reading
+    // that makes this a small effect rather than a re-roll — a shifted stream
+    // would have moved all six.
+    //
+    // The cause is W200's third fix: `rn-call-by-name` (Rego Nomen, tier 1)
+    // gained a `resource-yield` effect, and Nomen's `yieldWeights` are
+    // `vellum: 1024`, so the opening square has a magical vellum source for the
+    // first time. Vellum is what library upkeep and scribing spend, and a
+    // universe that is not perpetually short of it keeps more books alive —
+    // measured separately at +20%, +28% and +29% surviving grimoires over three
+    // seeds at 2,400 ticks. More surviving books is more teaching material, and
+    // the species that was furthest behind is the one it reaches first.
+    //
+    // **Re-measured on `integration/group-e`, 2026-08-16, at the merge of
+    // `w200/layer-one-fixes` into a tree already carrying `main`'s signed
+    // magnitudes — and for the fourth time neither side's numbers survived.**
+    // `main` read `12/12/11/9/11/9` (dwarf, human, orc, draconic, elf, gnome)
+    // and W200 read `12/12/12/11/11/10`; the merged run reads
+    // **`12/12/11/11/11/9`**. Draconic is `main`'s loser recovered and gnome is
+    // W200's winner lost.
+    //
+    // This block is the one place in the campaign where git's own resolution
+    // was demonstrably wrong: the six assertion lines auto-merged without a
+    // conflict into `12/12/11/9/11/10`, taking draconic from `main` and gnome
+    // from the branch. That tuple is a number **no build produces** — the exact
+    // failure the paragraphs above keep warning about, arriving through a clean
+    // auto-merge rather than through a resolution. It was caught by running the
+    // test, not by reading the diff.
+    //
+    // MEASURED here, not carried: `npx vitest run
+    // packages/scenario/test/unit/species-occupancy.test.ts` on this tree.
     expect(bySpecies('dwarf').occupiedCells).toBe(12);
     expect(bySpecies('human').occupiedCells).toBe(12);
     expect(bySpecies('orc').occupiedCells).toBe(11);
-    expect(bySpecies('draconic').occupiedCells).toBe(9);
+    expect(bySpecies('draconic').occupiedCells).toBe(11);
     expect(bySpecies('elf').occupiedCells).toBe(11);
     expect(bySpecies('gnome').occupiedCells).toBe(9);
   });
@@ -223,7 +266,21 @@ describe('twenty world years in', () => {
     // branch alone. Pinned to four places: the point of the metric is that this
     // number moves, and a test that only asserted "greater than zero" would let
     // it move to anything.
-    expect((entry as { value: number }).value).toBeCloseTo(0.0625, 4);
+    // 0.0343 at this horizon, re-measured on W200's merge with `main`
+    // (245e04f1), 2026-08-14 — was 0.0473 before the vellum source, and 0.0729,
+    // 0.0714 and 0.0645 at the three points the paragraph above describes.
+    // Pinned to four places: the point of the metric is that this number moves,
+    // and a test that only asserted "greater than zero" would let it move to
+    // anything.
+    //
+    // It fell, and the direction is the interesting part. This is a Gini
+    // coefficient over per-species occupied-cell counts, so a fall is the six
+    // species becoming *more* alike. Gnome alone gained a cell; nothing else
+    // moved. A magical vellum source is a rising tide, and the metric says it
+    // lifts the trailing species rather than the leading one — which is the
+    // opposite of what a capital-compounding effect would do, and worth watching
+    // if the magnitude is ever tuned up.
+    expect((entry as { value: number }).value).toBeCloseTo(0.0455, 4);
     expect(entry).toMatchObject({ detail: { everySpeciesEqual: false, everySpeciesZero: false } });
   });
 
@@ -260,6 +317,22 @@ describe('twenty world years in', () => {
     // reading is "gnome is short, and disproportionately short in Perdo"; the
     // exact membership is a pin, not a finding, and the next agent to see it
     // move should not read the movement as a defect.
+    //
+    // **Re-derived again on W200's merge with `main` (245e04f1), 2026-08-14,
+    // and the paragraph above is now the third reading in a row to be
+    // overturned.** Gnome picked up Perdo Mentem and is two cells short, not
+    // three: `perdo-terram` and `rego-terram`. So the shortfall is no longer
+    // disproportionately Perdo at all — **both remaining gaps are Terram**, and
+    // the count of Perdo gaps has gone 2, 3, 2, 1 across four measurements.
+    //
+    // The block above predicted exactly this and said what to do about it: *"the
+    // exact membership is a pin, not a finding, and the next agent to see it
+    // move should not read the movement as a defect."* Two cells is a small
+    // enough sample that "gnome is short in Terram" is a hypothesis and not yet
+    // a reading — but it is the first time the two gaps have shared a *form*
+    // rather than a technique, and a species locked out of a form is a different
+    // defect from one that is merely slow. The horizon this samples is twenty
+    // world years; the durable claim remains only "gnome is short".
     const cellName = new Map(content.registry.cells.map((e) => [e.contentId, e.record.id]));
     const held = new Set(bySpecies('gnome').occupiedCellIds.map((id) => cellName.get(id)));
     const dwarfHeld = bySpecies('dwarf').occupiedCellIds.map((id) => cellName.get(id));

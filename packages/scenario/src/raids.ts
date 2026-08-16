@@ -323,6 +323,12 @@ export function raidSystem(deps: RaidSystemDeps): System {
         // hooks resolve against the tradition this universe currently holds —
         // which god action 13 may have changed since tick zero.
         hostTraditionId: outbound ? content.traditionId : local.ruleset.traditionId,
+        // The loot shelf is keyed on what *this* universe's god forbids, which
+        // is a fact about this universe and not about the rival — so it is
+        // captured here, at the portal, alongside the tradition. It is the same
+        // snapshot arbitration uses, so a shelf can never be stocked against a
+        // ruleset the raid does not then enforce.
+        localRuleset: local.ruleset,
         constants,
       });
 

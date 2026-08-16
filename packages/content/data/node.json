@@ -7313,7 +7313,7 @@
     "id": "rn-call-by-name",
     "cell": "rego-nomen",
     "name": "Call by Name",
-    "gloss": "Say a thing's name in the imperative and have it arrive. The oldest complaint in the literature is that it does not specify in what condition.",
+    "gloss": "Say a thing's name in the imperative and have it arrive. The oldest complaint in the literature is that it does not specify in what condition — which is why the first thing every scriptorium calls for is skins, and why the quality is a standing joke. The only magical vellum in the opening square comes out of this working.",
     "tier": 1,
     "prerequisites": [],
     "researchCost": 2048,
@@ -7325,6 +7325,12 @@
         "primitive": "summon",
         "magnitude": 1024,
         "target": "side",
+        "durationTicks": 0
+      },
+      {
+        "primitive": "resource-yield",
+        "magnitude": 128,
+        "target": "universe",
         "durationTicks": 0
       }
     ],

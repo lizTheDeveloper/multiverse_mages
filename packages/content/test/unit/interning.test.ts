@@ -464,7 +464,53 @@ describe('contentRevision', () => {
     // revision is a digest over the values, so this is the ordinary case rather
     // than a union of branches. It changes every run in which any mage learns
     // The Nameless — which is the point of the change, not a side effect of it.
-    expect(registry.contentRevision).toBe('8681bf846bd94be80fdabc447e6e01df');
+    //
+    // 0dfdd5efc2c6dad07bd486a7d80c851d -> 3fa982e302f5b191c417d6bce36d1660,
+    // when `rn-call-by-name` gained a second effect: `resource-yield`, magnitude
+    // 128, target `universe` — the tier-1 magnitude eighteen other yield nodes
+    // already carry, so no new number is authored here.
+    //
+    // It is in the preimage for the reason every value edit above is, and this
+    // one is emphatically **not** inert at ship. Before it, no node in the v1
+    // rectangle routed any yield to vellum at all: of the 300 nodes, 59 carry
+    // `resource-yield`, exactly five of those sit in a v1 cell, and all five are
+    // `*-terram`, whose form weights are `stone` — while library upkeep and
+    // scribing both *spend* vellum. The single nomen yield node in the corpus,
+    // `mn-call-it-iron-until-it-is`, is in `muto-nomen`, and `muto` is not a v1
+    // technique. So the opening square had a vellum sink, a labour source in
+    // `territory.json`, and no magical source whatsoever — a god could permit
+    // every cell she had and still not make a universe that could write books
+    // faster by doing magic.
+    //
+    // `rego-nomen` is a v1 cell and `nomen`'s `yieldWeights` are `vellum: 1024`,
+    // so the whole of a yield in it is vellum, and the node's own text already
+    // said so: *"Say a thing's name in the imperative and have it arrive."* The
+    // gloss's standing joke — that it does not specify in what condition — is
+    // why the magnitude is the tier-1 one rather than a generous one. Nothing
+    // was invented to fill the hole; a second effect was hung on the sentence
+    // that already implied it.
+    //
+    // Union, and by the file's own convention neither side's literal survives.
+    // On this branch that same vellum edit was first recorded as `e8442af2 ->
+    // 7277d3f6`, over a preimage that has neither the seventeenth god cost nor
+    // the anti-requisite exclusions; `0dfdd5ef` is a digest over a preimage that
+    // has both of those and no vellum yield. This tree is the first one holding
+    // all three, so a further value is what a digest over the union is supposed
+    // to produce — not a disagreement being settled. The literal below is
+    // MEASURED on the merged tree, not carried from either side.
+    //
+    // 3fa982e302f5b191c417d6bce36d1660 -> cbcfb32c8fcf886ca381ccb81bed1a0a, on
+    // this merge. Union for the fifth time in this list, and for the fifth time
+    // neither side's literal survives: `8681bf84` is a digest over a preimage
+    // holding the signed `teach-rate` cost on `pn-the-nameless` and no vellum
+    // yield, `3fa982e3` over one holding the vellum yield and no signed cost.
+    // `integration/group-e` is the first tree holding both.
+    //
+    // MEASURED on the merged tree, not carried from either side:
+    // `node packages/content/bin/validate-content.mjs` reports
+    // `contentRevision cbcfb32c8fcf886ca381ccb81bed1a0a`, and this assertion
+    // agrees with it.
+    expect(registry.contentRevision).toBe('cbcfb32c8fcf886ca381ccb81bed1a0a');
   });
 
   it('is stable across loads of identical content', () => {
