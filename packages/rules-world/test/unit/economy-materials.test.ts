@@ -20,6 +20,7 @@ import { ClampCounters } from '@mm/primitives';
 import {
   CLAIMANT_KIND,
   CONSUMPTION_ORDER,
+  MATERIAL_KINDS,
   MATERIALS_PER_LABORER,
   NO_MATERIALS,
   NO_YIELD_BONUSES,
@@ -30,6 +31,7 @@ import {
   resourceYieldMultiplier,
   subsistenceDemand,
   totalAmount,
+  zeroAmounts,
 } from '../../src/index.js';
 import type { ConsumptionDemand, MaterialAmounts, MaterialKind } from '../../src/index.js';
 
@@ -50,7 +52,15 @@ import { primitiveNamed, speciesNamed } from './universities-fixtures.js';
  * shipped mix's own arithmetic (that it sums to `FP_ONE`) is asserted where it
  * is produced, in `economy-kinds.test.ts`.
  */
-const EXACT_SHARES: MaterialAmounts = { food: 512, stone: 256, vellum: 256 };
+/** Every kind unshort — the shape `ConsumptionOutcome.shortKinds` always has. */
+function noKindShort(): Record<MaterialKind, boolean> {
+  return Object.fromEntries(MATERIAL_KINDS.map((kind) => [kind, false])) as Record<
+    MaterialKind,
+    boolean
+  >;
+}
+
+const EXACT_SHARES: MaterialAmounts = { ...zeroAmounts(), food: 512, stone: 256, vellum: 256 };
 
 const production = (
   laborerCount: number,
@@ -76,9 +86,9 @@ describe('materials are produced by laborers', () => {
   it('scales linearly with the laborer count, and routes into the three kinds', () => {
     // Exact, because EXACT_SHARES was chosen to divide MATERIALS_PER_LABORER
     // (16) with no remainder: 8 food, 4 stone, 4 vellum per laborer.
-    expect(materialsProduced(production(1))).toEqual({ food: 8, stone: 4, vellum: 4 });
+    expect(materialsProduced(production(1))).toEqual({ ...zeroAmounts(), food: 8, stone: 4, vellum: 4 });
     expect(totalAmount(materialsProduced(production(1)))).toBe(MATERIALS_PER_LABORER);
-    expect(materialsProduced(production(100))).toEqual({ food: 800, stone: 400, vellum: 400 });
+    expect(materialsProduced(production(100))).toEqual({ ...zeroAmounts(), food: 800, stone: 400, vellum: 400 });
     expect(totalAmount(materialsProduced(production(100)))).toBe(MATERIALS_PER_LABORER * 100);
   });
 
@@ -106,13 +116,13 @@ describe('materials are produced by laborers', () => {
     expect(resourceYieldMultiplier(production(1), 'food')).toBe(FP_ONE);
     expect(
       resourceYieldMultiplier(
-        production(1, FP_ONE, { food: [256, 256], stone: [], vellum: [] }),
+        production(1, FP_ONE, { ...NO_YIELD_BONUSES, food: [256, 256], stone: [], vellum: [] }),
         'food',
       ),
     ).toBe(FP_ONE + 512);
 
     const counters = new ClampCounters();
-    const saturatedFood = production(1, FP_ONE, { food: [9999], stone: [], vellum: [] });
+    const saturatedFood = production(1, FP_ONE, { ...NO_YIELD_BONUSES, food: [9999], stone: [], vellum: [] });
     expect(resourceYieldMultiplier({ ...saturatedFood, counters }, 'food')).toBe(4096);
     expect(counters.count('resource-yield')).toBe(1);
 
@@ -173,7 +183,7 @@ describe('consumption follows a documented priority order', () => {
   });
 
   it("pays everyone when every kind's stock covers its own claimants", () => {
-    const stock: MaterialAmounts = { food: 200, stone: 200, vellum: 200 };
+    const stock: MaterialAmounts = { ...zeroAmounts(), food: 200, stone: 200, vellum: 200 };
     const outcome = consumeMaterials(
       stock,
       demand({ casting: 0, subsistence: 100, libraryUpkeep: 50, scribing: 25, construction: 10 }),
@@ -185,8 +195,8 @@ describe('consumption follows a documented priority order', () => {
       construction: 10,
     });
     expect(outcome.anyShortfall).toBe(false);
-    expect(outcome.shortKinds).toEqual({ food: false, stone: false, vellum: false });
-    expect(outcome.remaining).toEqual({ food: 100, stone: 190, vellum: 125 });
+    expect(outcome.shortKinds).toEqual({ ...noKindShort(), food: false, stone: false, vellum: false });
+    expect(outcome.remaining).toEqual({ ...zeroAmounts(), food: 100, stone: 190, vellum: 125 });
   });
 
   it('pays library upkeep before scribing, within the vellum stock they share', () => {
@@ -199,7 +209,7 @@ describe('consumption follows a documented priority order', () => {
     // shares a stock -- upkeep and scribing both spend vellum -- and that
     // ordering is still a documented decision (`materials.ts`: "knowledge
     // already held before knowledge not yet written").
-    const stock: MaterialAmounts = { food: 1_000_000, stone: 1_000_000, vellum: 60 };
+    const stock: MaterialAmounts = { ...zeroAmounts(), food: 1_000_000, stone: 1_000_000, vellum: 60 };
     const outcome = consumeMaterials(
       stock,
       demand({ casting: 0, subsistence: 100, libraryUpkeep: 50, scribing: 25, construction: 10 }),
@@ -212,7 +222,7 @@ describe('consumption follows a documented priority order', () => {
     expect(outcome.spent.libraryUpkeep).toBe(50);
     expect(outcome.spent.scribing).toBe(10);
     expect(outcome.shortfall.scribing).toBe(15);
-    expect(outcome.shortKinds).toEqual({ food: false, stone: false, vellum: true });
+    expect(outcome.shortKinds).toEqual({ ...noKindShort(), food: false, stone: false, vellum: true });
   });
 
   it("a shortage in one kind leaves the other kinds' claimants fully paid", () => {
@@ -221,7 +231,7 @@ describe('consumption follows a documented priority order', () => {
     // out of food can still finish its buildings and keep its libraries,
     // because construction and library upkeep are not drawn from food.
     // `shortKinds` names exactly the kind that ran out.
-    const stock: MaterialAmounts = { food: 0, stone: 1000, vellum: 1000 };
+    const stock: MaterialAmounts = { ...zeroAmounts(), food: 0, stone: 1000, vellum: 1000 };
     const outcome = consumeMaterials(
       stock,
       demand({ casting: 0, subsistence: 50, libraryUpkeep: 10, scribing: 10, construction: 10 }),
@@ -231,12 +241,12 @@ describe('consumption follows a documented priority order', () => {
     expect(outcome.spent.libraryUpkeep).toBe(10);
     expect(outcome.spent.scribing).toBe(10);
     expect(outcome.spent.construction).toBe(10);
-    expect(outcome.shortKinds).toEqual({ food: true, stone: false, vellum: false });
+    expect(outcome.shortKinds).toEqual({ ...noKindShort(), food: true, stone: false, vellum: false });
   });
 
   it('splits demand into spent and shortfall with nothing lost between them, in every kind', () => {
     for (const level of [0, 7, 63, 175, 400]) {
-      const stock: MaterialAmounts = { food: level, stone: level, vellum: level };
+      const stock: MaterialAmounts = { ...zeroAmounts(), food: level, stone: level, vellum: level };
       const wanted = demand({ casting: 0, subsistence: 100, libraryUpkeep: 50, scribing: 25, construction: 10 });
       const outcome = consumeMaterials(stock, wanted);
       for (const claimant of CONSUMPTION_ORDER) {
@@ -247,7 +257,7 @@ describe('consumption follows a documented priority order', () => {
 
   it('never leaves any kind negative, at any stock and any demand', () => {
     for (const level of [0, 1, 5, 999]) {
-      const stock: MaterialAmounts = { food: level, stone: level, vellum: level };
+      const stock: MaterialAmounts = { ...zeroAmounts(), food: level, stone: level, vellum: level };
       const outcome = consumeMaterials(
         stock,
         demand({ casting: 0, subsistence: 10_000, libraryUpkeep: 10_000, scribing: 10_000, construction: 10_000 }),
@@ -261,14 +271,14 @@ describe('consumption follows a documented priority order', () => {
   });
 
   it('treats a negative stock as empty rather than as credit, per kind', () => {
-    const outcome = consumeMaterials({ food: -500, stone: 0, vellum: 0 }, demand({ casting: 0, subsistence: 10 }));
+    const outcome = consumeMaterials({ ...zeroAmounts(), food: -500, stone: 0, vellum: 0 }, demand({ casting: 0, subsistence: 10 }));
     expect(outcome.remaining.food).toBe(0);
     expect(outcome.shortfall.subsistence).toBe(10);
   });
 
   it('refuses a negative demand rather than paying into the stock', () => {
     expect(() =>
-      consumeMaterials({ food: 100, stone: 100, vellum: 100 }, demand({ scribing: -5 })),
+      consumeMaterials({ ...zeroAmounts(), food: 100, stone: 100, vellum: 100 }, demand({ scribing: -5 })),
     ).toThrow(/negative demand/u);
   });
 });
@@ -279,13 +289,13 @@ describe('the non-negative invariant is asserted per kind, not assumed', () => {
     // names the kind that went negative, so "vellum ran out" and "food ran
     // out" are distinguishable from the exception message alone.
     expect(() => assertMaterialsNonNegative(NO_MATERIALS)).not.toThrow();
-    expect(() => assertMaterialsNonNegative({ food: -1, stone: 0, vellum: 0 })).toThrow(
+    expect(() => assertMaterialsNonNegative({ ...zeroAmounts(), food: -1, stone: 0, vellum: 0 })).toThrow(
       /the food stock is -1.*never to go below zero/u,
     );
-    expect(() => assertMaterialsNonNegative({ food: 0, stone: -1, vellum: 0 })).toThrow(
+    expect(() => assertMaterialsNonNegative({ ...zeroAmounts(), food: 0, stone: -1, vellum: 0 })).toThrow(
       /the stone stock is -1/u,
     );
-    expect(() => assertMaterialsNonNegative({ food: 0, stone: 0, vellum: -1 })).toThrow(
+    expect(() => assertMaterialsNonNegative({ ...zeroAmounts(), food: 0, stone: 0, vellum: -1 })).toThrow(
       /the vellum stock is -1/u,
     );
   });

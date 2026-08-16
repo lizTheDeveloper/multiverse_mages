@@ -1462,24 +1462,40 @@ function advanceUniversities(state: SimState, input: ConstructionInputs): Constr
   return { progressAdded, completed, stoneOwed, labourStalled };
 }
 
-/** The universe's three spendable stocks, or zeros if no row has been written yet. */
+/** The universe's seven spendable stocks, or zeros if no row has been written yet. */
 function readMaterialStock(state: SimState, universe: EntityHandle): MaterialAmounts {
   const store = componentOf(state, MATERIAL_STOCK);
-  if (!store.has(universe)) return { food: 0, stone: 0, vellum: 0 };
-  return {
-    food: store.get(universe, 'food'),
-    stone: store.get(universe, 'stone'),
-    vellum: store.get(universe, 'vellum'),
-  };
+  const stock = zeroAmounts();
+  if (!store.has(universe)) return stock;
+  for (const kind of MATERIAL_KINDS) stock[kind] = store.get(universe, kind);
+  return stock;
 }
 
 /**
- * Writes the three stocks back, creating the row on first use.
+ * Writes the seven stocks back, creating the row on first use.
  *
  * Lazy creation rather than a row seeded at world build, for the reason
  * `god-state` is lazy: a universe that has never been stepped has no economy to
  * record, and a row of zeros is indistinguishable from a universe that spent
  * everything.
+ *
+ * ## All seven now, and the reason the previous three-field version was right
+ * ## at the time
+ *
+ * Its comment read: *"the four kinds `material-economy` added are written at
+ * zero on creation and **not written again below**… a row written whole every
+ * tick would silently zero them the moment something else did."* That was the
+ * correct shape for a tree in which the four stocks existed and nothing
+ * produced or spent them. This tick now does both — `work.applied` fills them
+ * through `routeYieldByForm`, and the god's material costs and the teaching
+ * subsidy drain them — so the closing figure this function is handed **is** the
+ * whole seven-kind stock, and writing three of them would be the mirror-image
+ * defect: a stock produced this tick and dropped on the way back to the row.
+ *
+ * The god's intervention system runs **before** the world system in the same
+ * step (`installWorldLoop`'s schema order), so a material cost it deducted is
+ * already in the row `readMaterialStock` opened the tick with. Sequential, not
+ * concurrent: there is still exactly one writer per phase.
  */
 function writeMaterialStock(
   state: SimState,
@@ -1488,25 +1504,10 @@ function writeMaterialStock(
 ): void {
   const store = componentOf(state, MATERIAL_STOCK);
   if (!store.has(universe)) {
-    // The four kinds `material-economy` added to the component are written at
-    // zero on creation and **not written again below**, which is the point.
-    // Nothing in this loop produces or spends `labor`, `essence`, `insight` or
-    // `passage` yet — the faucets and the sinks arrive together, in the same
-    // change — and a row written whole every tick would silently zero them the
-    // moment something else did. The per-field `set` calls that follow touch
-    // only the three this function has an opinion about.
-    attachRecord(state, MATERIAL_STOCK, universe, {
-      ...stock,
-      labor: 0,
-      essence: 0,
-      insight: 0,
-      passage: 0,
-    });
+    attachRecord(state, MATERIAL_STOCK, universe, { ...stock });
     return;
   }
-  store.set(universe, 'food', stock.food);
-  store.set(universe, 'stone', stock.stone);
-  store.set(universe, 'vellum', stock.vellum);
+  for (const kind of MATERIAL_KINDS) store.set(universe, kind, stock[kind]);
 }
 
 interface MortalityPhase {

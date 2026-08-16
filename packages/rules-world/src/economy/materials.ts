@@ -125,11 +125,13 @@ export interface ProductionInput {
 }
 
 /** No bonuses of any kind — the neutral input, and the shape a caller starts from. */
-export const NO_YIELD_BONUSES: Readonly<Record<MaterialKind, readonly Fixed[]>> = {
-  food: [],
-  stone: [],
-  vellum: [],
-};
+export const NO_YIELD_BONUSES: Readonly<Record<MaterialKind, readonly Fixed[]>> =
+  Object.freeze(
+    Object.fromEntries(MATERIAL_KINDS.map((kind) => [kind, [] as readonly Fixed[]])) as Record<
+      MaterialKind,
+      readonly Fixed[]
+    >,
+  );
 
 /**
  * The `(1 + Σ)` `resource-yield` multiplier for one kind, capped once by the
@@ -292,7 +294,9 @@ export function consumeMaterials(
   const shortfall = zeroPerClaimant();
   const remaining = zeroAmounts();
   for (const kind of MATERIAL_KINDS) remaining[kind] = Math.max(0, stock[kind]);
-  const shortKinds: Record<MaterialKind, boolean> = { food: false, stone: false, vellum: false };
+  const shortKinds = Object.fromEntries(
+    MATERIAL_KINDS.map((kind) => [kind, false]),
+  ) as Record<MaterialKind, boolean>;
   let anyShortfall = false;
 
   for (const claimant of CONSUMPTION_ORDER) {

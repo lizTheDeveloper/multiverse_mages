@@ -1,5 +1,5 @@
 /*
- * Multiverse Mages — the three kinds of material, and the two tables that route
+ * Multiverse Mages — the seven kinds of material, and the two tables that route
  * territory and form to them.
  * Copyright (C) 2026 Ann Kelner
  *
@@ -28,18 +28,27 @@
  * example (*"Rego Terram letting universities go up faster"*) had nothing to
  * land on.
  *
- * ## Three, not fourteen
+ * ## Seven, not fourteen — and the first three are not the whole story
  *
  * Fourteen stocks would be fourteen tuning surfaces and thirteen more chances
- * for a claimant to starve on a technicality. Three is the smallest set in which
- * every link of the chain has a producer, a consumer that already existed, and a
- * cell of the grid whose magic relieves it:
+ * for a claimant to starve on a technicality. The set is the smallest one in
+ * which every link of the chain has a producer, a consumer that already
+ * existed, and a cell of the grid whose magic relieves it:
  *
  * | Kind | The forms it is made of (§4.2) | Spent on |
  * | --- | --- | --- |
  * | `food` | Herbam *"fibre"*, Aquam *"flow"*, Animal *"sinew"* | subsistence |
  * | `stone` | Terram *"mass, gravel, stone"*, Ignem the kiln, Auram the bellows | construction |
  * | `vellum` | Animal the parchment, Herbam the paper, Nomen *"naming is speech"* | scribing, library upkeep |
+ * | `labor` | Corpus — a body is what work is made of | construction, beside stone |
+ * | `essence` | Vim *"the carrier itself, unfiltered"* | the price of a dispensation |
+ * | `insight` | Mentem *"no reverb at all"*, Imaginem | university teaching throughput |
+ * | `passage` | Limen, Fatum, Umbra *"only tail"* | opening a portal |
+ *
+ * The last four are `material-economy`'s and they arrived because **three was
+ * not enough to make the grid legible**: seven of the fourteen forms routed
+ * nowhere, two of them (`mentem`, `limen`) inside the v1 opening square, so a
+ * god who opened on mind-magic and thresholds generated no economy at all.
  *
  * ## Forms are deliberately not partitioned
  *
@@ -53,15 +62,25 @@
  * the comparison `packages/coordination/test` measures, and it is the answer to
  * *"different universes aren't really different"*.
  *
- * ## And a form whose magic is not a material routes nowhere
+ * ## A form whose magic is not *food* is still a material
  *
- * Mentem, Vim, Umbra, Fatum, Limen, Imaginem and Corpus carry all-zero weights
- * in `form.json`, and this is a statement rather than an omission. §4.2:
- * Mentem *"is the only form with no reverb at all"* because it is not happening
- * in the world; Vim is *"the carrier itself, unfiltered"*; Umbra is
- * *"everything in the reverb tail, nothing in the dry signal"*. Shadow magic
- * feeds nobody. A universe that permits only those forms has a magnificent
- * arsenal and no economy, and that is a coherent — if hungry — world.
+ * This section used to say the opposite, and the record of the reversal is
+ * worth more than the corrected text. It read: *"Mentem, Vim, Umbra, Fatum,
+ * Limen, Imaginem and Corpus carry all-zero weights in `form.json`, and this is
+ * a statement rather than an omission… Shadow magic feeds nobody."*
+ *
+ * The observation was right and the conclusion was wrong. §4.2 does say Mentem
+ * *"is the only form with no reverb at all"* — it is not happening in the
+ * world — and what follows is not that mind-magic produces nothing, but that
+ * what it produces is not **grain**. It produces `insight`. Vim, *"the carrier
+ * itself, unfiltered"*, is `essence`. Umbra, *"everything in the reverb tail"*,
+ * is `passage`, which is what a threshold yields.
+ *
+ * A universe that permits only those forms still cannot eat. That is the true
+ * half of the old paragraph and it survives: `food` has exactly three producing
+ * forms and none of them is Mentem. What does not survive is the claim that
+ * such a universe has *no economy* — it has an economy the three-kind stock
+ * could not see.
  *
  * **Every magnitude reachable from here is untuned** (`docs/design/release-plan.md`).
  */
@@ -71,32 +90,64 @@ import { FP_ONE, floorDiv } from '@mm/sim-core';
 import type { FormRecord, TerritoryRecord } from '@mm/content';
 
 /**
- * The three kinds, in a fixed order.
+ * The seven kinds, in a fixed order.
  *
  * A literal tuple rather than the keys of an object, for the reason
  * `CONSUMPTION_ORDER` next door is one: *"the order is a decision a reviewer
  * checks, not a property of how an object literal was built"*. It is also what
- * makes "exactly three kinds" countable by a test rather than asserted in prose.
+ * makes "exactly these kinds, in this order" countable by a test rather than
+ * asserted in prose — and the order is `MATERIAL_STOCK`'s column order, which is
+ * appended to and never reordered.
  */
-export const MATERIAL_KINDS = ['food', 'stone', 'vellum'] as const;
+export const MATERIAL_KINDS = [
+  'food',
+  'stone',
+  'vellum',
+  'labor',
+  'essence',
+  'insight',
+  'passage',
+] as const;
 
-/** One of the three. */
+/** One of the seven. */
 export type MaterialKind = (typeof MATERIAL_KINDS)[number];
+
+/**
+ * The three that come out of **land**, and the reason the other four do not.
+ *
+ * `territoryYieldShares` splits a territory's yield across kinds, and
+ * `territory.schema.json` names three: a river delta yields grain and a
+ * highland yields stone, and no arrangement of acreage yields `insight`. The
+ * four `material-economy` added are made by a mage spending a month — they come
+ * out of `application.ts`'s applied channel and nowhere else — so a laborer in
+ * a field produces exactly zero of them, by having no share rather than by a
+ * special case.
+ *
+ * Kept as its own list rather than derived by subtraction, for the reason
+ * `MATERIAL_KINDS` is a literal: which kinds land yields is a decision a
+ * reviewer checks, not a property of how a filter was written.
+ */
+export const LAND_MATERIAL_KINDS = ['food', 'stone', 'vellum'] as const;
+
+/** One of the three kinds land yields. */
+export type LandMaterialKind = (typeof LAND_MATERIAL_KINDS)[number];
 
 /** A quantity of each kind. `fp` unless the field carrying it says otherwise. */
 export type MaterialAmounts = Readonly<Record<MaterialKind, Fixed>>;
 
 /** Nothing of anything — the identity for every sum below. */
-export const NO_MATERIALS: MaterialAmounts = { food: 0, stone: 0, vellum: 0 };
+export const NO_MATERIALS: MaterialAmounts = Object.freeze(zeroAmounts());
 
-/** A fresh mutable triple at zero. */
+/** A fresh mutable record at zero, one field per kind. */
 export function zeroAmounts(): Record<MaterialKind, Fixed> {
-  return { food: 0, stone: 0, vellum: 0 };
+  return { food: 0, stone: 0, vellum: 0, labor: 0, essence: 0, insight: 0, passage: 0 };
 }
 
 /** Adds two baskets, kind by kind. */
 export function addAmounts(a: MaterialAmounts, b: MaterialAmounts): MaterialAmounts {
-  return { food: a.food + b.food, stone: a.stone + b.stone, vellum: a.vellum + b.vellum };
+  const sum = zeroAmounts();
+  for (const kind of MATERIAL_KINDS) sum[kind] = a[kind] + b[kind];
+  return sum;
 }
 
 /**
@@ -109,7 +160,35 @@ export function addAmounts(a: MaterialAmounts, b: MaterialAmounts): MaterialAmou
  * exists to create.
  */
 export function totalAmount(amounts: MaterialAmounts): Fixed {
-  return amounts.food + amounts.stone + amounts.vellum;
+  let total = 0;
+  for (const kind of MATERIAL_KINDS) total += amounts[kind];
+  return total;
+}
+
+/**
+ * The three land kinds summed, which is **not** the same question.
+ *
+ * Two callers need this rather than {@link totalAmount}, and both would be
+ * silently wrong with it:
+ *
+ * - **The autonomy outlook.** A mage's *"can this universe afford to do
+ *   things"* term is scored against what the claimants she can see are paid in
+ *   — subsistence, scribing, casting, construction — and every one of those is
+ *   `food`, `stone` or `vellum`. Folding in a stock of `passage` the god is
+ *   saving for a portal would make her more optimistic about a shelf that is
+ *   still empty.
+ * - **`territoryYieldShares`**, whose denominator is the land's own yield.
+ *
+ * `@mm/agent-api`'s observation and player-state deliberately do *not* call
+ * this: both spell the three-term sum out inline, because §4.1's `materials`
+ * channel is a contract and a helper that widened one day would move a slot
+ * every trained agent depends on without moving the layout digest that is
+ * supposed to catch it.
+ */
+export function landTotal(amounts: MaterialAmounts): Fixed {
+  let total = 0;
+  for (const kind of LAND_MATERIAL_KINDS) total += amounts[kind];
+  return total;
 }
 
 /**
@@ -140,13 +219,13 @@ export function territoryYieldShares(regions: readonly TerritoryRecord[]): Mater
   const weighted = zeroAmounts();
   for (const region of regions) {
     const land = Math.max(0, region.landUnits);
-    for (const kind of MATERIAL_KINDS) {
+    for (const kind of LAND_MATERIAL_KINDS) {
       weighted[kind] += land * Math.max(0, region.yieldPerLandUnit[kind]);
     }
   }
 
-  const total = totalAmount(weighted);
-  if (total <= 0) return { food: FP_ONE, stone: 0, vellum: 0 };
+  const total = landTotal(weighted);
+  if (total <= 0) return { ...zeroAmounts(), food: FP_ONE };
 
   // Two of the three are floored and the first takes the remainder, so the three
   // sum to exactly `FP_ONE` however the division lands. Distributing the
@@ -155,7 +234,7 @@ export function territoryYieldShares(regions: readonly TerritoryRecord[]): Mater
   // does — subsistence is paid first.
   const stone = floorDiv(weighted.stone * FP_ONE, total);
   const vellum = floorDiv(weighted.vellum * FP_ONE, total);
-  return { food: FP_ONE - stone - vellum, stone, vellum };
+  return { ...zeroAmounts(), food: FP_ONE - stone - vellum, stone, vellum };
 }
 
 /**
@@ -195,9 +274,9 @@ export function routeYieldByForm(form: FormRecord, magnitude: Fixed): MaterialAm
   // food consumes stone: a statement about the material taxonomy, not about
   // one working, and nothing in `form.json` means it. The sign comes from the
   // node; the mix stays a non-negative property of the form.
-  return {
-    food: floorDiv(magnitude * Math.max(0, form.yieldWeights.food), FP_ONE),
-    stone: floorDiv(magnitude * Math.max(0, form.yieldWeights.stone), FP_ONE),
-    vellum: floorDiv(magnitude * Math.max(0, form.yieldWeights.vellum), FP_ONE),
-  };
+  const routed = zeroAmounts();
+  for (const kind of MATERIAL_KINDS) {
+    routed[kind] = floorDiv(magnitude * Math.max(0, form.yieldWeights[kind]), FP_ONE);
+  }
+  return routed;
 }

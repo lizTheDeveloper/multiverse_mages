@@ -130,7 +130,7 @@ describe('materialsProduced floors each share, and the sentinel sees every one',
     const input = {
       laborerCount: 1,
       laborAffinity: 64,
-      shares: { food: 1004, stone: 10, vellum: 10 },
+      shares: { ...zeroAmounts(), food: 1004, stone: 10, vellum: 10 },
       resourceYield: primitiveNamed(registry, 'resource-yield'),
       resourceYieldBonuses: NO_YIELD_BONUSES,
     };
@@ -166,7 +166,7 @@ describe('materialsProduced floors each share, and the sentinel sees every one',
     const input = {
       laborerCount: 1,
       laborAffinity: 32,
-      shares: { food: 512, stone: 256, vellum: 256 },
+      shares: { ...zeroAmounts(), food: 512, stone: 256, vellum: 256 },
       resourceYield: primitiveNamed(registry, 'resource-yield'),
       resourceYieldBonuses: NO_YIELD_BONUSES,
     };
@@ -207,7 +207,7 @@ describe('routeYieldByForm floors each weight, and the sentinel sees every one',
     // The weights sum to 1024 = FP_ONE, so they are valid. But the magnitude
     // is too small for any kind to survive the floor.
     const form = {
-      yieldWeights: { food: 512, stone: 256, vellum: 256 },
+      yieldWeights: { ...zeroAmounts(), food: 512, stone: 256, vellum: 256 },
     };
 
     const events: FixedPointAnnihilation[] = [];
