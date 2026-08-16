@@ -220,6 +220,9 @@ const doc = {
       id: c.id,
       technique: c.technique,
       form: c.form,
+      /* How many nodes the cell carries at all. The grid says "4 of 5 known",
+         which is the number a player needs; the count alone cannot say it. */
+      nodeCount: (c.nodes ?? []).length,
     })),
     species: registry.species.map(({ contentId, record: s }) => ({
       speciesId: contentId,

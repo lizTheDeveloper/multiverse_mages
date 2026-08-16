@@ -40,6 +40,19 @@ export const SURFACES = [
   { href: '', label: 'index', hint: 'all fourteen, with what each answers', group: 'meta' },
 ];
 
+/*
+ * No dark-mode override in here on purpose.
+ *
+ * `--god` is the god's cyan in both themes and is the one token that stays
+ * legible in both: measured on the play page, #0B4B51 on the vellum ground and
+ * #12B8C6 on the dark one, the latter at 8.07:1. The first cut swapped in
+ * `--god-deep` under dark and measured 2.2:1 — the opposite of what the swap
+ * was for.
+ *
+ * Keep CSS comments out of the template literal below: a backtick inside it
+ * closes the string, and the file then fails to parse with a message about
+ * postfix operators that says nothing about backticks.
+ */
 const CSS = `
 .mm-nav{display:flex;flex-wrap:wrap;align-items:baseline;gap:.15rem .1rem;
   margin:0 0 1.1rem;padding:.35rem .1rem .5rem;font-size:.78rem;
@@ -52,8 +65,6 @@ const CSS = `
   border-color:var(--god,currentColor);color:var(--god,inherit)}
 .mm-nav .mm-nav-sep{opacity:.3;padding:0 .3rem;user-select:none}
 .mm-nav .mm-nav-home{font-weight:600;opacity:.85;letter-spacing:.02em;padding-right:.5rem}
-@media (prefers-color-scheme:dark){:root:not([data-theme=light]) .mm-nav a[aria-current=page]{color:var(--god-deep,inherit);border-color:var(--god-deep,currentColor)}}
-:root[data-theme=dark] .mm-nav a[aria-current=page]{color:var(--god-deep,inherit);border-color:var(--god-deep,currentColor)}
 `;
 
 /**
