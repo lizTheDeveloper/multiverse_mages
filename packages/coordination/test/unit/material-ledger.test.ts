@@ -140,6 +140,21 @@ describe('a deliberately leaking flow fails the assertion — task 6.4', () => {
     expect(message).not.toMatch(/passage/u);
   });
 
+  it('is absent from the deps every ordinary world is built with', () => {
+    // **The guard that keeps a test hook from becoming a shipped defect.** The
+    // injector lives on the real `WorldStepDeps` so that the control exercises
+    // the real loop, and the cost of that choice is exactly this risk: a
+    // composition root that set `leak` would quietly destroy material in
+    // production, and the conservation assertion would dutifully report the
+    // leak it was itself asked to create.
+    //
+    // Asserted against the shared fixture rather than argued: nothing outside
+    // this file sets the field today, and if that changes, the change has to
+    // come through here.
+    expect(pricedDeps().leak).toBeUndefined();
+    expect(worldDeps(scribingTraditionId()).leak).toBeUndefined();
+  });
+
   it('does not fire for a leak of zero, which is the off switch', () => {
     // A control that fires whatever it is handed is not a control. A declared
     // leak of nothing must leave the run exactly as clean as no leak at all.

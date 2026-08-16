@@ -1,6 +1,6 @@
 /* W247 — is there any `labor` income at all in the v1 opening square? */
 import { AUDIT_RUN_SEED, referenceContent, referenceScenario } from '@mm/scenario';
-import { createSession, GOD_ACTION } from '@mm/agent-api';
+import { createSession } from '@mm/agent-api';
 
 const content = referenceContent();
 const { scenario, lastReport } = referenceScenario(content);
