@@ -505,7 +505,13 @@ server.listen(PORT, () => {
       `    http://localhost:${PORT}/\n\n` +
       `  ${run.frames[at].obs.length} observation slots, layout ${OBSERVATION_LAYOUT_DIGEST.slice(0, 12)}…\n` +
       `  Opened at tick ${at}${WARM > 0 ? ` — it ran ${WARM} ticks on its own first, because tick 0 is not a playable position` : ''}.\n` +
-      `  ${legal} of 16 actions legal right now. Advance time and more open up.\n` +
+      // The session's own size, not a literal. This is the second half of the
+      // bug #195 fixed in `toAction`: `inviteScholar` widened the space from 16
+      // to 17, the submit path was corrected, and this banner was not — so the
+      // first thing the operator reads on startup undercounts the action space
+      // by one and can never say more than "16 of 16".
+      `  ${legal} of ${run.session.actionSpaceSize} actions legal right now. ` +
+      'Advance time and more open up.\n' +
       '  Ctrl-C to end the universe.\n\n',
   );
 });
