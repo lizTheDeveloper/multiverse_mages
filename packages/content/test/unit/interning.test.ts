@@ -145,8 +145,14 @@ describe('interning', () => {
     // side of that merge shared. Node ids intern in sort order, so it lands at
     // 285 and every node after it shifts by one — the renumbering these
     // assertions exist to surface.
-    expect(registry.intern('node', 'rn-keep-the-name-close')).toBe(285);
-    expect(registry.intern('node', 'rv-turn-the-casting')).toBe(300);
+    //
+    // 285 -> 321 and 300 -> 337, when the deep-magic set added 37 nodes for the
+    // late game (`content/deep-magic`). Nothing was renamed and nothing moved
+    // cell; the shift is the sort order absorbing thirty-seven new ids, and
+    // these two pins are here precisely so that a content merge cannot add
+    // records without saying so out loud.
+    expect(registry.intern('node', 'rn-keep-the-name-close')).toBe(321);
+    expect(registry.intern('node', 'rv-turn-the-casting')).toBe(337);
     expect(registry.intern('species', 'draconic')).toBe(1);
     expect(registry.intern('tradition', 'art-of-memory')).toBe(1);
     expect(registry.intern('primitive', 'area-denial')).toBe(1);
@@ -464,7 +470,18 @@ describe('contentRevision', () => {
     // revision is a digest over the values, so this is the ordinary case rather
     // than a union of branches. It changes every run in which any mage learns
     // The Nameless — which is the point of the change, not a side effect of it.
-    expect(registry.contentRevision).toBe('8681bf846bd94be80fdabc447e6e01df');
+    //
+    // 8681bf846bd94be80fdabc447e6e01df -> 57c4db8d16329e8d4b16503531f6dcc7,
+    // when `content/deep-magic` added 37 nodes for the late game and the
+    // prestige ladder, and the `nodes` lists of the 31 cells that carry them.
+    // An addition again, not a value edit: every existing record is
+    // byte-identical, and the two `excludes` arrays `main` had meanwhile
+    // authored (PR #161) are still on the two cells that hold them — the merge
+    // is a union of that branch's node lists with main's exclusions, so
+    // neither side's literal is a digest over a preimage holding both. This
+    // tree is the first one holding both, and the value here was recomputed
+    // from it rather than copied from either parent.
+    expect(registry.contentRevision).toBe('57c4db8d16329e8d4b16503531f6dcc7');
   });
 
   it('is stable across loads of identical content', () => {

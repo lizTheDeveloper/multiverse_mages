@@ -11,7 +11,8 @@
       "can-quicken-the-herd",
       "can-call-the-pack",
       "can-the-fat-year",
-      "can-the-made-beast"
+      "can-the-made-beast",
+      "can-the-thing-that-breeds-true"
     ]
   },
   {
@@ -38,7 +39,8 @@
       "cau-clear-the-sky",
       "cau-call-the-storm",
       "cau-the-borrowed-season",
-      "cau-keep-the-sky"
+      "cau-keep-the-sky",
+      "cau-the-weather-that-is-argued-with"
     ]
   },
   {
@@ -54,7 +56,8 @@
       "cc-the-mended-decade",
       "cc-quicken-the-cohort",
       "cc-the-long-tenure",
-      "cc-the-unfinished-death"
+      "cc-the-unfinished-death",
+      "cc-the-archivist-that-is-not-a-person"
     ]
   },
   {
@@ -66,7 +69,8 @@
       "ch-quicken-the-seed",
       "ch-grow-the-beam",
       "ch-paper-without-rags",
-      "ch-the-grown-hall"
+      "ch-the-grown-hall",
+      "ch-the-page-that-does-not-take-fire"
     ]
   },
   {
@@ -81,7 +85,9 @@
       "cig-hold-the-temperature",
       "cig-the-assayers-flame",
       "cig-the-uncontained-hour",
-      "cig-the-standing-furnace"
+      "cig-the-standing-furnace",
+      "cig-the-light-with-no-source",
+      "cig-the-thing-that-is-only-burning"
     ],
     "excludes": [
       {
@@ -103,7 +109,8 @@
       "cim-the-shown-interior",
       "cim-the-absent-scholar",
       "cim-the-crowded-hall",
-      "cim-the-perfect-forgery"
+      "cim-the-perfect-forgery",
+      "cim-the-servant-made-of-seeing"
     ]
   },
   {
@@ -129,7 +136,8 @@
       "ct-make-the-brick",
       "ct-the-poured-wall",
       "ct-the-conjured-vein",
-      "ct-the-raised-bastion"
+      "ct-the-raised-bastion",
+      "ct-the-body-of-quarried-stone"
     ]
   },
   {
@@ -142,7 +150,9 @@
       "cv-feed-the-working",
       "cv-the-standing-aura",
       "cv-the-warded-precinct",
-      "cv-the-made-vis"
+      "cv-the-made-vis",
+      "cv-the-twelve-handed-working",
+      "cv-the-thing-made-of-raw-magic"
     ]
   },
   {
@@ -154,7 +164,8 @@
       "cu-cast-the-shadow",
       "cu-the-lengthened-dusk",
       "cu-the-kept-shadow",
-      "cu-the-unlit-hall"
+      "cu-the-unlit-hall",
+      "cu-the-shadow-with-no-body"
     ],
     "excludes": [
       {
@@ -174,7 +185,8 @@
       "cf-the-promised-year",
       "cf-the-fated-hand",
       "cf-write-the-ending",
-      "cf-the-given-destiny"
+      "cf-the-given-destiny",
+      "cf-the-servant-of-a-later-hour"
     ]
   },
   {
@@ -186,7 +198,8 @@
       "cl-set-the-doorstep",
       "cl-draw-the-circle",
       "cl-the-made-door",
-      "cl-the-threshold-that-was-always-there"
+      "cl-the-threshold-that-was-always-there",
+      "cl-the-building-with-no-outside"
     ]
   },
   {
@@ -226,7 +239,8 @@
       "iaq-sound-the-well",
       "iaq-sip-the-standing-pool",
       "iaq-trace-the-current",
-      "iaq-fathom-the-watershed"
+      "iaq-fathom-the-watershed",
+      "iaq-the-draught-of-common-knowledge"
     ]
   },
   {
@@ -310,7 +324,8 @@
       "im-weigh-the-attention",
       "im-follow-the-thought",
       "im-read-the-surface",
-      "im-open-the-locked-room"
+      "im-open-the-locked-room",
+      "im-the-one-attention"
     ],
     "v1": true
   },
@@ -325,7 +340,8 @@
       "it-taste-the-soil",
       "it-survey-the-strata",
       "it-find-the-deep-seam",
-      "it-read-the-fault"
+      "it-read-the-fault",
+      "it-the-long-survey"
     ],
     "v1": true
   },
@@ -384,7 +400,10 @@
       "il-sense-the-seam",
       "il-count-the-doors",
       "il-read-the-binding",
-      "il-stand-in-the-doorway"
+      "il-stand-in-the-doorway",
+      "il-the-plan-that-holds-the-whole-building",
+      "il-the-near-shore",
+      "il-the-far-and-unlike"
     ],
     "v1": true
   },
@@ -457,7 +476,8 @@
       "mc-the-body-for-the-work",
       "mc-wear-another-face",
       "mc-the-long-body",
-      "mc-the-shape-that-holds"
+      "mc-the-shape-that-holds",
+      "mc-the-long-now"
     ]
   },
   {
@@ -499,7 +519,8 @@
       "mim-turn-the-diagram",
       "mim-the-lecture-made-visible",
       "mim-wear-the-room",
-      "mim-the-image-that-argues-back"
+      "mim-the-image-that-argues-back",
+      "mim-the-universe-as-it-is-told"
     ]
   },
   {
@@ -513,7 +534,8 @@
       "mm-turn-the-difficulty",
       "mm-the-changed-appetite",
       "mm-translate-the-expert",
-      "mm-the-mind-made-a-library"
+      "mm-the-mind-made-a-library",
+      "mm-the-mind-that-holds-a-civilization"
     ]
   },
   {
@@ -527,7 +549,8 @@
       "mt-soften-the-stone",
       "mt-turn-the-poor-ore",
       "mt-the-stone-that-was-sand",
-      "mt-turn-the-ground-under-them"
+      "mt-turn-the-ground-under-them",
+      "mt-the-ore-that-was-never-mined"
     ]
   },
   {
@@ -556,7 +579,8 @@
       "mu-turn-the-shadow",
       "mu-the-shadow-of-something-else",
       "mu-give-the-shade-weight",
-      "mu-trade-shadows"
+      "mu-trade-shadows",
+      "mu-the-servant-of-cast-shade"
     ]
   },
   {
@@ -571,7 +595,8 @@
       "mf-change-the-debt",
       "mf-the-later-appointment",
       "mf-divide-it-among-the-heirs",
-      "mf-the-fate-that-was-yours"
+      "mf-the-fate-that-was-yours",
+      "mf-the-material-of-what-nearly-happened"
     ]
   },
   {
@@ -585,7 +610,8 @@
       "ml-change-what-the-wall-means",
       "ml-the-door-that-was-a-window",
       "ml-which-side-the-courtyard-is-on",
-      "ml-the-seam-made-a-hinge"
+      "ml-the-seam-made-a-hinge",
+      "ml-the-hall-larger-than-its-walls"
     ]
   },
   {
@@ -600,7 +626,8 @@
       "mn-lend-the-name",
       "mn-call-it-iron-until-it-is",
       "mn-trade-true-names",
-      "mn-the-second-true-name"
+      "mn-the-second-true-name",
+      "mn-the-substance-of-the-word"
     ]
   },
   {
@@ -660,7 +687,8 @@
       "ph-wither-the-row",
       "ph-take-the-haft",
       "ph-the-failed-harvest",
-      "ph-the-shelves-give-way"
+      "ph-the-shelves-give-way",
+      "ph-the-ledger-fire"
     ]
   },
   {
@@ -697,7 +725,8 @@
       "pm-the-misplaced-hour",
       "pm-scatter-the-lesson",
       "pm-unmake-the-mind",
-      "pm-the-empty-room"
+      "pm-the-empty-room",
+      "pm-the-broken-consensus"
     ],
     "v1": true
   },
@@ -724,7 +753,8 @@
     "nodes": [
       "pv-let-it-lapse",
       "pv-the-unfinished-sentence",
-      "pv-where-nothing-takes"
+      "pv-where-nothing-takes",
+      "pv-the-ash-of-the-art"
     ]
   },
   {
@@ -776,7 +806,8 @@
       "pn-mispronounce",
       "pn-shed-the-use-name",
       "pn-unsay-the-name",
-      "pn-the-nameless"
+      "pn-the-nameless",
+      "pn-the-name-you-gave-up"
     ],
     "v1": true
   },
@@ -853,7 +884,8 @@
       "rig-bank-the-forge",
       "rig-hold-the-fire-off",
       "rig-drive-the-flame",
-      "rig-the-walled-fire"
+      "rig-the-walled-fire",
+      "rig-the-kept-fire"
     ]
   },
   {
@@ -879,7 +911,8 @@
       "rm-hold-the-attention",
       "rm-the-patient-lesson",
       "rm-kindle-devotion",
-      "rm-the-shared-mind"
+      "rm-the-shared-mind",
+      "rm-the-standing-consensus"
     ],
     "v1": true
   },
@@ -948,7 +981,10 @@
       "rl-step-across",
       "rl-seal-the-way",
       "rl-open-the-portal",
-      "rl-the-standing-gate"
+      "rl-the-standing-gate",
+      "rl-the-corridor-that-is-shorter-inside",
+      "rl-the-crossing-to-a-kindred-house",
+      "rl-the-long-crossing"
     ],
     "v1": true
   },
@@ -964,7 +1000,8 @@
       "rn-write-the-name-down",
       "rn-keep-the-name-close",
       "rn-compel-by-name",
-      "rn-the-bound-servant"
+      "rn-the-bound-servant",
+      "rn-the-thing-called-from-outside"
     ],
     "v1": true
   }
