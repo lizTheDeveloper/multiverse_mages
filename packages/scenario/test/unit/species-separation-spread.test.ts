@@ -173,12 +173,26 @@ const CLAIMED_SEPARATIONS: readonly {
     status: 'asserted',
     verdict: 'established',
   },
+  // **Retired 2026-08-16 on `w247/material-economy-build`, at four sets.** It
+  // was `established` and is now `inconclusive`: strict in **1 of 4** sets with
+  // a gap of **1.1 SE**, which is inside the cross-seed spread. Dwarf's tier-3
+  // interval over the committed six seeds went `[25, 30]` to `[22, 66]` — one
+  // seed carries the whole widening — while elf's stayed `[37, 42]`.
+  //
+  // The cause is `material-economy` giving the v1 opening square's Mentem and
+  // Limen forms a `resource-yield` node apiece: `GOAL.applyMagic` becomes a
+  // live choice inside the shipped rectangle, and a month spent casting is a
+  // month not spent reaching tier 3. Which species that costs most is a
+  // property of `curiosity` and the affinities, not a decision anybody took.
+  //
+  // Retired next door in the same commit, and its source text is pinned in
+  // {@link RETIRED_ASSERTIONS} below.
   {
     faster: 'dwarf',
     slower: 'elf',
-    assertedAs: 'beforeElf.high < elf.low',
-    status: 'asserted',
-    verdict: 'established',
+    assertedAs: 'beforeElf.high < elf.low — retired 2026-08-16',
+    status: 'retired',
+    verdict: 'inconclusive',
   },
   {
     faster: 'gnome',
@@ -187,22 +201,40 @@ const CLAIMED_SEPARATIONS: readonly {
     status: 'asserted',
     verdict: 'established',
   },
-  // Strict in 11 of 12 sets at the bin's default design — a real effect, and not
-  // reproducible enough for a file with one seed set to assert. It fails in
-  // exactly the sets where elf's own interval reaches down to 45.
+  // Was strict in 11 of 12 sets at the bin's default design, and **is now
+  // refuted outright**: re-measured 2026-08-16 at four sets, elf arrives before
+  // orc by **−11.3 SE** — the claimed order is backwards. Orc's tier-3 interval
+  // over the committed six seeds went `[32, 51]` to `[57, 177]` while elf's did
+  // not move, so orc is the species that pays most for the new verb.
+  //
+  // Retiring it a second time is not possible and would not be right either:
+  // the row stays retired and the *verdict* moves, which is exactly what the
+  // file's own instruction asks for — *"re-record this row with the new numbers
+  // and the reason — do not delete it."*
   {
     faster: 'orc',
     slower: 'elf',
     assertedAs: 'orc.high < elf.low — retired 2026-08-14',
     status: 'retired',
-    verdict: 'inconclusive',
+    verdict: 'refuted',
   },
+  // The mirror image, and it is the more interesting of the pair. #127's claim
+  // was `refuted` at 0/12 sets; at four sets on this build it is
+  // **inconclusive** — strict in 3 of 4, gap 16.4 SE. Orc slowing down is what
+  // moved it, and the reading is not a rehabilitation: a claim that goes from
+  // *never* to *usually* on a content change is a claim about the content, and
+  // the file's whole subject is that a strict ordering is the statistic most
+  // likely to look clean by accident.
+  //
+  // **Left retired.** It is not re-asserted next door, and it should not be
+  // until somebody re-measures it at the bin's twelve sets rather than at this
+  // tripwire's four.
   {
     faster: 'human',
     slower: 'orc',
     assertedAs: 'human.high < orc.low — retired 2026-08-14',
     status: 'retired',
-    verdict: 'refuted',
+    verdict: 'inconclusive',
   },
 ];
 
@@ -214,6 +246,12 @@ const CLAIMED_SEPARATIONS: readonly {
  * six-seed table will write the same line again. This is the trace.
  */
 const RETIRED_ASSERTIONS: readonly { readonly source: string; readonly heldIn: string }[] = [
+  // `material-economy`'s, 2026-08-16. `beforeElf` was `[gnome, dwarf]` and is
+  // `[gnome]`, so the loop that asserted both now asserts one.
+  // `material-economy`'s, 2026-08-16. The *site* survives — `beforeElf` still
+  // holds `gnome` — so what is pinned is the **binding**, which is the line a
+  // future author would have to write again to re-assert the claim.
+  { source: 'const beforeElf = [gnome, dwarf]', heldIn: '1/4 sets' },
   { source: 'expect(human.high).toBeLessThan(orc.low)', heldIn: '0/12 sets' },
   { source: 'expect(orc.high).toBeLessThan(elf.low)', heldIn: '11/12 sets' },
   { source: 'expect(draconic.low).toBeLessThan(human.low)', heldIn: '5/12 sets' },
@@ -341,14 +379,16 @@ describe('every strict separation this repository asserts, re-rolled', () => {
         'remove the matching row in CLAIMED_SEPARATIONS so that every separation this ' +
         'repository publishes carries the number of seed sets it survives.',
     ).toBe(2);
-    // **Two sites, three asserted separations, and it was four sites and five
-    // before 2026-08-14.** The loop over `beforeElf` is one site and two
-    // separations; `orc` was dropped from it when `orc < elf` was retired at
-    // 11/12. The count is the tripwire and the two lines below say which two
-    // sites it is, so that swapping one claim for another cannot keep the count.
+    // **Two sites, two asserted separations, and it was four sites and five
+    // before 2026-08-14 and three until 2026-08-16.** The loop over `beforeElf`
+    // is one site and, since `material-economy` retired `dwarf < elf`, one
+    // separation: `orc` was dropped from it in August's retirement and `dwarf`
+    // in this one, so the loop now runs over `[gnome]` alone. The count is the
+    // tripwire and the two lines below say which two sites it is, so that
+    // swapping one claim for another cannot keep the count.
     expect(sibling).toContain('for (const entry of beforeElf) expect(entry.high)');
     expect(sibling).toContain('expect(gnome.high).toBeLessThan(human.low)');
-    expect(CLAIMED_SEPARATIONS.filter((claim) => claim.status === 'asserted')).toHaveLength(3);
+    expect(CLAIMED_SEPARATIONS.filter((claim) => claim.status === 'asserted')).toHaveLength(2);
   });
 
   it.each(RETIRED_ASSERTIONS)(

@@ -207,23 +207,48 @@ describe('twenty world years in', () => {
     // line: the campaign's knowledge-vitality wire, and `main`'s own merges.
     // Taking either hunk verbatim would pin a number no build produces, which
     // is exactly what the conflict resolution had to avoid.
-    expect(bySpecies('dwarf').occupiedCells).toBe(12);
-    expect(bySpecies('human').occupiedCells).toBe(12);
-    expect(bySpecies('orc').occupiedCells).toBe(11);
-    expect(bySpecies('draconic').occupiedCells).toBe(9);
-    expect(bySpecies('elf').occupiedCells).toBe(11);
-    expect(bySpecies('gnome').occupiedCells).toBe(9);
+    //
+    // **Re-measured 2026-08-16 on `w247/material-engine-build`'s
+    // `material-economy` work, and it moved again — this time for a reason
+    // rather than for a re-roll.** `12/12/11/9/11/9` became the six values
+    // below. Two of the shipped opening square's four forms — Mentem and Limen
+    // — carry a `resource-yield` node for the first time, so `GOAL.applyMagic`
+    // is a live choice inside the opening rectangle and mages spend months
+    // casting that they used to spend researching. Applied magic took 1,261
+    // mage-months over 240 ticks against a control's 1,016.
+    //
+    // A month at the field is a month not at the bench, so a species that takes
+    // to the new verb loses occupancy — *how many distinct cells it has anybody
+    // in* — and one that does not gains it, because the frontier it is racing
+    // for is less crowded. Orc falls five and draconic gains three, which is the
+    // trade the change exists to create rather than a regression. The values are
+    // pinned so the next person who moves them has to say why too.
+    //
+    // Asserted as one object rather than six statements, because the failure a
+    // reader needs is *which* species moved and by how much, and six separate
+    // `toBe`s report the first one and stop.
+    expect({
+      dwarf: bySpecies('dwarf').occupiedCells,
+      human: bySpecies('human').occupiedCells,
+      orc: bySpecies('orc').occupiedCells,
+      draconic: bySpecies('draconic').occupiedCells,
+      elf: bySpecies('elf').occupiedCells,
+      gnome: bySpecies('gnome').occupiedCells,
+    }).toEqual({ dwarf: 12, human: 12, orc: 6, draconic: 12, elf: 11, gnome: 9 });
   });
 
   it('measures a spread that is neither flat nor a hegemony', () => {
     const entry = collectSpeciesCellOccupancy(telemetryFor(sample));
     expect(entry.status).toBe('measured');
-    // 0.0473 at this horizon, re-measured on the merge described above — was
-    // 0.0729 before either change, 0.0714 on `main` alone and 0.0645 on the
-    // branch alone. Pinned to four places: the point of the metric is that this
-    // number moves, and a test that only asserted "greater than zero" would let
-    // it move to anything.
-    expect((entry as { value: number }).value).toBeCloseTo(0.0625, 4);
+    // 0.1075 at this horizon, re-measured 2026-08-16 with `material-economy`'s
+    // faucets live — was 0.0625 immediately before, and 0.0473, 0.0729, 0.0714
+    // and 0.0645 at the four readings before that. The concentration **rose**,
+    // which is the same finding the cell counts above carry from the other
+    // side: orc fell from eleven occupied cells to six, so the spread across
+    // species widened. Pinned to four places: the point of the metric is that
+    // this number moves, and a test that only asserted "greater than zero"
+    // would let it move to anything.
+    expect((entry as { value: number }).value).toBeCloseTo(0.1075, 4);
     expect(entry).toMatchObject({ detail: { everySpeciesEqual: false, everySpeciesZero: false } });
   });
 

@@ -77,13 +77,24 @@ const KNOWN_SHADOWED: Readonly<Record<string, string>> = Object.freeze({
     'comment above it calls it "tempo while the portal is unreachable" — the portal is reachable ' +
     'on 384 of 600 ticks now, and on the other 216 assignRole takes the slot instead. So the ' +
     'strategy has no tempo behaviour at all, and the cell it claims to push is pushed by nobody.',
-  'worship-maximizer/11':
-    'fundUniversity is a signature action and is never submitted. Both of its entries sit behind ' +
-    'blessMage: the first inside the `worship < favor` branch and the second after it, and ' +
-    'blessMage is legal on 598 of 600 ticks. So the strategy whose thesis is that worship is ' +
-    'bought with "blessings and buildings" buys only blessings, and the buildings half of its ' +
-    'hypothesis has never been measured. This is exactly permissive-breadth\'s incident ' +
-    '(w73/pool-build-order, PR #70) in a second strategy.',
+  // `worship-maximizer/11` was here and is **gone**, which is the first entry
+  // this list has ever lost. Its finding read: *"fundUniversity is a signature
+  // action and is never submitted. Both of its entries sit behind blessMage…
+  // and blessMage is legal on 598 of 600 ticks. So the strategy whose thesis is
+  // that worship is bought with 'blessings and buildings' buys only blessings,
+  // and the buildings half of its hypothesis has never been measured."*
+  //
+  // `material-economy` prices `blessMage` in `insight`, and the reference
+  // universe's founding endowment is eight blessings' worth. So `blessMage`
+  // stops being legal on 598 of 600 ticks, the entry behind it is finally
+  // reached, and the buildings half of the hypothesis gets measured for the
+  // first time. Removed on 2026-08-16 on `w247/material-economy-build`, by the
+  // stale-entry check below, which is exactly what that check is for: *"a stale
+  // entry is worse than a missing one."*
+  //
+  // Worth naming because it is a general property rather than luck. A verb that
+  // shadows another is one that is *always* legal, and a second currency is the
+  // cheapest thing there is for making a verb sometimes illegal.
   // The alliance pair, and the four entries below are one finding written four
   // times because `allianceGroundwork` is one list shared by both arms.
   //

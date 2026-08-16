@@ -85,13 +85,29 @@ const HORIZON = 400;
 
 /**
  * The two seeds whose raid log moves when `knowledge-steal` is neutralized, of
- * six surveyed at this horizon.
+ * twelve surveyed at this horizon.
  *
  * Named rather than swept, because two arms per seed at 400 ticks is seconds
  * each and a survey belongs in the commit message. Both are asserted, so one of
  * them ceasing to raid cannot silently leave this file passing on the other.
+ *
+ * **`0x0bad_c0de` was here and no longer moves.** Re-surveyed 2026-08-16 on
+ * `w247/material-economy-build`: it still raids twice at this horizon and the
+ * ablated log is now byte-identical, so `knowledge-steal` no longer reaches
+ * either of its raids. That is the roster shift `material-economy` causes
+ * upstream of any raid — mages spend months applying magic that they used to
+ * spend researching, so who arrives at a portal holding what is different — and
+ * it is a fact about that seed rather than about the mask. The survey of twelve
+ * found three movers on this build: `0x00ab_cdef` (2 raids), `0x0a97_0001` (3),
+ * and `0x0000_022b` (2). The first two are asserted; the third is recorded here
+ * so the next reader has a spare rather than a search.
+ *
+ * A seed *replaced* rather than the assertion weakened, and the distinction is
+ * the point of the file: the claim is that the mask reaches combat inside a
+ * raid, and a seed where no raid carries the primitive cannot test it either
+ * way. The four unmoved seeds below are what stop that from being an excuse.
  */
-const SEEDS: readonly number[] = Object.freeze([0x0bad_c0de, 0x00ab_cdef]);
+const SEEDS: readonly number[] = Object.freeze([0x00ab_cdef, 0x0a97_0001]);
 
 /** Seeds whose raid log does **not** move — the control on the control. */
 const UNMOVED_SEEDS: readonly number[] = Object.freeze([0x1234_5678, 0x0004_1000]);
