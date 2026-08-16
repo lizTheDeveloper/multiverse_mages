@@ -27,12 +27,8 @@
  *
  * A bigger constant would be the same defect deferred. The scan needs a bound
  * that *cannot* delete content, and the ruleset already is one: `permits()`
- * narrows the seventy cells to whatever the god has enabled. That used to be a
- * large narrowing — the twelve-cell v1 rectangle turned 300 nodes into 51 before
- * anything else ran — and since all seventy cells were enabled it narrows nothing
- * by default, because the reference ruleset is derived from the enabled set. The
- * bound is unaffected either way, which is the property: it is a *rule*, and a
- * god who forbids a cell still shrinks it. Walking the
+ * narrows the seventy cells to whatever the god has enabled, and the v1
+ * rectangle narrows 300 nodes to 51 before anything else runs. Walking the
  * permitted cells' nodes is `O(legal nodes)` and flat in total catalog size —
  * ten thousand nodes authored into cells nobody permitted cost nothing, which
  * is what the old constant's docstring claimed and did not deliver.

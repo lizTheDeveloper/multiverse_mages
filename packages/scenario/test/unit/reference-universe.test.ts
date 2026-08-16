@@ -40,15 +40,8 @@ import {
 } from '@mm/scenario';
 import { describe, expect, it } from 'vitest';
 
-/**
- * The enabled rectangle: was three techniques × four forms and is now all five ×
- * all fourteen (`contracts.md` §2.2). The reference universe's opening ruleset is
- * `v1RulesetAxes` — the OR of the enabled cells' axes — so enabling every cell
- * opened it to the whole grid. That is a consequence of the content flag and not
- * a change to `permits()`, which is untouched; a universe that ought to start
- * narrow needs a narrower *ruleset*, which is the opening-square work's business.
- */
-const V1_CELL_COUNT = 70;
+/** The v1 rectangle: three techniques × four forms (`contracts.md` §2.2). */
+const V1_CELL_COUNT = 12;
 
 const CONFIG = { worldTickCap: 24, options: { cohortSize: 4, foundingNodes: 4 } } as const;
 
@@ -56,7 +49,7 @@ const CONFIG = { worldTickCap: 24, options: { cohortSize: 4, foundingNodes: 4 } 
 const content = referenceContent();
 
 describe('the reference universe starts from shipped content', () => {
-  it('permits exactly the cells content flags v1, and no more', () => {
+  it('permits exactly the twelve cells content flags v1, and no thirteenth', () => {
     const state = referenceScenario(content).scenario.create(0x0005_0001, CONFIG);
     const ruleset = readRulesetForObservation(state, findUniverse(state));
 
@@ -66,7 +59,7 @@ describe('the reference universe starts from shipped content', () => {
     }
     expect(permitted).toHaveLength(V1_CELL_COUNT);
 
-    // And they are the cells content named, not that many of the same shape. A
+    // And they are the twelve content named, not twelve of the same shape. A
     // rectangle of the right size in the wrong place would hold no v1 nodes.
     const registry = shippedContent();
     const v1CellIds = registry.cells

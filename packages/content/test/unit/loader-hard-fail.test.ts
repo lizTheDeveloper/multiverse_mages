@@ -191,57 +191,36 @@ describe('invalid content is a hard load failure', () => {
     expect(validateContent(source).diagnostics).toEqual([]);
   });
 
-  // These two tests inverted when the enabled subset went from twelve cells to
-  // all seventy. There is no thirteenth cell to add and no cell outside the
-  // rectangle to swap in, so the mutation that used to *widen* the subset now has
-  // to *narrow* it. Both directions of the check survive the inversion: the count
-  // still has to be exact, and the shape still has to be a full
-  // technique × form product, which is the property `v1RulesetAxes` depends on
-  // when it re-derives the subset by OR-ing axis bits.
-  it('rejects a subset short of the full grid, naming the expected count', () => {
+  it('rejects a thirteenth v1 cell, naming it and the expected count', () => {
     const diagnostics = expectHardFail(
       brokenSource((documents) => {
-        recordById(documents, 'cell.json', 'creo-ignem')['v1'] = false;
+        recordById(documents, 'cell.json', 'creo-ignem')['v1'] = true;
       }),
     );
     const subset = diagnostics.filter((d) => d.code === 'v1-subset');
     expect(subset.length).toBeGreaterThanOrEqual(1);
-    expect(messages(subset)).toContain('exactly 70');
-    // The count message enumerates what it *found*, so the mirror of the old
-    // assertion is that the withheld cell is the one name absent from it.
-    expect(messages(subset)).toContain('rego-limen');
-    expect(messages(subset)).not.toContain('creo-ignem');
+    expect(messages(subset)).toContain('creo-ignem');
+    expect(messages(subset)).toContain('exactly 12');
   });
 
   it('rejects a v1 set that is not a rectangle, naming the uneven axes and the cells on them', () => {
     const diagnostics = expectHardFail(
       brokenSource((documents) => {
-        // Withhold exactly one cell. One cell is the *only* mutation that leaves
-        // every other axis even: a missing (technique, form) shortens precisely
-        // its own row and its own column, so two axes go uneven and twelve
-        // techniques-and-forms' worth of intact axes stay quiet. Any larger
-        // mutation makes most axes uneven and the message stops pointing.
-        recordById(documents, 'cell.json', 'creo-ignem')['v1'] = false;
+        // Swap one cell out of the rectangle for one outside it: still twelve.
+        recordById(documents, 'cell.json', 'perdo-terram')['v1'] = false;
+        recordById(documents, 'cell.json', 'creo-ignem')['v1'] = true;
       }),
     );
-    // Narrowing the subset raises the count diagnostic too, and *that* message
-    // enumerates the sixty-nine survivors — so the "points at the defect rather
-    // than listing the whole subset back" assertion has to read the rectangle
-    // diagnostic alone rather than every `v1-subset` message joined.
-    const subset = diagnostics.filter(
-      (d) => d.code === 'v1-subset' && d.message.includes('rectangle'),
-    );
-    expect(subset).toHaveLength(1);
+    const subset = diagnostics.filter((d) => d.code === 'v1-subset');
     expect(messages(subset)).toContain('rectangle');
-    expect(messages(subset)).toContain('technique "creo" covers 13 forms');
-    expect(messages(subset)).toContain('form "ignem" covers 4 techniques');
+    expect(messages(subset)).toContain('technique "creo" covers 1 forms');
+    expect(messages(subset)).toContain('form "ignem" covers 1 techniques');
     // tasks.md 2.2 asks the error to name the offending *cells*, not only the
-    // axes. An author reading "technique creo covers 13 forms" still has to grep
-    // cell.json to find which one; naming the cells on the short axes closes that
-    // gap by elimination. The intact axes stay unnamed, so the message points at
-    // the defect rather than listing the whole subset back — which is why
-    // `rego-limen`, whose technique and form are both even, is absent.
-    expect(messages(subset)).toContain('intellego-ignem');
+    // axes. An author reading "technique creo covers 1 forms" still has to grep
+    // cell.json to find which one; naming it closes that gap. The intact axes
+    // stay unnamed, so the message points at the defect rather than listing the
+    // whole subset back.
+    expect(messages(subset)).toContain('creo-ignem');
     expect(messages(subset)).not.toContain('rego-limen');
   });
 
@@ -396,17 +375,10 @@ describe('invalid content is a hard load failure', () => {
     expect(messages(diagnostics)).toContain('portal');
   });
 
-  // Authoring outside the enabled subset is permitted: a content set may flag a
-  // proper subset of the grid and leave the rest written but inert, which is what
-  // shipped content did until all seventy cells were enabled. What is NOT
-  // permitted is a playable node sitting behind content the release does not
-  // enable: it would be permanently unreachable, and nothing else in the pipeline
-  // would notice. Shipped content can no longer express that shape, so the
-  // fixture has to build it — the mutation now withholds `creo-terram`'s flag as
-  // well as parking the prerequisite there. The `v1-subset` diagnostics that
-  // withholding also raises are filtered out below; this test is about the
-  // prerequisite edge, and `loadContent` reports every violation rather than the
-  // first.
+  // Authoring outside the v1 subset is permitted -- the grid holds seventy cells and
+  // only twelve are enabled, so the rest are written but inert. What is NOT permitted
+  // is a playable node sitting behind content the release does not enable: it would be
+  // permanently unreachable, and nothing else in the pipeline would notice.
   it('rejects a v1 node whose prerequisite lies outside the v1 subset', () => {
     const diagnostics = expectHardFail(
       brokenSource((documents) => {
@@ -415,7 +387,6 @@ describe('invalid content is a hard load failure', () => {
         const stranded = { ...donor, id: 'ct-stranded-course', cell: 'creo-terram' };
         (documents['node.json'] as unknown[]).push(stranded);
         recordById(documents, 'cell.json', 'creo-terram')['nodes'] = ['ct-stranded-course'];
-        recordById(documents, 'cell.json', 'creo-terram')['v1'] = false;
         const playable = recordById(documents, 'node.json', 'rt-raise-the-course');
         playable['prerequisites'] = ['ct-stranded-course'];
       }),

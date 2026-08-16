@@ -45,10 +45,7 @@ describe('the v1 subset exercises every primitive but the declared exclusions', 
     expect(report.misplacedPortalNodes).toEqual([]);
   });
 
-  // Was 'except lifespan and fertility'. The exclusion list is empty now, so the
-  // filter below removes nothing and the claim is the stronger one: every
-  // primitive the registry declares is exercised by enabled content.
-  it('exercises every registry primitive', () => {
+  it('exercises every registry primitive except lifespan and fertility', () => {
     const registry = shippedRegistry();
     const report = checkPrimitiveCoverage(registry);
     const exercised = new Set(report.exercised.map((entry) => entry.primitiveId));
@@ -59,31 +56,14 @@ describe('the v1 subset exercises every primitive but the declared exclusions', 
     expect([...exercised].sort()).toEqual([...expected].sort());
   });
 
-  // Was 'declares exactly the two exclusions the design accepted', asserting
-  // `['fertility', 'lifespan']`. Enabling all seventy cells covered both — 5
-  // nodes carry `fertility` and 17 carry `lifespan` — and the check fails in that
-  // direction on purpose, so the list is empty. The assertion is kept exact
-  // rather than deleted: an entry reappearing is a claim that some primitive is
-  // unmeasurable at 0.5.0, and it should still be hard to make quietly.
-  it('declares no exclusions, because enabled content covers every primitive', () => {
-    expect([...PRIMITIVE_COVERAGE_EXCLUSIONS]).toEqual([]);
+  it('declares exactly the two exclusions the design accepted', () => {
+    expect([...PRIMITIVE_COVERAGE_EXCLUSIONS]).toEqual(['fertility', 'lifespan']);
   });
 
   it('states the exclusions in the formatted report, so a reader sees the gap', () => {
-    // Two halves, because the shipped list is empty and a report of nothing
-    // cannot demonstrate that the report would name a gap. The first asserts the
-    // line is still printed — a reader must be able to see that the list is empty
-    // rather than infer it from silence — and the second passes exclusions
-    // explicitly, which is the same argument the check itself takes.
-    const shipped = formatPrimitiveCoverageReport(checkPrimitiveCoverage(shippedRegistry()));
-    expect(shipped).toContain('Declared exclusions:');
-    expect(shipped).not.toMatch(/Declared exclusions: \w/u);
-
-    const withGap = formatPrimitiveCoverageReport(
-      checkPrimitiveCoverage(shippedRegistry(), ['fertility', 'lifespan']),
-    );
-    expect(withGap).toContain('fertility');
-    expect(withGap).toContain('lifespan');
+    const text = formatPrimitiveCoverageReport(checkPrimitiveCoverage(shippedRegistry()));
+    expect(text).toContain('fertility');
+    expect(text).toContain('lifespan');
   });
 });
 
@@ -112,14 +92,10 @@ describe('direction one: a primitive stops being exercised', () => {
 
 describe('direction two: an exclusion becomes covered', () => {
   it('fails and says the exclusion list must be updated deliberately', () => {
-    // This direction fired for real: the shipped list held `fertility` and
-    // `lifespan`, enabling all seventy cells covered both, `npm run check:coverage`
-    // went red, and the fix was to empty the list. So the exclusion is now passed
-    // explicitly rather than read from the shipped default, which is empty and
-    // could not express the case. `lifespan` is still the primitive, and the v1
-    // filter below still matters: the check reads only flagged content, and a
-    // fixture that mutated an unflagged node would assert the opposite of what it
-    // means the day a content set flags a proper subset again.
+    // Deliberately a *v1* node. The check reads only v1 content, and the grid is
+    // now pre-authored across all seventy cells, so `nodes[0]` is a creo-animal
+    // node the check never looks at -- mutating it would leave the exclusion
+    // uncovered and this test asserting the opposite of what it means.
     const v1 = v1CellIds(shippedRegistry());
     const registry = registryWith((documents) => {
       const first = nodeDocuments(documents).find((node) => v1.has(node['cell'] as string));
@@ -132,7 +108,7 @@ describe('direction two: an exclusion becomes covered', () => {
       });
     });
 
-    const report = checkPrimitiveCoverage(registry, ['lifespan']);
+    const report = checkPrimitiveCoverage(registry);
     expect(report.ok).toBe(false);
     expect(report.coveredExclusions).toEqual(['lifespan']);
     const text = formatPrimitiveCoverageReport(report);

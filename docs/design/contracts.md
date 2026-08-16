@@ -445,8 +445,8 @@ serialized into snapshots.
   "form": "corpus",
   "classicalLabels": ["necromancy"],                 // display only, never mechanical.
                                                      // Vision §4's mapping table is authoritative
-  "v1": true,                                        // optional; flags membership of the enabled
-                                                     // rectangle. Absent means not enabled
+  "v1": true,                                        // optional; flags membership of the 12-cell
+                                                     // v1 rectangle. Absent means not in v1
   "edicts": [],                                      // optional; "dispensation" | "interdiction".
                                                      // §1.1 requires the loader to reject a cell
                                                      // carrying both, which needs a slot to carry one
@@ -464,11 +464,8 @@ serialized into snapshots.
 }
 ```
 
-70 cells exist in schema. The **v1 subset** is flagged per-cell with `"v1": true`; all 70 carry it
-since `w115`, and the set must include `rego-limen`. It was 12 (3 techniques × 4 forms) holding 51
-of the 300 authored nodes, and the loader's invariant is unchanged by the widening: the flagged set
-must be a **full technique × form rectangle**, because `v1RulesetAxes` re-derives it by OR-ing axis
-bits and an axis mask cannot express a ragged subset.
+70 cells exist in schema. The **v1 subset** is flagged per-cell with `"v1": true`; exactly 12 cells
+(3 techniques × 4 forms) carry it, and the set must include `rego-limen`.
 
 ### 2.3 `node.json`
 

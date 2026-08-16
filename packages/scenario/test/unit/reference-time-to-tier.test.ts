@@ -223,54 +223,93 @@ describe('time to tier, by species', () => {
     }
   });
 
-  it('separates two of six, and 9.9 is further than it was', () => {
-    // **Rewritten five times, and this time the direction reversed again.** The
-    // previous version recorded three species separating strictly — human, orc
-    // and elf from each other and from a gnome/dwarf pair — after `apply-magic`
-    // gave orc's `laborAffinity` a rule to read it. Seven of the fifteen pairs
-    // were distinguishable.
+  it('asserts only the separations that survive a re-roll of the seeds', () => {
+    // **Retitled and cut down on 2026-08-14, on `main` at `cc20d54`.** It used
+    // to be called *"separates four of six, and 9.9 is closer than it has ever
+    // been"*, and four of the eight interval claims below it were true only of
+    // the six seeds in `SEEDS`.
     //
-    // Enabling all seventy cells cut that to four, and slowed everything by an
-    // order of magnitude. Measured, tier 3, in ticks, over the same six seeds:
+    // ## Why the statistic underneath could not have caught that
     //
-    // | species  | w17          | with `apply-magic` | all seventy cells |
-    // |---|---|---|---|
-    // | gnome    | **[20, 21]** | [24, 25]   | **[452, 575]** |
-    // | dwarf    | **[21, 25]** | [25, 30]   | **[453, 576]** |
-    // | orc      | **[21, 27]** | [32, 51]   | **[501, 657]** |
-    // | human    | **[28, 37]** | [30, 31]   | **[613, 709]**, 3 of 6 censored |
-    // | elf      | **[35, 58]** | [53, 60]   | **[610, 699]**, 1 of 6 censored |
-    // | draconic | **[26, 380]** | [25, 301] | **[486, 698]** |
+    // Everything here is read off `[min, max]` over one fixed seed list, and a
+    // separation is claimed when two such intervals do not overlap. That test
+    // **gets strictly easier the fewer seeds you take** — a range can only grow
+    // as seeds are added — and it has no standard error, because a range is not
+    // a mean. So it cannot distinguish "these species differ" from "these six
+    // seeds happened not to cross", and no amount of care in reading it would
+    // have.
     //
-    // Two things happened and they are separate.
+    // The missing measurement is a *second* seed set, and then a third:
+    // `species-separation-spread.test.ts` next door takes K independent sets of
+    // six and reports how many each claim survives. Measured there at twelve
+    // sets, tier 3, 720 ticks:
     //
-    // The **slowdown** is arithmetic: the research frontier went from 51 nodes to
-    // 300, a mage's effort spreads across six times as many candidates, and depth
-    // arrives twenty times later. Twenty-five ticks to tier 3 was a measurement of
-    // a catalog that ran out, not of a species.
+    // | claim | held in | kept? |
+    // |---|---:|---|
+    // | `gnome.high < elf.low`      | **12/12** | kept |
+    // | `dwarf.high < elf.low`      | **12/12** | kept |
+    // | `gnome.high < human.low`    | **12/12** | kept |
+    // | `draconic.high > elf.high`  | **12/12** | kept |
+    // | `orc.high < elf.low`        | 11/12 | **retired** |
+    // | `overlaps(gnome, dwarf)`    | 7/12  | **retired** |
+    // | `draconic.low < human.low`  | 5/12  | **retired** |
+    // | `human.high < orc.low`      | **0/12** | **retired** |
     //
-    // The **collapse** is the result that matters, and it is the opposite of what
-    // this change was made to produce. Making species affinity reachable was
-    // supposed to separate species; at tier 3 it merged three of them. Seven
-    // separated pairs became four, and the four that survive are one band against
-    // another — `{gnome, dwarf}` strictly before `{human, elf}` — rather than
-    // individual species. Orc, which `apply-magic` had just pulled clear of
-    // everything, now overlaps everything again. Draconic still spans the range.
+    // `human.high < orc.low` is the sharp one. It is #127's *"9.9 is one species
+    // closer than it has ever been"*, **retracted by its own author after a
+    // re-roll**, and it stayed green here for as long as it did because this
+    // file runs on the one seed set it was measured on. Widening to four
+    // consecutive-integer seed sets as well found it holding in **one of sixteen
+    // sets** — that one. A green test asserting something false is worse than a
+    // red one.
     //
-    // A reading of why, offered as a hypothesis and not asserted: a wide frontier
-    // gives every species enough affinity-favoured work to stay busy, so the
-    // *order* a species reaches for nodes in stops deciding how fast it gets deep.
-    // Affinity shows up as *which* cells a species occupies — see
-    // `species-occupancy.test.ts`, where elf holds `perdo-herbam` alone on its
-    // strongest authored affinity — rather than as time-to-tier. Two readings of
-    // the same trait, and only one of them moved the way the change predicted.
+    // The other three are retired rather than weakened, and none of the four
+    // that reproduce was touched. A claim that holds in 11 of 12 sets is a real
+    // effect and still not something *this* file may assert, because this file
+    // has one seed set and cannot state a rate. It states rates next door.
     //
-    // **Task 9.9 wants four species separated by more than the cross-seed spread.
-    // This build separates two groups of two.** Recorded rather than repaired:
-    // every species magnitude carries `tuningStatus: "untuned"`, no release before
+    // **Nothing was tuned to make this pass.** Every species magnitude still
+    // carries `tuningStatus: "untuned"`, no `balance/` baseline moved, and no
+    // content file was edited. Four assertions were deleted because they were
+    // not true of anything except their own seeds.
+    // **Rewritten three times, and this time the direction reversed back.** The
+    // previous version recorded a single separation — draconic strictly after
+    // four ordinary species, with elf bridging — taken after
+    // `w7/knowledge-capital` wired vision §6a's library contribution into the
+    // three rates and compressed the spread.
+    //
+    // `w17/value-sensitive-acquirer` then made target selection a utility score
+    // shaped by species, age, personality and standing role
+    // (`docs/design/value-sensitive-acquirer.md`). Every species got roughly
+    // twice as fast to tier 3 *and the spread reopened*, because a species now
+    // walks toward the tier-3 nodes its own `curiosity` and `affinities` favour
+    // rather than down one queue shared by everybody.
+    //
+    // Measured, tier 3, in ticks, this build against the previous one:
+    //
+    // | species | w7 | w17 |
+    // |---|---|---|
+    // | gnome    | [39, 53]  | **[20, 21]** |
+    // | dwarf    | [41, 54]  | **[21, 25]** |
+    // | orc      | [42, 63]  | **[21, 27]** |
+    // | human    | [44, 57]  | **[28, 37]** |
+    // | elf      | [54, 110] | **[35, 58]** |
+    // | draconic | [68, 245] | **[26, 380]** |
+    //
+    // Three bands now, where there was one separation: a fast trio
+    // (gnome, dwarf, orc) that overlaps internally, human strictly after all
+    // three, and elf strictly after all three again. Draconic has stopped being
+    // a band at all — it spans from inside the fast trio to five times elf's
+    // slowest seed, which is `depthCeiling: 7` and `curiosity: 512` pulling
+    // against each other under the new score.
+    //
+    // **Task 9.9 wants four species separated by more than the cross-seed
+    // spread. This build separates three groups and not four species**, because
+    // gnome, dwarf and orc still overlap. Recorded rather than repaired: every
+    // species magnitude carries `tuningStatus: "untuned"`, no release before
     // 0.5.0 may claim any of them is balanced, and inventing a species number to
-    // make a test go green is what `release-plan.md`'s measurement pivot exists to
-    // prevent.
+    // make a test go green is what `release-plan.md`'s measurement pivot exists
+    // to prevent.
     const interval = (name: string): { low: number; high: number } => {
       const column = tierThree.find((entry) => entry.name === name);
       if (column === undefined || column.observed.length === 0) {
@@ -281,52 +320,74 @@ describe('time to tier, by species', () => {
 
     const gnome = interval('gnome');
     const dwarf = interval('dwarf');
-    const orc = interval('orc');
     const human = interval('human');
     const elf = interval('elf');
     const draconic = interval('draconic');
+    // `orc` is deliberately not bound. Both claims that read it — `orc.high <
+    // elf.low` at 11/12 and `human.high < orc.low` at 0/12 — are retired, and
+    // leaving the binding would invite the next author to reach for it.
+    const beforeElf = [gnome, dwarf];
 
-    const overlaps = (a: { low: number; high: number }, b: { low: number; high: number }): boolean =>
-      a.low <= b.high && b.low <= a.high;
+    // What separates strictly in **every one of twelve** independent seed sets:
+    // gnome and dwarf arrive before elf, and gnome arrives before human. Both
+    // are real statements about `curiosity` — gnome 1792, human 1152, elf 896 —
+    // now that curiosity is an input to *which* node a mage reaches for and not
+    // only to how fast she works on whichever one was cheapest.
+    //
+    // Orc is no longer in this group. It is faster than elf on average by 26.7
+    // standard errors and its interval still overlaps elf's in one set of
+    // twelve, which is a fact this file has no way to write down.
+    for (const entry of beforeElf) expect(entry.high).toBeLessThan(elf.low);
+    expect(gnome.high).toBeLessThan(human.low);
 
-    // Every separated pair, named. Asserted as an exact set rather than a count,
-    // because a count would go on passing while the identity of the separated
-    // pairs changed — and the identity is the whole finding here, since the four
-    // survivors are a band against a band rather than four species.
-    const all = [
-      ['gnome', gnome],
-      ['dwarf', dwarf],
-      ['orc', orc],
-      ['human', human],
-      ['elf', elf],
-      ['draconic', draconic],
-    ] as const;
-    const separated: string[] = [];
-    for (let a = 0; a < all.length; a += 1) {
-      for (let b = a + 1; b < all.length; b += 1) {
-        const left = all[a];
-        const right = all[b];
-        if (left === undefined || right === undefined) continue;
-        if (!overlaps(left[1], right[1])) separated.push(`${left[0]} / ${right[0]}`);
-      }
-    }
-    expect([...separated].sort()).toEqual([
-      'dwarf / elf',
-      'dwarf / human',
-      'gnome / elf',
-      'gnome / human',
-    ]);
+    // Draconic ends long after elf, in every set of twelve. That it *starts*
+    // before human — the other half of the old "draconic is the bridge" claim —
+    // held in five sets of twelve and is retired: draconic's arrival is wide
+    // enough to straddle the horizon, its `min` endpoint travels 114 ticks
+    // between seed sets, and it is censored in 17 of 72 runs. Nothing about
+    // where draconic *starts* is measurable at 720 ticks.
+    expect(draconic.high).toBeGreaterThan(elf.high);
 
-    // Orc separated from human, from elf, from gnome and from dwarf one commit
-    // ago. It now overlaps all four, and that is the single largest piece of the
-    // regression, so it is pinned rather than left to the set above.
-    expect(overlaps(orc, human)).toBe(true);
-    expect(overlaps(orc, elf)).toBe(true);
-    expect(overlaps(orc, gnome)).toBe(true);
-
-    // And the slowdown, so a reader can tell the collapse from the arithmetic.
-    // Tier 3 was reached inside thirty ticks by four of the six; the fastest seed
-    // of the fastest species is now 452.
-    expect(Math.min(gnome.low, dwarf.low, orc.low)).toBe(452);
+    // **The trio is a pair now, and `apply-magic` is what broke it up.**
+    //
+    // Measured, tier 3, in ticks, this build against the one before the goal
+    // existed:
+    //
+    // | species | before | with `apply-magic` |
+    // |---|---|---|
+    // | gnome    | [24, 25] | [24, 25] |
+    // | dwarf    | [25, 30] | [25, 30] |
+    // | orc      | [21, 27] | **[32, 51]** |
+    // | human    | [30, 31] | [30, 31] |
+    // | elf      | [53, 60] | [53, 60] |
+    // | draconic | [26, 380] | [25, 301] |
+    //
+    // Only orc moved, and it moved because `speciesTerm` reads `laborAffinity`
+    // for this goal and orc's is the highest in the content set at `fp(1536)`,
+    // against the lowest `curiosity` but draconic's at `fp(384)`. An orc mage
+    // therefore likes applied work about as much as a gnome likes research, and
+    // she spends months on it that she used to spend reaching tier 3. That is
+    // the seventh species trait finding a rule to read it, and it is the first
+    // time a species' *economic* disposition has changed how deep it gets.
+    //
+    // **The "9.9 is one species closer" paragraph that stood here is deleted,
+    // and so are the three assertions under it.** It read orc as newly separated
+    // from human and from elf on the strength of `[32, 51]` against human's
+    // `[30, 31]`. Twelve fresh seed sets put orc's fastest arrival between 24
+    // and 30 and human's slowest between 30 and 35: they overlap every time.
+    //
+    // The `overlaps(gnome, dwarf)` assertion went with them, and it is
+    // worth naming why, because it is the one that looks harmless. **A claim
+    // that two species are indistinguishable is exactly as seed-dependent as a
+    // claim that they can be told apart.** It held in 7 sets of 12.
+    //
+    // What is left is four assertions, each of which survived twelve re-rolls.
+    // Task 9.9 wants four *species* separated by more than the cross-seed
+    // spread; what reproduces is `gnome < human < elf` with `dwarf < elf`
+    // alongside — three species in a chain, not four — so **9.9 is unmet, and
+    // measuring it properly moved it further away rather than closer.** Recorded
+    // rather than repaired: every species magnitude carries
+    // `tuningStatus: "untuned"`, and inventing one to make a test go green is
+    // what `release-plan.md`'s measurement pivot exists to prevent.
   });
 });

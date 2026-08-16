@@ -7,43 +7,34 @@ availability is decided, and how prerequisites and dormancy follow from that dec
 ## Requirements
 ### Requirement: The v1 cell subset
 
-Content SHALL flag all seventy cells with `"v1": true`, and the flagged set MUST be the full
-rectangle of every technique crossed with every form. The subset MUST include `rego-limen`, and the
-loader MUST reject content that violates either condition.
+Content SHALL flag exactly twelve cells with `"v1": true`, and those twelve MUST be the full
+rectangle of techniques `intellego`, `perdo`, `rego` crossed with forms `limen`, `mentem`, `nomen`,
+`terram`. The subset MUST include `rego-limen`, and the loader MUST reject content that violates
+either condition.
 
-The subset was twelve cells — `{intellego, perdo, rego} × {limen, mentem, nomen, terram}`, holding
-51 of the 300 authored nodes — until `w115` opened the grid. The reason was measured rather than
-stylistic: species `rediscoveryAffinity` is the strongest term in acquisition ordering, the twelve
-covered four of the fourteen forms, and four of the eleven authored affinity entries were live.
-Two species could express none at all.
-
-**The invariant this requirement defends is the rectangle, not the number.** `v1RulesetAxes`
-re-derives the enabled subset by OR-ing the flagged cells' technique and form bits, which is correct
-only while that subset is a full technique × form product; a ragged subset would silently permit
-cells holding no enabled content. Seventy of seventy satisfies it, and the loader still rejects a
-proper subset that is ragged.
-
-Nodes MAY be authored in cells outside the subset, and a content set MAY flag a proper subset — the
-loader's job is to reject a ragged one, not a small one. What it MUST also reject is a *playable*
-node made permanently unreachable: one in a flagged cell whose prerequisite lies in a cell the
-content set does not flag. Nothing else in the pipeline would notice that node can never be
-acquired. Shipped content can no longer express that shape, so the loader's own tests construct it.
+Nodes MAY be authored in cells outside the subset. The grid holds seventy cells and this release
+enables twelve; the remaining fifty-eight are written but inert, which is how a later release turns
+a cell on without authoring it under time pressure. What the loader MUST reject instead is a
+*playable* node made permanently unreachable — one in a v1 cell whose prerequisite lies in a cell
+this release does not enable. Nothing else in the pipeline would notice that node can never be
+acquired.
 
 #### Scenario: The subset is exactly the declared rectangle
 
 - **WHEN** the content loader completes and the set of cells flagged `v1` is collected
-- **THEN** it contains all seventy cells of the grid, every technique crossed with every form
+- **THEN** it contains exactly `intellego-limen`, `intellego-mentem`, `intellego-nomen`,
+  `intellego-terram`, `perdo-limen`, `perdo-mentem`, `perdo-nomen`, `perdo-terram`, `rego-limen`,
+  `rego-mentem`, `rego-nomen`, and `rego-terram`
 
-#### Scenario: A subset short of the full grid is rejected
+#### Scenario: A thirteenth v1 cell is rejected
 
-- **WHEN** content withholds `"v1": true` from a cell
-- **THEN** the load fails and the error names the expected count of seventy and lists what it found
+- **WHEN** content flags a thirteenth cell with `"v1": true`
+- **THEN** the load fails and the error names the offending cell id and the expected count of twelve
 
 #### Scenario: The subset is not a rectangle
 
-- **WHEN** content flags a set of cells that does not form a full technique × form rectangle
-- **THEN** the load fails and the error names the techniques and forms that are unevenly covered,
-  and the cells sitting on each uneven axis
+- **WHEN** content flags twelve cells that do not form a 3-technique × 4-form rectangle
+- **THEN** the load fails and the error names the techniques and forms that are unevenly covered
 
 #### Scenario: A node outside the subset is accepted and inert
 

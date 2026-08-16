@@ -56,28 +56,36 @@
 import type { ContentRegistry, NodeRecord } from '@mm/content';
 
 /**
- * The primitives no v1 node exercises, and the reason. **Now empty.**
+ * The two primitives no v1 node exercises, and the reason.
  *
- * It held `['fertility', 'lifespan']`. The reason it held them was a *form*
- * decision, not a primitive one: both are Corpus- and Animal-bound, and the
- * twelve enabled cells covered `{limen, mentem, nomen, terram}`, so including
- * `corpus` would have cost either Nomen — stranding True Naming with no form to
- * bite on — or Terram. Neither primitive had anything to act on.
+ * `lifespan` and `fertility` are Corpus- and Animal-bound; including `corpus`
+ * in the v1 form set would have cost either Nomen — stranding True Naming with
+ * no form to bite on — or Terram, and neither primitive has anything to act on
+ * until mages age, which is `mages-and-species` at 0.4.0.
  *
- * Enabling all seventy cells removed the cause, so the check removed the
- * exclusions, in the direction this file exists to catch: *"an exclusion that
- * becomes covered is a failure too, and the fix is to delete the exclusion
- * deliberately."* `fertility` is now exercised by 5 nodes and `lifespan` by 17,
- * and the shipped registry's sixteen primitives are covered 16 of 16 over 300
- * nodes, against 14 of 16 over 51.
+ * Sorted, and asserted to be exactly this pair by test. Adding a third entry is
+ * a claim that a third primitive is unmeasurable at 0.5.0, and should be as
+ * hard to do quietly as this list makes it.
  *
- * An empty list is the strongest form of the claim this constant makes: every
- * primitive the registry declares has samples for the balance harness to be
- * truthful about. Adding an entry back is a claim that some primitive is
- * unmeasurable at 0.5.0, and should be as hard to do quietly as this list makes
- * it.
+ * ## This list is no longer the consumption check's
+ *
+ * It was, and `consumption.ts` argued at length that sharing was safe because
+ * the two scopes agreed: *"`lifespan` is carried by seventeen non-v1 nodes and
+ * by no v1 node at all, so 'no academic can move it' holds in v1 either way."*
+ * Both halves of that sentence were true and the second one is now false.
+ * `coordination/knowledge-vitality.ts` fetches both primitives' authored
+ * magnitudes and the world loop applies them, so a **node-driven consumer
+ * exists** — while **no v1 node still declares either**, which is the only
+ * question this file asks.
+ *
+ * So the exclusion here has narrowed rather than lapsed. It no longer says
+ * *"knowledge cannot move this"*; it says *"no learnable node authors this
+ * yet"*, which is an authoring gap and is closed by content — an authored
+ * effect on a v1 node, or a v1 rectangle that includes *Corpus* — not by
+ * wiring. {@link PRIMITIVE_CONSUMPTION_EXCLUSIONS} in `consumption.ts` is now
+ * the other list, and it is empty.
  */
-export const PRIMITIVE_COVERAGE_EXCLUSIONS: readonly string[] = [];
+export const PRIMITIVE_COVERAGE_EXCLUSIONS: readonly string[] = ['fertility', 'lifespan'];
 
 /** The primitive whose cell `contracts.md` §8 mandates. */
 export const PORTAL_PRIMITIVE_ID = 'portal';

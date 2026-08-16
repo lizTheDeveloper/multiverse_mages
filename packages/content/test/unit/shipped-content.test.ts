@@ -33,86 +33,20 @@ import type { ContentRegistry } from '@mm/content';
 
 const registry: ContentRegistry = loadContent(shippedContentSource());
 
-/**
- * The enabled subset, spelled out so a silent swap fails.
- *
- * It was the twelve `knowledge-model` chose — `{intellego, perdo, rego} ×
- * {limen, mentem, nomen, terram}` — and is now all seventy. Still spelled out
- * rather than derived from `registry.cells`: a list read back out of the object
- * under test cannot fail, and the thing worth catching here is a cell quietly
- * losing its flag, which a derived list would agree with.
- */
+/** The v1 subset `knowledge-model` chose, spelled out so a silent swap fails. */
 const V1_CELLS = [
-  'creo-animal',
-  'creo-aquam',
-  'creo-auram',
-  'creo-corpus',
-  'creo-fatum',
-  'creo-herbam',
-  'creo-ignem',
-  'creo-imaginem',
-  'creo-limen',
-  'creo-mentem',
-  'creo-nomen',
-  'creo-terram',
-  'creo-umbra',
-  'creo-vim',
-  'intellego-animal',
-  'intellego-aquam',
-  'intellego-auram',
-  'intellego-corpus',
-  'intellego-fatum',
-  'intellego-herbam',
-  'intellego-ignem',
-  'intellego-imaginem',
   'intellego-limen',
   'intellego-mentem',
   'intellego-nomen',
   'intellego-terram',
-  'intellego-umbra',
-  'intellego-vim',
-  'muto-animal',
-  'muto-aquam',
-  'muto-auram',
-  'muto-corpus',
-  'muto-fatum',
-  'muto-herbam',
-  'muto-ignem',
-  'muto-imaginem',
-  'muto-limen',
-  'muto-mentem',
-  'muto-nomen',
-  'muto-terram',
-  'muto-umbra',
-  'muto-vim',
-  'perdo-animal',
-  'perdo-aquam',
-  'perdo-auram',
-  'perdo-corpus',
-  'perdo-fatum',
-  'perdo-herbam',
-  'perdo-ignem',
-  'perdo-imaginem',
   'perdo-limen',
   'perdo-mentem',
   'perdo-nomen',
   'perdo-terram',
-  'perdo-umbra',
-  'perdo-vim',
-  'rego-animal',
-  'rego-aquam',
-  'rego-auram',
-  'rego-corpus',
-  'rego-fatum',
-  'rego-herbam',
-  'rego-ignem',
-  'rego-imaginem',
   'rego-limen',
   'rego-mentem',
   'rego-nomen',
   'rego-terram',
-  'rego-umbra',
-  'rego-vim',
 ];
 
 describe('shipped content', () => {
@@ -121,8 +55,7 @@ describe('shipped content', () => {
       techniques: 5,
       forms: 14,
       cells: 70,
-      // Was 12. Every cell now carries "v1": true; see the comment on V1_CELLS.
-      v1Cells: 70,
+      v1Cells: 12,
       nodes: 300,
       species: 6,
       traditions: 3,
@@ -191,23 +124,17 @@ describe('shipped content', () => {
     expect(seen.size).toBe(70);
   });
 
-  // This test used to read the other way round: `creo-ignem` was addressable and
-  // populated but *unflagged*, and the separation was called the whole point of
-  // pre-authoring — the world is deeper than the playable slice, and enabling a
-  // cell later is a flag change rather than a content project. That claim has now
-  // been cashed: the flag change happened and there is no unflagged cell left to
-  // assert against. `creo-ignem` is kept as the witness rather than swapped for
-  // some other cell, because it is the one the old assertion named, and because
-  // it is where dwarf `ignem 1152` and draconic `ignem 1792` finally have
-  // somewhere to act.
-  it('resolves a formerly non-v1 cell as addressable, authored and now flagged', () => {
+  // A non-v1 cell is addressable and populated, but not enabled. That separation is
+  // the whole point of pre-authoring: the world is deeper than the playable slice,
+  // and enabling a cell later is a flag change rather than a content project.
+  it('resolves a non-v1 cell as addressable and authored, but unflagged', () => {
     const cellId = registry.intern('cell', 'creo-ignem');
     const cell = registry.cell(cellId);
     expect(cell?.nodes.length).toBeGreaterThan(0);
-    expect(cell?.v1).toBe(true);
+    expect(cell?.v1).toBeUndefined();
   });
 
-  it('flags every cell of the grid, including rego-limen', () => {
+  it('flags exactly the twelve v1 cells, including rego-limen', () => {
     const flagged = registry.cells
       .filter((entry) => entry.record.v1 === true)
       .map((entry) => entry.record.id)

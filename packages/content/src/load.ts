@@ -75,33 +75,14 @@ import type {
  */
 export const REQUIRED_V1_CELL = 'rego-limen';
 
-/**
- * The v1 subset is a rectangle of this many cells (`contracts.md` §2.2).
- *
- * It was 12 — `{intellego, perdo, rego} × {limen, mentem, nomen, terram}`, the
- * twelve `knowledge-model` chose — and is now the whole grid: 5 techniques × 14
- * forms = 70 cells, 300 nodes rather than 51. The invariant this check exists to
- * defend is unchanged and is the *rectangle*, not the number: an axis mask can
- * only express a subset of cells that is a full technique×form product, so
- * `v1RulesetAxes` re-deriving the subset by OR-ing axes is only correct while the
- * subset is rectangular. Seventy of seventy is trivially rectangular, so the
- * property still holds and the day someone flags a proper subset again the shape
- * check still catches a ragged one.
- *
- * The reason for the widening is measured, not stylistic: species affinity is the
- * strongest term in acquisition ordering (`w80`), and the twelve covered only
- * four forms — `limen`, `mentem`, `nomen`, `terram`. Two of six species (gnome,
- * human) could express no affinity at all inside them, and three of the other
- * four expressed only their weakest. Draconic's actual character, `ignem 1792`
- * and `vim 1536`, was unreachable.
- */
-export const V1_CELL_COUNT = 70;
+/** The v1 subset is a rectangle of this many cells (`contracts.md` §2.2). */
+export const V1_CELL_COUNT = 12;
 
-/** Techniques in the v1 rectangle. Was 3; the whole technique axis now. */
-export const V1_TECHNIQUE_COUNT = 5;
+/** Techniques in the v1 rectangle. */
+export const V1_TECHNIQUE_COUNT = 3;
 
-/** Forms in the v1 rectangle. Was 4; the whole form axis now. */
-export const V1_FORM_COUNT = 14;
+/** Forms in the v1 rectangle. */
+export const V1_FORM_COUNT = 4;
 
 /**
  * The most nodes a content set may declare, because every one of them is

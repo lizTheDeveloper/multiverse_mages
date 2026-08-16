@@ -1650,21 +1650,7 @@ export const POOL_BUILD_LIMITS: Readonly<Record<string, string>> = Object.freeze
     'measured (tools/w29/two-universes.mjs, 200 ticks, seed 589825): food 321443 vs 468099, vellum ' +
     '75733 vs 274403, months to raise a university 30 vs 42. The reason the five strategies ' +
     'converged was that permitting a cell had no economic consequence; it now has one. Re-run the ' +
-    'four factor cells before quoting any figure in this entry. ' +
-    'W115 NOTE, AND THE DELETION CONDITION IS NOW MET ON ONE AXIS. Every number in this entry was ' +
-    'taken while twelve of seventy cells were enabled, which is what made 51 nodes a ceiling five ' +
-    'strategies could all sit on. All seventy are enabled now and they do not converge. Measured ' +
-    'by balance-gate-agency (16 replicates, 240 ticks, one strategy per arm), ' +
-    'referenceNodesKnown: passive-control 69.5, worship-maximizer 70.5, archivist 73.1, ' +
-    'portal-rush 74.0, uniform-random-legal 77.75 -- a spread of 8.25 nodes at tens of standard ' +
-    'errors, where the figure above was the SAME integer for all five. denial-warden 16.75 and ' +
-    'narrow-depth 11.1 remain strictly below passive, so the deniers still form their own ' +
-    'profile. This is a different instrument from the one above -- an agency sweep rather than ' +
-    'era-boundary god reports over four factor cells -- so it settles the nodes-known axis and ' +
-    'NOT the (mastered cells, nodes known, cells spanned) triple. The entry is annotated rather ' +
-    'than deleted for exactly that reason: deleting it is a claim about the whole triple, and the ' +
-    're-measurement that can make it belongs to W117. What is already false is the sentence ' +
-    'saying the five produce the SAME universe.',
+    'four factor cells before quoting any figure in this entry.',
   'universities-are-founded-and-never-finished':
     'SUPERSEDED BY W29, kept because the measurement it records is still the measurement — what ' +
     'changed underneath it is the mechanism. The clause "advanceConstruction in rules-world has ' +

@@ -12,8 +12,7 @@
       "can-call-the-pack",
       "can-the-fat-year",
       "can-the-made-beast"
-    ],
-    "v1": true
+    ]
   },
   {
     "id": "creo-aquam",
@@ -25,8 +24,7 @@
       "caq-the-unfailing-well",
       "caq-turn-the-channel",
       "caq-raise-the-river"
-    ],
-    "v1": true
+    ]
   },
   {
     "id": "creo-auram",
@@ -41,8 +39,7 @@
       "cau-call-the-storm",
       "cau-the-borrowed-season",
       "cau-keep-the-sky"
-    ],
-    "v1": true
+    ]
   },
   {
     "id": "creo-corpus",
@@ -58,8 +55,7 @@
       "cc-quicken-the-cohort",
       "cc-the-long-tenure",
       "cc-the-unfinished-death"
-    ],
-    "v1": true
+    ]
   },
   {
     "id": "creo-herbam",
@@ -71,8 +67,7 @@
       "ch-grow-the-beam",
       "ch-paper-without-rags",
       "ch-the-grown-hall"
-    ],
-    "v1": true
+    ]
   },
   {
     "id": "creo-ignem",
@@ -88,7 +83,6 @@
       "cig-the-uncontained-hour",
       "cig-the-standing-furnace"
     ],
-    "v1": true,
     "excludes": [
       {
         "cell": "creo-umbra",
@@ -110,8 +104,7 @@
       "cim-the-absent-scholar",
       "cim-the-crowded-hall",
       "cim-the-perfect-forgery"
-    ],
-    "v1": true
+    ]
   },
   {
     "id": "creo-mentem",
@@ -123,8 +116,7 @@
       "cm-the-given-memory",
       "cm-the-second-attention",
       "cm-the-made-scholar"
-    ],
-    "v1": true
+    ]
   },
   {
     "id": "creo-terram",
@@ -138,8 +130,7 @@
       "ct-the-poured-wall",
       "ct-the-conjured-vein",
       "ct-the-raised-bastion"
-    ],
-    "v1": true
+    ]
   },
   {
     "id": "creo-vim",
@@ -152,8 +143,7 @@
       "cv-the-standing-aura",
       "cv-the-warded-precinct",
       "cv-the-made-vis"
-    ],
-    "v1": true
+    ]
   },
   {
     "id": "creo-umbra",
@@ -166,7 +156,6 @@
       "cu-the-kept-shadow",
       "cu-the-unlit-hall"
     ],
-    "v1": true,
     "excludes": [
       {
         "cell": "creo-ignem",
@@ -186,8 +175,7 @@
       "cf-the-fated-hand",
       "cf-write-the-ending",
       "cf-the-given-destiny"
-    ],
-    "v1": true
+    ]
   },
   {
     "id": "creo-limen",
@@ -199,8 +187,7 @@
       "cl-draw-the-circle",
       "cl-the-made-door",
       "cl-the-threshold-that-was-always-there"
-    ],
-    "v1": true
+    ]
   },
   {
     "id": "creo-nomen",
@@ -212,8 +199,7 @@
       "cn-name-the-unnamed",
       "cn-the-name-that-teaches",
       "cn-the-second-name"
-    ],
-    "v1": true
+    ]
   },
   {
     "id": "intellego-animal",
@@ -227,8 +213,7 @@
       "ian-number-the-herd",
       "ian-chart-the-migration",
       "ian-the-beasts-own-eye"
-    ],
-    "v1": true
+    ]
   },
   {
     "id": "intellego-aquam",
@@ -242,8 +227,7 @@
       "iaq-sip-the-standing-pool",
       "iaq-trace-the-current",
       "iaq-fathom-the-watershed"
-    ],
-    "v1": true
+    ]
   },
   {
     "id": "intellego-auram",
@@ -257,8 +241,7 @@
       "iau-gauge-the-winds-road",
       "iau-reckon-the-season",
       "iau-the-lightnings-chosen-ground"
-    ],
-    "v1": true
+    ]
   },
   {
     "id": "intellego-corpus",
@@ -272,8 +255,7 @@
       "ic-sift-the-humours",
       "ic-listen-at-the-ribs",
       "ic-tell-the-hour-of-a-body"
-    ],
-    "v1": true
+    ]
   },
   {
     "id": "intellego-herbam",
@@ -287,8 +269,7 @@
       "ih-question-the-orchard",
       "ih-pick-out-the-simple",
       "ih-the-root-beneath-the-root"
-    ],
-    "v1": true
+    ]
   },
   {
     "id": "intellego-ignem",
@@ -302,8 +283,7 @@
       "iig-the-colour-of-ready-iron",
       "iig-scry-the-coals",
       "iig-where-the-fire-will-go"
-    ],
-    "v1": true
+    ]
   },
   {
     "id": "intellego-imaginem",
@@ -317,8 +297,7 @@
       "iim-watch-the-light-lie",
       "iim-the-room-you-are-not-in",
       "iim-nothing-painted-passes"
-    ],
-    "v1": true
+    ]
   },
   {
     "id": "intellego-mentem",
@@ -362,8 +341,7 @@
       "iv-price-the-working",
       "iv-the-residue-in-the-room",
       "iv-know-the-hand-that-cast-it"
-    ],
-    "v1": true
+    ]
   },
   {
     "id": "intellego-umbra",
@@ -378,8 +356,7 @@
       "iu-look-along-the-shadow",
       "iu-the-unlit-line",
       "iu-the-shadow-before-the-thing"
-    ],
-    "v1": true
+    ]
   },
   {
     "id": "intellego-fatum",
@@ -394,8 +371,7 @@
       "if-the-fork-seen-from-above",
       "if-the-appointed-hour",
       "if-the-thread-fate-set-down"
-    ],
-    "v1": true
+    ]
   },
   {
     "id": "intellego-limen",
@@ -439,8 +415,7 @@
       "ma-the-willing-ox",
       "ma-the-changed-kennel",
       "ma-what-the-beast-remembers"
-    ],
-    "v1": true
+    ]
   },
   {
     "id": "muto-aquam",
@@ -454,8 +429,7 @@
       "maq-thicken-the-ford",
       "maq-the-standing-river",
       "maq-the-river-remembers-salt"
-    ],
-    "v1": true
+    ]
   },
   {
     "id": "muto-auram",
@@ -469,8 +443,7 @@
       "mau-the-mild-season",
       "mau-the-air-that-carries-nothing",
       "mau-the-storm-turned-inward"
-    ],
-    "v1": true
+    ]
   },
   {
     "id": "muto-corpus",
@@ -485,8 +458,7 @@
       "mc-wear-another-face",
       "mc-the-long-body",
       "mc-the-shape-that-holds"
-    ],
-    "v1": true
+    ]
   },
   {
     "id": "muto-herbam",
@@ -500,8 +472,7 @@
       "mh-the-second-harvest",
       "mh-the-grown-beam",
       "mh-the-thicket-that-was-a-road"
-    ],
-    "v1": true
+    ]
   },
   {
     "id": "muto-ignem",
@@ -515,8 +486,7 @@
       "mi-the-cold-flame",
       "mi-teach-the-fire-what-to-eat",
       "mi-the-heat-that-was-a-hearth"
-    ],
-    "v1": true
+    ]
   },
   {
     "id": "muto-imaginem",
@@ -530,8 +500,7 @@
       "mim-the-lecture-made-visible",
       "mim-wear-the-room",
       "mim-the-image-that-argues-back"
-    ],
-    "v1": true
+    ]
   },
   {
     "id": "muto-mentem",
@@ -545,8 +514,7 @@
       "mm-the-changed-appetite",
       "mm-translate-the-expert",
       "mm-the-mind-made-a-library"
-    ],
-    "v1": true
+    ]
   },
   {
     "id": "muto-terram",
@@ -560,8 +528,7 @@
       "mt-turn-the-poor-ore",
       "mt-the-stone-that-was-sand",
       "mt-turn-the-ground-under-them"
-    ],
-    "v1": true
+    ]
   },
   {
     "id": "muto-vim",
@@ -576,8 +543,7 @@
       "mv-turn-the-incoming",
       "mv-the-second-tradition",
       "mv-the-common-root"
-    ],
-    "v1": true
+    ]
   },
   {
     "id": "muto-umbra",
@@ -591,8 +557,7 @@
       "mu-the-shadow-of-something-else",
       "mu-give-the-shade-weight",
       "mu-trade-shadows"
-    ],
-    "v1": true
+    ]
   },
   {
     "id": "muto-fatum",
@@ -607,8 +572,7 @@
       "mf-the-later-appointment",
       "mf-divide-it-among-the-heirs",
       "mf-the-fate-that-was-yours"
-    ],
-    "v1": true
+    ]
   },
   {
     "id": "muto-limen",
@@ -622,8 +586,7 @@
       "ml-the-door-that-was-a-window",
       "ml-which-side-the-courtyard-is-on",
       "ml-the-seam-made-a-hinge"
-    ],
-    "v1": true
+    ]
   },
   {
     "id": "muto-nomen",
@@ -638,8 +601,7 @@
       "mn-call-it-iron-until-it-is",
       "mn-trade-true-names",
       "mn-the-second-true-name"
-    ],
-    "v1": true
+    ]
   },
   {
     "id": "perdo-animal",
@@ -651,8 +613,7 @@
       "pan-nothing-takes-the-scent",
       "pan-empty-the-pasture",
       "pan-nothing-answers-the-horn"
-    ],
-    "v1": true
+    ]
   },
   {
     "id": "perdo-aquam",
@@ -664,8 +625,7 @@
       "paq-unwrite",
       "paq-the-dry-season",
       "paq-leave-them-the-salt"
-    ],
-    "v1": true
+    ]
   },
   {
     "id": "perdo-auram",
@@ -677,8 +637,7 @@
       "pau-unmake-the-gale",
       "pau-the-airless-room",
       "pau-the-sky-withdraws"
-    ],
-    "v1": true
+    ]
   },
   {
     "id": "perdo-corpus",
@@ -690,8 +649,7 @@
       "pc-the-long-fever",
       "pc-take-the-years",
       "pc-the-hand-that-wrote-it"
-    ],
-    "v1": true
+    ]
   },
   {
     "id": "perdo-herbam",
@@ -703,8 +661,7 @@
       "ph-take-the-haft",
       "ph-the-failed-harvest",
       "ph-the-shelves-give-way"
-    ],
-    "v1": true
+    ]
   },
   {
     "id": "perdo-ignem",
@@ -716,8 +673,7 @@
       "pig-take-the-warmth",
       "pig-the-unburnt-library",
       "pig-nothing-will-catch"
-    ],
-    "v1": true
+    ]
   },
   {
     "id": "perdo-imaginem",
@@ -729,8 +685,7 @@
       "pim-the-quiet-working",
       "pim-unmake-the-demonstration",
       "pim-no-one-can-describe-it"
-    ],
-    "v1": true
+    ]
   },
   {
     "id": "perdo-mentem",
@@ -770,8 +725,7 @@
       "pv-let-it-lapse",
       "pv-the-unfinished-sentence",
       "pv-where-nothing-takes"
-    ],
-    "v1": true
+    ]
   },
   {
     "id": "perdo-umbra",
@@ -783,8 +737,7 @@
       "pu-lay-the-shade",
       "pu-nothing-casts-here",
       "pu-make-sure"
-    ],
-    "v1": true
+    ]
   },
   {
     "id": "perdo-fatum",
@@ -797,8 +750,7 @@
       "pf-nothing-is-owed",
       "pf-where-nothing-turns-out",
       "pf-the-unmade-discovery"
-    ],
-    "v1": true
+    ]
   },
   {
     "id": "perdo-limen",
@@ -838,8 +790,7 @@
       "ran-drive-the-herd",
       "ran-the-borrowed-eye",
       "ran-bring-the-pack-to-heel"
-    ],
-    "v1": true
+    ]
   },
   {
     "id": "rego-aquam",
@@ -852,8 +803,7 @@
       "raq-stand-the-water-off",
       "raq-the-held-breath",
       "raq-shut-the-harbour-mouth"
-    ],
-    "v1": true
+    ]
   },
   {
     "id": "rego-auram",
@@ -865,8 +815,7 @@
       "rau-step-on-the-air",
       "rau-turn-the-storm-aside",
       "rau-the-held-gale"
-    ],
-    "v1": true
+    ]
   },
   {
     "id": "rego-corpus",
@@ -881,8 +830,7 @@
       "rc-puppet-flesh",
       "rc-the-lengthened-term",
       "rc-the-unclaimed-body"
-    ],
-    "v1": true
+    ]
   },
   {
     "id": "rego-herbam",
@@ -894,8 +842,7 @@
       "rh-the-obedient-coppice",
       "rh-close-the-hedge",
       "rh-the-standing-timber"
-    ],
-    "v1": true
+    ]
   },
   {
     "id": "rego-ignem",
@@ -907,8 +854,7 @@
       "rig-hold-the-fire-off",
       "rig-drive-the-flame",
       "rig-the-walled-fire"
-    ],
-    "v1": true
+    ]
   },
   {
     "id": "rego-imaginem",
@@ -920,8 +866,7 @@
       "rim-the-turned-glance",
       "rim-show-the-working",
       "rim-the-standing-demonstration"
-    ],
-    "v1": true
+    ]
   },
   {
     "id": "rego-mentem",
@@ -964,8 +909,7 @@
       "rv-the-working-kept-in-iron",
       "rv-forbid-the-casting",
       "rv-the-standing-prohibition"
-    ],
-    "v1": true
+    ]
   },
   {
     "id": "rego-umbra",
@@ -977,8 +921,7 @@
       "ru-the-lent-shadow",
       "ru-step-by-shadow",
       "ru-the-held-dark"
-    ],
-    "v1": true
+    ]
   },
   {
     "id": "rego-fatum",
@@ -991,8 +934,7 @@
       "rf-turn-the-ill-hour",
       "rf-the-appointed-hour",
       "rf-the-settled-question"
-    ],
-    "v1": true
+    ]
   },
   {
     "id": "rego-limen",
