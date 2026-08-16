@@ -70,6 +70,15 @@ afterAll(() => {
 interface Frame {
   readonly obs: readonly number[];
   readonly sat: readonly number[];
+  /**
+   * `material-stock`'s three kinds, in fp — the one quantity `obs` structurally
+   * cannot carry, because §4.1 sums them into the single `resources[39]` slot.
+   */
+  readonly stocks: {
+    readonly food: number;
+    readonly stone: number;
+    readonly vellum: number;
+  };
   readonly mask: readonly number[];
   readonly candidates: Readonly<Record<string, readonly number[]>>;
   readonly status: string;
@@ -164,6 +173,44 @@ describe('the recording `npm run ui:record` produces', () => {
       // outside the observation would make a view label the wrong channel
       // "128+", which is worse than not labelling it.
       for (const slot of frame.sat) expect(slot).toBeLessThan(slots);
+    }
+  });
+
+  it('splits materials into the three stocks, and they sum to the slot they are summed into', () => {
+    // The newest field this file exists to guard, and it is guarded the way the
+    // header describes: `ui/play` reads `food`, `stone` and `vellum` by name and
+    // prints the breakdown only when all three are finite numbers, falling back
+    // to the summed total otherwise. A recorder that stopped emitting `stocks`
+    // would not fail anything above — every page would quietly fall back and the
+    // breakdown would just stop appearing, which is the silent degradation the
+    // rest of these assertions exist to prevent.
+    //
+    // The sum is checked rather than only the presence, because agreement with
+    // `resources[39]` is the whole claim: the sidecar comes from the §4.4 player
+    // projection and the slot comes from the §4.1 encoder, and two paths reading
+    // one component is exactly where they can drift apart. Checked on every
+    // frame, since a divergence that begins mid-run is the kind a spot check at
+    // tick 0 misses — at tick 0 all three stocks are equal and any two of them
+    // could be swapped undetectably.
+    const materials = recording.layout.find((b) => b.name === 'resources');
+    expect(materials, 'the recording has no resources block').toBeDefined();
+    const slot = (materials?.offset ?? 0) + 3;
+
+    for (const [i, frame] of recording.frames.entries()) {
+      const { food, stone, vellum } = frame.stocks;
+      for (const [kind, value] of Object.entries({ food, stone, vellum })) {
+        expect(Number.isFinite(value), `frame ${String(i)} has a non-finite ${kind}`).toBe(true);
+        expect(value, `frame ${String(i)} has a negative ${kind}`).toBeGreaterThanOrEqual(0);
+      }
+      // Exact, not approximate. Both sides are fp integers and the slot's
+      // normalization is a `ratio` over a power of two, so the recorder's
+      // round-trip through the divisor is lossless below saturation — and no
+      // frame of this run saturates that slot. An epsilon here would hide a
+      // real one-kind drift behind a tolerance nobody chose.
+      expect(frame.sat, `frame ${String(i)} saturated the materials slot`).not.toContain(slot);
+      expect(food + stone + vellum, `frame ${String(i)}'s stocks do not sum to resources[39]`).toBe(
+        frame.obs[slot],
+      );
     }
   });
 

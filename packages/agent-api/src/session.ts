@@ -76,6 +76,8 @@ import { OBSERVATION_LAYOUT_DIGEST, OBSERVATION_SCHEMA_VERSION } from './digest.
 import type { RejectionReason } from './gate.js';
 import { admit } from './gate.js';
 import type { OutcomeRecord } from './outcome.js';
+import type { PlayerState } from './player-state.js';
+import { project } from './player-state.js';
 import type { AgentView } from './view.js';
 import { observe } from './view.js';
 
@@ -262,6 +264,24 @@ export interface AgentSession {
   rng(): AgentRng;
   /** The current state's content hash, for a run record's provenance. */
   snapshotHash(): string;
+  /**
+   * The §4.4 player projection of the current state — what a *client* may see.
+   *
+   * Distinct from {@link observe}, which returns the §4.1 vector a *policy* is
+   * trained on, and it exists because those two are not the same entitlement.
+   * The vector is fixed at {@link OBSERVATION_SIZE} slots and widening it
+   * invalidates every trained agent, so a quantity the world holds but the
+   * vector aggregates — `material-stock`'s three kinds into one `materials`
+   * slot — was unreachable by a client for no reason except that the agent's
+   * budget is tight. `project()` was already the named home for the player's
+   * view; nothing exposed it from a running session, so every consumer that had
+   * one had only `observe()`.
+   *
+   * Reads no field the observation withholds: this is the same projection
+   * `unencodedObservables` checks, so a leak would fail that gate rather than
+   * ship quietly.
+   */
+  playerState(): PlayerState;
 }
 
 /** Builds a session. The episode does not exist until {@link AgentSession.reset}. */
@@ -489,6 +509,14 @@ export function createSession(options: SessionOptions): AgentSession {
 
     snapshotHash(): string {
       return snapshotHash(live());
+    },
+
+    playerState(): PlayerState {
+      // Built fresh rather than memoized beside `view`. The projection is not
+      // on the per-tick path any policy takes — only a client asks for it — and
+      // a second cache invalidated in `submit()` is a second thing that can be
+      // forgotten there and serve a tick-old universe as the current one.
+      return project({ state: live(), catalogue: scenario.catalogue });
     },
   };
 }

@@ -70,7 +70,7 @@
 
 import type { SimState } from '@mm/sim-core';
 import { TIME_MODE, eraOf } from '@mm/sim-core';
-import type { Edict, Ruleset } from '@mm/state';
+import type { Edict, MaterialStockRecord, Ruleset } from '@mm/state';
 import {
   COMBATANT,
   EDICT_BUDGET_MAX,
@@ -142,22 +142,51 @@ import {
  */
 
 /**
- * §1.1's five resource channels.
+ * §1.1's five resource channels, plus the three stocks `materials` sums.
  *
- * `materials` is the **sum** of `material-stock`'s three kinds. The encoder
- * records the consequence and it is repeated here because it is an entitlement
- * fact and not an encoding one: a player cannot tell a food shortage from a
- * vellum one. `favorCap` is withheld, so `favor` is readable and its ceiling is
- * not.
+ * `materials` is the **sum** of `material-stock`'s three kinds, because the
+ * §4.1 *observation* carries one slot for it and widening that slot is a
+ * contract change nobody has scheduled — vision §6: *"a resize invalidates
+ * every trained agent."* That constraint is the encoder's, and it is real.
+ *
+ * It is **not** this projection's constraint, and conflating the two cost a
+ * client the ability to draw a number the world plainly holds. This type is
+ * what a *player* may see; `encodePlayerState` is what an *agent* is handed,
+ * and only the latter is bound by the vector's width. So the three stocks are
+ * carried here individually **and** summed into `materials`, the encoder keeps
+ * writing the sum into its one slot, and `OBSERVATION_SIZE`,
+ * `OBSERVATION_LAYOUT_DIGEST` and `OBSERVATION_SCHEMA_VERSION` do not move.
+ *
+ * The consequence for an agent is unchanged and still recorded in
+ * `entitlement.ts` as `aggregated('resources[39]')`: a *policy* cannot tell a
+ * food shortage from a vellum one. A *client* now can.
+ *
+ * `favorCap` is withheld, so `favor` is readable and its ceiling is not.
+ *
+ * ## Why {@link stocks} is a nested `MaterialStockRecord` and not three fields
+ *
+ * The first draft inlined `food`, `stone` and `vellum` here as siblings of
+ * `materials`. `state`'s `schema-duplication` check refused it, and it was
+ * right to: a type whose fields are a superset of a `@mm/state` record is a
+ * second declaration of a §1 entity however it is named, and two declarations
+ * of one entity drift. Consuming `MaterialStockRecord` instead means a fourth
+ * kind of material — the schema is `MATERIAL_STOCK`'s to change — arrives here
+ * without anyone editing this file, rather than being silently dropped from
+ * every client by a projection that had transcribed the field list.
  */
 export interface PlayerResources {
   readonly favor: number;
   readonly worship: number;
   readonly worshipTier: number;
-  /** `food + stone + vellum`. */
+  /** `food + stone + vellum`. What the observation's one slot carries. */
   readonly materials: number;
   /** The carried-in stock. `prestigeEarned` is withheld. */
   readonly prestige: number;
+  /**
+   * The kinds {@link materials} sums, individually. `@mm/state`'s own record,
+   * consumed rather than copied — see the note above. Reaches no slot.
+   */
+  readonly stocks: MaterialStockRecord;
 }
 
 /** One cell's three knowledge channels. */
@@ -421,6 +450,7 @@ export function project(input: ObservationInput): PlayerState {
     worshipTier: 0,
     materials: 0,
     prestige: 0,
+    stocks: { food: 0, stone: 0, vellum: 0 },
   };
 
   // A world with no universe leaves an empty ruleset — both masks zero and no
@@ -438,16 +468,30 @@ export function project(input: ObservationInput): PlayerState {
 
     // Summed in a plain number and saturated once, matching the encoder. A
     // missing row is all-zero, which is what "never stepped" means.
+    //
+    // The three parts are read once and carried alongside the sum, rather than
+    // the sum being carried alone and the parts re-read by whoever wants them.
+    // `materials` is then derived from the same three reads that `food`,
+    // `stone` and `vellum` report, so the four numbers cannot disagree — the
+    // failure `layout.ts` names when it refuses to store a saturation constant
+    // under two names.
     const stocks = componentOf(state, MATERIAL_STOCK);
-    const materials = stocks.has(universe)
-      ? stocks.get(universe, 'food') + stocks.get(universe, 'stone') + stocks.get(universe, 'vellum')
-      : 0;
+    const held = stocks.has(universe);
+    const food = held ? stocks.get(universe, 'food') : 0;
+    const stone = held ? stocks.get(universe, 'stone') : 0;
+    const vellum = held ? stocks.get(universe, 'vellum') : 0;
     resources = {
       favor: saturate(record.favor),
       worship: saturate(record.worship),
       worshipTier: saturate(record.worshipTier),
-      materials: saturate(materials),
+      materials: saturate(food + stone + vellum),
       prestige: saturate(record.prestige),
+      // Saturated individually as well as in the sum. A single stock cannot
+      // overflow an int32 while the sum does not, but saturating the parts
+      // keeps every field of this type under the same one guarantee rather
+      // than under two, and `saturate` throws on a non-integer — which is the
+      // check that would catch a float reaching the projection.
+      stocks: { food: saturate(food), stone: saturate(stone), vellum: saturate(vellum) },
     };
   }
 

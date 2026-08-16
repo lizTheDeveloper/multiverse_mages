@@ -163,6 +163,12 @@ function encodeFrame(session) {
   return {
     obs,
     sat,
+    // `material-stock`'s three kinds, which §4.1 sums into `resources[39]`.
+    // Same field, same source and same reasoning as `record-session.mjs`: the
+    // §4.4 player projection, three fields only, nothing that is already in
+    // `obs`. A live server that served a different frame shape than the
+    // recorder would make every page work against one and not the other.
+    stocks: { ...session.playerState().resources.stocks },
     mask: [...mask],
     candidates: Object.fromEntries(
       [...candidates].map(([action, list]) => [action, [...(list ?? [])]]),

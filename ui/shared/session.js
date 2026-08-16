@@ -55,6 +55,22 @@ export const FP = 1024;
 /** An fp integer in world units — 40960 becomes 40.0 favor. */
 export const units = (fp) => fp / FP;
 
+/**
+ * Whether a frame's `stocks` sidecar carries all three kinds as real numbers.
+ *
+ * All three or none, and finite rather than merely present: `JSON.parse` turns
+ * a serialized `Infinity` or `NaN` into `null`, and `units(null)` is `0` — the
+ * exact zero {@link Frame#resources} refuses to invent. A partial sidecar is
+ * treated as no sidecar so a view falls back to the summed total it can trust
+ * instead of drawing two thirds of a breakdown.
+ */
+const hasStocks = (stocks) =>
+  stocks !== null &&
+  typeof stocks === 'object' &&
+  ['food', 'stone', 'vellum'].every(
+    (kind) => typeof stocks[kind] === 'number' && Number.isFinite(stocks[kind]),
+  );
+
 const KNOWLEDGE_CHANNELS = 3;
 const SPECIES_COUNT = 6;
 const MAGE_TIER_SLOTS = 8;
@@ -119,17 +135,40 @@ class Frame {
    * `worshipTier` is a small integer and stays one; the other four are fp. A
    * saturated channel is reported so a view can print *"128+"* rather than a
    * ceiling it would be wrong about.
+   *
+   * ## `food`, `stone` and `vellum` are `undefined` when absent, never `0`
+   *
+   * The observation has **one** slot for materials — §4.1 sums the three stocks
+   * into `resources[39]`, and widening that block moves `OBSERVATION_SIZE` and
+   * the layout digest, which invalidates every trained policy and every
+   * committed balance baseline. So the split does not come from `obs`. It comes
+   * from `stocks`, a per-frame sidecar off the §4.4 player projection, which a
+   * recorder written before that field existed will not carry.
+   *
+   * When it is missing these three are left `undefined` rather than defaulted.
+   * `0` would be a *lie a page prints as fact* — an empty granary is a crisis
+   * and an unknown granary is not, and the two must not render alike. A view
+   * therefore tests `typeof x === 'number' && Number.isFinite(x)` on all three
+   * and falls back to the summed `materials`, which is always present.
    */
   resources() {
     const [favor, worship, worshipTier, materials, prestige] = this.block('resources');
     const base = this.doc.blockByName.resources.offset;
     const sat = (i) => this.raw.sat.includes(base + i);
+    const stocks = this.raw.stocks;
     return {
       favor: units(favor),
       worship: units(worship),
       worshipTier,
       materials: units(materials),
       prestige: units(prestige),
+      // Spread conditionally rather than assigned from `stocks?.food`, because
+      // optional chaining yields `undefined` for a *present* sidecar that is
+      // missing one kind, and that case should be as absent as a missing
+      // sidecar rather than half-drawn. All three or none.
+      ...(hasStocks(stocks)
+        ? { food: units(stocks.food), stone: units(stocks.stone), vellum: units(stocks.vellum) }
+        : {}),
       saturated: { favor: sat(0), worship: sat(1), materials: sat(3), prestige: sat(4) },
     };
   }
@@ -354,6 +393,13 @@ function buildSession(doc, extras = {}) {
       const f = frame(doc.frames.length - 1);
       return {
         resources: true,
+        /**
+         * Whether `resources()` can split `materials` into food, stone and
+         * vellum. Read off the frame rather than asserted, because a recording
+         * made before the `stocks` sidecar existed is still a valid recording
+         * and a view must be able to ask instead of guessing.
+         */
+        materialBreakdown: typeof f.resources().food === 'number',
         ruleset: true,
         actionMask: true,
         knowledgeAggregates: f.knowledge().some((c) => c.live),
