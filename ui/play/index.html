@@ -677,8 +677,21 @@
      * `Candidate` carries `params` and no label. Naming it would mean inventing
      * a mage, and a UI that invents is worse than one that admits.
      */
+    /*
+     * `value` is what gets submitted. `aim` is what a click on the grid has to
+     * match, and it differs from `value` for exactly one verb — see 12 below.
+     *
+     * The axis verbs take a **1-based content id**, not the 0-based bit the
+     * ruleset block is indexed by: `interventions.ts:405` is `const bit =
+     * axisId - 1` and `gate.ts:267` refuses anything `< 1`. Sending the bit
+     * therefore made the first technique `parameter-out-of-range` and every
+     * other one hit its neighbour — a silent wrong target, which is the worse
+     * half. Measured 2026-08-15: aiming at Creo and casting `permitTechnique`
+     * came back `refused (parameter-out-of-range)`.
+     */
     return (id, candidates) => {
-      const list = (rows) => rows.map((name, i) => ({ value: i, label: name })).filter((o) => o.label);
+      const list = (rows) =>
+        rows.map((name, i) => ({ value: i + 1, label: name })).filter((o) => o.label);
       if (id === 1 || id === 2) return list(techniques);
       if (id === 3 || id === 4) return list(forms);
       /*
@@ -689,8 +702,13 @@
        * choices to offer.
        */
       if (id === 12) {
-        return (candidates ?? []).map((c) => ({
-          value: c.params[0],
+        /* `CANDIDATE_SLOTS` covers this one, so `gate.ts:225` resolves the
+           parameter through `candidateAt` — a slot index, not the cell id the
+           slot happens to carry. The cell id is what the grid click matches, so
+           it rides along as `aim`. */
+        return (candidates ?? []).map((c, slot) => ({
+          value: slot,
+          aim: c.params[0],
           label: cellName.get(c.params[0]) ?? `cell ${c.params[0]}`,
         }));
       }
@@ -700,14 +718,14 @@
           .map(([cellId, label]) => ({ value: cellId, label }));
       }
       if (id === 13) {
-        return (candidates ?? []).map((c) => ({
-          value: c.params[0],
+        return (candidates ?? []).map((c, slot) => ({
+          value: slot,
           label: traditions.get(c.params[0]) ?? `tradition ${c.params[0]}`,
         }));
       }
       if (id === 16) {
-        return (candidates ?? []).map((c) => ({
-          value: c.params[0],
+        return (candidates ?? []).map((c, slot) => ({
+          value: slot,
           label: species.get(c.params[0]) ?? `species ${c.params[0]}`,
         }));
       }
@@ -910,7 +928,8 @@
       const head = span('h', name);
       head.dataset.armed = String(form.permitted);
       head.title = `${name} — ${form.permitted ? 'armed' : 'closed'}. Click to aim the form verbs at it.`;
-      grid.append(pick(head, 'form', form.bit, name));
+      /* `bit + 1`: the axis verbs take a 1-based content id. See `namers`. */
+      grid.append(pick(head, 'form', form.bit + 1, name));
     }
 
     for (const technique of rules.techniques) {
@@ -918,7 +937,7 @@
       const label = span('rl', tname);
       label.dataset.armed = String(technique.permitted);
       label.title = `${tname} — ${technique.permitted ? 'armed' : 'closed'}. Click to aim the technique verbs at it.`;
-      grid.append(pick(label, 'technique', technique.bit, tname));
+      grid.append(pick(label, 'technique', technique.bit + 1, tname));
 
       for (const form of rules.forms) {
         const cell = known.get(`${technique.id} ${form.id}`);
@@ -1082,9 +1101,12 @@
              outside that list is not a legal target and the card says so
              rather than letting the player fire and be refused. */
           const allowed = options ?? [];
-          const match = allowed.find((o) => o.value === value);
+          /* Match on `aim` where an option has one — action 12's grid target is
+             its cell id while the parameter it submits is a §4.4 slot. */
+          const match = allowed.find((o) => (o.aim ?? o.value) === value);
           if (match) {
             valueLabel = match.label;
+            value = match.value;
           } else {
             value = undefined;
             needsPick = true;
