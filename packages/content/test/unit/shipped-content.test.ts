@@ -214,6 +214,39 @@ describe('shipped content', () => {
     }
   });
 
+  /**
+   * The inverse of the assertion above, and the half that was missing.
+   *
+   * That one asks *"is every kind produced by some form"* — it catches a typo
+   * that makes a material unreachable. This asks *"does every form produce some
+   * kind"*, and it catches the other thing entirely: a **part of the grid that
+   * magic can act on and the economy cannot see.**
+   *
+   * Seven of the fourteen shipped forms are `{0, 0, 0}`: `corpus`, `imaginem`,
+   * `mentem`, `vim`, `umbra`, `fatum`, `limen`. Two of those — `mentem` and
+   * `limen` — are in the **v1 opening square**, so a god who opens on
+   * mind-magic and thresholds generates no economy at all and the interface
+   * offers no way to find out why.
+   *
+   * `openspec/changes/material-economy` is the change that makes this pass, by
+   * giving those forms kinds of their own rather than squeezing them into the
+   * three that exist. **This assertion is written before that content, and it
+   * fails until the content is authored** — which is the point of writing it
+   * first: a test added afterwards proves only that somebody wrote a test.
+   */
+  it('leaves no form producing nothing at all', () => {
+    const inert = registry.forms
+      .filter((entry) =>
+        (['food', 'stone', 'vellum'] as const).every((kind) => entry.record.yieldWeights[kind] === 0),
+      )
+      .map((entry) => entry.record.id);
+
+    expect(
+      inert,
+      `these forms yield nothing, so magic acting on them moves no economy: ${inert.join(', ')}`,
+    ).toEqual([]);
+  });
+
   it('never authors a mētis node cheaper to rediscover than an episteme peer', () => {
     // metis-knowledge's proposal makes rediscovery of a mētis node costlier
     // "expressed through the existing rediscoveryMultiplier, not a new
