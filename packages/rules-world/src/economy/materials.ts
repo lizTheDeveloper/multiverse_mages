@@ -408,6 +408,120 @@ export function applyStockCeiling(stock: MaterialAmounts): CeilingOutcome {
 }
 
 /**
+ * One tick's material flow, per kind: what arrived and what left.
+ *
+ * ## Why a ledger and not another level metric
+ *
+ * `economy-flow-models.md` §5.2 is blunt about the gap: *"Every metric in the
+ * registry measures a level, a rate, or a distribution at a checkpoint. None
+ * reconciles flows. The favor ledger is the exception and proves the point — it
+ * is the only place a closing balance is asserted against opening + in − out."*
+ * This extends that shape to materials, which is what §3.4 asks for.
+ *
+ * A level tells you the granary is empty. It cannot tell you whether the food
+ * was eaten, spilled over a ceiling, or quietly lost by a phase that decremented
+ * a stock without telling anybody — and the third is a defect that produces
+ * plausible output indefinitely, because an economy that leaks slowly looks
+ * exactly like an economy that is merely poor.
+ *
+ * ## What counts as a faucet and what counts as a sink
+ *
+ * A **faucet** creates material that did not exist: laborers working the land,
+ * and mages casting into a form that routes to a kind. A **sink** destroys it:
+ * every claimant paid through {@link consumeMaterials}, the scribes paid at the
+ * desk, and the ceiling spill.
+ *
+ * **The spill is on the sink side and this is the reason it must be.**
+ * `MATERIAL_STOCK_CEILING` returns what did not fit rather than dropping it
+ * precisely so that this arithmetic has somewhere to put it. A silent
+ * truncation would show up here as a kind that does not balance, reported as a
+ * leak, which is the diagnosis a reader would then have to un-make.
+ *
+ * **A stock held back by a floor is neither.** `spendableLabor`'s reserve is a
+ * bound on how much a drain may take, not a transfer: the reserved `labor` is
+ * still in the stock at the end of the tick, so it appears on neither side and
+ * conservation is untouched by it. That is the property that made a floor the
+ * right shape for the two-claimant race on `labor` — a gate or a holding pool
+ * would both have needed the ledger to learn about them.
+ *
+ * **The god's spend is outside this ledger, and deliberately.** The intervention
+ * system runs *before* the world system in the same step, so a material cost it
+ * deducted is already in the opening balance the world tick reads. This
+ * reconciles the world loop's own flows against its own opening figure; folding
+ * in a deduction that happened before that figure was taken would make every
+ * tick a god acted on read as a leak.
+ */
+export interface MaterialLedger {
+  /** The stocks the tick opened with, per kind. */
+  readonly opening: MaterialAmounts;
+  /** The stocks the tick closed with, per kind. */
+  readonly closing: MaterialAmounts;
+  /** Everything created this tick, per kind. */
+  readonly faucet: MaterialAmounts;
+  /** Everything destroyed this tick, per kind — spill included. */
+  readonly sink: MaterialAmounts;
+}
+
+/** One kind that failed `delta == faucet - sink`, with the arithmetic. */
+export interface ConservationBreach {
+  readonly kind: MaterialKind;
+  /** `closing - opening`. */
+  readonly delta: Fixed;
+  /** `faucet - sink`, which `delta` must equal. */
+  readonly expected: Fixed;
+  /** `delta - expected`. Positive is material from nowhere; negative is a leak. */
+  readonly discrepancy: Fixed;
+}
+
+/**
+ * Every kind whose stock did not move by exactly what the tick recorded.
+ *
+ * Returns a list rather than throwing, so a caller can report it as a metric —
+ * `economy-flow-models.md` §3.4 asks for the conservation check to be
+ * **reported**, not only tested, and a function that can only throw cannot be a
+ * series. {@link assertMaterialsConserved} is the throwing wrapper.
+ *
+ * Exact, with no tolerance. Every quantity here is a fixed-point integer and an
+ * epsilon would hide precisely the slow one-unit-per-tick leak this exists to
+ * find.
+ */
+export function conservationBreaches(ledger: MaterialLedger): ConservationBreach[] {
+  const breaches: ConservationBreach[] = [];
+  for (const kind of MATERIAL_KINDS) {
+    const delta = ledger.closing[kind] - ledger.opening[kind];
+    const expected = ledger.faucet[kind] - ledger.sink[kind];
+    if (delta === expected) continue;
+    breaches.push({ kind, delta, expected, discrepancy: delta - expected });
+  }
+  return breaches;
+}
+
+/**
+ * Throws unless every kind satisfies `delta == faucet - sink`.
+ *
+ * Names the kind and the tick, which the spec requires of it: *"the conservation
+ * assertion fails and names the kind and the tick."* A message reading only
+ * "conservation failed" would send a reader to re-derive by hand the thing the
+ * check already knew.
+ */
+export function assertMaterialsConserved(ledger: MaterialLedger, worldTick: number): void {
+  const breaches = conservationBreaches(ledger);
+  if (breaches.length === 0) return;
+  const detail = breaches
+    .map(
+      (breach) =>
+        `${breach.kind} moved by ${String(breach.delta)} while the tick recorded a faucet less a ` +
+        `sink of ${String(breach.expected)}, a discrepancy of ${String(breach.discrepancy)}`,
+    )
+    .join('; ');
+  throw new Error(
+    `material conservation failed at world tick ${String(worldTick)}: ${detail}. Every kind's ` +
+      'stock must move by exactly what the tick produced less what it consumed, spill included — ' +
+      'a flow that changes a stock without recording itself is the defect this asserts against.',
+  );
+}
+
+/**
  * Asserts the invariant the `economy` spec states as a MUST, for every kind.
  *
  * Called at the tick boundary rather than trusted. A negative stock is the sort

@@ -46,10 +46,10 @@
 
 ## 6. The ledger, which is the part that can fail loudly
 
-- [ ] 6.1 Write a failing test: a tick that produces and consumes must satisfy `delta == faucet - sink` per kind
-- [ ] 6.2 Implement the per-tick faucet/sink ledger
-- [ ] 6.3 Add the conservation assertion to the sweep as a reported metric, not only as a test — `economy-flow-models.md` §3.4 asks for it to be reported
-- [ ] 6.4 Give the assertion a positive control: a deliberately leaking flow must fail it. A checker that has never failed is not known to work
+- [x] 6.1 Write a failing test: a tick that produces and consumes must satisfy `delta == faucet - sink` per kind
+- [x] 6.2 Implement the per-tick faucet/sink ledger
+- [x] 6.3 Add the conservation assertion to the sweep as a reported metric, not only as a test — `economy-flow-models.md` §3.4 asks for it to be reported
+- [x] 6.4 Give the assertion a positive control: a deliberately leaking flow must fail it. A checker that has never failed is not known to work
 
 ## 7. Balance and the record
 

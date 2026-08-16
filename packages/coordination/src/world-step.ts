@@ -132,6 +132,7 @@ import type {
   HiredLabourWeights,
   TeachingWeights,
   CohortDemography,
+  ConservationBreach,
   MageGoalCommitment,
   MaterialAmounts,
   MaterialKind,
@@ -152,6 +153,10 @@ import {
   advanceConstruction,
   appliedYield,
   applyStockCeiling,
+  assertMaterialsConserved,
+  conservationBreaches,
+  CLAIMANT_KIND,
+  CONSUMPTION_ORDER,
   applicationRations,
   applyLibraryUpkeep,
   assignStaff,
@@ -365,6 +370,19 @@ export interface WorldStepDeps {
    * `material-economy`'s sink for `labor`. Required for the same reason.
    */
   readonly hiredLabour: HiredLabourWeights;
+  /**
+   * A deliberately unrecorded drain, for testing the conservation assertion.
+   *
+   * **The positive control on {@link assertMaterialsConserved}**, and it lives
+   * on the shipped path on purpose. A checker that has never failed is not known
+   * to work, and a control that re-implements the tick can agree with itself
+   * while both have drifted from the real loop. This makes the real loop leak.
+   *
+   * Absent on every ordinary run. Supplying it takes the named amount out of the
+   * closing stock without recording it as a sink, so the ledger must fail by
+   * exactly that amount and name that kind.
+   */
+  readonly leak?: { readonly kind: MaterialKind; readonly perTick: Fixed } | undefined;
   /**
    * §9's ablation mask, neutralizing at most one primitive across the world loop.
    *
@@ -580,6 +598,36 @@ export interface WorldStepReport {
    * this on the sink side of `delta == faucet - sink`.
    */
   readonly spilledByKind: MaterialAmounts;
+  /**
+   * Everything the tick **created**, per kind, `fp` — the land and applied magic.
+   *
+   * With {@link sinkByKind} this is `economy-flow-models.md` §5.2's missing
+   * class: *"Every metric in the registry measures a level, a rate, or a
+   * distribution at a checkpoint. None reconciles flows."* Reported rather than
+   * only asserted, because §3.4 asks for the conservation check to be a
+   * **series** and a function that can only throw cannot be one — a run that
+   * balances every tick and one that was never asked look identical otherwise.
+   */
+  readonly faucetByKind: MaterialAmounts;
+  /**
+   * Everything the tick **destroyed**, per kind, `fp` — every claimant, the
+   * scribes paid at the desk, and the ceiling spill.
+   *
+   * The spill is included here rather than reported only on its own, because
+   * that is the side of `delta == faucet - sink` it has to be on for a capped
+   * inflow to balance. {@link spilledByKind} remains separately readable, since
+   * "spent" and "lost to a ceiling" are different facts about the economy.
+   */
+  readonly sinkByKind: MaterialAmounts;
+  /**
+   * Kinds whose stock did not move by exactly `faucet - sink` this tick.
+   *
+   * **Always empty on a correct build**, and reported so that a sweep can carry
+   * it as a metric instead of discovering it only when an assertion throws. A
+   * checker that can only fail loudly gives no evidence while it is passing;
+   * this is the series that says it was asked and answered.
+   */
+  readonly conservationBreaches: readonly ConservationBreach[];
   readonly carryingCapacity: number;
   readonly mageDeaths: number;
   readonly magesPromoted: number;
@@ -1251,7 +1299,68 @@ export function worldSystem(
       const bounded = applyStockCeiling(consumption.remaining);
       const closing = bounded.stock;
       assertMaterialsNonNegative(closing);
-      writeMaterialStock(state, universe, closing);
+
+      // ---- 9b. The ledger, which is the part that can fail loudly ----------
+      //
+      // `economy-flow-models.md` §5.2: every other metric here is a *level*, and
+      // a level cannot tell material that was spent from material that was lost.
+      // So the tick's flows are totted up per kind and the stock's movement is
+      // asserted against them — `delta == faucet - sink`, exactly, no epsilon,
+      // because every quantity is a fixed-point integer and a tolerance would
+      // hide the slow one-unit leak this exists to find.
+      //
+      // The three faucets and the four sinks are enumerated here rather than
+      // accumulated as the tick runs, and that is the whole point: this
+      // arithmetic is written from the *stock mutations* — there are exactly
+      // three in this function — so a fourth added later without a line here
+      // fails the assertion instead of quietly unbalancing the economy.
+      const faucet = zeroAmounts();
+      const sink = zeroAmounts();
+      for (const kind of MATERIAL_KINDS) {
+        // Faucets: the land (phase 1) and applied magic (phase 5a).
+        faucet[kind] = produced[kind] + work.applied[kind];
+        // Sinks: every claimant paid in phase 9, plus the ceiling spill. A
+        // spill is on this side because `applyStockCeiling` **returns** what did
+        // not fit rather than dropping it; a silent truncation would read here
+        // as a leak, which is a diagnosis a reader would then have to un-make.
+        sink[kind] = bounded.spilled[kind];
+      }
+      // Scribing is paid at the desk in phase 5 and so is not in `consumption`.
+      // It comes out of vellum, and omitting it would make vellum the one kind
+      // that never balances.
+      sink.vellum += materialsScribed;
+      for (const claimant of CONSUMPTION_ORDER) {
+        sink[CLAIMANT_KIND[claimant]] += consumption.spent[claimant];
+      }
+      // §9's leak injector, and the reason it is in the shipped path rather
+      // than in a test's copy of it. `assertMaterialsConserved` is a checker
+      // that had never failed on real input, and this campaign has now shipped
+      // five checkers that answered confidently about the wrong thing. A
+      // control that re-implements the loop can agree with itself while both
+      // have drifted; this one makes the **real** tick lose material, so the
+      // assertion is exercised exactly where it runs in production.
+      //
+      // Absent on every ordinary run, which is every run that does not ask for
+      // it by name.
+      const leaked = zeroAmounts();
+      for (const kind of MATERIAL_KINDS) leaked[kind] = closing[kind];
+      if (deps.leak !== undefined) {
+        const kind = deps.leak.kind;
+        // Taken out of the closing stock and recorded **nowhere**, which is
+        // precisely the defect shape: a flow that changes a stock without
+        // telling the ledger. `delta` falls by `stolen` while `faucet - sink`
+        // does not move, so the breach is exactly `-stolen`.
+        leaked[kind] -= Math.min(Math.max(0, deps.leak.perTick), leaked[kind]);
+      }
+
+      const ledger = { opening, closing: leaked, faucet, sink };
+      assertMaterialsConserved(ledger, worldTick);
+
+      // The **leaked** figure is written, not the clean one, so an injected leak
+      // is a real loss of material rather than a cosmetic one the assertion
+      // notices and the world does not. Identical to `closing` on every run that
+      // asks for no leak.
+      writeMaterialStock(state, universe, leaked);
 
       // The shortfall, apportioned per library and settled in ascending handle
       // order — `applyLibraryUpkeep`'s documented order, and the reason it is
@@ -1284,6 +1393,12 @@ export function worldSystem(
         teachingInsightPaid: consumption.spent.teaching,
         teachingFundedShare: work.teachingShare,
         spilledByKind: bounded.spilled,
+        faucetByKind: faucet,
+        sinkByKind: sink,
+        // Empty on every correct tick. Recomputed rather than carried out of the
+        // assertion above so that the reported series and the thrown error can
+        // never disagree about the same tick.
+        conservationBreaches: conservationBreaches(ledger),
         carryingCapacity: capacity,
         mageDeaths: mortality.deaths,
         magesPromoted: promoted,

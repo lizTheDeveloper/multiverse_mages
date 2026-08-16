@@ -247,3 +247,95 @@ than a countdown. That is a change to the opening square and belongs to the auth
 Unaffected, and by choice of shape. A floor holds a stock **in** the stock; it destroys nothing and
 accumulates nothing outside it. `spendableLabor` is a read, not a transfer, so the group-6 ledger
 sees no faucet and no sink for it and `delta == faucet − sink` is untouched.
+
+
+## Group 6 — the ledger, and the two controls that make it evidence
+
+Measured **2026-08-16** on branch `w247/material-economy-build`.
+
+### The flows, enumerated from the stock mutations rather than from intent
+
+`world-step.ts` mutates the material stock in exactly **three** places, and the ledger is written
+from that list rather than from a description of the economy:
+
+| | where | side |
+|---|---|---|
+| land production | phase 1, `produceMaterials` | faucet |
+| applied magic | phase 5a, `work.applied` | faucet |
+| scribing at the desk | phase 5, `materialsAccess.consume` | sink (`vellum`) |
+| every claimant | phase 9, `consumeMaterials` | sink, per `CLAIMANT_KIND` |
+| the ceiling | phase 9a, `applyStockCeiling` | sink (`spilledByKind`) |
+
+**Spill is on the sink side and must be.** `applyStockCeiling` returns what did not fit rather
+than dropping it precisely so this arithmetic has somewhere to put it; a silent truncation would
+read here as a leak, which is a diagnosis a reader would then have to un-make.
+
+**A stock held back by a reserve floor is on neither side.** `spendableLabor` bounds how much a
+drain may take; the reserved `labor` is still in the stock at the tick's end. That is what made a
+floor the right shape for task 1's two-claimant race — a gate or a holding pool would both have
+needed the ledger to learn about them.
+
+**The god's spend is deliberately outside.** The intervention system runs *before* the world
+system in the same step, so a material cost it deducted is already in the opening balance the
+world tick reads. Folding it in would make every tick a god acted on read as a leak.
+
+### Two positive controls, both run rather than asserted
+
+A checker that has never failed is not known to work, and this campaign has shipped five checkers
+that answered confidently about the wrong input.
+
+**Control 1 — the assertion (task 6.4).** `WorldStepDeps.leak` injects an unrecorded drain into
+the **shipped** world loop, not into a test's copy of it: a control that re-implements the tick can
+agree with itself while both have drifted. `material-ledger.test.ts` requires the assertion to
+throw, to name the kind, to name the tick, to report the discrepancy as exactly `-32`, to leak only
+the kind named, and *not* to fire for a declared leak of zero.
+
+**Control 2 — the reported metric (task 6.3).** A metric that can only ever read zero is
+indistinguishable from one that is not wired. Probed by disabling the throw and leaking 64 fp of
+`food` per tick: `referenceConservationBreaches` read **240 of 240 ticks** breaching. Restored, it
+reads **0**. The series can move, so the zero is a measurement.
+
+### The result
+
+Conservation holds. 363 coordination tests pass with the assertion live inside every `step`, and a
+240-tick reference run reports **0 breaching ticks**.
+
+
+## The pre-existing `illegalActionRate` defect, re-measured — and a disagreement recorded
+
+Asked to confirm that `illegalActionRate` still reads **0.0178** in both arms, with action 12
+`encourage-research` contributing **53 rejections while carrying no material cost at all**.
+
+**The qualitative claim reproduces exactly, and is not this change's.** `god-cost.json`'s action 12
+row carries no `materialCost` key at all, and it is nonetheless the **largest single source of
+rejections** in the pool: 24 of 57 at 600 ticks, 39 of 104 at 1,200. A verb with no material price
+cannot have been made unaffordable by a change that only adds material prices, so this is a
+mask/resolver disagreement predating `material-economy`, exactly as briefed. Not fixed here.
+
+**The magnitude does not reproduce, and the number is reported rather than the briefed one
+repeated.** Measured 2026-08-16 via `tools/w247/illegal-rate.mjs`, writing to a named file:
+
+| run | rejections / submissions | rate | vs the 0.01 ceiling |
+|---|---|---|---|
+| seed 20260813, 600 ticks | 57 / 8,197 | **0.0070** | **under** |
+| seed 20260811, 1,200 ticks | 104 / 15,197 | **0.0068** | **under** |
+
+Both are **below** the §7 ceiling, where the brief expected 0.0178 above it. The disagreement is
+stated rather than resolved, because resolving it would mean guessing which of two instruments is
+right, and this one has not been reconciled against the one that produced 0.0178 — that figure's
+denominator, seed set and strategy pool are not recorded anywhere this branch can read. What can be
+said precisely:
+
+- This probe pools **`accounting()` over all fourteen shipped strategies**, one run each, which is
+  `collectIllegalActionRate`'s own source (`submissions`, `rejections`, `byActionId`).
+- It is dominated by one strategy: `uniform-random-legal` at **0.0833**, with `allocate-spread` at
+  0.0117 and **every other strategy at exactly zero**. A pooled rate is therefore extremely
+  sensitive to which strategies are in the denominator, which is the most likely source of a 2.5×
+  discrepancy and is a warning about reading either number as "the" rate.
+- The probe **refuses to print a rate it cannot compute** — a third exit for a broken probe rather
+  than folding it into the answer. It was caught by that guard once during development, reading
+  `NaN/NaN` from two mistyped field names, and would otherwise have reported a confident nonsense.
+
+So: the defect is confirmed present and confirmed not-ours; the ceiling breach is **not**
+reproduced on this instrument, and nobody should quote 0.0178 or 0.0070 without the strategy pool
+beside it.

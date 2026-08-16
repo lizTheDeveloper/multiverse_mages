@@ -102,6 +102,8 @@ export {
 
 export type {
   CeilingOutcome,
+  ConservationBreach,
+  MaterialLedger,
   ConsumptionDemand,
   ConsumptionKind,
   ConsumptionOutcome,
@@ -113,6 +115,8 @@ export {
   MATERIAL_STOCK_CEILING,
   MATERIALS_PER_LABORER,
   applyStockCeiling,
+  assertMaterialsConserved,
+  conservationBreaches,
   NO_YIELD_BONUSES,
   SUBSISTENCE_PER_PERSON,
   assertMaterialsNonNegative,
