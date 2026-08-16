@@ -162,7 +162,7 @@ describe('twenty world years in', () => {
     }
   });
 
-  it('has three species at the ruleset ceiling and three below it', () => {
+  it('has five species at the ruleset ceiling and one below it', () => {
     // **Re-measured on the merge of `main` (5a1ce6c) into
     // `w108/university-fidelity`, 2026-08-14.** Not inherited from either side:
     // both sides of that merge re-recorded this block for different reasons and
@@ -207,23 +207,53 @@ describe('twenty world years in', () => {
     // line: the campaign's knowledge-vitality wire, and `main`'s own merges.
     // Taking either hunk verbatim would pin a number no build produces, which
     // is exactly what the conflict resolution had to avoid.
+    // **Re-measured 2026-08-16 on the Group B integration branch, and this time
+    // the cause is content rather than a re-roll.** `12/12/11/9/11/9` became
+    // `12/12/12/12/12/9` (dwarf, human, orc, draconic, elf, gnome), and the
+    // *title of this test changed with it*: five species now stand at the
+    // twelve-cell ruleset ceiling and one below, where it used to be three and
+    // three.
+    //
+    // The cause is `w80/research-cost-variation`, merged into this branch. It
+    // reprices 299 of `node.json`'s `researchCost` values off their powers of
+    // two and onto a swept price — 2048 -> 2477, 4096 -> 5066, 8192 -> 9154 —
+    // which is the branch's entire purpose. Cheaper marginal nodes let the four
+    // species that were short of the ceiling reach it inside twenty years.
+    //
+    // **This is not the handle re-roll the two comments above describe**, and
+    // the distinction matters for whoever reads this next. Those were RNG
+    // reallocation: movement in both directions, no direction to it. This is
+    // monotone and it has a mechanism — every species that moved, moved *up*,
+    // and the one that did not (gnome) is the one the sibling assertions
+    // already single out as short. A re-roll does not do that.
+    //
+    // Read off the run, not hand-computed, exactly as the content digest in
+    // `interning.test.ts` was.
     expect(bySpecies('dwarf').occupiedCells).toBe(12);
     expect(bySpecies('human').occupiedCells).toBe(12);
-    expect(bySpecies('orc').occupiedCells).toBe(11);
-    expect(bySpecies('draconic').occupiedCells).toBe(9);
-    expect(bySpecies('elf').occupiedCells).toBe(11);
+    expect(bySpecies('orc').occupiedCells).toBe(12);
+    expect(bySpecies('draconic').occupiedCells).toBe(12);
+    expect(bySpecies('elf').occupiedCells).toBe(12);
     expect(bySpecies('gnome').occupiedCells).toBe(9);
   });
 
   it('measures a spread that is neither flat nor a hegemony', () => {
     const entry = collectSpeciesCellOccupancy(telemetryFor(sample));
     expect(entry.status).toBe('measured');
-    // 0.0473 at this horizon, re-measured on the merge described above — was
-    // 0.0729 before either change, 0.0714 on `main` alone and 0.0645 on the
-    // branch alone. Pinned to four places: the point of the metric is that this
-    // number moves, and a test that only asserted "greater than zero" would let
-    // it move to anything.
-    expect((entry as { value: number }).value).toBeCloseTo(0.0625, 4);
+    // 0.0362 at this horizon, re-measured 2026-08-16 on the Group B integration
+    // branch — was 0.0625 before `w80/research-cost-variation` was merged into
+    // it, 0.0473 on the w108 merge, 0.0729 before either change, 0.0714 on
+    // `main` alone and 0.0645 on that branch alone. Pinned to four places: the
+    // point of the metric is that this number moves, and a test that only
+    // asserted "greater than zero" would let it move to anything.
+    //
+    // The fall is the same repricing the block above records, seen from the
+    // other side: four species climbing to the ceiling makes the distribution
+    // *more* even, so the spread drops. The two assertions below still hold and
+    // are the ones carrying the claim in this test's title — not flat, because
+    // gnome is still short at 9, and not a hegemony, because five species share
+    // the ceiling rather than one holding it.
+    expect((entry as { value: number }).value).toBeCloseTo(0.0362, 4);
     expect(entry).toMatchObject({ detail: { everySpeciesEqual: false, everySpeciesZero: false } });
   });
 
