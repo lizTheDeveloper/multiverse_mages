@@ -564,7 +564,14 @@ describe('contentRevision', () => {
     // literal is a digest over a preimage with those and without stewardship.
     // The two entries above are left standing — they record digests that were
     // computed, not claims about this tree.
-    expect(registry.contentRevision).toBe('38f32551846fac6c3370edf8774f46e7');
+    //
+    // 38f32551846fac6c3370edf8774f46e7 -> b4b5c9ad9e8951c6f76c194042d6193e,
+    // when the `w191/anti-requisites-in-v1` merge was reverted on the Group D
+    // integration branch and the `perdo-nomen` ⊥ `rego-nomen` exclusion left
+    // `cell.json` again. A sixth value, and for the same reason as the fifth:
+    // the tree still holds W77's displacement terms, and no earlier literal is
+    // a digest over a preimage with those and without the second pair.
+    expect(registry.contentRevision).toBe('b4b5c9ad9e8951c6f76c194042d6193e');
   });
 
   it('is stable across loads of identical content', () => {

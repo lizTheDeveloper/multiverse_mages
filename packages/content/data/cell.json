@@ -778,14 +778,7 @@
       "pn-unsay-the-name",
       "pn-the-nameless"
     ],
-    "v1": true,
-    "excludes": [
-      {
-        "cell": "rego-nomen",
-        "reason": "Either a name is the thing's own handle \u2014 Call by Name says the imperative reaches what it names, The Bound Servant that the named cannot refuse \u2014 or a name is a coat, which Shed the Use-Name takes off while colleagues still recognise the face. A scholar who has proved one account has disproved the other, and the workings she built on the loser stop working.",
-        "resolution": "destructive"
-      }
-    ]
+    "v1": true
   },
   {
     "id": "rego-animal",
@@ -973,13 +966,6 @@
       "rn-compel-by-name",
       "rn-the-bound-servant"
     ],
-    "v1": true,
-    "excludes": [
-      {
-        "cell": "perdo-nomen",
-        "reason": "Either a name is the thing's own handle \u2014 Call by Name says the imperative reaches what it names, The Bound Servant that the named cannot refuse \u2014 or a name is a coat, which Shed the Use-Name takes off while colleagues still recognise the face. A scholar who has proved one account has disproved the other, and the workings she built on the loser stop working.",
-        "resolution": "destructive"
-      }
-    ]
+    "v1": true
   }
 ]
