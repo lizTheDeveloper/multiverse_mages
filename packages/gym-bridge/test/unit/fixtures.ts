@@ -37,6 +37,7 @@ import type {
   EpisodeAccounting,
   EpisodeStatus,
   OutcomeRecord,
+  PlayerState,
   Scenario,
   SessionOptions,
   SubmitResult,
@@ -196,6 +197,21 @@ export function fixedSession(options: FixedSessionOptions = {}): AgentSession {
     observe: () => observation,
     legalActions: () => mask,
     candidates: (): CandidateLists => new Map(),
+    /*
+     * Not modelled, on purpose. This double answers questions about a frame,
+     * never about a world, and a hand-built `PlayerState` would be a second
+     * world model free to disagree with the observation right above it. A test
+     * that needs one wants `createSession` over a real scenario.
+     *
+     * It is a throw rather than a `null` because the interface promises a
+     * `PlayerState`, and a double that quietly hands back an empty one turns a
+     * missing fixture into a passing assertion about nothing.
+     */
+    playerState: (): PlayerState => {
+      throw new Error(
+        'fixedSession does not model player state — build a session over a real scenario for that',
+      );
+    },
     submit: (): SubmitResult => {
       submitted += 1;
       return {
