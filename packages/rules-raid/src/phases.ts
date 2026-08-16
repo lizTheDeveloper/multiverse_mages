@@ -39,10 +39,12 @@
  *
  * ## The three rules, and why each boundary is where it is
  *
- * - **Resolution is checked first.** It is stability-driven, so it wins over
- *   everything: a raid whose portal is nearly gone is in its last act whatever
- *   else is true. `allObjectivesResolved` also enters resolution, because a raid
- *   with nothing left to take has already decided what it was going to decide.
+ * - **Resolution is checked first**, so it wins over everything: a raid deep
+ *   enough into its own clock is in its last act whatever else is true.
+ *   `allObjectivesResolved` also enters resolution, because a raid with nothing
+ *   left to take has already decided what it was going to decide. The boundary
+ *   is an **elapsed engagement tick**, not remaining portal stability, and the
+ *   change is a correction — see {@link phaseOf}.
  * - **Muster is "contact has not happened yet", with a ceiling.** The natural
  *   definition is the design's own — *"portal is open, contact has not
  *   happened"* — and it is observable: {@link Raid.contactTick} is written the
@@ -99,22 +101,32 @@ export interface PhaseInputs {
   readonly engagementTick: number;
   /** The engagement tick contact was first observed on, or `-1` for none yet. */
   readonly contactTick: number;
-  /** Remaining portal stability, raw. */
-  readonly portalStability: number;
   /** Every objective is captured, looted, or destroyed. */
   readonly allObjectivesResolved: boolean;
   /** Authored: the tick muster ends on regardless of contact. */
   readonly musterCeilingTicks: number;
-  /** Authored: stability at or below which the raid is in its last act. Raw. */
-  readonly resolutionStabilityMargin: number;
+  /** Authored: the tick the raid enters its last act on. Ticks. */
+  readonly resolutionOnsetTicks: number;
 }
 
-/** Which phase an engagement is in. Pure, total, and stored nowhere. */
+/**
+ * Which phase an engagement is in. Pure, total, and stored nowhere.
+ *
+ * **Every input is now either an elapsed tick count or a fact about the
+ * objectives**, which is a stronger property than it looks: two of the four are
+ * on the world clock's snapshot header (`clock.engagementTick`), so a phase is
+ * derivable from world state alone up to the objective clause. That is what
+ * lets `agent-api`'s mask report the raid verbs at all — it holds a `SimState`
+ * and never a `Raid`, and before this it could not have asked.
+ *
+ * It reads `portalStability` no longer, and that is the correction rather than
+ * a simplification. Stability was the wrong clock: the portal opens with
+ * 2,411–3,577 engagement ticks of life against raids measured at p50 64 and max
+ * 148, so a stability threshold placed the boundary two thousand ticks after
+ * every raid had ended and resolution was a phase nothing ever entered.
+ */
 export function phaseOf(inputs: PhaseInputs): EngagementPhaseValue {
-  if (
-    inputs.portalStability <= inputs.resolutionStabilityMargin ||
-    inputs.allObjectivesResolved
-  ) {
+  if (inputs.engagementTick >= inputs.resolutionOnsetTicks || inputs.allObjectivesResolved) {
     return ENGAGEMENT_PHASE.resolution;
   }
   if (inputs.contactTick < 0 && inputs.engagementTick < inputs.musterCeilingTicks) {

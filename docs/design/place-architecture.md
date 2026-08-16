@@ -78,10 +78,20 @@ is not slow to reach, it is *unreachable*, which ends the raid on portal collaps
 lock-picking and no door-breaking. A wall is either a detour or a full stop.
 
 **1.4 — The attacker is on a clock and the defender is not.** `portal-stability-initial` is
-3,072,000 decaying at 1,024/tick, so a raid runs ~3,000 ticks; a raider withdraws below
-`withdraw-stability-margin` (409,600 — the last ~400 ticks). The defender's win condition is
-*survival*. **Delay is the defender's entire game**, and every metre an attacker walks is a metre
-paid for out of a countdown.
+3,072,000 decaying at 1,024/tick, so the *portal* lasts ~2,400–3,600 ticks — but that is the outer
+bound, not the clock a raider actually runs on. A raider withdraws once she has been inside for
+`withdraw-after-ticks` (56 engagement ticks), and measured raids resolve at a median of ~119.
+
+*Corrected 2026-08-14, on `w182/raid-seam`.* This paragraph previously cited
+`withdraw-stability-margin` (409,600 raw, "the last ~400 ticks"), which **could never fire**: it was
+a threshold on *remaining* stability against a portal that outlives the raid twentyfold, so the
+window opened two to three thousand ticks after every raid had ended. Measured: **0 of 169 raiders
+withdrew across 97 raids**, and the stranded-raider rule took every survivor. See
+`scripts/w182-withdrawal.mjs`.
+
+The defender's win condition is still *survival*. **Delay is the defender's entire game**, and every
+metre an attacker walks is a metre paid for out of a countdown — one that is now short enough to
+actually bind.
 
 **1.5 — Objectives are placed randomly in the defender's own band.** `placeInDefenderHalf`
 (`objectives.ts:245`) draws a point in the far 40 m strip, retries up to 32 times for passability,

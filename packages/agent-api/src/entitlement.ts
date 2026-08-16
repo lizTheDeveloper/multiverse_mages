@@ -284,10 +284,19 @@ export const TRAIT_CLASSIFICATION: Readonly<
   // price without being shown the mark. Classified on the
   // `design/raid-engagement` merge because `assertAllTraitsClassified` refuses a
   // component with no classification at all.
+  //
+  // W182 arrived at the identical classification independently, and its
+  // argument is kept because it is the better statement of why: *"the whole
+  // point of the row is that it survives the raid to price a later revert, so
+  // it is state the god is subject to and cannot see. §4.1's observation has no
+  // channel for it."* Two branches, one conclusion.
   'mid-raid-change': {
     scope: undecided(),
     targetId: undecided(),
     changeKind: undecided(),
+    // The surcharge base. An agent that could read it could price its own
+    // walk-back exactly; one that cannot is guessing, and `revertSurcharge`
+    // being deterministic means that guess is recoverable from the action log.
     paidCost: undecided(),
     markedTick: undecided(),
   },

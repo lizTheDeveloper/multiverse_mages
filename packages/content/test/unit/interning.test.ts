@@ -550,6 +550,13 @@ describe('contentRevision', () => {
     // magnitudes, the vellum yield, the seventeenth god cost or `prevalence`.
     // MEASURED: `node packages/content/bin/validate-content.mjs` reports 74 god
     // constants (72 + `unease-bars` + `unease-step`) and this digest.
+    // ---- And a fourth confluence, which is why the literal moved again ----
+    //
+    // Everything above describes `main`'s history. What follows arrived on
+    // `w182/raid-seam`, and the merge of the two is what this literal is a
+    // digest over. Neither side's value survives, for the same reason as every
+    // paragraph above: a digest over a union is a third value.
+    //
     // d4e3047657b4fa8a1a74e1d52f9f5c86 -> fd8ce7ef5fded0b0a23fc85f8006f595, when `main` met
     // `w37/raid-playable` and took the fourteen magnitudes that make
     // `raid-engagement.md` §§1-3 playable: eleven in `raid-constant.json` —
@@ -576,7 +583,26 @@ describe('contentRevision', () => {
     // constants now: main's 72, W21's `unease-bars`/`unease-step`, and this
     // branch's `mid-raid-revert-multiplier` — plus the eleven raid constants.
     // MEASURED on the merged tree.
-    expect(registry.contentRevision).toBe('3e2d1727655f3e0eab9f910430c5a56c');
+    // the raid magnitudes. This tree is the first holding both, and fd8ce7ef
+    // was measured from that merged tree.
+    //
+    // **And it moves again here, deliberately.** Two raid constants were
+    // renamed, re-valued and re-united: `withdraw-stability-margin` (409,600
+    // raw) became `withdraw-after-ticks` (56 ticks) and
+    // `resolution-stability-margin` (614,400 raw) became
+    // `resolution-onset-ticks` (96 ticks). Both were thresholds on *remaining
+    // portal stability* against a portal that outlives the raid by a factor of
+    // twenty, so neither could ever fire — 0 of 169 raiders withdrew across 97
+    // raids, and resolution was a phase no raid entered. An id, a value and a
+    // unit are all in the preimage, which is exactly right: two universes that
+    // disagreed about when a raider runs for the door would be playing
+    // different games while their revisions claimed compatibility.
+    //
+    // 3e2d1727655f3e0eab9f910430c5a56c -> 206e51013c0105332269cca96ff35643 on
+    // the `w182/raid-seam` merge — the two renamed withdrawal constants above,
+    // over a preimage that also holds W21's unease pair and the mid-raid revert
+    // multiplier. Tenth union; MEASURED, not carried from either side.
+    expect(registry.contentRevision).toBe('206e51013c0105332269cca96ff35643');
   });
 
   it('is stable across loads of identical content', () => {

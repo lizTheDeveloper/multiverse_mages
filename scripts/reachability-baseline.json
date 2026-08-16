@@ -1,14 +1,14 @@
 {
   "note": "Pinned reachability findings. Generated — do not hand-edit. Regenerate with `npm run reachability:pin` and explain the diff in the commit message: an entry removed is a repair, an entry added is a debt someone accepted.",
   "scan": {
-    "examinedSymbolCount": 882,
-    "productionFileCount": 329
+    "examinedSymbolCount": 970,
+    "productionFileCount": 348
   },
   "scanFloor": {
-    "examinedSymbolCount": 705,
-    "productionFileCount": 263
+    "examinedSymbolCount": 776,
+    "productionFileCount": 278
   },
-  "findingCount": 129,
+  "findingCount": 140,
   "findings": [
     {
       "key": "constant:packages/coordination/src/god/constants.ts:legacyArchiveMaxTier",
@@ -198,6 +198,50 @@
       "category": "unreached",
       "file": "packages/primitives/src/conformance.ts",
       "name": "ablationConformance",
+      "kind": "function"
+    },
+    {
+      "key": "symbol:packages/primitives/src/envelope.ts:ENVELOPE_HARMONIC_TARGET",
+      "group": "symbol",
+      "category": "reachedOnlyByUnreached",
+      "file": "packages/primitives/src/envelope.ts",
+      "name": "ENVELOPE_HARMONIC_TARGET"
+    },
+    {
+      "key": "symbol:packages/primitives/src/envelope.ts:ENVELOPE_SLOT_CEILING",
+      "group": "symbol",
+      "category": "reachedOnlyByUnreached",
+      "file": "packages/primitives/src/envelope.ts",
+      "name": "ENVELOPE_SLOT_CEILING"
+    },
+    {
+      "key": "symbol:packages/primitives/src/envelope.ts:ENVELOPE_SLOT_FLOOR",
+      "group": "symbol",
+      "category": "reachedOnlyByUnreached",
+      "file": "packages/primitives/src/envelope.ts",
+      "name": "ENVELOPE_SLOT_FLOOR"
+    },
+    {
+      "key": "symbol:packages/primitives/src/envelope.ts:RIGID_ENVELOPE",
+      "group": "symbol",
+      "category": "unreached",
+      "file": "packages/primitives/src/envelope.ts",
+      "name": "RIGID_ENVELOPE",
+      "kind": "const"
+    },
+    {
+      "key": "symbol:packages/primitives/src/envelope.ts:envelopeHarmonicSum",
+      "group": "symbol",
+      "category": "reachedOnlyByUnreached",
+      "file": "packages/primitives/src/envelope.ts",
+      "name": "envelopeHarmonicSum"
+    },
+    {
+      "key": "symbol:packages/primitives/src/envelope.ts:envelopeProblems",
+      "group": "symbol",
+      "category": "unreached",
+      "file": "packages/primitives/src/envelope.ts",
+      "name": "envelopeProblems",
       "kind": "function"
     },
     {
@@ -478,12 +522,43 @@
       "kind": "function"
     },
     {
+      "key": "symbol:packages/rules-raid/src/phases.ts:ENGAGEMENT_PHASE_NAMES",
+      "group": "symbol",
+      "category": "unreached",
+      "file": "packages/rules-raid/src/phases.ts",
+      "name": "ENGAGEMENT_PHASE_NAMES",
+      "kind": "const"
+    },
+    {
       "key": "symbol:packages/rules-raid/src/raid.ts:BURNABLE_LOCATION_KINDS",
       "group": "symbol",
       "category": "unreached",
       "file": "packages/rules-raid/src/raid.ts",
       "name": "BURNABLE_LOCATION_KINDS",
       "kind": "const"
+    },
+    {
+      "key": "symbol:packages/rules-raid/src/verbs.ts:legalVerbs",
+      "group": "symbol",
+      "category": "unreached",
+      "file": "packages/rules-raid/src/verbs.ts",
+      "name": "legalVerbs",
+      "kind": "function"
+    },
+    {
+      "key": "symbol:packages/rules-raid/src/verbs.ts:runPlanFor",
+      "group": "symbol",
+      "category": "unreached",
+      "file": "packages/rules-raid/src/verbs.ts",
+      "name": "runPlanFor",
+      "kind": "function"
+    },
+    {
+      "key": "symbol:packages/rules-raid/src/verbs.ts:verbSide",
+      "group": "symbol",
+      "category": "reachedOnlyByUnreached",
+      "file": "packages/rules-raid/src/verbs.ts",
+      "name": "verbSide"
     },
     {
       "key": "symbol:packages/rules-world/src/autonomy/affiliation.ts:completeAffiliation",
@@ -628,6 +703,14 @@
       "file": "packages/rules-world/src/mages/death.ts",
       "name": "isWorkingMage",
       "kind": "function"
+    },
+    {
+      "key": "symbol:packages/rules-world/src/mages/roles.ts:ASSIGNABLE_MAGE_ROLES",
+      "group": "symbol",
+      "category": "unreached",
+      "file": "packages/rules-world/src/mages/roles.ts",
+      "name": "ASSIGNABLE_MAGE_ROLES",
+      "kind": "const"
     },
     {
       "key": "symbol:packages/rules-world/src/mages/roles.ts:changeAffiliation",

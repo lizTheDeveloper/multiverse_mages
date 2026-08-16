@@ -315,7 +315,10 @@ export function openPortal(options: OpenPortalOptions): Raid {
     faults: options.faults ?? {},
   });
 
-  const terrain = generateTerrain(tuning, rng);
+  // Computed before the terrain, because the terrain generator has to know
+  // where the exit is in order to guarantee there is one. See `terrain.ts`.
+  const portal: Point = { x: floorDiv(tuning.battlefieldExtent, 2), y: 0 };
+  const terrain = generateTerrain(tuning, rng, portal);
 
   const raid: Raid = {
     attacker,
@@ -337,7 +340,7 @@ export function openPortal(options: OpenPortalOptions): Raid {
     lock: new RaidLock(),
     purse: openPurse(host.world, tuning.attackerVisStock),
     exposure: new ExposureRegister(),
-    portal: { x: floorDiv(tuning.battlefieldExtent, 2), y: 0 },
+    portal,
     maxTicks: maxEngagementTicks(engagement.raid),
     contactTick: -1,
     faults: options.faults ?? {},
@@ -610,9 +613,48 @@ export function stepEngagement(raid: Raid): ReturnType<typeof terminationOf> {
     engagementTick: nextTick,
     maxTicks: raid.maxTicks,
     allObjectivesResolved: allObjectivesResolved(raid.objectives),
-    livingAttackers: alive.filter((brief) => brief.side === RAID_SIDE.attacker).length,
+    livingAttackers: alive.filter(
+      (brief) => brief.side === RAID_SIDE.attacker && !isMarchingAtAWall(raid, brief, nextTick),
+    ).length,
     livingDefenders: alive.filter((brief) => brief.side === RAID_SIDE.defender).length,
+    // `livingCombatants` excludes the withdrawn, so they have to be counted off
+    // the roster rather than off `alive`.
+    withdrawnAttackers: withdrawnAttackerCount(raid),
   });
+}
+
+/** Attackers who left through the portal alive. */
+function withdrawnAttackerCount(raid: Raid): number {
+  let count = 0;
+  for (const brief of raid.rosters[RAID_SIDE.attacker].briefs) {
+    if (brief.withdrawn && isAlive(raid, brief)) count += 1;
+  }
+  return count;
+}
+
+/**
+ * An attacker who is trying to leave and can never arrive.
+ *
+ * Not a third kind of death and not a shortcut: she is still alive, still on
+ * the field, and `resolveRaid` will take her under the stranded-raider rule
+ * exactly as it would have. What this excludes her from is the **termination
+ * count**, because a raid whose every remaining attacker is walking at a wall
+ * has nothing left to decide, and without it it runs to portal collapse —
+ * measured at 3,199 engagement ticks against a p50 of 65.
+ *
+ * Two conditions, and both are needed. Past the withdrawal tick, because before
+ * it she is still fighting and a raid is not over merely because one exit is
+ * blocked. Unreachable, because `stepTowardGoal` degrades to a direct step for
+ * an unreachable goal rather than refusing, so she keeps moving and no other
+ * signal distinguishes her from a raider who is simply far away.
+ *
+ * The portal cell itself is guaranteed passable by `generateTerrain`; what is
+ * left after that is the walled-off pocket a raider can deploy into, which
+ * terrain generation can produce and nothing prevents.
+ */
+function isMarchingAtAWall(raid: Raid, brief: CombatantBrief, tick: number): boolean {
+  if (tick < raid.tuning.withdrawAfterTicks) return false;
+  return !raid.navigator.canReach(positionOf(raid, brief), raid.portal);
 }
 
 /**
@@ -672,10 +714,16 @@ function chooseIntent(
 
   // 1. Leave, while leaving is still possible. The stranded-raider rule makes
   //    this the difference between a live mage and a dead one.
-  if (
-    isAttacker &&
-    raid.engagement.raid.portalStability <= raid.tuning.withdrawStabilityMargin
-  ) {
+  //
+  // Keyed on **how long she has been here**, not on what is left of the portal.
+  // The stability form was measured dead: a portal opens with 2,411–3,577
+  // engagement ticks of life and the longest raid observed is 148, so the
+  // window opened thousands of ticks after every raid had ended. Over 97 raids
+  // on four seeds, 169 raiders went out, **0 came back and 169 were stranded**.
+  // Retuning the old threshold could not have fixed it — `portalStabilityJitter`
+  // is ±600 ticks, so any absolute remaining-stability figure fires at a tick
+  // that varies by twelve hundred, which is longer than any raid runs.
+  if (isAttacker && tick >= raid.tuning.withdrawAfterTicks) {
     return { kind: 'withdraw', goal: raid.portal };
   }
 
@@ -1165,9 +1213,24 @@ export function resolveRaid(raid: Raid, reason: RaidOutcome['reason']): RaidOutc
   const exposures = exposedNodes(raid.host, raid.exposure);
   movements.push(...exposureMovements(exposures));
 
+  // The three counts `RaidOutcome` documents. Summed in the walk below rather
+  // than in a second pass, so they cannot describe a different roster than the
+  // casualties do.
+  let raidersFielded = 0;
+  let raidersWithdrawn = 0;
+  let raidersStranded = 0;
+
   for (const roster of raid.rosters) {
     for (const brief of roster.briefs) {
       const dead = !isAlive(raid, brief);
+      if (
+        brief.side === RAID_SIDE.attacker &&
+        brief.sourceKind === COMBATANT_SOURCE_KIND.mage
+      ) {
+        raidersFielded += 1;
+        if (brief.withdrawn && !dead) raidersWithdrawn += 1;
+        else if (!dead) raidersStranded += 1;
+      }
       // The stranded-raider rule. An attacker still on the field when the
       // portal collapses is lost with it, and takes everything she was carrying.
       //
@@ -1227,6 +1290,9 @@ export function resolveRaid(raid: Raid, reason: RaidOutcome['reason']): RaidOutc
     primitiveApplication: raid.ledger.primitiveApplication(),
     actionEconomy: raid.economy.report(engagementTickOf(raid)),
     peakCombatants: raid.ledger.peakCombatants,
+    raidersFielded,
+    raidersWithdrawn,
+    raidersStranded,
     favorSpentByDefender: raid.purse.defenderSpent,
     visSpentByAttacker: raid.purse.attackerSpent,
     // Unspent Vis is captured when the raiders do not come home with it, and
@@ -1325,10 +1391,9 @@ export function currentPhase(raid: Raid): EngagementPhaseValue {
   return phaseOf({
     engagementTick: engagementTickOf(raid),
     contactTick: raid.contactTick,
-    portalStability: raid.engagement.raid.portalStability,
     allObjectivesResolved: allObjectivesResolved(raid.objectives),
     musterCeilingTicks: raid.tuning.musterCeilingTicks,
-    resolutionStabilityMargin: raid.tuning.resolutionStabilityMargin,
+    resolutionOnsetTicks: raid.tuning.resolutionOnsetTicks,
   });
 }
 

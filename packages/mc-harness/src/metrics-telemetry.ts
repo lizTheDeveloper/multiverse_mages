@@ -212,6 +212,36 @@ export interface RaidObservation {
   readonly attackerTempoCostWorldTicks: number;
 
   /**
+   * The attacking side's mages: sent, brought home, and lost to the timer.
+   *
+   * Attacker-relative whichever side the observing universe was on, matching
+   * {@link RaidObservation.combatSources}. Three counts and not a rate: a
+   * withdrawal rule that never fires and one that fires and is survived produce
+   * the same casualty total, and telling them apart is the whole reason these
+   * are here.
+   */
+  readonly raidersFielded: number;
+  readonly raidersWithdrawn: number;
+  readonly raidersStranded: number;
+  /** Nodes the attacking side carried out of the host universe. */
+  readonly nodesTakenByAttacker: number;
+  /** Mid-raid ruleset changes this god made, and the raid favor they cost. */
+  readonly directivesApplied: number;
+  readonly directiveFavorSpent: number;
+
+  /**
+   * Who won, and why it ended. `RAID_SIDE` and `RAID_END_REASON` values,
+   * carried as the integers `rules-raid` computed rather than as names.
+   *
+   * Present because an observation that could not say who won made the two
+   * halves of a withdrawal tuning indistinguishable: a threshold early enough
+   * that every raider comes home is also early enough that none of them takes
+   * anything, and without the victor the first reads as a success.
+   */
+  readonly victor: number;
+  readonly reason: number;
+
+  /**
    * Per-primitive action economy, ascending by `source`.
    *
    * Required rather than optional, for the reason the module opens with:

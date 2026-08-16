@@ -79,6 +79,8 @@ import {
 } from '@mm/state';
 import { KnowledgeSubsystem, MASTERY_MAX, MagicGrid } from '@mm/rules-magic';
 import { readRaidTuning } from '@mm/rules-raid';
+
+import type { EngagementPolicy } from './raid-directives.js';
 import { createMage } from '@mm/rules-world';
 import type {
   AblationMask,
@@ -987,6 +989,22 @@ export interface ReferenceScenarioOptions {
    * path with baselines attached.
    */
   readonly ablation?: AblationMask;
+  /**
+   * A policy asked on every engagement tick of every raid, or absent.
+   *
+   * Absent is the build before the raid seam existed, byte for byte: the raid
+   * loop steps, resolves and throws exactly as `runRaid` did, so every
+   * committed baseline takes the branch it was recorded on. Installing one is
+   * what makes `raid-engagement.md` §3's verbs reachable at all — the god's
+   * world-tick submission cannot serve, because `coordination`'s world-scale
+   * resolver has already consumed it by the time a portal opens.
+   *
+   * Per **scenario** rather than per `ReferenceContent`, for the reason
+   * {@link ReferenceScenarioOptions.ablation} gives at length: a content set is
+   * memoized for the life of a worker and a policy folded into one would be
+   * shared by every run the worker executed afterwards.
+   */
+  readonly engagementPolicy?: EngagementPolicy;
 }
 
 /**
@@ -1079,6 +1097,11 @@ export function referenceScenario(
       // arm neutralizing a combat primitive would neutralize nothing and report
       // a null result for a wire that was live the whole time.
       ...(options.ablation === undefined ? {} : { ablation: options.ablation }),
+      // Same placement and the same reason as the mask above: per run, so a
+      // policy cannot leak into the arms scheduled after it.
+      ...(options.engagementPolicy === undefined
+        ? {}
+        : { engagementPolicy: options.engagementPolicy, maskCatalogue: content.catalogue }),
     }),
   ]);
 

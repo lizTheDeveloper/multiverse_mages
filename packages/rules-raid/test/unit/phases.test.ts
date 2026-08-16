@@ -42,13 +42,12 @@ import { buildRaid } from './raid-fixture.js';
 const BASE = {
   engagementTick: 0,
   contactTick: -1,
-  portalStability: 1_000_000,
   allObjectivesResolved: false,
   musterCeilingTicks: 120,
-  resolutionStabilityMargin: 614_400,
+  resolutionOnsetTicks: 96,
 };
 
-describe('phaseOf is a pure function of six numbers', () => {
+describe('phaseOf is a pure function of five numbers', () => {
   it('starts in muster', () => {
     expect(phaseOf(BASE)).toBe(ENGAGEMENT_PHASE.muster);
   });
@@ -58,13 +57,35 @@ describe('phaseOf is a pure function of six numbers', () => {
   });
 
   it('leaves muster at the authored ceiling even if the sides never meet', () => {
-    expect(phaseOf({ ...BASE, engagementTick: 119 })).toBe(ENGAGEMENT_PHASE.muster);
-    expect(phaseOf({ ...BASE, engagementTick: 120 })).toBe(ENGAGEMENT_PHASE.contact);
+    // Resolution is checked first and outranks the ceiling, so the ceiling is
+    // only *observable* when the onset sits above it. The shipped content puts
+    // the onset (96) below the ceiling (120) on purpose — see the constant's
+    // gloss — which means the shipped raid goes muster → resolution and never
+    // reaches contact without a fight. That is a fact about the content, and
+    // this is a claim about the function, so the two are separated here rather
+    // than conflated.
+    const late = { ...BASE, resolutionOnsetTicks: 1_000 };
+    expect(phaseOf({ ...late, engagementTick: 119 })).toBe(ENGAGEMENT_PHASE.muster);
+    expect(phaseOf({ ...late, engagementTick: 120 })).toBe(ENGAGEMENT_PHASE.contact);
   });
 
-  it('enters resolution when stability reaches the margin, contact or not', () => {
-    expect(phaseOf({ ...BASE, portalStability: 614_400 })).toBe(ENGAGEMENT_PHASE.resolution);
-    expect(phaseOf({ ...BASE, portalStability: 614_401 })).toBe(ENGAGEMENT_PHASE.muster);
+  it('enters resolution at the authored onset tick, contact or not', () => {
+    expect(phaseOf({ ...BASE, engagementTick: 96 })).toBe(ENGAGEMENT_PHASE.resolution);
+    expect(phaseOf({ ...BASE, engagementTick: 95 })).toBe(ENGAGEMENT_PHASE.muster);
+  });
+
+  // The property the mask depends on. `phaseOf` reads no portal stability and
+  // no `Raid`, so every input but `allObjectivesResolved` is on the world
+  // clock's snapshot header — which is the whole reason `agent-api` can report
+  // the ruleset verbs during an engagement at all.
+  it('takes no input that is not on the world clock or the objectives', () => {
+    expect(Object.keys(BASE).sort()).toEqual([
+      'allObjectivesResolved',
+      'contactTick',
+      'engagementTick',
+      'musterCeilingTicks',
+      'resolutionOnsetTicks',
+    ]);
   });
 
   it('enters resolution when there is nothing left to take', () => {

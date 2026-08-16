@@ -218,10 +218,16 @@ function separation(
  * shipped magnitudes of the four `ARMED` nodes move, when raid tuning moves, or
  * when the terrain generator moves — each of which is a diff a reviewer should
  * read as the claim it is.
+ *
+ * Moved 2,106 → 2,016 with `withdraw-after-ticks`: raiders now leave at tick 56
+ * instead of standing on the field until the portal takes them, so an armed
+ * warband has fewer ticks in which to land damage. The separation between the
+ * arms is unchanged in kind — the unarmed control is still exactly zero — which
+ * is what says the drop is the withdrawal clock and not the combat wiring.
  */
 const EXPECTED_ARMED_VERSUS_UNARMED = Object.freeze({
-  armedMean: 2106,
-  armedStandardError: 127,
+  armedMean: 2016,
+  armedStandardError: 131,
   unarmedMean: 0,
   unarmedStandardError: 0,
 });

@@ -138,6 +138,13 @@ describe('unclassifiedTraits (step 2)', () => {
    * The inventory's headline number, asserted rather than described. If this
    * moves, `docs/design/observable-trait-inventory.md` is stale and its date and
    * ref line are lying about the tree.
+   *
+   * **108 at `be446a6` → 113 on `w182/raid-seam`.** The five are
+   * `mid-raid-change`'s, which arrived with `w37/raid-playable` on a branch this
+   * inventory had never seen; the merged tree is the first on which the
+   * component and the classifier coexist. All five are `not-yet-decided`, so the
+   * undecided count below moves by the same five and no existing row was
+   * reclassified to absorb them.
    */
   it('covers the 115 traits: 108 at be446a6, plus bar-phase and mid-raid-change', () => {
     let traits = 0;
@@ -149,7 +156,11 @@ describe('unclassifiedTraits (step 2)', () => {
     // `design/raid-engagement` one. The count is the point of the test, so
     // it moves with the component set rather than being loosened to `>=`;
     // `docs/design/observable-trait-inventory.md` is the document this is
-    // keeping honest and it now reads two traits short.
+    // keeping honest and it now reads seven traits short.
+    //
+    // W182 reached 113 on its own tree — the same five `mid-raid-change` fields
+    // over a base with no `bar-phase`. 115 is the count of the union, and
+    // neither branch's literal is.
     expect(traits).toBe(115);
 
     let classified = 0;

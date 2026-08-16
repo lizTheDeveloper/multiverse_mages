@@ -31,10 +31,10 @@
  * silently:
  *
  * 1. §1's package rows each sum across the categories to their own total.
- * 2. §1's totals row is the sum of the package rows, and equals 129.
+ * 2. §1's totals row is the sum of the package rows, and equals 140.
  * 3. §2's per-mechanism counts sum to the number its closing sentence claims.
  * 4. That claim is not larger than §1's integration-debt total.
- * 5. The 129 matches `scripts/reachability-baseline.json` — the document and the
+ * 5. The 140 matches `scripts/reachability-baseline.json` — the document and the
  *    gate describe the same tree.
  *
  * What it deliberately does **not** check is the *classification*: whether
@@ -105,7 +105,7 @@ describe('the reachability triage document', () => {
     }
   });
 
-  it('has a totals row equal to the sum of the package rows, and to 129', () => {
+  it('has a totals row equal to the sum of the package rows, and to 140', () => {
     expect(totalsRow).toHaveLength(1);
     const totals = totalsRow[0]!.slice(1);
 
@@ -115,7 +115,26 @@ describe('the reachability triage document', () => {
         `column ${String(column)}: ${String(stated)}`,
       );
     }
-    expect(totals.at(-1)).toBe(129);
+    // 125 -> 133 on 2026-08-14, when `w182/raid-seam` merged `main`. Four of the
+    // eight were already slipped on `main` (`characterFor` and
+    // `strategy-audit.ts`'s three), confirmed by running the ratchet on a
+    // pristine `origin/main` worktree; four are `rules-raid`'s verb surface,
+    // staged ahead of its consumer. See §2 of the document.
+    //
+    // 133 -> 140 on `integration/group-e`, 2026-08-16. MEASURED with
+    // `check-reachability-ratchet.mjs`, which named all seven rather than
+    // reporting a bare count — six are `w21/timing-and-envelopes`' envelope
+    // surface (`RIGID_ENVELOPE`, `envelopeProblems`, `envelopeHarmonicSum` and
+    // three constants) and one is `w197/aptitude-sorts-careers`'
+    // `ASSIGNABLE_MAGE_ROLES`. Both are staged-ahead-of-consumer debt of exactly
+    // the kind §2 describes, arriving through a merge rather than through a
+    // commit: neither branch was red on its own tree, because on neither tree
+    // was the *other* branch's consumer absent.
+    //
+    // Neither side's literal is the count of the union — 129 on this tree
+    // before the merge, 133 on W182's — so it was re-measured rather than
+    // picked.
+    expect(totals.at(-1)).toBe(140);
   });
 
   it('has a §2 table whose counts sum to the total its closing sentence claims', () => {

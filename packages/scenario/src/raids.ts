@@ -88,10 +88,10 @@ import {
   heldInstancesOf,
   openPortal,
   portalGate,
-  runRaid,
 } from '@mm/rules-raid';
 import type { ActionEconomyReport, RaidParticipant, RaidTuning } from '@mm/rules-raid';
 import type { AblationMask } from '@mm/coordination';
+import type { ContentCatalogue } from '@mm/agent-api';
 import {
   TERMINAL_REASON,
   captureRuleset,
@@ -99,6 +99,8 @@ import {
   readUniverse,
 } from '@mm/state';
 
+import type { DirectiveLog, EngagementPolicy } from './raid-directives.js';
+import { runRaidWithPolicy } from './raid-directives.js';
 import { requiredSpeciesOf } from './rival-universe.js';
 import type { ReferenceContent } from './reference-universe.js';
 import type { RivalConstants } from './rival-universe.js';
@@ -134,6 +136,40 @@ export interface RaidRecord {
   readonly reason: number;
   /** Mages this universe lost, permanently. */
   readonly localCasualties: number;
+  /**
+   * The attacking side's mages: sent, brought home, and lost to the timer.
+   *
+   * **Raid-relative, not local-relative**, for the same reason
+   * {@link RaidRecord.actionEconomy} is: they are the attacker's numbers
+   * whichever side this universe was on, and re-orienting them here would put
+   * arithmetic on a record whose job is to carry numbers unmodified.
+   */
+  readonly raidersFielded: number;
+  readonly raidersWithdrawn: number;
+  readonly raidersStranded: number;
+  /**
+   * Nodes the attacking side carried out of the host universe, whichever side
+   * this universe was on. Raid-relative, like the three counts above.
+   *
+   * The other half of a withdrawal tuning. A threshold early enough that every
+   * raider comes home is also early enough that none of them takes anything,
+   * and without this the first reads as a success — `localCasualties` falls,
+   * `raidersWithdrawn` rises, and nothing says the raid accomplished nothing.
+   */
+  readonly nodesTakenByAttacker: number;
+  /**
+   * Mid-raid ruleset changes this god actually made, and the favor they cost.
+   *
+   * The seam's own instrument. Unmasking actions 1–4 and routing them to
+   * `applyDirective` is unfalsifiable without a count: a run in which the god
+   * submits a change and one in which it does not would otherwise differ only
+   * in numbers that move for a dozen other reasons. `directivesApplied` counts
+   * accepted changes — a refusal by side, phase, purse or lock is not one — and
+   * `directiveFavorSpent` is what the raid purse was debited, settled at
+   * resolution like every other raid consequence.
+   */
+  readonly directivesApplied: number;
+  readonly directiveFavorSpent: number;
   /** Nodes that left this universe entirely — every instance destroyed. */
   readonly nodesLostLocally: number;
   /** Nodes this universe's raiders carried home. */
@@ -222,6 +258,18 @@ export interface RaidSystemDeps {
    * run and every committed baseline then takes the branch it was recorded on.
    */
   readonly ablation?: AblationMask | undefined;
+  /**
+   * A policy consulted on every engagement tick of every raid, or absent.
+   *
+   * Absent is the build before the seam existed: `runRaidWithPolicy` with no
+   * policy steps, resolves and throws exactly as `runRaid` did, so every
+   * committed baseline takes the branch it was recorded on. Installing one is
+   * what makes `raid-engagement.md` §3's verbs reachable from outside
+   * `rules-raid`'s own tests.
+   */
+  readonly engagementPolicy?: EngagementPolicy | undefined;
+  /** The catalogue the mid-raid mask prices against. Absent means structure only. */
+  readonly maskCatalogue?: ContentCatalogue | undefined;
 }
 
 /**
@@ -447,14 +495,43 @@ function resolveOneRaid(input: {
   deployRaid(raid);
 
   const initialPortalStabilityTicks = raid.maxTicks;
+  let log: DirectiveLog = { directives: [], ticksOffered: 0 };
   try {
-    runRaid(raid);
+    // **Tick at a time, not `runRaid`.** `runRaid` drives `stepEngagement` to
+    // completion in a `while` loop with no gap in it, which is why unmasking
+    // actions 1–4 moved nothing on its own: the raid was over before any caller
+    // could offer the god a mask, and the engagement branch of that mask had
+    // been measured as evaluated *zero* times. `runRaidWithPolicy` is the same
+    // loop with the gap open, and with no policy installed it steps, resolves
+    // and throws exactly as `runRaid` does.
+    //
+    // The policy is asked **per engagement tick** rather than handed
+    // `ctx.actions`, and that is a correction rather than a refinement: a
+    // world-tick submission has already been consumed by `coordination`'s
+    // world-scale resolver by the time a raid opens. Measured — submitting
+    // `forbidTechnique` on every world tick drains every technique bit at world
+    // scale by tick 100, after which the same action mid-raid is correctly
+    // `not-a-change`. Replaying `ctx.actions` into the raid would double-apply
+    // a world-scale action or apply a dead one.
+    log = runRaidWithPolicy(raid, {
+      defending: !outbound,
+      ...(deps.engagementPolicy === undefined ? {} : { policy: deps.engagementPolicy }),
+      ...(deps.maskCatalogue === undefined ? {} : { catalogue: deps.maskCatalogue }),
+    });
   } catch (error) {
-    // `runRaid` resolves *before* it throws the ceiling error, precisely so a
+    // Resolution happens *before* the ceiling error is thrown, precisely so a
     // caller still holds a complete outcome. Anything else is a real fault and
     // must not be swallowed: a raid that failed halfway has already mutated
     // both worlds' clocks, and continuing would leave the run frozen.
     if (!(error instanceof EngagementCeilingReached)) throw error;
+  }
+
+  let directivesApplied = 0;
+  let directiveFavorSpent = 0;
+  for (const entry of log.directives) {
+    if (!entry.result.applied) continue;
+    directivesApplied += 1;
+    directiveFavorSpent += entry.result.paid;
   }
 
   const outcome = raid.outcome;
@@ -484,6 +561,12 @@ function resolveOneRaid(input: {
     victor: outcome.victor,
     reason: outcome.reason,
     localCasualties,
+    directivesApplied,
+    directiveFavorSpent,
+    raidersFielded: outcome.raidersFielded,
+    raidersWithdrawn: outcome.raidersWithdrawn,
+    raidersStranded: outcome.raidersStranded,
+    nodesTakenByAttacker: countOf(applied.nodesGainedByRaider),
     // `nodesLostByHost` is the host's loss and `nodesGainedByRaider` the
     // attacker's gain, both computed by the write-back rather than by
     // `resolveRaid`, which hardcodes both to `[]`.
