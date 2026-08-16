@@ -293,11 +293,17 @@ describe('twenty world years in', () => {
     const cellName = new Map(content.registry.cells.map((e) => [e.contentId, e.record.id]));
     const held = new Set(bySpecies('gnome').occupiedCellIds.map((id) => cellName.get(id)));
     const dwarfHeld = bySpecies('dwarf').occupiedCellIds.map((id) => cellName.get(id));
-    // Re-pinned 2026-08-14 on the rebase onto `main` (245e04f1): `rego-terram`
-    // out, `perdo-limen` in. Which is precisely what the paragraph above says
-    // to expect — the set reorders under a handle-keyed re-roll, the durable
-    // reading is *"gnome is short, and disproportionately short in Perdo"*, and
-    // that reading is unchanged: all three are still Perdo but one.
+    //
+    // **Third measurement, on the merge with #125 landed, 2026-08-15: the set is
+    // `perdo-limen`, `perdo-mentem`, `perdo-terram` — three cells, all three
+    // Perdo.** The two-entry list that stood here was not measured on any build:
+    // #125 dropped `perdo-limen` from the four-entry original and W18 dropped
+    // `rego-terram`, both deletions merged cleanly, and the result was the
+    // intersection rather than anything a run produces. Read together with the
+    // note above, the durable statement is the one that has survived every
+    // re-roll — **gnome is short, and disproportionately short in Perdo** —
+    // while the exact membership has now been three different sets in three
+    // measurements and should be treated as a pin rather than a finding.
     expect(dwarfHeld.filter((cell) => !held.has(cell)).sort()).toEqual([
       'perdo-limen',
       'perdo-mentem',

@@ -130,6 +130,44 @@
  * includes *Corpus* — and `checkPrimitiveCoverage` is the check that will say
  * so, because both primitives stay on its list until a **v1** node declares
  * one.
+ *
+ * ## The scope of that paragraph is load-bearing, and it moved twice in one day
+ *
+ * *"Zero in any v1 universe"* is scoped to the twelve enabled cells, and that
+ * scope is doing more work than it looks like it is. **The reference harness
+ * does not play the v1 rectangle.** `scenario`'s reference run under
+ * `permissive-breadth` opens far more of the grid, and every node above becomes
+ * reachable there. Measured on the base this wire was written against
+ * (`e2b89d8`, seed `0x12345678`, 240 world ticks): **2,592 contributions**, and
+ * a final population of **494 against 325** with the wire absent — carried
+ * entirely by the `fertility` channel, since zeroing `lifespanUniverse` alone
+ * changes nothing measurable at that horizon.
+ *
+ * **And then it went back to zero, for a reason that is not this module's.** On
+ * the tree that merges `#161`'s anti-requisites with the academic rate wire,
+ * `vitalityBonuses` gathers **zero contributions at all six seeds measured**
+ * whenever the rate wire is installed — and 650 to 739 at three of those six
+ * when it is not, worth 60 to 80 people. `creo-ignem ⊥ creo-umbra` resolves
+ * `destructive`; a faster research rate reaches the far half of an excluded
+ * pair sooner; and the school that burns is the one carrying these primitives,
+ * because they are authored in *Corpus*, *Animal* and *Fatum* rather than
+ * anywhere the v1 rectangle can see. The agency gate records the same mechanism
+ * where it is not seed anecdote: `referenceNodesKnown@permissive-breadth`
+ * 42.5 → 36.625 — read off a baseline re-record that was **reverted**, so it is
+ * a measurement taken once rather than a committed number, and re-deriving it
+ * means running a gate, which is deferred. Treat it as a lead. The 68.63 → 42.50
+ * half of that comparison *is* committed, in `docs/design/anti-requisites.md`.
+ *
+ * The lesson to carry is not about any of the three changes. **A zero here has
+ * meant three different things in one day** — never reachable, reachable and
+ * lively, reachable and then destroyed — and none of them is *"the wire is
+ * broken"*.
+ * {@link import('./world-step.js').WorldStepReport.vitalityContributions} is
+ * the counter that separates them, and it is the reason to emit a counter for a
+ * quantity everybody expects to be zero.
+ *
+ * Measured 2026-08-14 on `w187/effects-union` merged with `origin/main`
+ * `1e2651a`, and on `e2b89d8` for the middle figure. Re-measure before quoting.
  */
 
 import type { ContentId, ContentRegistry } from '@mm/content';

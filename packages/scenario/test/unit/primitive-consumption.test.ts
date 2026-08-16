@@ -108,7 +108,7 @@ describe('god-driven consumption is recorded, and does not count', () => {
     },
   );
 
-  it('has no god-only primitive left to leave out, which is the campaign result', () => {
+  it('no longer has a god-only primitive to leave out, and says which ones moved', () => {
     const { recorder, registry } = recorded();
     const report = checkPrimitiveConsumption(registry, recorder);
     const consumed = report.consumed.map((entry) => entry.primitiveId);
@@ -134,20 +134,31 @@ describe('god-driven consumption is recorded, and does not count', () => {
   });
 
   it('explains itself in the report rather than leaving a reader guessing', () => {
+    // **A synthetic god-only registration, and not an assertion that the section
+    // is empty.** `consumption.ts` argues that `nonNode`'s whole job is to
+    // explain why a primitive plainly in use is nonetheless unreachable by an
+    // academic — and the day that explanation is needed again is the day a new
+    // primitive lands with a god consumer and no node one. A test that asserted
+    // the section stays empty would pass on the tree that deleted the section's
+    // formatter and fail nothing.
+    //
+    // So this replays the real universe's registrations with one edit: the
+    // vitality wire's node-driven `lifespan` row is dropped, leaving the god's
+    // blessing behind. That is a universe this repository shipped four commits
+    // ago, and it is the shape the formatter exists for.
     const { recorder, registry } = recorded();
-    const text = formatPrimitiveConsumptionReport(checkPrimitiveConsumption(registry, recorder));
+    const godOnly = createConsumptionRecorder();
+    for (const registration of recorder.registrations()) {
+      if (registration.primitiveId === 'lifespan' && registration.kind === 'node') continue;
+      godOnly.register(registration);
+    }
 
-    // The "Consumed, but never from node effects" section is **absent now**,
-    // because nothing belongs in it — see the test above. Asserting its absence
-    // rather than deleting the check keeps the report honest in both
-    // directions: the day a primitive regresses to god-only, this fails and
-    // says which section came back.
-    expect(text).not.toContain('Consumed, but never from node effects');
-    // What the report must still do is name a consumer for every primitive, so
-    // a reader can see *where* knowledge reaches it rather than being told a
-    // count.
-    expect(text).toContain('coordination/knowledge-vitality');
-    expect(text).toContain('coordination/academic-effects');
+    const report = checkPrimitiveConsumption(registry, godOnly, ['lifespan']);
+    expect(report.nonNode.map((entry) => entry.primitiveId)).toEqual(['lifespan']);
+
+    const text = formatPrimitiveConsumptionReport(report);
+    expect(text).toContain('Consumed, but never from node effects');
+    expect(text).toContain('coordination/god/effects.lifespanEffectsFor');
   });
 
   it.each(['research-rate', 'scribe-rate', 'teach-rate'])(

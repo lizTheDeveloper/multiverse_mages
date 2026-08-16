@@ -472,11 +472,25 @@ export interface WorldStepReport {
    *
    * The sibling of {@link WorldStepReport.economicNodes}, emitted for the same
    * reason. Both primitives were declared exclusions in the consumption check
-   * until `knowledge-vitality.ts`, and under v1 content this figure is **zero**
-   * on every tick — every node authoring either sits outside the twelve enabled
-   * cells, so `permits()` refuses it. A zero here and a zero in the birth rate
-   * therefore mean different things, and without this counter they would look
-   * the same.
+   * until `knowledge-vitality.ts`, and under **v1 content** — the twelve enabled
+   * cells the balance gates play — this figure is **zero** on every tick, since
+   * every node authoring either sits outside them and `permits()` refuses it. A
+   * zero here and a zero in the birth rate therefore mean different things, and
+   * without this counter they would look the same.
+   *
+   * **The v1 scope is load-bearing, and a zero here has meant three different
+   * things in one day.** A run that opens more of the grid than the v1
+   * rectangle — every `scenario` reference run under `permissive-breadth`,
+   * including the ablation harness — saw this figure in the thousands on
+   * `e2b89d8`: 2,592 contributions over 240 ticks, and a population of 494
+   * against 325 with the wire absent. On the tree that merges `#161`'s
+   * anti-requisites with the academic rate wire it reads **zero again**, at all
+   * six seeds measured, because a faster research rate reaches the far half of
+   * a `destructive` excluded pair sooner and burns the school carrying these
+   * primitives. Never reachable, reachable and lively, reachable and then
+   * destroyed — three zeroes, three meanings, and this counter is what
+   * separates them. `knowledge-vitality.ts`'s module note carries the
+   * measurements and their dates.
    */
   readonly vitalityContributions: number;
   /**
