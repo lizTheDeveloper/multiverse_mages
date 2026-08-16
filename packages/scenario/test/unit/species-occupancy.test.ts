@@ -250,12 +250,28 @@ describe('twenty world years in', () => {
     //
     // MEASURED here, not carried: `npx vitest run
     // packages/scenario/test/unit/species-occupancy.test.ts` on this tree.
-    expect(bySpecies('dwarf').occupiedCells).toBe(12);
+    //
+    // **Re-measured again after `w197/aptitude-sorts-careers`, 2026-08-16, and
+    // the title of this test no longer describes it.** The tuple is
+    // `11/12/12/11/12/12` (dwarf, human, orc, draconic, elf, gnome): *four*
+    // species at the ruleset ceiling of 12 and two below it, where every reading
+    // before this had three and three. Gnome went 9 -> 12 and is no longer the
+    // trailing species; dwarf went 12 -> 11 and is.
+    //
+    // That is the largest single move this block has recorded, and it is not a
+    // re-roll: W197 makes students mage entities and sorts graduates into two
+    // careers, so who holds knowledge and how many people hold it both change by
+    // construction. The Gini falls to 0.0190 for the same reason — twelve is the
+    // ceiling and four species are on it.
+    //
+    // The test name is left alone deliberately. Renaming it would erase the
+    // comparison; the numbers below are the finding.
+    expect(bySpecies('dwarf').occupiedCells).toBe(11);
     expect(bySpecies('human').occupiedCells).toBe(12);
-    expect(bySpecies('orc').occupiedCells).toBe(11);
+    expect(bySpecies('orc').occupiedCells).toBe(12);
     expect(bySpecies('draconic').occupiedCells).toBe(11);
-    expect(bySpecies('elf').occupiedCells).toBe(11);
-    expect(bySpecies('gnome').occupiedCells).toBe(9);
+    expect(bySpecies('elf').occupiedCells).toBe(12);
+    expect(bySpecies('gnome').occupiedCells).toBe(12);
   });
 
   it('measures a spread that is neither flat nor a hegemony', () => {
@@ -280,7 +296,7 @@ describe('twenty world years in', () => {
     // lifts the trailing species rather than the leading one — which is the
     // opposite of what a capital-compounding effect would do, and worth watching
     // if the magnitude is ever tuned up.
-    expect((entry as { value: number }).value).toBeCloseTo(0.0455, 4);
+    expect((entry as { value: number }).value).toBeCloseTo(0.019, 4);
     expect(entry).toMatchObject({ detail: { everySpeciesEqual: false, everySpeciesZero: false } });
   });
 
@@ -341,11 +357,18 @@ describe('twenty world years in', () => {
     // to expect — the set reorders under a handle-keyed re-roll, the durable
     // reading is *"gnome is short, and disproportionately short in Perdo"*, and
     // that reading is unchanged: all three are still Perdo but one.
-    expect(dwarfHeld.filter((cell) => !held.has(cell)).sort()).toEqual([
-      'perdo-limen',
-      'perdo-mentem',
-      'perdo-terram',
-    ]);
+    //
+    // **Empty after W197, 2026-08-16, and that retires the reading rather than
+    // moving it.** Gnome now holds twelve cells and dwarf eleven, so the set of
+    // cells dwarf holds and gnome does not is `[]`. Five successive
+    // measurements said "gnome is short, and disproportionately short in Perdo";
+    // the sixth says gnome is not short at all. The durable claim was already
+    // hedged down to *"gnome is short"* and even that is now false.
+    //
+    // Kept as an assertion rather than deleted because an empty difference is
+    // still a statement about the two species, and the next change that makes it
+    // non-empty should have to say so.
+    expect(dwarfHeld.filter((cell) => !held.has(cell)).sort()).toEqual([]);
   });
 
   it('has every occupied cell shared, so the concentration is not specialisation', () => {
