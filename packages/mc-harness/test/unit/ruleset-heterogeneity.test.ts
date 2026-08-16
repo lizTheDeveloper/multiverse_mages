@@ -59,7 +59,7 @@ function emitted(definition: StrategyDefinition): { action: number; parameter?: 
   const observation = new Float64Array(64);
   const out: { action: number; parameter?: number }[] = [];
   for (let round = 0; round < ROUNDS; round += 1) {
-    for (const preference of effectivePreferences(definition, { observation, mask, round, context })) {
+    for (const preference of effectivePreferences(definition, { observation, mask, round, candidates: new Map(), context })) {
       out.push(preference);
     }
   }
@@ -195,7 +195,7 @@ describe('the pool no longer declares one ruleset', () => {
       const mask = new Uint8Array(ACTION_SPACE_SIZE).fill(1);
       const observation = new Float64Array(64);
       for (let round = 0; round < ROUNDS; round += 1) {
-        const list = effectivePreferences(definition, { observation, mask, round, context });
+        const list = effectivePreferences(definition, { observation, mask, round, candidates: new Map(), context });
         // Index 0 is the ascension stance's DECLARE, which is prepended.
         const own = list.filter((entry) => entry.action !== GOD_ACTION.declareAscension);
         if (own.length > 0) firsts.add((own[0] as { action: number }).action);
