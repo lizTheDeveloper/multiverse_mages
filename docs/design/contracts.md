@@ -77,7 +77,7 @@ state would have no mechanism preventing mid-raid rule changes at all.
 | `favor` | `fp` | god's currency |
 | `worship` | `fp` | drives favor regen |
 | `worshipTier` | `uint8` | derived, cached; recomputed on worship change |
-| `materials` | `fp` | |
+| `materials` | `fp` | **No longer a universe field.** World-schema revision 5 moved it off `universe` and split it into the `material-stock` component; revision 7 widened that component to seven kinds. Left in the table as the row the migration reads, and annotated rather than deleted because `splitMaterialsByKind` still has to find it in a pre-revision-5 save. See the revision-7 note below. |
 | `era` | `uint16` | **derived, cached**: `floor(worldTick / ERA_TICKS)` with `ERA_TICKS = 240` (20 world years). Nothing advances it imperatively — it was previously a field nothing wrote, while an ascension path was defined over it |
 | `prestige` | `fp` | carried in from prior runs; **read-only during a run** |
 | `prestigeEarned` | `fp` | written once at run end; the input to the next run's `prestige` |
@@ -164,7 +164,8 @@ The reasoning, in the order it forced the decision:
   rather than as a resource that ran out.
 - **The cost is a third schema revision**, repaired exactly as the two before it: world-schema
   revision 6 appends an empty `grant-budget` section, and `sim-core`'s `SNAPSHOT_VERSION` again
-  does not move. `WORLD_SCHEMA_VERSION` is now **6** — revision 5 is `material-stock`, and
+  does not move. `WORLD_SCHEMA_VERSION` was **6** at the time this was written and is **7** as of
+  2026-08-16 — see the `material-stock` note below. Revision 5 is `material-stock`, and
   `grant-budget` is appended after it because section order in a snapshot is declaration order.
   It is also the one place in `migrations.ts` where appending beats rewriting:
   `splitMaterialsByKind` rewrites the universe layout and is right to, because a save that recorded
@@ -174,6 +175,38 @@ The reasoning, in the order it forced the decision:
   exactly as it always did and the mechanic is exercised only through the swept arms. The value
   that eventually ships falls out of a measured curve rather than out of a guess, which is what the
   harness is for.
+
+**`material-stock` holds seven kinds, not three — a fourth schema revision, recorded 2026-08-16
+on `w247/material-economy-build`.** `material-economy` found that seven of the fourteen forms
+declared all-zero `yieldWeights`, two of them (`mentem`, `limen`) inside the v1 opening square, so
+half the grid was something magic could act on and the economy could not see. The repair is four
+more kinds — `labor` from Corpus, `essence` from Vim, `insight` from Mentem and Imaginem, `passage`
+from Limen, Fatum and Umbra — and `MATERIAL_STOCK` gains one `i32` field each.
+
+- **It is the first revision whose marker is a field rather than a section.** `worldSchemaVersionOf`
+  identifies a revision by which components a snapshot carries, and an added *field* is invisible to
+  that test — the note in `components.ts` says so. Revision 7's marker is therefore the `labor`
+  column on the `material-stock` section, checked before revision 6's `grant-budget` section so that
+  the newest marker wins.
+- **An absent kind reads zero, and zero is not a shortage.** `widenMaterialStock` appends four zeroed
+  columns and touches nothing else. Unlike `splitMaterialsByKind`, it does not rewrite: a save that
+  recorded a materials total had recorded something, while a save predating these four kinds recorded
+  nothing about them — no form yielded one and no sink spent one — so zero is the only value the save
+  supports rather than a guess. A revision-6 world restores to a byte-identical snapshot hash.
+- **Both material-stock steps now freeze their field lists as literals**, and that is a defect
+  repaired rather than a style. `splitMaterialsByKind` built its output field table from
+  `Object.keys(MATERIAL_STOCK.fields)` — the *live* spec — so widening the spec would have made the
+  4 → 5 step emit a seven-column section. A revision-4 save would then have read as revision **7**
+  the instant it reached 5, `migrateWorldEnvelope`'s loop would have exited, and `grant-budget` would
+  never have been appended: a save silently missing a component, out of a migration that throws
+  nothing. A migration step must name the shape it produces, and revision 8 will need its own list.
+- **`SNAPSHOT_VERSION` again does not move**, for the reason it did not move for revisions 2 through
+  6: it is inside the hashed header, so bumping it would fail every golden fixture with a version
+  error instead of a behaviour diff.
+- **The observation vector does not move either.** §4.1's `resources` block is fixed at five slots
+  and its `materials` channel still carries `food + stone + vellum`; `OBSERVATION_LAYOUT_DIGEST` is
+  unchanged, and the four new kinds are withheld until a named per-kind block is added to
+  `PlayerState`, which is not the vector.
 
 **A terminated universe is frozen in its component rows, and not in its clock.** `god-agency`'s
 ascension spec asks that *"no world tick may further alter the universe's state"* and that a
