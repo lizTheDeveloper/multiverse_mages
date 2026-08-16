@@ -496,6 +496,13 @@ export function mountSourceNote(host, session, needs = []) {
       .mm-src b{color:var(--soft);font-weight:500;letter-spacing:.09em;text-transform:uppercase}
       .mm-src .mm-why{flex:1 1 26rem;min-width:0;font:italic 12.5px/1.55 var(--serif);color:var(--soft)}
       .mm-src code{font-family:var(--mono);color:var(--faint)}
+      /* The cheated-run marker. Loud on purpose, and it is not a decoration:
+         a person six weeks from now reading a screenshot has to be able to see
+         that the numbers on it came from a universe somebody granted. */
+      .mm-src.is-cheated{border-left-color:var(--loss);border-left-width:4px;
+        background:color-mix(in oklab, var(--loss) 12%, var(--sunk))}
+      .mm-src.is-cheated .mm-cheat{color:var(--loss);font-weight:600;letter-spacing:.06em;
+        text-transform:uppercase}
     `;
     document.head.append(style);
   }
@@ -536,6 +543,28 @@ export function mountSourceNote(host, session, needs = []) {
       ? `seed ${p.seed} · tick ${p.ticks} of ${p.tickCap} · running now · layout ${p.observationLayoutDigest.slice(0, 8)}`
       : `seed ${p.seed} · ${p.ticks} ticks · layout ${p.observationLayoutDigest.slice(0, 8)}`,
   );
+  /*
+   * The sandbox marker, on **every** surface that mounts a source note, because
+   * a banner that lives on one page is a banner somebody screenshots around.
+   *
+   * Keyed on `provenance.sandbox`, which the play server sets only for a run
+   * built on a cheat sheet. Absent on every recording and on every honest live
+   * run, so this adds nothing to a document that was honest — which is the same
+   * rule the `sandbox` key itself follows.
+   */
+  const cheated = p.sandbox;
+  if (cheated !== undefined && cheated !== null) {
+    el.classList.add('is-cheated');
+    put('mm-cheat', `Cheated · ${String(cheated.digest ?? '')}`);
+    put(
+      'mm-why',
+      `This universe was built by the sandbox layer: ${
+        (cheated.cheats ?? []).join(', ') || 'branded, no cheat declared'
+      }. Nothing on this screen is a measurement of the game. The run is branded inside its own ` +
+        'snapshot and the balance harness refuses it.',
+    );
+  }
+
   if (missing.length > 0) {
     el.classList.add('is-absent');
     put(
