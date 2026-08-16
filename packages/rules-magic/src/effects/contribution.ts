@@ -35,7 +35,7 @@
  * see `stack.ts`.
  */
 
-import type { ContentId, EffectDisplacement, EffectTarget } from '@mm/content';
+import type { ContentId, EffectTarget } from '@mm/content';
 import type { Fixed } from '@mm/sim-core';
 import { LOCATION_KIND } from '@mm/state';
 
@@ -54,17 +54,6 @@ export interface EffectContribution {
   readonly magnitude: Fixed;
   readonly target: EffectTarget;
   readonly durationTicks: number;
-  /**
-   * The effect's authored cost, when it has one (`contracts.md` §2.3).
-   *
-   * Carried for the same reason `target` is, and dropped by the same consumers:
-   * gathering does not know who spends a displacement any more than it knows
-   * who spends a magnitude, so it hands over what the node declared and filters
-   * nothing. Absent on every effect that is a pure bonus, which is all but five
-   * of them — and absence is *not* a zero. A consumer that substituted one
-   * would be inventing a cost the author did not write.
-   */
-  readonly displacement?: EffectDisplacement;
 }
 
 /**

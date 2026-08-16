@@ -378,25 +378,6 @@ describe('contentRevision', () => {
     // magic is a goal a mage will choose, so a tick's materials and a tick's
     // goal histogram both move from the first month.
     //
-    // Union once more, and this is the merge that produced the literal below:
-    // `main`'s chain above met this branch's optional `displacement` term on an
-    // effect — five effects on the four `rego-terram` nodes, the first cost any
-    // effect in the shipped set has ever carried. Every other effect in
-    // `node.json` is untouched and the field is absent from all of them, which
-    // is the whole design: absence means "pure bonus", the reading three
-    // hundred nodes were authored under.
-    //
-    // It belongs in the preimage for the plainest possible reason: it changes
-    // what a universe *produces*. Two universes agreeing on their revisions
-    // while one of them empties its fields when a mage learns to quarry
-    // without hands would not be running the same economy, and the raid
-    // arbitration that reads the host's ruleset would be arbitrating between
-    // two different games.
-    //
-    // Neither side's literal — this branch's 5ab77110/b6a577dd, nor `main`'s
-    // d4e30476 — is a digest over a preimage containing both, so the value
-    // below was **re-measured from the merged tree** rather than taken from
-    // either side.
     // d4e3047657b4fa8a1a74e1d52f9f5c86 -> e8442af2c5f91ae6f80ad9a178e0e451,
     // when anti-requisites landed (`vision.md` §4b) and `cell.json` gained an
     // `excludes` array carrying one pair: *Creo Ignem* and *Creo Umbra* exclude
@@ -483,95 +464,7 @@ describe('contentRevision', () => {
     // revision is a digest over the values, so this is the ordinary case rather
     // than a union of branches. It changes every run in which any mage learns
     // The Nameless — which is the point of the change, not a side effect of it.
-    //
-    // 8681bf846bd94be80fdabc447e6e01df -> 57c4db8d16329e8d4b16503531f6dcc7,
-    // when `content/deep-magic` added 37 nodes for the late game and the
-    // prestige ladder, and the `nodes` lists of the 31 cells that carry them.
-    // An addition again, not a value edit: every existing record is
-    // byte-identical, and the two `excludes` arrays `main` had meanwhile
-    // authored (PR #161) are still on the two cells that hold them — the merge
-    // is a union of that branch's node lists with main's exclusions, so
-    // neither side's literal is a digest over a preimage holding both. This
-    // tree is the first one holding both, and the value here was recomputed
-    // from it rather than copied from either parent.
-    //
-    // 57c4db8d16329e8d4b16503531f6dcc7 -> 5a7f36e2e3b7d1a349b0e3802cb8fb79,
-    // when `w35/permit-cost` appended the four `stewardship-*` magnitudes to
-    // `god-constant.json` — the recurring favor cost of holding a permissive
-    // ruleset open, and the economy's first drain. Union for the fifth time in
-    // this list, and this one is worth naming precisely: the branch recorded
-    // `d4e30476… -> 0baf4644…`, over a preimage that has the four stewardship
-    // constants and neither the seventeenth god cost, nor the exclusion pair,
-    // nor the deep-magic nodes. Every one of those is on this tree. Neither
-    // parent's literal is a digest over a preimage holding all of it, so the
-    // value here was recomputed from the merged content — 76 constants and 17
-    // costs — rather than taken from a side.
-    //
-    // 5a7f36e2e3b7d1a349b0e3802cb8fb79 -> 5dede81afebb971eba5784765321a035,
-    // when the `content/deep-magic` merge was reverted on the Group D
-    // integration branch, pending the author's ruling on the set. The 37 nodes
-    // and the 31 cells' node lists leave the preimage again; the four
-    // `stewardship-*` constants stay, because W35 is independent of them. So
-    // this is a *fourth* distinct value rather than a return to `8681bf84…` —
-    // that literal is a digest over a preimage with neither the deep-magic
-    // nodes nor the stewardship constants, and this tree has the second. The
-    // two entries above are left standing on purpose: they are the record of a
-    // digest that was computed, not a claim about this tree.
-    //
-    // 5dede81afebb971eba5784765321a035 -> c96f4046f85b2fc5121e12690c20d810,
-    // when `w77/effect-displacement` gave an effect an optional `displacement`
-    // term — five effects on the four `rego-terram` nodes, the first cost any
-    // effect in the shipped set has carried. Every other effect in `node.json`
-    // is untouched and the field is absent from all of them, which is the whole
-    // design: absence means *pure bonus*, the reading three hundred nodes were
-    // authored under.
-    //
-    // It belongs in the preimage for the plainest possible reason: it changes
-    // what a universe *produces*. Two universes agreeing on their revisions
-    // while one of them empties its fields when a mage learns to quarry without
-    // hands would not be running the same economy, and the raid arbitration
-    // that reads the host's ruleset would be arbitrating between two different
-    // games.
-    //
-    // Union for the sixth time in this list. The branch recorded
-    // `5ab77110`/`b6a577dd`, over a preimage without the seventeenth god cost,
-    // without the exclusion pair and without W35's four `stewardship-*`
-    // constants; all three are on this tree. Re-measured from the merged tree
-    // rather than taken from either side.
-    //
-    // c96f4046f85b2fc5121e12690c20d810 -> 1302bc6da218bf25a2bdc924774bc857,
-    // when `w191/anti-requisites-in-v1` authored the second exclusion pair:
-    // `perdo-nomen` and `rego-nomen` exclude one another, `destructive`. Unlike
-    // the first pair — both halves *creo*, both outside the v1 rectangle, and
-    // inert in every shipped baseline — this one is inside it, so it is the
-    // first exclusion the reference universe can actually reach.
-    //
-    // In the preimage for the same reason the first pair is, and now with
-    // consequences a run can see: `species-occupancy` measures one side of the
-    // pair driven to zero occupancy across the whole universe. Two universes
-    // disagreeing about that pair would disagree about what a mage may hold and
-    // about what she loses when she learns the other half.
-    //
-    // Recomputed on the merged tree, whose preimage also holds W35's
-    // stewardship constants and W77's displacement terms; the branch's own
-    // literal knows neither.
-    //
-    // 1302bc6da218bf25a2bdc924774bc857 -> 38f32551846fac6c3370edf8774f46e7,
-    // when the `w35/permit-cost` merge was reverted on the Group D integration
-    // branch and the four `stewardship-*` constants left the preimage again.
-    // A fifth value rather than a return: the tree still holds W77's
-    // displacement terms and W191's second exclusion pair, and no earlier
-    // literal is a digest over a preimage with those and without stewardship.
-    // The two entries above are left standing — they record digests that were
-    // computed, not claims about this tree.
-    //
-    // 38f32551846fac6c3370edf8774f46e7 -> b4b5c9ad9e8951c6f76c194042d6193e,
-    // when the `w191/anti-requisites-in-v1` merge was reverted on the Group D
-    // integration branch and the `perdo-nomen` ⊥ `rego-nomen` exclusion left
-    // `cell.json` again. A sixth value, and for the same reason as the fifth:
-    // the tree still holds W77's displacement terms, and no earlier literal is
-    // a digest over a preimage with those and without the second pair.
-    expect(registry.contentRevision).toBe('b4b5c9ad9e8951c6f76c194042d6193e');
+    expect(registry.contentRevision).toBe('8681bf846bd94be80fdabc447e6e01df');
   });
 
   it('is stable across loads of identical content', () => {

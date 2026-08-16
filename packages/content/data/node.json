@@ -7442,11 +7442,7 @@
         "primitive": "build-rate",
         "magnitude": 192,
         "target": "universe",
-        "durationTicks": 0,
-        "displacement": {
-          "role": "laborer",
-          "fraction": 26
-        }
+        "durationTicks": 0
       }
     ],
     "knowledgeKind": "episteme",
@@ -7470,11 +7466,7 @@
         "primitive": "build-rate",
         "magnitude": 384,
         "target": "universe",
-        "durationTicks": 0,
-        "displacement": {
-          "role": "laborer",
-          "fraction": 41
-        }
+        "durationTicks": 0
       }
     ],
     "knowledgeKind": "episteme",
@@ -7499,11 +7491,7 @@
         "primitive": "resource-yield",
         "magnitude": 384,
         "target": "universe",
-        "durationTicks": 0,
-        "displacement": {
-          "role": "laborer",
-          "fraction": 77
-        }
+        "durationTicks": 0
       }
     ],
     "knowledgeKind": "episteme",
@@ -7528,21 +7516,13 @@
         "primitive": "build-rate",
         "magnitude": 640,
         "target": "universe",
-        "durationTicks": 0,
-        "displacement": {
-          "role": "laborer",
-          "fraction": 51
-        }
+        "durationTicks": 0
       },
       {
         "primitive": "resource-yield",
         "magnitude": 192,
         "target": "universe",
-        "durationTicks": 0,
-        "displacement": {
-          "role": "laborer",
-          "fraction": 26
-        }
+        "durationTicks": 0
       }
     ],
     "knowledgeKind": "episteme",

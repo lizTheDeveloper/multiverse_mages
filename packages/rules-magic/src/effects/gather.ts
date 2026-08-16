@@ -114,18 +114,12 @@ export function gatherEffects(
       const primitive = requirePrimitive(registry, effect.primitive);
       if (!primitiveAppliesInMode(primitive, mode)) continue;
 
-      // Spread conditionally rather than assigned: under
-      // `exactOptionalPropertyTypes` an explicit `undefined` is not the same as
-      // an absent key, and the absent key is the one that means "this effect
-      // costs nothing", which is what `contribution.ts` says it must keep
-      // meaning.
       contributions.push({
         nodeId: instance.nodeId,
         primitiveId: primitive.id,
         magnitude: effect.magnitude,
         target: effect.target,
         durationTicks: effect.durationTicks,
-        ...(effect.displacement === undefined ? {} : { displacement: effect.displacement }),
       });
     }
   }
