@@ -135,6 +135,10 @@ export const LONG_RUN_OPTIONS: ReferenceOptions = Object.freeze({
   // The long run measures a demographic question and the gate is not part of
   // it; zero is what this constant meant before the instrument existed.
   foundingPortalMagic: 0,
+  // One academy, which is what the long run has always founded and what every
+  // committed baseline was measured against. The two-academy starting position
+  // is `scripts/w78-university-divergence.mjs`'s, not this one's.
+  foundingUniversities: 1,
 });
 
 /** One world tick of the long run, stocks and flows together. */

@@ -287,6 +287,10 @@ export function buildRival(input: {
       foundingNodes: 6,
       foundingSpeciesMask: 0,
       foundingPortalMagic: 0,
+      // One academy, pinned for the same reason as the other four: a rival whose
+      // internal institutional structure varied would confound a raid result
+      // with a teaching-boundary result.
+      foundingUniversities: 1,
       openingTechniqueCount: 0,
       openingFormCount: 0,
       // Unread with no counts, and pinned anyway so that a later default flip

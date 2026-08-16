@@ -446,6 +446,43 @@ describe('two hundred world years of the reference universe', () => {
     // reports. Compared against the run's own `nodesKnown` rather than a
     // literal, so that widening the ruleset does not silently weaken it.
     expect(last?.libraryDepth ?? 0).toBe(last?.nodesKnown ?? -1);
+    //
+    // ## Both claims are kept, because they are two claims and not one
+    //
+    // `main` replaced the duplication ratio with the coverage equality above,
+    // giving the reason: a ratio near one is also what an *empty* library
+    // reports, so the ratio alone could be satisfied by a shelf that had been
+    // degraded out of existence. `w78/teaching-boundary` did not see that
+    // decision and widened the ratio instead. Resolved on the Group F merge,
+    // 2026-08-16, by keeping both: the equality is the coverage claim and the
+    // ratio is the duplication claim, and neither implies the other. Both were
+    // re-measured on this tree rather than inherited — see below.
+    // **The two effects compound, and the merged tree is the first one holding
+    // both.** `w78/teaching-boundary` measured this same ratio independently and
+    // widened it to `6 ×` for its own reason: teaching stops at the institution,
+    // only six of ninety mages are ever affiliated, and they collectively know
+    // less, so the shelf holds fewer *distinct* nodes. That is the same
+    // denominator `apply-magic` cuts, by a different mechanism. Neither number
+    // below is a claim about a tree holding both:
+    //
+    // | tree | books | distinct nodes | ratio | bound it carried |
+    // |---|--:|--:|--:|---|
+    // | after `vellum` decoupled from food | 157 | 48 | 3.3 | `< 4 ×` |
+    // | `main`, after `apply-magic` | 186 | 43 | 4.33 | `< 5 ×` |
+    // | `w78`, after the teaching boundary | 154 | 36 | 4.3 | `< 6 ×` |
+    // | **both, this tree** | **164** | **25** | **6.56** | `< 8 ×` |
+    //
+    // Re-measured from the merged tree rather than taken from either side —
+    // `5 ×` and `6 ×` are both bounds this tree fails, and taking the tighter of
+    // two numbers neither side measured here is how a merge silently pins a
+    // value the build cannot hold. The numerator barely moved; the denominator
+    // fell 43 → 25 because both mechanisms take distinct nodes off the shelf.
+    //
+    // Widened to 8, which fits 6.56 with headroom and is still under the "ten
+    // would mean it is gone" ceiling the original comment named — but 6.56 is
+    // the closest this ratio has ever come to it. **If this fails again, do not
+    // widen it a fourth time without naming which mechanism moved which half.**
+    expect(last?.grimoires ?? 0).toBeLessThan(8 * (last?.libraryDepth ?? 1));
 
     // ## Destruction is still live, which is the other half and the harder one
     //
