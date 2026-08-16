@@ -576,12 +576,42 @@ export function mountSourceNote(host, session, needs = []) {
   el.append(
     Object.assign(document.createElement('b'), { textContent: isLive ? 'Live' : 'Recording' }),
   );
-  put(
+  /*
+   * `p.ticks` is a number captured when the document was fetched. On a
+   * recording that is the whole run and never moves. On a **live** run the
+   * frame array grows under the page, so a strip built from `p.ticks` claimed
+   * `tick 40 of 4000` for the rest of the session — measured 2026-08-15 with
+   * the clock at 391 and the strip still reading 40. A live surface reporting a
+   * frozen clock is worse than one reporting no clock at all.
+   *
+   * `session.frameCount` is a getter for exactly this reason, so the live strip
+   * re-reads it. The interval stops itself once the strip leaves the document,
+   * which is what makes this safe to own here rather than in fourteen pages.
+   *
+   * What it tracks, precisely: **the frames this page holds**, not the server's
+   * clock. A surface that drives the run — `console/` casts and scrubs, so it
+   * pulls — now follows it. A passive surface that fetched once and never asks
+   * again still reads its load tick, and that is the truth about what it is
+   * drawing. Making those pages follow a universe they never poll is a
+   * different and larger change than this one.
+   */
+  const where = put(
     null,
     isLive
-      ? `seed ${p.seed} · tick ${p.ticks} of ${p.tickCap} · running now · layout ${p.observationLayoutDigest.slice(0, 8)}`
+      ? `seed ${p.seed} · tick ${session.frameCount - 1} of ${p.tickCap} · running now · layout ${p.observationLayoutDigest.slice(0, 8)}`
       : `seed ${p.seed} · ${p.ticks} ticks · layout ${p.observationLayoutDigest.slice(0, 8)}`,
   );
+  if (isLive) {
+    const tick = setInterval(() => {
+      if (!where.isConnected) {
+        clearInterval(tick);
+        return;
+      }
+      const at = session.frameCount - 1;
+      const next = `seed ${p.seed} · tick ${at} of ${p.tickCap} · running now · layout ${p.observationLayoutDigest.slice(0, 8)}`;
+      if (where.textContent !== next) where.textContent = next;
+    }, 400);
+  }
   if (missing.length > 0) {
     el.classList.add('is-absent');
     put(
