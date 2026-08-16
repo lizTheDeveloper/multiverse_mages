@@ -78,14 +78,6 @@ export interface GodConstants {
   readonly favorCapPerTier: Fp;
   readonly hysteresisDecayTicks: number;
   readonly hysteresisStep: Fp;
-  /** Favor drained per world tick per permitted axis beyond the free allowance. */
-  readonly stewardshipPerAxis: Fp;
-  /** Permitted axes governed at no cost — the v1 rectangle's seven switches. */
-  readonly stewardshipFreeAxes: number;
-  /** Favor drained per world tick per node the universe currently knows. */
-  readonly stewardshipPerKnownNode: Fp;
-  /** The favor level the stewardship drain may never take the pool below. */
-  readonly stewardshipReserve: Fp;
 
   // Upheaval.
   readonly upheavalTicks: number;
@@ -259,10 +251,6 @@ export function resolveGodConstants(registry: ContentRegistry): GodConstants {
     favorCapPerTier: value('favor-cap-per-tier'),
     hysteresisDecayTicks: value('hysteresis-decay-ticks'),
     hysteresisStep: value('hysteresis-step'),
-    stewardshipPerAxis: value('stewardship-per-axis'),
-    stewardshipFreeAxes: value('stewardship-free-axes'),
-    stewardshipPerKnownNode: value('stewardship-per-known-node'),
-    stewardshipReserve: value('stewardship-reserve'),
 
     upheavalTicks: value('upheaval-ticks'),
     upheavalShockFloor: value('upheaval-shock-floor'),

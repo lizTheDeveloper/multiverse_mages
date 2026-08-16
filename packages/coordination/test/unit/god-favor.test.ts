@@ -36,15 +36,12 @@ import { ClampCounters, stackMagnitudes } from '@mm/primitives';
 import {
   ACTION,
   applyRegeneration,
-  applyStewardship,
-  axisToLapse,
   favorCapFor,
   favorRegeneration,
   hysteresisMultiplier,
   inertFraction,
   interventionCost,
   ledgerBalances,
-  stewardshipUpkeep,
   upheavalShock,
   worshipShareOfRegeneration,
 } from '../../src/index.js';
@@ -258,10 +255,8 @@ describe('the ledger balances, and it is arithmetic rather than a record', () =>
         opening: 10_000,
         regenerated: 1500,
         discarded: 500,
-        drained: 300,
-        lapsed: 0,
         spentByAction: { [ACTION.blessMage]: 2048, [ACTION.assignRole]: 256 },
-        closing: 10_000 + 1500 - 500 - 300 - 2048 - 256,
+        closing: 10_000 + 1500 - 500 - 2048 - 256,
       }),
     ).toBe(true);
   });
@@ -273,8 +268,6 @@ describe('the ledger balances, and it is arithmetic rather than a record', () =>
         opening: 10_000,
         regenerated: 1500,
         discarded: 0,
-        drained: 0,
-        lapsed: 0,
         spentByAction: {},
         closing: 12_000,
       }),
@@ -288,8 +281,6 @@ describe('the ledger balances, and it is arithmetic rather than a record', () =>
         opening: 10_000,
         regenerated: 0,
         discarded: 0,
-        drained: 0,
-        lapsed: 0,
         spentByAction: {},
         closing: 9_000,
       }),
@@ -323,76 +314,5 @@ describe('upheaval is proportional to what the civilization actually relied on',
 
   it('reads a universe that knows nothing as undisrupted rather than as ruined', () => {
     expect(inertFraction(5, 0)).toBe(0);
-  });
-});
-
-describe('ruleset stewardship is a drain, and its unmet part lapses rather than banks', () => {
-  it('charges nothing for the shipped constitution and charges breadth beyond it', () => {
-    const bare = stewardshipUpkeep(C.stewardshipFreeAxes, 0, C);
-    expect(bare).toBe(0);
-    const wide = stewardshipUpkeep(C.stewardshipFreeAxes + 4, 0, C);
-    expect(wide).toBe(4 * C.stewardshipPerAxis);
-  });
-
-  it('scales the doctrine term with what the universe knows, which is what grows', () => {
-    const shallow = stewardshipUpkeep(C.stewardshipFreeAxes, 51, C);
-    const deep = stewardshipUpkeep(C.stewardshipFreeAxes, 300, C);
-    // Cook's source/sink power matching: a sink that does not grow with the
-    // source it answers falls behind it forever.
-    expect(deep).toBeGreaterThan(shallow);
-    expect(deep - shallow).toBe((300 - 51) * C.stewardshipPerKnownNode);
-  });
-
-  it('never takes the pool below the reserve, and never banks the remainder as debt', () => {
-    const outcome = applyStewardship(C.stewardshipReserve + 100, 5000, C.stewardshipReserve);
-    expect(outcome.favor).toBe(C.stewardshipReserve);
-    expect(outcome.drained).toBe(100);
-    expect(outcome.lapsed).toBe(4900);
-    // The identity that says it is not a debt: nothing about `lapsed` appears
-    // in the pool, this tick or any other.
-    expect(outcome.favor + outcome.drained).toBe(C.stewardshipReserve + 100);
-  });
-
-  it('leaves a pool already below the reserve exactly where it is', () => {
-    const outcome = applyStewardship(C.stewardshipReserve - 500, 5000, C.stewardshipReserve);
-    expect(outcome.favor).toBe(C.stewardshipReserve - 500);
-    expect(outcome.drained).toBe(0);
-    expect(outcome.lapsed).toBe(5000);
-  });
-
-  it('keeps the reserve at or above the cheapest way out of the drain', () => {
-    // The deadlock guard, asserted here as well as in the content loader: a god
-    // held below the price of forbidding a form can never narrow the ruleset
-    // that is draining them, and that is a state the drain created rather than
-    // a decision anyone made.
-    expect(C.stewardshipReserve).toBeGreaterThanOrEqual(COSTS.byAction[ACTION.forbidForm] ?? 0);
-  });
-});
-
-describe('the lapse chooses the family the civilization uses least', () => {
-  const nodes = new Map<string, number>([
-    ['0:0', 40],
-    ['0:1', 3],
-    ['1:0', 12],
-  ]);
-  const nodesOnAxis = (kind: number, bit: number): number => nodes.get(`${kind}:${bit}`) ?? 0;
-
-  it('refuses to lapse anything while the ruleset is at the free allowance', () => {
-    // 0b111 is three axes; with four more on the form side that is the shipped
-    // seven, and the shipped constitution is never taken.
-    expect(axisToLapse(0b111, 0b1111, 7, 0, 1, 5, 14, nodesOnAxis)).toBeUndefined();
-  });
-
-  it('takes the permitted axis holding the fewest known nodes', () => {
-    const lapsed = axisToLapse(0b11, 0b1, 1, 0, 1, 5, 14, nodesOnAxis);
-    expect(lapsed).toEqual({ kind: 0, bit: 1, knownNodes: 3 });
-  });
-
-  it('never considers an axis that is not permitted', () => {
-    // Technique bit 1 is the least-used axis above, and it is masked out here,
-    // so the answer must be the least-used of what remains.
-    const lapsed = axisToLapse(0b01, 0b1, 1, 0, 1, 5, 14, nodesOnAxis);
-    expect(lapsed?.kind).toBe(1);
-    expect(lapsed?.bit).toBe(0);
   });
 });

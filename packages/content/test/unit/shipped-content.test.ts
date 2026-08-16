@@ -64,12 +64,8 @@ describe('shipped content', () => {
       // One per action id in contracts.md §4.2, and one per magnitude the
       // god-agency rules read by name. Both coverings are checked by the
       // loader; these are the counts they come out at.
-      // Seventeen: sixteen, plus `w109`'s alliance invitation (action 16) on `main`.
       godCosts: 17,
-      // Seventy-six: seventy-two on `main`, plus the four `stewardship-*`
-      // magnitudes W35 adds — the recurring favor cost of holding a permissive
-      // ruleset open. Both counts are a union; neither side of the merge had both.
-      godConstants: 76,
+      godConstants: 72,
       // One per magnitude the raid rules read by name, checked in both
       // directions by the loader for the reason the god constants are. Five of
       // them are the composition root's rather than the engine's — how many

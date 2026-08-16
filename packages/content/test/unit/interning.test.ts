@@ -555,7 +555,16 @@ describe('contentRevision', () => {
     // Recomputed on the merged tree, whose preimage also holds W35's
     // stewardship constants and W77's displacement terms; the branch's own
     // literal knows neither.
-    expect(registry.contentRevision).toBe('1302bc6da218bf25a2bdc924774bc857');
+    //
+    // 1302bc6da218bf25a2bdc924774bc857 -> 38f32551846fac6c3370edf8774f46e7,
+    // when the `w35/permit-cost` merge was reverted on the Group D integration
+    // branch and the four `stewardship-*` constants left the preimage again.
+    // A fifth value rather than a return: the tree still holds W77's
+    // displacement terms and W191's second exclusion pair, and no earlier
+    // literal is a digest over a preimage with those and without stewardship.
+    // The two entries above are left standing — they record digests that were
+    // computed, not claims about this tree.
+    expect(registry.contentRevision).toBe('38f32551846fac6c3370edf8774f46e7');
   });
 
   it('is stable across loads of identical content', () => {

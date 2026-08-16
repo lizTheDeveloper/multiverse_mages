@@ -70,22 +70,17 @@ export {
   worshipTierOf,
 } from './worship.js';
 
-export type { FavorLedgerEntry, RegenerationOutcome, UpkeepOutcome } from './favor.js';
+export type { FavorLedgerEntry, RegenerationOutcome } from './favor.js';
 export {
   applyRegeneration,
-  applyStewardship,
   favorRegeneration,
   hysteresisMultiplier,
   inertFraction,
   interventionCost,
   ledgerBalances,
-  stewardshipUpkeep,
   upheavalShock,
   worshipShareOfRegeneration,
 } from './favor.js';
-
-export type { AxisRef, StewardshipReport } from './stewardship.js';
-export { axisCount, axisToLapse, permittedAxes } from './stewardship.js';
 
 export type { GodEffectDeps, GodEffectHooks } from './effects.js';
 export { godEffectHooks } from './effects.js';
