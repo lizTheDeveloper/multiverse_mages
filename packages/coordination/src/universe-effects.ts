@@ -79,6 +79,38 @@
  * loop still runs through the library — a deep shelf trains the mages who cast —
  * but the library is not itself a factory.
  *
+ * ## `resource-yield` is gated on **work performed**; `build-rate` is not
+ *
+ * This module used to read the instance table and nothing else, which made
+ * *knowing* a spell identical to *applying* it. W49 measured what that costs:
+ * `permit-then-idle` — a bot that presses two buttons for 140 of 2400 ticks and
+ * then does literally nothing — scored **1.0001×** `permissive-breadth` on
+ * applied use. Idle is the ablation of breadth, and 2,260 ticks of doing nothing
+ * cost it 0.01%. An economy that reads what a universe *holds* cannot respond to
+ * what a universe *does*, and every god verb aimed at it was therefore
+ * decoration.
+ *
+ * So a `resource-yield` contribution now requires a **practitioner**: the
+ * instance's holder must be committed to `GOAL.practice` on that node. Vision
+ * §4's *"magic would be everywhere in universes it was in"* becomes a claim
+ * about mage-months rather than about a census — the harvest spell raises the
+ * harvest while somebody is casting it, and stops when she moves on.
+ *
+ * The commitment read here is the one written **last** tick, because this phase
+ * runs before autonomy and before the work phase. That is `spendTheMonth`'s own
+ * convention — *"only a held commitment is worked"* — applied to the same
+ * boundary: the economy counts the mages who are about to spend this month
+ * casting, and the same mages then spend it.
+ *
+ * **`build-rate` is deliberately left ungated, and this is one change, not two.**
+ * Its consumer is `advanceConstruction`, its unit is a multiplier on a
+ * *construction site's* progress, and the design's worked example for it is
+ * institutional — *"Rego Terram letting universities go up faster"*. Gating it
+ * on an individual's month would stall half-built universities behind one
+ * mage's goal switch, which is a second balance movement mixed into the
+ * measurement of the first. One primitive moves per change, so the delta is
+ * attributable; `build-rate` is the control.
+ *
  * ## Per contributing instance, not once per node
  *
  * Three archmages who know the harvest spell contribute three magnitudes, and
@@ -116,8 +148,10 @@ import type { CellResolver, ConsumptionRecorder, EffectSourceInstance } from '@m
 import { gatherEffects } from '@mm/rules-magic';
 import type { MaterialAmounts, MaterialKind } from '@mm/rules-world';
 import { MATERIAL_KINDS, formRoutesToMaterials, routeYieldByForm, zeroAmounts } from '@mm/rules-world';
-import type { Ruleset } from '@mm/state';
+import type { Handle, Ruleset } from '@mm/state';
 import { KNOWLEDGE_INSTANCE, collectRecords } from '@mm/state';
+import { GOAL, readCommitment } from '@mm/rules-world';
+import { isHeldLocation } from '@mm/rules-magic';
 
 /**
  * The content lookups the economy needs and `gatherEffects` does not do.
@@ -259,6 +293,12 @@ export interface UniverseEconomyBonuses {
   /** `build-rate` magnitudes, for `stackMagnitudes`. */
   readonly buildRate: readonly Fixed[];
   /**
+   * Instances whose holder is practising them this tick — the gate
+   * `resource-yield` passes through, reported so that "nobody is practising" and
+   * "practice produces nothing" are distinguishable series.
+   */
+  readonly practisedInstances: number;
+  /**
    * Contributions that reached the economy this tick.
    *
    * Emitted because "the economy did not move" and "nothing reached it" look
@@ -275,6 +315,7 @@ export const NO_ECONOMY_BONUSES: UniverseEconomyBonuses = {
   resourceYield: { food: [], stone: [], vellum: [] },
   buildRate: [],
   contributingNodes: 0,
+  practisedInstances: 0,
 };
 
 /** What {@link universeEconomyBonuses} reads. */
@@ -310,39 +351,68 @@ export function universeEconomyBonuses(
   // `gatherEffects` documents contribution order as instances-in-order, and the
   // one place order must not matter — the fold over magnitudes — is
   // `@mm/primitives`' and solved there.
+  //
+  // Two lists, and the second is a subset of the first. `gatherEffects` drops
+  // the holder — `EffectSourceInstance` carries a location *kind* and no
+  // *id* — so the practitioner gate cannot be applied to its output and has to
+  // be applied to its input. Two calls rather than one, over the same
+  // memoized-per-state pass, because the alternative is index-mapping
+  // contributions back to instances and a node carrying two economic primitives
+  // makes that mapping wrong in a way no assertion here would catch.
   const instances: EffectSourceInstance[] = [];
+  const practised: EffectSourceInstance[] = [];
   for (const { row } of collectRecords(state, KNOWLEDGE_INSTANCE)) {
-    instances.push({ nodeId: row.nodeId, locationKind: row.locationKind, mastery: row.mastery });
+    const source: EffectSourceInstance = {
+      nodeId: row.nodeId,
+      locationKind: row.locationKind,
+      mastery: row.mastery,
+    };
+    instances.push(source);
+    // Only a held instance has a mage behind its `locationId`; a shelved book's
+    // is a library, and a library does not practise. `gatherEffects` would drop
+    // it on its own location gate, but asking here keeps the handle we look up
+    // meaningful rather than merely harmless.
+    if (isHeldLocation(row.locationKind) && practisesNode(state, row.locationId, row.nodeId)) {
+      practised.push(source);
+    }
   }
 
-  const contributions = gatherEffects(instances, {
+  const gatherDeps = {
     registry: deps.index.registry,
     ruleset: deps.ruleset,
     mode: TIME_MODE.world,
-    cellOf: (nodeId) => deps.cells.cellOf(nodeId),
-  });
+    cellOf: (nodeId: ContentId) => deps.cells.cellOf(nodeId),
+  };
 
   const resourceYield: Record<MaterialKind, Fixed[]> = { food: [], stone: [], vellum: [] };
   const buildRate: Fixed[] = [];
   let contributingNodes = 0;
 
-  for (const contribution of contributions) {
+  for (const contribution of gatherEffects(instances, gatherDeps)) {
     if (contribution.target !== 'universe') continue;
-    if (!ECONOMIC_PRIMITIVES.has(contribution.primitiveId)) continue;
+    if (contribution.primitiveId !== 'build-rate') continue;
     contributingNodes += 1;
+    // Nonzero, not positive. The twin of the filter in `academic-effects.ts`,
+    // and it was correct for exactly as long as `node.schema.json` said
+    // `"minimum": 1`: "zero" and "negative" were the same empty set, so the
+    // wider test was free. `permitsNegativeMagnitude` covers **every**
+    // `additive-into-multiplier` primitive, `build-rate` included, so a node
+    // authoring a construction cost would otherwise validate, ship, and be
+    // silently swallowed here. `stackMagnitudes` floors the `(1 + Sigma)` at
+    // zero, so what leaves this list is bounded however negative the sum is.
+    //
+    // Restored on the Group F merge of `w53/practice`, 2026-08-16: the branch
+    // split this single loop in two so that resource-yield could gate on
+    // practice, and its copy of the build-rate half predates W201's signed
+    // magnitudes and still read `> 0`. The split auto-merged without a
+    // conflict, so the sign test would have been reverted silently.
+    if (contribution.magnitude !== 0) buildRate.push(contribution.magnitude);
+  }
 
-    if (contribution.primitiveId === 'build-rate') {
-      // Nonzero, not positive. The twin of the filter in `academic-effects.ts`,
-      // and it was correct for exactly as long as `node.schema.json` said
-      // `"minimum": 1`: "zero" and "negative" were the same empty set, so the
-      // wider test was free. `permitsNegativeMagnitude` covers **every**
-      // `additive-into-multiplier` primitive, `build-rate` included, so a node
-      // authoring a construction cost would otherwise validate, ship, and be
-      // silently swallowed here. `stackMagnitudes` floors the `(1 + Σ)` at
-      // zero, so what leaves this list is bounded however negative the sum is.
-      if (contribution.magnitude !== 0) buildRate.push(contribution.magnitude);
-      continue;
-    }
+  for (const contribution of gatherEffects(practised, gatherDeps)) {
+    if (contribution.target !== 'universe') continue;
+    if (contribution.primitiveId !== 'resource-yield') continue;
+    contributingNodes += 1;
 
     const form = deps.index.formOf(contribution.nodeId);
     if (form === undefined) continue;
@@ -356,9 +426,28 @@ export function universeEconomyBonuses(
     }
   }
 
-  const built: UniverseEconomyBonuses = { resourceYield, buildRate, contributingNodes };
+  const built: UniverseEconomyBonuses = {
+    resourceYield,
+    buildRate,
+    contributingNodes,
+    practisedInstances: practised.length,
+  };
   cached.set(state, built);
   return built;
+}
+
+/**
+ * Whether this holder is committed to practising this node right now.
+ *
+ * The commitment component is the one autonomy wrote last tick; see the module
+ * note on why last tick's is the right one to read here. A holder with no
+ * commitment row — a mage created this tick, a library — answers `false`, which
+ * is the §0 absent-value reading and not a special case.
+ */
+function practisesNode(state: SimState, holder: Handle, nodeId: ContentId): boolean {
+  const commitment = readCommitment(state, holder);
+  if (commitment === undefined) return false;
+  return commitment.goalId === GOAL.practice && commitment.targetNodeId === nodeId;
 }
 
 /** Sums a routed basket, for tests and diagnostics that want one number. */

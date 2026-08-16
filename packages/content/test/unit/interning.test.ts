@@ -384,6 +384,13 @@ describe('contentRevision', () => {
     // of both paths, so two universes on either side of this revision would
     // disagree about whether a game was over. No existing record changed a byte.
     //
+    // d4e3047657b4fa8a1a74e1d52f9f5c86 -> 92d842243c6c7c9718a74c1c097f81d9,
+    // when W53 added the `practice-rate` primitive, the `bless-practice-rate`
+    // god constant, and the two `rego-mentem` nodes that grant the primitive.
+    // Three value edits and no new file, so the preimage is the same shape and
+    // the digest moving is the whole of what a digest is for: a universe that
+    // does not know `practice-rate` exists cannot restore mastery, and would
+    // run a visibly different economy while claiming to be compatible.
     // d4e3047657b4fa8a1a74e1d52f9f5c86 -> e8442af2c5f91ae6f80ad9a178e0e451,
     // when anti-requisites landed (`vision.md` §4b) and `cell.json` gained an
     // `excludes` array carrying one pair: *Creo Ignem* and *Creo Umbra* exclude
@@ -485,7 +492,16 @@ describe('contentRevision', () => {
     // `node packages/content/bin/validate-content.mjs` on the merged tree and
     // then confirmed by this test, which is two independent paths to the same
     // value rather than a literal copied off a failure message.
-    expect(registry.contentRevision).toBe('68fc8134abf583f3b9d71d6363d5ad94');
+    // Both edits arrived on separate branches and this tree is the first holding
+    // both, so the union is necessarily a third value. Read from the test.
+    //
+    // RECOMPUTED AGAIN on the Group F merge of `w53/practice`, 2026-08-16 —
+    // the sixth union in this list and the same reason as the five above it.
+    // Neither `68fc8134` (this group's tree after `w63`) nor `6feb3278` (this
+    // branch's) is a digest over a preimage holding both, so the value below
+    // was read from `node packages/content/bin/validate-content.mjs` on the
+    // merged tree and then confirmed by this test.
+    expect(registry.contentRevision).toBe('ef1988583047c5dec4b7ad5fcae03313');
   });
 
   it('is stable across loads of identical content', () => {

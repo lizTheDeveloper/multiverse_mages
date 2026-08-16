@@ -60,12 +60,12 @@ describe('shipped content', () => {
       species: 6,
       traditions: 3,
       territories: 5,
-      primitives: 16,
+      primitives: 17,
       // One per action id in contracts.md §4.2, and one per magnitude the
       // god-agency rules read by name. Both coverings are checked by the
       // loader; these are the counts they come out at.
       godCosts: 17,
-      godConstants: 73,
+      godConstants: 74,
       // One per magnitude the raid rules read by name, checked in both
       // directions by the loader for the reason the god constants are. Five of
       // them are the composition root's rather than the engine's — how many

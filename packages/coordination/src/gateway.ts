@@ -151,6 +151,8 @@ import {
   MASTERY_ACTIVATION_THRESHOLD,
   disownGrimoire,
   isRediscovery,
+  practice,
+  practiceRequirement,
   research,
   researchRequirement,
   scribe,
@@ -854,6 +856,173 @@ export class CoordinatingKnowledgeGateway implements KnowledgeGateway {
     ledger.clear(key);
     this.#completed.push({
       kind: EFFORT_KIND.scribing,
+      subject: mage,
+      counterparty: 0,
+      nodeId,
+    });
+  }
+
+  /**
+   * This mage's best mastery of a node she holds, or `0`.
+   *
+   * The same reading {@link canTeach} takes — the best copy, not the stalest —
+   * so that "how stale is she in this subject" has one answer across the outlook
+   * builder, the teaching mask and the staleness count.
+   */
+  masteryOf(mage: MageHandle, nodeId: ContentId): Fp {
+    return this.#holdings(mage).get(nodeId) ?? 0;
+  }
+
+  /**
+   * A node this mage holds and **has lost teaching standing in**, or
+   * `undefined`.
+   *
+   * Two of the three conditions are `practice`'s own refusals — permitted cell,
+   * held instance — asked here so that the utility-AI never commits a month to a
+   * project that can never complete. `remainingCost` is the months still owed
+   * **after** what she has already banked, because the outlook quotes it to
+   * `target-appeal.ts`' effort term and a mage two months from finishing should
+   * read as cheaper than one who has not started.
+   *
+   * ## The third condition is `DEFAULT_TEACH_THRESHOLD`, not `MASTERY_MAX`
+   *
+   * The rule refuses only at full mastery, and offering candidates on that gate
+   * was measured to be wrong in two directions at once.
+   *
+   * **It never empties.** `MASTERY_DECAY_PER_TICK` takes a point off every held
+   * instance every month, so *below full mastery* is a condition every instance
+   * in the universe satisfies within a month of acquiring it. A goal that is
+   * feasible for every mage on every tick forever is not a goal that competes
+   * for the month; it is one that wins the month by default, and the appeal
+   * terms behind it — `GOAL_BASE_APPEAL`, `OPPORTUNITY_PER_STALE_HOLDING` — were
+   * written for a candidate list that could be empty.
+   *
+   * **And its far end is nearly free of value.** A mage practising a node at
+   * `fp(1023)` pays a whole month and `practice`'s clamp gives her back **one**
+   * point. The quantum is `PRACTICE_MASTERY_RESTORE`; what she banks is
+   * `min(before + quantum, MASTERY_MAX) - before`. Every month spent in the top
+   * eighth of the scale is a month bought at up to 128× the price of the same
+   * month spent by a scholar who has fallen out of standing.
+   *
+   * `DEFAULT_TEACH_THRESHOLD` is the line that already means something here: it
+   * is what {@link staleHoldings} counts against, what `canTeach` reads, and
+   * what `ages-of-magic.md` §2c's *"faculty who have not had a new result in
+   * twenty years"* have fallen below. Gating candidacy on it makes practice a
+   * **hysteresis loop around teaching standing** — she drops below, she
+   * practises back over, she stops and goes back to the frontier — which is the
+   * publish-or-perish loop the goal was built for and *not* a permanent
+   * top-up.
+   *
+   * ## Why this is narrower than `isPractisable`, deliberately
+   *
+   * `rules-magic`' `isPractisable` still mirrors `practice`'s refusals exactly
+   * and is right to: it answers *would the rule refuse this*. This answers
+   * *should autonomy be offered this*, and the two are allowed to differ in one
+   * direction only — never offer what the rule would refuse. Offering **less**
+   * than the rule accepts is already the case here (`MAX_CANDIDATE_TARGETS`
+   * truncates the list), and this is the same asymmetry with a reason attached.
+   *
+   * ## What it was measured to cost and buy
+   *
+   * On thirty-two paired seeds of the reference long run, gating at
+   * `MASTERY_MAX` cut library **breadth** by 6.3 distinct nodes against a
+   * practice-free control (`t = -2.96`) while leaving the book count unchanged —
+   * the same volume of copies spread over fewer subjects — and killed the last
+   * scribing window outright on four of eight seeds at the two-century horizon.
+   * `docs/design/practice-results.md` records both series and the control.
+   */
+  practisableBy(mage: MageHandle, nodeId: ContentId): KnowledgeTarget | undefined {
+    const node = this.#deps.catalog.node(nodeId);
+    if (node === undefined) return undefined;
+    if (!permits(this.#deps.ruleset, this.#deps.cells.cellOf(nodeId))) return undefined;
+    const mastery = this.#holdings(mage).get(nodeId);
+    if (mastery === undefined || mastery >= DEFAULT_TEACH_THRESHOLD) return undefined;
+
+    const required = practiceRequirement(node);
+    // The banked months, when there is a ledger to ask. A query-only gateway —
+    // the observation path — has none, and quoting the full price there is
+    // right: it is the price of starting, which is what a reader of an
+    // observation is being told.
+    const banked =
+      this.#deps.effort?.progressOf({
+        subject: mage,
+        kind: EFFORT_KIND.practice,
+        nodeId,
+        counterparty: 0,
+      }) ?? 0;
+
+    const facets = this.#deps.facets(nodeId);
+    return {
+      nodeId,
+      tier: node.tier,
+      remainingCost: Math.max(required - banked, 0),
+      cellId: facets.cellId,
+      formId: facets.formId,
+      primitives: facets.primitives,
+    };
+  }
+
+  /**
+   * How many nodes this mage holds at a mastery below the teaching threshold.
+   *
+   * The count `ages-of-magic.md` §2c's 93.4% is the population share of, asked
+   * per mage. Her *best* copy of each node is the one compared, because that is
+   * the copy `canTeach` reads: a scholar with one stale duplicate and one fresh
+   * copy has not lost her standing in that subject.
+   */
+  staleHoldings(mage: MageHandle): number {
+    let stale = 0;
+    for (const mastery of this.#holdings(mage).values()) {
+      if (mastery < DEFAULT_TEACH_THRESHOLD) stale += 1;
+    }
+    return stale;
+  }
+
+  /**
+   * Spends mage-months keeping a node sharp, and restores a mastery quantum on
+   * the tick the requirement is met.
+   *
+   * The arithmetic is entirely `rules-magic`'s `practice`; what this method owns
+   * is where the running total sits between two calls, which is the same
+   * division of labour {@link contributeResearch} describes.
+   *
+   * **No RNG.** `practice` draws nothing — see its module note — so unlike the
+   * other three accruals this one does not reach for `#rng`, and a gateway built
+   * without one can still run it. That is the property that keeps every
+   * committed balance baseline's stream sequences untouched by this change.
+   */
+  contributePractice(
+    mage: MageHandle,
+    nodeId: ContentId,
+    mageMonths: Fixed,
+    practiceRate: Fixed = NEUTRAL_RATE,
+  ): void {
+    const ledger = this.#ledger('practice');
+    const key = effortKey(EFFORT_KIND.practice, mage, nodeId, 0);
+    const outcome = practice({
+      knowledge: this.#deps.knowledge,
+      catalog: this.#deps.catalog,
+      cells: this.#deps.cells,
+      ruleset: this.#deps.ruleset,
+      subject: mage,
+      nodeId,
+      worldTick: this.#deps.state.clock.worldTick,
+      progress: ledger.progressOf(key),
+      effort: mageMonths,
+      practiceRate,
+    });
+
+    if (outcome.refusal !== undefined) return;
+    if (!outcome.completed) {
+      ledger.accrue(key, outcome.progress - ledger.progressOf(key));
+      return;
+    }
+    // Cleared rather than carried: a completed quantum is a finished project,
+    // and leaving the surplus behind would let a mage bank months against a node
+    // she is about to abandon and cash them all at once on returning to it.
+    ledger.clear(key);
+    this.#completed.push({
+      kind: EFFORT_KIND.practice,
       subject: mage,
       counterparty: 0,
       nodeId,

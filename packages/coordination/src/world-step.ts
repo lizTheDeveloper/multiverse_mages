@@ -377,6 +377,8 @@ export interface WorldStepDeps {
     readonly researchRate: PrimitiveRecord;
     readonly teachRate: PrimitiveRecord;
     readonly scribeRate: PrimitiveRecord;
+    /** `practice-rate`, the fourth of vision §6a's rates. */
+    readonly practiceRate: PrimitiveRecord;
     readonly fertility: PrimitiveRecord;
   };
   /**
@@ -432,6 +434,19 @@ export interface WorldStepDeps {
     | undefined;
   readonly teachBonusesFor?:
     | ((state: SimState, worldTick: number, mage: Handle) => readonly Fixed[])
+    | undefined;
+  /**
+   * `practice-rate` magnitudes in force on one mage practising one node.
+   *
+   * Takes the node for the reason `researchBonusesFor` does: an encouragement is
+   * keyed on a cell. This is the seam by which the god's verbs reach maintenance
+   * at all — a funded university deepens the library that feeds
+   * `libraryRateMultiplier`, and an encouragement pushes a cell — and a build
+   * that left it unwired would have made every measurement of "does the god
+   * influence practice?" answer no by construction.
+   */
+  readonly practiceBonusesFor?:
+    | ((state: SimState, worldTick: number, mage: Handle, nodeId: number) => readonly Fixed[])
     | undefined;
   /** `lifespan` effect magnitudes in force on one mage, for the shared stacking. */
   readonly lifespanEffectsFor?:
@@ -597,6 +612,15 @@ export interface WorldStepReport {
   readonly lessonsTaught: number;
   /** Books finished this tick. */
   readonly grimoiresScribed: number;
+  /**
+   * Practice projects that reached their requirement and restored a mastery
+   * quantum this tick.
+   *
+   * The cheapest available reading of whether the universe is maintaining
+   * itself. `masteryTeachable` next door says where it has got to; this says
+   * what it did.
+   */
+  readonly practiceCompleted: number;
   /** Materials those books cost, deducted at the desk. `fp`. */
   readonly materialsScribed: Fixed;
   /**
@@ -1266,6 +1290,7 @@ export function worldSystem(
         researchCompleted: work.researchCompleted,
         lessonsTaught: work.lessonsTaught,
         grimoiresScribed: work.grimoiresScribed,
+        practiceCompleted: work.practiceCompleted,
         materialsScribed,
         staffAssigned: staffing.assigned.length,
         staffPruned: staffing.pruned,
@@ -1693,6 +1718,7 @@ interface WorkPhaseOutcome {
   readonly magesAffiliated: number;
   /** Mages whose first-choice university had no free seat. */
   readonly affiliationsRefused: number;
+  readonly practiceCompleted: number;
 }
 
 /**
@@ -1831,12 +1857,18 @@ function spendTheMonth(
   let researchCompleted = 0;
   let lessonsTaught = 0;
   let grimoiresScribed = 0;
+  let practiceCompleted = 0;
   for (const done of gateway.completions()) {
     completedBy.add(done.subject);
     if (done.counterparty !== 0) completedBy.add(done.counterparty);
+    // Named rather than defaulted. This used to end `else grimoiresScribed += 1`
+    // on the argument that there were only three kinds, and `EFFORT_KIND` said
+    // so — so the first practice completion would have been reported as a book
+    // written, in a counter nobody would have thought to doubt.
     if (done.kind === EFFORT_KIND.research) researchCompleted += 1;
     else if (done.kind === EFFORT_KIND.teaching) lessonsTaught += 1;
-    else grimoiresScribed += 1;
+    else if (done.kind === EFFORT_KIND.scribing) grimoiresScribed += 1;
+    else if (done.kind === EFFORT_KIND.practice) practiceCompleted += 1;
   }
   return {
     castingOwed,
@@ -1845,6 +1877,7 @@ function spendTheMonth(
     researchCompleted,
     lessonsTaught,
     grimoiresScribed,
+    practiceCompleted,
     applied,
     applyingMages,
     monthsByGoal,
@@ -2143,6 +2176,25 @@ function workOne(
       }
       return undefined;
     }
+    case GOAL.practice:
+      // The month is a month and the rate travels separately, exactly as
+      // research's does: `practice.ts` scales the *requirement* rather than the
+      // progress, for the one-place-for-rates reason `research.ts` argues.
+      //
+      // This is where the god's verbs reach maintenance. `shelves` is the
+      // library depth a funded university produces, and `practiceBonusesFor`
+      // carries the blessing and the cell emphasis; both arrive in the same
+      // `(1 + Σ)` channel that research and teaching use, under the same cap.
+      gateway.contributePractice(
+        mage,
+        nodeId,
+        MAGE_MONTHS_PER_TICK,
+        rate(
+          deps.primitives.practiceRate,
+          deps.practiceBonusesFor?.(state, worldTick, mage, nodeId) ?? NO_BONUSES,
+        ),
+      );
+      return;
     case GOAL.scribe:
       // The `universities` requirement names three rates and this is the third.
       // The ceiling gating it is the **author's**, not the reader's: the mage at

@@ -80,6 +80,7 @@ function row(entries: Partial<Record<GoalId, Fixed>>): RoleBiasRow {
     [GOAL.wardDuty]: 0,
     [GOAL.raidReadiness]: 0,
     [GOAL.applyMagic]: 0,
+    [GOAL.practice]: 0,
     ...entries,
   };
 }
@@ -105,6 +106,15 @@ function row(entries: Partial<Record<GoalId, Fixed>>): RoleBiasRow {
  * hillside into a quarry are one instinct about using what the academy has
  * rather than adding to it. The professor leans hardest away: her month is
  * worth more in a classroom.
+ *
+ * `practice` is where the four rows disagree most usefully. A **professor**
+ * maintains her fundamentals because she cannot supervise without them — that
+ * is `ages-of-magic.md` §2c's loop, and it is the largest practice entry in the
+ * table. A **raider** drills because a spell she cannot cast under pressure is
+ * one she does not have. A **researcher** leans slightly away: the frontier is
+ * where her attention is, and letting the fundamentals go stale is exactly the
+ * mistake §2c says the game should let her make. A **warden** is neutral;
+ * standing watch is not practice and nothing in the design says it should be.
  */
 export const ROLE_BIAS: Readonly<Record<MageRoleValue, RoleBiasRow>> = {
   [MAGE_ROLE.researcher]: row({
@@ -113,6 +123,7 @@ export const ROLE_BIAS: Readonly<Record<MageRoleValue, RoleBiasRow>> = {
     [GOAL.seekTeaching]: 64,
     [GOAL.wardDuty]: -128,
     [GOAL.applyMagic]: -64,
+    [GOAL.practice]: -64,
   }),
   [MAGE_ROLE.warden]: row({
     [GOAL.wardDuty]: 384,
@@ -127,12 +138,14 @@ export const ROLE_BIAS: Readonly<Record<MageRoleValue, RoleBiasRow>> = {
     [GOAL.scribe]: 128,
     [GOAL.raidReadiness]: -128,
     [GOAL.applyMagic]: -128,
+    [GOAL.practice]: 256,
   }),
   [MAGE_ROLE.raider]: row({
     [GOAL.raidReadiness]: 384,
     [GOAL.wardDuty]: 128,
     [GOAL.scribe]: -128,
     [GOAL.teach]: -64,
+    [GOAL.practice]: 192,
   }),
 };
 

@@ -447,6 +447,26 @@ describe('two hundred world years of the reference universe', () => {
     // literal, so that widening the ruleset does not silently weaken it.
     expect(last?.libraryDepth ?? 0).toBe(last?.nodesKnown ?? -1);
     //
+    // ## The coverage equality stays; the books-to-depth ratio is withdrawn
+    //
+    // Three branches reached this line with three different answers and the
+    // Group F merge, 2026-08-16, had to rule between them. `main` replaced the
+    // ratio with the coverage equality above, on the ground that *a ratio near
+    // one is also what an empty library reports*. `w78/teaching-boundary`
+    // widened the ratio to `6 x`, then this group re-measured it to `8 x` on the
+    // w78 tree. `w53/practice` withdrew it outright, and gave the strongest
+    // reason of the three: books-per-node averages **10.9 across 32 seeds** with
+    // depth running 3 to 45, so the ratio is not a trend and no bound over it is
+    // a claim anybody has established. Two of the three sides therefore agree
+    // the ratio is a bad instrument, and the `8 x` this group measured two rows
+    // ago is a fourth number for a quantity that should not have a bound at all.
+    //
+    // So: the equality is kept, the ratio is withdrawn, and the number is
+    // printed instead. What survives from `w78` is its finding, recorded below
+    // and no longer asserted.
+    //
+    // ### Recorded, not asserted: what `w78` measured
+    //
     // ## Both claims are kept, because they are two claims and not one
     //
     // `main` replaced the duplication ratio with the coverage equality above,
@@ -482,7 +502,56 @@ describe('two hundred world years of the reference universe', () => {
     // would mean it is gone" ceiling the original comment named — but 6.56 is
     // the closest this ratio has ever come to it. **If this fails again, do not
     // widen it a fourth time without naming which mechanism moved which half.**
-    expect(last?.grimoires ?? 0).toBeLessThan(8 * (last?.libraryDepth ?? 1));
+    // **The books-to-depth bound is withdrawn, and this is the third time this
+    // task has withdrawn an assertion rather than loosening one.**
+    //
+    // Its history: close to one book per node under the single-stock economy;
+    // 157 books against 48 distinct nodes — roughly 3.3 — once `w29` decoupled
+    // `vellum` from `food`, with a bound of `4 x depth` written to fit that
+    // *"with headroom, not doubled reflexively"*, and a comment observing it
+    // was *"nowhere near the 'ten would mean it is gone' ceiling"*.
+    //
+    // W53 measured here: **159 books against 17 distinct nodes, roughly 9.4** —
+    // at the ceiling that comment named, from the other side. The count holds
+    // while the *breadth* collapses.
+    //
+    // **The first draft of this comment named the wrong cause, and the
+    // correction is worth more than the number.** It said the `resource-yield`
+    // practitioner gate did it: *"an economy that only pays out while somebody
+    // is casting produces less `vellum`, and less `vellum` is fewer books."*
+    // Ablating that gate — the ungated instance list to the second
+    // `gatherEffects` call, i.e. `main`'s behaviour exactly — changes `stone`
+    // and **nothing else**: food, vellum, population, carrying capacity and the
+    // per-species mage table are bit-identical over 1,200 ticks. Every
+    // `resource-yield` node in this content set routes to `stone`, so the gate
+    // never fed vellum and cannot have starved it.
+    //
+    // What did it is the **practice goal taking the month** from research and
+    // rediscovery, the only two operations that add a *distinct* node. Against a
+    // practice-free control on 32 paired seeds: depth −6.31 (t = −2.96) at an
+    // unchanged book count. Both halves of the fix are in
+    // `docs/design/practice-results.md`.
+    //
+    // And 3.3 was itself one seed: main-equivalent books-per-node averages 10.9
+    // across 32 seeds at this horizon, with depth running 3 to 45. This ratio is
+    // not a trend and this bound is not coming back on one run's evidence.
+    //
+    // Widening the bound to `10 x depth` would make it pass and would assert
+    // that 9.4 is fine, which is exactly the claim nobody has established. So
+    // the number is printed and the bound is gone, in the same spirit the
+    // module note applies to 9.5 and 9.9: *"a checked box that is false is
+    // worse than an unmet promise recorded."* What is asserted instead is
+    // non-vacuity — the library has *some* breadth and *some* books — and the
+    // ratio is left to the writeup, where W53 records it as the cost of the
+    // gate rather than as a passing test.
+    console.log(
+      `9.8 books-to-depth: ${String(last?.grimoires ?? 0)} books against ` +
+        `${String(last?.libraryDepth ?? 0)} distinct nodes — ` +
+        `${((last?.grimoires ?? 0) / Math.max(last?.libraryDepth ?? 1, 1)).toFixed(1)} per node. ` +
+        'Was 3.3 before the practice gate. NOT ASSERTED; see the comment.',
+    );
+    expect(last?.libraryDepth ?? 0).toBeGreaterThan(0);
+    expect(last?.grimoires ?? 0).toBeGreaterThan(0);
 
     // ## Destruction is still live, which is the other half and the harder one
     //

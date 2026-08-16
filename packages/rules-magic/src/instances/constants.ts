@@ -116,6 +116,43 @@ export const SCRIBE_CAPACITY_PER_TIER = 1024;
 export const MASTERY_MAX = 1024;
 
 /**
+ * Mage-months one restore quantum of practice costs, **per tier**. **Untuned.**
+ *
+ * A tier-1 node costs `fp(1)` of a mage's month per quantum and a tier-7 node
+ * costs seven, so keeping the deep specialty sharp is a real expense and keeping
+ * the fundamentals sharp is not. That ordering is the design's, not a
+ * convenience: `ages-of-magic.md` §2c makes the maintained mass *"the
+ * prerequisites, the low tiers, the fundamentals"*, and a flat cost would have
+ * made a seventh-tier node exactly as cheap to hold as a first-tier one, which
+ * removes the only decision practice contains.
+ *
+ * Deliberately of the same order as {@link PRACTICE_MASTERY_RESTORE} divided by
+ * `MASTERY_DECAY_PER_TICK`, so that a mage who practises one node continuously
+ * roughly holds it and does not run away to `MASTERY_MAX` in a decade. That is
+ * an order-of-magnitude claim about a placeholder, not a balance claim, and
+ * `practice-restores-mastery.test.ts` pins the arithmetic rather than the
+ * intent.
+ */
+export const PRACTICE_COST_PER_TIER = 1024;
+
+/**
+ * Mastery one completed practice project gives back. **Untuned.**
+ *
+ * `fp(128)` — an eighth of full mastery. Above {@link MASTERY_DECAY_PER_TICK}
+ * by enough that a completed project is visible against ordinary forgetting,
+ * and well below the gap between `DEFAULT_INITIAL_MASTERY` and
+ * {@link DEFAULT_TEACH_THRESHOLD}, so that a scholar who has fallen out of
+ * teaching standing takes **more than one** project to earn it back. A quantum
+ * large enough to restore standing in a single completion would make
+ * publish-or-perish a formality; `ages-of-magic.md` §2c's whole complaint is
+ * that there was no price on the way back.
+ *
+ * Clamped at {@link MASTERY_MAX} where it lands, so the value is a step size and
+ * never a level.
+ */
+export const PRACTICE_MASTERY_RESTORE = 128;
+
+/**
  * The share of `retention` that becomes an instance's decay floor. **Untuned.**
  *
  * `fp(256)` — a quarter — so that a species at `fp(1024)` retention settles at

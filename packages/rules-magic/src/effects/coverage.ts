@@ -63,6 +63,16 @@ import type { ContentRegistry, NodeRecord } from '@mm/content';
  * no form to bite on — or Terram, and neither primitive has anything to act on
  * until mages age, which is `mages-and-species` at 0.4.0.
  *
+ * `practice-rate` was nearly a third entry when W53 added the primitive, and it
+ * is worth recording why it is not. The tempting argument was that its live
+ * sources — a blessing, a cell encouragement, vision §6a's library depth — are
+ * none of them node effects, so no node *needs* to grant it. But that argument
+ * applies word for word to `research-rate`, which is covered because content
+ * declares it, and accepting it once would have made the exclusion list a place
+ * to put primitives rather than a claim about content. Two `rego-mentem` nodes
+ * grant it instead, at `target: "self"`, exactly as their neighbours grant
+ * `research-rate` and `teach-rate`.
+ *
  * Sorted, and asserted to be exactly this pair by test. Adding a third entry is
  * a claim that a third primitive is unmeasurable at 0.5.0, and should be as
  * hard to do quietly as this list makes it.

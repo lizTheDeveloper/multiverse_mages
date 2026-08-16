@@ -42,6 +42,9 @@ __pycache__/
 .w46/
 # W70's opening-square size sweep. Same reason: 480 runs of node-id sets.
 .w70/
+# W53's practice arms — the before/after of the applied-use probe. Same reason.
+.w53/
+
 # W158's axis-price sweep, and its pilot. Same reason: run records, not source.
 # The findings are committed as docs/design/axis-price-sweep.md; the records are
 # regenerable from tools/w158/run-arm.mjs and its manifests.

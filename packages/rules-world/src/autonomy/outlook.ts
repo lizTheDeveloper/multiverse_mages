@@ -110,6 +110,19 @@ export interface MageOutlook {
    * appeal score, then node id. Right, when there is no project to finish.
    */
   readonly applicableTargets: readonly KnowledgeTarget[];
+  /**
+   * Nodes she already holds and could keep sharp, with the months one restore
+   * quantum costs as `remainingCost`.
+   *
+   * The gateway builds this from her own held instances, filtered to permitted
+   * cells and to instances below full mastery — the same three conditions
+   * `practice` refuses on — and sorted **stalest first**, so a truncation at
+   * `MAX_CANDIDATE_TARGETS` drops the nodes she is closest to full on rather
+   * than the ones she has lost standing in. That ordering is the publish-or-
+   * perish half of `ages-of-magic.md` §2c arriving as a candidate list rather
+   * than as a scoring weight: a weight can be outvoted, and this cannot.
+   */
+  readonly practiceTargets: readonly KnowledgeTarget[];
 
   /** Universe materials stock, `fp`. Scribing is masked without enough. */
   readonly materials: Fixed;
@@ -141,4 +154,17 @@ export interface MageOutlook {
   readonly wardPressure: Fixed;
   /** How much the universe wants raiders ready, `fp`. Zero at 0.4.0, same reason. */
   readonly raidPressure: Fixed;
+
+  /**
+   * How many nodes she holds at a mastery below the teaching threshold.
+   *
+   * Not derivable from {@link practiceTargets}: that list is bounded at
+   * `MAX_CANDIDATE_TARGETS` and is a *cost* device, and reading a count off a
+   * truncated list is the "reading a truncation as a fact about the world"
+   * mistake `select.ts` records at length. This is the untruncated count, and it
+   * is what makes `practice` attractive to a scholar who has lost the standing
+   * to supervise anything — `ages-of-magic.md` §2c's *"faculty who have not had
+   * a new result in twenty years"*.
+   */
+  readonly staleHoldings: number;
 }

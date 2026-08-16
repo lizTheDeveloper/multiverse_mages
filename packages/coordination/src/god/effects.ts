@@ -67,7 +67,7 @@ export interface GodEffectDeps {
   readonly cells: CellResolver;
 }
 
-/** The three callbacks `WorldStepDeps` takes. */
+/** The callbacks `WorldStepDeps` takes. */
 export interface GodEffectHooks {
   readonly researchBonusesFor: (
     state: SimState,
@@ -79,6 +79,22 @@ export interface GodEffectHooks {
     state: SimState,
     worldTick: number,
     mage: number,
+  ) => readonly Fixed[];
+  /**
+   * The god's contribution to a mage's `practice-rate` on one node.
+   *
+   * Takes a `nodeId`, unlike the teaching hook and like the research one,
+   * because an encouragement is keyed on a **cell** and practice happens in one.
+   * That is the only channel through which `encourageResearch` reaches
+   * maintenance at all: a god who pushes attention onto Rego Terram makes its
+   * spells both cheaper to derive and cheaper to keep, which is what pushing
+   * attention onto a subject does.
+   */
+  readonly practiceBonusesFor: (
+    state: SimState,
+    worldTick: number,
+    mage: number,
+    nodeId: number,
   ) => readonly Fixed[];
   readonly lifespanEffectsFor: (
     state: SimState,
@@ -141,6 +157,19 @@ export function godEffectHooks(deps: GodEffectDeps): GodEffectHooks {
 
     teachBonusesFor: (state, worldTick, mage) =>
       effectsFor(state, worldTick).blessed.has(mage) ? [deps.constants.blessTeachRate] : [],
+
+    // The same two sources as research, against a different constant. Written
+    // out rather than delegated to `researchBonusesFor`, because aliasing two
+    // primitives onto one channel is how an ablation sweep comes to report a
+    // `research-rate` effect that was half `practice-rate` all along.
+    practiceBonusesFor: (state, worldTick, mage, nodeId) => {
+      const effects = effectsFor(state, worldTick);
+      const sources: Fixed[] = [];
+      if (effects.blessed.has(mage)) sources.push(deps.constants.blessPracticeRate);
+      const emphasis = effects.emphasis.get(deps.cells.cellOf(nodeId));
+      if (emphasis !== undefined && emphasis > 0) sources.push(emphasis);
+      return sources;
+    },
 
     // `lifespan` is `additive` in months rather than a multiplier, so this hands
     // back magnitudes for `effectiveLifespan` to stack rather than a stacked

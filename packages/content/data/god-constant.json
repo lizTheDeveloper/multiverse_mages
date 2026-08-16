@@ -189,6 +189,13 @@
     "tuningStatus": "untuned"
   },
   {
+    "id": "bless-practice-rate",
+    "value": 256,
+    "unit": "fp",
+    "gloss": "A blessing's contribution to the shared practice-rate channel. Equal to the teach-rate figure on purpose: a blessing is one act and the design gives no reason for it to favour keeping a spell sharp over passing it on. Practice is the only operation that restores mastery, so this is the god's one lever on whether a scholar keeps the standing to supervise.",
+    "tuningStatus": "untuned"
+  },
+  {
     "id": "bless-lifespan-months",
     "value": 60,
     "unit": "months",

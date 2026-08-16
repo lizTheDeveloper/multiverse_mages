@@ -41,7 +41,14 @@ import {
   componentOf,
 } from '@mm/state';
 import type { KnowledgeTarget, MageOutlook, SpeciesAffinities } from '@mm/rules-world';
-import { ageInMonths, boundCandidates, gatherFrontier, normalizedAge } from '@mm/rules-world';
+import {
+  MAX_CANDIDATE_TARGETS,
+  ageInMonths,
+  boundCandidates,
+  gatherFrontier,
+  normalizedAge,
+  withinDepthCeiling,
+} from '@mm/rules-world';
 
 import type { CoordinatingKnowledgeGateway } from './gateway.js';
 import type { NodeFacetResolver } from './node-facets.js';
@@ -133,6 +140,7 @@ export function buildOutlook(
     teachableByMe: boundCandidates(teachableByMe(mage, deps), species),
     scribableTargets: boundCandidates(scribableBy(mage, deps), species),
     applicableTargets: boundCandidates(applicableBy(mage, deps), species),
+    practiceTargets: practisableBy(mage, deps, species),
 
     materials: deps.materials,
     scribeThroughput: deps.scribeThroughputOf(row.universityId),
@@ -143,7 +151,52 @@ export function buildOutlook(
     // `raid-engagement` supplies a number instead of amending the goal set.
     wardPressure: 0,
     raidPressure: 0,
+
+    staleHoldings: deps.gateway.staleHoldings(mage),
   };
+}
+
+/**
+ * Nodes this mage holds that are worth keeping sharp, stalest first.
+ *
+ * ## The sort is the mechanic, and it is why `boundCandidates` is not used here
+ *
+ * Every other list on the outlook goes through `boundCandidates`, which filters
+ * to the species depth ceiling, sorts by `compareTargets` — novel before cheap,
+ * for the reason `candidates.ts` records — and truncates. Novelty is the right
+ * order for a node she is trying to *acquire* and exactly the wrong one for a
+ * node she is trying to *keep*: nothing she already holds is novel, so the
+ * comparator would fall through to cost and the truncation would keep the nodes
+ * she is closest to full on and drop the ones she has not touched in twenty
+ * years. Those are `ages-of-magic.md` §2c's whole subject.
+ *
+ * So this bound sorts on **held mastery ascending** and truncates after that:
+ * the stalest node survives, and `target-appeal.ts`' effort term chooses among
+ * the survivors. The depth-ceiling filter is still applied, from the same shared
+ * predicate rather than a second copy — she cannot hold a node above her
+ * ceiling today, but a species retune could make that false and a filter that
+ * only works because of a fact elsewhere is a filter waiting to be wrong. Ties
+ * fall to the lower node id, a total order over content ids; `heldNodes` already
+ * sorts, so this is a stable refinement of a declared order rather than a rescue
+ * of an undeclared one.
+ *
+ * `boundCandidates` stays imported and used by the three lists above it, so a
+ * reader comparing them can see that this one is deliberately different.
+ */
+function practisableBy(
+  mage: Handle,
+  deps: OutlookDeps,
+  species: SpeciesRecord,
+): readonly KnowledgeTarget[] {
+  const found: { target: KnowledgeTarget; mastery: Fixed }[] = [];
+  for (const nodeId of deps.gateway.heldNodes(mage)) {
+    const target = deps.gateway.practisableBy(mage, nodeId);
+    if (target === undefined) continue;
+    if (!withinDepthCeiling(target, species)) continue;
+    found.push({ target, mastery: deps.gateway.masteryOf(mage, nodeId) });
+  }
+  found.sort((a, b) => a.mastery - b.mastery || a.target.nodeId - b.target.nodeId);
+  return found.slice(0, MAX_CANDIDATE_TARGETS).map((entry) => entry.target);
 }
 
 /**

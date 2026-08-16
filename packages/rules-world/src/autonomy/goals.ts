@@ -43,6 +43,23 @@
  * appending is free only for the *ids*: every balance baseline taken in between
  * would have been taken over a goal set that could not express warding, and
  * would need retaking.
+ *
+ * ## `practice` is id 9, and it is the first goal appended after 0.4.0
+ *
+ * It is here because `decay.ts` asked for it by name — *"Nothing in this
+ * subsystem restores mastery; practice does, and practice is an operation
+ * somebody has to perform"* — and because nobody performed it, mastery in this
+ * game was monotonically non-increasing for every instance ever created.
+ * `ages-of-magic.md` §2c is the design half of that: publish-or-perish with the
+ * publish half missing, and 93.4% of held instances below the teach threshold as
+ * the measurement of it.
+ *
+ * It is a **goal** rather than a background restoration for one reason, and the
+ * reason is the whole design: a month spent keeping a node sharp is a month not
+ * spent researching, teaching, scribing or standing watch. Appending it moves
+ * every strategy's goal mix, so every baseline taken before it is a baseline
+ * over a nine-goal world — which is exactly what the append-only rule above
+ * exists to make legible rather than silent.
  */
 
 /**
@@ -78,6 +95,16 @@ export const GOAL = {
    * and never *work* one, so nothing anybody knew ever touched anything.
    */
   applyMagic: 9,
+  /**
+   * Keep a node she already holds sharp, restoring its mastery.
+   *
+   * The tenth goal. It was authored on its branch as the ninth and takes 10
+   * here because `applyMagic` reached `main` first — the registry is
+   * append-only (`state/src/components.ts` serializes `goalId` into
+   * `goal-commitment`), so ids 0-8 are untouched and the two new goals are
+   * ordered by which one landed, not by which is more important.
+   */
+  practice: 10,
 } as const;
 
 /** Any id in the permanent registry. */
@@ -102,6 +129,7 @@ export const GOALS_IN_ORDER: readonly GoalId[] = [
   GOAL.wardDuty,
   GOAL.raidReadiness,
   GOAL.applyMagic,
+  GOAL.practice,
 ];
 
 /** How many goals the enumeration holds. Grows; never shrinks. */
@@ -124,6 +152,7 @@ export const GOAL_NAMES: Readonly<Record<GoalId, string>> = {
   [GOAL.wardDuty]: 'ward-duty',
   [GOAL.raidReadiness]: 'raid-readiness',
   [GOAL.applyMagic]: 'apply-magic',
+  [GOAL.practice]: 'practice',
 };
 
 /** Whether a number names a goal in the permanent registry. */
@@ -145,6 +174,7 @@ export const GOALS_NEEDING_A_TARGET: readonly GoalId[] = [
   GOAL.teach,
   GOAL.scribe,
   GOAL.applyMagic,
+  GOAL.practice,
 ];
 
 /** Whether a goal is meaningless without a node to point it at. */

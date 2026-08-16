@@ -128,6 +128,14 @@ export function isFeasible(goal: GoalId, outlook: MageOutlook): boolean {
       // (`contracts.md` §5 rule 3), answered by the coordinating layer in one
       // pass.
       return anyOf(outlook.applicableTargets);
+    case GOAL.practice:
+      // Held, permitted, and below full mastery — the gateway has already
+      // applied all three, because they are `practice`'s own refusals and a
+      // second copy here would be the private rule this directory keeps
+      // refusing. An empty list is a mage with nothing to keep sharp, which is
+      // a real state: a novice who holds one node at full mastery has no
+      // maintenance to do.
+      return anyOf(outlook.practiceTargets);
     default:
       throw new RangeError(
         `${String(goal)} is not a goal id; the registry in goals.ts is append-only and this ` +

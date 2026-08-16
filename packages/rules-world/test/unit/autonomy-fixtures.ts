@@ -145,6 +145,8 @@ export function outlook(overrides: Partial<MageOutlook> = {}): MageOutlook {
     preferredUniversity: 0,
     wardPressure: 0,
     raidPressure: 0,
+    practiceTargets: [],
+    staleHoldings: 0,
   };
   return { ...base, ...overrides };
 }
@@ -167,6 +169,10 @@ export function richOutlook(overrides: Partial<MageOutlook> = {}): MageOutlook {
     // `remainingCost` zero, because an applicable node is one she already knows
     // — there is no project left to pay for.
     applicableTargets: [target(61, 1, 0)],
+    // A node she holds and has let go stale. `richOutlook` is "everything is
+    // available", and after W53 that includes having something to keep sharp.
+    practiceTargets: [target(61)],
+    staleHoldings: 1,
     materials: 4096,
     scribeThroughput: 1024,
     betterAffiliationAvailable: true,

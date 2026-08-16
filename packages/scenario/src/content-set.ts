@@ -779,6 +779,7 @@ export function worldDeps(
       researchRate: primitiveNamed(registry, 'research-rate'),
       teachRate: primitiveNamed(registry, 'teach-rate'),
       scribeRate: primitiveNamed(registry, 'scribe-rate'),
+      practiceRate: primitiveNamed(registry, 'practice-rate'),
       fertility: primitiveNamed(registry, 'fertility'),
     },
     knowledgeFor,

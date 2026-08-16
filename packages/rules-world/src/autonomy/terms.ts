@@ -145,6 +145,13 @@ export const GOAL_BASE_APPEAL: Readonly<Record<GoalId, Fixed>> = {
    * sweep should move first.
    */
   [GOAL.applyMagic]: 384,
+  // Below both research goals and both teaching goals on purpose. Maintenance
+  // is what a mage does when she has fallen behind, not what she wants to be
+  // doing — `ages-of-magic.md` §2c's scholar is a scholar because of the
+  // frontier, and practice is the price of staying one. The pressure that makes
+  // it win comes from `opportunityTerm`'s stale-holdings count, which is a fact
+  // about her situation rather than a preference.
+  [GOAL.practice]: 320,
 };
 
 /**
@@ -174,6 +181,7 @@ export const AGE_TERM: Readonly<Record<AgeBandValue, Readonly<Record<GoalId, Fix
     [GOAL.wardDuty]: -64,
     [GOAL.raidReadiness]: 64,
     [GOAL.applyMagic]: 0,
+    [GOAL.practice]: -64,
   },
   [AGE_BAND.prime]: {
     [GOAL.idle]: 0,
@@ -186,6 +194,7 @@ export const AGE_TERM: Readonly<Record<AgeBandValue, Readonly<Record<GoalId, Fix
     [GOAL.wardDuty]: 0,
     [GOAL.raidReadiness]: 0,
     [GOAL.applyMagic]: 0,
+    [GOAL.practice]: 0,
   },
   [AGE_BAND.senescent]: {
     [GOAL.idle]: 0,
@@ -201,6 +210,7 @@ export const AGE_TERM: Readonly<Record<AgeBandValue, Readonly<Record<GoalId, Fix
     // mage knows leaves the universe when she does unless she spends it on
     // something. A harvest is a use that outlives her exactly as a book is.
     [GOAL.applyMagic]: 128,
+    [GOAL.practice]: 192,
   },
 };
 
@@ -219,6 +229,31 @@ export const OPPORTUNITY_CANDIDATE_CAP = 4;
 
 /** Opportunity a change of affiliation offers when one is worth making. **Untuned.** */
 export const AFFILIATION_OPPORTUNITY: Fixed = 256;
+
+/**
+ * Opportunity each node held below the teaching threshold adds to `practice`.
+ * **Untuned.**
+ *
+ * Larger than {@link OPPORTUNITY_PER_CANDIDATE}, because a node she has lost
+ * standing in is a stronger reason to practise than a node she merely could.
+ */
+export const OPPORTUNITY_PER_STALE_HOLDING: Fixed = 96;
+
+/**
+ * Stale holdings past which more of them add nothing.
+ *
+ * Concave by truncation, exactly as {@link OPPORTUNITY_CANDIDATE_CAP} is, and
+ * chosen so that the term cannot exceed `TERM_BOUND.opportunity` — a term that
+ * saturates its own clamp on ordinary inputs has stopped being a signal, and
+ * `boundTerm` would hide that rather than report it.
+ *
+ * `3 x 96 = 288` against a bound of `512`. That sentence used to be written of
+ * *"the two together"* — this cap plus {@link OPPORTUNITY_CANDIDATE_CAP}'s
+ * `4 x 64` — and the arithmetic did not hold: `544` is over the bound, so
+ * `practice` clamped on ordinary inputs from the day it shipped. The second
+ * count is gone (see `opportunityTerm`), and with it the claim is true.
+ */
+export const STALE_HOLDING_CAP = 3;
 
 function candidateOpportunity(count: number): Fixed {
   return Math.min(count, OPPORTUNITY_CANDIDATE_CAP) * OPPORTUNITY_PER_CANDIDATE;
@@ -257,6 +292,15 @@ export function speciesTerm(goal: GoalId, outlook: MageOutlook): Fixed {
       // inventing a ninth keeps "which species farms with magic" a content
       // decision.
       return boundTerm('species', shareOfDeviation(species.laborAffinity, 2));
+    case GOAL.practice:
+      // Retention, inverted. A species that forgets slowly has less maintenance
+      // to do and finds it correspondingly less pressing; a species that forgets
+      // fast lives closer to the threshold. `contracts.md` §2.4's retention is
+      // the trait decay divides by, so this is that same trait read from the
+      // mage's side of the ledger — and it is the second rule anywhere that
+      // gives retention a behavioural consequence rather than only an
+      // arithmetic one.
+      return boundTerm('species', -shareOfDeviation(species.retention, 2));
     default:
       return 0;
   }
@@ -302,6 +346,15 @@ export function personalityTerm(goal: GoalId, outlook: MageOutlook): Fixed {
         'personality',
         shareOfDeviation(caution, 4) - shareOfDeviation(curiosity, 4),
       );
+    case GOAL.practice:
+      // Caution keeps what it has; ambition wants the next thing. Both axes,
+      // opposed, because practice is the one goal on the table that is purely
+      // defensive — it produces no node, no student and no book, and an
+      // ambitious mage has to be talked into it by her own decay.
+      return boundTerm(
+        'personality',
+        shareOfDeviation(caution, 2) - shareOfDeviation(ambition, 4),
+      );
     default:
       return 0;
   }
@@ -342,6 +395,39 @@ export function opportunityTerm(goal: GoalId, outlook: MageOutlook): Fixed {
       return boundTerm('opportunity', outlook.raidPressure);
     case GOAL.applyMagic:
       return boundTerm('opportunity', candidateOpportunity(outlook.applicableTargets.length));
+    case GOAL.practice:
+      // **One count, not two, and the removed one was a duplicate that
+      // saturated the clamp.**
+      //
+      // This read `candidateOpportunity(practiceTargets.length)` as well, on the
+      // reasoning that the candidate concavity is what every other goal gets and
+      // staleness is the extra mechanic on top. That reasoning depended on the
+      // two lists being different sets, and since `practisableBy` began gating
+      // candidacy on `DEFAULT_TEACH_THRESHOLD` they are the *same* set:
+      // `practiceTargets` is the truncated stale holdings, and
+      // {@link MageOutlook.staleHoldings} is the untruncated count of it. Adding
+      // them counted the same fact about the mage twice.
+      //
+      // It also broke {@link STALE_HOLDING_CAP}'s own promise. Four candidates
+      // and three stale holdings give `256 + 288 = 544` against a
+      // `TERM_BOUND.opportunity` of `512` — so on the *ordinary* input, not an
+      // extreme one, the sum clamped, and a term pinned at its bound is the
+      // dead signal that comment says it was chosen to avoid. Pinned there,
+      // `practice` carried the largest opportunity any goal can carry, against
+      // `scribe`'s `256` ceiling, which is a `+256` advantage that swamps the
+      // `-64` its base appeal was given to keep it modest. Measured: the
+      // frontier goals lost the month to maintenance, and library **breadth**
+      // fell 6.3 distinct nodes over thirty-two paired seeds at the same book
+      // count.
+      //
+      // What is left is the mechanic itself, untruncated — see
+      // `MageOutlook.staleHoldings` — and it peaks at `288`, which sits beside
+      // `scribe`'s `256` rather than above every goal in the table, and inside
+      // the bound with room, which is what the cap was always supposed to buy.
+      return boundTerm(
+        'opportunity',
+        Math.min(outlook.staleHoldings, STALE_HOLDING_CAP) * OPPORTUNITY_PER_STALE_HOLDING,
+      );
     default:
       return 0;
   }
