@@ -58,7 +58,12 @@
  * and the signature it satisfies is the contract.
  */
 
-export type { ActionCostTable, CatalogueNode, ContentCatalogue } from './catalogue.js';
+export type {
+  ActionCostTable,
+  ActionMaterialCost,
+  CatalogueNode,
+  ContentCatalogue,
+} from './catalogue.js';
 export { EMPTY_CATALOGUE, buildCatalogue } from './catalogue.js';
 
 export type { GodActionId } from './actions.js';
@@ -155,7 +160,7 @@ export type { Candidate, CandidateInput, CandidateLists } from './candidates.js'
 export { buildCandidates, candidateAt } from './candidates.js';
 
 export type { MaskInput } from './mask.js';
-export { isLegal, legalityMask } from './mask.js';
+export { isLegal, legalityMask, unaffordableReason } from './mask.js';
 
 export type { AdmissionResult, GateInput, RejectedAction, RejectionReason } from './gate.js';
 export { admit } from './gate.js';

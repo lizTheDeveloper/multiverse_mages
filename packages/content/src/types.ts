@@ -367,6 +367,25 @@ export interface GodCostRecord {
   readonly actionId: number;
   /** Base favor price, `fp`. Hysteresis and node tier scale it at resolution. */
   readonly favorCost: Fp;
+  /**
+   * What the action costs in **materials**, per kind, `fp`. Absent for most.
+   *
+   * `material-economy`'s second half. Until it, the game held two economies
+   * that never met — worship made favor and favor bought the seventeen verbs,
+   * while magic made materials the god could never spend — so a player asking
+   * *"what is my economy doing"* was asking about a system their verbs could
+   * not reach.
+   *
+   * The systemic rule the table satisfies: **a verb that makes a thing in the
+   * world spends the material that thing is made of.** Favor stays the pacing
+   * currency and does not go away; the material cost is what makes a verb also
+   * a claim on the economy the populace and the academy are running.
+   *
+   * Optional, and the loader accepts a table where some actions name one and
+   * others do not — an unpriced verb is one that makes nothing out of anything.
+   * A kind outside {@link MATERIAL_KIND_IDS} fails the load, named.
+   */
+  readonly materialCost?: Readonly<Partial<Record<MaterialKindId, Fp>>>;
   readonly gloss: string;
   readonly tuningStatus: TuningStatus;
 }

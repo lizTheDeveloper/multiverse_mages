@@ -266,14 +266,21 @@ export function seededWorld(
   // a test that wants one starves a specific kind itself, the way
   // `knowledge-capital.test.ts` zeroes `vellum` to force a library upkeep
   // shortfall.
+  // All seven at the working figure. The four `material-economy` added were
+  // seeded at zero while nothing produced or spent them; five god verbs are now
+  // priced in materials, and the resolver refuses one the stocks cannot pay —
+  // so a fixture holding zero of four kinds would mask a blessing and make a
+  // test about worship fail about a starting position instead. A test that
+  // wants an empty stock zeroes the kind it cares about, as
+  // `material-sinks.test.ts` does.
   attachRecord(state, MATERIAL_STOCK, universe, {
     food: 1000 * 1024,
     stone: 1000 * 1024,
     vellum: 1000 * 1024,
-    labor: 0,
-    essence: 0,
-    insight: 0,
-    passage: 0,
+    labor: 1000 * 1024,
+    essence: 1000 * 1024,
+    insight: 1000 * 1024,
+    passage: 1000 * 1024,
   });
 
   const mages: EntityHandle[] = [];

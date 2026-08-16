@@ -587,6 +587,7 @@ export function contentCatalogue(registry: ContentRegistry): ContentCatalogue {
   const god = resolveGodContent(registry);
   return buildCatalogue(nodes, registry.traditions.map((entry) => entry.contentId), {
     byAction: god.costs.byAction,
+    materialByAction: god.costs.materialByAction,
     foundUniversity: god.costs.foundUniversity,
     hysteresisStep: god.constants.hysteresisStep,
   });

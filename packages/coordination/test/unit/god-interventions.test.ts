@@ -38,6 +38,7 @@ import {
   MAGE,
   MAGE_ROLE,
   TERMINAL_REASON,
+  MATERIAL_STOCK,
   UNIVERSE,
   UNIVERSITY,
   UPHEAVAL,
@@ -810,5 +811,76 @@ describe('edict kinds are the two contracts.md §1.1 declares', () => {
   it('numbers dispensation 0 and interdiction 1', () => {
     expect(EDICT_KIND.dispensation).toBe(0);
     expect(EDICT_KIND.interdiction).toBe(1);
+  });
+});
+
+/**
+ * `material-economy` group 4: the two economies meet.
+ *
+ * The god's verbs were priced in favor alone, so the game held two economies
+ * that never touched — worship made favor and favor bought the seventeen verbs,
+ * while magic made materials nothing the god did could ever spend. The
+ * systemic rule the shipped table now satisfies: **a verb that makes a thing in
+ * the world spends the material that thing is made of.**
+ *
+ * The shipped prices are read off `god-cost.json` rather than restated here, so
+ * a retune moves the test with the content instead of against it.
+ */
+describe('a verb that makes a thing spends the material it is made of', () => {
+  /** One stock, on a resolved bench. */
+  function stockOf(b: Bench, kind: 'stone' | 'labor' | 'essence' | 'insight' | 'passage'): number {
+    return componentOf(b.state, MATERIAL_STOCK).get(b.universe, kind);
+  }
+
+  function priceOf(actionId: number): Readonly<Record<string, number>> {
+    const price = COSTS.materialByAction[actionId];
+    if (price === undefined) throw new Error(`god-cost.json prices action ${String(actionId)} in no material`);
+    return price;
+  }
+
+  it('deducts the declared cost in the same tick the action succeeds', () => {
+    const b = bench({ mages: 1, incompleteUniversities: 1 });
+    const site = b.universities[0];
+    if (site === undefined) throw new Error('missing fixture');
+    const before = { stone: stockOf(b, 'stone'), labor: stockOf(b, 'labor') };
+    const outcome = resolve(b, [{ kind: ACTION.fundUniversity, params: [site] }]);
+    expect(outcome.applied).toBe(1);
+    const price = priceOf(ACTION.fundUniversity);
+    expect(before.stone - stockOf(b, 'stone')).toBe(price['stone']);
+    expect(before.labor - stockOf(b, 'labor')).toBe(price['labor']);
+  });
+
+  it('leaves every other kind exactly alone', () => {
+    // A deduction that reached for a total, or looped the wrong table, would
+    // still pass the assertion above.
+    const b = bench({ mages: 1 });
+    const before = stockOf(b, 'passage');
+    resolve(b, [{ kind: ACTION.blessMage, params: [mage(b, 0)] }]);
+    expect(stockOf(b, 'passage')).toBe(before);
+    expect(stockOf(b, 'insight')).toBeLessThan(1000 * 1024);
+  });
+
+  it('refuses the action outright when the stock cannot pay, and spends no favor', () => {
+    // The resolver is the authoritative half of a check the mask also makes —
+    // `mask.ts` clears the entry, and this refuses a submission that arrived
+    // anyway. §4.2's remedy, the same one an unaffordable favor price gets: a
+    // no-op and a count, never a negative stock.
+    const b = bench({ mages: 1, materials: 0 });
+    const favorBefore = favorOf(b.state, b.universe);
+    const outcome = resolve(b, [{ kind: ACTION.blessMage, params: [mage(b, 0)] }]);
+    expect(outcome.applied).toBe(0);
+    expect(outcome.refused).toBe(1);
+    expect(favorOf(b.state, b.universe)).toBe(favorBefore);
+    expect(stockOf(b, 'insight')).toBe(0);
+  });
+
+  it('applies a verb the table prices in no material, as it always did', () => {
+    // The positive control on the whole mechanism: sixteen of the seventeen
+    // rows name no material at all, and the loader accepts a mixed table
+    // precisely so that an unpriced verb is unaffected.
+    const b = bench({ materials: 0 });
+    expect(COSTS.materialByAction[ACTION.encourageResearch]).toBeUndefined();
+    const outcome = resolve(b, [{ kind: ACTION.encourageResearch, params: [1] }]);
+    expect(outcome.applied).toBe(1);
   });
 });
