@@ -116,10 +116,31 @@ the trunk is the only place a revision number means anything. The governing rule
 `migrations.ts`'s own — **"Append; never renumber"** — which is a rule about what a *merged*
 history may contain: whichever of these branches lands second renumbers, because a revision
 number is what a migration step is keyed on and reusing one silently applies the wrong repair
-to a save. (The parent brief cited `contracts.md` §4.4 for this; §4.4 on this ref is
-*"Parameterized actions and the explain channel"* and says nothing about schema revisions.
-`grep -rn "order of arrival"` over `docs/`, `packages/` and `openspec/` returns nothing. The
-resolution is unchanged; the citation was stale.)
+to a save.
+
+**And the rule is already written down, in a different document from the one the brief named.**
+`contracts.md` §4.4 is *"Parameterized actions and the explain channel"* and says nothing about
+schema revisions; `grep -rn "order of arrival"` over `docs/`, `packages/` and `openspec/` returns
+nothing. The section that governs this is **`docs/design/sim-rigor-2026-08-15.md` §4.4, "Collision 2
+— #170 and #171 both take world-schema revision 7"**, which names two of the branches in the table
+above and records that the same collision has already happened once: *"#171's own source records
+that `mid-raid-change` 'was written against revision 4… `grant-budget` had taken 5 and 6 in the
+meantime.' It is now being bumped a second time for the same reason."*
+
+It also supplies the reconciliation recipe, which now applies to **this** change as much as to
+those two — whichever of the three lands second takes 8:
+
+1. `WORLD_SCHEMA_VERSION = 8`.
+2. The migration step becomes `{ from: 7, to: 8 }`, not `{ from: 6, to: 7 }`.
+3. The marker check moves to the **front** of `worldSchemaVersionOf`'s newest-first chain, ahead of
+   whichever component took revision 7.
+4. The component stays **last** in `WORLD_COMPONENTS`.
+
+That document adds the reason it matters: *"Getting (2) or (3) wrong does not throw: an older save
+migrates through the wrong steps and lands holding the wrong sections."* For this change, step 4 is
+free — `material-stock` is not a new component and does not move in `WORLD_COMPONENTS` at all — and
+step 3 is the one to watch, because revision 7's marker here is a **field** and the branches it
+would be reordered against use **section** markers.
 
 ### The marker, which is the part that needed care
 

@@ -972,7 +972,8 @@ Three consequences a reader planning against this table needs:
   personality is drawn on stream 1 against her own entity handle — §6's
   insertion invariance makes a draw keyed on a handle that did not previously
   exist disturb nobody — so **no committed balance baseline is invalidated**.
-  `WORLD_SCHEMA_VERSION` stays at 6.
+  `WORLD_SCHEMA_VERSION` stays at 6. (A statement about *this* change, not about the tree: the
+  number is 7 as of 2026-08-16, and `invite-scholar` still costs no revision.)
 - **The roster is the caller's, exactly as `portalTargets` is**, and for the
   same §1.1 reason. An empty roster masks the action, which is what a universe
   with no allies means and what the control arm of the measurement supplies.
