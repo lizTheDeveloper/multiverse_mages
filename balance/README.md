@@ -5,6 +5,37 @@ Two kinds of file live here, and one command each.
     balance/sweeps/      the experiments, as committed JSON
     balance/baselines/   what each gate sweep measured, and how far it may move
 
+One further artifact, which is neither:
+
+    balance/metric-reachability.json   which metrics can be made to move at all
+
+## Before a metric may be gated or optimised — `npm run check:metric-reachability`
+
+A gate compares a metric against a baseline. It cannot tell you whether the metric is capable of
+moving in the first place, and **an instrument that cannot move reads as green forever**. The
+campaign found ten of those; every one was passing.
+
+So `scripts/check-metric-reachability.mjs` asks, per registered metric: ablate the mechanism it
+names, run paired arms under common random numbers, and report one of three verdicts —
+
+- **`moves`** — the paired 95% interval excludes zero. Safe to gate, safe to optimise.
+- **`inert`** — the experiment ran, the lever demonstrably reached the simulation, and the metric
+  did not respond. A finding *about the metric*.
+- **`not-measurable`** — the experiment could not be run: no producer, no observation, no pair, or a
+  lever that never reached the simulation. **Not** a claim that the mechanism does nothing.
+
+`inert ∪ not-measurable` is the **quarantine list**, and it is published rather than applied
+silently, because a silently-skipped metric is how this failure returns.
+
+**It is deliberately not in `npm run verify`.** It costs minutes, and — the load-bearing reason — a
+quarantine list must not be a build failure. The cheapest way to clear a build failure is to stop
+measuring, and this list is only worth anything while nobody is under pressure to shorten it. It
+exits non-zero on exactly one condition: a registered metric with *no* verdict, which is the
+silently-skipped metric the guard forbids.
+
+The report is stamped with the git SHA it was taken on. It will rot the day somebody wires a
+collector or consumes the ablation mask — re-run it rather than reading it.
+
 ## What the gates actually do
 
 There are **four** of them, and they are four instruments rather than one instrument run four times.
