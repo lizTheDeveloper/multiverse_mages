@@ -13313,3 +13313,48 @@ The rules, mechanical because the failure is:
   distinct disaster it has caught — the first was a PR carrying someone else's images under my title.
 - **Re-fetch `main` before building anything substantial on a branch**, not only before merging. A
   session long enough to be worth having is long enough for `main` to move underneath it.
+
+## W253 — The gates stopped blocking on the 14th; by the 16th all four baselines are stale
+
+[executed, 2026-08-16, `origin/main` @ ad7f80c2; provenance read from the committed baselines,
+content revision from `interning.test.ts`]
+
+W251 ended on a rule: **a gate's blocking status decides whether its baseline gets maintained.**
+That was written about one ungated baseline. It generalises worse than expected.
+
+    main content revision                8681bf84   (moved by #201)
+    balance-gate-v1                      0dfdd5ef
+    balance-gate-horizon-v1              0dfdd5ef
+    balance-gate-agency-v1               0dfdd5ef
+    balance-gate-ascension-v1            d4e30476
+
+**All four are baseline-invalid**, and `Balance gates (non-blocking)` is red on `main` for that
+reason rather than for a regression. `CLAUDE.md` records the change that caused it, with its
+argument intact: the three Monte Carlo gates left `npm run verify` on **2026-08-14** because they
+were the entire cost of checking a commit, the self-hosted runner serialises, and during a campaign
+every commit is sweep-bearing — so they queued every unrelated pull request behind a number that was
+moving on purpose. That reasoning is sound and the split is defended in `ci.yml`.
+
+**Two days later nothing forces a re-record, and nothing has been re-recorded.** The mechanism W251
+named is not specific to one ungated baseline: it is what *gating* was doing for all of them. A red
+PR is what made somebody re-record, and there are no red PRs now.
+
+This also supersedes **#203**. It re-records the ascension baseline to `0dfdd5ef`, which was
+`main`'s revision when the work started and is not `main`'s revision now. The re-record would need
+taking again against `8681bf84`, and the blind-metric finding it carries —
+`referenceNodesGainedFinalQuarter`, tolerance 3.034 against a value of 1.953 — would need
+re-measuring with it.
+
+Two green results worth recording beside that, both from tonight:
+
+    Primitive consumption (non-blocking)   failure -> SUCCESS    (#201)
+    Rules-path reachability ratchet        failure -> SUCCESS    (#204)
+
+So of the three red non-required jobs W251 found, two are fixed and the third turned out to be the
+visible end of a larger thing.
+
+The rule, sharpened: **moving a gate off the blocking path does not reduce it to "runs less often".
+It removes the only thing that was maintaining its baseline.** The split is still right — the queue
+argument is real — but it needs a replacement forcing function: a scheduled re-record, a release
+checklist item, or a gate that fails on provenance age rather than on a metric. #202's watcher makes
+the red visible; it does not make anybody re-record.
