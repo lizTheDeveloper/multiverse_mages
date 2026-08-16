@@ -32,6 +32,8 @@ export const SURFACES = [
    * view of — who the mages are, what they hold, which one you pick, and what
    * you fund. A university screen, when there is one, belongs here.
    */
+  { href: 'university/', label: 'university', hint: 'one college: its roster, its shelf, its reachable graph', group: 'academy' },
+  { href: 'economy/', label: 'economy', hint: 'who produces, who consumes, and what is short', group: 'academy' },
   { href: 'mage/', label: 'mage', hint: 'one mage, and why she chose it', group: 'academy' },
   { href: 'knowledge/', label: 'knowledge', hint: 'where the knowledge is', group: 'academy' },
   { href: 'targets/', label: 'targets', hint: 'choosing who', group: 'academy' },
@@ -51,7 +53,7 @@ export const SURFACES = [
   { href: 'ascension/', label: 'ascension', hint: 'the ending you have to choose', group: 'ending' },
 
   { href: 'design-dashboard/', label: 'dashboard', hint: 'the state of the design', group: 'meta' },
-  { href: '', label: 'index', hint: 'all fourteen, with what each answers', group: 'meta' },
+  { href: '', label: 'index', hint: 'every surface, with what each answers', group: 'meta' },
 ];
 
 /*
