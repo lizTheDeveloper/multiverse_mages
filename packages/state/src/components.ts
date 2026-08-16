@@ -539,6 +539,52 @@ export interface GrantBudgetRecord {
 
 export const GRANT_BUDGET_FIELDS_MATCH: KeysMatch<GrantBudgetRecord, typeof GRANT_BUDGET> = true;
 
+/**
+ * The bar's law-clock — `sound-design.md` §5.2's eight-bar unease, as state.
+ *
+ * §3.1 makes one world tick one bar. §5.2 says a permit's dissonance *"decays
+ * over about eight bars"*, which is the only duration the design attaches to a
+ * constitutional act, and this row is the one integer needed to know whether it
+ * is still ringing.
+ *
+ * **A component rather than two more fields on `god-state`.** §1.1's own note
+ * on that row explains why: a snapshot section carries its field table inline,
+ * so an added *field* reshapes the section and every older save has to be
+ * rewritten column by column, where an added *component* is an appended empty
+ * section — the migration shape this project has used three times and tested.
+ * Widening `god-state` would have been the obvious move and the expensive one.
+ *
+ * Created lazily on the first constitutional act, so *no row* means *this
+ * universe has never changed its own law*, which is exactly what it means. A
+ * universe that never legislates never pays.
+ *
+ * Deliberately holds only the unease. The other half of the timing rule — which
+ * of §3.1's subdivisions the bar is playing — is read from whether any project
+ * of that subsystem is in flight, and a cached bitmask would be a second record
+ * of a fact the effort rows already carry.
+ */
+export const BAR_PHASE = {
+  name: 'bar-phase',
+  fields: {
+    uneaseUntilTick: 'i32',
+    lastConstitutionalTick: 'i32',
+  },
+} as const satisfies ComponentSpec<ComponentFields>;
+
+export interface BarPhaseRecord {
+  /**
+   * World tick at which the last constitutional act's unease lapses.
+   *
+   * A constitutional act committed strictly before this pays the off-grid
+   * surcharge, scaled by how much of the decay is left.
+   */
+  uneaseUntilTick: Tick;
+  /** The tick the unease started on, so the remaining share is computable. */
+  lastConstitutionalTick: Tick;
+}
+
+export const BAR_PHASE_FIELDS_MATCH: KeysMatch<BarPhaseRecord, typeof BAR_PHASE> = true;
+
 // ---------------------------------------------------------------------------
 // §1.2 Mage. §1.3 Populace cohort.
 // ---------------------------------------------------------------------------
@@ -1070,6 +1116,11 @@ export const WORLD_COMPONENTS = [
   // after `material-stock` and so goes after it, however much both of them
   // read as if they belonged beside `UNIVERSE`.
   GRANT_BUDGET,
+  // And a third time, two revisions later. `bar-phase` takes world-schema
+  // revision **8** — 7 is reserved for `material-economy`, which is not in this
+  // tree — and it goes last for the same reason the two above do. §4.5: every
+  // component that has ever been added has been appended, never inserted.
+  BAR_PHASE,
 ] as const satisfies readonly ComponentSpec<ComponentFields>[];
 
 /** Engagement-scale components, in snapshot order. */

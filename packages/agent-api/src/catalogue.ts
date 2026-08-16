@@ -72,6 +72,23 @@ export interface ActionCostTable {
   readonly foundUniversity: number;
   /** What one recent flip of an axis adds to its multiplier, `fp`. */
   readonly hysteresisStep: number;
+  /**
+   * Bars `sound-design.md` §5.2's unease decays over, and what each one still
+   * ringing adds to a constitutional act's multiplier, `fp`.
+   *
+   * Here for the reason `hysteresisStep` is here. The mask reprices every
+   * action itself, and an action the mask calls affordable and the resolver
+   * refuses is not a cost — it is an illegal-action counter, which is the exact
+   * defect integration round 2 found in `uniform-random-legal`. Both numbers
+   * travel with the cost table so the two prices are the same arithmetic over
+   * the same content.
+   *
+   * Optional so that a catalogue built before this rule existed — a fixture, a
+   * hand-built cost table — reads as *no unease*, which is what a world with no
+   * `bar-phase` row is in.
+   */
+  readonly uneaseBars?: number;
+  readonly uneaseStep?: number;
 }
 
 /** Everything the observation needs from content, indexed for lookup. */

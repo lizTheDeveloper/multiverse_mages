@@ -267,6 +267,17 @@ export const TRAIT_CLASSIFICATION: Readonly<
     grantsUsed: undecided(),
     seededNodes: undecided(),
   },
+  // §5.2's eight-bar unease. Both fields are ticks on a universe row, and both
+  // are `undecided()` for the same reason `grant-budget`'s are: they price the
+  // god's next constitutional act and the agent is subject to them without
+  // seeing them. Classified here rather than left absent because
+  // `assertAllTraitsClassified` refuses a component with no classification at
+  // all — which is the check working, on the `w21/timing-and-envelopes` merge
+  // that introduced the component.
+  'bar-phase': {
+    uneaseUntilTick: undecided(),
+    lastConstitutionalTick: undecided(),
+  },
   combatant: {
     sourceKind: undecided(),
     sourceId: undecided(),

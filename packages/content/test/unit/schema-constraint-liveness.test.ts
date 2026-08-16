@@ -165,6 +165,7 @@ const SHADOWED: readonly { readonly constraint: string; readonly why: string }[]
     'primitive.schema.json#/$defs/primitive/properties/scale',
     'primitive.schema.json#/$defs/primitive/properties/stacking',
     'primitive.schema.json#/$defs/cap/properties/kind',
+    'technique.schema.json#/$defs/envelope/properties/tuningStatus',
     'god-cost.schema.json#/$defs/godCost/properties/tuningStatus',
     'god-constant.schema.json#/$defs/godConstant/properties/unit',
     'god-constant.schema.json#/$defs/godConstant/properties/tuningStatus',

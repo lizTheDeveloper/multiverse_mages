@@ -531,7 +531,26 @@ describe('contentRevision', () => {
     //
     // MEASURED rather than assumed: `node packages/content/bin/validate-content.mjs`
     // on the merged tree still reports `1f5036f71cd6a1b6e2036c70e32a7530`.
-    expect(registry.contentRevision).toBe('1f5036f71cd6a1b6e2036c70e32a7530');
+    // a622452a3b55e38fd902a2d3264b44d7 -> d89d4eefa457f08c90a25e9f02039675, when W21 gave
+    // each technique an `envelope` (§2.1) — `sound-design.md` §4.1's shape over
+    // the duration an acquisition takes — and added §5.2's two unease constants
+    // to `god-constant.json`. The envelope belongs in the preimage more squarely
+    // than most: it is the only thing in the project that makes the five
+    // techniques mechanically different from one another, so two universes
+    // disagreeing about a curve would be researching at different speeds, on
+    // different trajectories, while their revisions agreed they were
+    // compatible. The unease constants belong for the reason the rest of the
+    // god table does — two universes disagreeing about what changing the law
+    // costs are playing different games.
+    //
+    // 1f5036f71cd6a1b6e2036c70e32a7530 -> c0276a360357ff2e4e27932552e2a3e0, on
+    // the W21 merge, and neither side's literal survives for the eighth time.
+    // `1f5036f7` is a digest over a preimage with no technique envelope and no
+    // unease constants; `d89d4eef` over one with both and without the signed
+    // magnitudes, the vellum yield, the seventeenth god cost or `prevalence`.
+    // MEASURED: `node packages/content/bin/validate-content.mjs` reports 74 god
+    // constants (72 + `unease-bars` + `unease-step`) and this digest.
+    expect(registry.contentRevision).toBe('c0276a360357ff2e4e27932552e2a3e0');
   });
 
   it('is stable across loads of identical content', () => {

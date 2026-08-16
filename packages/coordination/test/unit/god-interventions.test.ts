@@ -60,6 +60,8 @@ import { constants, costs, godWorld, nodesCarrying } from './god-fixtures.js';
 
 const C = constants();
 const COSTS = costs();
+/** `sound-design.md` §5.2's eight bars, read from content rather than assumed. */
+const UNEASE_BARS = C.uneaseBars;
 const SCHEMA = defineWorldStateSchema([]);
 
 /** A universe with enough favor to buy anything, and the deps to act on it. */
@@ -312,10 +314,16 @@ describe('technique and form toggles are symmetric and immediate', () => {
 
   it('escalates the price of a second flip of the same axis', () => {
     const b = bench();
+    // Eight bars apart, which is `sound-design.md` §5.2's unease window. This
+    // test is about hysteresis — the price of flipping *one axis* back and
+    // forth — and letting the two acts land in the same phrase would measure
+    // the product of two rules and attribute it to one.
     const first = favorOf(b.state, b.universe);
-    expect(resolve(b, [{ kind: ACTION.forbidTechnique, params: [1] }]).applied).toBe(1);
+    expect(resolve(b, [{ kind: ACTION.forbidTechnique, params: [1] }], 0).applied).toBe(1);
     const afterFirst = favorOf(b.state, b.universe);
-    expect(resolve(b, [{ kind: ACTION.permitTechnique, params: [1] }]).applied).toBe(1);
+    expect(
+      resolve(b, [{ kind: ACTION.permitTechnique, params: [1] }], UNEASE_BARS).applied,
+    ).toBe(1);
     const afterSecond = favorOf(b.state, b.universe);
     expect(first - afterFirst).toBeGreaterThan(0);
     expect(afterFirst - afterSecond).toBe((first - afterFirst) * 2);
@@ -324,15 +332,19 @@ describe('technique and form toggles are symmetric and immediate', () => {
   it('keeps escalation per axis rather than global', () => {
     const b = bench();
     const base = COSTS.byAction[ACTION.forbidTechnique] ?? 0;
-    const churn = resolve(b, [
-      { kind: ACTION.forbidTechnique, params: [1] },
-      { kind: ACTION.permitTechnique, params: [1] },
-      { kind: ACTION.forbidTechnique, params: [1] },
-    ]);
-    expect(churn.applied).toBe(3);
+    // One act per phrase, for the reason above.
+    for (const [tick, kind] of [
+      [0, ACTION.forbidTechnique],
+      [UNEASE_BARS, ACTION.permitTechnique],
+      [2 * UNEASE_BARS, ACTION.forbidTechnique],
+    ] as const) {
+      expect(resolve(b, [{ kind, params: [1] }], tick).applied).toBe(1);
+    }
     const before = favorOf(b.state, b.universe);
     // A different technique, never touched, pays the base price.
-    expect(resolve(b, [{ kind: ACTION.forbidTechnique, params: [2] }]).applied).toBe(1);
+    expect(
+      resolve(b, [{ kind: ACTION.forbidTechnique, params: [2] }], 3 * UNEASE_BARS).applied,
+    ).toBe(1);
     expect(before - favorOf(b.state, b.universe)).toBe(base);
   });
 

@@ -76,10 +76,11 @@ import type { CombatEffectIndex } from '@mm/rules-raid';
 import { combatEffectIndex } from '@mm/rules-raid';
 import type { WorldStepDeps } from '@mm/coordination';
 import {
+  academicEffectIndex,
+  envelopeResolver,
   godEffectHooks,
   nodeFacetsFrom,
   resolveGodContent,
-  academicEffectIndex,
   universeEffectIndex,
   vitalityIndex,
 } from '@mm/coordination';
@@ -587,6 +588,12 @@ export function contentCatalogue(registry: ContentRegistry): ContentCatalogue {
     byAction: god.costs.byAction,
     foundUniversity: god.costs.foundUniversity,
     hysteresisStep: god.constants.hysteresisStep,
+    // `sound-design.md` §5.2's eight bars. The mask reprices every action
+    // itself, so these travel with the prices — an action the mask calls
+    // affordable and the resolver refuses is not a cost, it is an
+    // illegal-action counter.
+    uneaseBars: god.constants.uneaseBars,
+    uneaseStep: god.constants.uneaseStep,
   });
 }
 
@@ -729,6 +736,11 @@ export function worldDeps(
     // import. `raids.ts` reads it off `content.deps`, which is
     // `ReturnType<typeof worldDeps>` and so picks the widening up for free.
     combat: combatEffectIndex(registry, recorder),
+    // `sound-design.md` §4.1's shape, per technique. Built here because this is
+    // where a registry is in hand; the arithmetic that reads it is
+    // `@mm/primitives`' and the resolution is `@mm/coordination`'s. This file
+    // wires; it does not compute.
+    envelopes: envelopeResolver(registry, cells),
     facets: nodeFacetsFrom(registry),
     affinitiesOf: (species) => {
       const cached = affinityCache.get(species.id);

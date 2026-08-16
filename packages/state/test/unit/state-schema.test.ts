@@ -173,6 +173,12 @@ describe('the world schema is stable in the way the snapshot format needs', () =
       // Appended by the founding-grant budget, as world-schema revision 6, and
       // after `material-stock` for exactly the reason above.
       'grant-budget',
+      // Appended as world-schema revision 8: sound-design.md §5.2's eight-bar
+      // unease, which is the one duration the design attaches to a
+      // constitutional act. A component rather than two more fields on
+      // `god-state`, because a section carries its field table inline — see
+      // §1.1's own note on why widening a row is the expensive shape.
+      'bar-phase',
     ]);
   });
 

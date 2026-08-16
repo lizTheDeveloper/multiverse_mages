@@ -114,6 +114,8 @@ export const REQUIRED_GOD_CONSTANTS: readonly string[] = Object.freeze([
   'stagnation-worship-ticks',
   'tradition-shock',
   'tradition-shock-ticks',
+  'unease-bars',
+  'unease-step',
   'upheaval-shock-floor',
   'upheaval-ticks',
   'worship-lag-fall',

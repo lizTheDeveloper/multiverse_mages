@@ -80,6 +80,7 @@ import type {
 import { decodeSnapshot, envelopeToState, floorDiv } from '@mm/sim-core';
 
 import {
+  BAR_PHASE,
   BLESSING,
   EFFORT_PROGRESS,
   ERA_EVALUATION,
@@ -107,6 +108,8 @@ import {
  * `universe` layout, because leaving it would leave a stock nothing spends
  * beside three stocks everything does. See {@link splitMaterialsByKind} for the
  * split rule and for why a section rewrite is safe here.
+ * | **7**    | *reserved*          | **not in this tree** — `material-stock` widened from three kinds to seven, on `w247/material-economy-build`. See {@link addBarPhase}. |
+ * | 8        | W21 timing          | adds `bar-phase` — sound-design §5.2's eight-bar unease |
  *
  * Revision 4 adds four components in one step, where the two before it added
  * one each. That is not a loosening of the rule — it is what the rule is for.
@@ -119,7 +122,7 @@ import {
  * **Append; never renumber.** A revision number is what a migration step is
  * keyed on, so reusing one silently applies the wrong repair to a save.
  */
-export const WORLD_SCHEMA_VERSION = 6;
+export const WORLD_SCHEMA_VERSION = 8;
 
 /**
  * The world-schema revision an envelope was written by.
@@ -137,6 +140,18 @@ export const WORLD_SCHEMA_VERSION = 6;
  */
 export function worldSchemaVersionOf(envelope: SnapshotEnvelope): number {
   const carried = new Set(envelope.components.map((component) => component.name));
+  // **Revision 8's marker is `bar-phase`, and it is checked first** — §4.4 step
+  // 3: the newest marker leads the chain, or a save written by this build reads
+  // as revision 6 (it carries `grant-budget` too) and is walked through a
+  // migration it has already had.
+  //
+  // Revision 7 has no arm here on purpose. It belongs to
+  // `w247/material-economy-build`, which is not in this tree, and its marker is
+  // a **field** on `material-stock` rather than a component — so it cannot be
+  // detected by this function's component test at all, and adding a component
+  // arm for it would misidentify some other revision. The combiner adds the
+  // field test, above this line, when that branch arrives.
+  if (carried.has(BAR_PHASE.name)) return 8;
   // Revision 6's marker is `grant-budget`, and it is checked first because a
   // revision-6 envelope also carries `material-stock` — newest marker wins, or
   // every save written since the budget landed would be walked through a
@@ -430,6 +445,57 @@ export const addGrantBudget: WorldSchemaMigration = {
   },
 };
 
+/**
+ * Revision 6 → **8**: append an empty `bar-phase` section, across a reserved
+ * revision 7 that is not in this tree.
+ *
+ * `sound-design.md` §5.2's eight-bar unease needs one integer per universe, and
+ * §1.1's note on `god-state` says plainly which shape to give it: an added
+ * component is an appended empty section, an added *field* reshapes a section
+ * and rewrites every older save column by column.
+ *
+ * Empty, for the reason the four steps before it were. No row means the universe
+ * has never changed its own law, which is true of every save written before the
+ * rule existed — and a synthesised row would hand a restored universe a decaying
+ * unease over an act nobody ever committed, which is the cost surcharge
+ * equivalent of inventing a `favorWasted` nobody wasted.
+ *
+ * ## Why this step spans two revisions, which no other step does
+ *
+ * W21 authored this as `{ from: 4, to: 5 }` against a `main` at revision 4. By
+ * the time it merged, `main` was at 6 and **revision 7 was already spoken for**
+ * by `w247/material-economy-build`, which widens `material-stock` from three
+ * kinds to seven and marks the revision with a **field** rather than a
+ * component. That branch is combined with this one afterwards, so 7 must be left
+ * free here — and this component takes **8**.
+ *
+ * The hole cannot be filled with a placeholder. {@link migrateWorldEnvelope}
+ * refuses a step whose result does not read as a higher revision than its input,
+ * and no marker for 7 exists in this tree to leave behind, so a no-op 6 → 7 step
+ * would throw rather than pass through. Bridging 6 → 8 is the only shape that
+ * both reserves 7 and leaves a revision-6 save migratable, which is the property
+ * that actually matters to a player.
+ *
+ * **What the combiner must do**, stated here so it is not rediscovered: once
+ * `material-economy`'s `{ from: 6, to: 7 }` step is in the tree, this step's
+ * `from` becomes **7** and the bridge disappears. Until that flip,
+ * `worldSchemaVersionOf` will read a snapshot written by this build as revision
+ * 8 and the combined build will therefore never run the widening on it — so **no
+ * snapshot serialized from this branch may be persisted across the combine.**
+ * Nothing in this repository writes one today; that sentence is here for the day
+ * something does.
+ */
+export const addBarPhase: WorldSchemaMigration = {
+  from: 6,
+  to: 8,
+  migrate(envelope) {
+    return {
+      ...envelope,
+      components: [...envelope.components, emptySection(BAR_PHASE)],
+    };
+  },
+};
+
 /** Every step this build knows, ascending by source revision. */
 export const WORLD_SCHEMA_MIGRATIONS: readonly WorldSchemaMigration[] = [
   addGoalCommitment,
@@ -437,6 +503,7 @@ export const WORLD_SCHEMA_MIGRATIONS: readonly WorldSchemaMigration[] = [
   addGodAgencyState,
   splitMaterialsByKind,
   addGrantBudget,
+  addBarPhase,
 ];
 
 /**

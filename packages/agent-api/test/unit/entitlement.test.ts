@@ -139,12 +139,18 @@ describe('unclassifiedTraits (step 2)', () => {
    * moves, `docs/design/observable-trait-inventory.md` is stale and its date and
    * ref line are lying about the tree.
    */
-  it('covers the 108 traits the inventory counted at be446a6', () => {
+  it('covers the 110 traits the inventory counted at be446a6, plus bar-phase', () => {
     let traits = 0;
     for (const spec of [...WORLD_COMPONENTS, ...ENGAGEMENT_COMPONENTS]) {
       traits += Object.keys(spec.fields).length;
     }
-    expect(traits).toBe(108);
+    // 108 at `be446a6`, plus `bar-phase`'s two fields
+    // (`uneaseUntilTick`, `lastConstitutionalTick`) on the
+    // `w21/timing-and-envelopes` merge. The count is the point of the test, so
+    // it moves with the component set rather than being loosened to `>=`;
+    // `docs/design/observable-trait-inventory.md` is the document this is
+    // keeping honest and it now reads two traits short.
+    expect(traits).toBe(110);
 
     let classified = 0;
     for (const rows of Object.values(TRAIT_CLASSIFICATION)) {
@@ -168,7 +174,10 @@ describe('unclassifiedTraits (step 2)', () => {
         byReason.set(reason, (byReason.get(reason) ?? 0) + 1);
       }
     }
-    expect(byReason.get('not-yet-decided')).toBe(70);
+    // 70 + `bar-phase`'s two, both `undecided()` for `grant-budget`'s reason:
+    // they price the god's next constitutional act and the agent is subject to
+    // them without seeing them.
+    expect(byReason.get('not-yet-decided')).toBe(72);
     expect(byReason.get('internal-bookkeeping')).toBe(6);
     // Unused until there is an opponent-facing projection to hide anything
     // from. Asserted at zero so that the day it stops being zero is a diff.

@@ -46,11 +46,38 @@ export type ContentNamespace =
   | 'raid-constant'
   | 'autonomy-weight';
 
+/**
+ * `sound-design.md` §4.1's envelope, as content.
+ *
+ * The shape a technique imposes on the effort an acquisition takes, indexed on
+ * `progress / required` in eight equal slots. The arithmetic that reads it is
+ * `@mm/primitives`' `envelopeMultiplier`, and the invariant the loader enforces
+ * — that the slot reciprocals sum to the flat curve's — is that module's
+ * `envelopeHarmonicSum`. Declared here because content declares shapes;
+ * computed there because `@mm/content` is dependency-free by mechanical check
+ * and so cannot reach `sim-core`'s single shared `floorDiv`.
+ */
+export interface EnvelopeRecord {
+  readonly id: string;
+  readonly gloss: string;
+  /** Exactly eight fp multipliers on effort, in order. */
+  readonly slots: readonly Fp[];
+  readonly tuningStatus: TuningStatus;
+}
+
 export interface TechniqueRecord {
   readonly id: string;
   readonly name: string;
   readonly gloss: string;
   readonly bit: number;
+  /**
+   * `sound-design.md` §4.1: *"Techniques are envelopes."* Required, because a
+   * technique without one is a technique the shape rule silently skips, and the
+   * five shapes are the whole of what distinguishes the techniques mechanically
+   * — before this field, nothing in the tree branched on technique identity at
+   * all.
+   */
+  readonly envelope: EnvelopeRecord;
 }
 
 /**
