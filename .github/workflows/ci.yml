@@ -485,6 +485,59 @@ jobs:
       - name: Primitive consumption (can knowledge move each primitive?)
         run: npm run check:consumption
 
+  baselines:
+    # Do the committed baselines name the content they were taken on?
+    #
+    # A second, against the gates' minutes. `balance` and `ascension` answer
+    # *"did a metric move"*; this answers the strictly weaker *"is this baseline
+    # even about this build"*, and a gate whose baseline names another revision
+    # reports `baseline-invalid` and compares nothing at all.
+    #
+    # ## Why it exists
+    #
+    # The three Monte Carlo gates left `npm run verify` on 2026-08-14 for a good
+    # reason, recorded in the `balance` job below: they were the whole cost of
+    # checking a commit, the self-hosted runner serialises, and during a
+    # campaign every commit is sweep-bearing. **Two days later all four
+    # baselines were stale** — `main`'s content revision had moved and nothing
+    # had been re-recorded, because a red pull request is what used to force it
+    # and there are no red pull requests when the gate does not block.
+    #
+    # Moving a gate off the blocking path does not reduce it to "runs less
+    # often". It removes the only thing that was maintaining its baseline. This
+    # restores the forcing signal without restoring the cost.
+    #
+    # ## When to make this blocking
+    #
+    # Put `check:baselines` into `verify` — and therefore into
+    # `scripts/ci-check.sh` through the same gate — once every baseline names
+    # the current revision. Adding it while four of four are stale would block
+    # every unrelated pull request on a re-record nobody has scheduled, which is
+    # the failure the split of 2026-08-14 was avoiding.
+    name: Baseline freshness (non-blocking)
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node from .nvmrc
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - name: Install
+        run: npm ci
+
+      # It reads the *loader's* revision rather than the literal pinned in
+      # `interning.test.ts`, so it needs the build: a stale test and a stale
+      # baseline agreeing with each other would otherwise pass.
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Do the baselines name this content?
+        run: npm run check:baselines
+
   reachability:
     # The same question as `consumption`, one level down: `check:consumption`
     # asks whether an authored *primitive* reaches the simulation; this asks
