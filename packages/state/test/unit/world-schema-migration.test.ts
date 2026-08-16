@@ -63,6 +63,7 @@ import {
   migrateWorldEnvelope,
   readRecord,
   splitMaterialsByKind,
+  widenMaterialStock,
   worldSchemaVersionOf,
 } from '@mm/state';
 
@@ -154,9 +155,54 @@ function revisionFourEnvelope(materialsValue: number = LEGACY_MATERIALS_VALUE): 
   return withLegacyMaterialsField(envelopeWithout(MATERIAL_STOCK.name, GRANT_BUDGET.name), materialsValue);
 }
 
+/**
+ * The three kinds `material-stock` carried at revisions 5 and 6, frozen.
+ *
+ * A literal rather than `Object.keys(MATERIAL_STOCK.fields)`, and the same
+ * reason the migration itself freezes it: the live spec now names seven, so a
+ * fixture reading the spec would build a **revision-7** section and call it a
+ * revision-5 one.
+ */
+const REVISION_FIVE_KINDS = ['food', 'stone', 'vellum'] as const;
+
+/** Rebuilds `material-stock` with only the columns revision 6 knew about. */
+function withThreeKindStock(envelope: SnapshotEnvelope): SnapshotEnvelope {
+  const stock = envelope.components.find((component) => component.name === MATERIAL_STOCK.name);
+  if (stock === undefined) return envelope;
+
+  const width = stock.fields.length;
+  const rows = stock.slots.length;
+  const keep = REVISION_FIVE_KINDS.map((kind) =>
+    stock.fields.findIndex((field) => field.name === kind),
+  );
+  const values = new Uint32Array(rows * keep.length);
+  for (let row = 0; row < rows; row += 1) {
+    for (let index = 0; index < keep.length; index += 1) {
+      values[row * keep.length + index] = stock.values[row * width + (keep[index] as number)] as number;
+    }
+  }
+  const rewritten: SnapshotComponent = {
+    name: stock.name,
+    fields: REVISION_FIVE_KINDS.map((kind) => ({ name: kind, kind: 'i32' as const })),
+    slots: stock.slots,
+    values,
+  };
+  return {
+    ...envelope,
+    components: envelope.components.map((component) =>
+      component.name === MATERIAL_STOCK.name ? rewritten : component,
+    ),
+  };
+}
+
 /** The world as the last build whose founding grants were unlimited saw it. */
 function revisionFiveEnvelope(): SnapshotEnvelope {
-  return envelopeWithout(GRANT_BUDGET.name);
+  return withThreeKindStock(envelopeWithout(GRANT_BUDGET.name));
+}
+
+/** The world as the last build with only three material kinds saw it. */
+function revisionSixEnvelope(): SnapshotEnvelope {
+  return withThreeKindStock(stateToEnvelope(populatedWorld().state));
 }
 
 describe('the world-schema revision is read off the snapshot itself', () => {
@@ -166,6 +212,7 @@ describe('the world-schema revision is read off the snapshot itself', () => {
     expect(worldSchemaVersionOf(revisionThreeEnvelope())).toBe(3);
     expect(worldSchemaVersionOf(revisionFourEnvelope())).toBe(4);
     expect(worldSchemaVersionOf(revisionFiveEnvelope())).toBe(5);
+    expect(worldSchemaVersionOf(revisionSixEnvelope())).toBe(6);
     expect(worldSchemaVersionOf(stateToEnvelope(populatedWorld().state))).toBe(
       WORLD_SCHEMA_VERSION,
     );
@@ -178,7 +225,7 @@ describe('the world-schema revision is read off the snapshot itself', () => {
     // hash in the project and fails the fixtures with a version error rather
     // than a behaviour diff.
     expect(SNAPSHOT_VERSION).toBe(1);
-    expect(WORLD_SCHEMA_VERSION).toBe(6);
+    expect(WORLD_SCHEMA_VERSION).toBe(7);
   });
 });
 
@@ -340,7 +387,12 @@ describe('migrating a revision-4 world snapshot forward (splitMaterialsByKind)',
     expect(universe?.fields.map((field) => field.name)).not.toContain('materials');
 
     const stock = after.components.find((component) => component.name === MATERIAL_STOCK.name);
-    expect(stock?.fields.map((field) => field.name)).toEqual(Object.keys(MATERIAL_STOCK.fields));
+    // The frozen three, **not** `Object.keys(MATERIAL_STOCK.fields)`. Revision 5
+    // produced three columns; the live spec now names seven, and a step that read
+    // the spec would emit a revision-7 section from a revision-4 save — which
+    // reads as revision 7 immediately, so the walk exits and `addGrantBudget`
+    // never runs. See the walk test below.
+    expect(stock?.fields.map((field) => field.name)).toEqual([...REVISION_FIVE_KINDS]);
     expect(stock?.slots).toEqual(universe?.slots);
     // LEGACY_MATERIALS_VALUE is 1000, not a multiple of three: trunc(1000/3)
     // is 333, so stone and vellum get 333 each and food takes the remainder
@@ -517,6 +569,116 @@ describe('migrating a revision-5 world snapshot forward', () => {
   });
 });
 
+describe('migrating a revision-6 world snapshot forward (widenMaterialStock)', () => {
+  it('appends the four new kinds at zero and leaves the three it found alone', () => {
+    const before = revisionSixEnvelope();
+    const beforeStock = before.components.find((c) => c.name === MATERIAL_STOCK.name);
+    if (beforeStock === undefined) throw new Error('fixture must carry a material-stock section');
+
+    const after = widenMaterialStock.migrate(before);
+    expect(worldSchemaVersionOf(after)).toBe(7);
+
+    const stock = after.components.find((c) => c.name === MATERIAL_STOCK.name);
+    expect(stock?.fields.map((field) => field.name)).toEqual(Object.keys(MATERIAL_STOCK.fields));
+    expect(stock?.slots).toEqual(beforeStock.slots);
+
+    const width = stock?.fields.length ?? 0;
+    for (let row = 0; row < beforeStock.slots.length; row += 1) {
+      for (let index = 0; index < REVISION_FIVE_KINDS.length; index += 1) {
+        expect(
+          stock?.values[row * width + index],
+          `${String(REVISION_FIVE_KINDS[index])} at row ${String(row)} moved across a migration ` +
+            'documented to append columns and touch nothing',
+        ).toBe(beforeStock.values[row * REVISION_FIVE_KINDS.length + index]);
+      }
+      // **An absent kind reads zero, never as a shortage.** This is the whole
+      // requirement: a migrated save must not starve on a stock it was never
+      // given the chance to accumulate.
+      for (let index = REVISION_FIVE_KINDS.length; index < width; index += 1) {
+        expect(
+          stock?.values[row * width + index],
+          `${String(stock?.fields[index]?.name)} at row ${String(row)} did not read zero`,
+        ).toBe(0);
+      }
+    }
+  });
+
+  it('widens a section with no rows at all', () => {
+    // A schema declared and never stepped. The columns still have to arrive, or
+    // the component check refuses the restored state on the field list alone.
+    const before = revisionSixEnvelope();
+    const emptied: SnapshotEnvelope = {
+      ...before,
+      components: before.components.map((component) =>
+        component.name === MATERIAL_STOCK.name
+          ? { ...component, slots: new Uint32Array(0), values: new Uint32Array(0) }
+          : component,
+      ),
+    };
+    const stock = widenMaterialStock
+      .migrate(emptied)
+      .components.find((c) => c.name === MATERIAL_STOCK.name);
+    expect(stock?.fields.map((field) => field.name)).toEqual(Object.keys(MATERIAL_STOCK.fields));
+    expect(stock?.values.length).toBe(0);
+  });
+
+  it('leaves the container format version exactly where it found it', () => {
+    const before = revisionSixEnvelope();
+    expect(widenMaterialStock.migrate(before).version).toBe(before.version);
+    expect(widenMaterialStock.migrate(before).version).toBe(SNAPSHOT_VERSION);
+  });
+
+  it('does not mutate the envelope it was given', () => {
+    const before = revisionSixEnvelope();
+    const stock = before.components.find((c) => c.name === MATERIAL_STOCK.name);
+    const width = stock?.fields.length;
+    widenMaterialStock.migrate(before);
+    expect(
+      before.components.find((c) => c.name === MATERIAL_STOCK.name)?.fields.length,
+    ).toBe(width);
+  });
+
+  it('walks a revision-4 save to 7 without skipping the grant budget', () => {
+    // The regression test for the trap this revision very nearly shipped.
+    //
+    // `splitMaterialsByKind` used to build its field table from
+    // `Object.keys(MATERIAL_STOCK.fields)` — the *live* spec. The moment the
+    // spec named seven kinds, the 4 -> 5 step emitted a seven-column section, a
+    // revision-4 save read as **revision 7** the instant it reached 5, and
+    // `migrateWorldEnvelope`'s loop exited with `grant-budget` never appended:
+    // a save silently missing a component, produced by a migration that threw
+    // nothing.
+    for (const envelope of [revisionOneEnvelope(), revisionFourEnvelope()]) {
+      const walked = migrateWorldEnvelope(envelope);
+      expect(worldSchemaVersionOf(walked)).toBe(WORLD_SCHEMA_VERSION);
+      expect(walked.components.map((component) => component.name)).toContain(GRANT_BUDGET.name);
+      const stock = walked.components.find((c) => c.name === MATERIAL_STOCK.name);
+      expect(stock?.fields.map((field) => field.name)).toEqual(Object.keys(MATERIAL_STOCK.fields));
+    }
+  });
+
+  it('restores a revision-6 save with the four new kinds at zero and nothing else moved', () => {
+    // End to end, through the real loader. The four kinds read zero; every
+    // metric the world produced before the migration is byte-identical, which
+    // is the spec's *"an absent kind is not a shortage"* stated as a hash.
+    const { state, universe } = populatedWorld();
+    const migrated = loadWorldSnapshot(
+      encodeSnapshot(revisionSixEnvelope()),
+      defineWorldStateSchema(),
+    );
+
+    const row = readRecord(migrated, MATERIAL_STOCK, universe);
+    expect(row).toEqual(readRecord(state, MATERIAL_STOCK, universe));
+    expect(row.labor).toBe(0);
+    expect(row.essence).toBe(0);
+    expect(row.insight).toBe(0);
+    expect(row.passage).toBe(0);
+
+    expect(snapshotHash(migrated)).toBe(snapshotHash(state));
+    expect(Array.from(serializeState(migrated))).toEqual(Array.from(serializeState(state)));
+  });
+});
+
 describe('an older save loads into a current world', () => {
   it('loads, and nobody in it is committed to anything or part-way through anything', () => {
     const bytes = encodeSnapshot(revisionOneEnvelope());
@@ -597,6 +759,7 @@ describe('an older save loads into a current world', () => {
       [encodeSnapshot(revisionThreeEnvelope()), /god-state/],
       [encodeSnapshot(revisionFourEnvelope()), /material-stock/],
       [encodeSnapshot(revisionFiveEnvelope()), /grant-budget/],
+      [encodeSnapshot(revisionSixEnvelope()), /material-stock/],
     ] as const) {
       expect(() => loadWorldSnapshot(bytes, defineWorldStateSchema())).not.toThrow();
       expect(() => envelopeToState(decodeSnapshot(bytes), defineWorldStateSchema())).toThrow(
