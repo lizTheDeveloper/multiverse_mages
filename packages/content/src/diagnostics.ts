@@ -47,6 +47,7 @@ export type ContentDiagnosticCode =
   | 'prerequisite-cycle'
   | 'inverted-tier'
   | 'edict-conflict'
+  | 'technique-sign'
   | 'asymmetric-exclusion'
   | 'self-exclusion'
   | 'intellego-exclusion'

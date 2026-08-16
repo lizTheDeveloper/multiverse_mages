@@ -31,10 +31,10 @@
  * silently:
  *
  * 1. §1's package rows each sum across the categories to their own total.
- * 2. §1's totals row is the sum of the package rows, and equals 125.
+ * 2. §1's totals row is the sum of the package rows, and equals 129.
  * 3. §2's per-mechanism counts sum to the number its closing sentence claims.
  * 4. That claim is not larger than §1's integration-debt total.
- * 5. The 125 matches `scripts/reachability-baseline.json` — the document and the
+ * 5. The 129 matches `scripts/reachability-baseline.json` — the document and the
  *    gate describe the same tree.
  *
  * What it deliberately does **not** check is the *classification*: whether
@@ -105,7 +105,7 @@ describe('the reachability triage document', () => {
     }
   });
 
-  it('has a totals row equal to the sum of the package rows, and to 125', () => {
+  it('has a totals row equal to the sum of the package rows, and to 129', () => {
     expect(totalsRow).toHaveLength(1);
     const totals = totalsRow[0]!.slice(1);
 
@@ -115,7 +115,7 @@ describe('the reachability triage document', () => {
         `column ${String(column)}: ${String(stated)}`,
       );
     }
-    expect(totals.at(-1)).toBe(125);
+    expect(totals.at(-1)).toBe(129);
   });
 
   it('has a §2 table whose counts sum to the total its closing sentence claims', () => {

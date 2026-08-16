@@ -76,6 +76,7 @@ describe('additive stacking', () => {
     expect(stackMagnitudes(areaDenial, [fromInt(3), fromInt(4)])).toEqual({
       value: fromInt(7),
       clamped: false,
+      floored: false,
     });
   });
 
