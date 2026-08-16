@@ -26,6 +26,7 @@
     "check:generated": "node scripts/check-generated-artifacts.mjs",
     "check:reachability:ratchet": "node scripts/check-reachability-ratchet.mjs",
     "reachability:pin": "node scripts/check-reachability-ratchet.mjs --update",
+    "check:metric-reachability": "node scripts/check-metric-reachability.mjs",
     "content:map": "node scripts/content-graph.mjs --format map",
     "content:graph": "node scripts/content-graph.mjs --format html",
     "audio:generate": "node scripts/generate-audio.mjs",

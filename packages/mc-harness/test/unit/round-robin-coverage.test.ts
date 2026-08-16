@@ -35,14 +35,25 @@
  * measured at `--replicates 24` (96 runs, twelve per strategy, all eight
  * covered) reads 0.115.
  *
- * These tests do not fix anything. They pin the behaviour so the arithmetic is
- * checkable, and they state the guard that is missing.
+ * The first four tests pin the arithmetic, which is unchanged: `assignStrategies`
+ * still cycles on the replicate index and still ignores `cellIndex`, because
+ * that is what round-robin *means* and changing it would silently re-seed every
+ * committed sweep.
+ *
+ * **W18 supplies the guard the last test used to record as missing.**
+ * `validateSweep` now refuses a round-robin sweep whose replicate count is not a
+ * multiple of its pool size, and `coverageProblem` asserts the coverage that was
+ * actually observed after the records come back. Refusal rather than a warning:
+ * this defect reached a committed constant once already.
  */
 
 import { describe, expect, it } from 'vitest';
 
-import { assignStrategies } from '../../src/sweep-spec.js';
+import { coverageProblem } from '../../src/tuner.js';
+import type { StrategyOutcome } from '../../src/tuner.js';
+import { assignStrategies, roundRobinCoverageProblem, validateSweep } from '../../src/sweep-spec.js';
 import type { AgentPoolSpec } from '../../src/sweep-spec.js';
+import { TOY_REGISTRIES, toySweep } from './fixtures.js';
 
 const EIGHT = [
   'passive-control',
@@ -107,13 +118,83 @@ describe('round-robin coverage depends on replicates alone, never on the cell co
     expect([...counts.values()].sort((a, b) => a - b)).toEqual([4, 4, 4, 4, 8, 8, 8, 8]);
   });
 
-  /**
-   * The guard that is missing, written as the assertion a sweep validator would
-   * make. Left as a documented expectation rather than added to `sweep-spec.ts`,
-   * because this branch verifies and does not fix.
-   */
-  it('has no validator refusing a replicate count below the pool size', () => {
-    const counts = coverage(EIGHT, 4, 6);
-    expect(counts.size).toBeLessThan(EIGHT.length);
+});
+
+// ---------------------------------------------------------------------------
+// W18: the guard, supplied.
+// ---------------------------------------------------------------------------
+
+describe('the sweep validator refuses a pool it would not cover', () => {
+  it('names the tuner default that produced the shipped constant', () => {
+    const problem = roundRobinCoverageProblem(EIGHT.length, 6);
+    expect(problem).toContain('replicates is 6');
+    expect(problem).toContain('only 6');
+    expect(problem).toContain('dropping 2');
+    expect(problem).toContain('multiple of 8');
+  });
+
+  it('accepts exactly the multiples, and nothing else', () => {
+    for (const replicates of [8, 16, 24, 96]) {
+      expect(roundRobinCoverageProblem(8, replicates), `${String(replicates)} divides`).toBeUndefined();
+    }
+    for (const replicates of [1, 6, 7, 9, 12, 20]) {
+      expect(roundRobinCoverageProblem(8, replicates), `${String(replicates)} does not`).toBeDefined();
+    }
+  });
+
+  it('refuses the covered-but-uneven case, which is the one the two headline numbers disagree in', () => {
+    // 12 replicates over 8 strategies reaches all eight — and gives four of them
+    // twice the runs of the other four, so `ascensionRate` (run-weighted) and the
+    // exploit margin's pool mean (unweighted over strategies) stop being the same
+    // quantity. Coverage alone would have let this through.
+    expect(coverage(EIGHT, 4, 12).size).toBe(8);
+    expect(roundRobinCoverageProblem(8, 12)).toContain('unevenly');
+  });
+
+  it('is wired into validateSweep, so an under-covering sweep never dispatches', () => {
+    const bad = toySweep({ replicates: 3 }); // pool of two, round-robin
+    const problems = validateSweep(bad, TOY_REGISTRIES);
+    expect(problems.some((problem) => problem.includes('round-robin'))).toBe(true);
+    // The committed shape — replicates a multiple of the pool — still validates.
+    expect(validateSweep(toySweep({ replicates: 4 }), TOY_REGISTRIES)).toEqual([]);
+  });
+
+  it('leaves fixed and mirrored assignment alone: neither cycles on the replicate index', () => {
+    const fixedSpec = toySweep({
+      replicates: 3,
+      agentPool: { strategies: ['toy-passive', 'toy-greedy'], assignment: 'fixed', slots: 1 },
+    });
+    expect(validateSweep(fixedSpec, TOY_REGISTRIES)).toEqual([]);
+  });
+});
+
+describe('observed coverage is asserted after the records come back', () => {
+  const outcome = (strategyId: string, runs: number): StrategyOutcome => ({
+    strategyId,
+    ascended: 0,
+    runs,
+    meanNodesKnown: 51,
+  });
+
+  it('catches the six-strategy fold that scored the eight-strategy sweep', () => {
+    const folded = EIGHT.slice(0, 6).map((id) => outcome(id, 4));
+    const problem = coverageProblem(folded, EIGHT);
+    expect(problem).toContain('portal-rush');
+    expect(problem).toContain('worship-maximizer');
+    expect(problem).toContain('never ran');
+  });
+
+  it('catches uneven coverage even when every strategy appears', () => {
+    const folded = EIGHT.map((id, index) => outcome(id, index < 4 ? 8 : 4));
+    expect(coverageProblem(folded, EIGHT)).toContain('unevenly');
+  });
+
+  it('catches a strategy the pool never declared', () => {
+    const folded = [...EIGHT, 'permit-then-idle'].map((id) => outcome(id, 4));
+    expect(coverageProblem(folded, EIGHT)).toContain('permit-then-idle');
+  });
+
+  it('passes only on full, even coverage', () => {
+    expect(coverageProblem(EIGHT.map((id) => outcome(id, 12)), EIGHT)).toBeUndefined();
   });
 });

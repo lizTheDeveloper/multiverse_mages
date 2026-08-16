@@ -190,19 +190,53 @@ const CLAIMED_SEPARATIONS: readonly {
   // Strict in 11 of 12 sets at the bin's default design — a real effect, and not
   // reproducible enough for a file with one seed set to assert. It fails in
   // exactly the sets where elf's own interval reaches down to 45.
+  //
+  // **Re-recorded 2026-08-16 on the Group B integration branch: `inconclusive`
+  // -> `refuted`, and it is the *direction* that moved, not the strength.**
+  // Re-measured as this file's failure text instructs, with
+  // `node packages/scenario/bin/species-separation.mjs --sets 12`:
+  //
+  //     elf < orc    REFUTED   strict in 0/12 sets, paired gap 7.9 ± 8.3 ticks
+  //                            = 0.9 SE, per-set endpoint gap [-16, -4]
+  //
+  // The claimed order is backwards in every one of the twelve sets, which is
+  // what `refuted` means here — not "a weaker version of the same claim".
+  //
+  // Cause is `w80/research-cost-variation`, merged into this branch: it reprices
+  // 299 of `node.json`'s `researchCost` values. What it did to `orc` is visible
+  // in orc's own spread — mean 40.0 ± 8.2 SE with a between-set sd of 28.4 and
+  // endpoints travelling 8/378 ticks, against elf's 32.1 ± 0.2 SE. Orc is now
+  // the volatile species, and a pair with one volatile member reorders easily.
+  // Kept rather than deleted, per this file's own rule.
   {
     faster: 'orc',
     slower: 'elf',
     assertedAs: 'orc.high < elf.low — retired 2026-08-14',
     status: 'retired',
-    verdict: 'inconclusive',
+    verdict: 'refuted',
   },
+  // **Re-recorded 2026-08-16, and it moved the opposite way to the row above:
+  // `refuted` -> `inconclusive`.** Same twelve-set re-measurement:
+  //
+  //     human < orc  INCONCLUSIVE  strict in 2/12 sets, paired gap 17.3 ± 8.2
+  //                                ticks = 2.1 SE, per-set endpoint gap [-4, 5]
+  //
+  // Neither established nor backwards: the gap is real in sign but small against
+  // its own cross-seed spread, and that spread is orc's, as the row above
+  // records. Same cause. Two rows swapping verdicts in *opposite* directions off
+  // one content change is the honest summary of what a repricing does to a pair
+  // of claims that were already near the edge — and the reason neither should be
+  // read as a balance decision.
+  //
+  // Both rows stay `retired`. Nothing here argues for re-asserting either: a
+  // verdict that moves when content moves is exactly why this file pins
+  // verdicts rather than intervals.
   {
     faster: 'human',
     slower: 'orc',
     assertedAs: 'human.high < orc.low — retired 2026-08-14',
     status: 'retired',
-    verdict: 'refuted',
+    verdict: 'inconclusive',
   },
 ];
 
