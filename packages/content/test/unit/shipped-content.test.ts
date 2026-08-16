@@ -97,7 +97,19 @@ describe('shipped content', () => {
       // assumed, so the branch's arithmetic was right about the increment and
       // wrong about the base. This is exactly why the rule for this file is
       // recount, never union of literals.
-      autonomyWeights: 41,
+      //
+      // Forty since W116 added the two `goal-affiliate-*` opportunities beside
+      // them. Both pairs are scalars in the same file for the same reason, and
+      // they arrived on separate branches — see `interning.test.ts` for the
+      // revision digest that union produces.
+      //
+      // **Forty-three on the Group F merge of `w116/complete-affiliation`,
+      // 2026-08-16.** Recounted again from the data file — 43 records — after
+      // W116's two `goal-affiliate-*` opportunities joined the 41 above. Every
+      // number in the two comment blocks that precede this one was a prediction
+      // and every one of them was wrong by the time the tree held all the
+      // branches; the count is the only thing here that is evidence.
+      autonomyWeights: 43,
     });
   });
 

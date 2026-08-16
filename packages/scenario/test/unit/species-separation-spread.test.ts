@@ -181,12 +181,42 @@ const CLAIMED_SEPARATIONS: readonly {
   // interval now reaches into elf's in half the sets. The paired gap is still
   // 24.6 SE in dwarf's favour, which is why this is `inconclusive` and not
   // `refuted`: the effect is real and the interval test cannot state it.
+  // **Reversed on W116, and the reversal is the largest single species movement
+  // this instrument has recorded.** It was established at 12/12 sets; it is now
+  // *refuted* at 0/12, with elf arriving before dwarf by 8.6 paired standard
+  // errors. Dwarf's own mean went from among the fastest to **234.9 ± 23.5
+  // ticks against gnome's 23.8** — the slowest species to tier 3, by an order of
+  // magnitude, where it used to be second-fastest.
+  //
+  // This is a mechanism and not a re-roll, and the two independent readings
+  // agree on which species: `species-occupancy` has dwarf falling 12 → 5 cells
+  // over the same change, the largest move in *that* series too. Dwarf carries
+  // the highest `scribeAffinity` in the content, `completeAffiliation` gained a
+  // caller, and a month spent writing a node down is a month not spent reaching
+  // the next tier. **Time to tier is a breadth measure, and this branch buys
+  // depth with breadth**; the species that trades hardest is the one that
+  // scribes best.
+  //
+  // Recorded as a refutation rather than retired, because the row is the
+  // measurement. Nothing was tuned: every species magnitude still carries
+  // `tuningStatus: "untuned"`.
   {
     faster: 'dwarf',
     slower: 'elf',
-    assertedAs: 'beforeElf.high < elf.low — retired 2026-08-14 on w185',
+    assertedAs: 'beforeElf.high < elf.low — refuted on W116, no longer asserted',
     status: 'retired',
-    verdict: 'inconclusive',
+    verdict: 'refuted',
+  },
+  // Established on W116 at 12/12 sets and 13.3 SE, replacing the row above as
+  // the sibling file's second `beforeElf` binding. `gnome < elf` was true before
+  // and is unchanged by this branch; it is listed now because it is asserted
+  // now.
+  {
+    faster: 'gnome',
+    slower: 'elf',
+    assertedAs: 'beforeElf.high < elf.low',
+    status: 'asserted',
+    verdict: 'established',
   },
   {
     faster: 'gnome',
@@ -418,11 +448,23 @@ describe("#140's four-species chain", () => {
   });
 
   it('has one link that does reproduce, and it is not new', () => {
-    // `human < elf` is established on `main` too, at 12/12 sets and 64.7 SE. It
-    // is worth naming so that nobody reads "the chain does not reproduce" as
-    // "nothing separates": four relations separate robustly, and they are the
-    // same four before and after #140.
-    const link = separationOf(report, 'human', 'elf');
+    // `human < elf` was the link: established on `main` too, at 12/12 sets and
+    // 64.7 SE, and worth naming so nobody reads "the chain does not reproduce"
+    // as "nothing separates".
+    //
+    // **W116 knocked it to inconclusive — 4/12 sets — and the reason is elf
+    // rather than human.** Human is one of the tightest columns the instrument
+    // has (29.1 ± 0.2, endpoints travelling 3 and 8 ticks); elf's interval
+    // widened enough to reach under it in eight sets of twelve. The paired gap
+    // is still +15.4 ticks at 10.5 SE, so human is *on average* faster and the
+    // per-set endpoint comparison no longer holds reliably — which is exactly
+    // the distinction this file exists to draw.
+    //
+    // `gnome < human` is asserted instead. It is 12/12 sets at **32.1 SE**, the
+    // most robust separation in the report, established before this branch and
+    // unmoved by it. So the claim "not everything separates, but something
+    // does" survives on a stronger link than the one it used to rest on.
+    const link = separationOf(report, 'gnome', 'human');
     expect(verdictOf(link).verdict).toBe('established');
   });
 });

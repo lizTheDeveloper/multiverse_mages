@@ -39,6 +39,17 @@ import type { MageOutlook } from './outlook.js';
  * {@link changeAffiliation} writes exactly one field, and `roles.ts` explains
  * why that is enforced there rather than trusted here. This function adds only
  * the choice of destination.
+ *
+ * ## Why the outlook is a `Pick` and not a `MageOutlook`
+ *
+ * The caller is the **work phase**, which runs before the autonomy phase and
+ * builds no outlooks: `spendTheMonth` walks a slot-ordered roster reading two
+ * columns, and constructing the frontier scan a full `MageOutlook` needs — for
+ * every mage, every tick, to answer a question about one field — is the
+ * unbounded work the outlook shape exists to bound. Two fields are all this
+ * function has ever read, and `universityPreference` produces both from one
+ * scan of the shelves. Naming exactly those two is what lets the phase that has
+ * them call this without pretending to be a phase that does not.
  */
 
 /**
@@ -50,6 +61,10 @@ import type { MageOutlook } from './outlook.js';
  * gathering a research frontier, a teaching graph and a scribable list per mage
  * for two booleans. A `MageOutlook` satisfies this type, so every existing
  * caller and every test that already holds one passes it unchanged.
+ *
+ * Both fields come from `universityPreference` and they are a pair: the boolean
+ * is `preferred !== current`, computed once so that no second computation can
+ * disagree with it. (`w116/complete-affiliation`.)
  */
 export type AffiliationPreference = Pick<
   MageOutlook,

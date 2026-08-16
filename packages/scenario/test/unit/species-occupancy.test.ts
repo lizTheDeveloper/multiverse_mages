@@ -234,12 +234,33 @@ describe('twenty world years in', () => {
     // (`12/12/11/9/11/9` is two at the ceiling) and is false of this one. A
     // test whose name states a measurement it does not make is the doc-rot this
     // repository keeps paying for.
-    expect(bySpecies('dwarf').occupiedCells).toBe(12);
-    expect(bySpecies('human').occupiedCells).toBe(12);
-    expect(bySpecies('orc').occupiedCells).toBe(12);
-    expect(bySpecies('draconic').occupiedCells).toBe(12);
+    // **Re-measured on W116, 2026-08-14: `12/12/12/11/11/9` became
+    // `12/12/11/10/9/5`** (elf, orc, draconic, human, gnome, dwarf), and the
+    // title of this test changed with it — three species at the ceiling became
+    // two. The composition note above still applies and gains a third cause,
+    // which is the interesting one:
+    //
+    // 3. **Affiliation (W116).** `completeAffiliation` gained a caller, so mages
+    //    join universities and may scribe. That is not a re-roll: a month spent
+    //    writing a node down is a month not spent reaching into a new cell, and
+    //    this metric counts cells reached. **Occupancy falling is the cost side
+    //    of the trade the change buys** — `referenceGrimoires` goes 90 → 412 on
+    //    the five-year gate over the same period.
+    //
+    // **Dwarf at 5 is the row to read.** It is the largest single move this
+    // metric has ever recorded and dwarf is the species with the highest
+    // `scribeAffinity` in the content, which is exactly the species that should
+    // trade breadth for books hardest if the mechanism is what it claims to be.
+    // That is a *consistent* reading, not a verified one: nothing here isolates
+    // it, and the honest alternative — that a re-roll happened to land on dwarf —
+    // is not excluded by anything in this file. If the next agent sees dwarf
+    // move back without anyone touching scribing, that alternative wins.
     expect(bySpecies('elf').occupiedCells).toBe(12);
-    expect(bySpecies('gnome').occupiedCells).toBe(10);
+    expect(bySpecies('orc').occupiedCells).toBe(12);
+    expect(bySpecies('draconic').occupiedCells).toBe(11);
+    expect(bySpecies('human').occupiedCells).toBe(10);
+    expect(bySpecies('gnome').occupiedCells).toBe(9);
+    expect(bySpecies('dwarf').occupiedCells).toBe(5);
   });
 
   it('measures a spread that is neither flat nor a hegemony', () => {
@@ -268,7 +289,19 @@ describe('twenty world years in', () => {
     // metric measures is small precisely when occupancy is near-uniform, which
     // is what the accompanying `everySpeciesEqual: false` still denies is
     // *exactly* uniform.
-    expect((entry as { value: number }).value).toBeCloseTo(0.0238, 4);
+    // 0.1271 at this horizon on W116 — was 0.0473 on the merge described above,
+    // 0.0729 before any of it, 0.0714 on `main` alone and 0.0645 on the
+    // `w108` branch alone. Pinned to four places: the point of the metric is
+    // that this number moves, and a test that only asserted "greater than zero"
+    // would let it move to anything.
+    //
+    // The rise is the largest in the series and it is the same event as the
+    // occupancy block above: affiliation makes mages write rather than reach,
+    // the species do not all trade at the same rate, and a metric of *spread*
+    // rises when they diverge. Still neither flat nor a hegemony, which is what
+    // this test is for — the concentration would have to reach 1 for one species
+    // to own the grid.
+    expect((entry as { value: number }).value).toBeCloseTo(0.1271, 4);
     expect(entry).toMatchObject({ detail: { everySpeciesEqual: false, everySpeciesZero: false } });
   });
 
@@ -307,7 +340,6 @@ describe('twenty world years in', () => {
     // move should not read the movement as a defect.
     const cellName = new Map(content.registry.cells.map((e) => [e.contentId, e.record.id]));
     const held = new Set(bySpecies('gnome').occupiedCellIds.map((id) => cellName.get(id)));
-    const dwarfHeld = bySpecies('dwarf').occupiedCellIds.map((id) => cellName.get(id));
     // Re-pinned 2026-08-14 on the rebase onto `main` (245e04f1): `rego-terram`
     // out, `perdo-limen` in. Which is precisely what the paragraph above says
     // to expect — the set reorders under a handle-keyed re-roll, the durable
@@ -327,9 +359,28 @@ describe('twenty world years in', () => {
     // this tree produces — `integration/group-f` had three and the branch four.
     // The durable reading survives a third re-roll where the membership did
     // not: gnome is short, and its shortfall is entirely Perdo.
-    expect(dwarfHeld.filter((cell) => !held.has(cell)).sort()).toEqual([
+    // Against **every cell any species reached**, not against dwarf's. The
+    // reference used to be dwarf because dwarf sat at the ceiling; on W116 dwarf
+    // is the species that fell furthest (12 → 5), so the old comparison now
+    // measures dwarf's shortfall through gnome's, which is two findings tangled
+    // into one assertion. The union is the reading the prose above was always
+    // making — *which cells is gnome missing* — and it does not move when the
+    // species used as a yardstick moves.
+    const reached = new Set<string | undefined>();
+    for (const entry of sample.species) {
+      for (const id of entry.occupiedCellIds) reached.add(cellName.get(id));
+    }
+    //
+    // **W116, 2026-08-14: `perdo-mentem/perdo-terram/rego-terram` became
+    // `perdo-limen/perdo-mentem/perdo-terram`.** Membership moved for the third
+    // time and the durable reading survived it again — still three cells, still
+    // disproportionately Perdo, and this time *all three* are Perdo. Read that
+    // as the prose above instructs: the count and the technique skew are the
+    // finding, the exact membership is a pin.
+    expect([...reached].filter((cell) => !held.has(cell)).sort()).toEqual([
       'perdo-limen',
       'perdo-mentem',
+      'perdo-terram',
     ]);
   });
 

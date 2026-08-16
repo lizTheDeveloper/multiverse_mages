@@ -143,9 +143,14 @@ export {
   targetTerms,
 } from './target-appeal.js';
 
-export type { ScoreTerms, TermKind } from './terms.js';
+export type {
+  AffiliationAppeal,
+  GoalAppealSource,
+  GoalAppealWeights,
+  ScoreTerms,
+  TermKind,
+} from './terms.js';
 export {
-  AFFILIATION_OPPORTUNITY,
   AGE_TERM,
   GOAL_BASE_APPEAL,
   OPPORTUNITY_CANDIDATE_CAP,
@@ -158,6 +163,7 @@ export {
   ageTerm,
   opportunityTerm,
   personalityTerm,
+  readGoalAppeal,
   speciesTerm,
   termsFor,
 } from './terms.js';

@@ -112,6 +112,20 @@
     "tuningStatus": "untuned"
   },
   {
+    "id": "goal-affiliate-first-opportunity",
+    "value": 512,
+    "unit": "fp",
+    "gloss": "Opportunity a mage with NO university sees in affiliating. Equal to the opportunity term's bound, which is the strongest statement that axis can make: affiliation is the gate on scribing and warding, so for a mage who has none it is a prerequisite rather than an option. Falsified if mages affiliate and then produce no more grimoires than before, which would mean the gate was never what bound the shelves.",
+    "tuningStatus": "untuned"
+  },
+  {
+    "id": "goal-affiliate-transfer-opportunity",
+    "value": 64,
+    "unit": "fp",
+    "gloss": "Opportunity a mage who ALREADY has a university sees in moving to a deeper one. An eighth of the first-affiliation weight, because the codebase names two operations — completeAffiliation and changeAffiliation — and only one of them unlocks anything. It leaves a transfer scoring about what affiliate scored before this file knew the difference, which is a score no mage has ever chosen. Falsified if runs show mages changing university more often than they gain one.",
+    "tuningStatus": "untuned"
+  },
+  {
     "id": "target-appeal-ceiling",
     "value": 4096,
     "unit": "fp",

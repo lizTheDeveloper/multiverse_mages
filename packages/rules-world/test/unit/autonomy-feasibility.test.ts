@@ -33,7 +33,7 @@ import {
   selectGoal,
 } from '../../src/index.js';
 
-import { appealWeights, outlook, richOutlook, speciesNamed, target } from './autonomy-fixtures.js';
+import { appealWeights, goalAppealWeights, outlook, richOutlook, speciesNamed, target } from './autonomy-fixtures.js';
 import { stepRng } from './mage-fixtures.js';
 
 describe('goals a mage cannot pursue are removed', () => {
@@ -103,11 +103,12 @@ describe('a masked goal is unreachable, not merely unattractive', () => {
     // list -- so this asserts over the list, not only over the winner.
     const barren = outlook();
     const mask = maskGoals(barren);
-    const scores = scoreGoals(mask.feasible, barren);
+    const scores = scoreGoals(mask.feasible, barren, goalAppealWeights);
 
     expect(scores.map((entry) => entry.goal)).not.toContain(GOAL.researchNode);
     const chosen = selectGoal({
       appeal: appealWeights,
+      goalAppeal: goalAppealWeights,
       outlook: barren,
       worldTick: 0,
       incumbent: undefined,
@@ -126,6 +127,7 @@ describe('idle is always feasible', () => {
   it('leaves the argmax with something to return, so no "no goal" state exists', () => {
     const selection = selectGoal({
       appeal: appealWeights,
+      goalAppeal: goalAppealWeights,
       outlook: outlook(),
       worldTick: 0,
       incumbent: undefined,
@@ -152,6 +154,7 @@ describe('masking is counted, not only applied', () => {
   it('surfaces the count on a selection, which is where an aggregate reads it', () => {
     const selection = selectGoal({
       appeal: appealWeights,
+      goalAppeal: goalAppealWeights,
       outlook: outlook(),
       worldTick: 0,
       incumbent: undefined,

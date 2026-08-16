@@ -65,6 +65,7 @@ import {
 } from '@mm/rules-magic';
 import type { SpeciesAffinities } from '@mm/rules-world';
 import {
+  readGoalAppeal,
   readApplicationWeights,
   readCastingWeights,
   readTargetAppeal,
@@ -744,6 +745,7 @@ export function worldDeps(
       return resolved;
     },
     appeal: readTargetAppeal(registry),
+    goalAppeal: readGoalAppeal(registry),
     application: readApplicationWeights(registry),
     casting: readCastingWeights(registry),
     store: storeHookOf(registry, traditionId),

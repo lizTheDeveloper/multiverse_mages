@@ -31,12 +31,18 @@ import { MAGE_ROLE } from '@mm/state';
 import type { MageRoleValue } from '@mm/state';
 
 import type {
+  GoalAppealWeights,
   KnowledgeTarget,
   MageOutlook,
   SpeciesAffinities,
   TargetAppealWeights,
 } from '../../src/index.js';
-import { NO_EMPHASIS, readTargetAppeal, resolveSpeciesAffinities } from '../../src/index.js';
+import {
+  NO_EMPHASIS,
+  readGoalAppeal,
+  readTargetAppeal,
+  resolveSpeciesAffinities,
+} from '../../src/index.js';
 
 import { shippedRegistry } from './mage-fixtures.js';
 
@@ -69,6 +75,9 @@ export function speciesNamed(id: string): SpeciesRecord {
  * whether the shipped content differentiates anything.
  */
 export const appealWeights: TargetAppealWeights = readTargetAppeal(registry);
+
+/** The goal-appeal weights, read from the same file for the same reason. */
+export const goalAppealWeights: GoalAppealWeights = readGoalAppeal(registry);
 
 const affinityCache = new Map<string, SpeciesAffinities>();
 

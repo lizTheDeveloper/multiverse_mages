@@ -132,6 +132,7 @@ import type {
   CastingWeights,
   CapitalEmission,
   CohortDemography,
+  GoalAppealWeights,
   MageGoalCommitment,
   MaterialAmounts,
   MaterialKind,
@@ -256,6 +257,11 @@ export interface WorldStepDeps {
    * content is not one of the inputs a tick is allowed to re-read.
    */
   readonly appeal: TargetAppealWeights;
+  /**
+   * Every magnitude goal selection is made of that is content rather than a
+   * table in `terms.ts`, read from the same file and carried the same way.
+   */
+  readonly goalAppeal: GoalAppealWeights;
   /** The universe's resolved `store` hook, from its tradition. */
   readonly store: StorePolicy;
   /**
@@ -1118,6 +1124,7 @@ export function worldSystem(
         worldTick,
         rng,
         appeal: deps.appeal,
+        goalAppeal: deps.goalAppeal,
         // The caller's judgement, which is exactly how `select.ts` asks for it:
         // completion is a fact about the work, and the work happened one phase
         // ago. A mage who finished this month reconsiders this month rather than
@@ -1701,7 +1708,10 @@ function killTheDead(
 
 /** What the work phase did, and who it freed to reconsider. */
 interface WorkPhaseOutcome {
-  /** Mages whose committed project finished this tick, either side of a lesson. */
+  /**
+   * Mages whose committed project finished this tick, either side of a lesson —
+   * and the mages who affiliated, who finished a goal that never had a project.
+   */
   readonly completedBy: ReadonlySet<Handle>;
   readonly researchCompleted: number;
   readonly lessonsTaught: number;
@@ -1727,12 +1737,13 @@ interface WorkPhaseOutcome {
   readonly castingGranted: Fixed;
   /** Mages who spent the month applying magic. What the rations are owed for. */
   readonly applyingMages: number;
-  /** Mage-months spent under each goal, indexed by goal id. */
-  readonly monthsByGoal: readonly number[];
   /** Mages whose `universityId` changed this tick. */
   readonly magesAffiliated: number;
   /** Mages whose first-choice university had no free seat. */
   readonly affiliationsRefused: number;
+  /** Mage-months spent under each goal, indexed by goal id. */
+  readonly monthsByGoal: readonly number[];
+  /** Mages who finished a `practice` project this tick. */
   readonly practiceCompleted: number;
 }
 
@@ -1841,6 +1852,13 @@ function spendTheMonth(
     // Before `workOne`, and unconditionally: a goal with no arm returns from it
     // without touching anything, and a tally taken on the way out would count
     // exactly the goals that are working and miss exactly the ones that are not.
+    //
+    // **And now before the `affiliate` arm below, which is why the ordering is
+    // load-bearing rather than incidental.** W183 measured `affiliate` at 36.5 %
+    // of all committed mage-life while it accrued nothing; this change gives it
+    // an arm that returns from the walk early, so a tally placed after that
+    // return would report zero for the one goal the instrument was built to
+    // see — the same blindness #192 removed, reintroduced by the fix for it.
     monthsByGoal[commitment.goalId] = (monthsByGoal[commitment.goalId] ?? 0) + 1;
     // Collected, not applied here — and collected *after* the tally, because a
     // month held on `affiliate` is still a month this phase consumed and
@@ -1895,9 +1913,9 @@ function spendTheMonth(
     practiceCompleted,
     applied,
     applyingMages,
-    monthsByGoal,
     magesAffiliated: affiliation.moved,
     affiliationsRefused: affiliation.refused,
+    monthsByGoal,
   };
 }
 

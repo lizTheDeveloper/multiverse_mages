@@ -100,6 +100,23 @@ function row(entries: Partial<Record<GoalId, Fixed>>): RoleBiasRow {
  * - **raider** raises `raid-readiness` and alone leans negative on `scribe`.
  *   Somebody has to be unwilling to sit still, or nobody goes through a portal.
  *
+ * ## Every row leans toward `affiliate`, and that is a mechanic rather than a taste
+ *
+ * The `affiliate` column was zero for all four roles until W116, which read as
+ * "no role cares" and was the only zero column in the table for a goal that is
+ * not `idle`. It is false in the loop's own arithmetic: `libraryRateMultiplier`
+ * scales research, teaching and scribing by the depth of *the mage's own*
+ * library, and `capital.depthFor(0)` is nothing at all — so an unaffiliated mage
+ * of any role works at the unmultiplied rate, forever. Vision §6a is the whole
+ * argument: *"a university's output scales with the depth of its library."*
+ *
+ * The ordering follows how much of a role's own work a library actually
+ * accelerates. The **warden** is highest because for her it is not an
+ * acceleration at all — `ward-duty` is masked outright on `universityId === 0`,
+ * so the institution is the job. The **researcher** and the **professor** each
+ * have their own rate multiplied. The **raider** is lowest and not zero: no
+ * library makes a raid faster, but he still reads.
+ *
  * `apply-magic` is the ninth goal and **no role is for it** — a statement, not
  * an omission. The god's four roles are all about knowledge; the one leaning
  * toward applied work is the warden, because standing watch and turning a
@@ -120,6 +137,7 @@ export const ROLE_BIAS: Readonly<Record<MageRoleValue, RoleBiasRow>> = {
   [MAGE_ROLE.researcher]: row({
     [GOAL.researchNode]: 320,
     [GOAL.rediscoverNode]: 256,
+    [GOAL.affiliate]: 256,
     [GOAL.seekTeaching]: 64,
     [GOAL.wardDuty]: -128,
     [GOAL.applyMagic]: -64,
@@ -127,6 +145,7 @@ export const ROLE_BIAS: Readonly<Record<MageRoleValue, RoleBiasRow>> = {
   }),
   [MAGE_ROLE.warden]: row({
     [GOAL.wardDuty]: 384,
+    [GOAL.affiliate]: 320,
     [GOAL.scribe]: 128,
     [GOAL.researchNode]: -64,
     [GOAL.raidReadiness]: 64,
@@ -134,6 +153,7 @@ export const ROLE_BIAS: Readonly<Record<MageRoleValue, RoleBiasRow>> = {
   }),
   [MAGE_ROLE.professor]: row({
     [GOAL.teach]: 384,
+    [GOAL.affiliate]: 256,
     [GOAL.seekTeaching]: 192,
     [GOAL.scribe]: 128,
     [GOAL.raidReadiness]: -128,
@@ -143,6 +163,7 @@ export const ROLE_BIAS: Readonly<Record<MageRoleValue, RoleBiasRow>> = {
   [MAGE_ROLE.raider]: row({
     [GOAL.raidReadiness]: 384,
     [GOAL.wardDuty]: 128,
+    [GOAL.affiliate]: 64,
     [GOAL.scribe]: -128,
     [GOAL.teach]: -64,
     [GOAL.practice]: 192,

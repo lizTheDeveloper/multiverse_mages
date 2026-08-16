@@ -42,7 +42,7 @@ import {
   opportunityTerm,
 } from '../../src/index.js';
 
-import { outlook, target } from './autonomy-fixtures.js';
+import { goalAppealWeights, outlook, target } from './autonomy-fixtures.js';
 
 /** An outlook with a stated number of stale holdings and candidates. */
 function practising(staleHoldings: number, candidates: number) {
@@ -56,20 +56,20 @@ describe("practice's opportunity is the stale-holding count and nothing else", (
   it('is zero for a mage with nothing below the teaching threshold', () => {
     // Candidates without staleness cannot happen since `practisableBy` gates on
     // the threshold, but the term must not invent pressure if they ever do.
-    expect(opportunityTerm(GOAL.practice, practising(0, 4))).toBe(0);
+    expect(opportunityTerm(GOAL.practice, practising(0, 4), goalAppealWeights)).toBe(0);
   });
 
   it('rises one quantum per stale holding, up to the cap', () => {
     for (let stale = 0; stale <= STALE_HOLDING_CAP; stale += 1) {
-      expect(opportunityTerm(GOAL.practice, practising(stale, stale))).toBe(
+      expect(opportunityTerm(GOAL.practice, practising(stale, stale), goalAppealWeights)).toBe(
         stale * OPPORTUNITY_PER_STALE_HOLDING,
       );
     }
   });
 
   it('is concave by truncation — a fourth stale holding adds nothing', () => {
-    const atCap = opportunityTerm(GOAL.practice, practising(STALE_HOLDING_CAP, 4));
-    expect(opportunityTerm(GOAL.practice, practising(STALE_HOLDING_CAP + 9, 4))).toBe(atCap);
+    const atCap = opportunityTerm(GOAL.practice, practising(STALE_HOLDING_CAP, 4), goalAppealWeights);
+    expect(opportunityTerm(GOAL.practice, practising(STALE_HOLDING_CAP + 9, 4), goalAppealWeights)).toBe(atCap);
   });
 
   it('does not count the candidate list as well, which is the same fact twice', () => {
@@ -78,13 +78,13 @@ describe("practice's opportunity is the stale-holding count and nothing else", (
     // staleness term over the same set counts one situation twice, and the sum
     // is what used to overflow the bound. Same staleness, more candidates, same
     // answer.
-    const one = opportunityTerm(GOAL.practice, practising(2, 1));
-    expect(opportunityTerm(GOAL.practice, practising(2, 4))).toBe(one);
+    const one = opportunityTerm(GOAL.practice, practising(2, 1), goalAppealWeights);
+    expect(opportunityTerm(GOAL.practice, practising(2, 4), goalAppealWeights)).toBe(one);
   });
 
   it('never reaches its own clamp, which the removed term did on ordinary input', () => {
     // The worst case the shipped comment named: the cap in both counts.
-    const worst = opportunityTerm(GOAL.practice, practising(STALE_HOLDING_CAP, 4));
+    const worst = opportunityTerm(GOAL.practice, practising(STALE_HOLDING_CAP, 4), goalAppealWeights);
     expect(worst).toBe(STALE_HOLDING_CAP * OPPORTUNITY_PER_STALE_HOLDING);
     expect(worst).toBeLessThan(TERM_BOUND.opportunity);
     // And the arithmetic the old comment got wrong, stated as a number so a

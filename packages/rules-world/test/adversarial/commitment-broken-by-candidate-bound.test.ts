@@ -103,7 +103,7 @@ import {
 } from '../../src/index.js';
 import type { MageGoalCommitment, KnowledgeGateway, KnowledgeTarget } from '../../src/index.js';
 
-import { appealWeights, outlook, speciesNamed, target } from '../unit/autonomy-fixtures.js';
+import { appealWeights, goalAppealWeights, outlook, speciesNamed, target } from '../unit/autonomy-fixtures.js';
 import { stepRng } from '../unit/mage-fixtures.js';
 
 /** The node the mage commits to. Tier 1, so no depth ceiling can exclude it. */
@@ -144,6 +144,7 @@ describe('a bounded candidate scan must not end a commitment', () => {
     const alone = gatewayOver([target(COMMITTED_NODE, 1, 4096)]);
     const first = selectGoal({
       appeal: appealWeights,
+      goalAppeal: goalAppealWeights,
       outlook: outlook({
         mage,
         discoveryTargets: gatherFrontier(alone, mage, species).discovery,
@@ -177,6 +178,7 @@ describe('a bounded candidate scan must not end a commitment', () => {
 
     const second = selectGoal({
       appeal: appealWeights,
+      goalAppeal: goalAppealWeights,
       outlook: outlook({
         mage,
         discoveryTargets: gatherFrontier(later, mage, species).discovery,

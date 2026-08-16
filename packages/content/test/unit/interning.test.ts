@@ -519,7 +519,46 @@ describe('contentRevision', () => {
     // 2026-08-16 — the seventh union in this list. Read from
     // `node packages/content/bin/validate-content.mjs` on the merged tree and
     // confirmed by this test.
-    expect(registry.contentRevision).toBe('5d4b38b99210b89d77dd650bae76b51d');
+    //
+    // 162f80bf169296d0e5fd516cc3c5257a -> f49b406d509a1d0e0ed4e152f7b90fb5 (on this branch,
+    // before the merge below: b37b15fc7f882af127057304f72a7522),
+    // when `affiliate` stopped being priced with one number. Two autonomy
+    // weights were added — the opportunity a mage with no university sees in
+    // getting one, and the much smaller opportunity a mage who has one sees in
+    // moving to a deeper one. In the preimage for the plainest possible reason:
+    // they change which goal a mage picks, and two universes that disagreed
+    // about whether their mages join institutions would not be playing the same
+    // game for five minutes. Unlike the god constants above, this one **does**
+    // change every run from its first year, and the balance baselines it moves
+    // are reported in the change that added it rather than regenerated.
+    //
+    // Union, for the fifth time in this list, and the last two entries are
+    // independent: `main` reached this merge asserting `0dfdd5ef` — a digest
+    // over a preimage holding the exclusion pair and the seventeenth god cost
+    // but not W116's two affiliation weights — while this branch reached it
+    // asserting `68cea590`, over one holding the affiliation weights and
+    // neither of those. Neither is a competing claim about *this* tree, whose
+    // preimage strictly contains both, so the value below is the union
+    // arriving rather than a disagreement being settled.
+    //
+    // MEASURED on the merged tree rather than carried from either side, which
+    // is the only way a digest over a union can be pinned: a revision literal
+    // is a statement about the tree it was read on, and neither parent is that
+    // tree. `201d3719` was read back from `loadContent(shippedContentSource())`
+    // on this merge commit. It is a **revision re-pin** and nothing else: no
+    // gated metric was measured into any baseline for it. The three gate
+    // baselines carry this same digest in `provenance.contentHash` by way of a
+    // provenance-only re-seal (`reseal-baseline.mjs`, PR #184), which runs the
+    // sweep, refuses if any metric has moved, and passes every metric line
+    // through byte for byte — the verification reported 0.00 SE on every gated
+    // metric of all three gates, so this merge is behaviourally inert and only
+    // the seal was stale.
+    //
+    // RECOMPUTED AGAIN on the Group F merge of `w116/complete-affiliation`,
+    // 2026-08-16 — the eighth union in this list. Read from
+    // `node packages/content/bin/validate-content.mjs` on the merged tree and
+    // confirmed by this test.
+    expect(registry.contentRevision).toBe('08f5fc0de0fb8e1ef07fc757eb2e5ed6');
   });
 
   it('is stable across loads of identical content', () => {

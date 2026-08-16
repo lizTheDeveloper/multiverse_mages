@@ -184,6 +184,21 @@ describe('recovery, per species', () => {
     // species in the game into an invariant, and every branch that perturbed
     // the simulation at all tripped it — which is a test reporting its own
     // fragility, not a regression.
+    // **A third case, found on W116: present, and not shocked.** The cull takes
+    // half the living mages and orc reached the cull tick with **two**, of which
+    // it lost **none** — so `killed > 0` holds for five species while
+    // `preShock > 0` holds for six, and the equality above fails on a run where
+    // nothing is wrong.
+    //
+    // The comment above already tells this story one case short. It moved from
+    // "all six, always" to "all six that had a roster" because orc reads zero at
+    // many seeds; the surviving assumption was that having a roster means losing
+    // somebody, and at a roster of two that is a coin flip rather than a fact.
+    //
+    // So what is asserted is what the cull actually promises: **it shocked
+    // somebody, and it shocked nobody who was not there.** A species with a
+    // roster that happened to lose nobody is reported below with the extinct
+    // ones rather than counted as a failure.
     const withRoster = detail.species.filter((row) => (row['preShock'] as number) > 0);
     // Every species the cull *reached* is one that had a roster — the direction
     // that says the cull is not inventing losses. The converse does not hold and
@@ -207,7 +222,7 @@ describe('recovery, per species', () => {
       .filter((row) => (row['killed'] as number) === 0)
       .map((row) => String(row['speciesId']));
     if (spared.length > 0) {
-      console.log(`species with a roster the cull did not reach: ${spared.join(', ')}`);
+      console.log(`species with a roster the cull happened to spare: ${spared.join(', ')}`);
     }
 
     // And the fact the old assertion was accidentally carrying: name any
@@ -273,6 +288,17 @@ describe('recovery, per species', () => {
     // argument the `preShock: 0` comment below already makes for absent species,
     // applied to the case the cull's parity skipped. See the note in the first
     // test for why orc keeps arriving at this boundary.
+    // **`killed > 0`, not `preShock > 0`.** The guard below was written for
+    // species that were *absent*; W116 produced a species that was present and
+    // lost nobody — orc, with a roster of two at the cull tick — and that is the
+    // same hole from the other side. A species that lost nothing has nothing to
+    // recover from: it scores `recoveryTicks: 12`, which reads in `recoverers`
+    // as precisely the outcome this test exists to refute, and is not one.
+    //
+    // The claim being defended is unchanged and is about species the cull
+    // actually hit: **the two shortest-lived species that lost mages do not get
+    // them back.** Narrowing the set to those species is what makes the sentence
+    // true of what is measured rather than of what was assumed.
     const present = new Set(
       (detail['species'] as Record<string, unknown>[])
         .filter((row) => (row['killed'] as number) > 0)
