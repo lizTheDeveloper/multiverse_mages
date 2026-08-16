@@ -765,8 +765,8 @@
   }
 
   function drawWorld(s) {
-    const cell = (k, v, n, extra = '') =>
-      `<div class="stat"><div class="k">${k}</div><div class="v">${v}</div>` +
+    const cell = (k, v, n, extra = '', wide = false) =>
+      `<div class="stat${wide ? ' wide' : ''}"><div class="k">${k}</div><div class="v">${v}</div>` +
       `<div class="n">${n}</div>${extra}</div>`;
 
     /* Saturation is a ceiling the channel hit, not a value. Say so rather than
@@ -791,7 +791,9 @@
     $('world').innerHTML = [
       cell('Favor', sat('favor', s.favor), 'what you spend'),
       cell('Worship', sat('worship', s.worship), `tier ${s.worshipTier} · your income`),
-      cell('Materials', sat('materials', s.materials), materialNote, materialSplit),
+      /* Two columns wide when it carries the breakdown: three numbers and a
+         three-word caption do not fit a 7.5rem tile without wrapping twice. */
+      cell('Materials', sat('materials', s.materials), materialNote, materialSplit, haveStocks),
       cell('Prestige', sat('prestige', s.prestige), 'carried in'),
       cell('Universities', fmt(s.universities), `${fmt(s.capacity)} seats`),
       cell('Library', fmt(s.libraryDepth), 'distinct nodes'),
