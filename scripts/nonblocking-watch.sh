@@ -40,6 +40,9 @@ set -euo pipefail
 REPO="${REPO:-lizTheDeveloper/multiverse_mages}"
 BRANCH="${BRANCH:-main}"
 
+# The workflow that actually carries the watched jobs.
+CI_WORKFLOW="${CI_WORKFLOW:-ci.yml}"
+
 # Matched as a prefix against the job name, because the full names carry
 # parenthetical asides ("(not required to merge)") that are prose and may be
 # reworded without the job changing.
@@ -47,6 +50,15 @@ WATCHED=(
   "Balance gate, two hundred world years"
   "Primitive consumption"
   "Rules-path reachability ratchet"
+  # Added 2026-08-16. The first version of this script watched three of the four
+  # non-required jobs while calling itself "are the non-required jobs green" —
+  # and the one it left out was red on `main` and unread, which is the exact
+  # condition the script exists to surface. Its own comment says why it matters:
+  # *"a failure here means the next Node major may change simulation
+  # behaviour, which we want to know about before it is pinned."* A determinism
+  # change arriving with a runtime upgrade is the kind of thing this project
+  # cannot afford to learn about late.
+  "Next Node major"
 )
 
 fail_probe() {
@@ -59,9 +71,19 @@ command -v gh >/dev/null 2>&1 || fail_probe "gh is not on PATH"
 # The newest *completed* run for the branch. Deliberately not the newest run:
 # an in-progress run has null conclusions on jobs that have not started, and
 # reading those as anything but "unknown" is the bug this file exists to avoid.
-run_id="$(gh run list --repo "$REPO" --branch "$BRANCH" --status completed --limit 1 \
-  --json databaseId --jq '.[0].databaseId' 2>/dev/null || true)"
-[ -n "$run_id" ] || fail_probe "no completed run found for $BRANCH"
+# `--workflow` is load-bearing and its absence was a real bug. Without it this
+# took the newest completed run *of any workflow* on the branch — and once this
+# script's own scheduled workflow began running on `main`, that was the newest
+# run. It contains one job and none of the watched names, so the watcher spent
+# its first outing **watching itself** and exiting 1.
+#
+# It exited 1 rather than 0, which is the whole argument for the third exit: a
+# probe that cannot find what it is looking for said so instead of reporting
+# green. The bug was still mine, and it is the same shape as the five this
+# repository already records — a checker answering about the wrong input.
+run_id="$(gh run list --repo "$REPO" --branch "$BRANCH" --workflow "$CI_WORKFLOW" \
+  --status completed --limit 1 --json databaseId --jq '.[0].databaseId' 2>/dev/null || true)"
+[ -n "$run_id" ] || fail_probe "no completed run of \"$CI_WORKFLOW\" found for $BRANCH"
 
 head_sha="$(gh run view "$run_id" --repo "$REPO" --json headSha --jq '.headSha' 2>/dev/null || true)"
 [ -n "$head_sha" ] || fail_probe "could not read headSha for run $run_id"
