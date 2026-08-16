@@ -229,11 +229,39 @@ export function researchRequirement(node: KnowledgeNode, inputs: RequirementInpu
   // one a reader can check against content rather than against this line.
   const authored = inputs.acquire?.researchCost(node.researchCost) ?? node.researchCost;
   const base = mul(authored, multiplier);
-  const rate = mul(inputs.learnRate, inputs.researchRate);
+  const rate = effectiveResearchRate(inputs.learnRate, inputs.researchRate);
   // A zero rate would be a mage who cannot learn at all rather than one who
   // learns instantly, and div() by zero is not a question the rules path asks.
+  //
+  // **The requirement is not where a zero rate is expressed.** Returning `base`
+  // here is a placeholder, not a price: it is the same number a neutral rate
+  // produces, so read alone this line says a total research cost is no cost at
+  // all. What actually stops the work is {@link research} supplying **zero
+  // effort** for the same condition, three lines of one function away — and
+  // that is deliberate, because the alternative is a sentinel "unreachable"
+  // requirement, and a sentinel in a fixed-point field is a number some later
+  // arithmetic will happily multiply.
+  //
+  // The condition became reachable when magnitudes became signed: a stack of
+  // `research-rate` costs floors at `fp(0)` in `@mm/primitives`, and `mul`
+  // floors, so a small-but-positive rate against a small `learnRate` reaches
+  // zero too. Before that, every magnitude was positive, `(1 + Σ) >= fp(1024)`,
+  // and only a species with `learnRate: 0` could get here.
   if (rate <= 0) return base;
   return div(base, rate);
+}
+
+/**
+ * The one product of the two research rates, so both readers agree on zero.
+ *
+ * {@link researchRequirement} divides by it and {@link research} decides whether
+ * any effort was supplied at all. Two `mul(learnRate, researchRate)` expressions
+ * would be two chances for the pair to disagree about the exact boundary — and
+ * the boundary is the whole question, since `mul` floors toward negative
+ * infinity and can land a nonzero product on zero.
+ */
+export function effectiveResearchRate(learnRate: Fp, researchRate: Fp): Fp {
+  return mul(learnRate, researchRate);
 }
 
 /**
@@ -286,7 +314,23 @@ export function research(inputs: ResearchInputs): ResearchOutcome {
 
   const stream = inputs.rng.actorStream(RNG_STREAM.research, inputs.subject);
   const jitter = nextBounded(stream, RESEARCH_JITTER_SPAN * 2 + 1) - RESEARCH_JITTER_SPAN;
-  const progress = inputs.progress + mul(inputs.effort, FP_ONE + jitter);
+
+  // A rate of zero means **the month produces nothing**, and this is where that
+  // is said. `researchRequirement` cannot say it: it scales the *cost*, and
+  // there is no cost that means "unreachable" without a sentinel.
+  //
+  // Zeroing the effort rather than refusing the step is what keeps this
+  // determinism-neutral. A refusal returns before the draw above, so it would
+  // change how many values this actor's stream consumes on a tick — and the
+  // whole point of a cost is that it is a balance change, not a replay change.
+  // The mage still spends her month, still accrues nothing, and is still moved
+  // off the goal by the ordinary feasibility path rather than by a special case
+  // here.
+  //
+  // Unreachable for any content that could be authored before this change: with
+  // every magnitude positive, `(1 + Σ)` was never below `fp(1024)`.
+  const effort = effectiveResearchRate(inputs.learnRate, inputs.researchRate) <= 0 ? 0 : inputs.effort;
+  const progress = inputs.progress + mul(effort, FP_ONE + jitter);
 
   if (progress < required) {
     return { progress, required, rediscovery, completed: false, instance: 0 };

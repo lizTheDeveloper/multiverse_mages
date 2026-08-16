@@ -94,7 +94,18 @@ version error instead of a behaviour diff.
 
 Two commands worth knowing before touching the core:
 
-- `npm run verify` — typecheck, lint, dependency-purity, and the full test suite. This is the gate.
+- `npm run verify` — typecheck, lint, dependency-purity, and the full test suite. This is the
+  **merge** gate.
+- `npm run verify:balance` — the three Monte Carlo balance gates. **Not** in `verify` since
+  2026-08-14: they run per-commit in a non-blocking Actions job and are required at *release*, not
+  at merge. They were the entire cost of checking a commit, the self-hosted runner serialises, and
+  during a campaign every commit is sweep-bearing — so they queued every unrelated pull request
+  behind a number that was moving on purpose. `ci.yml`'s `balance` job carries the argument and the
+  condition for putting them back.
+- `npm run verify:full` — `verify` plus `verify:balance` plus the two-hundred-year ascension gate.
+  **This is what an even MINOR requires** (`release-plan.md`), and the reason the split is safe: the
+  sweeps are release evidence, and a release that skips them is taking an even MINOR without the
+  evidence the parity scheme exists to carry.
 - `npm run goldens:regen` — regenerates the golden replay fixtures. **Never run this to make a
   test pass.** A fixture diff is a claim that behaviour changed on purpose, and reviewers read it
   as one.
@@ -412,6 +423,29 @@ Two related traps in the same command:
 - **`contentHash` at the top level of a baseline is a tamper seal over the file's own fields, not a
   content revision.** `provenance.contentHash` is the content revision. Reasoning from the wrong one
   produces confident nonsense — two baselines with different seals can hold identical provenance.
+
+## A state you established earlier is not a state you can trust later
+
+Two failures in one session, and they are the same failure twice.
+
+**A `git commit --amend` that errors leaves the index staged.** Amend refused with *"would make it
+empty"*; the follow-up `git commit` took **the index as it stood** rather than the working tree. The
+branch then carried `main`'s original file while the regenerated one sat uncommitted beside it — two
+commits, **zero net diff**, and `Verify` and `ci/hetzner-lint` both green on a pull request that
+changed nothing. A green check on an empty diff looks exactly like a green check on a real one.
+
+**A branch cut earlier does not know what `main` did since.** An agent spent an evening building a
+module that had landed on `main` mid-session in a more complete form — and only found out because a
+CI failure named a test file it had never written. The branch was deleted unmerged.
+
+So:
+
+- **After an `amend` that errors, re-stage before committing.**
+- **`gh pr view <n> --json files` before every merge.** One call. It has now caught two distinct
+  disasters: a PR carrying someone else's images under my title, and a PR that changed nothing at
+  all.
+- **Re-fetch `main` before building anything substantial**, not only before merging. A session long
+  enough to be worth having is long enough for `main` to move underneath it.
 
 ## A background loop outlives the reasoning that started it
 

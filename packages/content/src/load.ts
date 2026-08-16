@@ -186,6 +186,57 @@ function rediscoveryRequirementOverflows(researchCost: number, multiplier: numbe
   return researchCost * effective > FP_CEILING * FP_SCALE;
 }
 
+/**
+ * Whether a node may author a **negative** magnitude for this primitive.
+ *
+ * ## The rule, and the whole reason it is one line
+ *
+ * `node.schema.json` read `"minimum": 1` for as long as there was content, so
+ * all 407 shipped effects were positive and no node could express a cost. Every
+ * deep spell was a bonus, and a rate primitive wired to node effects could only
+ * ever *add* — which is a pure output boost with no opposing term, exactly the
+ * shape the balance work keeps refusing to build on.
+ *
+ * A negative is meaningful under `additive-into-multiplier` and only there. Those
+ * are the seven world-scale rate multipliers; their magnitudes are contributions
+ * to the `(1 + Σ)` a rate is multiplied by, `Σ` is a signed quantity by
+ * construction, and `@mm/primitives` floors the fold at zero so a stack of costs
+ * can stop a rate and can never reverse it.
+ *
+ * Every other rule is refused, and each refusal is a defect that would otherwise
+ * be silent rather than a conservatism:
+ *
+ * - **`presence`** (`portal`) — the magnitude carries no meaning at all, so a
+ *   negative one still opens the portal while reading as a prohibition.
+ * - **`multiplicative-on-remainder`** (`ward`, `concealment`) — the value is a
+ *   *prevented fraction*. A negative one makes `applyWard` amplify damage with
+ *   no bound at all, because the only bound in that direction is a ceiling.
+ * - **`max`** (`blink`, `knowledge-steal`) — `knowledge-steal` is an fp
+ *   probability and `rollStackedProbability` tests `draw < value` against an
+ *   unclamped stack, so a negative probability is silently always-false.
+ * - **`additive`** and **`summed-then-single-ward`** (`direct-damage`,
+ *   `area-denial`, `summon`, `lifespan`) — each would need a floor of its own
+ *   that no shared rule can supply. A negative `summon` has no count floor; a
+ *   negative `direct-damage` is healing, which is a design decision rather than
+ *   a sign convention.
+ *
+ * `lifespan` is the near miss worth naming here rather than in a commit message:
+ * `effectiveLifespan` **already** floors a curse at `MIN_EFFECTIVE_LIFESPAN_MONTHS`
+ * and its own field is documented *"true when the floor bound, i.e. a curse drove
+ * the total non-positive."* Enabling it is one line in this function. It is left
+ * refused because how many months a curse takes is a content-scale decision — and
+ * because authored `lifespan` magnitudes are currently sub-month values that
+ * `toInt` floors to zero, so the first authored curse would have to answer that
+ * question anyway.
+ *
+ * Derived from the registry's declared `stacking` rather than a per-primitive
+ * flag, so opening a rule opens it everywhere at once and there is no way for
+ * `primitive.json` to say "signed" about a rule that cannot hold a sign.
+ */
+export function permitsNegativeMagnitude(primitive: PrimitiveRecord): boolean {
+  return primitive.stacking === 'additive-into-multiplier';
+}
+
 /** Result of a validation pass that is allowed to fail without throwing. */
 export interface ValidationResult {
   readonly diagnostics: readonly ContentDiagnostic[];
@@ -951,7 +1002,8 @@ function checkNodes(
     for (let index = 0; index < node.effects.length; index += 1) {
       const effect = node.effects[index];
       if (effect === undefined) continue;
-      if (!primitiveById.has(effect.primitive)) {
+      const primitive = primitiveById.get(effect.primitive);
+      if (primitive === undefined) {
         out.push(
           diagnostic(
             file,
@@ -960,6 +1012,104 @@ function checkNodes(
             `node "${node.id}" declares effect primitive "${effect.primitive}", which primitive.json ` +
               'does not define. The primitive set is closed: content may not invent one — which is also ' +
               'what forbids a primitive that would modify portalStability (contracts.md §1.6)',
+          ),
+        );
+        continue;
+      }
+
+      // `substrate.md` §2: the five techniques are five operations on one
+      // conserved quantity, and the sign follows from the operation. **Creo
+      // adds and Perdo removes**, so a Creo node may not carry a negative
+      // world-scale magnitude and a Perdo node may not carry a positive one.
+      //
+      // ## Why only world scale
+      //
+      // The naive form of this rule — "a Perdo node may not carry a positive
+      // magnitude" — was tested against shipped content and **refuted**: 18
+      // Perdo effects are positive, and every one is an *engagement* primitive
+      // (`direct-damage`, `area-denial`, `concealment`, `ward`). Those measure
+      // a **consequence**, not a flow of vis. Unmaking a scent trail produces
+      // concealment; the concealment is positive because it is what the
+      // unmaking *achieved*, and the operation is still destructive. So the
+      // rule binds where the primitive names a flow, which is world scale.
+      //
+      // *Intellego* is deliberately unconstrained, and that is Maxwell's demon
+      // rather than an exemption. 19 Intellego nodes carry positive
+      // `resource-yield` — *"know how many, of what ages, and which of them
+      // will not see the winter"* — and none of them creates food. They are
+      // information reducing waste in a process that was already running, so
+      // the same labour yields more. That extracts more useful work from an
+      // existing flow without adding to it, which is exactly what perception
+      // is allowed to do.
+      //
+      // ## This rule was obeyed before it existed
+      //
+      // Measured over all 300 shipped nodes at the time of writing: Creo,
+      // Intellego, Muto and Rego carry 220 world-scale effects between them
+      // and **every one is positive**. Perdo carries exactly **one** — a
+      // negative `teach-rate` — and no Perdo node has ever carried a positive
+      // `resource-yield`. Nothing enforced any of that. The authors were
+      // following the cosmology before it was written down, which is the
+      // strongest available evidence that it was discovered rather than
+      // invented, and it is why this check lands with zero content churn.
+      //
+      // Note it could not have been violated before signed magnitudes existed:
+      // every magnitude had to be positive, and a positive Perdo world effect
+      // is incoherent, so authors simply never wrote one. Signed magnitudes is
+      // what admitted Perdo to the world economy at all.
+      const scale = primitive.scale;
+      const technique = cell?.technique;
+      if (scale === 'world' && technique === 'perdo' && effect.magnitude > 0) {
+        out.push(
+          diagnostic(
+            file,
+            `${at}/effects/${String(index)}/magnitude`,
+            'technique-sign',
+            `node "${node.id}" is a *Perdo* working and adds ${String(effect.magnitude)} to ` +
+              `"${effect.primitive}", a world-scale flow. Perdo unmakes: an unmaking that ` +
+              'increases a flow is not a balance choice, it is a claim that destruction creates. ' +
+              'Author it negative, or move the effect to a technique that makes (substrate.md §2)',
+          ),
+        );
+      }
+      if (scale === 'world' && technique === 'creo' && effect.magnitude < 0) {
+        out.push(
+          diagnostic(
+            file,
+            `${at}/effects/${String(index)}/magnitude`,
+            'technique-sign',
+            `node "${node.id}" is a *Creo* working and subtracts ${String(-effect.magnitude)} from ` +
+              `"${effect.primitive}", a world-scale flow. Creo makes: a making that reduces a flow ` +
+              'is a cost wearing the wrong technique — author it under Perdo (substrate.md §2)',
+          ),
+        );
+      }
+
+      if (effect.magnitude === 0) {
+        out.push(
+          diagnostic(
+            file,
+            `${at}/effects/${String(index)}/magnitude`,
+            'content-invariant',
+            `node "${node.id}" authors a magnitude of zero for "${effect.primitive}". An effect that ` +
+              'does nothing reads as an authored intent and behaves as a comment; delete the effect ' +
+              'instead. (The schema cannot say this: the interpreter behind it implements neither ' +
+              '"not" nor "exclusiveMinimum".)',
+          ),
+        );
+      } else if (effect.magnitude < 0 && !permitsNegativeMagnitude(primitive)) {
+        out.push(
+          diagnostic(
+            file,
+            `${at}/effects/${String(index)}/magnitude`,
+            'content-invariant',
+            `node "${node.id}" authors a negative magnitude for "${effect.primitive}", whose ` +
+              `stacking rule is "${primitive.stacking}". A cost is only meaningful under ` +
+              '"additive-into-multiplier", where it subtracts from the (1 + Σ) a rate is ' +
+              'multiplied by and @mm/primitives floors that fold at zero. Under every other rule ' +
+              'a negative is a category error with no floor to catch it: it inverts a prevented ' +
+              'fraction, an evasion probability or a summoned headcount rather than opposing one ' +
+              '(contracts.md §3)',
           ),
         );
       }

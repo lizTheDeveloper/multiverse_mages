@@ -338,8 +338,11 @@ describe('the re-seal entrypoint is unreachable from anything automated', () => 
         ENTRYPOINT,
       );
     }
-    // Not vacuous: the gate *is* wired in.
-    expect(manifest.scripts['verify']).toContain('balance:gate');
+    // Not vacuous: the gate *is* wired into a script the repo runs. That script
+    // is `verify:balance` and not `verify` — the three Monte Carlo gates moved
+    // out of the merge path on 2026-08-14 and are required at release instead.
+    // The control still controls; only the name it points at moved.
+    expect(manifest.scripts['verify:balance']).toContain('balance:gate');
   });
 
   it('offers no flag that skips the verification sweep', () => {

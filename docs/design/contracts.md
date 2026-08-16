@@ -820,6 +820,29 @@ all of them.
 | `knowledge-steal` | fp probability per attempt of copying an instance | engagement | max, not sum |
 | `portal` | boolean gate; enables raid initiation | world | n/a — presence only |
 
+**Magnitudes are signed, and a negative one is a COST.** `node.schema.json` read `"minimum": 1`
+for as long as there was content, so all 407 shipped effects were positive and no node could
+express the other half of a tradeoff. A negative magnitude is meaningful under
+**`additive-into-multiplier` and nowhere else**: it subtracts from the `(1 + Σ)` a rate is
+multiplied by, which is a signed quantity by construction. The content loader refuses one on every
+other rule, because a negative there is a category error with no bound to catch it — it inverts a
+prevented fraction (`ward` amplifies damage without limit), an evasion probability
+(`rollStackedProbability` reads it as always-false), or a summoned headcount, rather than opposing
+one. It refuses a magnitude of zero everywhere, since an effect that does nothing reads as an
+authored intent and behaves as a comment.
+
+**Every `(1 + Σ)` therefore has a floor of `fp(0)`,** applied by `@mm/primitives` before the cap and
+counted in its own series beside the clamp counters. The floor is a property of the *stacking rule*
+rather than of the primitive: it exists exactly where a sum can cross zero. Zero is the whole of the
+bound — a floor above it would be an untuned balance magnitude living in code, and it would cap how
+strong a cost an author may write, which is the same defect as the `"minimum": 1` it replaced.
+**A stack of costs can stop a rate; it can never reverse one.** What a zero rate *means* is then
+each consumer's, and all three answer the same way: the month produces nothing. `scribingThroughput`
+and `expectedBirths` multiply through and get zero for free; research scales the *cost* rather than
+the progress, so it says it as zero effort — `researchRequirement` has no requirement that means
+"unreachable" without a sentinel, and a sentinel in a fixed-point field is a number some later
+arithmetic will multiply.
+
 **Why the caps exist:** every uncapped multiplicative rate in a game with two compounding loops
 (worship §7, knowledge-as-capital §6a) is a runaway waiting to happen. The caps are deliberately
 placed to be *reachable*, so the balance harness measures behaviour at the cap rather than

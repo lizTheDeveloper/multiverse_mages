@@ -1,0 +1,530 @@
+<!doctype html>
+<!--
+  Multiverse Mages — play.
+  Copyright (C) 2026 Ann Kelner
+  SPDX-License-Identifier: AGPL-3.0-or-later
+
+  The console next door asks whether every surface composes. This page asks a
+  smaller question: can a person sit down and play the universe.
+
+  Three things it does that the console does not.
+
+  1. **It names what it can, and refuses to name what it cannot.** Techniques,
+     forms, cells, species and traditions all carry names in `content`, so the
+     verbs that take them offer named choices instead of integers. The verbs that
+     take an entity handle — bless, assign, fund, grant, portal — genuinely
+     cannot be named: §4.4's `Candidate` is `{params}` and nothing on it says
+     which mage a handle is. Those say "the 3rd of 19, by §4.4's ranking" rather
+     than inventing a person.
+  2. **It draws the two things that were already observable and undrawn.**
+     `universityCount`, `universityCapacity` and `prestige` are in §4.1's five
+     resource and four institution channels and have been all along;
+     `ui/shared/session.js` has decoded them since it was written.
+  3. **It says what changed.** Every action and every span of time prints a diff
+     against the frame before it. A god who cannot see the consequence of a verb
+     is pressing buttons, and that was the honest description of playing here.
+
+  It reads through `ui/shared/session.js` like every other surface, so it decodes
+  and never computes: no rule is evaluated here, and a number this page cannot
+  source it does not show.
+-->
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Multiverse Mages — play</title>
+<link rel="stylesheet" href="../shared/theme.css" />
+
+<style>
+  :root {
+    --gap: 1rem;
+    --edge: color-mix(in oklab, currentColor 14%, transparent);
+    --raised: color-mix(in oklab, currentColor 5%, transparent);
+    --good: #2f7d5b;
+    --spend: #8a5a2b;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme='light']) {
+      --good: #6ec49a;
+      --spend: #d0a06a;
+    }
+  }
+  :root[data-theme='dark'] {
+    --good: #6ec49a;
+    --spend: #d0a06a;
+  }
+
+  body {
+    max-width: 62rem;
+    margin: 0 auto;
+    padding: 1.5rem 1.25rem 4rem;
+  }
+
+  h1 {
+    font-size: 1.35rem;
+    margin: 0 0 0.15rem;
+  }
+  .sub {
+    font: inherit;
+    font-size: 0.85rem;
+    opacity: 0.72;
+    margin: 0 0 1.25rem;
+  }
+
+  /* ---- the world -------------------------------------------------------- */
+  .world {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(7.5rem, 1fr));
+    gap: 0.5rem;
+    margin-bottom: var(--gap);
+  }
+  .stat {
+    border: 1px solid var(--edge);
+    border-radius: 3px;
+    padding: 0.5rem 0.6rem;
+  }
+  .stat .k {
+    font-size: 0.7rem;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    opacity: 0.65;
+  }
+  .stat .v {
+    font-size: 1.3rem;
+    font-variant-numeric: tabular-nums;
+    line-height: 1.2;
+  }
+  .stat .n {
+    font-size: 0.72rem;
+    opacity: 0.6;
+  }
+
+  /* ---- what changed ----------------------------------------------------- */
+  #changed {
+    border: 1px solid var(--edge);
+    border-left: 3px solid var(--good);
+    border-radius: 3px;
+    padding: 0.6rem 0.75rem;
+    margin-bottom: var(--gap);
+    min-height: 2.9rem;
+    font-size: 0.9rem;
+  }
+  #changed .head {
+    font-weight: 600;
+  }
+  #changed ul {
+    margin: 0.3rem 0 0;
+    padding-left: 1.1rem;
+    columns: 2;
+  }
+  #changed li {
+    font-variant-numeric: tabular-nums;
+  }
+  .up {
+    color: var(--good);
+  }
+  .down {
+    color: var(--spend);
+  }
+
+  /* ---- controls --------------------------------------------------------- */
+  .clock {
+    display: flex;
+    gap: 0.4rem;
+    flex-wrap: wrap;
+    margin-bottom: var(--gap);
+  }
+  button {
+    font: inherit;
+    font-size: 0.85rem;
+    padding: 0.35rem 0.7rem;
+    border: 1px solid var(--edge);
+    border-radius: 3px;
+    background: var(--raised);
+    color: inherit;
+    cursor: pointer;
+  }
+  button:hover:not(:disabled) {
+    border-color: currentColor;
+  }
+  button:disabled {
+    opacity: 0.38;
+    cursor: not-allowed;
+  }
+  button:focus-visible {
+    outline: 2px solid currentColor;
+    outline-offset: 2px;
+  }
+
+  .verbs {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(17rem, 1fr));
+    gap: 0.6rem;
+  }
+  .verb {
+    border: 1px solid var(--edge);
+    border-radius: 3px;
+    padding: 0.6rem 0.7rem;
+  }
+  .verb h3 {
+    font-size: 0.95rem;
+    margin: 0 0 0.1rem;
+    display: flex;
+    justify-content: space-between;
+    gap: 0.5rem;
+    align-items: baseline;
+  }
+  .verb .cost {
+    font-size: 0.75rem;
+    opacity: 0.7;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+  }
+  .verb p {
+    margin: 0 0 0.45rem;
+    font-size: 0.78rem;
+    opacity: 0.72;
+  }
+  .verb select {
+    font: inherit;
+    font-size: 0.82rem;
+    width: 100%;
+    padding: 0.25rem;
+    margin-bottom: 0.4rem;
+    background: var(--raised);
+    color: inherit;
+    border: 1px solid var(--edge);
+    border-radius: 3px;
+  }
+  .unnamed {
+    font-size: 0.72rem;
+    opacity: 0.6;
+    margin: -0.2rem 0 0.4rem;
+  }
+  #dead {
+    margin-top: 1.5rem;
+    font-size: 0.8rem;
+    opacity: 0.62;
+  }
+  #err {
+    color: #b3261e;
+    font-size: 0.85rem;
+  }
+</style>
+
+<h1>Multiverse Mages</h1>
+<p class="sub" id="sub">Opening a universe…</p>
+<p id="err"></p>
+
+<div class="world" id="world"></div>
+<div id="changed"><span class="head">Nothing yet.</span> Advance time or take an action.</div>
+
+<div class="clock">
+  <button data-ticks="1">+1 month</button>
+  <button data-ticks="12">+1 year</button>
+  <button data-ticks="60">+5 years</button>
+  <button data-ticks="240">+20 years</button>
+</div>
+
+<div class="verbs" id="verbs"></div>
+<p id="dead"></p>
+
+<script type="module">
+  import { openSession, units } from '../shared/session.js';
+  import { mountThemeControl } from '../shared/theme.js';
+
+  const $ = (id) => document.getElementById(id);
+
+  /*
+   * What each verb is for, in a player's words rather than the spec's. The spec
+   * numbers stay in `actionNames`; this is the sentence a person needs to decide
+   * whether they want it. Absent means the verb has no gloss and prints none —
+   * an invented one would be worse than silence.
+   */
+  const GLOSS = {
+    1: 'Arm every cell on one technique.',
+    2: 'Close every cell on one technique.',
+    3: 'Arm every cell on one form.',
+    4: 'Close every cell on one form.',
+    5: 'Prise one cell open against the ruleset.',
+    6: 'Close one cell against the ruleset.',
+    7: 'Free an edict slot.',
+    8: 'Give a mage a root node outright.',
+    9: 'Raise one mage’s research, teaching and life.',
+    10: 'Move a mage to another role.',
+    11: 'Found a university, or advance a build.',
+    12: 'Point the academy at one cell. Decays.',
+    13: 'Change what magic is, wholesale.',
+    14: 'Open a portal and raid.',
+    15: 'End the run and take the summit.',
+    16: 'Buy a scholar of a species you cannot breed.',
+  };
+
+  /* The four channels a player watches, and the four institutions beside them. */
+  const STATS = [
+    ['favor', 'Favor', 'what you spend'],
+    ['worship', 'Worship', 'income'],
+    ['materials', 'Materials', 'food + stone + vellum'],
+    ['prestige', 'Prestige', 'carried in'],
+  ];
+
+  let session;
+  let previous = null;
+
+  /* ---- naming ----------------------------------------------------------- */
+
+  /*
+   * The named axes. Techniques and forms are indexed by their `bit`, which is
+   * the position §1.1's ruleset switches sit at, and that is what the axis
+   * actions take as their parameter.
+   */
+  const byBit = (rows) => {
+    const out = [];
+    for (const row of rows ?? []) out[row.bit] = row.name ?? row.id;
+    return out;
+  };
+
+  function namers(content) {
+    const techniques = byBit(content.techniques);
+    const forms = byBit(content.forms);
+    const cellName = new Map(
+      (content.cells ?? []).map((c) => {
+        const t = (content.techniques ?? []).find((x) => x.id === c.technique);
+        const f = (content.forms ?? []).find((x) => x.id === c.form);
+        return [c.cellId, `${t?.name ?? c.technique} ${f?.name ?? c.form}`];
+      }),
+    );
+    const species = new Map((content.species ?? []).map((s) => [s.speciesId, s.name ?? s.id]));
+    const traditions = new Map((content.traditions ?? []).map((t) => [t.traditionId, t.name ?? t.id]));
+
+    /*
+     * Options for one verb, or `null` when the parameter is an entity handle.
+     *
+     * `null` is the honest answer and the page prints it as one. A handle is
+     * `(generation << 20) | index` and says nothing about who it is; §4.4's
+     * `Candidate` carries `params` and no label. Naming it would mean inventing
+     * a mage, and a UI that invents is worse than one that admits.
+     */
+    return (id, candidates) => {
+      const list = (rows) => rows.map((name, i) => ({ value: i, label: name })).filter((o) => o.label);
+      if (id === 1 || id === 2) return list(techniques);
+      if (id === 3 || id === 4) return list(forms);
+      /*
+       * `encourageResearch` is §4.4-parameterized and ships a ranked candidate
+       * list, so its options are that list in its order. The two edicts are not
+       * — `CANDIDATE_SLOTS` covers 8–14 and 16 alone — so their parameter is a
+       * cell id with no list behind it, and the whole grid is the honest set of
+       * choices to offer.
+       */
+      if (id === 12) {
+        return (candidates ?? []).map((c) => ({
+          value: c.params[0],
+          label: cellName.get(c.params[0]) ?? `cell ${c.params[0]}`,
+        }));
+      }
+      if (id === 5 || id === 6) {
+        return [...cellName.entries()]
+          .sort((a, b) => (a[1] < b[1] ? -1 : 1))
+          .map(([cellId, label]) => ({ value: cellId, label }));
+      }
+      if (id === 13) {
+        return (candidates ?? []).map((c) => ({
+          value: c.params[0],
+          label: traditions.get(c.params[0]) ?? `tradition ${c.params[0]}`,
+        }));
+      }
+      if (id === 16) {
+        return (candidates ?? []).map((c) => ({
+          value: c.params[0],
+          label: species.get(c.params[0]) ?? `species ${c.params[0]}`,
+        }));
+      }
+      return null;
+    };
+  }
+
+  /* ---- rendering -------------------------------------------------------- */
+
+  function snapshot(frame) {
+    const r = frame.resources();
+    const i = frame.institutions();
+    const c = frame.clock();
+    const mages = frame.mageBuckets?.() ?? null;
+    return {
+      favor: r.favor,
+      worship: r.worship,
+      worshipTier: r.worshipTier,
+      materials: r.materials,
+      prestige: r.prestige,
+      universities: i.universities,
+      capacity: i.capacity,
+      libraryDepth: i.libraryDepth,
+      grimoires: i.grimoires,
+      tick: c.worldTick,
+      era: c.era,
+      mages: mages ? mages.reduce((n, b) => n + b.living, 0) : null,
+    };
+  }
+
+  const fmt = (n) => (Number.isInteger(n) ? String(n) : n.toFixed(1));
+
+  function drawWorld(s) {
+    const cell = (k, v, n) => `<div class="stat"><div class="k">${k}</div>
+      <div class="v">${v}</div><div class="n">${n}</div></div>`;
+    $('world').innerHTML = [
+      ...STATS.map(([key, label, note]) =>
+        cell(label, fmt(s[key]), key === 'worship' ? `tier ${s.worshipTier}` : note),
+      ),
+      cell('Universities', `${s.universities}`, `${fmt(s.capacity)} seats`),
+      cell('Library', `${s.libraryDepth}`, 'distinct nodes'),
+      cell('Grimoires', `${s.grimoires}`, 'books'),
+      cell('Mages', s.mages === null ? '—' : s.mages, `tick ${s.tick} · era ${s.era}`),
+    ].join('');
+  }
+
+  /* The whole point of the page: a verb you cannot see the consequence of is a
+     button, not a move. */
+  const DIFF = [
+    ['favor', 'favor'],
+    ['worship', 'worship'],
+    ['materials', 'materials'],
+    ['prestige', 'prestige'],
+    ['universities', 'universities'],
+    ['capacity', 'seats'],
+    ['libraryDepth', 'library depth'],
+    ['grimoires', 'grimoires'],
+    ['mages', 'mages'],
+  ];
+
+  function drawChanged(head, before, after) {
+    const rows = [];
+    for (const [key, label] of DIFF) {
+      if (before?.[key] == null || after?.[key] == null) continue;
+      const d = after[key] - before[key];
+      if (Math.abs(d) < 0.05) continue;
+      const cls = d > 0 ? 'up' : 'down';
+      rows.push(
+        `<li><span class="${cls}">${d > 0 ? '+' : ''}${fmt(d)}</span> ${label}
+         <span style="opacity:.55">(${fmt(before[key])} → ${fmt(after[key])})</span></li>`,
+      );
+    }
+    const months = after.tick - before.tick;
+    const when = months > 0 ? ` · ${months} month${months === 1 ? '' : 's'} passed` : '';
+    $('changed').innerHTML =
+      `<span class="head">${head}</span>${when}` +
+      (rows.length ? `<ul>${rows.join('')}</ul>` : ' — nothing measurable moved.');
+  }
+
+  function drawVerbs(frame) {
+    const nameFor = namers(session.content);
+    const candidates = frame.candidateLists();
+    const host = $('verbs');
+    host.innerHTML = '';
+    const dead = [];
+
+    for (const action of frame.actions()) {
+      if (action.id === 0) continue;
+      if (!action.legal) {
+        dead.push(action.name);
+        continue;
+      }
+      const options = nameFor(action.id, candidates.get(action.id));
+      const slots = candidates.get(action.id)?.length ?? 0;
+      const cost = session.actionCost(action.id) ?? 0;
+
+      const card = document.createElement('div');
+      card.className = 'verb';
+      card.innerHTML =
+        `<h3>${action.name}<span class="cost">${cost === 0 ? 'free' : `${fmt(units(cost))} favor`}</span></h3>` +
+        (GLOSS[action.id] ? `<p>${GLOSS[action.id]}</p>` : '');
+
+      let read = () => [];
+      if (options && options.length > 0) {
+        const select = document.createElement('select');
+        for (const option of options) {
+          const node = document.createElement('option');
+          node.value = String(option.value);
+          node.textContent = option.label;
+          select.append(node);
+        }
+        card.append(select);
+        read = () => [Number(select.value)];
+      } else if (slots > 0) {
+        /* Honest about what it cannot name. */
+        const select = document.createElement('select');
+        for (let slot = 0; slot < slots; slot += 1) {
+          const node = document.createElement('option');
+          node.value = String(slot);
+          node.textContent = `${slot + 1} of ${slots}, by §4.4 ranking`;
+          select.append(node);
+        }
+        card.append(select);
+        const note = document.createElement('p');
+        note.className = 'unnamed';
+        note.textContent = 'These are entity handles. Nothing in the read path says who they are.';
+        card.append(note);
+        read = () => [Number(select.value)];
+      }
+
+      const go = document.createElement('button');
+      go.textContent = 'Do it';
+      go.addEventListener('click', () => act(action.id, action.name, read()));
+      card.append(go);
+      host.append(card);
+    }
+
+    $('dead').textContent = dead.length
+      ? `Closed to you right now: ${dead.join(', ')}. Advance time, or change the ruleset, and some open.`
+      : '';
+  }
+
+  function redraw(head, before) {
+    const frame = session.last();
+    const now = snapshot(frame);
+    drawWorld(now);
+    if (before) drawChanged(head, before, now);
+    drawVerbs(frame);
+    previous = now;
+    const p = session.provenance;
+    $('sub').textContent =
+      `seed ${p.seed} · tick ${now.tick} of ${p.tickCap} · ${frame.status()} · ` +
+      `${p.actionSpaceSize} verbs`;
+  }
+
+  async function act(id, name, params) {
+    const before = previous;
+    try {
+      const result = await session.submit(id, params);
+      const verdict = result?.admitted === false ? `${name} — refused (${result.rejection})` : name;
+      redraw(verdict, before);
+    } catch (error) {
+      $('err').textContent = String(error.message ?? error);
+    }
+  }
+
+  async function run(ticks) {
+    const before = previous;
+    try {
+      await session.advance(ticks);
+      redraw(`${ticks} month${ticks === 1 ? '' : 's'} of the world on its own`, before);
+    } catch (error) {
+      $('err').textContent = String(error.message ?? error);
+    }
+  }
+
+  mountThemeControl(document.querySelector('.clock'));
+
+  for (const button of document.querySelectorAll('.clock button')) {
+    button.addEventListener('click', () => run(Number(button.dataset.ticks)));
+  }
+
+  try {
+    session = await openSession({ live: true });
+    if (!session.live) {
+      $('err').textContent =
+        'This page needs a running universe: `npm run play`, then open http://localhost:8300/ui/play/.';
+    }
+    redraw(null, null);
+  } catch (error) {
+    $('err').textContent = String(error.message ?? error);
+    $('sub').textContent = 'No universe.';
+  }
+</script>

@@ -61,6 +61,7 @@ export {
 
 export type { RequirementInputs, ResearchInputs, ResearchOutcome } from './research.js';
 export {
+  effectiveResearchRate,
   holdsUsable,
   isRediscovery,
   personalLocationKind,

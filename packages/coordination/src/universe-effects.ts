@@ -344,7 +344,15 @@ export function universeEconomyBonuses(
     contributingNodes += 1;
 
     if (contribution.primitiveId === 'build-rate') {
-      if (contribution.magnitude > 0) buildRate.push(contribution.magnitude);
+      // Nonzero, not positive. The twin of the filter in `academic-effects.ts`,
+      // and it was correct for exactly as long as `node.schema.json` said
+      // `"minimum": 1`: "zero" and "negative" were the same empty set, so the
+      // wider test was free. `permitsNegativeMagnitude` covers **every**
+      // `additive-into-multiplier` primitive, `build-rate` included, so a node
+      // authoring a construction cost would otherwise validate, ship, and be
+      // silently swallowed here. `stackMagnitudes` floors the `(1 + Σ)` at
+      // zero, so what leaves this list is bounded however negative the sum is.
+      if (contribution.magnitude !== 0) buildRate.push(contribution.magnitude);
       continue;
     }
 
@@ -352,7 +360,11 @@ export function universeEconomyBonuses(
     if (form === undefined) continue;
     const routed = routeYieldByForm(form, contribution.magnitude);
     for (const kind of MATERIAL_KINDS) {
-      if (routed[kind] > 0) resourceYield[kind].push(routed[kind]);
+      // Zero, not positive: a negative routed amount is this node's cost to
+      // that material kind, and dropping it here would undo `routeYieldByForm`
+      // one line downstream. The bound is `stackingFloor`'s `fp(0)` on the
+      // stacked multiplier, not a sign test at the door.
+      if (routed[kind] !== 0) resourceYield[kind].push(routed[kind]);
     }
   }
 

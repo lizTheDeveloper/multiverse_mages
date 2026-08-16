@@ -148,6 +148,41 @@ export function multiplicativeOnRemainder(fractions: readonly Fixed[]): Fixed {
   // not make the fold exact — the one-unit rounding loss is inherent to
   // flooring at each step — but a rule that is uniformly slightly lossy is a
   // balance question, while a rule that disagrees with itself is a bug.
+  // A negative prevented fraction is **refused**, not floored.
+  //
+  // It is not a weaker ward, it is a sign-inversion: `FP_ONE - (-200)` is
+  // `1224`, the remainder grows past `FP_ONE`, and `applyWard(1000, -200)`
+  // returns **1195** — twenty percent more damage than no ward at all. The cap
+  // cannot catch it, because a cap is a ceiling and this leaves through the
+  // floor.
+  //
+  // Refusing rather than clamping to zero, for the reason the overflow guard
+  // below already gave for `FP_MIN`: a magnitude this function cannot interpret
+  // is a defect upstream, and silently reading it as "no ward" turns a
+  // sign-inverted defence into a defence that merely does nothing — which is
+  // the harder of the two to ever notice.
+  //
+  // Content cannot reach this. `permitsNegativeMagnitude` refuses a negative on
+  // every `multiplicative-on-remainder` primitive, which is the primary defence
+  // and the one that names the offending node in a diagnostic. This is the
+  // second, and it is here rather than in a caller because a raid arbitrating
+  // under a *host's* ruleset reads magnitudes this package cannot re-validate.
+  //
+  // Only the lower end is bounded. A fraction **above** `FP_ONE` — "prevents
+  // more than everything" — carries the same flip at three or more sources, and
+  // bounding it would change what a shipped `ward` magnitude means today, so it
+  // is left as an authored question rather than silently redefined here.
+  for (const fraction of fractions) {
+    if (fraction < 0) {
+      throw new RangeError(
+        `multiplicative-on-remainder stacking received a negative prevented fraction ` +
+          `(${String(fraction)}). A negative fraction amplifies rather than prevents, and no cap ` +
+          'bounds it: contracts.md §3 permits a negative magnitude only under ' +
+          'additive-into-multiplier, and the content loader refuses one here.',
+      );
+    }
+  }
+
   const ordered = [...fractions].sort((a, b) => a - b);
 
   let remainder: Fixed = FP_ONE;

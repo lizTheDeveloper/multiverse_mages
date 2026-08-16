@@ -1,14 +1,14 @@
 {
   "note": "Pinned reachability findings. Generated — do not hand-edit. Regenerate with `npm run reachability:pin` and explain the diff in the commit message: an entry removed is a repair, an entry added is a debt someone accepted.",
   "scan": {
-    "examinedSymbolCount": 860,
-    "productionFileCount": 311
+    "examinedSymbolCount": 882,
+    "productionFileCount": 329
   },
   "scanFloor": {
-    "examinedSymbolCount": 688,
-    "productionFileCount": 248
+    "examinedSymbolCount": 705,
+    "productionFileCount": 263
   },
-  "findingCount": 125,
+  "findingCount": 129,
   "findings": [
     {
       "key": "constant:packages/coordination/src/god/constants.ts:legacyArchiveMaxTier",
@@ -103,6 +103,14 @@
       "category": "unreached",
       "file": "packages/content/src/audio.ts",
       "name": "audioSelect",
+      "kind": "function"
+    },
+    {
+      "key": "symbol:packages/content/src/character.ts:characterFor",
+      "group": "symbol",
+      "category": "unreached",
+      "file": "packages/content/src/character.ts",
+      "name": "characterFor",
       "kind": "function"
     },
     {
@@ -843,11 +851,26 @@
       "kind": "function"
     },
     {
+      "key": "symbol:packages/scenario/src/strategy-audit.ts:FOUNDING_PROBE",
+      "group": "symbol",
+      "category": "reachedOnlyByUnreached",
+      "file": "packages/scenario/src/strategy-audit.ts",
+      "name": "FOUNDING_PROBE"
+    },
+    {
       "key": "symbol:packages/scenario/src/strategy-audit.ts:actionName",
       "group": "symbol",
       "category": "reachedOnlyByUnreached",
       "file": "packages/scenario/src/strategy-audit.ts",
       "name": "actionName"
+    },
+    {
+      "key": "symbol:packages/scenario/src/strategy-audit.ts:auditFounding",
+      "group": "symbol",
+      "category": "unreached",
+      "file": "packages/scenario/src/strategy-audit.ts",
+      "name": "auditFounding",
+      "kind": "function"
     },
     {
       "key": "symbol:packages/scenario/src/strategy-audit.ts:auditPool",
@@ -870,6 +893,14 @@
       "category": "unreached",
       "file": "packages/scenario/src/strategy-audit.ts",
       "name": "formatAudit",
+      "kind": "function"
+    },
+    {
+      "key": "symbol:packages/scenario/src/strategy-audit.ts:formatFounding",
+      "group": "symbol",
+      "category": "unreached",
+      "file": "packages/scenario/src/strategy-audit.ts",
+      "name": "formatFounding",
       "kind": "function"
     },
     {

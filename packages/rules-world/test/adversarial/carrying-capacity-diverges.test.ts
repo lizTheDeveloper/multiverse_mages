@@ -166,7 +166,7 @@ function run(share: number): Trace {
 
     const demand = subsistenceDemand(population);
     const outcome = consumeMaterials(stock, {
-      subsistence: demand,
+      casting: 0, subsistence: demand,
       libraryUpkeep: 0,
       scribing: 0,
       construction: 0,

@@ -137,9 +137,13 @@
  * Neither check establishes that alone. Run in `verify` they are adjacent on
  * purpose.
  *
- * This is also why the exclusions can be shared despite the different scopes.
- * `lifespan` is carried by seventeen non-v1 nodes and by no v1 node at all, so
- * "no academic can move it" holds in v1 either way.
+ * The exclusions **used** to be shared despite the different scopes, on the
+ * argument that `lifespan` is carried by seventeen non-v1 nodes and by no v1
+ * node at all, so "no academic can move it" held in v1 either way. That is no
+ * longer true: `coordination/knowledge-vitality.ts` is a node-driven consumer
+ * of both `lifespan` and `fertility`, so this check's answer moved and
+ * `coverage.ts`'s did not. See {@link PRIMITIVE_CONSUMPTION_EXCLUSIONS} for
+ * what the split costs and what it does not.
  *
  * ## It fails in both directions, like its sibling
  *
@@ -153,7 +157,38 @@
 
 import type { ContentId, ContentRegistry, EffectRecord, Fp } from '@mm/content';
 
-import { PRIMITIVE_COVERAGE_EXCLUSIONS } from './coverage.js';
+/**
+ * Primitives this check accepts as having no node-driven consumer.
+ *
+ * **Empty, and that is the point of the campaign this file was written for.**
+ * `.github/workflows/ci.yml` states the exit condition in the repo's own words
+ * — *"every primitive has a node-driven consumer, or the remaining ones are
+ * declared exclusions"* — and warns in the same breath that adding a primitive
+ * here to make the job green is the exact failure the check exists to catch. An
+ * entry is a claim that no academic can move a number the content says they
+ * can, and it should be as hard to write as this comment makes it.
+ *
+ * ## Why this is not `coverage.ts`'s list any more
+ *
+ * It was, imported rather than restated, and the argument for sharing was that
+ * the two scopes agreed on the only two entries. They no longer do.
+ * `lifespan` and `fertility` have a node-driven consumer as of
+ * `coordination/knowledge-vitality.ts` — this check's question, answered yes —
+ * and still no **v1** node declares either, which is `coverage.ts`'s question,
+ * answered no. One list cannot hold two answers, and the failure direction each
+ * check owns is what forced the split: a shared list would make this check fail
+ * on `consumedExclusions` and that one fail on `unexercised`, whichever way it
+ * was written.
+ *
+ * The two checks are still adjacent in `verify` and still tighter together than
+ * apart. What is lost is the composed claim for these two primitives
+ * specifically: coverage no longer certifies that the node whose magnitude
+ * reaches the consumer is one a mage could legally learn. For `lifespan` and
+ * `fertility` it is not — every authored node sits outside the twelve enabled
+ * cells — and `knowledge-vitality.ts` says so in its own module note rather
+ * than leaving a reader to infer it from a green check.
+ */
+export const PRIMITIVE_CONSUMPTION_EXCLUSIONS: readonly string[] = [];
 
 /**
  * Where a consumer's magnitudes come from.
@@ -385,16 +420,14 @@ function entriesFrom(
  * here, so there is no transcribed list of primitive names in this file.
  * @param recorder - The recorder the composition root threaded through its
  * wiring. What it collected *is* the answer.
- * @param exclusions - Defaults to `coverage.ts`'s
- * {@link PRIMITIVE_COVERAGE_EXCLUSIONS}, imported rather than restated so the
- * two checks cannot come to disagree about which gaps are accepted. Passed in
- * so a test can watch the check fail on a bad list, which is the only way to
- * know the list is checked at all.
+ * @param exclusions - Defaults to {@link PRIMITIVE_CONSUMPTION_EXCLUSIONS},
+ * which is empty. Passed in so a test can watch the check fail on a bad list,
+ * which is the only way to know the list is checked at all.
  */
 export function checkPrimitiveConsumption(
   registry: ContentRegistry,
   recorder: ConsumptionRecorder,
-  exclusions: readonly string[] = PRIMITIVE_COVERAGE_EXCLUSIONS,
+  exclusions: readonly string[] = PRIMITIVE_CONSUMPTION_EXCLUSIONS,
 ): PrimitiveConsumptionReport {
   const declared = new Set(registry.primitives.map((entry) => entry.record.id));
   const excluded = new Set(exclusions);
