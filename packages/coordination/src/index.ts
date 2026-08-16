@@ -150,3 +150,13 @@ export {
 
 export type { WorldSimulation, WorldStepDeps, WorldStepReport } from './world-step.js';
 export { defineWorldSimulation, worldSystem } from './world-step.js';
+/**
+ * The scribing queue the world loop asks the populace for — §5's written record,
+ * as a count of what has not been written yet.
+ *
+ * Exported for one reason: `agent-api`'s `knowledgeCensus` reports the identical
+ * figure as `unwrittenNodeIds.length`, and the rules path may not import a §4.4
+ * diagnostic to get it. Two implementations of one definition need a test that
+ * they agree, and that test needs to be able to call this one.
+ */
+export { unwrittenNodeCount } from './world-step.js';

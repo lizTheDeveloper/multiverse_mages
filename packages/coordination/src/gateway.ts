@@ -122,6 +122,7 @@
 
 import type { ContentId, Fp } from '@mm/content';
 import type { EntityHandle, Fixed, SimState } from '@mm/sim-core';
+import { floorDiv } from '@mm/sim-core';
 import type { EffortKindValue, Handle, Ruleset } from '@mm/state';
 import {
   EFFORT_KIND,
@@ -134,6 +135,7 @@ import {
   UNIVERSITY,
   componentOf,
   permits,
+  readRecord,
 } from '@mm/state';
 import type {
   AcquirePolicy,
@@ -164,7 +166,7 @@ import type {
   MageHandle,
   UniversityHandle,
 } from '@mm/rules-world';
-import { compareTargets } from '@mm/rules-world';
+import { DEGRADATION_PER_SHORTFALL, compareTargets } from '@mm/rules-world';
 import { NO_INHERITOR } from '@mm/rules-world';
 
 import type { EffortKey, EffortLedger } from './effort-store.js';
@@ -866,21 +868,58 @@ export class CoordinatingKnowledgeGateway implements KnowledgeGateway {
    * The `universities` requirement *Libraries impose upkeep proportional to
    * depth* ends with the clause this method exists for: *"the shortfall MUST
    * degrade libraries deterministically rather than driving materials
-   * negative."* `applyLibraryUpkeep` decides **how many** — that is an economy
-   * question and `rules-world` owns it — and says in as many words that
-   * *"which instance is destroyed is the knowledge subsystem's decision"*,
-   * because `contracts.md` §5 rule 3 keeps the two packages out of each other.
-   * This is the port between them.
+   * negative."* `applyLibraryUpkeep` decides **what is owed and what went
+   * unpaid** — that is an economy question and `rules-world` owns it — and this
+   * is the port that spends the unpaid part against actual books, because
+   * `contracts.md` §5 rule 3 keeps `rules-world` out of `rules-magic` and it
+   * therefore may not know that a shelf holds books at all.
+   *
+   * ## A shortfall budget, not an instance count — and why that is the fix
+   *
+   * This used to take a count, computed upstream as `floorDiv(shortfall, 32)`.
+   * Every book on the shelf then cost the same 32 of unpaid upkeep, which made
+   * a grimoire's `durability` — the one structural difference between the
+   * species, dwarf `scribeAffinity` 1792 against orc 384 — a number written once
+   * at scribing and read only by a raid consequence that has never run.
+   *
+   * It now takes the shortfall itself and spends it: a book costs
+   * `max(1, floorDiv(durability, DEGRADATION_PER_SHORTFALL))`, so neglect
+   * destroys a dwarven library about four and a half times more slowly than an
+   * orcish one holding the same number of books. At the reference affinity of
+   * `fp(1024)` the price is exactly 32 — the flat number it replaces — so
+   * nothing is switched off and nothing is made cheaper by default. Vision §5's
+   * written record persists *and can still be lost*, which is the whole point:
+   * this is the only non-raid destruction channel in the game.
+   *
+   * A book with no `GRIMOIRE` record behind it — an instance shelved by some
+   * path that did not scribe it — is priced at `DEGRADATION_PER_SHORTFALL`, the
+   * reference cost, rather than free. Free would make an unrecorded book
+   * immortal-adjacent in reverse: infinitely cheap to destroy.
    *
    * **Duplicates first, then ascending instance handle.** A library that must
-   * shed ten books sheds ten it holds twice before it sheds anything it holds
+   * shed books sheds ones it holds twice before it sheds anything it holds
    * once, which is what a librarian does and what makes the brake a cost on
    * *hoarding* rather than a randomised loss of the archive. `libraryDependence`
    * is the metric that would otherwise be moved by a brake meant to charge for
    * shelf space. Ascending handle is the tie-break, for `applyLibraryUpkeep`'s
    * own reason: handles are stable identities and iteration order is a function
-   * of the destroy history.
+   * of the destroy history. Durability does **not** reorder the shelf — it
+   * prices it. Sorting by durability would quietly turn the brake into "the
+   * worst books go first", which is a different mechanic nobody asked for and
+   * would hide the hoarding cost behind a quality cull.
    *
+   * For the same reason the walk **stops** at the first book it cannot afford
+   * rather than skipping past it to a cheaper one further down. Skipping is
+   * cheapest-first wearing a disguise: it would take the flimsiest books on a
+   * mixed shelf whatever order the librarian was supposed to use, and a
+   * well-made book at the head of the queue would stop protecting the shelf
+   * behind it. Stopping means one sturdy duplicate can shield a tick's worth of
+   * neglect, which is what a sturdy book *is*.
+   *
+   * No RNG is drawn here, so no stream is re-rolled and no committed baseline
+   * rots for a draw that moved.
+   *
+   * @param shortfall - Unpaid upkeep for this library this tick, `fp`.
    * @returns how many instances were actually destroyed, and how many of them
    * were the last copy in the universe of their node — which the world loop adds
    * to `nodesLost`, because a node whose last copy rotted off a shelf has left
@@ -888,10 +927,10 @@ export class CoordinatingKnowledgeGateway implements KnowledgeGateway {
    */
   degradeLibrary(
     library: Handle,
-    instances: number,
+    shortfall: Fixed,
     worldTick: number,
   ): { destroyed: number; nodesLost: number } {
-    if (instances <= 0) return { destroyed: 0, nodesLost: 0 };
+    if (shortfall <= 0) return { destroyed: 0, nodesLost: 0 };
     const knowledge = this.#deps.knowledge;
 
     const shelved = [...knowledge.instancesAt(LOCATION_KIND.library, library)].sort(
@@ -912,15 +951,33 @@ export class CoordinatingKnowledgeGateway implements KnowledgeGateway {
       }
     }
 
+    let budget = shortfall;
     let destroyed = 0;
     let nodesLost = 0;
     for (const instance of [...duplicates, ...singles]) {
-      if (destroyed >= instances) break;
+      const price = this.#neglectPriceOf(instance);
+      if (price > budget) break;
+      budget -= price;
       const loss = knowledge.destroyInstance(instance, worldTick);
       destroyed += 1;
       if (loss !== undefined) nodesLost += 1;
     }
     return { destroyed, nodesLost };
+  }
+
+  /**
+   * Unpaid upkeep it takes to destroy one shelved instance.
+   *
+   * Floors at 1 so that no book, however flimsily made, is free to lose — a
+   * price of zero would let a single tick of shortfall empty an entire shelf.
+   */
+  #neglectPriceOf(instance: Handle): Fixed {
+    const grimoire = this.#deps.knowledge.grimoireHolding(instance);
+    if (grimoire === 0) return DEGRADATION_PER_SHORTFALL;
+    const store = componentOf(this.#deps.state, GRIMOIRE);
+    if (!store.has(grimoire as EntityHandle)) return DEGRADATION_PER_SHORTFALL;
+    const durability = readRecord(this.#deps.state, GRIMOIRE, grimoire as EntityHandle).durability;
+    return Math.max(1, floorDiv(durability, DEGRADATION_PER_SHORTFALL));
   }
 
   /** Every node this mage holds in mind or palace, ascending by node id. */

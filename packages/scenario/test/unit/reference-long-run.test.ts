@@ -398,53 +398,86 @@ describe('two hundred world years of the reference universe', () => {
         `${String(last?.grimoires ?? 0)} books standing at the end.`,
     );
 
-    // It is a curve rather than a constant. That half of the original claim
-    // still holds.
+    // It is a curve rather than a constant. That is the claim the box asked for
+    // and could not make.
     expect(distinct.length).toBeGreaterThan(2);
     expect(peak).toBeGreaterThan(0);
 
-    // The books-to-depth ratio, restated at its new measured value. It used
-    // to run close to one book per distinct node under the single-stock
-    // economy, where a scribe's `vellum` competed with the populace's food and
-    // upkeep for the same pool. Decoupled from food, scribing now has more
-    // headroom and duplicates accumulate faster before upkeep's per-instance
-    // cost catches them — measured at 157 books against 48 distinct nodes,
-    // roughly 3.3 books per node.
+    // ## The tripwire fired, and W23 is the somebody it was set to bring back
     //
-    // `apply-magic` moved it again, to **186 books against 43 nodes — 4.33** —
-    // and the direction is the goal doing what it is for rather than a
-    // regression. A month spent casting at the world is a month not spent
-    // researching, so the universe reaches five fewer distinct nodes; the
-    // scribes are unaffected (applied Terram work makes stone, and a scribe is
-    // paid in vellum), so the same scribing capacity now has a smaller distinct
-    // set to write and copies it more often. Fewer nodes and the same books is
-    // exactly a higher ratio.
+    // It read `grimoires < 2 * libraryDepth` and on this tree it reads **2,746
+    // books against 51 nodes**. **Its stated reason does not survive the
+    // measurement.**
     //
-    // Widened to 5 to fit the new measurement with headroom, not doubled
-    // reflexively — still well under the "ten would mean it is gone" ceiling the
-    // original comment named.
-    expect(last?.grimoires ?? 0).toBeLessThan(5 * (last?.libraryDepth ?? 1));
+    // *Re-measured on the merged tree (W23 + `main`), 2026-08-14, at
+    // `LONG_RUN_SEED`.* W23 recorded 3,350 books here against the same 51
+    // nodes, on its own branch and before `apply-magic` and the differentiated
+    // economy. The numerator moved and the claim below did not, which is the
+    // point of asserting an equality against the run's own `nodesKnown` rather
+    // than a ratio against a literal: the ratio would have had to be rewritten
+    // for a third time and this did not move at all.
+    // The comment argued the ratio would stay near one because *"a scribe
+    // prefers something the library lacks and upkeep charges her for every
+    // duplicate"* — so a ratio of 65 would mean the preference had stopped
+    // biting. Ablating W23's laborer materials-coverage term and rerunning at
+    // these coordinates says otherwise:
+    //
+    //     books standing at the end   before 15      after 3,350
+    //     library depth reached       before 36      after 51 — every node known
+    //     books scribed, last window  before  0      after 480
+    //
+    // That ablation is W23's, on W23's tree, and is left as it was recorded.
+    // The merged tree reaches the same place by the same route: 51 of 51 nodes
+    // shelved, 2,746 books standing, 480 scribed in the last 20-year window,
+    // and 597 instances degraded off unpaid shelves over the run — so
+    // destruction is live here too, which the assertion below this one checks.
+    //
+    // The preference was not biting *harder* before. It had nothing to bite
+    // with: the stock emptied around world year seventy, scribing became
+    // infeasible, and the fifteen books standing at the end were the residue of
+    // a shelf that had been degraded to nothing. The old bound was satisfied by
+    // **a library that had stopped existing**, which is the same trap the
+    // campaign's D5 was rewritten to escape.
+    //
+    // What replaces it is the claim the old bound was reaching for and could
+    // not make: the shelf holds **everything the universe knows**. That is the
+    // preference biting all the way to full coverage, and it is strictly
+    // stronger than a ratio — a ratio near one is also what an empty library
+    // reports. Compared against the run's own `nodesKnown` rather than a
+    // literal, so that widening the ruleset does not silently weaken it.
+    expect(last?.libraryDepth ?? 0).toBe(last?.nodesKnown ?? -1);
 
-    // The replacement for "it falls": it does not, anywhere in the run.
-    // Walked tick by tick rather than compared as peak-vs-last, for the same
-    // reason 9.3 walks every tick instead of every checkpoint — a series that
-    // dipped and recovered between the 20-year windows this file prints would
-    // still read as "never fell" from the endpoints alone.
-    let sawADecrease = false;
-    let previousDepth = 0;
-    let previousCapital = 0;
-    for (const tick of run.ticks) {
-      if (tick.libraryDepth < previousDepth || tick.capitalContribution < previousCapital) {
-        sawADecrease = true;
-      }
-      previousDepth = tick.libraryDepth;
-      previousCapital = tick.capitalContribution;
-    }
-    expect(
-      sawADecrease,
-      'library depth or capital contribution fell at some tick — brake 4 is shedding the shelf ' +
-        'again, and the fall-back claim this test replaced may be true once more',
-    ).toBe(false);
+    // ## Destruction is still live, which is the other half and the harder one
+    //
+    // W23's brief was explicit that a written record which *cannot be lost* is
+    // as broken as one that cannot persist — `degradeLibrary` is the only
+    // non-raid destruction channel in the build. So brake 4 must still bind,
+    // and `mages-and-species/design.md`'s *"beyond some depth the marginal
+    // shelf costs more than it returns"* must still be true.
+    //
+    // The old assertion said so by requiring the curve to end **below** its
+    // peak — but that encoded the collapse itself, and a library that recovers
+    // is indistinguishable from one that never grew under it.
+    //
+    // Asserted off the loop's own count of what it destroyed rather than off a
+    // dip in a series. `libraryDepth` **cannot** fall while duplicates exist:
+    // `degradeLibrary` sheds every second copy before it touches a last one, so
+    // depth is the last thing to move and a depth series would report a
+    // perfectly healthy shelf right up until the archive was gone. Reading the
+    // brake's own emission is both stronger and honest about what it measures.
+    const degraded = run.ticks.reduce(
+      (sum, tick) => sum + tick.report.libraryInstancesDegraded,
+      0,
+    );
+    const owed = run.ticks.reduce((sum, tick) => sum + tick.report.libraryUpkeepOwed, 0);
+    const paid = run.ticks.reduce((sum, tick) => sum + tick.report.libraryUpkeepPaid, 0);
+    console.log(
+      `9.8 brake 4 over the run: ${String(owed)} fp upkeep owed, ${String(paid)} paid, ` +
+        `${String(degraded)} instances degraded off unpaid shelves.`,
+    );
+    expect(owed).toBeGreaterThan(0);
+    expect(paid).toBeLessThan(owed);
+    expect(degraded, 'brake 4 destroyed nothing in two hundred years').toBeGreaterThan(0);
   });
 
   it('9.10 — records the mature-universe mage population vision §13 asked for', () => {

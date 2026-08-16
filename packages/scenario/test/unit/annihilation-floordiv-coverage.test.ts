@@ -234,11 +234,17 @@ describe('routeYieldByForm floors each weight, and the sentinel sees every one',
 // Finding 4: the cohort transfer budget is sentinel-blind.
 // ---------------------------------------------------------------------------
 
-describe('the cohort transfer cliff at sixteen members is visible', () => {
-  it('a cohort of 15 has a transfer budget of zero, and the sentinel says so', () => {
+describe('the transfer cliff at sixteen members is visible', () => {
+  it('an occupation of 15 has a transfer pool of zero, and the sentinel says so', () => {
     // TRANSFER_RATE_PER_TICK = floorDiv(FP_ONE, 16) = 64.
-    // budget = floorDiv(15 * 64, 1024) = floorDiv(960, 1024) = 0.
-    // A cohort that shrinks to 15 through mortality silently freezes.
+    // pool = floorDiv(15 * 64, 1024) = floorDiv(960, 1024) = 0.
+    //
+    // W185 moved this cliff from the *cohort* to the *occupation*. That is the
+    // whole of the fix: taken per cohort it fired once for every one of dozens
+    // of single-digit cohorts and welded the labour market shut; taken per
+    // occupation it fires only when the occupation itself is smaller than
+    // `1 / TRANSFER_RATE_PER_TICK`, which is a rate with no bank behaving as a
+    // rate with no bank.
     const TRANSFER_RATE_PER_TICK = floorDiv(FP_ONE, 16);
 
     const events: FixedPointAnnihilation[] = [];
@@ -252,10 +258,9 @@ describe('the cohort transfer cliff at sixteen members is visible', () => {
       expect(events).toHaveLength(1);
       expect(events[0]?.numerator).toBe(960);
 
-      // At 16 members the budget becomes 1, so nothing more is reported. The
-      // cliff is declared in `reallocation.ts`'s own note — "cohorts smaller
-      // than 1 / TRANSFER_RATE_PER_TICK never transfer at all" — and is now
-      // visible to the instrument as well as to a reader.
+      // At 16 members the pool becomes 1, so nothing more is reported. The
+      // cliff is declared in `reallocation.ts`'s own note and is visible to
+      // the instrument as well as to a reader.
       const budgetAt16 = floorDiv(16 * TRANSFER_RATE_PER_TICK, FP_ONE);
       expect(budgetAt16).toBe(1);
     } finally {
