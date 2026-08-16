@@ -89,10 +89,11 @@
     "id": "fund-university",
     "actionId": 11,
     "favorCost": 3072,
-    "gloss": "Advancing an existing build. Founding a new one costs the separate `found-university-cost` constant, because §4.2 gives the two one action id and they are not the same purchase. It also costs stone, because raising a building should take stone and not only favour. Not labor: the world loop already spends that stock hiring the person-months, and charging it here too starved the verb.",
+    "gloss": "Advancing an existing build; founding costs the separate `found-university-cost`. It costs stone and labor, because raising a building takes wood and hands and not only favour. Pricing it in labor failed once — an automatic sink and a discretionary verb on one stock is a race the sink wins, and this verb came back legal on 8 of 585 ticks. The construction hire now reserves this price. Untuned.",
     "tuningStatus": "untuned",
     "materialCost": {
-      "stone": 8192
+      "stone": 8192,
+      "labor": 4096
     }
   },
   {

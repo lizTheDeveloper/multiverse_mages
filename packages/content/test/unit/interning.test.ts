@@ -544,7 +544,17 @@ describe('contentRevision', () => {
     // 4. The glosses of every row above moved with the values, which is a value
     //    edit inside the preimage in its own right and deliberate: the gloss is
     //    the only place a JSON file can say *why*.
-    expect(registry.contentRevision).toBe('1a70954598f2a5acdd7d06bfa1c1eafc');
+    //
+    // 1a70954598f2a5acdd7d06bfa1c1eafc -> 373e08bf48ca987d1081cb100f31295f, and
+    // this one reverses half of (3) on the author's instruction: **`labor` is
+    // back on `fund-university`**, at 4096 beside its stone, because raising a
+    // university takes wood and hands and not only favour. What removed it was
+    // real and is not being ignored — an automatic per-tick sink and a
+    // discretionary verb on one stock is a race the sink wins — so the price
+    // returns together with a **reserve floor** under the hire that drains the
+    // same stock (`HiredLabourWeights.reserve`), which is a fix to the sink
+    // rather than a retreat from the price. One row and its gloss moved.
+    expect(registry.contentRevision).toBe('373e08bf48ca987d1081cb100f31295f');
   });
 
   it('is stable across loads of identical content', () => {

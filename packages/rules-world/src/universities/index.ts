@@ -66,6 +66,7 @@ export {
   advanceConstruction,
   hireableMonths,
   readHiredLabourWeights,
+  spendableLabor,
   buildRateMultiplier,
   createUniversity,
   effectiveCapacity,

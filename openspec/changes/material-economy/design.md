@@ -197,3 +197,53 @@ it is current.
   per-field `set` path below it touches only `food`, `stone` and `vellum`. A row written whole every
   tick would silently zero the new stocks the moment something produced one, which is the trap
   group 3 would have walked into.
+
+## Task 1 — `fund-university`'s `labor` price, restored behind a reserve floor
+
+Measured **2026-08-16** on branch `w247/material-economy-build`, seed 20260813, 600 world ticks,
+via `tools/w247/action11-legality.mjs --out <named file>`. Never a directory glob: `CLAUDE.md`
+records an aggregator that folded every `.ndjson` under a directory and ate a previous run's
+records at a different `--ticks`.
+
+### The three arms, on the founding probe
+
+| arm | action 11 legal | fraction | probe foundings |
+|---|---|---|---|
+| **A** — no `labor` price (as landed) | 400/600 | 66.67% | 123 |
+| **B** — `labor` 4096, no floor | 8/600 | **1.33%** | 1 |
+| **C** — `labor` 4096, reserve floor | 13/600 | **2.17%** | 2 |
+
+Arm B reproduces the previous agent's recorded figure — *"legal on 8 ticks of 585"* — to the tick,
+which is the positive control saying the instrument measures what it measured before.
+
+### The floor works, and it is not what is binding
+
+The floor is a real mechanism and the trace shows it operating: the automatic hire draws the stock
+down and stops at 4,096 instead of at 0, leaving exactly one funding payable. It moved the verb
+from 8 ticks to 13, and pool-wide foundings from 10 to 19.
+
+**It cannot do more, and the reason is not the floor.** `labor` production over 600 reference ticks
+is **exactly zero**. Corpus is the only form whose `yieldWeights` name `labor`, and Corpus is
+outside the v1 opening square — `intellego · perdo · rego` × `mentem · terram · limen · nomen`,
+whose four forms yield `insight`, `stone`, `passage` and `vellum` respectively. So the founding
+endowment `FOUNDING_LABOR` is a **runway with no faucet**, and a floor redistributes a finite
+endowment between two claimants rather than manufacturing income.
+
+The bounding experiment, run rather than argued: setting the reserve so high that the automatic
+hire **never draws at all** gives 46/600 (7.67%). That is the ceiling on anything done to the sink
+alone — the whole endowment, spent by nobody but the verb, at 4,096 a time, is eight foundings.
+**66.67% is not reachable by any reserve policy** while the faucet is zero.
+
+### What this means for the author's instruction
+
+The verb costs `labor`, as instructed, and the sink no longer wins the race by construction. The
+honest report is that this restores the price without restoring the verb's *availability*, because
+availability was never limited by the race alone. The remedy is a **content** decision, not a flow
+one: enabling a Corpus cell gives `labor` a producer and makes the price a recurring cost rather
+than a countdown. That is a change to the opening square and belongs to the author.
+
+### Conservation
+
+Unaffected, and by choice of shape. A floor holds a stock **in** the stock; it destroys nothing and
+accumulates nothing outside it. `spendableLabor` is a read, not a transfer, so the group-6 ledger
+sees no faucet and no sink for it and `delta == faucet − sink` is untouched.

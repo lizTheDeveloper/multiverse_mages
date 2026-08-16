@@ -139,15 +139,27 @@ const STARTING_MATERIALS = 1000 * FP_ONE;
  * than quietly wrong. Eight uses for the two kinds the v1 opening square cannot
  * produce at all, and two portals for `passage`, which it can.
  *
- * **`FOUNDING_LABOR` is the exception and is not a verb multiple.** It was one
- * — `fund-university` was priced in `labor` as well as `stone` — and the
- * measurement that removed that price is recorded on the verb's own gloss: an
- * automatic per-tick sink and a discretionary verb on one stock is a race the
- * sink always wins, and action 11 came back legal on 8 ticks of 585. So `labor`
- * has exactly one claimant now, the construction hire, and this figure is sized
- * against *it*: 32,768 at 256 per hired month is about 128 person-months, a few
- * ticks of a doubled crew. Large enough to be visible, small enough that the
- * `build-rate` causal chain stays measurable under it.
+ * **`FOUNDING_LABOR` is sized against two claimants, not one.** `labor` is
+ * spent both by the construction hire, every tick and automatically, and by
+ * `fund-university`, which the god chooses. Pricing the verb naively made those
+ * two race and the sink won: action 11 came back legal on 8 ticks of 585. The
+ * fix is a reserve floor under the hire — `HiredLabourWeights.reserve`, equal to
+ * the verb's own declared price — so the automatic drain stops at what the
+ * discretionary verb costs instead of at zero.
+ *
+ * 32,768 at 256 per hired month is about 128 person-months, a few ticks of a
+ * doubled crew, of which the last 4,096 is reserved for one funding. Large
+ * enough to be visible, small enough that the `build-rate` causal chain stays
+ * measurable under it.
+ *
+ * **And it is a runway with no faucet, which the floor cannot change.** Measured
+ * 2026-08-16 on this branch: `labor` production over 600 reference ticks is
+ * exactly **zero**, because Corpus is the only form that yields it and Corpus is
+ * outside the v1 opening square (`intellego · perdo · rego` × `mentem · terram ·
+ * limen · nomen`). A floor redistributes a finite endowment between two
+ * claimants; it cannot manufacture income. Opening the body-magic column is what
+ * makes `labor` a renewable resource, and until a run does that, action 11's
+ * availability is bounded by this constant and not by the floor.
  *
  * **Untuned**, and a starting position rather than a rule.
  */

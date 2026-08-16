@@ -43,7 +43,7 @@ import { nextBounded } from '@mm/sim-core';
 import type { Ruleset } from '@mm/state';
 import { permits } from '@mm/state';
 import type { CatalogueNode, ContentCatalogue } from '@mm/agent-api';
-import { buildCatalogue } from '@mm/agent-api';
+import { GOD_ACTION, buildCatalogue } from '@mm/agent-api';
 import type {
   AcquirePolicy,
   ExclusionResolver,
@@ -744,7 +744,22 @@ export function worldDeps(
     application: readApplicationWeights(registry),
     casting: readCastingWeights(registry),
     teaching: readTeachingWeights(registry),
-    hiredLabour: readHiredLabourWeights(registry),
+    // The hire's rate from `autonomy-weight.json`, and its **reserve** from
+    // `god-cost.json` — `fund-university`'s own declared `labor` price, read
+    // rather than restated. The automatic per-tick hire may not draw the stock
+    // below what the discretionary verb costs, so the two claims on `labor`
+    // stop being a race the sink always wins. See
+    // `HiredLabourWeights.reserve` for the measurement (action 11 legal on 8
+    // ticks of 585 without it) and for why the floor sits on the drain rather
+    // than as a gate on the verb.
+    //
+    // Reading the price here rather than authoring a second constant is what
+    // keeps the two in step: a retune of the verb moves the floor with it, and
+    // there is no second number that can quietly disagree with the first.
+    hiredLabour: readHiredLabourWeights(
+      registry,
+      god.costs.materialByAction[GOD_ACTION.fundUniversity]?.labor ?? 0,
+    ),
     store: storeHookOf(registry, traditionId),
     acquire: acquireHookOf(registry, traditionId),
     territory: territoryExtent(registry.territories.map((entry) => entry.record)),

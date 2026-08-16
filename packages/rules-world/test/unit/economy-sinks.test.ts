@@ -43,6 +43,7 @@ import {
   insightTeachingBonus,
   readHiredLabourWeights,
   readTeachingWeights,
+  spendableLabor,
   teachingInsightDemand,
   zeroAmounts,
 } from '../../src/index.js';
@@ -181,6 +182,87 @@ describe('labor drains into construction by hiring months, and hires nobody for 
 
   it('hires nobody on a build whose hire rate is zero', () => {
     expect(hireableMonths(10, 1_000_000, { laborPerMonth: 0 })).toBe(0);
+  });
+});
+
+/**
+ * The reserve floor, which exists because the first attempt at pricing
+ * `fund-university` in `labor` failed and the failure was measured.
+ *
+ * An automatic per-tick sink and a discretionary verb competing for one stock is
+ * a race the sink always wins: the hire drains to zero every tick, so the verb
+ * is masked on almost every tick it is otherwise legal on. Measured on the
+ * shipped pool, action 11 came back legal on **8 ticks of 585**.
+ *
+ * `economy-flow-models.md` §3.3–§3.4 name the two available shapes, and this is
+ * the **drain** one rather than the **gate** one: the hire still draws
+ * proportionally to the crew above the reserve and simply stops drawing there.
+ * Nothing is gated, nothing accumulates outside a stock, and a stock held back
+ * by a floor is still in the stock — which is why conservation is unaffected.
+ */
+describe('the hire reserves what the funding verb costs, and drains freely above it', () => {
+  const RESERVE = { laborPerMonth: 4, reserve: 40 };
+
+  it('draws only the labor above the reserve', () => {
+    // 100 held, 40 reserved, 60 spendable, 4 per month -> 15 months.
+    expect(hireableMonths(100, 100, RESERVE)).toBe(15);
+    // And the subtraction happens exactly **once**. The first draft of this
+    // floor subtracted the reserve in the world loop as well as here, which
+    // floored the drain at twice the declared price — 8192 against a reserve of
+    // 4096 — and every arm still moved in the right direction, so only an
+    // arithmetic assertion could catch it. This is that assertion.
+    expect(hireableMonths(100, 100, { laborPerMonth: 4, reserve: 0 })).toBe(25);
+  });
+
+  it('hires nobody once the stock is down to the reserve', () => {
+    // The floor itself. At or below it the hire is zero, which is what leaves
+    // the discretionary verb something to spend.
+    expect(hireableMonths(100, 40, RESERVE)).toBe(0);
+    expect(hireableMonths(100, 39, RESERVE)).toBe(0);
+    expect(hireableMonths(100, 44, RESERVE)).toBe(1);
+  });
+
+  it('is a floor on the drain and never a gate on it', () => {
+    // A *gate* would refuse to hire at all until some threshold was cleared.
+    // This hires whatever the margin above the reserve affords, however thin —
+    // one month over, one month hired. The distinction is the one
+    // `economy-flow-models.md` §3.4 draws, and it is why the verb stays payable
+    // rather than the hire becoming a switch.
+    expect(hireableMonths(100, 41, RESERVE)).toBe(0);
+    expect(hireableMonths(100, 48, RESERVE)).toBe(2);
+    expect(hireableMonths(100, 1_000_000, RESERVE)).toBe(100);
+  });
+
+  it('behaves exactly as it always did when no reserve is declared', () => {
+    // The compatibility arm, and the positive control on the whole field: every
+    // world written before this floor supplies no reserve, and must drain to
+    // zero precisely as it did. An absent reserve and a zero reserve are the
+    // same universe.
+    expect(hireableMonths(100, 100, { laborPerMonth: 4 })).toBe(25);
+    expect(hireableMonths(100, 100, { laborPerMonth: 4, reserve: 0 })).toBe(25);
+    expect(hireableMonths(100, 3, { laborPerMonth: 4 })).toBe(0);
+  });
+
+  it('reads the reserve off the funding verb rather than off a second constant', () => {
+    // `readHiredLabourWeights` takes the price as an argument because the
+    // composition root reads it out of `god-cost.json`. A second authored
+    // constant could disagree with the price it exists to protect, and would go
+    // stale the first time anybody retuned the verb.
+    expect(readHiredLabourWeights(shippedRegistry(), 4096).reserve).toBe(4096);
+    // Defaulted, and clamped: an absent price is no floor, and a negative one
+    // is not a floor either.
+    expect(readHiredLabourWeights(shippedRegistry()).reserve).toBe(0);
+    expect(readHiredLabourWeights(shippedRegistry(), -10).reserve).toBe(0);
+  });
+
+  it('holds the reserved labor in the stock rather than destroying it', () => {
+    // Conservation. A floor that consumed what it held back would read as a
+    // leak to the ledger, and the whole point of choosing a floor over a gate
+    // is that nothing leaves the stock.
+    expect(spendableLabor(100, RESERVE)).toBe(60);
+    expect(spendableLabor(40, RESERVE)).toBe(0);
+    expect(spendableLabor(10, RESERVE)).toBe(0);
+    expect(spendableLabor(-5, RESERVE)).toBe(0);
   });
 });
 

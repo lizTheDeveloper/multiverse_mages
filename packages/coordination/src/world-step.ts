@@ -1179,6 +1179,19 @@ export function worldSystem(
         // site over and above the crew the populace supplied. Zero on every
         // world written before this change, and a zero budget hires nobody, so
         // construction there is bit-for-bit what it was.
+        //
+        // The **whole** stock is handed over, not the stock less the reserve.
+        // `hireableMonths` applies `HiredLabourWeights.reserve` itself, once,
+        // and subtracting it here as well would floor the drain at twice the
+        // declared price — which is what the first draft did, and the trace
+        // caught it stalling at 8192 against a reserve of 4096. One subtraction,
+        // in the rules package, so that every caller of `hireableMonths`
+        // inherits the same floor instead of each remembering to pre-subtract.
+        //
+        // The floor is on this drain and not on the verb: the hire still draws
+        // proportionally above the reserve and simply stops there, so nothing
+        // is gated and nothing is held anywhere the ledger cannot see it — a
+        // stock held back by a floor is still in the stock.
         labor: stock.labor,
         deps,
         crew: labour.crew,

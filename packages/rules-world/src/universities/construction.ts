@@ -117,6 +117,32 @@ export const MATERIALS_PER_LABOR_MONTH: Fixed = 4;
 export interface HiredLabourWeights {
   /** `labor` per hired person-month, `fp`. */
   readonly laborPerMonth: Fixed;
+  /**
+   * `labor` the automatic hire may not draw below, `fp`. Defaults to zero.
+   *
+   * ## Why a floor exists at all, and why it is on the *sink* rather than the verb
+   *
+   * `fund-university` is priced in `labor` as well as `stone`, because the
+   * author's rule for the table is that raising a building takes wood and
+   * labour and not only favour. Pricing it there once already failed, and the
+   * measurement is the reason this field exists: an automatic per-tick sink and
+   * a discretionary verb competing for one stock is a race the sink always
+   * wins, and action 11 came back legal on **8 ticks of 585**.
+   *
+   * `economy-flow-models.md` §3.3–§3.4 name the two shapes available. A **gate**
+   * on the verb — *"you may fund only while `labor >= X`"* — reads as a policy
+   * and behaves as a switch, and would leave the same race in place with an
+   * extra predicate on top. A floor under the **drain** is the other: the hire
+   * still draws proportionally to the crew, and it simply stops drawing at the
+   * reserve instead of at zero. Nothing is gated, nothing accumulates, and a
+   * stock held back by a floor is still in the stock — which is why the ledger
+   * balances across it and no conservation assertion has to learn about it.
+   *
+   * Absent, or zero, is every world written before this: the hire drains to
+   * zero exactly as it did, so a fixture that supplies no reserve builds
+   * bit-for-bit what it built before.
+   */
+  readonly reserve?: Fixed | undefined;
 }
 
 /** The id {@link readHiredLabourWeights} requires of the weight table. */
@@ -134,8 +160,20 @@ export interface HiredLabourWeightSource {
  * table does not declare, so a content mistake fails before a single site has
  * been staffed.
  */
-export function readHiredLabourWeights(source: HiredLabourWeightSource): HiredLabourWeights {
-  return Object.freeze({ laborPerMonth: source.autonomyWeight('construction-labor-per-month') });
+export function readHiredLabourWeights(
+  source: HiredLabourWeightSource,
+  reserve: Fixed = 0,
+): HiredLabourWeights {
+  return Object.freeze({
+    laborPerMonth: source.autonomyWeight('construction-labor-per-month'),
+    // The reserve is **not** an `autonomy-weight.json` row, and that is the
+    // point: it is `fund-university`'s own declared `labor` price, read out of
+    // `god-cost.json` by the composition root and handed here. A second
+    // authored constant would be a number that could disagree with the price it
+    // exists to protect, and it would go silently stale the first time anybody
+    // retuned the verb.
+    reserve: Math.max(0, reserve),
+  });
 }
 
 /**
@@ -155,7 +193,20 @@ export function hireableMonths(
 ): number {
   if (crewMonths <= 0) return 0;
   if (weights.laborPerMonth <= 0) return 0;
-  return Math.min(crewMonths, floorDiv(Math.max(0, laborAvailable), weights.laborPerMonth));
+  return Math.min(crewMonths, floorDiv(spendableLabor(laborAvailable, weights), weights.laborPerMonth));
+}
+
+/**
+ * The part of a `labor` stock the automatic hire is allowed to reach.
+ *
+ * The stock less {@link HiredLabourWeights.reserve}, floored at zero. Exported
+ * so the world loop can bound what it charges by the same figure the hire was
+ * sized from: a hire budgeted above the floor and then *charged* out of the
+ * whole stock would push the stock through it, which is the shape of defect
+ * that leaves the floor looking installed and doing nothing.
+ */
+export function spendableLabor(laborAvailable: Fixed, weights: HiredLabourWeights): Fixed {
+  return Math.max(0, Math.max(0, laborAvailable) - Math.max(0, weights.reserve ?? 0));
 }
 
 /** What one tick of construction did. */
