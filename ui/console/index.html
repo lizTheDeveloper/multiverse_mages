@@ -115,15 +115,26 @@
   /* the seventy cells */
   .grid70 { display: grid; grid-template-columns: 5.5rem repeat(14, 1fr); gap: 2px; font: 9px var(--mono); }
   .grid70 .h { color: var(--faint); letter-spacing: .04em; text-transform: uppercase;
-    writing-mode: vertical-rl; transform: rotate(180deg); justify-self: center; padding-bottom: .2rem; }
+    writing-mode: vertical-rl; transform: rotate(180deg); justify-self: center;
+    /* Padding, not margin: a label is a click target now and a 9px glyph is not one. */
+    padding: .25rem .15rem .3rem; }
   .grid70 .rl { color: var(--faint); letter-spacing: .06em; text-transform: uppercase;
-    align-self: center; text-align: right; padding-right: .3rem; }
+    align-self: center; text-align: right; padding: .2rem .3rem .2rem 0; }
   .grid70 .c { aspect-ratio: 1; border-radius: 2px; border: 1px solid var(--edge);
     background: var(--sunk); display: flex; align-items: center; justify-content: center;
     color: var(--faint); font-size: 8px; }
   .grid70 .c[data-off="true"] { border-style: dotted; background: transparent; color: transparent; }
   .grid70 .c[data-live="true"] { border-color: currentColor; color: var(--ink);
     background: color-mix(in srgb, currentColor 18%, transparent); }
+  /* The grid is the control surface, so its labels and cells are controls.
+     Aiming lives on the board rather than in a menu: a dropdown would hide
+     seventy targets that are already drawn on the screen. */
+  .grid70 [data-pick] { cursor: pointer; }
+  .grid70 .rl[data-pick]:hover, .grid70 .h[data-pick]:hover { color: var(--ink); }
+  .grid70 .c[data-pick]:hover { outline: 1px solid var(--soft); outline-offset: 1px; }
+  .grid70 [data-pick]:focus-visible { outline: 2px solid var(--god); outline-offset: 1px; }
+  .grid70 .c[data-chosen="true"] { outline: 2px solid var(--god); outline-offset: 1px; }
+  .grid70 .rl[data-chosen="true"], .grid70 .h[data-chosen="true"] { color: var(--god); font-weight: 700; }
   .f-limen { color: var(--limen) } .f-mentem { color: var(--mentem) }
   .f-nomen { color: var(--nomen) } .f-terram { color: var(--terram) }
   .gridkey { font: 10px var(--mono); color: var(--faint); line-height: 1.6; }
@@ -150,8 +161,27 @@
   .cast { display: flex; flex-direction: column; gap: .45rem; padding: .55rem;
     border: 1px solid var(--edge); border-radius: 3px; background: var(--sunk); }
   .cast .lbl { font: 10px var(--mono); letter-spacing: .11em; text-transform: uppercase; color: var(--faint); }
-  .cast select { width: 100%; font: 11px var(--mono); padding: .25rem .3rem; border: 1px solid var(--edge);
-    border-radius: 3px; background: var(--plate); color: var(--ink); }
+  /* Chips, not a dropdown. Every option on the screen at the moment of
+     deciding: a <select> costs a click to find out what the choices even are,
+     hides how many there are, and cannot show which of them matters.
+     `flex: 0 0 auto` is load-bearing — `.cast button` below stretches, and a
+     stretched chip row is a row of dead space with three words in it. */
+  .cast .chips { display: flex; flex-wrap: wrap; gap: .22rem; }
+  .cast .chip { flex: 0 0 auto; font: 10.5px var(--mono); padding: .16rem .42rem;
+    border: 1px solid var(--edge); border-radius: 999px; background: var(--plate);
+    color: var(--soft); cursor: pointer; font-variant-numeric: tabular-nums;
+    /* `9` and `31` are the same width or a row of thirty-two slots reads ragged. */
+    min-width: 1.6rem; text-align: center; }
+  .cast .chip:hover { border-color: var(--god); color: var(--ink); }
+  .cast .chip[aria-pressed="true"] { border-color: var(--god); color: var(--god); font-weight: 600; }
+  .cast .chip:focus-visible { outline: 2px solid var(--god); outline-offset: 1px; }
+  /* The caption under a chip row takes the console's own quiet-label scale
+     rather than the serif `.note`: three lines of italic serif under sixteen
+     chips read louder than the chips, which are the thing being chosen. */
+  .cast .chipcap { font: 10px/1.5 var(--mono); color: var(--faint); margin-top: .3rem; }
+  .cast .aim { font: 11px/1.5 var(--mono); color: var(--soft); }
+  .cast .aim b { color: var(--god); font-weight: 600; }
+  .cast .aim .ask { font: italic 11.5px/1.5 var(--serif); color: var(--soft); }
   .cast .row { display: flex; gap: .4rem; flex-wrap: wrap; }
   .cast button { flex: 1 1 auto; font: 11px var(--mono); padding: .35rem .5rem; border: 1px solid var(--edge);
     border-radius: 3px; background: var(--plate); color: var(--soft); cursor: pointer; }
@@ -294,10 +324,36 @@ mountSourceNote(document.getElementById('srchost'), session,
 const el = (id) => document.getElementById(id);
 const state = { at: 0, verb: 9, slot: 0, params: new Map(), playing: false, busy: false };
 
-/** §4.2's parameter columns, as the four kinds of chooser they need. */
-const DIRECT_PICKER = { 1: 'technique', 2: 'technique', 3: 'form', 4: 'form', 5: 'cell', 6: 'cell', 7: 'edict' };
-/** §4.4's range, restated where it is used: for these, `params[0]` is a slot index. */
-const PARAMETERIZED = new Set([8, 9, 10, 11, 12, 13, 14]);
+/*
+  ---- choosing a parameter, with no dropdown ------------------------------
+
+  "Dropdowns are a sin in strategy game interface design." A <select> hides the
+  board behind a list of words and makes you read a menu to find a thing that is
+  already drawn two inches to the right. So the seventy cells *are* the control:
+  click a technique row label, a form column label or a cell, and every verb
+  taking that kind of parameter aims itself at what you picked.
+
+    1, 2   take a technique  -> click a row label     (axis id, 1-based)
+    3, 4   take a form       -> click a column label  (axis id, 1-based)
+    5, 6   take a cell       -> click a cell          (content cell id)
+
+  The rest take a small closed set with no board to click — an edict slot in
+  force, or one of §4.4's ranked candidate slots — and those get a row of chips
+  instead: every option visible at once, one click to choose.
+
+  `AXIS` is 1-based on purpose. `gate.ts`'s `outOfAxisRange` rejects anything
+  below 1, because `coordination`'s intervention flips bit `axisId - 1`, so the
+  parameter is the bit **plus one** and a page that sends the bit gets
+  `parameter-out-of-range` for the first technique and the wrong axis for
+  every other.
+*/
+const AXIS = { 1: 'technique', 2: 'technique', 3: 'form', 4: 'form', 5: 'cell', 6: 'cell' };
+/** Action 7 alone takes an edict slot: a closed set that only the ruleset knows. */
+const EDICT_VERB = 7;
+/** §4.4's range, restated where it is used: for these, `params[0]` is a slot index.
+    16 is in it — `PARAMETERIZED_ACTIONS` in `agent-api/src/actions.ts` lists 8–14
+    *and* `inviteScholar`, and omitting it here sent `[]` and earned `missing-slot`. */
+const PARAMETERIZED = new Set([8, 9, 10, 11, 12, 13, 14, 16]);
 
 if (session === null) {
   document.querySelector('.panes').innerHTML =
@@ -506,77 +562,170 @@ function boot() {
   /** What `params` this verb would be cast with, given the current choices. */
   function currentParams() {
     if (PARAMETERIZED.has(state.verb)) return [state.slot];
-    if (DIRECT_PICKER[state.verb] !== undefined) {
+    if (AXIS[state.verb] !== undefined || state.verb === EDICT_VERB) {
       const v = state.params.get(state.verb);
       return v === undefined ? [] : [v];
     }
     return [];
   }
 
+  /*
+    One aim per kind, so a chosen technique and a chosen cell stay lit at the
+    same time: the grid shows every target you currently hold, not only the last
+    one you touched. `state.params` is still what `currentParams()` reads, so the
+    submission shape is unchanged — this only writes into it from the board
+    instead of from a menu.
+  */
+  const aimed = new Map();
+
+  function select(kind, value) {
+    aimed.set(kind, value);
+    for (const [id, wants] of Object.entries(AXIS)) {
+      if (wants === kind) state.params.set(Number(id), value);
+    }
+    paint();
+  }
+
+  /** Makes one grid node a target: click or Enter aims every verb of that kind. */
+  function pickable(node, kind, value) {
+    node.tabIndex = 0;
+    node.dataset.pick = kind;
+    node.addEventListener('click', () => select(kind, value));
+    node.addEventListener('keydown', (ev) => {
+      if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); select(kind, value); }
+    });
+    return node;
+  }
+
+  /** A row of chips. What replaced the `<select>`: every option, at once. */
+  function chips(options, value, onPick, caption) {
+    const wrap = document.createElement('div');
+    wrap.className = 'chips';
+    for (const o of options) {
+      const chip = document.createElement('button');
+      chip.type = 'button';
+      chip.className = 'chip';
+      chip.textContent = o.label;
+      chip.title = o.title ?? o.label;
+      chip.setAttribute('aria-pressed', String(o.value === value));
+      chip.addEventListener('click', () => onPick(o.value));
+      wrap.append(chip);
+    }
+    const host = document.createElement('div');
+    host.append(wrap);
+    if (caption !== undefined) {
+      const cap = document.createElement('div');
+      cap.className = 'chipcap';
+      cap.innerHTML = caption;
+      host.append(cap);
+    }
+    return host;
+  }
+
+  /* The names the content can supply for a parameter, built once. A handle is
+     `(generation << 20) | index` and names nobody, so where §4.4 hands one over
+     the chips stay numbered and say so — inventing a mage would be worse than
+     admitting the read path cannot name her. */
+  const cellNameById = new Map(session.content.cells.map((c) => [c.cellId, `${c.technique} × ${c.form}`]));
+  const cellIdOf = new Map(session.content.cells.map((c) => [`${c.technique}-${c.form}`, c.cellId]));
+  const traditionName = new Map((session.content.traditions ?? []).map((t) => [t.traditionId, t.name ?? t.id]));
+  const speciesName = new Map((session.content.species ?? []).map((x) => [x.speciesId, x.name ?? x.id]));
+  const axisName = (kind, value) => {
+    const rows = kind === 'technique' ? session.content.techniques : session.content.forms;
+    const hit = rows.find((x) => x.bit + 1 === value);
+    return hit === undefined ? undefined : (hit.name ?? hit.id);
+  };
+  /** One §4.4 slot, labelled with whatever the content can honestly name. */
+  const slotLabel = (verb, candidate, i) => {
+    const first = candidate.params[0];
+    if (verb === 12) return cellNameById.get(first) ?? `cell ${first}`;
+    if (verb === 13) return traditionName.get(first) ?? `tradition ${first}`;
+    if (verb === 16) return speciesName.get(first) ?? `species ${first}`;
+    return String(i);
+  };
+
   /**
    * The parameter chooser, rebuilt when the verb or the tick changes.
    *
-   * Nothing here judges legality — the options are content ids and edict slots,
-   * and whether one is allowed is the gate's answer, delivered as a rejection
-   * with the gate's own word for it. §5: the client computes no rules.
+   * There is no `<select>` here and there must not be one: the seventy cells are
+   * already on the screen, so a verb taking a technique, a form or a cell is
+   * *aimed* from the grid, and a verb taking a closed set gets every member of
+   * that set as a chip. Nothing here judges legality — the options are content
+   * ids and slot indices, and whether one is allowed is the gate's answer,
+   * delivered as a rejection in the gate's own word. §5: the client computes no
+   * rules.
+   *
+   * @returns Whether the verb is still missing the parameter it needs, which is
+   * the one thing the cast button has to know.
    */
   function paintPick(f) {
-    const kind = DIRECT_PICKER[state.verb];
     const pick = el('pick');
     const label = el('picklbl');
+    const kind = AXIS[state.verb];
 
-    if (PARAMETERIZED.has(state.verb)) {
-      label.textContent = 'parameter — a candidate slot';
-      pick.innerHTML = '<div class="note">Chosen from the candidate list at the right of the page. '
-        + '§4.4 hands the god a ranked top-<em>k</em>, and a slot index is what the action takes.</div>';
-      return;
-    }
-    if (kind === undefined) {
-      label.textContent = 'parameter';
-      pick.innerHTML = '<div class="note">This verb takes none.</div>';
-      return;
+    if (kind !== undefined) {
+      const where = kind === 'technique' ? 'a row label' : kind === 'form' ? 'a column label' : 'a cell';
+      label.textContent = `parameter — ${kind === 'cell' ? 'a cell' : `a ${kind}`}, aimed from the grid`;
+      const value = state.params.get(state.verb);
+      const name = value === undefined
+        ? undefined
+        : kind === 'cell' ? cellNameById.get(value) : axisName(kind, value);
+      pick.innerHTML = name === undefined
+        ? `<div class="aim"><span class="ask">Click ${where} in the grid to aim this verb — `
+          + 'the board is the control, and every target is already drawn on it.</span></div>'
+        : `<div class="aim">Aimed at <b>${name}</b> — the ${kind} you picked in the grid.</div>`;
+      return name === undefined;
     }
 
-    let options = [];
-    if (kind === 'technique') {
-      label.textContent = 'parameter — a technique';
-      options = session.content.techniques.map((t) => ({ value: t.bit + 1, label: `${t.name} (${t.id})` }));
-    } else if (kind === 'form') {
-      label.textContent = 'parameter — a form';
-      options = session.content.forms.map((x) => ({ value: x.bit + 1, label: `${x.name} (${x.id})` }));
-    } else if (kind === 'cell') {
-      label.textContent = 'parameter — a cell of the grid';
-      const known = new Map(f.knowledge().map((c) => [`${c.technique}-${c.form}`, c]));
-      options = session.content.cells.map((c) => {
-        const k = known.get(`${c.technique}-${c.form}`);
-        return {
-          value: c.cellId,
-          label: `${c.technique} × ${c.form}${k !== undefined && k.live ? ` — ${k.nodesKnown} nodes` : ''}`,
-        };
-      });
-    } else {
-      label.textContent = 'parameter — an edict slot';
-      options = f.ruleset().edicts.filter((e) => !e.empty)
-        .map((e) => ({ value: e.slot, label: `slot ${e.slot} — ${e.kindName} on ${e.cell?.id ?? e.cellId}` }));
+    if (state.verb === EDICT_VERB) {
+      label.textContent = 'parameter — an edict in force';
+      const options = f.ruleset().edicts.filter((e) => !e.empty)
+        .map((e) => ({
+          value: e.slot,
+          label: `${e.slot} · ${e.kindName.slice(0, 4)}`,
+          title: `slot ${e.slot} — ${e.kindName} on ${e.cell?.id ?? `cell ${e.cellId}`}`,
+        }));
       if (options.length === 0) {
         pick.innerHTML = '<div class="note">No edict is in force, so there is nothing to revoke. '
           + 'The mask says the same thing with one bit.</div>';
-        return;
+        return false;
       }
+      const chosen = options.some((o) => o.value === state.params.get(state.verb))
+        ? state.params.get(state.verb)
+        : options[0].value;
+      state.params.set(state.verb, chosen);
+      pick.replaceChildren(chips(options, chosen, (v) => { state.params.set(state.verb, v); paint(); },
+        'every edict standing this tick — a slot with nothing in it cannot be revoked'));
+      return false;
     }
 
-    const chosen = state.params.get(state.verb) ?? options[0]?.value;
-    state.params.set(state.verb, chosen);
-    const sel = document.createElement('select');
-    for (const o of options) {
-      const node = document.createElement('option');
-      node.value = String(o.value);
-      node.textContent = o.label;
-      if (o.value === chosen) node.selected = true;
-      sel.append(node);
+    if (PARAMETERIZED.has(state.verb)) {
+      label.textContent = 'parameter — a candidate slot';
+      const list = f.candidateLists().get(state.verb) ?? [];
+      if (list.length === 0) {
+        pick.innerHTML = '<div class="note">§4.4 offered this verb no candidates this tick, so there is '
+          + 'no slot to take. The mask says the same thing with one bit.</div>';
+        return false;
+      }
+      if (state.slot >= list.length) state.slot = 0;
+      const named = state.verb === 12 || state.verb === 13 || state.verb === 16;
+      const options = list.map((c, i) => ({
+        value: i,
+        label: slotLabel(state.verb, c, i),
+        title: `slot ${i} — params ${c.params.join(' , ')}`,
+      }));
+      pick.replaceChildren(chips(options, state.slot, (v) => { state.slot = v; paint(); },
+        `${list.length} candidate${list.length === 1 ? '' : 's'} · §4.4's ranked order`
+        + (named
+          ? ', named from the content — their raw parameters are in the list at the right'
+          : '. A slot names a handle and a handle names nobody, so the numbers are all this '
+            + 'page can honestly print; the raw parameters are in the list at the right')));
+      return false;
     }
-    sel.addEventListener('change', () => { state.params.set(state.verb, Number(sel.value)); });
-    pick.replaceChildren(sel);
+
+    label.textContent = 'parameter';
+    pick.innerHTML = '<div class="note">This verb takes none.</div>';
+    return false;
   }
 
   el('castbtn').addEventListener('click', async () => {
@@ -652,18 +801,31 @@ function boot() {
   const forms = session.content.forms;
   const techniques = session.content.techniques;
   grid.append(Object.assign(document.createElement('span'), { className: 'rl' }));
+  /* Every label and every cell is a control. `bit + 1` is the axis id actions
+     1–4 take and `cellId` is what 5 and 6 take, so one click hands the cast
+     panel exactly the integer the gate wants — no menu in between. */
+  const formLabels = new Map();
+  const techLabels = new Map();
   for (const f of forms) {
-    grid.append(Object.assign(document.createElement('span'), { className: 'h', textContent: f.id.slice(0, 6) }));
+    const h = Object.assign(document.createElement('span'), { className: 'h', textContent: f.id.slice(0, 6) });
+    h.title = `${f.name ?? f.id} — click to aim the form verbs (3, 4) at it.`;
+    formLabels.set(f.id, pickable(h, 'form', f.bit + 1));
+    grid.append(h);
   }
   const cellNodes = new Map();
   for (const t of techniques) {
-    grid.append(Object.assign(document.createElement('span'), { className: 'rl', textContent: t.id }));
+    const rl = Object.assign(document.createElement('span'), { className: 'rl', textContent: t.id });
+    rl.title = `${t.name ?? t.id} — click to aim the technique verbs (1, 2) at it.`;
+    techLabels.set(t.id, pickable(rl, 'technique', t.bit + 1));
+    grid.append(rl);
     for (const f of forms) {
       const c = document.createElement('span');
       c.className = `c f-${f.id}`;
       c.title = `${t.id} ${f.id}`;
       grid.append(c);
       cellNodes.set(`${t.id}-${f.id}`, c);
+      const id = cellIdOf.get(`${t.id}-${f.id}`);
+      if (id !== undefined) pickable(c, 'cell', id);
     }
   }
 
@@ -723,16 +885,29 @@ function boot() {
       const node = cellNodes.get(`${c.technique}-${c.form}`);
       if (node === undefined) continue;
       const enabled = onT.has(c.technique) && onF.has(c.form);
+      const id = cellIdOf.get(`${c.technique}-${c.form}`);
       node.dataset.off = String(!enabled);
       node.dataset.live = String(c.live);
+      node.dataset.chosen = String(id !== undefined && aimed.get('cell') === id);
       node.textContent = c.live ? String(c.deepestTier) : '';
       node.title = `${c.technique} ${c.form} — ${c.live
         ? `${c.nodesKnown} nodes, deepest tier ${c.deepestTier}, ${c.redundancy} instances`
-        : enabled ? 'permitted, and nobody knows anything in it' : 'not enabled by the ruleset'}`;
+        : enabled ? 'permitted, and nobody knows anything in it' : 'not enabled by the ruleset'}`
+        + (id === undefined ? '' : '. Click to aim the cell verbs (5, 6) at it.');
       if (c.live) { live += 1; nodes += c.nodesKnown; }
     }
+    // Which row, column and cell the god currently holds. One aim per kind, so
+    // all three can be lit at once and the board shows every target you hold.
+    for (const t of techniques) {
+      techLabels.get(t.id).dataset.chosen = String(aimed.get('technique') === t.bit + 1);
+    }
+    for (const x of forms) {
+      formLabels.get(x.id).dataset.chosen = String(aimed.get('form') === x.bit + 1);
+    }
     el('gridkey').innerHTML = `<b>${live}</b> cells live · <b>${nodes}</b> nodes known · a number is the `
-      + 'deepest tier reached. Dotted cells are outside the ruleset; plain cells are permitted and empty.';
+      + 'deepest tier reached. Dotted cells are outside the ruleset; plain cells are permitted and empty. '
+      + '<b>Click a row, a column or a cell</b> to aim the verbs that take one — this grid is the '
+      + 'parameter chooser, and there is no menu.';
 
     // Population: species by deepest tier.
     const buckets = f.mageBuckets();
@@ -771,10 +946,16 @@ function boot() {
     }
 
     if (session.live) {
-      paintPick(session.frame(session.frameCount - 1));
+      /* An axis verb with nothing aimed would submit `params: []`, which
+         `outOfAxisRange` does not judge — an absent parameter is a different
+         defect from a wrong one — so the gate would admit an action naming
+         nothing. The button says what is missing instead. */
+      const unaimed = paintPick(session.frame(session.frameCount - 1));
       const running = session.frame(session.frameCount - 1).status() === 'running';
-      el('castbtn').disabled = !running;
-      el('castbtn').textContent = atHead ? 'cast' : 'cast at the newest tick';
+      el('castbtn').disabled = !running || unaimed;
+      el('castbtn').textContent = unaimed
+        ? 'pick a target first'
+        : atHead ? 'cast' : 'cast at the newest tick';
     }
 
     drawSpine();
