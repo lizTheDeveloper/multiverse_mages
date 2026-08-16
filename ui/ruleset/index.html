@@ -152,7 +152,13 @@ const EDICT_BUDGET_MAX = 8; // packages/state/src/enums.ts
  * which this file's header already records as its standing cost. What the
  * session supplies is the starting position, not the rule.
  */
-const session = await openSession({ recording: '../session.json' }).catch(() => null);
+/* Live first, recording second, and neither throws: `npm run play` serves this page
+   beside a universe that is still running, `npm run ui` beside one that finished,
+   and a plain static server beside neither. The two sources publish the same
+   document, so everything below reads one model either way. */
+const session =
+  (await openSession({ live: '' }).catch(() => null)) ??
+  (await openSession({ recording: '../session.json' }).catch(() => null));
 const seeded = session === null ? null : session.frame(0).ruleset();
 
 const state = {

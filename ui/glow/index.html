@@ -259,7 +259,13 @@ const FORM_TOKEN = { limen: 'c-limen', mentem: 'c-mentem', nomen: 'c-nomen', ter
 const V1 = { techniques: ['intellego', 'perdo', 'rego'], forms: ['limen', 'mentem', 'nomen', 'terram'] };
 const isV1 = (c) => V1.techniques.includes(c.technique) && V1.forms.includes(c.form);
 
-const session = await openSession({ recording: '../session.json' }).catch(() => null);
+/* Live first, recording second, and neither throws: `npm run play` serves this page
+   beside a universe that is still running, `npm run ui` beside one that finished,
+   and a plain static server beside neither. The two sources publish the same
+   document, so everything below reads one model either way. */
+const session =
+  (await openSession({ live: '' }).catch(() => null)) ??
+  (await openSession({ recording: '../session.json' }).catch(() => null));
 mountSourceNote(document.getElementById('srchost'), session, ['actionMask', 'maskReason']);
 
 if (session !== null) {

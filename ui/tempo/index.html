@@ -483,6 +483,12 @@ setInterval(() => {
      does not carry — which capability is missing and why. Sourced from
      capabilities() rather than prose, so it cannot go stale quietly. */
   import { mountSourceNote, openSession } from '../shared/session.js';
-  const s = await openSession({ recording: '../session.json' }).catch(() => null);
+  /* Live first, recording second, and neither throws: `npm run play` serves this
+     page beside a universe that is still running, `npm run ui` beside one that
+     finished, and a plain static server beside neither. The two sources publish
+     the same document, so everything below reads one model either way. */
+  const s =
+    (await openSession({ live: '' }).catch(() => null)) ??
+    (await openSession({ recording: '../session.json' }).catch(() => null));
   mountSourceNote(document.getElementById('srchost'), s, ['eventDeltas']);
 </script>
