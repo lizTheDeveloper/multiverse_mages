@@ -41,7 +41,13 @@ import { constants } from './god-fixtures.js';
 
 const C = constants();
 
-/** The identity setting W6 names, all five constants at once. */
+/**
+ * The identity setting W6 names, all five constants at once — plus W63's
+ * `ascension-institutions` at 0, which is the setting its own gloss licenses
+ * for recovering the shipped predicate. A sixth constant that was not in the
+ * identity would silently turn these two differential tests into assertions
+ * that the *new* conjunct never fires, which is the opposite of what they check.
+ */
 const IDENTITY: GodConstants = {
   ...C,
   ascensionSummitCells: 1,
@@ -49,6 +55,7 @@ const IDENTITY: GodConstants = {
   ascensionCanonBreadth: 0,
   ascensionCanonCells: 0,
   ascensionLossFraction: 0,
+  ascensionInstitutions: 0,
 };
 
 // ---------------------------------------------------------------------------
@@ -129,6 +136,7 @@ describe('W6 verification — the identity values reproduce the pre-change predi
         cellOf,
         deepest: DEEPEST,
         worshipTier: Math.floor(rand() * 6),
+        completedUniversities: Math.floor(rand() * 4),
       };
       const shipped = apotheosisSatisfied(facts, IDENTITY);
       const onMain = apotheosisSatisfiedOnMain(facts, IDENTITY);
@@ -146,6 +154,7 @@ describe('W6 verification — the identity values reproduce the pre-change predi
         cellsKnown: Math.floor(rand() * 70),
         dependence: Math.floor(rand() * FP_ONE),
         eraNodesLost: Math.floor(rand() * 12),
+        completedUniversities: Math.floor(rand() * 4),
       };
       const shipped = eraBoundaryPassed(facts, IDENTITY);
       const onMain = eraBoundaryPassedOnMain(facts, IDENTITY);
@@ -174,6 +183,7 @@ describe('W6 verification — the identity values reproduce the pre-change predi
       cellOf,
       deepest: DEEPEST,
       worshipTier: C.ascensionTierGate,
+      completedUniversities: C.ascensionInstitutions,
     };
     expect(apotheosisSatisfiedOnMain(facts, C)).toBe(true);
     expect(apotheosisSatisfied(facts, C)).toBe(false);

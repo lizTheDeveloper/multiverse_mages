@@ -106,6 +106,8 @@ export interface ApotheosisFacts {
   readonly cellOf: (nodeId: number) => number;
   readonly deepest: DeepestByCell;
   readonly worshipTier: number;
+  /** Universities standing at `buildProgress >= 1` right now. */
+  readonly completedUniversities: number;
 }
 
 /**
@@ -139,26 +141,47 @@ export function masteredCellCount(facts: ApotheosisFacts, copies: number): numbe
 /**
  * Whether the Apotheosis path is satisfied right now.
  *
- * Five conjuncts, and each is independently unlikely: a species with the depth
+ * Six conjuncts, and each is independently unlikely: a species with the depth
  * ceiling to reach a cell's deepest tier, a mage who lived long enough to climb
  * the whole prerequisite chain, the cell still permitted at the moment of
  * declaration, `ascension-summit-copies` surviving instances of a node that by
  * construction only one mage has ever held — that last one is why teaching or
- * scribing is a necessary step and not a nicety — and now
- * `ascension-summit-cells` cells in that state at once.
+ * scribing is a necessary step and not a nicety — `ascension-summit-cells`
+ * cells in that state at once, and `ascension-institutions` completed
+ * universities standing while all of that is true.
  *
- * **The cell count is the conjunct that reads play.** Worship tier does not:
- * it accrues from mages, universities and populace whether or not the god acts,
- * and a 2-D scan over the two authored knobs found the idle probe winning every
- * cell of the grid because of it. Raising the tier gate could not fix that —
- * `worship-tier-count` is 5, so the knob was already one step from its ceiling.
+ * **The cell count was supposed to be the conjunct that read play, and it is
+ * not.** Worship tier never was: it accrues from mages, universities and
+ * populace whether or not the god acts. But the cell count turned out to read
+ * the *ruleset* rather than the universe, because a permitted cell is driven to
+ * its floor autonomously — measured at n=400 in `integration-round-2-results.md`,
+ * `permit-then-idle` presses `permitTechnique` and `permitForm` for 140 of 2400
+ * ticks, submits an empty preference list for the remaining 2260, and wins
+ * **40 of 40**, beating `permissive-breadth`'s 38 of 40 which does the same
+ * *and* funds, dispenses and encourages. (W63's own paired arm, on different
+ * seeds, has `permissive-breadth` at 40 of 40 rather than 38; the two agree on
+ * the finding and disagree on one strategy's rate, and the committed figure is
+ * quoted here rather than restated as this branch's.)
+ * Every threshold over knowledge has that property, because the
+ * universe exhausts whatever it is permitted; raising one moves the tick the
+ * clock strikes and nothing else.
  *
- * At `ascension-summit-cells = 1` and `ascension-summit-copies = 2` this is
- * exactly the predicate that shipped before, which is what makes the change
- * bisectable against a moved balance number.
+ * **The university count is the conjunct that cannot be edited into existence.**
+ * It is an anchor to a cause rather than a calibrated number: the reference
+ * scenario seeds exactly one completed academy, the world loop founds no site,
+ * and `foundUniversity` is the only thing in the build that creates one — so
+ * the second is a fact about what the god bought. Construction finishing on its
+ * own since W29 does not weaken that, it is the shape of it: the god buys the
+ * site, the universe raises it, and the count lapses if the buildings do.
+ *
+ * At `ascension-summit-cells = 1`, `ascension-summit-copies = 2` and
+ * `ascension-institutions = 0` this is exactly the predicate that shipped
+ * originally, which is what keeps the change bisectable against a moved balance
+ * number.
  */
 export function apotheosisSatisfied(facts: ApotheosisFacts, constants: GodConstants): boolean {
   if (facts.worshipTier < constants.ascensionTierGate) return false;
+  if (facts.completedUniversities < constants.ascensionInstitutions) return false;
   return masteredCellCount(facts, constants.ascensionSummitCopies) >= constants.ascensionSummitCells;
 }
 
@@ -202,6 +225,8 @@ export interface EraBoundaryFacts {
   readonly dependence: Fixed;
   /** Nodes that left the universe during the era now ending. */
   readonly eraNodesLost: number;
+  /** Universities standing at `buildProgress >= 1` at the boundary. */
+  readonly completedUniversities: number;
 }
 
 /**
@@ -254,11 +279,27 @@ export function lossAllowance(nodesKnown: number, constants: GodConstants): numb
  * the number of single-copy nodes and pushes back on the dependence ceiling.
  * Three axes that cannot all be maximised at once is the difference between a
  * summit and a counter.
+ *
+ * **The three axes turned out to be one, and the fourth conjunct is the
+ * repair.** All three read knowledge, and a universe drives knowledge to the
+ * ceiling of whatever the ruleset permits without the god doing anything after
+ * the permitting: measured at n=400, `permit-then-idle` ends a run holding 258
+ * nodes across 70 cells with `libraryDependence` at zero and nothing lost, on a
+ * policy of two buttons for 140 ticks and silence for 2260. Anchoring higher
+ * would have moved the tick it passed, not whether it passed. So a passing
+ * boundary now also requires `ascension-institutions` completed universities
+ * standing *at that boundary* — the one quantity in either path that no edit to
+ * the ruleset produces, because the world loop founds no site and
+ * `foundUniversity` is the only thing that does. Path B counts a **run** of
+ * boundaries, so this is a standing requirement across eras rather than a
+ * purchase made once: §8a's *"held its knowledge intact"* now needs somewhere
+ * that holds it.
  */
 export function eraBoundaryPassed(facts: EraBoundaryFacts, constants: GodConstants): boolean {
   return (
     facts.nodesKnown >= constants.ascensionCanonBreadth &&
     facts.cellsKnown >= constants.ascensionCanonCells &&
+    facts.completedUniversities >= constants.ascensionInstitutions &&
     facts.dependence <= constants.ascensionDependenceMax &&
     facts.eraNodesLost <= lossAllowance(facts.nodesKnown, constants)
   );

@@ -315,6 +315,13 @@
     "tuningStatus": "untuned"
   },
   {
+    "id": "ascension-institutions",
+    "value": 2,
+    "unit": "count",
+    "gloss": "Completed universities both paths require, at qualification and at every era boundary. An anchor to a cause, not a calibrated threshold: the scenario seeds one completed academy, the world loop founds no site, and foundUniversity alone creates one, so the second was bought. Every other conjunct reads a state the universe reaches by itself once permitted, which is why permit-then-idle won 40 of 40 on two buttons and then silence. Set to 0 to recover the shipped predicate.",
+    "tuningStatus": "untuned"
+  },
+  {
     "id": "ascension-loss-fraction",
     "value": 51,
     "unit": "fp",

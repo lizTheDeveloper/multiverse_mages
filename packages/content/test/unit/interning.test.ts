@@ -378,6 +378,12 @@ describe('contentRevision', () => {
     // magic is a goal a mage will choose, so a tick's materials and a tick's
     // goal histogram both move from the first month.
     //
+    // d4e3047657b4fa8a1a74e1d52f9f5c86 -> fcd0825c452084f12210209bfd20665d, when
+    // W63 added a sixth ascension constant, `ascension-institutions`. Same shape
+    // as the five above and the same reason it is not a shrug: it is a conjunct
+    // of both paths, so two universes on either side of this revision would
+    // disagree about whether a game was over. No existing record changed a byte.
+    //
     // d4e3047657b4fa8a1a74e1d52f9f5c86 -> e8442af2c5f91ae6f80ad9a178e0e451,
     // when anti-requisites landed (`vision.md` §4b) and `cell.json` gained an
     // `excludes` array carrying one pair: *Creo Ignem* and *Creo Umbra* exclude
@@ -464,7 +470,22 @@ describe('contentRevision', () => {
     // revision is a digest over the values, so this is the ordinary case rather
     // than a union of branches. It changes every run in which any mage learns
     // The Nameless — which is the point of the change, not a side effect of it.
-    expect(registry.contentRevision).toBe('8681bf846bd94be80fdabc447e6e01df');
+    // Both edits above arrived on separate branches and this tree is the first
+    // holding both, so neither branch's literal is a digest over a preimage
+    // containing the other. The union is a third value, read from the test
+    // rather than derived by hand.
+    //
+    // 9b7ca0f7156bf5c6f8036364aa28f952 / 8681bf846bd94be80fdabc447e6e01df ->
+    // RECOMPUTED BELOW, on the Group F merge of `w63/ascension-requires-play`
+    // into `integration/group-f`, 2026-08-16. For the fifth time in this list
+    // neither side's literal is a digest over a preimage holding both edits:
+    // `8681bf84` knows the seventeenth god cost and the signed `pn-the-nameless`
+    // cost but not W63's seventy-third god constant, and `9b7ca0f7` knows the
+    // constant but not the other two. Read from
+    // `node packages/content/bin/validate-content.mjs` on the merged tree and
+    // then confirmed by this test, which is two independent paths to the same
+    // value rather than a literal copied off a failure message.
+    expect(registry.contentRevision).toBe('68fc8134abf583f3b9d71d6363d5ad94');
   });
 
   it('is stable across loads of identical content', () => {
