@@ -423,13 +423,28 @@ describe('the control sets are inert by construction', () => {
   });
 });
 
+/**
+ * Each of these runs two full world simulations and compares them, so a case is
+ * two universes deep rather than one assertion. Measured 2026-08-15 at 61 s for
+ * the file on a machine at load 32 — comfortably inside `vitest.config.ts`'s
+ * 30 s per-test default when the box is quiet, and **over it when the box is
+ * not.** `ci/hetzner-lint` failed twice, ten minutes apart, with `testTimeout`
+ * on exactly these cases while `Verify (pinned Node)` was green on the same
+ * commit; the self-hosted runner serialises, so it is the loaded one.
+ *
+ * The repository's existing idiom for a test whose cost is real rather than
+ * accidental — `SLOW_TEST_MS` in `balance-telemetry.test.ts` — applied here
+ * rather than making the test do less. What it measures is worth the minute.
+ */
+const SLOW_TEST_MS = 180_000;
+
 describe('a universe that knows these nodes outworks one that does not', () => {
   // The headline claim, and the counterfactual is the **pre-W18 universe**: same
   // mages, same seed, same knowledge in the same heads, differing only in whether
   // what they know reaches their rates. `world-step.ts` documents the optional
   // dep as *"a thing a test can assert against rather than a silent
   // degradation"*; this is that assertion, run three times.
-  it.each(ACADEMIC_PRIMITIVES)('%s: more work finished than when knowledge moves nothing', async (primitive) => {
+  it.each(ACADEMIC_PRIMITIVES)('%s: more work finished than when knowledge moves nothing', { timeout: SLOW_TEST_MS }, async (primitive) => {
     const grant = treatmentSet(primitive);
     const metric = METRIC[primitive];
 
@@ -442,7 +457,7 @@ describe('a universe that knows these nodes outworks one that does not', () => {
     expect(knowing[metric]).toBeGreaterThan(inert[metric]);
   });
 
-  it('ends holding more distinct nodes, not merely churning through more work', async () => {
+  it('ends holding more distinct nodes, not merely churning through more work', { timeout: SLOW_TEST_MS }, async () => {
     // `researchCompleted` counts completions including rediscoveries, so a
     // universe that forgets and relearns the same node scores well on it. This is
     // the check that the extra work is *retained*: distinct nodes held at the end
@@ -467,7 +482,7 @@ describe("§9's mask reaches the academic rates, and attributes the gain", () =>
   // is where §9 applies it and the library shares that accumulator by design. The
   // delta is therefore an upper bound on the node-sourced part, not an estimate
   // of it.
-  it('attributes a large research gain to research-rate alone', async () => {
+  it('attributes a large research gain to research-rate alone', { timeout: SLOW_TEST_MS }, async () => {
     const grant = treatmentSet('research-rate');
     const live = await armTotals({ grant });
     const masked = await armTotals({ grant, ablate: 'research-rate' });
@@ -479,7 +494,7 @@ describe("§9's mask reaches the academic rates, and attributes the gain", () =>
     expect(live.nodesKnown).toBeGreaterThan(masked.nodesKnown);
   });
 
-  it('attributes a grimoire gain to scribe-rate alone', async () => {
+  it('attributes a grimoire gain to scribe-rate alone', { timeout: SLOW_TEST_MS }, async () => {
     const grant = treatmentSet('scribe-rate');
     const live = await armTotals({ grant });
     const masked = await armTotals({ grant, ablate: 'scribe-rate' });
@@ -488,7 +503,7 @@ describe("§9's mask reaches the academic rates, and attributes the gain", () =>
     expect(live.grimoiresScribed).toBeGreaterThan(masked.grimoiresScribed);
   });
 
-  it('finds no completion-count gain for teach-rate, because a lesson already fits in a month', async () => {
+  it('finds no completion-count gain for teach-rate, because a lesson already fits in a month', { timeout: SLOW_TEST_MS }, async () => {
     // **A finding, asserted so it cannot rot into a silent zero.**
     //
     // `teach-rate`'s magnitudes reach the multiplier — the test below reads them
@@ -531,7 +546,7 @@ describe('the magnitudes reach the mage, in a universe that has been running', (
   // is long enough for mages granted inert nodes to *discover* academic ones, and
   // an assertion that they had none would be a claim about goal selection wearing
   // this file's name.
-  it.each(ACADEMIC_PRIMITIVES)('%s: a holder is carrying magnitudes after five years', async (primitive) => {
+  it.each(ACADEMIC_PRIMITIVES)('%s: a holder is carrying magnitudes after five years', { timeout: SLOW_TEST_MS }, async (primitive) => {
     const grant = treatmentSet(primitive);
     const traditionId = scribingTraditionId();
     const deps: WorldStepDeps = {
