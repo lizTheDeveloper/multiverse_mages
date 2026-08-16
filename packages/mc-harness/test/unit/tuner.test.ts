@@ -22,12 +22,15 @@ import { describe, expect, it } from 'vitest';
 
 import type { StrategyOutcome } from '../../src/tuner.js';
 import {
+  CORRELATION_MIN_SUPPORT,
   DOMINANCE_LIMIT,
   EXPLOIT_MARGIN_MIN,
   EXPLOIT_PROBE,
+  EXPLOIT_PROBES,
   candidatesForAxis,
   correlationOf,
   scoreBalance,
+  spearmanOf,
   varietyOf,
 } from '../../src/tuner.js';
 
@@ -51,6 +54,21 @@ function pool(
   runs = 10,
 ): StrategyOutcome[] {
   return POOL.map((strategyId) => {
+    const entry = spec[strategyId] ?? ([0, 50] as const);
+    return { strategyId, ascended: entry[0], runs, meanNodesKnown: entry[1] };
+  });
+}
+
+/**
+ * The same, but over an arbitrary strategy list, so a fixture can name the
+ * adversarial probes that are not in the shipped eight.
+ */
+function poolWith(
+  spec: Record<string, readonly [number, number]>,
+  runs = 10,
+): StrategyOutcome[] {
+  const ids = [...new Set([...POOL, ...Object.keys(spec)])];
+  return ids.map((strategyId) => {
     const entry = spec[strategyId] ?? ([0, 50] as const);
     return { strategyId, ascended: entry[0], runs, meanNodesKnown: entry[1] };
   });
@@ -193,17 +211,19 @@ describe('correlation between winning and knowing magic', () => {
   });
 
   it('is flagged when winners know no more magic than losers', () => {
-    // The measured state after the harness artifact was fixed: portal-rush and
-    // worship-maximizer ascend 12/12 at 50.9 and 51.0 nodes, against a
-    // passive-control that never declares and sits at 51.0. The winners are at
-    // the passive baseline, so knowledge has no variance across the pool and no
-    // relationship with winning is detectable — which is the finding.
+    // The measured state after the harness artifact was fixed: portal-rush,
+    // worship-maximizer and archivist all sit at the passive baseline of 51
+    // nodes, and so does the passive control. The winners know exactly what the
+    // losers know, so no relationship with winning is detectable — which is the
+    // finding. Three winners, so the support gate is satisfied and the number
+    // being reported is the coefficient rather than the absence of one.
     const flat = 50;
     const outcomes = pool(
-      { 'portal-rush': [4, flat], 'worship-maximizer': [4, flat] },
+      { 'portal-rush': [2, flat], 'worship-maximizer': [2, flat], archivist: [2, flat] },
       10,
     );
     const score = scoreBalance(outcomes, WEIGHTS, BAND);
+    expect(score.nonZeroStrategies).toBe(3);
     expect(score.correlation).toBe(0);
     expect(score.notes.join(' ')).toContain('does not measure play');
   });
@@ -215,10 +235,149 @@ describe('correlation between winning and knowing magic', () => {
   });
 });
 
-describe('the exploit probe', () => {
-  it('is uniform-random-legal, not passive-control', () => {
+// ---------------------------------------------------------------------------
+// W18 (C): Spearman beside Pearson, and the support count beside both.
+// ---------------------------------------------------------------------------
+
+describe('the correlation term reports its own shape, because neither coefficient can', () => {
+  /**
+   * The measured W6 pool, transcribed from the campaign board: `permissive-
+   * breadth` takes 12 of its 12 runs and reaches 262 nodes, every other strategy
+   * ascends zero times, and the losers sit at the passive ceiling of 51 apart
+   * from the two deniers.
+   */
+  const MEASURED_W6 = pool(
+    {
+      'permissive-breadth': [12, 262],
+      'passive-control': [0, 51],
+      'uniform-random-legal': [0, 51],
+      archivist: [0, 51],
+      'portal-rush': [0, 51],
+      'worship-maximizer': [0, 51],
+      'narrow-depth': [0, 9],
+      'denial-warden': [0, 5],
+    },
+    12,
+  );
+
+  it('reproduces the review\'s shape, and states plainly where it cannot reproduce its digits', () => {
+    const score = scoreBalance(MEASURED_W6, WEIGHTS, BAND);
+
+    // The adversarial review reported Pearson +0.955 and Spearman +0.615. This
+    // fixture reads +0.970 and +0.661. **The gap is the fixture, not the
+    // arithmetic**, and it is recorded rather than tuned away: the node means
+    // above are the campaign board's rounded per-strategy figures (262, 51, 9,
+    // 5), and the review computed from the sweep's exact means, which are not
+    // in the board. Both coefficients are sensitive to those magnitudes —
+    // Spearman through the tie structure, since which strategies sit at exactly
+    // 51.0 decides how many ranks are shared.
+    //
+    // Fitting the fixture until the digits matched would be inventing data to
+    // reproduce a number, which is the failure mode this whole workstream is
+    // about. `spearmanOf` is pinned by hand-computed arithmetic instead, below.
+    expect(score.correlation).toBeCloseTo(0.97, 2);
+    expect(score.spearman).toBeCloseTo(0.661, 2);
+    expect(score.nonZeroStrategies).toBe(1);
+  });
+
+  it('computes Spearman with average ranks, checked against the arithmetic by hand', () => {
+    // x = [1, 2, 2, 4]: the two ties span ranks 2 and 3, so both take 2.5.
+    //   ranks x = [1, 2.5, 2.5, 4], mean 2.5, dx = [-1.5, 0, 0, 1.5]
+    //   ranks y = [1, 2, 3, 4],     mean 2.5, dy = [-1.5, -0.5, 0.5, 1.5]
+    //   sxy = 2.25 + 0 + 0 + 2.25 = 4.5
+    //   sxx = 4.5, syy = 5  ->  r = 4.5 / sqrt(22.5) = 0.94868...
+    // Ordinal ranks would have given [1, 2, 3, 4] against [1, 2, 3, 4] and
+    // reported a perfect 1, inventing an order between the two tied values out
+    // of their array positions. That is the failure this case pins.
+    expect(spearmanOf([1, 2, 2, 4], [10, 20, 30, 40])).toBeCloseTo(4.5 / Math.sqrt(22.5), 12);
+    expect(spearmanOf([1, 2, 2, 4], [10, 20, 30, 40])).toBeLessThan(1);
+    // Perfectly monotone but wildly non-linear: Spearman is exactly 1 where
+    // Pearson is not, which is the whole reason both are reported.
+    expect(spearmanOf([1, 2, 3, 4], [1, 2, 3, 4000])).toBeCloseTo(1, 12);
+    expect(correlationOf([1, 2, 3, 4], [1, 2, 3, 4000])).toBeLessThan(0.9);
+    // No variance on one side is 0, matching correlationOf's contract.
+    expect(spearmanOf([1, 1, 1], [1, 2, 3])).toBe(0);
+  });
+
+  it('is the finding: BOTH coefficients are comfortably positive on one point', () => {
+    const score = scoreBalance(MEASURED_W6, WEIGHTS, BAND);
+    // This is why the repair could not be a threshold. Any cut-off that admits
+    // a real relationship also admits this, because the number is high in both
+    // coefficients — the degeneracy is in the *support*, not in the magnitude.
+    expect(score.correlation).toBeGreaterThan(0.5);
+    expect(score.spearman).toBeGreaterThan(0.5);
+  });
+
+  it('drops to nothing scored, because one winner is not a relationship', () => {
+    const score = scoreBalance(MEASURED_W6, WEIGHTS, BAND);
+    expect(score.nonZeroStrategies).toBeLessThan(CORRELATION_MIN_SUPPORT);
+    expect(score.notes.join(' ')).toContain('leveraged point');
+    // The whole in-band score is variety + correlation + exploit - dominance,
+    // and with variety 0, an unsupported correlation and a 100% top share the
+    // only surviving term is the exploit margin.
+    const supported = scoreBalance(
+      pool(
+        {
+          'permissive-breadth': [5, 262],
+          archivist: [4, 150],
+          'narrow-depth': [3, 90],
+        },
+        12,
+      ),
+      WEIGHTS,
+      BAND,
+    );
+    expect(supported.nonZeroStrategies).toBe(3);
+    expect(supported.score).toBeGreaterThan(score.score);
+  });
+
+  it('gives ties the average rank, so seven strategies at zero are not ordered by array position', () => {
+    // Reversing the order of the tied losers must not move Spearman.
+    const reversed = [...MEASURED_W6].reverse();
+    expect(spearmanOf(
+      MEASURED_W6.map((entry) => entry.ascended / entry.runs),
+      MEASURED_W6.map((entry) => entry.meanNodesKnown),
+    )).toBeCloseTo(
+      spearmanOf(
+        reversed.map((entry) => entry.ascended / entry.runs),
+        reversed.map((entry) => entry.meanNodesKnown),
+      ),
+      12,
+    );
+  });
+
+  it('scores the weaker of the two coefficients, not the flattering one', () => {
+    // Monotone but sharply non-linear: Spearman is 1 and Pearson is lower, so
+    // the scored term must follow Pearson here — and on the measured pool,
+    // where Pearson is the higher of the two, it must follow Spearman.
+    const outcomes = pool(
+      { 'permissive-breadth': [6, 1000], archivist: [4, 60], 'narrow-depth': [2, 55] },
+      12,
+    );
+    const score = scoreBalance(outcomes, WEIGHTS, BAND);
+    expect(score.spearman).toBeGreaterThan(score.correlation);
+    // variety + min(pearson, spearman) + exploit - dominance, so recovering the
+    // correlation term from the score identifies which coefficient was used.
+    const dominance = score.topShare > DOMINANCE_LIMIT ? score.topShare - DOMINANCE_LIMIT : 0;
+    const used = score.score - score.variety - score.exploitMargin + dominance;
+    expect(used).toBeCloseTo(Math.min(score.correlation, score.spearman), 10);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// W18 (B): the exploit margin excludes its own probes.
+// ---------------------------------------------------------------------------
+
+describe('the exploit probes', () => {
+  it('are three, not one, and passive-control is none of them', () => {
     // passive-control's stance is `never`, so "it does not win" is true by
     // construction and measures nothing.
+    expect(EXPLOIT_PROBES).not.toContain('passive-control');
+    expect([...EXPLOIT_PROBES].sort()).toEqual([
+      'idle-then-declare',
+      'permit-then-idle',
+      'uniform-random-legal',
+    ]);
     expect(EXPLOIT_PROBE).toBe('uniform-random-legal');
   });
 
@@ -228,6 +387,93 @@ describe('the exploit probe', () => {
       10,
     );
     expect(scoreBalance(outcomes, WEIGHTS, BAND).exploitMargin).toBeGreaterThan(0);
+  });
+
+  it('excludes the probe from the mean it is compared against', () => {
+    const outcomes = pool(
+      { 'permissive-breadth': [7, 220], 'uniform-random-legal': [1, 50] },
+      10,
+    );
+    const score = scoreBalance(outcomes, WEIGHTS, BAND);
+    // Seven non-probe strategies, one of them at 0.7: 0.7/7 = 0.1. Including
+    // the probe would have divided by eight and given 0.0875 — and, more to the
+    // point, would have made the margin identically `ascensionRate - probeRate`.
+    expect(score.deliberateMean).toBeCloseTo(0.1, 10);
+    expect(score.probeRate).toBeCloseTo(0.1, 10);
+    expect(score.exploitMargin).toBeCloseTo(0, 10);
+  });
+
+  it('takes the worst probe, so beating two of three is not passing', () => {
+    const outcomes = poolWith(
+      {
+        'permissive-breadth': [6, 262],
+        archivist: [4, 150],
+        'narrow-depth': [2, 90],
+        'uniform-random-legal': [0, 50],
+        'idle-then-declare': [0, 51],
+        // The degenerate-play probe: it permits for 140 ticks and idles for
+        // 2260, and it measured permissive-breadth's exact profile.
+        'permit-then-idle': [6, 231],
+      },
+      12,
+    );
+    const score = scoreBalance(outcomes, WEIGHTS, BAND);
+    expect(score.probeRate).toBeCloseTo(0.5, 10);
+    expect(score.exploitMargin).toBeLessThan(0);
+    expect(score.feasible).toBe(false);
+    expect(score.notes.join(' ')).toContain('permit-then-idle');
+  });
+
+  it('is unmeasured rather than zero when the pool declares no probe at all', () => {
+    const noProbe = pool({ 'permissive-breadth': [6, 262], archivist: [4, 150] }, 10).filter(
+      (entry) => !EXPLOIT_PROBES.includes(entry.strategyId),
+    );
+    const score = scoreBalance(noProbe, WEIGHTS, BAND);
+    expect(Number.isNaN(score.exploitMargin)).toBe(true);
+    expect(score.feasible).toBe(false);
+    expect(score.notes.join(' ')).toContain('unmeasured constraint');
+  });
+});
+
+describe('the exploit margin is no longer a restatement of the band', () => {
+  it('can fail while the band passes', () => {
+    const outcomes = poolWith(
+      {
+        'permissive-breadth': [3, 262],
+        archivist: [2, 150],
+        'narrow-depth': [1, 90],
+        'idle-then-declare': [6, 51],
+      },
+      12,
+    );
+    const score = scoreBalance(outcomes, WEIGHTS, BAND);
+    expect(score.inBand).toBe(true);
+    expect(score.exploitMargin).toBeLessThan(0);
+  });
+
+  it('can pass while the band fails, which the old identity made impossible', () => {
+    // Every deliberate strategy wins outright and no probe ever does: the
+    // exploit margin is the maximum 1.0 and the ruleset is far too easy.
+    const outcomes = poolWith(
+      {
+        'permissive-breadth': [12, 262],
+        archivist: [12, 150],
+        'narrow-depth': [12, 90],
+        'denial-warden': [12, 60],
+        'passive-control': [12, 51],
+        'portal-rush': [12, 51],
+        'worship-maximizer': [12, 51],
+        'uniform-random-legal': [0, 51],
+      },
+      12,
+    );
+    const score = scoreBalance(outcomes, WEIGHTS, BAND);
+    expect(score.inBand).toBe(false);
+    expect(score.exploitMargin).toBeCloseTo(1, 10);
+  });
+
+  it('and its threshold is not the band floor, which is what made the two read as one', () => {
+    expect(EXPLOIT_MARGIN_MIN).not.toBe(BAND.min);
   });
 });
 

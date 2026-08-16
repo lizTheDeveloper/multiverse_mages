@@ -226,6 +226,7 @@ export {
   SWEEP_KIND,
   assignStrategies,
   expandSweep,
+  roundRobinCoverageProblem,
   sweepConfigurationHash,
   validateSweep,
 } from './sweep-spec.js';
@@ -450,6 +451,8 @@ export {
   BOT_POOL,
   BOT_POOL_REGISTRY,
   POOL_BUILD_LIMITS,
+  SECT_RULESETS,
+  SECT_STRATEGIES,
   botStrategyRegistry,
   degeneracyOf,
   effectivePreferences,
@@ -486,11 +489,17 @@ export type {
   TuningAxis,
 } from './tuner.js';
 export {
+  CORRELATION_MIN_SUPPORT,
   DOMINANCE_LIMIT,
+  EXPLOIT_MARGIN_MIN,
   EXPLOIT_PROBE,
+  EXPLOIT_PROBES,
   candidatesForAxis,
   correlationOf,
+  coverageProblem,
+  describeScore,
   scoreBalance,
+  spearmanOf,
   varietyOf,
 } from './tuner.js';
 
@@ -527,3 +536,18 @@ export {
   foldArchive,
   nullBarOf,
 } from './quality-diversity.js';
+export type { BetterWhen, ScoringControl, ScoringTerm, Separation } from './scoring-controls.js';
+export {
+  BETTER_WHEN,
+  CONTROL_POOL,
+  CONTROL_RUNS,
+  MEASURED_NODES,
+  SCORING_TERMS,
+  TERMS_WITHOUT_CONTROLS,
+  constructedPool,
+  controlCorpus,
+  controlPool,
+  falseFriendReading,
+  isAffineRestatement,
+  separationOf,
+} from './scoring-controls.js';
