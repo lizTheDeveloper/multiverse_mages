@@ -550,7 +550,33 @@ describe('contentRevision', () => {
     // magnitudes, the vellum yield, the seventeenth god cost or `prevalence`.
     // MEASURED: `node packages/content/bin/validate-content.mjs` reports 74 god
     // constants (72 + `unease-bars` + `unease-step`) and this digest.
-    expect(registry.contentRevision).toBe('c0276a360357ff2e4e27932552e2a3e0');
+    // d4e3047657b4fa8a1a74e1d52f9f5c86 -> fd8ce7ef5fded0b0a23fc85f8006f595, when `main` met
+    // `w37/raid-playable` and took the fourteen magnitudes that make
+    // `raid-engagement.md` §§1-3 playable: eleven in `raid-constant.json` —
+    // where §2's two phase boundaries fall, what each of §3's six raid verbs
+    // costs and does, the concealment ceiling, and the Vis a raiding party
+    // carries — plus `mid-raid-revert-multiplier` in `god-constant.json`, which
+    // prices §1's walk-back of a wartime edict. They are in the preimage for the
+    // reason every other raid and god magnitude is: two universes that disagreed
+    // about when the defender stops having verbs, or about what unmaking a
+    // wartime edict costs, would be playing two different games while their
+    // revisions agreed they were compatible. Nothing existing changed a byte.
+    //
+    // Neither literal survives, for the third time in this list. The branch
+    // asserted 74e73627 over a preimage that had W17's autonomy weights and the
+    // raid magnitudes but neither the material split, the summon cap, the two
+    // `node.json` passes, the grant budget nor `apply-magic`'s two scalars;
+    // `main` asserted d4e30476 over a preimage holding all of those and none of
+    // the raid magnitudes. This tree is the first holding both, and the value
+    // below was **measured from this merged tree** rather than carried from
+    // either side.
+    //
+    // c0276a360357ff2e4e27932552e2a3e0 -> 3e2d1727655f3e0eab9f910430c5a56c, on
+    // the `design/raid-engagement` merge. Ninth union in this list. 75 god
+    // constants now: main's 72, W21's `unease-bars`/`unease-step`, and this
+    // branch's `mid-raid-revert-multiplier` — plus the eleven raid constants.
+    // MEASURED on the merged tree.
+    expect(registry.contentRevision).toBe('3e2d1727655f3e0eab9f910430c5a56c');
   });
 
   it('is stable across loads of identical content', () => {

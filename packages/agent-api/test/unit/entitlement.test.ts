@@ -139,18 +139,18 @@ describe('unclassifiedTraits (step 2)', () => {
    * moves, `docs/design/observable-trait-inventory.md` is stale and its date and
    * ref line are lying about the tree.
    */
-  it('covers the 110 traits the inventory counted at be446a6, plus bar-phase', () => {
+  it('covers the 115 traits: 108 at be446a6, plus bar-phase and mid-raid-change', () => {
     let traits = 0;
     for (const spec of [...WORLD_COMPONENTS, ...ENGAGEMENT_COMPONENTS]) {
       traits += Object.keys(spec.fields).length;
     }
-    // 108 at `be446a6`, plus `bar-phase`'s two fields
-    // (`uneaseUntilTick`, `lastConstitutionalTick`) on the
-    // `w21/timing-and-envelopes` merge. The count is the point of the test, so
+    // 108 at `be446a6`, plus `bar-phase`'s two fields on the
+    // `w21/timing-and-envelopes` merge and `mid-raid-change`'s five on the
+    // `design/raid-engagement` one. The count is the point of the test, so
     // it moves with the component set rather than being loosened to `>=`;
     // `docs/design/observable-trait-inventory.md` is the document this is
     // keeping honest and it now reads two traits short.
-    expect(traits).toBe(110);
+    expect(traits).toBe(115);
 
     let classified = 0;
     for (const rows of Object.values(TRAIT_CLASSIFICATION)) {
@@ -174,10 +174,10 @@ describe('unclassifiedTraits (step 2)', () => {
         byReason.set(reason, (byReason.get(reason) ?? 0) + 1);
       }
     }
-    // 70 + `bar-phase`'s two, both `undecided()` for `grant-budget`'s reason:
-    // they price the god's next constitutional act and the agent is subject to
-    // them without seeing them.
-    expect(byReason.get('not-yet-decided')).toBe(72);
+    // 70 + `bar-phase`'s two + `mid-raid-change`'s five, all `undecided()` for
+    // `grant-budget`'s reason: they price the god's next constitutional act, or
+    // the unmaking of one, and the agent is subject to them without seeing them.
+    expect(byReason.get('not-yet-decided')).toBe(77);
     expect(byReason.get('internal-bookkeeping')).toBe(6);
     // Unused until there is an opponent-facing projection to hide anything
     // from. Asserted at zero so that the day it stops being zero is a diff.

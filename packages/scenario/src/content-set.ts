@@ -594,6 +594,7 @@ export function contentCatalogue(registry: ContentRegistry): ContentCatalogue {
     // illegal-action counter.
     uneaseBars: god.constants.uneaseBars,
     uneaseStep: god.constants.uneaseStep,
+    midRaidRevertMultiplier: god.constants.midRaidRevertMultiplier,
   });
 }
 

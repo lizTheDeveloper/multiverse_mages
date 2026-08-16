@@ -48,12 +48,15 @@ import {
   MAGE,
   MAGE_ROLE,
   MATERIAL_STOCK,
+  MID_RAID_CHANGE,
   OBJECTIVE,
   OBJECTIVE_STATUS,
   OCCUPATION,
   POPULACE_COHORT,
   PREPARED_SPELL,
   RAID_SIDE,
+  RULE_CHANGE_KIND,
+  RULE_SCOPE,
   UNIVERSITY,
   UNIVERSITY_STAFF,
   UPHEAVAL,
@@ -268,6 +271,17 @@ export function populatedWorld(): PopulatedWorld {
   attachRecord(state, BAR_PHASE, universe, {
     uneaseUntilTick: 46,
     lastConstitutionalTick: 38,
+  });
+
+  // One raid-scarred technique, so the mark `raid-engagement.md` §1 leaves is
+  // in the round-trip like everything else.
+  const midRaidChange = state.entities.create();
+  attachRecord(state, MID_RAID_CHANGE, midRaidChange, {
+    scope: RULE_SCOPE.technique,
+    targetId: 3,
+    changeKind: RULE_CHANGE_KIND.forbid,
+    paidCost: 4096,
+    markedTick: 41,
   });
 
   assertEveryWorldComponentPopulated(state);

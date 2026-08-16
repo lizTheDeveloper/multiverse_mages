@@ -65,18 +65,21 @@ describe('shipped content', () => {
       // god-agency rules read by name. Both coverings are checked by the
       // loader; these are the counts they come out at.
       godCosts: 17,
-      // 72 + W21's `unease-bars` and `unease-step` = 74. Neither side's number
-      // survives: `main` had 72 without the pair, W21 had 71 without `w109`'s
-      // seventeenth cost and the two constants that came with it.
-      godConstants: 74,
+      // 75 = main's 72, plus W21's `unease-bars` and `unease-step`, plus
+      // raid-engagement's `mid-raid-revert-multiplier`. Three separate branches
+      // added constants; no side's literal is a count of the union.
+      godConstants: 75,
       // One per magnitude the raid rules read by name, checked in both
       // directions by the loader for the reason the god constants are. Five of
       // them are the composition root's rather than the engine's — how many
       // rivals hang in the sky, how they are armed, how often one arrives, and
       // how long after a raid the next may not — because §1.1 keeps the
       // multiverse out of state and something has to say who is on the other
-      // end of the portal.
-      raidConstants: 46,
+      // end of the portal. Fifty-nine is `main`'s 46 plus the thirteen
+      // `raid-engagement` authored: §2's two phase boundaries, what each of §3's
+      // six verbs costs and does, the concealment ceiling, and the Vis a
+      // raiding party carries.
+      raidConstants: 59,
       // Thirty-eight since `apply-magic` added `apply-output-per-month` and
       // `apply-ration-per-month`. Both are scalars rather than role-appeal rows
       // — they price what applied work makes and eats, not what a role wants —

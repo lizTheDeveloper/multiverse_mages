@@ -69,15 +69,22 @@ import {
   BAR_PHASE,
   axisChangeCount,
   componentOf,
+  EDICT,
+  EDICT_KIND,
   GRID_FORM_COUNT,
   GRID_TECHNIQUE_COUNT,
+  RULE_CHANGE_KIND,
+  RULE_SCOPE,
   TERMINAL_REASON,
   canIssueEdict,
+  collectRecords,
   findUniverse,
   godStateOrEmpty,
   inEngagement,
   readEdicts,
+  readMidRaidMarks,
   readUniverse,
+  revertSurcharge,
 } from '@mm/state';
 
 import { ACTION_SPACE_SIZE, GOD_ACTION, PARAMETERIZED_ACTIONS } from './actions.js';
@@ -234,7 +241,6 @@ function cheapestPrice(
       );
     case GOD_ACTION.issueDispensation:
     case GOD_ACTION.issueInterdiction:
-    case GOD_ACTION.revokeEdict:
       return mul(base, unease);
     case GOD_ACTION.grantFoundingKnowledge: {
       // §4.2 prices a grant at `base × node tier`, so the cheapest grant is the
@@ -248,6 +254,21 @@ function cheapestPrice(
       // it would put the mask and `grantPlan` back into disagreement.
       return base;
     }
+    case GOD_ACTION.revokeEdict:
+      // **Both branches priced this action and the union made one unreachable.**
+      // W21 grouped it with dispensation/interdiction under the unease
+      // multiplier; `design/raid-engagement` gave it a dedicated arm charging
+      // §1's revert surcharge. A textual union produced two `case
+      // GOD_ACTION.revokeEdict` labels in one switch — the first wins, the
+      // second is dead, and the only thing that reported it was eslint's
+      // `no-duplicate-case` through `float-boundary.test.ts`. TypeScript
+      // compiled it silently.
+      //
+      // Composed rather than chosen: the revert surcharge picks *which* edict is
+      // cheapest to revoke, and the unease multiplier prices *when* the revoke
+      // happens. They are independent and both are live, in the same order and
+      // through the same `mul` that `coordination`'s `interventionCost` uses.
+      return mul(cheapestRevoke(state, costs, base), unease);
     case GOD_ACTION.fundUniversity: {
       // Slot 0 founds and every other slot funds; §4.2 gives them one id, so the
       // entry is legal while *either* is affordable.
@@ -312,6 +333,42 @@ function uneaseMultiplier(state: SimState, costs: ActionCostTable, action: numbe
 
   const remaining = Math.max(store.get(universe, 'uneaseUntilTick') - state.clock.worldTick, 0);
   return FP_ONE + Math.min(remaining, bars) * step;
+}
+
+/**
+ * The cheapest edict this god could revoke.
+ *
+ * Ordinary while any *unmarked* edict stands, because the mask's contract is
+ * "there is a parameter this god can afford" rather than "every parameter is
+ * affordable" — the same reading `cheapestAxisMultiplier` takes one case up.
+ * When every standing edict is one a raid left, the cheapest revoke really is a
+ * surcharged one, and reporting the base there would admit an action the
+ * resolver refuses.
+ *
+ * Priced through `@mm/state`'s `revertSurcharge`, which is where that
+ * arithmetic lives precisely so that this file and `coordination`'s resolver
+ * cannot disagree: `agent-api` may not import a rules package and `coordination`
+ * may not import `agent-api`, so a second copy here would be a player told they
+ * can afford something the server refuses.
+ */
+function cheapestRevoke(state: SimState, costs: ActionCostTable, base: number): number {
+  const marks = readMidRaidMarks(state);
+  if (marks.length === 0) return base;
+
+  const multiplier = costs.midRaidRevertMultiplier ?? FP_ONE;
+  let cheapest = Number.POSITIVE_INFINITY;
+  for (const { row } of collectRecords(state, EDICT)) {
+    const mark = marks.find(
+      (candidate) =>
+        candidate.scope === RULE_SCOPE.cell &&
+        candidate.targetId === row.cellId &&
+        candidate.changeKind ===
+          (row.kind === EDICT_KIND.interdiction ? RULE_CHANGE_KIND.forbid : RULE_CHANGE_KIND.permit),
+    );
+    const price = mark === undefined ? base : revertSurcharge(base, mark.paidCost, multiplier);
+    if (price < cheapest) cheapest = price;
+  }
+  return cheapest === Number.POSITIVE_INFINITY ? base : cheapest;
 }
 
 /** Whether an action's mask entry is set. Out-of-range ids read as illegal. */

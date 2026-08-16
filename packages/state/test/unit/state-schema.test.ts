@@ -179,6 +179,10 @@ describe('the world schema is stable in the way the snapshot format needs', () =
       // `god-state`, because a section carries its field table inline — see
       // §1.1's own note on why widening a row is the expensive shape.
       'bar-phase',
+      // Appended by `raid-engagement`, as world-schema revision 9 -- renumbered
+      // from 5, then 7, on successive merges: 7 is reserved for
+      // `material-economy` and 8 was taken by `bar-phase`.
+      'mid-raid-change',
     ]);
   });
 

@@ -88,6 +88,7 @@ import {
   GOD_STATE,
   GRANT_BUDGET,
   MATERIAL_STOCK,
+  MID_RAID_CHANGE,
   UNIVERSE,
   UPHEAVAL,
 } from './components.js';
@@ -102,6 +103,8 @@ import {
  * | 3        | `mages-and-species` | adds `effort-progress` (`contracts.md` §1.2)  |
  * | 4        | `god-agency`        | adds `god-state`, `blessing`, `upheaval`, `era-evaluation` (§1.1) |
  * | 5        | `city-and-supply-chain` | adds `material-stock`; **removes** `universe.materials` |
+ * | 6        | `god-agency`        | adds `grant-budget` (`contracts.md` §1.1)     |
+ * | 7        | `raid-engagement`   | adds `mid-raid-change` (`raid-engagement.md` §1) |
  *
  * Revision 5 is the first step that does not only append. It splits the one
  * `materials` scalar into three kinds and takes the old field out of the
@@ -110,6 +113,13 @@ import {
  * split rule and for why a section rewrite is safe here.
  * | **7**    | *reserved*          | **not in this tree** — `material-stock` widened from three kinds to seven, on `w247/material-economy-build`. See {@link addBarPhase}. |
  * | 8        | W21 timing          | adds `bar-phase` — sound-design §5.2's eight-bar unease |
+ *
+ * Revision 7 appends `mid-raid-change`. It was written against revision 4 on
+ * `w37/raid-playable` and renumbered on the merge — `material-stock` and
+ * `grant-budget` had taken 5 and 6 in the meantime, and a revision number is
+ * what a migration step is keyed on, so keeping the branch's 5 would have
+ * silently applied a raid repair to a save that only needed the materials
+ * split.
  *
  * Revision 4 adds four components in one step, where the two before it added
  * one each. That is not a loosening of the rule — it is what the rule is for.
@@ -122,7 +132,7 @@ import {
  * **Append; never renumber.** A revision number is what a migration step is
  * keyed on, so reusing one silently applies the wrong repair to a save.
  */
-export const WORLD_SCHEMA_VERSION = 8;
+export const WORLD_SCHEMA_VERSION = 9;
 
 /**
  * The world-schema revision an envelope was written by.
@@ -140,6 +150,11 @@ export const WORLD_SCHEMA_VERSION = 8;
  */
 export function worldSchemaVersionOf(envelope: SnapshotEnvelope): number {
   const carried = new Set(envelope.components.map((component) => component.name));
+  // **Revision 9's marker is `mid-raid-change`, and it leads the chain** — §4.4
+  // step 3, newest marker first. Authored as revision 7; 7 is reserved for
+  // `w247/material-economy-build` and 8 was taken by `bar-phase` one merge
+  // earlier, so this is the third renumber in arrival order.
+  if (carried.has(MID_RAID_CHANGE.name)) return 9;
   // **Revision 8's marker is `bar-phase`, and it is checked first** — §4.4 step
   // 3: the newest marker leads the chain, or a save written by this build reads
   // as revision 6 (it carries `grant-budget` too) and is walked through a
@@ -169,7 +184,6 @@ export function worldSchemaVersionOf(envelope: SnapshotEnvelope): number {
   // not any row was written — and because it is the first of the four in
   // `WORLD_COMPONENTS`, so a partially-appended envelope reads as the older
   // revision and is completed rather than being read as current and left short.
-  if (carried.has(GRANT_BUDGET.name)) return 5;
   if (carried.has(GOD_STATE.name)) return 4;
   if (carried.has(EFFORT_PROGRESS.name)) return 3;
   if (carried.has(GOAL_COMMITMENT.name)) return 2;
@@ -260,6 +274,32 @@ export const addEffortProgress: WorldSchemaMigration = {
     return {
       ...envelope,
       components: [...envelope.components, emptySection(EFFORT_PROGRESS)],
+    };
+  },
+};
+
+/**
+ * Revision 6 → 7: append an empty `mid-raid-change` section.
+ *
+ * Empty is the correct repair and not merely the convenient one. A mark records
+ * a ruleset change made **during a raid**, and no build before this one could
+ * make one — the rule it descends from said a raid in progress was frozen
+ * policy. So there is no save in existence holding a change this section should
+ * describe, and synthesising rows would invent constitutional history: every
+ * restored universe would owe a surcharge on edicts it issued in peacetime.
+ */
+export const addMidRaidChange: WorldSchemaMigration = {
+  // Authored as `{ from: 6, to: 7 }`. Renumbered on the `integration/group-e`
+  // merge: 7 is reserved for `w247/material-economy-build` (a **field** marker
+  // on `material-stock`, not a component — see {@link addBarPhase}), and 8 was
+  // taken by `bar-phase` one merge before this one. Arrival order, which is what
+  // §4.4 says settles a revision number.
+  from: 8,
+  to: 9,
+  migrate(envelope) {
+    return {
+      ...envelope,
+      components: [...envelope.components, emptySection(MID_RAID_CHANGE)],
     };
   },
 };
@@ -504,6 +544,7 @@ export const WORLD_SCHEMA_MIGRATIONS: readonly WorldSchemaMigration[] = [
   splitMaterialsByKind,
   addGrantBudget,
   addBarPhase,
+  addMidRaidChange,
 ];
 
 /**

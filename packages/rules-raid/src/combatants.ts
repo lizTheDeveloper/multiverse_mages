@@ -122,8 +122,15 @@ export interface CombatantBrief {
   readonly knownNodes: ReadonlySet<ContentId>;
   /** `contracts.md` §1.6's `preparedSpells`, readied at home and spent abroad. */
   preparedSpells: readonly number[];
-  /** `ward` sources this combatant carries, already legality-filtered. */
-  readonly wardSources: readonly Fixed[];
+  /**
+   * `ward` sources this combatant carries, already legality-filtered.
+   *
+   * Mutable since `raid-engagement.md` §1 made the ruleset changeable mid-raid:
+   * a ward whose cell is forbidden stops warding, and `lock.ts` recomputes this
+   * from the same `passiveDefences` call the deployment used. Nothing else
+   * writes it.
+   */
+  wardSources: readonly Fixed[];
   /** The intrinsic per-tick damage of a detachment or a summon; `0` for a mage. */
   readonly intrinsicDamage: Fixed;
   /** The reach of that intrinsic attack; `0` for a mage. */

@@ -320,5 +320,96 @@
     "unit": "count",
     "gloss": "Books a rival shelves from cells this universe's own ruleset forbids. Not zero, because twelve of seventy cells are enabled and they hold 51 of 300 nodes, so an undisturbed universe learns all 51 and stops: the plateau is content exhaustion, not balance. A god researches only what they permit but may take what another permitted, so this is what makes the other 249 reachable at all. INVENTED with the rest of the rival stand-in.",
     "tuningStatus": "untuned"
+  },
+  {
+    "id": "muster-ceiling-ticks",
+    "value": 120,
+    "unit": "ticks",
+    "gloss": "Engagement tick at which the muster phase ends whether or not the two sides have met. The natural boundary is contact itself, and this is the guard on its degenerate case: sides that never close, or a raid whose objectives are all undefended, would otherwise sit in muster with the full verb set for the whole raid. At the shipped movement rate the bands close in about twenty ticks, so this rarely binds and is not meant to.",
+    "tuningStatus": "untuned"
+  },
+  {
+    "id": "resolution-stability-margin",
+    "value": 614400,
+    "unit": "raw",
+    "gloss": "Portal stability at or below which the engagement is in its resolution phase and the player has no verbs left. fp(600), so the last six hundred ticks of a two-to-three-thousand tick raid. Deliberately a separate constant from withdraw-stability-margin even though both are stability thresholds: one decides when a raider runs for the door, the other decides when the god stops being able to help, and tying them would make a balance change to either silently retune the other.",
+    "tuningStatus": "untuned"
+  },
+  {
+    "id": "verb-forbid-cost",
+    "value": 6144,
+    "unit": "fp",
+    "gloss": "Favor the defender pays to forbid a technique, a form, or a cell mid-raid. Priced at the world-scale interdiction rate rather than derived from it, because it is a different verb: it resolves in seconds, it is irreversible for the engagement, and it is the input to the post-raid revert surcharge. Charged only when the lock accepts the change; a refused change costs a decision and not a resource.",
+    "tuningStatus": "untuned"
+  },
+  {
+    "id": "verb-permit-cost",
+    "value": 6144,
+    "unit": "fp",
+    "gloss": "Favor the defender pays to permit mid-raid. Identical to forbidding, because vision pillar 1 rests on the permit/forbid decision being symmetric, and any price difference turns denial from a peer strategy into a penalty.",
+    "tuningStatus": "untuned"
+  },
+  {
+    "id": "verb-levy-cost",
+    "value": 4096,
+    "unit": "fp",
+    "gloss": "Favor the defender pays to levy one detachment out of a cohort that does not fight -- laborers, scholars, whoever the universe was using for something else. Muster only: deciding who fights is a thing you do before contact or not at all. NOT a second soldier detachment: the opening deployment already commits every detachment a soldier cohort can field, so that verb could never fire. Priced below a ruleset change because it commits people rather than law.",
+    "tuningStatus": "untuned"
+  },
+  {
+    "id": "verb-ward-cost",
+    "value": 3072,
+    "unit": "fp",
+    "gloss": "Favor the defender pays to raise every living defender's ward by one stacked source. Survives into contact: it helps the people already fighting, which is what the contact phase is for.",
+    "tuningStatus": "untuned"
+  },
+  {
+    "id": "verb-ward-magnitude",
+    "value": 205,
+    "unit": "fp",
+    "gloss": "Ward the defender's ward verb adds, as one more stacked source rather than a written total, so it caps through primitives like every other ward. fp(0.2) -- a fifth of incoming damage turned aside, once, at a price the defender will feel.",
+    "tuningStatus": "untuned"
+  },
+  {
+    "id": "verb-mend-cost",
+    "value": 4096,
+    "unit": "fp",
+    "gloss": "Vis the attacker spends to mend every living raider. The verb that makes the attacker's two payments pull against each other: Vis keeps raiders alive to cast again, and every cast is a spell the host's academics watch you use. It was a vigor refill first; measured over eight seeds, a raider never spends enough vigor in a 54-96 tick raid for a refill to do anything, so the verb reported no-effect on every run. Hit points are what binds.",
+    "tuningStatus": "untuned"
+  },
+  {
+    "id": "verb-mend-hit-points",
+    "value": 32768,
+    "unit": "fp",
+    "gloss": "Hit points restored per raider by the mend verb, capped at the health she arrived with. fp(32) against a combatant-base-max-hp of fp(64) is half a raider's frame -- large enough that the buy is visible in survival, which is the observable section 5's first claim is stated in, and small enough that it is a reprieve rather than immortality.",
+    "tuningStatus": "untuned"
+  },
+  {
+    "id": "verb-conceal-cost",
+    "value": 3072,
+    "unit": "fp",
+    "gloss": "Vis the attacker spends to raise every raider's concealment. Muster only: how you approach is decided before you are seen.",
+    "tuningStatus": "untuned"
+  },
+  {
+    "id": "verb-conceal-magnitude",
+    "value": 154,
+    "unit": "fp",
+    "gloss": "Concealment the conceal verb adds per raider, clamped at concealment-cap. fp(0.15) -- a real evasion chance against the only miss roll in combat, and small enough that it is a lean rather than a build.",
+    "tuningStatus": "untuned"
+  },
+  {
+    "id": "concealment-cap",
+    "value": 819,
+    "unit": "fp",
+    "gloss": "Ceiling on a combatant's concealment however it was raised. fp(0.8): above this a raider is effectively untargetable and area denial becomes the only counter, which would make one verb the whole game. Section 3 caps concealment for primitives through the stacking table; this is the same ceiling applied to the row field the conceal verb writes.",
+    "tuningStatus": "untuned"
+  },
+  {
+    "id": "attacker-vis-stock",
+    "value": 65536,
+    "unit": "fp",
+    "gloss": "Vis a raiding party carries through the portal. A portable, lootable stock, seeded once and never refilled -- running out is what ends an over-extended raid. AUTHORED CONTENT RATHER THAN A WORLD BALANCE, and deliberately so: the economy spec amendment records that Vis production and storage land with the economy capability, and reading a stock that does not exist yet would be a fourth resource invented here rather than one chosen. fp(64) buys sixteen of the cheaper verb.",
+    "tuningStatus": "untuned"
   }
 ]

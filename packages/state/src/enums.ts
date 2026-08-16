@@ -226,6 +226,40 @@ export const AXIS_KIND = {
 export type AxisKindValue = (typeof AXIS_KIND)[keyof typeof AXIS_KIND];
 
 /**
+ * What a ruleset change was made *to* (`docs/design/raid-engagement.md` §1).
+ *
+ * The three scopes a god can change legality at, which are exactly the three
+ * §4.2 already has actions for: a technique's row, a form's column, and one
+ * cell through an edict. `0` is unassigned, per §0's null convention — a zeroed
+ * row is a malformed record rather than a change to nothing.
+ */
+export const RULE_SCOPE = {
+  technique: 1,
+  form: 2,
+  cell: 3,
+} as const;
+
+export type RuleScopeValue = (typeof RULE_SCOPE)[keyof typeof RULE_SCOPE];
+
+/**
+ * Which direction a ruleset change moved legality.
+ *
+ * Named by what it did rather than by which action did it, because the same
+ * direction is reached by two different §4.2 actions depending on scope —
+ * forbidding a cell is an interdiction, forbidding a technique is action 2 —
+ * and the lock, and the revert surcharge after it, care only about the
+ * direction.
+ */
+export const RULE_CHANGE_KIND = {
+  /** Made something illegal that was legal. */
+  forbid: 1,
+  /** Made something legal that was illegal. */
+  permit: 2,
+} as const;
+
+export type RuleChangeKindValue = (typeof RULE_CHANGE_KIND)[keyof typeof RULE_CHANGE_KIND];
+
+/**
  * What kind of unfinished work a `effort-progress` row is accumulating
  * (`contracts.md` §1.2, "Effort progress").
  *

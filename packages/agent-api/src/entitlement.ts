@@ -278,6 +278,19 @@ export const TRAIT_CLASSIFICATION: Readonly<
     uneaseUntilTick: undecided(),
     lastConstitutionalTick: undecided(),
   },
+  // `raid-engagement.md` §1's mark on a ruleset change made during a raid. All
+  // five `undecided()`, on `grant-budget`'s and `bar-phase`'s argument: the mark
+  // sets what unmaking the change will cost, and the agent is subject to that
+  // price without being shown the mark. Classified on the
+  // `design/raid-engagement` merge because `assertAllTraitsClassified` refuses a
+  // component with no classification at all.
+  'mid-raid-change': {
+    scope: undecided(),
+    targetId: undecided(),
+    changeKind: undecided(),
+    paidCost: undecided(),
+    markedTick: undecided(),
+  },
   combatant: {
     sourceKind: undecided(),
     sourceId: undecided(),

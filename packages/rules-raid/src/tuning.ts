@@ -76,6 +76,36 @@ export interface RaidTuning {
   /** Remaining stability below which withdrawal outscores everything. Raw. */
   readonly withdrawStabilityMargin: number;
 
+  // ---- The engagement's three phases (`raid-engagement.md` §2). ----
+  /** Engagement tick muster ends on regardless of contact. Ticks. */
+  readonly musterCeilingTicks: number;
+  /** Stability at or below which the raid is watch-only. Raw. */
+  readonly resolutionStabilityMargin: number;
+
+  // ---- The raid verb set (`raid-engagement.md` §3). All fp. ----
+  /** Favor the defender pays to forbid mid-raid. */
+  readonly verbForbidCost: Fixed;
+  /** Favor the defender pays to permit mid-raid. Equal, and the equality matters. */
+  readonly verbPermitCost: Fixed;
+  /** Favor the defender pays to levy a detachment from a non-fighting cohort. */
+  readonly verbLevyCost: Fixed;
+  /** Favor the defender pays to ward her side. */
+  readonly verbWardCost: Fixed;
+  /** Ward added per defender, as one more stacked source. */
+  readonly verbWardMagnitude: Fixed;
+  /** Vis the attacker spends to mend her raiders. */
+  readonly verbMendCost: Fixed;
+  /** Hit points restored per raider, capped at her `maxHp`. */
+  readonly verbMendHitPoints: Fixed;
+  /** Vis the attacker spends to conceal her party. */
+  readonly verbConcealCost: Fixed;
+  /** Concealment added per raider. */
+  readonly verbConcealMagnitude: Fixed;
+  /** Ceiling on a combatant's concealment however it was raised. */
+  readonly concealmentCap: Fixed;
+  /** Vis a raiding party carries through the portal. Authored, not a balance. */
+  readonly attackerVisStock: Fixed;
+
   // ---- Derived combatant statistics. Untuned placeholders, every one. ----
   readonly combatantBaseMaxHp: Fixed;
   readonly combatantHpPerTier: Fixed;
@@ -144,6 +174,21 @@ export function readRaidTuning(source: RaidConstantSource): RaidTuning {
     objectiveProgressPerTick: at('objective-progress-per-tick'),
     portalMargin: at('portal-margin'),
     withdrawStabilityMargin: at('withdraw-stability-margin'),
+
+    musterCeilingTicks: at('muster-ceiling-ticks'),
+    resolutionStabilityMargin: at('resolution-stability-margin'),
+
+    verbForbidCost: at('verb-forbid-cost'),
+    verbPermitCost: at('verb-permit-cost'),
+    verbLevyCost: at('verb-levy-cost'),
+    verbWardCost: at('verb-ward-cost'),
+    verbWardMagnitude: at('verb-ward-magnitude'),
+    verbMendCost: at('verb-mend-cost'),
+    verbMendHitPoints: at('verb-mend-hit-points'),
+    verbConcealCost: at('verb-conceal-cost'),
+    verbConcealMagnitude: at('verb-conceal-magnitude'),
+    concealmentCap: at('concealment-cap'),
+    attackerVisStock: at('attacker-vis-stock'),
 
     combatantBaseMaxHp: at('combatant-base-max-hp'),
     combatantHpPerTier: at('combatant-hp-per-tier'),
