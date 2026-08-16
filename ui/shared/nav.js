@@ -74,8 +74,12 @@ const CSS = `
   margin:0 0 1.1rem;padding:.35rem .1rem .5rem;font-size:.78rem;
   border-bottom:1px solid var(--line,currentColor);line-height:1.6}
 .mm-nav a{color:inherit;text-decoration:none;padding:.12rem .42rem;border-radius:3px;
-  opacity:.62;white-space:nowrap;border:1px solid transparent}
+  opacity:.78;white-space:nowrap;border:1px solid transparent}
 .mm-nav a:hover{opacity:1;border-color:var(--edge,currentColor)}
+/* .62 measured 4.40:1 on the vellum ground — under the 4.5 floor, on every page.
+   .78 clears it. Opacity on a link is a contrast multiplier, and the earlier
+   measurement here was taken on the aria-current link, which carries its own
+   colour and was never the one at risk. */
 .mm-nav a:focus-visible{outline:2px solid currentColor;outline-offset:1px}
 .mm-nav a[aria-current=page]{opacity:1;font-weight:600;
   border-color:var(--god,currentColor);color:var(--god,inherit)}
