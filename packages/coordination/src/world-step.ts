@@ -150,6 +150,7 @@ import {
   MATERIAL_KINDS,
   NO_STANDING_ARMY,
   advanceConstruction,
+  NO_EMPHASIS,
   appliedYield,
   applicationRations,
   applyLibraryUpkeep,
@@ -430,7 +431,20 @@ export interface WorldStepDeps {
    * where every month is a month.
    */
   readonly researchBonusesFor?:
-    | ((state: SimState, worldTick: number, mage: Handle, nodeId: number) => readonly Fixed[])
+    | ((state: SimState, worldTick: number, mage: Handle) => readonly Fixed[])
+    | undefined;
+  /**
+   * Which cells the god has encouraged this tick, and how strongly, `fp`.
+   *
+   * Not a rate and not a bonus: it goes to the **outlook**, where
+   * `target-appeal.ts`'s emphasis term reads it, because vision §7's
+   * *"encourage a research direction"* names a cell as a preference and its whole job is now to
+   * change what a mage picks next. An absent hook is a world with no god, whose
+   * mages therefore have no instruction — which is `NO_EMPHASIS` and not an
+   * empty rate.
+   */
+  readonly emphasisFor?:
+    | ((state: SimState, worldTick: number) => ReadonlyMap<number, Fixed>)
     | undefined;
   readonly teachBonusesFor?:
     | ((state: SimState, worldTick: number, mage: Handle) => readonly Fixed[])
@@ -1125,6 +1139,7 @@ export function worldSystem(
             tierOf: (nodeId) => deps.catalog.node(nodeId)?.tier ?? 1,
             facetsOf: deps.facets,
             affinitiesOf: deps.affinitiesOf,
+            emphasis: deps.emphasisFor?.(state, worldTick) ?? NO_EMPHASIS,
             preferredUniversityFor,
             // The authored half of applicability. Absent on a build with no
             // economy index, which makes `apply-magic` masked for every mage —
@@ -2123,7 +2138,13 @@ function workOne(
         rate(
           deps.primitives.researchRate,
           withKnown(
-            deps.researchBonusesFor?.(state, worldTick, mage, nodeId) ?? NO_BONUSES,
+            // Three arguments, not four: `w52/emphasis-reorders` moved the
+            // god's encouragement out of `researchBonusesFor` and into
+            // `target-appeal.ts`'s preference term, so the hook no longer needs
+            // to know which node it is being asked about. The `withKnown`
+            // wrapper is `main`'s and stays — it is the node-driven academic
+            // rate, which is a different source from the god's constants.
+            deps.researchBonusesFor?.(state, worldTick, mage) ?? NO_BONUSES,
             academic.researchRate(mage),
           ),
         ),

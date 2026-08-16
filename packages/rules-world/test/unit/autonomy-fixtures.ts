@@ -36,7 +36,7 @@ import type {
   SpeciesAffinities,
   TargetAppealWeights,
 } from '../../src/index.js';
-import { readTargetAppeal, resolveSpeciesAffinities } from '../../src/index.js';
+import { NO_EMPHASIS, readTargetAppeal, resolveSpeciesAffinities } from '../../src/index.js';
 
 import { shippedRegistry } from './mage-fixtures.js';
 
@@ -127,6 +127,7 @@ export function outlook(overrides: Partial<MageOutlook> = {}): MageOutlook {
     mage: 1,
     species: speciesNamed('human'),
     affinities: affinitiesOf('human'),
+    emphasis: NO_EMPHASIS,
     personality: { curiosity: 1024, ambition: 1024, caution: 1024 },
     roleId: MAGE_ROLE.researcher as MageRoleValue,
     // fp(512) — the middle of the prime band for every species, and the

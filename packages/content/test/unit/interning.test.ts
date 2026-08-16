@@ -391,6 +391,14 @@ describe('contentRevision', () => {
     // the digest moving is the whole of what a digest is for: a universe that
     // does not know `practice-rate` exists cannot restore mastery, and would
     // run a visibly different economy while claiming to be compatible.
+    // d4e3047657b4fa8a1a74e1d52f9f5c86 -> 158e2dc733c26dd526f481e49a4d43d9,
+    // when W52 added `target-emphasis-divisor` and `target-bound-emphasis` to
+    // `autonomy-weight.json` — what the god's `encourageResearch` is worth to a
+    // mage deciding what to study next, now that it is a preference rather than
+    // a research rate. Two new records and one gloss edit; no existing value
+    // moved. They are in the preimage for the same reason the rest of that file
+    // is: two universes that disagreed about how strongly an encouragement
+    // pulls would develop different magic from the same edicts.
     // d4e3047657b4fa8a1a74e1d52f9f5c86 -> e8442af2c5f91ae6f80ad9a178e0e451,
     // when anti-requisites landed (`vision.md` §4b) and `cell.json` gained an
     // `excludes` array carrying one pair: *Creo Ignem* and *Creo Umbra* exclude
@@ -501,7 +509,17 @@ describe('contentRevision', () => {
     // branch's) is a digest over a preimage holding both, so the value below
     // was read from `node packages/content/bin/validate-content.mjs` on the
     // merged tree and then confirmed by this test.
-    expect(registry.contentRevision).toBe('ef1988583047c5dec4b7ad5fcae03313');
+    // Both edits above arrived on separate branches and this tree is the first
+    // holding both, so neither branch's literal is a digest over a preimage
+    // containing the other. The union is a third value, which is what a digest
+    // over a union is supposed to produce, and it was read from the test rather
+    // than derived by hand — guessing it is not an option.
+    //
+    // RECOMPUTED AGAIN on the Group F merge of `w52/emphasis-reorders`,
+    // 2026-08-16 — the seventh union in this list. Read from
+    // `node packages/content/bin/validate-content.mjs` on the merged tree and
+    // confirmed by this test.
+    expect(registry.contentRevision).toBe('5d4b38b99210b89d77dd650bae76b51d');
   });
 
   it('is stable across loads of identical content', () => {

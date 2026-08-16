@@ -40,6 +40,8 @@ __pycache__/
 .w17/
 # W46's affinity-ablation arms. Same reason.
 .w46/
+# W52's three emphasis arms — 324 runs of sampled node composition. Same reason.
+.w52/
 # W70's opening-square size sweep. Same reason: 480 runs of node-id sets.
 .w70/
 # W53's practice arms — the before/after of the applied-use probe. Same reason.

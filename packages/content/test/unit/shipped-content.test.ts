@@ -79,7 +79,25 @@ describe('shipped content', () => {
       // — they price what applied work makes and eats, not what a role wants —
       // and both are in `REQUIRED_AUTONOMY_WEIGHTS`, so the loader checks the
       // set in both directions exactly as it does for the target weights.
-      autonomyWeights: 39,
+      // Forty, and neither side of this merge said so. `main` reached 38 when
+      // `apply-magic` added `apply-output-per-month` and `apply-ration-per-month`
+      // — scalars rather than role-appeal rows, pricing what applied work makes
+      // and eats. This branch reached 38 independently, adding two because the
+      // god's emphasis became a preference the outlook weighs rather than a rate
+      // it multiplies, and a preference needs a weight to be weighed against.
+      // All four are in `REQUIRED_AUTONOMY_WEIGHTS`, the loader checks the set in
+      // both directions, and this tree is the first holding all four — so 38
+      // from either side would be a count the loader rejects. Measured, not
+      // chosen.
+      //
+      // **Forty-one, and it is neither 39 nor the 40 this branch's comment
+      // predicts.** Recounted on the Group F merge, 2026-08-16, straight from
+      // `packages/content/data/autonomy-weight.json` — 41 records — rather than
+      // added up from two comments. `main` is at 39 here, not the 38 the branch
+      // assumed, so the branch's arithmetic was right about the increment and
+      // wrong about the base. This is exactly why the rule for this file is
+      // recount, never union of literals.
+      autonomyWeights: 41,
     });
   });
 

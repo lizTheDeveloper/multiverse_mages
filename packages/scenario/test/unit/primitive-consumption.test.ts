@@ -148,6 +148,12 @@ describe('god-driven consumption is recorded, and does not count', () => {
     // count.
     expect(text).toContain('coordination/knowledge-vitality');
     expect(text).toContain('coordination/academic-effects');
+    // `w52/emphasis-reorders` asserted `toContain('coordination/god/effects.
+    // researchBonusesFor')` here, under the section header above. Tried on the
+    // Group F merge, 2026-08-16, and it fails: the report no longer prints
+    // non-node consumer *strings* at all once every primitive has a node-driven
+    // consumer, so the branch's assertion is unsatisfiable on this tree rather
+    // than merely unnecessary. Recorded instead of silently dropped.
   });
 
   it.each(['research-rate', 'scribe-rate', 'teach-rate'])(

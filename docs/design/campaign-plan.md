@@ -2270,6 +2270,166 @@ all would notice, which is the measurement a tuner should start from; the consta
 above zero, or any run terminating with `favorWasted` at zero and a non-saturated `favorCap`.
 Verdict `unmeasured` — this entry has one run's numbers against one strategy, which is an existence
 proof of the surplus and not a measurement of its extent across the pool.
+---
+
+## W52: the emphasis is a preference now, it reorders, and the slot ordering points it at Intellego every time
+
+`w52/emphasis-reorders`. `encourageResearch` is the god's only verb that names a **cell**, and it
+was spent entirely on `research-rate`: an encouraged cell was researched *faster* and never *chosen
+sooner*. So the one ordinal-shaped thing the god can say was implemented as a scalar. It is now the
+seventh term in `target-appeal.ts` — `target-emphasis-divisor` 1 and `target-bound-emphasis`
+fp(256), both `untuned` — and **the rate contribution is gone rather than kept alongside**, because
+a verb that is simultaneously a preference and a speed cannot be attributed by an ablation.
+
+### Three arms, because a before-and-after cannot separate the two halves of one change
+
+108 runs each, 324 total, on W15's coordinates (`rootSeed` 20260811, sweep `w15-dimensionality-v1`,
+cells 0 and 3, six replicates), under common random numbers, node sets read at the source of truth
+through W15's inert probe. `tools/w52/emphasis-arm.mjs`; the containment, spectrum and prefix-
+fidelity figures are computed by `tools/w15/analyse.mjs` **unmodified**, so they are comparable to
+the record rather than merely similar to it.
+
+| arm | build | the verb |
+|---|---|---|
+| A | `main` at the branch point | a rate |
+| B | this branch | a preference |
+| C | this branch, emphasis floored to zero through its divisor | nothing |
+
+**B − C is the preference term. A − C is the rate removal.** Neither is readable from two arms.
+
+The pool is the eight shipped strategies plus a **reconstructed** `permit-then-idle` — the
+campaign's negative control is described in this document and is **not on `main`**; the commits
+carrying it were never merged. It is a host-side probe, not a ninth entry in `BOT_POOL`, and its
+win rate is comparable between these arms and **not** to the 38/40 in the record, which came from a
+ten-strategy pool on a different build.
+
+### The three numbers asked for. All three are null.
+
+| # | metric | arm A (rate) | arm B (preference) | arm C (inert) |
+|---|---|--:|--:|--:|
+| 1 | cross-strategy containment, v1-bound, terminal | **0.989** | **0.989** | **0.989** |
+| | …at t=240 / 480 / 960 | 0.979 / 0.987 / 0.989 | 0.973 / 0.985 / 0.996 | 0.980 / 0.986 / 0.988 |
+| 2 | `betweenShare`, v1-bound | **0.956** | **0.956** | **0.957** |
+| | …whole pool | 0.955 | 0.951 | 0.957 |
+| 3 | `permit-then-idle` wins | **12/12** | **12/12** | **12/12** |
+
+Every other strategy's win rate is identical in all three arms as well: `archivist`,
+`permissive-breadth`, `portal-rush`, `uniform-random-legal` and `worship-maximizer` at 12/12,
+`denial-warden` at 2/12, `narrow-depth` and `passive-control` at 0/12. Prefix fidelity moves
+0.9218 → 0.9185 → 0.9216, which is noise.
+
+**Note on the baseline figures the brief quoted.** Containment inside v1 is 0.989 and not 1.000 on
+*this* build before the change — the residual is `denial-warden` ↔ `narrow-depth`, the two smallest
+sets, exactly the pair the original table flagged; W20's content rewrite is what moved it off 1.000,
+not this workstream. And the `betweenShare` of 0.140 at tick 30 could not be located in any
+committed instrument, so what is reported here is W15's own variance decomposition, arm against arm,
+which is the figure that can be compared.
+
+### The negative control passes exactly, and it was free
+
+**Five of the nine strategies never submit `encourageResearch` at all** — `archivist`,
+`denial-warden`, `passive-control`, `permit-then-idle`, `worship-maximizer`. Across all three arms
+they are identical: paired per-run Jaccard **1.000** at every horizon and at terminal, in every one
+of their twelve run pairs. The instrument moves nothing on its own, and the arms differ only where
+a god actually spoke.
+
+### The term does reorder. The content ceiling is what erases it.
+
+Paired per-run Jaccard, run against the run at the same coordinates in the other arm.
+
+**C vs B — the preference term, isolated.** A dash is survival filtering, not missing data: a pair
+counts only where both sides were still running, and `uniform-random-legal` terminates at a mean of
+762 ticks so it has no t=960 sample.
+
+| strategy | t=240 | t=480 | t=960 | terminal | terminal Δnodes | ∪ C → ∪ B |
+|---|--:|--:|--:|--:|--:|--:|
+| `uniform-random-legal` | **0.929** | 0.992 | — | 1.000 | +0.0 | 51 → 51 |
+| `portal-rush` | **0.937** | 0.987 | 0.998 | 0.998 | −0.1 | 51 → 51 |
+| `narrow-depth` | 0.939 | 0.939 | 0.943 | **0.939** | +0.2 | 11 → 11 |
+| `permissive-breadth` | 0.969 | 0.970 | 0.971 | **0.949** | **+4.8** | **205 → 241** |
+
+**C vs A — the rate removal, isolated:** 0.973, 0.966, 0.992 and 0.976 at t=240 for the same four,
+converging to 1.000 by terminal for the two that exhaust v1.
+
+Two readings, and they are the answer to *"reordering or merely reweighting?"*:
+
+1. **It is reordering, and roughly twice the size of the rate it replaced.** At t=240 the preference
+   term moves `uniform-random-legal` 0.071 off identity and `portal-rush` 0.063; the rate removal
+   moves the same two 0.027 and 0.034. The god's instruction now changes *which* magic exists in a
+   universe at a given moment, not only how much.
+2. **And wherever a universe lives long enough to exhaust the 51 reachable v1 nodes, the reorder is
+   erased by the ceiling.** `uniform-random-legal` and `portal-rush` return to Jaccard 1.000 at
+   terminal with an identical union of 51. That is not this term failing; **a term that reorders a
+   queue cannot change the union of a queue that gets fully walked**, which is exactly what W46
+   measured for species affinities and exactly what W19 measured at twelve horizons. The two
+   strategies that *do* keep a terminal difference are the two that never exhaust. They keep it
+   differently, and the difference between them is worth stating: `narrow-depth`, content-starved by
+   its own edicts, holds **different sets run for run** (paired Jaccard 0.939 at terminal) out of the
+   **same eleven-node union** — per-run reordering that twelve seeds average back out. Only
+   `permissive-breadth`, whose permitted space is far larger than what it reaches, moves the union
+   itself: **205 → 241 nodes, +36, union Jaccard 0.835**, paired 0.949, +4.8 nodes per run.
+
+So the mechanism works and the measurement of it is bounded above by the same content ceiling every
+workstream since W15 has run into. **Nothing here contradicts the "speed, not shape" finding; it
+narrows it.** Shape now moves, and then the ceiling flattens it again.
+
+### The reason the headline numbers do not move, and it is not the term
+
+The probe recorded which cells each god ever encouraged. Four strategies encourage; here is every
+cell any of them ever named, resolved:
+
+| strategy | cells encouraged |
+|---|---|
+| `narrow-depth` | 22, 23, 27, 28 |
+| `permissive-breadth` | 22, 23, 28, 51 |
+| `portal-rush` | 22, 23, 27, 28, 55, 64, 69, 70 |
+| `uniform-random-legal` | 22, 23, 27, 28, 50, 51, 55, 56, 64, 65, 69, 70 |
+
+**22, 23, 27 and 28 are the four Intellego cells, and every single strategy that encourages names
+all or most of them.** The cause is `agent-api/src/candidates.ts`: slot 0 of `encourageResearch` is
+*"the permitted cell with the most instances already in it"*, ranked by descending instance count.
+Under a lattice where Rego is gated behind Intellego, the cell with the most instances is **always
+an Intellego cell**, in every universe, at every tick, for every strategy.
+
+> The god's one ordinal verb is aimed by a ranking that is a pure function of what the universe is
+> already doing most of. A god can therefore only ever be told to encourage the thing already
+> winning. Every strategy asks for the same reorder, and reordering one queue identically in every
+> universe is still one queue.
+
+That is a **different defect from the one this workstream was commissioned against**, it is one
+level up from it, and it was invisible until the verb had an ordinal effect worth aiming. The
+mechanism is now in place; what is missing is a vocabulary in which two gods can name different
+cells. The fix is in the slot ordering, not in `target-appeal.ts` — and §4.4's own note calls a
+change to a candidate ordering *"a balance-affecting change"*, so it is a decision and not a
+cleanup. Deliberately left for the author.
+
+`encourageMaxCells` is 3, which is the second half of it: with three live slots and a ranking that
+puts the same four cells on top, the reachable vocabulary of the verb is roughly *"one of the four
+Intellego cells"*.
+
+### What was changed, and what the gates say
+
+- `target-appeal.ts` gains a seventh term; `autonomy-weight.json` gains two `untuned` constants; the
+  loader gains a **second** dominance check, parallel to the role bound's and against the same five
+  mage-owned bounds rather than a sum that includes it — two god-owned terms that could only be
+  outvoted together are one puppeteer wearing two names.
+- `godEffectHooks` gains `emphasisFor` and loses its `CellResolver`; `researchBonusesFor` loses its
+  `nodeId` and is blessings only.
+- **Uniform across every target-taking goal**, because the scorer is goal-blind: an encouraged cell
+  is also the cell mages seek teaching in and write books about. A choice, stated in the module docs.
+- **No new component, no `WORLD_SCHEMA_VERSION` bump, no RNG draw.** The term reads a derived map
+  and draws nothing, so no stream re-rolls and no committed baseline rots by re-roll.
+- **No golden replay fixture was regenerated**, and none needed to be.
+- The three balance baselines were re-recorded **once**, in their own commit, with a rationale
+  naming both constants. What forced it was the provenance check, not a behaviour diff:
+  `balance-gate-v1` and `balance-gate-horizon-v1` moved **no metric at all** — because neither
+  sweep's strategies ever submit `encourageResearch` — and `balance-gate-ascension-v1`, whose
+  strategies do, moved every metric inside **0.5 SE**.
+
+One tooling change worth recording: `tools/w15/analyse.mjs` called `main()` at module scope, so
+importing `containment` ran a whole analysis against `process.argv[2]`. It is now guarded by an
+entry-point check. Running it directly is unchanged; nothing about any published number moves. This
+is the trap W46 recorded about `run-arm.mjs` and worked around by restating W15's coordinates.
 
 ## Vision audit: three implications that gut things designed the same night
 

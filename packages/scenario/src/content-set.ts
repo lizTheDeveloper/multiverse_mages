@@ -667,15 +667,21 @@ export function worldDeps(
   // beside it. A non-node registration never counts toward consumption; it only
   // explains, which is why these three stay here now that two of the primitives
   // they name have a node-driven consumer as well.
+  //
+  // **An encouragement is no longer among them.** It used to be a second source
+  // of `research-rate` here; it is now the emphasis term in `target-appeal.ts`,
+  // which consumes no primitive at all because what it changes is *which node a
+  // mage picks*, not how fast any rate runs. So `research-rate`'s god-side
+  // consumer is the blessing and nothing else.
   registerNonNodeConsumer(
     recorder,
     'research-rate',
-    'coordination/god/effects.researchMultiplierFor (blessing + encouragement constants)',
+    'coordination/god/effects.researchBonusesFor (blessing constants)',
   );
   registerNonNodeConsumer(
     recorder,
     'teach-rate',
-    'coordination/god/effects.teachMultiplierFor (blessing constants)',
+    'coordination/god/effects.teachBonusesFor (blessing constants)',
   );
   registerNonNodeConsumer(
     recorder,
