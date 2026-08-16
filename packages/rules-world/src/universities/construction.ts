@@ -99,6 +99,65 @@ export const BUILD_PROGRESS_PER_LABOR_MONTH: Fixed = 2;
  */
 export const MATERIALS_PER_LABOR_MONTH: Fixed = 4;
 
+/**
+ * What hiring one extra person-month out of the `labor` stock costs, `fp`.
+ *
+ * `material-economy`'s sink for `labor` — Corpus, *"a body is what work is made
+ * of"* — and the reason it is a **hire** rather than a second per-month charge
+ * beside {@link MATERIALS_PER_LABOR_MONTH}. A second charge would be a *gate*:
+ * every world written before this change holds zero `labor`, so a construction
+ * claim denominated in it would either stop every building site in the project
+ * or record a shortfall every tick and change nothing, and
+ * `economy-flow-models.md` §3.3 is about exactly that pair of outcomes.
+ *
+ * A hire drains only what it buys. A universe with no `labor` builds precisely
+ * as it did before; a universe with a Corpus faculty builds faster; and the
+ * claim is zero whenever there is no work to hire for.
+ */
+export interface HiredLabourWeights {
+  /** `labor` per hired person-month, `fp`. */
+  readonly laborPerMonth: Fixed;
+}
+
+/** The id {@link readHiredLabourWeights} requires of the weight table. */
+export const REQUIRED_CONSTRUCTION_WEIGHTS = ['construction-labor-per-month'] as const;
+
+/** Anything that can answer an `autonomy-weight.json` id by name. */
+export interface HiredLabourWeightSource {
+  autonomyWeight(id: string): Fixed;
+}
+
+/**
+ * Reads the hire rate, once.
+ *
+ * Eager, for the reason `readCastingWeights` is: the source throws on an id the
+ * table does not declare, so a content mistake fails before a single site has
+ * been staffed.
+ */
+export function readHiredLabourWeights(source: HiredLabourWeightSource): HiredLabourWeights {
+  return Object.freeze({ laborPerMonth: source.autonomyWeight('construction-labor-per-month') });
+}
+
+/**
+ * How many extra person-months a `labor` stock can hire onto one crew.
+ *
+ * **Bounded by the crew's own months**, which is the design decision rather
+ * than an arithmetic convenience: `labor` accelerates a workforce and does not
+ * replace one. A site with nobody on it hires nobody however deep the stock —
+ * so the claim is zero exactly when there is no construction happening, which
+ * is what keeps a new claimant from recording a shortfall on every world that
+ * has never held any of the kind.
+ */
+export function hireableMonths(
+  crewMonths: number,
+  laborAvailable: Fixed,
+  weights: HiredLabourWeights,
+): number {
+  if (crewMonths <= 0) return 0;
+  if (weights.laborPerMonth <= 0) return 0;
+  return Math.min(crewMonths, floorDiv(Math.max(0, laborAvailable), weights.laborPerMonth));
+}
+
 /** What one tick of construction did. */
 export interface ConstructionOutcome {
   /** `buildProgress` added this tick, in `fp`. */

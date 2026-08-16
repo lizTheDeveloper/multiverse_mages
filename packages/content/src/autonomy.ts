@@ -101,6 +101,14 @@ export const REQUIRED_AUTONOMY_WEIGHTS = [
   // the rules read it by name, so the id is a contract checked in both
   // directions while the value stays an untuned placeholder the harness owns.
   'casting-vellum-per-month',
+  // `material-economy`'s two sinks that live in the world loop. `insight` funds
+  // university teaching throughput and `labor` hires extra person-months onto a
+  // building site; both are read by name for the same reason as everything
+  // above, and both are here rather than in a fourth table because a second
+  // place to forget is the only thing a fourth table would add.
+  'teaching-insight-per-month',
+  'teaching-insight-bonus',
+  'construction-labor-per-month',
 ] as const;
 
 /** The scalar ids that must be at least 1, because they are divisors. */

@@ -129,6 +129,8 @@ import type {
   ApplicationWeights,
   CastingWeights,
   CapitalEmission,
+  HiredLabourWeights,
+  TeachingWeights,
   CohortDemography,
   MageGoalCommitment,
   MaterialAmounts,
@@ -149,6 +151,7 @@ import {
   NO_STANDING_ARMY,
   advanceConstruction,
   appliedYield,
+  applyStockCeiling,
   applicationRations,
   applyLibraryUpkeep,
   assignStaff,
@@ -164,8 +167,11 @@ import {
   createMage,
   effectiveLifespan,
   fertilityBrake,
+  fundedTeachingShare,
   hazardAt,
+  hireableMonths,
   insertNewborns,
+  insightTeachingBonus,
   killMage,
   libraryRateMultiplier,
   libraryUpkeep,
@@ -177,7 +183,9 @@ import {
   stepMageAutonomy,
   stepPopulace,
   subsistenceDemand,
+  teachingInsightDemand,
   totalAmount,
+  landTotal,
   zeroAmounts,
 } from '@mm/rules-world';
 
@@ -340,6 +348,23 @@ export interface WorldStepDeps {
    * that supplied one.
    */
   readonly application: ApplicationWeights;
+  /**
+   * What a mage-month of teaching draws from the `insight` stock, and what a
+   * funded month adds to `teach-rate`. Read from content.
+   *
+   * `material-economy`'s sink for `insight`. Required rather than optional, for
+   * the reason {@link WorldStepDeps.casting} is: an absent price is not a
+   * degraded behaviour a test can assert against, it is a stock with a faucet
+   * and no drain — which `economy-flow-models.md` §4 says is not a resource at
+   * all, only a label on one.
+   */
+  readonly teaching: TeachingWeights;
+  /**
+   * What hiring one extra person-month onto a building site costs in `labor`.
+   *
+   * `material-economy`'s sink for `labor`. Required for the same reason.
+   */
+  readonly hiredLabour: HiredLabourWeights;
   /**
    * §9's ablation mask, neutralizing at most one primitive across the world loop.
    *
@@ -524,6 +549,37 @@ export interface WorldStepReport {
   readonly constructionStoneOwed: Fixed;
   /** Stone construction was actually paid, `fp`. Below `owed` means the quarry is the bottleneck. */
   readonly constructionStonePaid: Fixed;
+  /**
+   * `labor` the hired person-months cost this tick, `fp`.
+   *
+   * `material-economy`'s sink for `labor`, reported rather than inferred: a
+   * hire raises `buildProgressAdded` and spends a stock, and with only those
+   * two series a reader cannot tell a fast build funded by Corpus magic from a
+   * fast build funded by a big crew.
+   */
+  readonly constructionLaborPaid: Fixed;
+  /** `insight` this tick's teaching drew, `fp`. The sink `insight` earns its slot with. */
+  readonly teachingInsightPaid: Fixed;
+  /**
+   * The share of this tick's teaching the `insight` stock funded, `fp`.
+   *
+   * `FP_ONE` when the stock covered every teaching month, less when it did not,
+   * and `FP_ONE` again when nobody taught at all. Emitted because a fully
+   * funded faculty and an unfunded one produce the same lesson *count* and
+   * different rates — *"the economy did not move"* and *"nothing reached it"*
+   * look identical in every other series.
+   */
+  readonly teachingFundedShare: Fixed;
+  /**
+   * What each kind lost to {@link MATERIAL_STOCK_CEILING} this tick, `fp`.
+   *
+   * Zero on every run this repository has measured, and reported anyway:
+   * `economy-flow-models.md` §3.3 says a cap that truncates silently *"destroys
+   * the signal that would feed back to whatever is overproducing"*, and a spill
+   * nothing reports is a truncation with extra steps. Group 6's ledger puts
+   * this on the sink side of `delta == faucet - sink`.
+   */
+  readonly spilledByKind: MaterialAmounts;
   readonly carryingCapacity: number;
   readonly mageDeaths: number;
   readonly magesPromoted: number;
@@ -972,6 +1028,7 @@ export function worldSystem(
         rateClamps,
         academic,
         stock.vellum,
+        stock.insight,
       );
 
       // ---- 5a. What the mages who cast at the world made ----------------------
@@ -990,10 +1047,20 @@ export function worldSystem(
       for (const kind of MATERIAL_KINDS) stock[kind] += work.applied[kind];
 
       // ---- 6. Autonomy -------------------------------------------------------
-      // What a mage believes the treasury holds when she chooses a goal. Every
-      // kind summed, because a goal is scored against "can this universe afford
-      // to do things", not against a particular shelf.
-      const stockAtDecisionTime = totalAmount(stock);
+      // What a mage believes the treasury holds when she chooses a goal.
+      //
+      // **The three land kinds, not all seven, and the narrowing is deliberate.**
+      // The line used to read `totalAmount(stock)` with the note *"every kind
+      // summed, because a goal is scored against 'can this universe afford to do
+      // things', not against a particular shelf"* — sound while the only kinds
+      // were the three her claimants are paid in. `material-economy` added four
+      // that no claimant a mage can see is paid in: `insight` funds her
+      // teaching (and is reserved before she chooses), `labor` hires builders,
+      // and `essence` and `passage` are the god's to spend. Folding those in
+      // would make a scholar more optimistic about her prospects because her god
+      // is saving up for a portal, which is not a thing she can observe and not
+      // a thing that feeds her.
+      const stockAtDecisionTime = landTotal(stock);
       const gateway = gatewayFor();
       // One scan of the shelves for the whole phase, not one per mage. See
       // `universityPreference`.
@@ -1108,6 +1175,11 @@ export function worldSystem(
       // multiplied by whatever `build-rate` magic the universe knows.
       const construction = advanceUniversities(state, {
         stone: stock.stone,
+        // `material-economy`'s sink for `labor`: person-months hired onto a
+        // site over and above the crew the populace supplied. Zero on every
+        // world written before this change, and a zero budget hires nobody, so
+        // construction there is bit-for-bit what it was.
+        labor: stock.labor,
         deps,
         crew: labour.crew,
         buildRateBonuses: economy.buildRate,
@@ -1130,6 +1202,13 @@ export function worldSystem(
         // full demand here would bill for work that never happened. The unmet
         // remainder is reported as `castingShortfall`, not hidden.
         casting: work.castingGranted,
+        // What the lessons that actually happened drew from the `insight`
+        // stock, at the share they were funded at. Reserved before the work
+        // phase and spent during it, exactly as scribing is — see
+        // `WorkPhaseOutcome.insightSpent` — so this figure is payable in full
+        // by construction and a shortfall here would be a defect rather than a
+        // hungry universe.
+        teaching: work.insightSpent,
         // Brake 4, charged once. The same figure the work phase reserved out of
         // the scribes' stock at the top of the tick, so the priority order is
         // honoured by a claimant paid out of order and by one paid in it.
@@ -1142,8 +1221,22 @@ export function worldSystem(
         // `advanceConstruction`'s own header gives: the stocks have one writer,
         // and a phase that reached for `stock.stone` itself would be the second.
         construction: construction.stoneOwed,
+        // The hired half of the same work, in the kind a body is made of.
+        // Zero whenever no site hired anybody, which is every world that holds
+        // no `labor` at all.
+        constructionLabor: construction.laborOwed,
       });
-      const closing = consumption.remaining;
+      // ---- 9a. The ceiling, which spills rather than truncating ------------
+      //
+      // `economy-flow-models.md` §3.3's corollary: a cap that silently drops the
+      // excess *"both breaks conservation and destroys the signal that would
+      // feed back to whatever is overproducing"*. So the one place a stock can
+      // meet a ceiling returns what did not fit, and the tick reports it. It
+      // does not bind on any run this repository has measured — see
+      // `MATERIAL_STOCK_CEILING` — and exists because the columns are `i32` and
+      // a wrap would surface as a negative stock several phases later.
+      const bounded = applyStockCeiling(consumption.remaining);
+      const closing = bounded.stock;
       assertMaterialsNonNegative(closing);
       writeMaterialStock(state, universe, closing);
 
@@ -1174,6 +1267,10 @@ export function worldSystem(
         universitiesStanding: componentOf(state, UNIVERSITY).size,
         constructionStoneOwed: construction.stoneOwed,
         constructionStonePaid: consumption.spent.construction,
+        constructionLaborPaid: consumption.spent.constructionLabor,
+        teachingInsightPaid: consumption.spent.teaching,
+        teachingFundedShare: work.teachingShare,
+        spilledByKind: bounded.spilled,
         carryingCapacity: capacity,
         mageDeaths: mortality.deaths,
         magesPromoted: promoted,
@@ -1379,10 +1476,22 @@ interface ConstructionPhase {
   readonly stoneOwed: Fixed;
   /** Person-months that went unspent for want of stone. */
   readonly labourStalled: number;
+  /**
+   * `labor` the hired months actually cost, `fp`.
+   *
+   * Charged for months a site **used**, never for months it was offered: the
+   * months a site buys are attributed to its crew first and only the excess to
+   * the stock. `construction.ts` records what the other attribution costs — a
+   * site one month from done, handed ten thousand person-months, *"deducted
+   * forty thousand materials for two `fp` of building"* while no counter moved.
+   */
+  readonly laborOwed: Fixed;
 }
 
 interface ConstructionInputs {
   readonly stone: Fixed;
+  /** The `labor` stock available to hire extra person-months from, `fp`. */
+  readonly labor: Fixed;
   readonly deps: WorldStepDeps;
   /**
    * Person-months and the affinity they work at, resolved in phase 1.
@@ -1417,13 +1526,15 @@ function advanceUniversities(state: SimState, input: ConstructionInputs): Constr
   let completed = 0;
   let stoneOwed = 0;
   let labourStalled = 0;
+  let laborOwed = 0;
   let budget = Math.max(0, input.stone);
+  let laborBudget = Math.max(0, input.labor);
 
   // A working copy: the phase spends `months` down, and the plan it was handed
   // belongs to the caller.
   const assignments = input.crew.map((entry) => ({ affinity: entry.affinity, months: entry.months }));
   if (assignments.length === 0) {
-    return { progressAdded: 0, completed: 0, stoneOwed: 0, labourStalled: 0 };
+    return { progressAdded: 0, completed: 0, stoneOwed: 0, labourStalled: 0, laborOwed: 0 };
   }
 
   const sites = [...collectRecords(state, UNIVERSITY)]
@@ -1434,8 +1545,15 @@ function advanceUniversities(state: SimState, input: ConstructionInputs): Constr
   for (const site of sites) {
     for (const assignment of assignments) {
       if (assignment.months <= 0) continue;
+      // Hired months, capped at the crew's own: `labor` accelerates a workforce
+      // and does not replace one, so a site with nobody on it hires nobody
+      // however deep the stock. That cap is what makes the claim exactly zero
+      // whenever there is no construction happening, which is the property a
+      // new claimant needs if it is not to record a shortfall every tick on
+      // every world that has never held any of the kind.
+      const hired = hireableMonths(assignment.months, laborBudget, input.deps.hiredLabour);
       const outcome = advanceConstruction(site.row, {
-        laborMonths: assignment.months,
+        laborMonths: assignment.months + hired,
         laborAffinity: assignment.affinity,
         materials: budget,
         buildRate: input.deps.primitives.buildRate,
@@ -1446,11 +1564,27 @@ function advanceUniversities(state: SimState, input: ConstructionInputs): Constr
       progressAdded += outcome.progressAdded;
       stoneOwed += outcome.materialsSpent;
       budget -= outcome.materialsSpent;
-      labourStalled += outcome.labourStalled;
+      // The months the site actually bought, read off what it paid for them —
+      // the one figure `advanceConstruction` guarantees is the work that
+      // happened.
+      const usedMonths = floorDiv(outcome.materialsSpent, MATERIALS_PER_LABOR_MONTH);
+      const crewUsed = Math.min(usedMonths, assignment.months);
+      const hiredUsed = Math.max(0, usedMonths - crewUsed);
+      const hiredCost = hiredUsed * Math.max(0, input.deps.hiredLabour.laborPerMonth);
+      laborOwed += hiredCost;
+      laborBudget -= hiredCost;
+      // The crew's own leftover, not the offered leftover. A hired month that
+      // went unused was never bought, so it is not a laborer standing idle and
+      // must not be handed to the next site as one.
+      const crewLeft = assignment.months - crewUsed;
       // Person-months the site could not use are returned to the pool for the
       // next site rather than burned, which is what makes a surplus of laborers
       // finish two universities in a tick instead of one and a half.
-      assignment.months = outcome.labourStalled + outcome.labourSurplus;
+      assignment.months = crewLeft;
+      // Stalled means *for want of stone*, and the counter has one reader who
+      // treats it as "produce more materials". Bounded by the crew's own idle
+      // months so that unbought hires cannot inflate it.
+      labourStalled += Math.min(outcome.labourStalled, crewLeft);
       if (outcome.completed) {
         completed += 1;
         break;
@@ -1459,7 +1593,7 @@ function advanceUniversities(state: SimState, input: ConstructionInputs): Constr
     store.set(site.handle, 'buildProgress', site.row.buildProgress);
   }
 
-  return { progressAdded, completed, stoneOwed, labourStalled };
+  return { progressAdded, completed, stoneOwed, labourStalled, laborOwed };
 }
 
 /** The universe's seven spendable stocks, or zeros if no row has been written yet. */
@@ -1620,6 +1754,25 @@ interface WorkPhaseOutcome {
    */
   readonly castingOwed: Fixed;
   readonly castingGranted: Fixed;
+  /**
+   * `insight` the tick's teaching actually spent, `fp`.
+   *
+   * Reserved before the walk and charged after it — the share is settled from
+   * the *committed* teaching months so that no teacher's rate depends on slot
+   * order, and the spend is measured from the lessons that actually paired, so
+   * a teacher with no student costs nothing. The first is never smaller than
+   * the second, which is what makes the claim payable in phase 9 by
+   * construction.
+   */
+  readonly insightSpent: Fixed;
+  /**
+   * The fraction of this tick's teaching the `insight` stock funded, `fp`.
+   *
+   * Reported, because `FP_ONE` and `0` produce the same lesson count and very
+   * different rates, and *"the economy did not move"* and *"nothing reached
+   * it"* look identical in every other series.
+   */
+  readonly teachingShare: Fixed;
   /** Mages who spent the month applying magic. What the rations are owed for. */
   readonly applyingMages: number;
   /** Mage-months spent under each goal, indexed by goal id. */
@@ -1662,6 +1815,7 @@ function spendTheMonth(
   rateClamps: ClampCounters,
   academic: AcademicRateBonuses,
   vellumOnHand: Fixed,
+  insightOnHand: Fixed,
 ): WorkPhaseOutcome {
   // The `alive` column and the handle, rather than a `MageRecord` per mage: the
   // two fields below are all this phase reads, and `collectRecords` builds an
@@ -1678,6 +1832,12 @@ function spendTheMonth(
   // an increment and no second pass — see `WorldStepReport.monthsByGoal` for
   // why the number has to exist at all.
   const monthsByGoal = new Array<number>(GOAL_COUNT).fill(0);
+  // Months of teaching that **actually happened**, which is not the same as
+  // months committed to it: a teacher whose student the gateway could not pair
+  // her with this tick contributes nothing, and charging her insight would bill
+  // for a lesson nobody attended. The reserve above is taken against the
+  // committed figure and is therefore never smaller than what is spent here.
+  let taughtMonths = 0;
 
   // `monthsByGoal` above is filled *during* the walk; the pre-pass below has to
   // finish *before* it, so the two cannot be folded into one traversal however
@@ -1699,6 +1859,22 @@ function spendTheMonth(
   // outcome `contracts.md` §6 spends real effort preventing. Counting first and
   // scaling everyone by one fraction is order-independent by construction.
   let researchMonths = 0;
+  // ---- The `teaching` claim, decided in the same pre-pass and for the same
+  // ---- reason.
+  //
+  // `insight` is what a faculty teaches out of, and `material-economy`'s sink
+  // for it is university teaching throughput. The share has to be settled
+  // before any lesson is given, exactly as the casting share does: a budget
+  // spent down the roster would fund whichever teachers the walk reached first
+  // and leave the rest at the base rate, which is the order-keyed outcome
+  // `contracts.md` §6 spends real effort preventing.
+  //
+  // **Both halves of a lesson are counted.** §2.3 prices a lesson as the pair's
+  // cost and has each of the two push her own half at her own rate, so a month
+  // at the lectern and a month at the desk are each a month of teaching
+  // throughput and each draws insight. Crediting only the teacher would make a
+  // lesson cost half as much when the student happened to be committed too.
+  let teachingMonths = 0;
   mages.forEach((row, handle) => {
     if ((alive[row] as number) === 0) return;
     const commitment = readCommitment(state, handle);
@@ -1706,7 +1882,19 @@ function spendTheMonth(
     if (commitment.goalId === GOAL.researchNode || commitment.goalId === GOAL.rediscoverNode) {
       researchMonths += MAGE_MONTHS_PER_TICK;
     }
+    if (commitment.goalId === GOAL.teach || commitment.goalId === GOAL.seekTeaching) {
+      teachingMonths += MAGE_MONTHS_PER_TICK;
+    }
   });
+  // The share the stock can fund, and the `teach-rate` magnitude it buys. The
+  // magnitude is the same for every teacher this tick, and it joins the array
+  // `workOne` already builds from the god's blessing and the mage's own
+  // knowledge — **one array, one `stackMagnitudes`, one `fp(4096)` cap**. That
+  // is `material-economy` precondition 0.4's condition, not a stylistic
+  // preference: routed as its own multiplier, or into `research-rate`, insight
+  // would be a third lever on an outcome `encourage-research` already moves.
+  const teachingShare = fundedTeachingShare(teachingMonths, Math.max(0, insightOnHand), deps.teaching);
+  const teachingSubsidy = insightTeachingBonus(teachingShare, deps.teaching);
   const castingOwed = castingDemand(researchMonths, deps.casting);
   // What is left for casting after the claimants ahead of it in
   // `CONSUMPTION_ORDER` that share its kind. Casting is the *first* vellum
@@ -1742,6 +1930,10 @@ function spendTheMonth(
       rateClamps,
       academic,
       castingShare,
+      teachingSubsidy,
+      () => {
+        taughtMonths += MAGE_MONTHS_PER_TICK;
+      },
     );
     if (cast === undefined) return;
     applyingMages += 1;
@@ -1762,6 +1954,11 @@ function spendTheMonth(
   return {
     castingOwed,
     castingGranted,
+    // What the lessons that happened cost, at the share they were funded at.
+    // `mul` before the price rather than after, so a partly funded faculty is
+    // charged for exactly the acceleration it was given.
+    insightSpent: teachingInsightDemand(mul(taughtMonths, teachingShare), deps.teaching),
+    teachingShare,
     completedBy,
     researchCompleted,
     lessonsTaught,
@@ -1805,6 +2002,16 @@ function workOne(
   rateClamps: ClampCounters,
   academic: AcademicRateBonuses,
   castingShare: Fixed,
+  /**
+   * The `teach-rate` magnitude this tick's `insight` funding buys, `fp`.
+   *
+   * Appended to the same array the god's blessing and the mage's own knowledge
+   * go into, at both ends of a lesson, so it is capped once with them. See the
+   * pre-pass in {@link spendTheMonth}, and `material-economy` precondition 0.4.
+   */
+  teachingSubsidy: Fixed,
+  /** Called once for each half of a lesson that actually paired and pushed. */
+  noteTaughtMonth: () => void,
 ): MaterialAmounts | undefined {
   const nodeId = commitment.targetNodeId;
   if (nodeId === 0) return undefined;
@@ -1859,6 +2066,25 @@ function workOne(
     return [...godBonuses, ...known];
   };
 
+  /**
+   * The `insight` subsidy, appended to the array rather than applied to its
+   * result.
+   *
+   * The whole of `material-economy` precondition 0.4 is in the word *appended*.
+   * `academic-effects.ts` records the rule this follows —
+   * *"the magnitudes it returns join the god's in **one array**, through
+   * **one** `stackMagnitudes`, under **one** `fp(4096)` cap"* — quoting
+   * `mages-and-species/design.md`: *"two caps on the same quantity is how a
+   * rate ends up at 4.0 × 2.0 without anyone deciding it should be 8.0."*
+   * A universe that has saturated `teach-rate` from its god and its scholars
+   * gets nothing more from a deep insight stock, which is the correct answer
+   * and the one a separate multiplier would have got wrong.
+   */
+  const withInsight = (bonuses: readonly Fixed[], subsidy: Fixed): readonly Fixed[] => {
+    if (subsidy <= 0) return bonuses;
+    return [...bonuses, subsidy];
+  };
+
   switch (commitment.goalId) {
     case GOAL.researchNode:
     case GOAL.rediscoverNode:
@@ -1898,6 +2124,7 @@ function workOne(
         // a deep library advances it faster and a student at one advances her
         // own half faster — which is what "one project with two people pushing
         // it" means when the two do not study in the same place.
+        noteTaughtMonth();
         gateway.contributeTeaching(
           mage,
           student,
@@ -1906,9 +2133,12 @@ function workOne(
             MAGE_MONTHS_PER_TICK,
             rate(
               deps.primitives.teachRate,
-              withKnown(
-                deps.teachBonusesFor?.(state, worldTick, mage) ?? NO_BONUSES,
-                academic.teachRate(mage),
+              withInsight(
+                withKnown(
+                  deps.teachBonusesFor?.(state, worldTick, mage) ?? NO_BONUSES,
+                  academic.teachRate(mage),
+                ),
+                teachingSubsidy,
               ),
             ),
           ),
@@ -1919,6 +2149,7 @@ function workOne(
     case GOAL.seekTeaching: {
       const teacher = gateway.teacherFor(mage, nodeId);
       if (teacher !== undefined) {
+        noteTaughtMonth();
         gateway.contributeTeaching(
           teacher,
           mage,
@@ -1927,9 +2158,12 @@ function workOne(
             MAGE_MONTHS_PER_TICK,
             rate(
               deps.primitives.teachRate,
-              withKnown(
-                deps.teachBonusesFor?.(state, worldTick, mage) ?? NO_BONUSES,
-                academic.teachRate(mage),
+              withInsight(
+                withKnown(
+                  deps.teachBonusesFor?.(state, worldTick, mage) ?? NO_BONUSES,
+                  academic.teachRate(mage),
+                ),
+                teachingSubsidy,
               ),
             ),
           ),

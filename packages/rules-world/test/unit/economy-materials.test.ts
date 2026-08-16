@@ -76,9 +76,11 @@ const production = (
 
 const demand = (overrides: Partial<ConsumptionDemand> = {}): ConsumptionDemand => ({
   casting: 0, subsistence: 0,
+  teaching: 0,
   libraryUpkeep: 0,
   scribing: 0,
   construction: 0,
+  constructionLabor: 0,
   ...overrides,
 });
 
@@ -155,12 +157,21 @@ describe('consumption follows a documented priority order', () => {
     // `remaining` is tracked per kind, so a claimant only ranks against the
     // ones sharing its stock, and casting on vellum is what makes §7.1's
     // *"magic competes with the library, not with bread"* a true sentence.
+    // `teaching` and `constructionLabor` joined on 2026-08-16
+    // (`material-economy`), and both are **alone in their kind** — insight and
+    // labor respectively — so their positions rank against nothing today. They
+    // are declared anyway, for the reason the list is a literal at all: the
+    // order is a decision a reviewer checks, and a second insight claimant
+    // added later has to be placed against this one rather than appended
+    // wherever it happened to be written.
     expect([...CONSUMPTION_ORDER]).toEqual([
       'subsistence',
       'casting',
+      'teaching',
       'libraryUpkeep',
       'scribing',
       'construction',
+      'constructionLabor',
     ]);
   });
 
@@ -176,9 +187,11 @@ describe('consumption follows a documented priority order', () => {
     expect(CLAIMANT_KIND).toEqual({
       subsistence: 'food',
       casting: 'vellum',
+      teaching: 'insight',
       libraryUpkeep: 'vellum',
       scribing: 'vellum',
       construction: 'stone',
+      constructionLabor: 'labor',
     });
   });
 
@@ -189,10 +202,13 @@ describe('consumption follows a documented priority order', () => {
       demand({ casting: 0, subsistence: 100, libraryUpkeep: 50, scribing: 25, construction: 10 }),
     );
     expect(outcome.spent).toEqual({
-      casting: 0, subsistence: 100,
+      casting: 0,
+      subsistence: 100,
+      teaching: 0,
       libraryUpkeep: 50,
       scribing: 25,
       construction: 10,
+      constructionLabor: 0,
     });
     expect(outcome.anyShortfall).toBe(false);
     expect(outcome.shortKinds).toEqual({ ...noKindShort(), food: false, stone: false, vellum: false });

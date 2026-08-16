@@ -143,6 +143,12 @@ export function worldDeps(traditionId: number): WorldStepDeps {
     // `universeEffects` and that is deliberately absent — see the note below.
     application: readApplicationWeights(registry()),
     casting: { vellumPerMonth: 0 },
+    // Zero, like `casting` above: the shared fixture prices nothing, so a test
+    // that wants a sink to bind supplies its own weights. `material-economy`'s
+    // two world-loop sinks follow that convention rather than inventing a
+    // default nobody authored.
+    teaching: { insightPerMonth: 0, insightTeachBonus: 0 },
+    hiredLabour: { laborPerMonth: 0 },
     store: shippedStorePolicy(traditionId),
     acquire: shippedAcquirePolicy(traditionId),
     territory: territoryExtent(registry().territories.map((entry) => entry.record)),

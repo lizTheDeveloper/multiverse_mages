@@ -196,9 +196,11 @@ export function subsistenceDemand(population: number): Fixed {
 export const CONSUMPTION_ORDER = [
   'subsistence',
   'casting',
+  'teaching',
   'libraryUpkeep',
   'scribing',
   'construction',
+  'constructionLabor',
 ] as const;
 
 /** One of the five claims. */
@@ -241,9 +243,25 @@ export const CLAIMANT_KIND: Readonly<Record<ConsumptionKind, MaterialKind>> = {
   // The reading is not a stretch: a working consumes its notes, its diagrams,
   // its prepared surfaces. Magic and the archive want the same skins.
   casting: 'vellum',
+  // **`material-economy`'s two world-loop sinks, and each is alone in its
+  // kind.** `CONSUMPTION_ORDER` only ranks claimants that share a stock, so
+  // both positions are inert today and are declared anyway: the order is what a
+  // reviewer checks, and a second insight claimant added later has to be placed
+  // against this one rather than appended wherever it happened to be written.
+  //
+  // Teaching is paid at the lectern rather than here — `world-step.ts` reserves
+  // the share before a single lesson is given, exactly as scribing is paid at
+  // the desk — so the figure that arrives here is what was actually spent.
+  teaching: 'insight',
   libraryUpkeep: 'vellum',
   scribing: 'vellum',
   construction: 'stone',
+  // Hired person-months, over and above the crew the populace supplied. Never
+  // charged for a month a site could not use: `advanceUniversities` attributes
+  // the months a site actually bought to the crew first, and only the excess to
+  // this claimant, so a universe with no building work demands zero and a
+  // universe with no `labor` builds exactly as it did before this change.
+  constructionLabor: 'labor',
 };
 
 /** What each claimant is asking for this tick, `fp` of its own kind. */
@@ -319,6 +337,74 @@ export function consumeMaterials(
   }
 
   return { spent, shortfall, remaining, anyShortfall, shortKinds };
+}
+
+/**
+ * The most any one stock may hold, `fp`.
+ *
+ * ## Why there is a ceiling at all, and why it is here rather than nowhere
+ *
+ * `MATERIAL_STOCK`'s columns are `i32`. A stock that grew past `2^31 - 1` would
+ * not throw; it would wrap, land negative, and be caught — if at all — by
+ * {@link assertMaterialsNonNegative} several phases later, reported as a
+ * negative stock rather than as an overflow. That is the shape of defect that
+ * produces plausible output for a long time.
+ *
+ * `2^30 - 1` is the same bound `node.schema.json` puts on every authored `fp`
+ * magnitude, which makes it the largest quantity anything in this project is
+ * allowed to *mean*, and it leaves a whole bit of headroom under the column's
+ * own limit so that a sum taken across kinds cannot wrap either.
+ *
+ * ## It spills; it does not truncate
+ *
+ * `docs/design/economy-flow-models.md` §3.3's corollary, quoted in
+ * `material-economy`'s proposal: a silent truncation *"both breaks conservation
+ * and destroys the signal that would feed back to whatever is overproducing"*.
+ * So the excess is **returned** by {@link applyStockCeiling} rather than
+ * dropped, the tick reports it, and the ledger group 6 builds can put it on the
+ * sink side of `delta == faucet - sink` instead of finding a kind that does not
+ * balance.
+ *
+ * **It does not bind on any run this repository has measured.** The reference
+ * universe's largest stock over 2,400 ticks is stone at roughly 4.4M, four
+ * hundred times under this. That is the intent: a ceiling that bound in ordinary
+ * play would be a balance decision wearing an overflow guard's clothes.
+ */
+export const MATERIAL_STOCK_CEILING: Fixed = 1_073_741_823;
+
+/** A stock bounded at the ceiling, and whatever would not fit. */
+export interface CeilingOutcome {
+  /** Every kind at or below {@link MATERIAL_STOCK_CEILING}. */
+  readonly stock: MaterialAmounts;
+  /** What each kind lost to the ceiling. Recorded, never silent. */
+  readonly spilled: MaterialAmounts;
+  /** Whether anything spilled at all, for the once-per-tick reporting path. */
+  readonly anySpill: boolean;
+}
+
+/**
+ * Bounds every kind at {@link MATERIAL_STOCK_CEILING}, returning what spilled.
+ *
+ * Called at the tick boundary, on the closing figure, so that exactly one place
+ * in the loop can lose a material to a ceiling and exactly one number says how
+ * much. A per-faucet clamp would be four places, three of which would forget to
+ * report.
+ */
+export function applyStockCeiling(stock: MaterialAmounts): CeilingOutcome {
+  const bounded = zeroAmounts();
+  const spilled = zeroAmounts();
+  let anySpill = false;
+  for (const kind of MATERIAL_KINDS) {
+    const held = stock[kind];
+    if (held > MATERIAL_STOCK_CEILING) {
+      bounded[kind] = MATERIAL_STOCK_CEILING;
+      spilled[kind] = held - MATERIAL_STOCK_CEILING;
+      anySpill = true;
+    } else {
+      bounded[kind] = held;
+    }
+  }
+  return { stock: bounded, spilled, anySpill };
 }
 
 /**

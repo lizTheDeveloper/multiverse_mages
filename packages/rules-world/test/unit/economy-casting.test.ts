@@ -94,6 +94,8 @@ describe('casting takes its vellum before the library does', () => {
     const out = consumeMaterials(stock, {
       subsistence: 500,
       casting: 80,
+      teaching: 0,
+      constructionLabor: 0,
       libraryUpkeep: 80,
       scribing: 0,
       construction: 40,
