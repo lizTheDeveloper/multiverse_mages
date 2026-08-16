@@ -1,9 +1,9 @@
 ## 0. Preconditions
 
-- [ ] 0.1 Re-take the three measurements in `proposal.md` against the branch being built on, rather than trusting them. They were taken on `origin/main` @ `edcaf591` on 2026-08-15 and this repository has a documented history of measurements rotting in the present tense
-- [ ] 0.2 Read `docs/design/economy-flow-models.md` §3.3–§3.4 before writing any flow: converter-vs-trader, gate-vs-drain, and the rule that a cap must spill explicitly rather than truncate silently
-- [ ] 0.3 Confirm whether `discriminating-ascension` task 1.5 has landed — `declare-ascension.favorCost` is still `0` on `main` while that change's tasks call for `20480`. If the ending is still free, pricing the *verbs* here will not change the optimal policy and the two changes must be sequenced deliberately
-- [ ] 0.4 Decide, and record, whether `insight` double-counts `encourage-research`'s existing effect on research rate. Two levers pointed at one outcome is the defect class this campaign has hit three times
+- [x] 0.1 Re-take the three measurements in `proposal.md` against the branch being built on, rather than trusting them. They were taken on `origin/main` @ `edcaf591` on 2026-08-15 and this repository has a documented history of measurements rotting in the present tense
+- [x] 0.2 Read `docs/design/economy-flow-models.md` §3.3–§3.4 before writing any flow: converter-vs-trader, gate-vs-drain, and the rule that a cap must spill explicitly rather than truncate silently
+- [x] 0.3 Confirm whether `discriminating-ascension` task 1.5 has landed — `declare-ascension.favorCost` is still `0` on `main` while that change's tasks call for `20480`. If the ending is still free, pricing the *verbs* here will not change the optimal policy and the two changes must be sequenced deliberately
+- [x] 0.4 Decide, and record, whether `insight` double-counts `encourage-research`'s existing effect on research rate. Two levers pointed at one outcome is the defect class this campaign has hit three times
 
 ## 1. Content: the materials exist and every form yields one
 
