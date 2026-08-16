@@ -30,11 +30,11 @@ import type { CellEmphasis, SpeciesAffinities } from './target-appeal.js';
  * Three requirements met by that shape alone, all in
  * `openspec/changes/mages-and-species/specs/mage-autonomy/spec.md`:
  *
- * - `:158` position-free — no coordinate field, so scoring cannot read one.
+ * - `:212` position-free — no coordinate field, so scoring cannot read one.
  *   Structural, but fragile: `autonomy-no-position.test.ts` scans anyway.
- * - `:186` bounded in cost — `MAX_CANDIDATE_TARGETS`, applied at the frontier
+ * - `:236` bounded in cost — `MAX_CANDIDATE_TARGETS`, applied at the frontier
  *   fetch, not at each of the five target-taking goals.
- * - `:63` individually ablatable — zero a term, re-run the same outlook, no
+ * - `:119` individually ablatable — zero a term, re-run the same outlook, no
  *   re-simulated universe. Hence `scoring-ablation.test.ts` is a unit test.
  *
  * ## Why `KnowledgeTarget`, not node ids
