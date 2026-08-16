@@ -149,3 +149,30 @@ cannot inherit the same trap. A walk test covers a revision-4 envelope reaching 
 `worldSchemaVersionOf` contains a dead line — a second `if (carried.has(GRANT_BUDGET.name)) return 5;`
 below the `return 4` marker, unreachable because the identical check above it returns 6.
 Harmless, pre-existing, and not this change's to touch.
+
+## What groups 3–7 inherit, and one thing task 5.3 must not skip
+
+Recorded here because it was done under a different task's name and would otherwise be
+rediscovered or duplicated.
+
+**`observable-trait-inventory.md` was amended for the *count*, not for the entitlement.** Adding
+four fields to `MATERIAL_STOCK` trips `packages/agent-api`'s entitlement gate, which refuses any
+component field with no classification and pins the inventory's headline number. The four kinds are
+classified **withheld / `not-yet-decided`**, and the document's totals moved 108 → 112 and
+70 → 74 undecided, dated 2026-08-16 and named to this branch.
+
+That is *not* task 5.3. 5.3 asks for four kinds to move from **withheld to entitled**, which
+depends on task 5.1's named per-kind block on `PlayerState`, which is group 5's. 5.3 is
+deliberately left unchecked. Whoever takes it should amend the same table again rather than assume
+it is current.
+
+**Two decisions the spec is silent on, taken to preserve behaviour and flagged for revisiting.**
+
+- `packages/scenario/src/reference-universe.ts` seeds the four new kinds at **zero**. A founding
+  endowment is a claim that the starting position holds something, and this universe has never
+  cast. It is also the only choice that keeps the reference run identical while the sinks are
+  unbuilt. Group 3 should treat it as a starting-position decision rather than inherit it as one.
+- `writeMaterialStock` in `world-step.ts` writes the four at zero **on row creation only**; the
+  per-field `set` path below it touches only `food`, `stone` and `vellum`. A row written whole every
+  tick would silently zero the new stocks the moment something produced one, which is the trap
+  group 3 would have walked into.
