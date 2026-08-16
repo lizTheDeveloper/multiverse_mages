@@ -39,7 +39,7 @@ import { EDICT_KIND, LOCATION_KIND } from '@mm/state';
 
 import { isDormant } from '../../src/dormancy.js';
 import { MagicGrid } from '../../src/grid.js';
-import { DEFAULT_INITIAL_MASTERY, DEFAULT_TEACH_THRESHOLD, MASTERY_MAX } from '../../src/instances/constants.js';
+import { DEFAULT_INITIAL_MASTERY, MASTERY_MAX } from '../../src/instances/constants.js';
 import { decayHeldKnowledge, decayedMastery, masteryFloor } from '../../src/instances/decay.js';
 import type { ResearchOutcome } from '../../src/instances/research.js';
 import { research } from '../../src/instances/research.js';
@@ -73,7 +73,7 @@ import {
   testWorld,
 } from '../support/scenario.js';
 import { fixtureNodeId, gridContentFixture } from './fixtures.js';
-import { ALL_TRADITIONS, ART_OF_MEMORY, TRADITIONS, TRUE_NAMING, V1_TRADITIONS, VANCIAN } from './tradition-fixtures.js';
+import { ART_OF_MEMORY, TRADITIONS, TRUE_NAMING, V1_TRADITIONS, VANCIAN } from './tradition-fixtures.js';
 
 /** The fixed script. Identical for every tradition; only the hooks change. */
 const SCRIPT = {
@@ -182,90 +182,6 @@ describe('each pair of v1 traditions is distinguishable', () => {
 
   it('is reproducible: the same script under the same tradition twice', () => {
     for (const [, id] of V1_TRADITIONS) expect(run(id)).toEqual(run(id));
-  });
-});
-
-/**
- * W28: the same claim, over all seven shipped traditions.
- *
- * The v1 block above proves the three that shipped first are pairwise
- * distinguishable. That is the weaker claim, and it stopped being the
- * interesting one the moment a second cohort of traditions arrived: the failure
- * worth catching is not "two of the original three collapsed", it is **a new
- * regime that is a re-skin of an old one**. W13 measured exactly that failure in
- * the wild — Vancian and True Naming differ by one authored number and measure
- * as the same universe on almost every world-time metric — so a suite that only
- * compares within a cohort would have called that pair distinguishable and been
- * useless.
- *
- * Twenty-one pairs, and the script is unchanged: same node, same base costs,
- * same held count, same seed. Only the tradition varies.
- */
-describe('every pair of shipped traditions is distinguishable, across both cohorts', () => {
-  const outcomes = new Map(ALL_TRADITIONS.map(([name, id]) => [name, run(id)]));
-
-  for (let i = 0; i < ALL_TRADITIONS.length; i += 1) {
-    for (let j = i + 1; j < ALL_TRADITIONS.length; j += 1) {
-      const left = ALL_TRADITIONS[i]?.[0] ?? '';
-      const right = ALL_TRADITIONS[j]?.[0] ?? '';
-
-      it(`${left} differs from ${right}`, () => {
-        expect(outcomes.get(left)).not.toEqual(outcomes.get(right));
-      });
-    }
-  }
-
-  /**
-   * Each W28 regime differs through the hook it was authored to stress, and the
-   * assertions below are the *world-time* half — the only half a Monte Carlo
-   * sweep can see, and therefore the only half that makes a regime a regime
-   * rather than a label. Vancian's identity lives in `cast`/`cost` and is
-   * invisible to the harness; that is the mistake these four do not repeat.
-   */
-  it('gives each W28 regime the world-time identity its thesis claims', () => {
-    const chorale = outcomes.get('chorale');
-    const flesh = outcomes.get('flesh-codex');
-    const shared = outcomes.get('shared-mind');
-    const witch = outcomes.get('witch-bond');
-    const artOfMemory = outcomes.get('art-of-memory');
-    const vancian = outcomes.get('vancian-memorization');
-
-    // The Chorale: unwritten, and unbounded where the Art of Memory is bounded.
-    // The thirteenth song is admitted; the thirteenth room is not.
-    expect(chorale?.scribingAvailable).toBe(false);
-    expect(chorale?.admittedThirteenth).toBe(true);
-    expect(artOfMemory?.admittedThirteenth).toBe(false);
-
-    // The Flesh Codex: cheap to cut in, and unteachable. Below the teach
-    // threshold an instance can never rise to it, so this is transmission
-    // switched off — the single highest-leverage number in the acquire hook.
-    expect(flesh?.researchCost).toBeLessThan(vancian?.researchCost ?? 0);
-    expect(flesh?.initialMastery).toBeLessThan(DEFAULT_TEACH_THRESHOLD);
-    expect(flesh?.scribingAvailable).toBe(false);
-    expect(flesh?.admittedThirteenth).toBe(false);
-
-    // The Shared Mind is the Art of Memory with transmission switched on, and
-    // nothing else. Same store, same bound, same unwritability — and the pair
-    // is a designed experiment on the teach-threshold cliff, so it must differ
-    // on mastery and agree on every store term.
-    expect(shared?.initialMastery).toBe(FP_ONE);
-    expect(artOfMemory?.initialMastery).toBeLessThan(DEFAULT_TEACH_THRESHOLD);
-    expect(shared?.personalLocationKind).toBe(artOfMemory?.personalLocationKind);
-    expect(shared?.admittedThirteenth).toBe(artOfMemory?.admittedThirteenth);
-    expect(shared?.scribingAvailable).toBe(artOfMemory?.scribingAvailable);
-
-    // The Witch's Bond holds the corner no v1 kind could reach: books exist AND
-    // a mage's memory is finite. `standard` hardcodes unbounded; `palace`
-    // cannot write. This assertion is the whole justification for the one new
-    // hook kind W28 added, and it fails if that kind ever loses either half.
-    expect(witch?.scribingAvailable).toBe(true);
-    expect(witch?.admittedThirteenth).toBe(false);
-    expect(vancian?.scribingAvailable).toBe(true);
-    expect(vancian?.admittedThirteenth).toBe(true);
-  });
-
-  it('is reproducible: the same script under the same tradition twice', () => {
-    for (const [, id] of ALL_TRADITIONS) expect(run(id)).toEqual(run(id));
   });
 });
 

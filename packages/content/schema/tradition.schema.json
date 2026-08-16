@@ -10,12 +10,10 @@
     "tradition": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["id", "name", "gloss", "hooks", "tuningStatus"],
+      "required": ["id", "name", "hooks"],
       "properties": {
         "id": { "$ref": "#/$defs/contentId" },
         "name": { "type": "string", "minLength": 1, "maxLength": 64 },
-        "gloss": { "type": "string", "minLength": 1, "maxLength": 400 },
-        "tuningStatus": { "type": "string", "enum": ["untuned", "tuned"] },
         "hooks": {
           "type": "object",
           "additionalProperties": false,

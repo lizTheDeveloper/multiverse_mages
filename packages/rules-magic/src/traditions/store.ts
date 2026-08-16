@@ -111,8 +111,6 @@ export function storePolicy(hook: ResolvedHook): StorePolicy {
   switch (hook.kind) {
     case 'standard':
       return standardStore();
-    case 'bounded':
-      return boundedStore(hook);
     case 'palace':
       return palaceStore(hook);
     default:
@@ -141,35 +139,6 @@ function standardStore(): StorePolicy {
     burnableAt: (locationKind) => WRITTEN_KINDS.includes(locationKind),
     perishesWithHolder: [LOCATION_KIND.mind],
     libraryDepthCoefficient: 0,
-  };
-}
-
-/**
- * `standard`, with a ceiling on what one head may carry.
- *
- * The whole difference from {@link standardStore} is {@link
- * StorePolicy.slotsPerMage}, and that one difference occupies a corner of the
- * store space no v1 tradition could reach. `standard` hardcodes
- * {@link UNBOUNDED_SLOTS}; `palace` takes a slot count but sets
- * `scribingAvailable: false`. So a universe whose mages have finite memory *and*
- * whose scribes still copy books — the Witch's Bond, and every "you may hold
- * only so many pacts" regime — had no kind to declare, and this is it.
- *
- * Deliberately not a param added to `standard`. `standard` is the answer a
- * tradition gets for saying nothing, and its unbounded-ness is what makes
- * `personalStoreFull` return before counting; giving it a required param would
- * make every tradition that declares no store hook pay for a rule it did not
- * ask for.
- *
- * Knowledge is still mortal exactly as far as `standard` makes it mortal — the
- * mind dies, the book does not — because a capacity bound is a statement about
- * how much fits, not about what survives.
- */
-function boundedStore(hook: ResolvedHook): StorePolicy {
-  return {
-    ...standardStore(),
-    kind: 'bounded',
-    slotsPerMage: integerParam(hook, 'slotsPerMage'),
   };
 }
 
