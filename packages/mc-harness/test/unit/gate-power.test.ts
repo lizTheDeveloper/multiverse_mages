@@ -112,10 +112,23 @@ const BLIND_ARM_LINES: Readonly<Record<string, readonly string[]>> = {
   // whose arm sits close to zero will cross this threshold on any re-roll, in
   // either direction, and that is a fact about the strategy rather than about
   // the tolerance.
+  //
+  // **Back to two, 2026-08-16, and the lesson above predicted it.** The wiring
+  // campaign (PR #201) took `referenceNodesKnown@denial-warden` off the list:
+  // the three academic rates now feed from authored node effects, so even the
+  // arm that permits least learns enough to step clear of a tolerance three
+  // standard errors wide. **This list shrinking is as much a change in the
+  // instrument as it growing** — the gate can now tell a proportional move on
+  // that line from noise, and it could not a day ago — which is why the test
+  // asserts set equality rather than containment, and why this note exists.
+  //
+  // `referenceNodesGained@denial-warden` stayed. The two are the same arm and
+  // moved together every previous time; that they parted is worth one line of
+  // suspicion for whoever next re-records, and nothing more than that on this
+  // evidence.
   'balance/baselines/balance-gate-agency-v1.baseline.json': [
     'referenceNodesGained@denial-warden',
     'referenceNodesGainedFinalQuarter@permissive-breadth',
-    'referenceNodesKnown@denial-warden',
   ],
   // Ten since w107, up from seven, and the three that joined are all the same
   // shape: an arm whose *spread* widened rather than an arm that stopped
