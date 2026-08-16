@@ -39,12 +39,22 @@
 - [ ] 3.2 Route production through the existing applied-magic path rather than a second one. There is already one `resource-yield` reading and a second would be the fourth reading of the capital term that no balance assertion covers
 - [ ] 3.3 Write a failing test per sink: `labor` accelerates construction, `essence` prices a dispensation, `insight` raises university teaching throughput, `passage` is spent opening a portal
 - [ ] 3.4 Implement the four sinks. Each must **drain**, not gate — a sink that accumulates nothing and destroys only as a side effect is the shape `economy-flow-models.md` warns reads as a policy while behaving as a switch
-- [ ] 3.5 Assert no sink truncates at a cap silently: an inflow over a ceiling spills explicitly and the spill is recorded
+- [ ] 3.5 Assert no sink truncates at a cap silently: an inflow over a ceiling spills explicitly and
+      the spill is recorded. **The assertion must first be shown able to reach the ceiling** — a
+      test for "nothing truncates" passes for free in a world that never fills a stock, and would
+      then report the absence of a condition it never created as the absence of a defect. Drive a
+      stock over its cap deliberately and watch the spill appear before asserting it does not
+      happen silently
 
 ## 4. Costs: the two economies meet
 
 - [ ] 4.1 Add an optional `materialCost` map to `god-cost.schema.json` and to the loader, with a content invariant that an action naming a kind the schema does not know fails the load
-- [ ] 4.2 Write a failing test asserting an action whose material cost cannot be paid is **masked**, and that the mask's reason is distinguishable from "cannot afford the favor"
+- [ ] 4.2 Write a failing test asserting an action whose material cost cannot be paid is **masked**,
+      and that the mask's reason is distinguishable from "cannot afford the favor". **Construct the
+      poverty rather than hoping for it**: if the reference position can always pay, this passes
+      without ever exercising the branch. Set the stock below the price explicitly, and assert the
+      same action is *unmasked* when the stock is raised — the pair is what makes it a test rather
+      than a coincidence
 - [ ] 4.3 Author `materialCost` for the verbs named in `proposal.md` B, each with a gloss stating the rule: a verb that makes a thing spends the material that thing is made of
 - [ ] 4.4 Extend `applyAffordability` in `packages/agent-api/src/mask.ts` to clear an action the god cannot pay the materials for, beside the favor check it already runs
 - [ ] 4.5 Confirm `illegalActionRate` does not inflate: a newly unaffordable verb must be **masked**, not submitted-and-refused. Re-run the strategy sweep and check the rate against the 0.01 ceiling
