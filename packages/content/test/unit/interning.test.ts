@@ -378,6 +378,25 @@ describe('contentRevision', () => {
     // magic is a goal a mage will choose, so a tick's materials and a tick's
     // goal histogram both move from the first month.
     //
+    // Union once more, and this is the merge that produced the literal below:
+    // `main`'s chain above met this branch's optional `displacement` term on an
+    // effect — five effects on the four `rego-terram` nodes, the first cost any
+    // effect in the shipped set has ever carried. Every other effect in
+    // `node.json` is untouched and the field is absent from all of them, which
+    // is the whole design: absence means "pure bonus", the reading three
+    // hundred nodes were authored under.
+    //
+    // It belongs in the preimage for the plainest possible reason: it changes
+    // what a universe *produces*. Two universes agreeing on their revisions
+    // while one of them empties its fields when a mage learns to quarry
+    // without hands would not be running the same economy, and the raid
+    // arbitration that reads the host's ruleset would be arbitrating between
+    // two different games.
+    //
+    // Neither side's literal — this branch's 5ab77110/b6a577dd, nor `main`'s
+    // d4e30476 — is a digest over a preimage containing both, so the value
+    // below was **re-measured from the merged tree** rather than taken from
+    // either side.
     // d4e3047657b4fa8a1a74e1d52f9f5c86 -> e8442af2c5f91ae6f80ad9a178e0e451,
     // when anti-requisites landed (`vision.md` §4b) and `cell.json` gained an
     // `excludes` array carrying one pair: *Creo Ignem* and *Creo Umbra* exclude
@@ -498,7 +517,28 @@ describe('contentRevision', () => {
     // nodes nor the stewardship constants, and this tree has the second. The
     // two entries above are left standing on purpose: they are the record of a
     // digest that was computed, not a claim about this tree.
-    expect(registry.contentRevision).toBe('5dede81afebb971eba5784765321a035');
+    //
+    // 5dede81afebb971eba5784765321a035 -> c96f4046f85b2fc5121e12690c20d810,
+    // when `w77/effect-displacement` gave an effect an optional `displacement`
+    // term — five effects on the four `rego-terram` nodes, the first cost any
+    // effect in the shipped set has carried. Every other effect in `node.json`
+    // is untouched and the field is absent from all of them, which is the whole
+    // design: absence means *pure bonus*, the reading three hundred nodes were
+    // authored under.
+    //
+    // It belongs in the preimage for the plainest possible reason: it changes
+    // what a universe *produces*. Two universes agreeing on their revisions
+    // while one of them empties its fields when a mage learns to quarry without
+    // hands would not be running the same economy, and the raid arbitration
+    // that reads the host's ruleset would be arbitrating between two different
+    // games.
+    //
+    // Union for the sixth time in this list. The branch recorded
+    // `5ab77110`/`b6a577dd`, over a preimage without the seventeenth god cost,
+    // without the exclusion pair and without W35's four `stewardship-*`
+    // constants; all three are on this tree. Re-measured from the merged tree
+    // rather than taken from either side.
+    expect(registry.contentRevision).toBe('c96f4046f85b2fc5121e12690c20d810');
   });
 
   it('is stable across loads of identical content', () => {
