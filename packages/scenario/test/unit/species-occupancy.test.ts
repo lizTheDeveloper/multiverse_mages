@@ -266,10 +266,22 @@ describe('twenty world years in', () => {
     //
     // The test name is left alone deliberately. Renaming it would erase the
     // comparison; the numbers below are the finding.
+    // **Re-measured on the `w183/removal-probe` (W24 siting) merge, 2026-08-16:
+    // `11/12/12/12/12/12`.** One number moved — draconic, 11 -> 12 — and the
+    // Gini fell with it, to 0.0117. Five of six species now sit on the ruleset
+    // ceiling and dwarf alone is short, which inverts the reading this test
+    // carried for five measurements: dwarf was the reference species every other
+    // was compared against, and it is now the only one below the cap.
+    //
+    // A sited academy changes carrying capacity, so the population that holds
+    // cells changes with it. That is a mechanism, not a re-roll — but the test's
+    // title has now been wrong for three merges running, and the durable reading
+    // is that occupancy at this horizon is a ceiling effect: whatever the ruleset
+    // permits, most species reach.
     expect(bySpecies('dwarf').occupiedCells).toBe(11);
     expect(bySpecies('human').occupiedCells).toBe(12);
     expect(bySpecies('orc').occupiedCells).toBe(12);
-    expect(bySpecies('draconic').occupiedCells).toBe(11);
+    expect(bySpecies('draconic').occupiedCells).toBe(12);
     expect(bySpecies('elf').occupiedCells).toBe(12);
     expect(bySpecies('gnome').occupiedCells).toBe(12);
   });
@@ -296,7 +308,7 @@ describe('twenty world years in', () => {
     // lifts the trailing species rather than the leading one — which is the
     // opposite of what a capital-compounding effect would do, and worth watching
     // if the magnitude is ever tuned up.
-    expect((entry as { value: number }).value).toBeCloseTo(0.019, 4);
+    expect((entry as { value: number }).value).toBeCloseTo(0.0117, 4);
     expect(entry).toMatchObject({ detail: { everySpeciesEqual: false, everySpeciesZero: false } });
   });
 

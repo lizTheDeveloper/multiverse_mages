@@ -302,6 +302,10 @@ export function buildRival(input: {
       foundingNodes: 6,
       foundingSpeciesMask: 0,
       foundingPortalMagic: 0,
+      // Pinned to the documented default for the reason `foundingSpeciesMask` is:
+      // a rival whose academy stood somewhere the host's did not would confound
+      // "where my university is" with "who I am fighting".
+      academySiteKind: 0,
       openingTechniqueCount: 0,
       openingFormCount: 0,
       // Unread with no counts, and pinned anyway so that a later default flip

@@ -602,7 +602,30 @@ describe('contentRevision', () => {
     // the `w182/raid-seam` merge — the two renamed withdrawal constants above,
     // over a preimage that also holds W21's unease pair and the mid-raid revert
     // multiplier. Tenth union; MEASURED, not carried from either side.
-    expect(registry.contentRevision).toBe('206e51013c0105332269cca96ff35643');
+    // a622452a3b55e38fd902a2d3264b44d7 -> 5be755471cd46620625b01b77d2888a7, when
+    // W24 added `libraryUpkeepMultiplier` to every `territory.json` record (§2.7)
+    // — what a library standing in that kind of country pays to stay standing.
+    // It is in the preimage for the reason `capacityPerLandUnit` is: two
+    // universes that disagreed about what the weather does to parchment would
+    // lose different books while their revisions agreed they were compatible.
+    // No existing value changed; five records each gained one field.
+    //
+    // Union again, and this is the merge that produced the literal below:
+    // `main`'s chain met `w24/university-siting`'s `libraryUpkeepMultiplier` on
+    // every territory record — what a library standing in this kind of country
+    // pays to stay standing. In the preimage for the reason every other
+    // territory field is: two universes disagreeing about what a written record
+    // costs in the highland waste would keep different libraries while their
+    // revisions agreed they were compatible.
+    //
+    // Neither side's literal is a digest over a preimage holding both, so the
+    // value below was **re-measured from the merged tree**.
+    //
+    // 206e51013c0105332269cca96ff35643 -> 869b4e45c7852df1f2c7e705e032a8f6 on
+    // the W24 merge — `libraryUpkeepMultiplier` on all five territory records,
+    // over a preimage that also holds the unease pair, the revert multiplier and
+    // the two renamed withdrawal constants. Eleventh union; MEASURED.
+    expect(registry.contentRevision).toBe('869b4e45c7852df1f2c7e705e032a8f6');
   });
 
   it('is stable across loads of identical content', () => {

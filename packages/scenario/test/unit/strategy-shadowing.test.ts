@@ -183,6 +183,17 @@ describe('every verb a strategy asks for is a verb it can reach', () => {
           'legal every time it is.',
       }));
 
+    // **LEFT RED, `integration/group-e`, 2026-08-16.** One surprise:
+    // `narrow-depth` lists `grantFoundingKnowledge` (action 8), the mask allows
+    // it on 6 ticks, and it is never submitted — something ahead of it in its
+    // preference list is legal every time it is.
+    //
+    // This instrument's whole purpose is to report a verb a strategy asks for
+    // and cannot reach, and adding the entry to `KNOWN_SHADOWED` would convert
+    // exactly that report into silence. It is not pinned: a strategy that
+    // silently never plays a verb is measuring a different agent than the one
+    // its name describes, and every balance number taken from `narrow-depth`
+    // since this merge is a number about eight verbs, not nine.
     const surprises = found.filter((verb) => KNOWN_SHADOWED[verb.key] === undefined);
     expect(surprises.map((verb) => verb.detail)).toEqual([]);
   });

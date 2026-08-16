@@ -151,6 +151,12 @@ export function worldDeps(traditionId: number): WorldStepDeps {
     store: shippedStorePolicy(traditionId),
     acquire: shippedAcquirePolicy(traditionId),
     territory: territoryExtent(registry().territories.map((entry) => entry.record)),
+    territoryKinds: registry().territories.map((entry) => ({
+      kindId: entry.contentId,
+      landUnits: entry.record.landUnits,
+      capacityPerLandUnit: entry.record.capacityPerLandUnit,
+      libraryUpkeepMultiplier: entry.record.libraryUpkeepMultiplier,
+    })),
     // The same records the extent is summed from, read for their yield mix
     // instead of their capacity — `scenario`'s composition root does the same
     // (`content-set.ts`). Required on `WorldStepDeps` since `w29`, so a fixture

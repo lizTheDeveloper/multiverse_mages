@@ -49,6 +49,9 @@ function territory(overrides: Partial<TerritoryRecord> = {}): TerritoryRecord {
     landUnits: 100,
     capacityPerLandUnit: 1024,
     yieldPerLandUnit: { food: 0, stone: 0, vellum: 0 },
+    // Neutral, so nothing here reads as a library-upkeep result. Required since
+    // `w24/university-siting` put a per-country upkeep multiplier on the record.
+    libraryUpkeepMultiplier: 1024,
     tuningStatus: 'untuned',
     ...overrides,
   };

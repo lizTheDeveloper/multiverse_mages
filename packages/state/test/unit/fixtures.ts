@@ -58,6 +58,8 @@ import {
   RULE_CHANGE_KIND,
   RULE_SCOPE,
   UNIVERSITY,
+  TERRITORY_HOLDING,
+  UNIVERSITY_SITE,
   UNIVERSITY_STAFF,
   UPHEAVAL,
   WORLD_COMPONENTS,
@@ -85,6 +87,8 @@ export interface PopulatedWorld {
   readonly library: EntityHandle;
   readonly grimoire: EntityHandle;
   readonly effort: EntityHandle;
+  /** The one `territory-holding` row. The site hangs on `university` instead. */
+  readonly holding: EntityHandle;
 }
 
 /**
@@ -256,6 +260,13 @@ export function populatedWorld(): PopulatedWorld {
     passed: 1,
   });
 
+  // `university-siting`'s two. The holding is an entity of its own — one per
+  // kind of country held — while the site hangs on the university's own handle,
+  // because §1.4 gives a university exactly one site and two rows would make
+  // "which country is this in" depend on iteration order.
+  const holding = state.entities.create();
+  attachRecord(state, TERRITORY_HOLDING, holding, { kindId: 1, landUnits: 1600 });
+  attachRecord(state, UNIVERSITY_SITE, university, { kindId: 1 });
   // On the universe handle too, and for the same singleton reason as god-state:
   // one universe, one budget. Every field distinct and none of them zero, so a
   // round-trip that dropped or transposed one is visible.
@@ -285,7 +296,7 @@ export function populatedWorld(): PopulatedWorld {
   });
 
   assertEveryWorldComponentPopulated(state);
-  return { state, universe, mage, cohort, university, library, grimoire, effort };
+  return { state, universe, mage, cohort, university, library, grimoire, effort, holding };
 }
 
 /** Fails if any world component has no rows, so "every component" stays true. */

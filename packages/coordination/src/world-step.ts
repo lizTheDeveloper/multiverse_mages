@@ -139,6 +139,7 @@ import type {
   StepRng,
   TargetAppealWeights,
   TerritoryExtent,
+  TerritoryKind,
 } from '@mm/rules-world';
 import {
   CohortStore,
@@ -168,6 +169,7 @@ import {
   enrolmentFraction,
   fertilityBrake,
   hazardAt,
+  heldTerritoryExtent,
   insertNewborns,
   killMage,
   libraryRateMultiplier,
@@ -175,12 +177,17 @@ import {
   materialsProduced,
   graduate,
   prevalenceOf,
+  materializeTerritoryHoldings,
   promoteStudentCohort,
   readCommitment,
   rollMortality,
   scribingThroughput,
   sortGraduateCareer,
+  siteCapacityMultiplier,
+  siteKindOf,
+  sitedCapacity,
   stepMageAutonomy,
+  territoryKindIndex,
   stepPopulace,
   STUDENT_MAGE_ROLE,
   subsistenceDemand,
@@ -282,14 +289,30 @@ export interface WorldStepDeps {
    */
   readonly acquire: AcquirePolicy;
   /**
-   * The universe's territory, summed from content by `territoryExtent`.
+   * The universe's **founding endowment**, summed from content by
+   * `territoryExtent`.
    *
-   * Carried on the deps rather than read from state because it is fixed for the
-   * length of a run (`contracts.md` §2.7) — and because `carrying-capacity.ts`
-   * derives `K` from it precisely so that `K` cannot be moved by anything the
-   * loop below produces.
+   * No longer what `K` is derived from. `contracts.md` §2.7 said `landUnits`
+   * would move to §1.1 *"when a raid takes ground"*, and `university-siting`
+   * made the move: the loop below reads {@link heldTerritoryExtent} off the
+   * `territory-holding` rows, and this figure is what those rows are
+   * materialized from on the first tick that finds none.
+   *
+   * It stays on the deps because it is still the right input to
+   * `maxCarryingCapacity` — the *documented* population bound is a claim about
+   * content, assertable without knowing how a run went, and a bound computed
+   * from state would move with the run it is supposed to bound.
    */
   readonly territory: TerritoryExtent;
+  /**
+   * What each kind of country is like, and what it endows.
+   *
+   * The content half of §2.7's split (`rules-world`'s `TerritoryKind`). Read for
+   * three things: materializing holdings, converting a holding's land into the
+   * people it carries, and converting a university's site into what that site
+   * does to its seats and to its library's upkeep.
+   */
+  readonly territoryKinds: readonly TerritoryKind[];
   /**
    * What this universe's land yields, as shares over the three material kinds
    * summing to `fp(1024)` — `territoryYieldShares` of the same content records
@@ -856,6 +879,10 @@ export function defineWorldSimulation(deps: WorldStepDeps): WorldSimulation {
   // a second place the two could disagree about which tick a count belongs to.
   const god = godSystems({
     ...deps.god,
+    // Threaded from the world deps rather than duplicated onto `GodDeps` by the
+    // composition root: there is exactly one territory content set per run, and
+    // two places to configure it is two places for it to disagree.
+    territoryKinds: deps.territoryKinds,
     nodesLostThisTick: (worldTick) => (last?.worldTick === worldTick ? last.nodesLost : 0),
   });
   return {
@@ -901,6 +928,23 @@ export function worldSystem(
       const universe = findUniverse(state);
       if (universe === 0) return;
       const ruleset: Ruleset = readRulesetForObservation(state, universe);
+
+      // ---- 0. Territory ----------------------------------------------------
+      // `contracts.md` §2.7's own migration, executed once per universe: the
+      // content endowment becomes `territory-holding` rows the first tick that
+      // finds none. A world-schema revision-4 save arrives here with an empty
+      // section — `migrations.ts` says why the repair could not go in the
+      // migration — and leaves this line holding exactly the land it always did.
+      materializeTerritoryHoldings(state, deps.territoryKinds);
+      const kindIndex = territoryKindIndex(deps.territoryKinds);
+      // Two reads of one relationship, resolved once for the tick. Both take a
+      // university handle, because §1.4 pins the site on the university and a
+      // library carries no back-link to its owner.
+      const siteSeatMultiplier = (university: Handle): Fixed =>
+        siteCapacityMultiplier(kindIndex.get(siteKindOf(state, university as EntityHandle)));
+      const siteUpkeepMultiplier = (university: Handle): Fixed =>
+        kindIndex.get(siteKindOf(state, university as EntityHandle))?.libraryUpkeepMultiplier ??
+        FP_ONE;
 
       const knowledge = deps.knowledgeFor(state);
       const cohorts = new CohortStore(state.entities, componentOf(state, POPULACE_COHORT));
@@ -971,6 +1015,7 @@ export function worldSystem(
         catalog: deps.catalog,
         cells: deps.cells,
         ruleset,
+        siteUpkeepMultiplier,
       });
       // One counter per tick, for the §7 emission. `contracts.md` §3's cap is
       // the only bound on the capital loop, so how often it binds is the
@@ -992,7 +1037,7 @@ export function worldSystem(
       // costs upkeep forever and contributes nothing to depth — which is the
       // asymmetry that makes "hoard everything" a losing line.
       const upkeepOwed = capital.libraries.reduce(
-        (total, entry) => total + libraryUpkeep(entry.depth),
+        (total, entry) => total + libraryUpkeep(entry.depth, entry.siteMultiplier),
         0,
       );
       let materialsScribed = 0;
@@ -1049,7 +1094,13 @@ export function worldSystem(
         demand: computeOccupationDemand({
           constructionBacklog: constructionBacklog(state),
           scribingQueueDepth: 0,
-          universityCapacity: completedCapacity(state),
+          // W24's site multiplier and W197's latent count are independent
+          // widenings of the same call, and the union produced two
+          // `universityCapacity` keys and two `standingSoldierTarget`s — the
+          // second of each silently winning. Composed: the capacity is the
+          // *sited* one, and the soldier target keeps `main`'s cited constant
+          // rather than W24's bare `0`.
+          universityCapacity: completedCapacity(state, siteSeatMultiplier),
           latentMagicUsers: latent,
           // Zero, by citation rather than by omission. `ages-of-magic.md` §2b:
           // *"A university's stationed mages are its faculty, its researchers
@@ -1226,13 +1277,17 @@ export function worldSystem(
               ),
             );
       const capacity = carryingCapacity({
-        territory: deps.territory,
+        // Held, not endowed. The two are equal until something takes ground, and
+        // `territory-holdings.test.ts` proves the equality on the seeded world
+        // rather than assuming it — but `K` must read what the universe *has*,
+        // or colonization would move the map and leave the population alone.
+        territory: heldTerritoryExtent(state, deps.territoryKinds),
         // Food, not the three kinds summed. `carrying-capacity.ts` says why: a
         // country holds more people because there is more to eat, and a heap of
         // quarried stone should raise what a universe can build rather than
         // what it can feed.
         food: stock.food,
-        completedCapacity: completedCapacity(state),
+        completedCapacity: completedCapacity(state, siteSeatMultiplier),
         subsistenceShortfallShare,
       });
       const births = deliverBirths(cohorts, {
@@ -2737,11 +2792,27 @@ function constructionBacklog(state: SimState): Fixed {
   return backlog;
 }
 
-/** Student seats across completed universities. Unfinished ones carry nobody. */
-function completedCapacity(state: SimState): number {
+/**
+ * Student seats across completed universities, **as their sites keep them**.
+ * Unfinished ones carry nobody.
+ *
+ * `capacity` is the designed seat count — how many desks were built. What the
+ * surrounding country can keep at those desks is `sitedCapacity`, and the two
+ * differ by up to 16× across the shipped kinds. This is the one figure siting
+ * moves, and it reaches both halves of what siting is supposed to change:
+ * `seatsBonus` in `K` (and so population), and student demand (and so, through
+ * promotion, mages and knowledge).
+ *
+ * `worshipInputs` deliberately keeps reading the *designed* capacity through
+ * `effectiveCapacity`. §7 pays worship for what an institution **is**, not for
+ * how the harvest went, and leaving it alone keeps the snowball metric measuring
+ * one thing.
+ */
+function completedCapacity(state: SimState, siteMultiplier: (university: Handle) => Fixed): number {
   let total = 0;
-  for (const { row } of collectRecords(state, UNIVERSITY)) {
-    if (row.buildProgress >= FP_ONE) total += row.capacity;
+  for (const { handle, row } of collectRecords(state, UNIVERSITY)) {
+    if (row.buildProgress < FP_ONE) continue;
+    total += sitedCapacity(row, siteMultiplier(handle));
   }
   return total;
 }

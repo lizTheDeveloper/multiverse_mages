@@ -99,6 +99,7 @@ export {
   REFERENCE_FACTOR_IDS,
   REFERENCE_SCENARIO_ID,
   TRADITION_FACTOR_ID,
+  academySiteKindOf,
   buildReferenceState,
   referenceContent,
   referenceOptions,

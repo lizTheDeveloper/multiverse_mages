@@ -86,11 +86,20 @@ imports it — and that is what makes its unusually wide edge list safe. Two fur
 `goal-commitment` component and the `effort-progress` component, neither of which
 `mages-and-species` expected to need. A third, from **§1.1**, is the `grant-budget` component: god
 action 8 is no longer unlimited, and an absent row means unbounded so that every older save and
-every hand-built test world keeps the behaviour it was written against. Each cost a world-schema
-revision — `WORLD_SCHEMA_VERSION` is now 6, after `material-stock` took revision 5 — and none of
-them moved `sim-core`'s
-`SNAPSHOT_VERSION`, which is inside the hashed header and would break every golden fixture with a
-version error instead of a behaviour diff.
+every hand-built test world keeps the behaviour it was written against. Two more, from **§1.1 and
+§1.4**, arrived with `university-siting`: the `territory-holding` component (`landUnits` moving out
+of content, exactly as §2.7 said it would) and the `university-site` component (a university stands
+in a *kind of country* — a relationship, which vision §7a permits, and not a coordinate, which it
+forbids).
+
+Each addition cost a world-schema revision — `WORLD_SCHEMA_VERSION` is now **7**: revision 2
+`goal-commitment`, 3 `effort-progress`, 4 `god-agency`'s four rows, 5 `material-stock`, 6
+`grant-budget`, 7 the siting pair — and **none of them moved `sim-core`'s `SNAPSHOT_VERSION`**,
+which is inside the hashed header and would break every golden fixture with a version error instead
+of a behaviour diff. `packages/state/src/migrations.ts` carries the argument for each one,
+including why revision 7 must *not* synthesize the territory rows it would be so convenient to
+synthesize. Revision 7 was written as revision 5 on `w24/university-siting` and renumbered when that
+branch was brought current; a migration's number is its position in a walk, not a name.
 
 Two commands worth knowing before touching the core:
 

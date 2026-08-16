@@ -89,7 +89,9 @@ import {
   GRANT_BUDGET,
   MATERIAL_STOCK,
   MID_RAID_CHANGE,
+  TERRITORY_HOLDING,
   UNIVERSE,
+  UNIVERSITY_SITE,
   UPHEAVAL,
 } from './components.js';
 
@@ -120,6 +122,14 @@ import {
  * what a migration step is keyed on, so keeping the branch's 5 would have
  * silently applied a raid repair to a save that only needed the materials
  * split.
+ * | 10       | `university-siting` | adds `territory-holding` (§1.1) and `university-site` (§1.4) |
+ *
+ * Revision 10 is W24's, renumbered twice: once to 7 on its own merge, and again here, because 7 is reserved for `material-economy` and 8 and 9 were taken by `bar-phase` and `mid-raid-change` while this branch was out. It was written as revision 5
+ * against a tree where 5 was free; `main` took 5 for the material split and 6
+ * for the grant budget while W24 was out of date, and a migration's number is
+ * its position in a walk, not a name. Nothing else about it changed: it still
+ * appends two empty sections and reads an absent row the way every append step
+ * here does.
  *
  * Revision 4 adds four components in one step, where the two before it added
  * one each. That is not a loosening of the rule — it is what the rule is for.
@@ -129,10 +139,14 @@ import {
  * revisions would invent three intermediate versions nothing ever wrote, and
  * three migration steps that could only ever be exercised by a test.
  *
+ * Revision 5 adds two for the same reason: a university's site is meaningless
+ * without a holding to stand in, and no build has ever shipped one without the
+ * other.
+ *
  * **Append; never renumber.** A revision number is what a migration step is
  * keyed on, so reusing one silently applies the wrong repair to a save.
  */
-export const WORLD_SCHEMA_VERSION = 9;
+export const WORLD_SCHEMA_VERSION = 10;
 
 /**
  * The world-schema revision an envelope was written by.
@@ -150,6 +164,13 @@ export const WORLD_SCHEMA_VERSION = 9;
  */
 export function worldSchemaVersionOf(envelope: SnapshotEnvelope): number {
   const carried = new Set(envelope.components.map((component) => component.name));
+  // Revision 10's marker is `territory-holding`, and it leads the chain because newest
+  // marker wins — a revision-10 envelope also carries `grant-budget` and
+  // `material-stock`, and reading it as either would walk it through migrations
+  // it has already had. It is the first of its own pair in `WORLD_COMPONENTS`,
+  // so an envelope that somehow carried only `university-site` reads as the
+  // older revision and is completed rather than left short.
+  if (carried.has(TERRITORY_HOLDING.name)) return 10;
   // **Revision 9's marker is `mid-raid-change`, and it leads the chain** — §4.4
   // step 3, newest marker first. Authored as revision 7; 7 is reserved for
   // `w247/material-economy-build` and 8 was taken by `bar-phase` one merge
@@ -536,6 +557,40 @@ export const addBarPhase: WorldSchemaMigration = {
   },
 };
 
+/**
+ * Revision 9 → 10: append empty `territory-holding` and `university-site`
+ * sections.
+ *
+ * An append, and empty is the whole repair. A save written before a universe
+ * held ground has no holdings to recover, and the world step materializes the
+ * content endowment into an empty section on its first tick — `god-state`'s
+ * lazy-creation rule, for the same reason. A university with no site row is
+ * unsited, which is representable and is what every save before W24 describes.
+ *
+ * Renumbered 4 → 5, then 6 → 7, then 9 → 10; see the table above and the note at
+ * the step itself.
+ */
+export const addTerritorySiting: WorldSchemaMigration = {
+  // Authored as `{ from: 5, to: 6 }`, renumbered to `{ from: 6, to: 7 }` on W24's
+  // own merge, and renumbered again here to `{ from: 9, to: 10 }`: 7 is reserved
+  // for `w247/material-economy-build`, and `bar-phase` and `mid-raid-change`
+  // took 8 and 9 while this branch was out. Third assignment for one step, and
+  // the reason §4.4 says a revision number is settled by arrival rather than by
+  // authoring.
+  from: 9,
+  to: 10,
+  migrate(envelope) {
+    return {
+      ...envelope,
+      components: [
+        ...envelope.components,
+        emptySection(TERRITORY_HOLDING),
+        emptySection(UNIVERSITY_SITE),
+      ],
+    };
+  },
+};
+
 /** Every step this build knows, ascending by source revision. */
 export const WORLD_SCHEMA_MIGRATIONS: readonly WorldSchemaMigration[] = [
   addGoalCommitment,
@@ -545,6 +600,7 @@ export const WORLD_SCHEMA_MIGRATIONS: readonly WorldSchemaMigration[] = [
   addGrantBudget,
   addBarPhase,
   addMidRaidChange,
+  addTerritorySiting,
 ];
 
 /**

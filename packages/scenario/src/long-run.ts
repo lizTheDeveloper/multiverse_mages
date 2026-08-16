@@ -135,6 +135,10 @@ export const LONG_RUN_OPTIONS: ReferenceOptions = Object.freeze({
   // The long run measures a demographic question and the gate is not part of
   // it; zero is what this constant meant before the instrument existed.
   foundingPortalMagic: 0,
+  // The documented default site, which over the shipped content is
+  // `arable-lowland` and therefore neutral in both siting mechanisms. Pinned at
+  // the default so that the long run keeps measuring what it always measured.
+  academySiteKind: 0,
 });
 
 /** One world tick of the long run, stocks and flows together. */

@@ -61,7 +61,7 @@
  * the cost.
  */
 
-import type { EntityHandle, SimState } from '@mm/sim-core';
+import type { EntityHandle, Fixed, SimState } from '@mm/sim-core';
 import type { Handle, Ruleset } from '@mm/state';
 import { UNIVERSITY, collectRecords, permits } from '@mm/state';
 import type { CellResolver, NodeCatalog } from '@mm/rules-magic';
@@ -76,6 +76,16 @@ export interface LibraryCapitalDeps {
   readonly catalog: NodeCatalog;
   readonly cells: CellResolver;
   readonly ruleset: Ruleset;
+  /**
+   * What the country a university stands in does to its library's upkeep, `fp`
+   * (`contracts.md` §2.7, `rules-world`'s `universities/siting.ts`).
+   *
+   * A callback rather than a resolved table because the site is *state* — a
+   * university can be re-sited, and colonization will re-site several at once —
+   * while `catalog` and `cells` above are content. Neutral for an unsited
+   * university, which is what a world-schema revision-4 save restores as.
+   */
+  readonly siteUpkeepMultiplier: (university: Handle) => Fixed;
 }
 
 /** One tick's reading of every library, keyed by the university that owns it. */
@@ -91,7 +101,12 @@ export interface LibraryCapital {
    */
   depthFor(university: Handle): LibraryDepth | undefined;
   /** Every completed university's library, ascending by library handle. */
-  readonly libraries: readonly { readonly handle: EntityHandle; readonly depth: LibraryDepth }[];
+  readonly libraries: readonly {
+    readonly handle: EntityHandle;
+    readonly depth: LibraryDepth;
+    /** The upkeep multiplier of the country the owning university stands in, `fp`. */
+    readonly siteMultiplier: Fixed;
+  }[];
   /**
    * The §7 `capitalSnowball` emission, at one reference depth ceiling.
    *
@@ -113,7 +128,10 @@ export function libraryCapital(state: SimState, deps: LibraryCapitalDeps): Libra
   // only ones that keep a library at all: `libraryId` of `0` is §0's absent
   // reference, and a book shelved into it would sit at a location nothing can
   // count and nothing can burn.
-  const byUniversity = new Map<Handle, { library: EntityHandle; depth: LibraryDepth }>();
+  const byUniversity = new Map<
+    Handle,
+    { library: EntityHandle; depth: LibraryDepth; siteMultiplier: Fixed }
+  >();
   for (const { handle, row } of collectRecords(state, UNIVERSITY)) {
     if (row.buildProgress < COMPLETE || row.libraryId === 0) continue;
     // An empty shelf is present at zero rather than absent. `capitalSnowball` is
@@ -124,6 +142,11 @@ export function libraryCapital(state: SimState, deps: LibraryCapitalDeps): Libra
     byUniversity.set(handle, {
       library: row.libraryId as EntityHandle,
       depth: depths.get(row.libraryId as EntityHandle) ?? emptyLibraryDepth(),
+      // Read here, with the university in hand. A library carries no back-link
+      // to its owner on purpose (`components.ts` on `LIBRARY`), so this is the
+      // one place in the tick where "which country is this shelf in" is
+      // answerable without inventing the inverse edge §1.4 refuses.
+      siteMultiplier: deps.siteUpkeepMultiplier(handle),
     });
   }
 
@@ -132,7 +155,11 @@ export function libraryCapital(state: SimState, deps: LibraryCapitalDeps): Libra
   // happen to appear in an iteration would make which library goes short depend
   // on the history that reached the state rather than on the state.
   const libraries = [...byUniversity.values()]
-    .map((entry) => ({ handle: entry.library, depth: entry.depth }))
+    .map((entry) => ({
+      handle: entry.library,
+      depth: entry.depth,
+      siteMultiplier: entry.siteMultiplier,
+    }))
     .sort((a, b) => a.handle - b.handle);
 
   return {

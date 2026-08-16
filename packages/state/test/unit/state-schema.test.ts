@@ -183,6 +183,14 @@ describe('the world schema is stable in the way the snapshot format needs', () =
       // from 5, then 7, on successive merges: 7 is reserved for
       // `material-economy` and 8 was taken by `bar-phase`.
       'mid-raid-change',
+      // Appended by `university-siting`, together, as world-schema revision 10.
+      // The pair for the same reason the four above are a group: a site is
+      // meaningless without ground to stand in, and no build has shipped one
+      // without the other. Last, because section order is snapshot order and
+      // this pair was renumbered behind `material-stock` and `grant-budget` when
+      // the branch was brought current.
+      'territory-holding',
+      'university-site',
     ]);
   });
 
