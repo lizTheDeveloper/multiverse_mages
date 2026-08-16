@@ -504,7 +504,15 @@ describe('migrating a revision-4 world snapshot forward (splitMaterialsByKind)',
     const bytes = encodeSnapshot(revisionFourEnvelope());
     const migrated = loadWorldSnapshot(bytes, defineWorldStateSchema());
     const [row] = collectRecords(migrated, MATERIAL_STOCK);
-    expect(row?.row).toEqual({ food: 334, stone: 333, vellum: 333 });
+    expect(row?.row).toEqual({
+      food: 334,
+      stone: 333,
+      vellum: 333,
+      labor: 0,
+      essence: 0,
+      insight: 0,
+      passage: 0,
+    });
   });
 });
 
@@ -723,7 +731,15 @@ describe('an older save loads into a current world', () => {
     // splitMaterialsByKind divides that into thirds with the remainder on
     // food, not into the 500/250/150 split `populatedWorld()` seeds for its
     // own, unrelated reasons.
-    attachRecord(state, MATERIAL_STOCK, universe, { food: 334, stone: 333, vellum: 333 });
+    attachRecord(state, MATERIAL_STOCK, universe, {
+      food: 334,
+      stone: 333,
+      vellum: 333,
+      labor: 0,
+      essence: 0,
+      insight: 0,
+      passage: 0,
+    });
 
     const migrated = loadWorldSnapshot(
       encodeSnapshot(revisionOneEnvelope()),

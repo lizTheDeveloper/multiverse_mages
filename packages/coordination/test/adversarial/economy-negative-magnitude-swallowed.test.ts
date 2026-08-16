@@ -163,7 +163,7 @@ describe('DEFECT (still open post-4d836d2): a negative build-rate magnitude is g
       favorCap: 0,
       ascended: 0,
     });
-    attachRecord(state, MATERIAL_STOCK, universe, { food: 0, stone: 0, vellum: 0 });
+    attachRecord(state, MATERIAL_STOCK, universe, { food: 0, stone: 0, vellum: 0, labor: 0, essence: 0, insight: 0, passage: 0 });
 
     const holder = state.entities.create();
     attachRecord(state, KNOWLEDGE_INSTANCE, holder, {

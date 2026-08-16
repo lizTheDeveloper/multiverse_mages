@@ -210,6 +210,10 @@ export function godWorld(schema: WorldSchema, options: GodWorldOptions = {}): Go
     food: materials,
     stone: materials,
     vellum: materials,
+    labor: 0,
+    essence: 0,
+    insight: 0,
+    passage: 0,
   });
 
   const speciesId = registry().species[0]?.contentId ?? 1;

@@ -120,6 +120,10 @@ export function populatedWorld(): PopulatedWorld {
     food: 500 * FP_ONE,
     stone: 250 * FP_ONE,
     vellum: 150 * FP_ONE,
+    labor: 0,
+    essence: 0,
+    insight: 0,
+    passage: 0,
   });
 
   const edict = state.entities.create();

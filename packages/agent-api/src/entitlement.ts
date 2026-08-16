@@ -251,12 +251,25 @@ export const TRAIT_CLASSIFICATION: Readonly<
     nodesLost: undecided(),
     passed: undecided(),
   },
-  // Summed across the three fields of one row — a sum, not a histogram over
-  // entities. An agent cannot tell a food shortage from a vellum one.
+  // Summed across three of the seven fields of one row — a sum, not a histogram
+  // over entities. An agent cannot tell a food shortage from a vellum one.
+  //
+  // The four kinds `material-economy` added are **withheld**, not aggregated,
+  // and the distinction is the point: `resources[39]` carries
+  // `food + stone + vellum` and nothing else, because §4.1's block is fixed at
+  // five slots and *"a resize invalidates every trained agent."* An agent
+  // cannot see `labor`, `essence`, `insight` or `passage` at all — not even
+  // folded into a total. That is `material-economy` task 5.1's to change, by
+  // adding a named per-kind block to `PlayerState`, which is not the vector and
+  // carries no digest; until then `not-yet-decided` is the honest reading.
   'material-stock': {
     food: aggregated('resources[39]'),
     stone: aggregated('resources[39]'),
     vellum: aggregated('resources[39]'),
+    labor: undecided(),
+    essence: undecided(),
+    insight: undecided(),
+    passage: undecided(),
   },
   // God action 8's budget: a second bound in exactly the shape of action cost,
   // one the agent is subject to and cannot see.

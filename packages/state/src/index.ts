@@ -164,6 +164,7 @@ export {
   addGodAgencyState,
   addGrantBudget,
   splitMaterialsByKind,
+  widenMaterialStock,
   loadWorldSnapshot,
   migrateWorldEnvelope,
   worldSchemaVersionOf,

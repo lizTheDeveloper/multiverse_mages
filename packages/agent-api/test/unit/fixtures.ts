@@ -126,7 +126,7 @@ export function firstUniverse(): FixtureWorld {
   // against `500 * FP` regardless of how it is split. Put entirely in `food`
   // for a single, unambiguous source rather than splitting it three ways for
   // no reason.
-  attachRecord(state, MATERIAL_STOCK, universe, { food: 500 * FP, stone: 0, vellum: 0 });
+  attachRecord(state, MATERIAL_STOCK, universe, { food: 500 * FP, stone: 0, vellum: 0, labor: 0, essence: 0, insight: 0, passage: 0 });
 
   const edict = state.entities.create();
   attachRecord(state, EDICT, edict, { cellId: cellIdAt(1, 2), kind: EDICT_KIND.interdiction });

@@ -15,11 +15,11 @@
 
 ## 2. State: the component and the migration
 
-- [ ] 2.1 Write a failing test asserting a world at `WORLD_SCHEMA_VERSION` 6 loads at 7 with all four new kinds reading zero, and that its behaviour is otherwise byte-identical
-- [ ] 2.2 Add `labor`, `essence`, `insight`, `passage` as `i32` fields to `MATERIAL_STOCK` in `packages/state/src/components.ts`, with the same doc-comment discipline the existing three carry — each names its producing forms and its sink
-- [ ] 2.3 Bump `WORLD_SCHEMA_VERSION` to 7 and write the migration. **An absent kind reads as zero, never as a shortage** — a migrated save must not starve
-- [ ] 2.4 Confirm `SNAPSHOT_VERSION` did **not** move, and that the golden fixtures fail with a behaviour diff rather than a version error if they fail at all
-- [ ] 2.5 Run `npm run check:purity` — no float entered the rules path
+- [x] 2.1 Write a failing test asserting a world at `WORLD_SCHEMA_VERSION` 6 loads at 7 with all four new kinds reading zero, and that its behaviour is otherwise byte-identical
+- [x] 2.2 Add `labor`, `essence`, `insight`, `passage` as `i32` fields to `MATERIAL_STOCK` in `packages/state/src/components.ts`, with the same doc-comment discipline the existing three carry — each names its producing forms and its sink
+- [x] 2.3 Bump `WORLD_SCHEMA_VERSION` to 7 and write the migration. **An absent kind reads as zero, never as a shortage** — a migrated save must not starve
+- [x] 2.4 Confirm `SNAPSHOT_VERSION` did **not** move, and that the golden fixtures fail with a behaviour diff rather than a version error if they fail at all
+- [x] 2.5 Run `npm run check:purity` — no float entered the rules path
 
 ## 3. Rules: production and the sinks
 

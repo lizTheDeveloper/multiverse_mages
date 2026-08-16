@@ -251,6 +251,10 @@ export function seededWorld(
     food: 1000 * 1024,
     stone: 1000 * 1024,
     vellum: 1000 * 1024,
+    labor: 0,
+    essence: 0,
+    insight: 0,
+    passage: 0,
   });
 
   const mages: EntityHandle[] = [];

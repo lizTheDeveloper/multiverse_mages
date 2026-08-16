@@ -663,10 +663,22 @@ export function buildReferenceState(input: {
   // rather than left for the loop to materialize, because a founding endowment
   // is a starting position and a starting position should be visible in the
   // scenario that declares it, not inferred from the absence of a row.
+  // The four kinds `material-economy` added start at **zero**, deliberately and
+  // not because the spec says so — it does not say either way. A founding
+  // endowment is a claim that the starting position holds something, and this
+  // universe has never cast, so nothing has yielded it `labor`, `essence`,
+  // `insight` or `passage`. Zero is also the behaviour-preserving choice while
+  // the sinks are unbuilt: an endowment nothing can spend would be a number on
+  // the frame that never moves. Whoever builds the sinks should revisit it as a
+  // starting-position decision rather than inherit it as one.
   attachRecord(state, MATERIAL_STOCK, universe, {
     food: STARTING_MATERIALS,
     stone: STARTING_MATERIALS,
     vellum: STARTING_MATERIALS,
+    labor: 0,
+    essence: 0,
+    insight: 0,
+    passage: 0,
   });
 
   const library = state.entities.create();

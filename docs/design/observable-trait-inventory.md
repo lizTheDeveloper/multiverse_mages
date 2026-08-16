@@ -10,6 +10,15 @@
 whose two commits above `be446a6` are `docs/design/observation-entitlement.md` and nothing else —
 no package under `packages/` differs.
 
+**Amended 2026-08-16** on `w247/material-economy-build`, for `material-economy`'s world-schema
+revision 7: `material-stock` went from three fields to seven, so the totals below move by four and
+the `material-stock` section gains four rows. Nothing else was re-measured — every other row still
+carries its 2026-08-14 reading, and `observation.ts` is untouched, so
+`OBSERVATION_LAYOUT_DIGEST` is unchanged. The four new kinds are **withheld**, not aggregated:
+`resources[39]` still carries `food + stone + vellum` and nothing else. Turning them into
+something a player can read is `material-economy` task 5.1, and this table should be amended again
+when it lands.
+
 This is step 0 of `docs/design/observation-entitlement.md`: every `(component, field)` trait in
 the world, classified against what the encoder in `packages/agent-api/src/observation.ts`
 actually writes. **Every row was read off the encoder, not inferred from the field name.**
@@ -23,10 +32,10 @@ above, re-run the tally before believing a row.
 | | |
 |---|---|
 | Components | 20 world + 3 engagement = 23 |
-| **Total `(component, field)` traits** | **108** |
+| **Total `(component, field)` traits** | **112** |
 | OBSERVABLE | 12 |
 | AGGREGATED | 19 |
-| WITHHELD | 76 |
+| WITHHELD | 80 |
 | AMBIGUOUS | 1 |
 | Observation slots | 400 |
 | `OBSERVATION_LAYOUT_DIGEST` | `46182c35d829b205` |
@@ -35,7 +44,7 @@ WITHHELD, broken down by the reason given:
 
 | Reason | Rows |
 |---|---|
-| not-yet-decided | 70 |
+| not-yet-decided | 74 |
 | internal bookkeeping | 6 |
 | derived from something already observable | 0 |
 | hidden-from-opponent | 0 |
@@ -46,7 +55,7 @@ anything to be hidden from. The category becomes live when `pvp-server` ships, a
 marked `not-yet-decided` is a row that will have to be re-read then.
 
 `not-yet-decided` is used honestly and it dominates. It is not a placeholder for "we thought about
-it": 70 of 108 traits have no artifact anywhere in the repository that says whether a
+it": 74 of 112 traits have no artifact anywhere in the repository that says whether a
 player should see them. That number is the point of the exercise.
 
 ## Slots per block
@@ -243,13 +252,17 @@ player should see them. That number is the point of the exercise.
 | `nodesLost` | `u16` | WITHHELD | not-yet-decided |  |
 | `passed` | `u8` | WITHHELD | not-yet-decided |  |
 
-### `material-stock` (3 traits)
+### `material-stock` (7 traits)
 
 | Field | Type | Class | Slot / aggregate / reason | Note |
 |---|---|---|---|---|
-| `food` | `i32` | AGGREGATED | `resources[39]` | A **sum across the three fields of one row**, not a histogram over entities. The encoder records the consequence: an agent cannot tell a food shortage from a vellum one. |
+| `food` | `i32` | AGGREGATED | `resources[39]` | A **sum across three of the seven fields of one row**, not a histogram over entities. The encoder records the consequence: an agent cannot tell a food shortage from a vellum one. |
 | `stone` | `i32` | AGGREGATED | `resources[39]` | Same sum. |
 | `vellum` | `i32` | AGGREGATED | `resources[39]` | Same sum. |
+| `labor` | `i32` | WITHHELD | not-yet-decided | Added at revision 7. **Not in the sum** — `resources[39]` carries the original three, because §4.1's block is fixed at five slots and a resize invalidates every trained agent. So this is invisible rather than blurred. |
+| `essence` | `i32` | WITHHELD | not-yet-decided | Same. |
+| `insight` | `i32` | WITHHELD | not-yet-decided | Same. |
+| `passage` | `i32` | WITHHELD | not-yet-decided | Same. |
 
 ### `grant-budget` (5 traits)
 
@@ -377,21 +390,21 @@ forces — a correction of the doc, not a change of design.
 ## Is the granularity right?
 
 The design set the test in advance: *"thirty traits and this design is comfortable, a hundred and
-fifty and it needs coarsening before a line is written."* The answer is **108** — nearer the
+fifty and it needs coarsening before a line is written."* The answer is **112** — nearer the
 coarsening end than the comfortable one, and the design had already coarsened for it.
 
 Steps 1–3 are unaffected. `unclassifiedTraits()` is a one-time registry walk producing a table a human
-reads once; 108 rows is a long document, not an unworkable one, and this file is the proof that it can
+reads once; 112 rows is a long document, not an unworkable one, and this file is the proof that it can
 be produced and read.
 
 **Step 4 is where the number bites**, and the design already says so: at field granularity it is
-108 × twelve strategies ≈ 1296 `because` strings, nearly all of them *"static preference list,
+112 × twelve strategies ≈ 1344 `because` strings, nearly all of them *"static preference list,
 reads nothing"* — the hand-maintained checklist reimplemented in TypeScript, failing the same way.
 At block granularity it is nine blocks × twelve strategies = 108 decisions a human reviews. **Take step 4
 at block granularity.** That was the design's call before the count came in; the count confirms it.
 
 One further coarsening the count argues for, which the design did not anticipate: `god-state` (15
 traits, all withheld), `goal-commitment` (4), `effort-progress` (5) and `grant-budget` (5) are 29
-traits — **27% of the registry** — that are derived bookkeeping over things already in the world.
+traits — **26% of the registry** — that are derived bookkeeping over things already in the world.
 Should the gates ever need to be shorter, the honest coarsening is per *component* for those four,
 not per field. It is not needed for steps 1–3 and is not being done now.

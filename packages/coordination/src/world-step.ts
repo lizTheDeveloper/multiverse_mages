@@ -1462,7 +1462,7 @@ function advanceUniversities(state: SimState, input: ConstructionInputs): Constr
   return { progressAdded, completed, stoneOwed, labourStalled };
 }
 
-/** The universe's three stocks, or zeros if no row has been written yet. */
+/** The universe's three spendable stocks, or zeros if no row has been written yet. */
 function readMaterialStock(state: SimState, universe: EntityHandle): MaterialAmounts {
   const store = componentOf(state, MATERIAL_STOCK);
   if (!store.has(universe)) return { food: 0, stone: 0, vellum: 0 };
@@ -1488,7 +1488,20 @@ function writeMaterialStock(
 ): void {
   const store = componentOf(state, MATERIAL_STOCK);
   if (!store.has(universe)) {
-    attachRecord(state, MATERIAL_STOCK, universe, stock);
+    // The four kinds `material-economy` added to the component are written at
+    // zero on creation and **not written again below**, which is the point.
+    // Nothing in this loop produces or spends `labor`, `essence`, `insight` or
+    // `passage` yet — the faucets and the sinks arrive together, in the same
+    // change — and a row written whole every tick would silently zero them the
+    // moment something else did. The per-field `set` calls that follow touch
+    // only the three this function has an opinion about.
+    attachRecord(state, MATERIAL_STOCK, universe, {
+      ...stock,
+      labor: 0,
+      essence: 0,
+      insight: 0,
+      passage: 0,
+    });
     return;
   }
   store.set(universe, 'food', stock.food);

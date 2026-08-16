@@ -139,12 +139,12 @@ describe('unclassifiedTraits (step 2)', () => {
    * moves, `docs/design/observable-trait-inventory.md` is stale and its date and
    * ref line are lying about the tree.
    */
-  it('covers the 108 traits the inventory counted at be446a6', () => {
+  it('covers the 112 traits the inventory counted, amended at revision 7', () => {
     let traits = 0;
     for (const spec of [...WORLD_COMPONENTS, ...ENGAGEMENT_COMPONENTS]) {
       traits += Object.keys(spec.fields).length;
     }
-    expect(traits).toBe(108);
+    expect(traits).toBe(112);
 
     let classified = 0;
     for (const rows of Object.values(TRAIT_CLASSIFICATION)) {
@@ -168,7 +168,10 @@ describe('unclassifiedTraits (step 2)', () => {
         byReason.set(reason, (byReason.get(reason) ?? 0) + 1);
       }
     }
-    expect(byReason.get('not-yet-decided')).toBe(70);
+    // 70 at be446a6, plus `material-stock`'s four new kinds at revision 7. They
+    // are `not-yet-decided` rather than aggregated because `resources[39]` still
+    // carries `food + stone + vellum` and nothing else — the vector did not move.
+    expect(byReason.get('not-yet-decided')).toBe(74);
     expect(byReason.get('internal-bookkeeping')).toBe(6);
     // Unused until there is an opponent-facing projection to hide anything
     // from. Asserted at zero so that the day it stops being zero is a diff.

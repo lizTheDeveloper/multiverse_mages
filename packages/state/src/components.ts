@@ -212,9 +212,27 @@ export const MATERIAL_STOCK = {
     food: 'i32',
     stone: 'i32',
     vellum: 'i32',
+    labor: 'i32',
+    essence: 'i32',
+    insight: 'i32',
+    passage: 'i32',
   },
 } as const satisfies ComponentSpec<ComponentFields>;
 
+/**
+ * The seven stocks, appended in `form.json`'s kind order and never reordered.
+ *
+ * The four after `vellum` are `material-economy`'s, and they exist because the
+ * economy could only see three of the fourteen things magic acts on. Seven of
+ * the forms yielded nothing at all, two of them — `mentem` and `limen` — inside
+ * the v1 opening square, so a god who opened on mind-magic and thresholds
+ * generated no economy and no reading of the interface said why.
+ *
+ * Each names its producing forms and its sink, in the discipline the first three
+ * carry. A kind with a producer and no sink is not a resource; it is a label on
+ * one, and `docs/design/economy-flow-models.md` §4 is explicit that the count is
+ * only defensible if each earns its slot.
+ */
 export interface MaterialStockRecord {
   /** Eaten by subsistence. Grain, meat, water — Herbam, Animal, Aquam. */
   food: Fp;
@@ -222,6 +240,14 @@ export interface MaterialStockRecord {
   stone: Fp;
   /** Spent scribing grimoires and keeping libraries. Parchment and paper — Animal, Herbam, Nomen. */
   vellum: Fp;
+  /** Spent on construction rate — raising a university faster. Person-months of work — Corpus. */
+  labor: Fp;
+  /** Spent enchanting, and on the price of a dispensation. Raw magic held as stuff — Vim. */
+  essence: Fp;
+  /** Spent on university teaching throughput. What a faculty teaches out of — Mentem, Imaginem. */
+  insight: Fp;
+  /** Spent opening a portal and holding it. Threshold, fate, shadow — Limen, Fatum, Umbra. */
+  passage: Fp;
 }
 
 export const MATERIAL_STOCK_FIELDS_MATCH: KeysMatch<MaterialStockRecord, typeof MATERIAL_STOCK> =

@@ -101,6 +101,16 @@ import {
  * | 3        | `mages-and-species` | adds `effort-progress` (`contracts.md` §1.2)  |
  * | 4        | `god-agency`        | adds `god-state`, `blessing`, `upheaval`, `era-evaluation` (§1.1) |
  * | 5        | `city-and-supply-chain` | adds `material-stock`; **removes** `universe.materials` |
+ * | 6        | `god-agency` (W69) | adds `grant-budget` |
+ * | 7        | `material-economy` | **widens** `material-stock` from three kinds to seven |
+ *
+ * Revision 7 is the first step that adds *fields* rather than a section, and
+ * that is why it needs a different kind of marker — see
+ * {@link worldSchemaVersionOf}. It is also why revisions 5 and 7 both freeze
+ * their field lists as literals rather than reading {@link MATERIAL_STOCK}: a
+ * step that derives its output shape from the live spec stops describing the
+ * revision it is keyed on the moment the spec moves, and a revision-4 save would
+ * then arrive at 5 already looking like a 7.
  *
  * Revision 5 is the first step that does not only append. It splits the one
  * `materials` scalar into three kinds and takes the old field out of the
@@ -119,7 +129,7 @@ import {
  * **Append; never renumber.** A revision number is what a migration step is
  * keyed on, so reusing one silently applies the wrong repair to a save.
  */
-export const WORLD_SCHEMA_VERSION = 6;
+export const WORLD_SCHEMA_VERSION = 7;
 
 /**
  * The world-schema revision an envelope was written by.
@@ -137,10 +147,16 @@ export const WORLD_SCHEMA_VERSION = 6;
  */
 export function worldSchemaVersionOf(envelope: SnapshotEnvelope): number {
   const carried = new Set(envelope.components.map((component) => component.name));
-  // Revision 6's marker is `grant-budget`, and it is checked first because a
-  // revision-6 envelope also carries `material-stock` — newest marker wins, or
-  // every save written since the budget landed would be walked through a
+  // Revision 7's marker is a **field**, not a section, and it is the first one
+  // that has to be. `material-economy` widened `material-stock` from three kinds
+  // to seven; an appended section is detectable by name and an appended field is
+  // not, so the test is "does the stock section carry a `labor` column". Checked
+  // before revision 6's marker for the reason that one is checked before
+  // revision 5's: a revision-7 envelope carries `grant-budget` too, and the
+  // newest marker has to win or every current save would be walked through a
   // migration it has already had.
+  const stock = envelope.components.find((component) => component.name === MATERIAL_STOCK.name);
+  if (stock?.fields.some((field) => field.name === REVISION_SEVEN_KINDS[3]) === true) return 7;
   if (carried.has(GRANT_BUDGET.name)) return 6;
   // Revision 5's marker is the presence of `material-stock`. The *absence* of
   // `universe.materials` would be an equally true test and a worse one: it asks
@@ -283,6 +299,41 @@ export const addGodAgencyState: WorldSchemaMigration = {
 };
 
 /**
+ * The three kinds `material-stock` was born with, frozen at revision 5.
+ *
+ * **A migration step must not read the live component spec for its output
+ * shape.** `splitMaterialsByKind` did, via `Object.keys(MATERIAL_STOCK.fields)`,
+ * and it was correct for exactly as long as the spec had three fields. The
+ * moment `material-economy` widened it to seven, that step would have emitted a
+ * seven-column section from a revision-4 save — which {@link worldSchemaVersionOf}
+ * reads as **revision 7**, so {@link migrateWorldEnvelope}'s loop would exit at
+ * once and `grant-budget` would never be appended. A save silently missing a
+ * component, out of a migration that throws nothing.
+ *
+ * So each step names the shape it produces, and the shapes are frozen. Revision
+ * 8 will need its own list rather than inheriting this hazard.
+ */
+const REVISION_FIVE_KINDS = ['food', 'stone', 'vellum'] as const;
+
+/**
+ * The seven kinds as of revision 7, frozen for the reason above.
+ *
+ * Order matters and is `MATERIAL_STOCK`'s declaration order: section field order
+ * in an envelope is what a restored row is read against, so a step that emitted
+ * these in a different sequence would line every migrated save's stocks up
+ * against the wrong columns.
+ */
+const REVISION_SEVEN_KINDS = [
+  'food',
+  'stone',
+  'vellum',
+  'labor',
+  'essence',
+  'insight',
+  'passage',
+] as const;
+
+/**
  * Revision 4 → 5: split the one materials stock into three kinds, and take the
  * old field out of the universe layout.
  *
@@ -325,16 +376,22 @@ export const splitMaterialsByKind: WorldSchemaMigration = {
   to: 5,
   migrate(envelope) {
     const universe = envelope.components.find((component) => component.name === UNIVERSE.name);
-    const stockFields = Object.keys(MATERIAL_STOCK.fields).map((name) => ({
-      name,
-      kind: MATERIAL_STOCK.fields[name as keyof typeof MATERIAL_STOCK.fields],
-    }));
+    // The three kinds revision 5 invented, frozen — **not**
+    // `Object.keys(MATERIAL_STOCK.fields)`, which this used to read. See
+    // {@link REVISION_FIVE_KINDS}.
+    const stockFields = REVISION_FIVE_KINDS.map((name) => ({ name, kind: 'i32' as const }));
 
     if (universe === undefined) {
       // No universe section at all. Nothing to split and nothing to rewrite;
       // the appended section is empty, as it is for every save that predates a
       // component it never wrote a row for.
-      return { ...envelope, components: [...envelope.components, emptySection(MATERIAL_STOCK)] };
+      return {
+        ...envelope,
+        components: [
+          ...envelope.components,
+          { name: MATERIAL_STOCK.name, fields: stockFields, slots: new Uint32Array(0), values: new Uint32Array(0) },
+        ],
+      };
     }
 
     const column = universe.fields.findIndex((field) => field.name === 'materials');
@@ -430,6 +487,91 @@ export const addGrantBudget: WorldSchemaMigration = {
   },
 };
 
+/**
+ * Revision 6 → 7: append the four new material kinds to `material-stock`, at
+ * zero.
+ *
+ * ## An absent kind reads zero, and zero is not a shortage
+ *
+ * This is the whole repair, and the argument for it is the one
+ * {@link addGrantBudget} makes and not the one {@link splitMaterialsByKind}
+ * makes. The split *rewrote*, and was right to: a save that recorded a materials
+ * total had recorded something, and dividing it was an honest reading of a
+ * number that existed. A save written before `labor`, `essence`, `insight` and
+ * `passage` existed recorded **nothing at all** about them — no form yielded
+ * them, no sink spent them, and no tick of that run could have accumulated one.
+ * Zero is not a guess here; it is the only value the save supports.
+ *
+ * What must not happen is the reading that zero is a *shortage*. Nothing in this
+ * step may make a restored universe behave as though it had run out of
+ * something: the sinks arrive with the faucets, in the same change, so a save
+ * carrying four zeroes plays exactly as it did when it was written. The
+ * end-to-end test asserts that as a snapshot hash rather than as a promise.
+ *
+ * ## A column append, not a section append
+ *
+ * Every step before this one adds a section, and `worldSchemaVersionOf` finds a
+ * revision by asking which sections exist. A field is invisible to that test —
+ * the note in `components.ts` says so — so revision 7's marker is the `labor`
+ * *column*, and it is checked before revision 6's section marker so the newest
+ * marker wins.
+ *
+ * The append reads the incoming column positions **by name** rather than
+ * assuming an order, exactly as the column *drop* in `splitMaterialsByKind`
+ * does. A save written by a build that ordered `food`, `stone` and `vellum`
+ * differently still migrates correctly, and the output is always
+ * {@link REVISION_SEVEN_KINDS}' order because that is what the current layout
+ * reads against.
+ */
+export const widenMaterialStock: WorldSchemaMigration = {
+  from: 6,
+  to: 7,
+  migrate(envelope) {
+    const stock = envelope.components.find((component) => component.name === MATERIAL_STOCK.name);
+    const fields = REVISION_SEVEN_KINDS.map((name) => ({ name, kind: 'i32' as const }));
+
+    if (stock === undefined) {
+      // No stock section at all — a revision-6 save cannot be in this state,
+      // since revision 5 appends the section unconditionally. Handled anyway,
+      // and handled as an empty section rather than as a throw, because the
+      // alternative is a migration that refuses a save over a component it is
+      // about to create.
+      return {
+        ...envelope,
+        components: [
+          ...envelope.components,
+          { name: MATERIAL_STOCK.name, fields, slots: new Uint32Array(0), values: new Uint32Array(0) },
+        ],
+      };
+    }
+
+    const oldWidth = stock.fields.length;
+    const rows = stock.slots.length;
+    const source = REVISION_SEVEN_KINDS.map((name) =>
+      stock.fields.findIndex((field) => field.name === name),
+    );
+    const values = new Uint32Array(rows * fields.length);
+    for (let row = 0; row < rows; row += 1) {
+      for (let index = 0; index < fields.length; index += 1) {
+        const column = source[index] as number;
+        // A kind the save never had reads zero — the `Uint32Array` is already
+        // zeroed, so the absent case is expressed by writing nothing rather than
+        // by writing a value that would have to be chosen.
+        if (column < 0) continue;
+        values[row * fields.length + index] = stock.values[row * oldWidth + column] as number;
+      }
+    }
+
+    const widened: SnapshotComponent = { name: stock.name, fields, slots: stock.slots, values };
+    return {
+      ...envelope,
+      components: envelope.components.map((component) =>
+        component.name === MATERIAL_STOCK.name ? widened : component,
+      ),
+    };
+  },
+};
+
 /** Every step this build knows, ascending by source revision. */
 export const WORLD_SCHEMA_MIGRATIONS: readonly WorldSchemaMigration[] = [
   addGoalCommitment,
@@ -437,6 +579,7 @@ export const WORLD_SCHEMA_MIGRATIONS: readonly WorldSchemaMigration[] = [
   addGodAgencyState,
   splitMaterialsByKind,
   addGrantBudget,
+  widenMaterialStock,
 ];
 
 /**
