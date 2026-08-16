@@ -464,7 +464,20 @@ describe('contentRevision', () => {
     // revision is a digest over the values, so this is the ordinary case rather
     // than a union of branches. It changes every run in which any mage learns
     // The Nameless — which is the point of the change, not a side effect of it.
-    expect(registry.contentRevision).toBe('8681bf846bd94be80fdabc447e6e01df');
+    // 8681bf84... -> 94073a8c..., on the Group B integration merge of
+    // `w80/research-cost-variation`. That branch is a repricing: 299 of
+    // `node.json`'s `researchCost` values move off their powers of two and onto
+    // a swept price (2048 -> 2477, 4096 -> 5066, 8192 -> 9154, ...). The digest
+    // is over the content values, so a repricing of a third of the grid moves it
+    // by construction — this is the ordinary case, not a union of branches.
+    //
+    // **Recomputed, not chosen.** The campaign rule for this file is recompute
+    // the digest, never take a side, and neither parent's literal is correct
+    // here: `main`'s 8681bf84... is the digest of the pre-repricing grid and the
+    // branch's 0dfdd5ef... is the digest of a content set that predates several
+    // of main's own additions. The value below is what the test printed when run
+    // against the merged content set.
+    expect(registry.contentRevision).toBe('94073a8c838ca84019f4025810aa2acc');
   });
 
   it('is stable across loads of identical content', () => {

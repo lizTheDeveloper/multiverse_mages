@@ -64,6 +64,10 @@ __pycache__/
 # below: `git add ui/` skips an ignored file SILENTLY.
 ui/session.json
 ui/design-dashboard/data.json
+# W80's discovery-order arms. Same reason: 84 runs x 2 arms of per-node
+# first-seen ticks is megabytes of JSON and none of it is source. The tools that
+# produce it and the report that reads it are both committed.
+.w80/
 
 # The generated lattice report, regenerated with scripts/content-graph.mjs.
 # Named exactly rather than globbed: `ui/*.html` also matched ui/index.html, and
