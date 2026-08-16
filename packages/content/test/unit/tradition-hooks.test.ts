@@ -204,8 +204,36 @@ describe('the three v1 traditions are authored and each stresses a different hoo
   const registry = loadContent(shippedContentSource());
   const byId = new Map(registry.traditions.map(({ record }) => [record.id, record]));
 
-  it('ships exactly the three v1 traditions', () => {
-    expect([...byId.keys()].sort()).toEqual(['art-of-memory', 'true-naming', 'vancian-memorization']);
+  it('ships the three v1 traditions and the four W28 regimes', () => {
+    expect([...byId.keys()].sort()).toEqual([
+      'art-of-memory',
+      'chorale',
+      'flesh-codex',
+      'shared-mind',
+      'true-naming',
+      'vancian-memorization',
+      'witch-bond',
+    ]);
+  });
+
+  /**
+   * `scribingTraditionId` picks the reference universe's tradition by walking
+   * traditions in interned order — which is lexicographic on the id string —
+   * and taking the first whose `store` can scribe. So **a tradition's name
+   * decides which universe every committed balance baseline was measured in.**
+   *
+   * That is a latent hazard, not a rule anyone chose, and this test is the trip
+   * wire for it. It lives in `@mm/content` rather than next to the selector
+   * because the hazard is a property of the *content*: a future author adding a
+   * scribing tradition whose id sorts before `true-naming` re-baselines the
+   * whole balance suite silently, and will find out here.
+   */
+  it('keeps true-naming first among the traditions that keep written copies', () => {
+    const scribing = [...byId.entries()]
+      .filter(([, record]) => record.hooks.store.kind !== 'palace')
+      .map(([id]) => id)
+      .sort();
+    expect(scribing[0]).toBe('true-naming');
   });
 
   it('gives Vancian memorization the cast and cost hooks', () => {

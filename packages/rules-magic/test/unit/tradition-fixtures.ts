@@ -48,6 +48,28 @@ export const V1_TRADITIONS: readonly (readonly [string, number])[] = [
   ['art-of-memory', ART_OF_MEMORY],
 ];
 
+export const CHORALE = traditionId('chorale');
+export const FLESH_CODEX = traditionId('flesh-codex');
+export const SHARED_MIND = traditionId('shared-mind');
+export const WITCH_BOND = traditionId('witch-bond');
+
+/**
+ * Every shipped tradition, for the suites that must cover the whole enumeration
+ * rather than the three that happened to ship first.
+ *
+ * W28's four regimes are here rather than in a list of their own because the
+ * distinguishability claim is about *pairs*, and a claim that only covers the
+ * pairs inside one cohort is not the claim: the interesting failure is a new
+ * regime that turns out to be indistinguishable from an old one.
+ */
+export const ALL_TRADITIONS: readonly (readonly [string, number])[] = [
+  ...V1_TRADITIONS,
+  ['chorale', CHORALE],
+  ['flesh-codex', FLESH_CODEX],
+  ['shared-mind', SHARED_MIND],
+  ['witch-bond', WITCH_BOND],
+];
+
 /** One hook of a tradition acting in its own sky. */
 export function ownHook(hook: HookPoint, tradition: number): ResolvedHook {
   return hookFor(hook, tradition, tradition, TRADITIONS);

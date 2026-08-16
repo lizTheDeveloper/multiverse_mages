@@ -538,7 +538,27 @@ describe('contentRevision', () => {
     // without the exclusion pair and without W35's four `stewardship-*`
     // constants; all three are on this tree. Re-measured from the merged tree
     // rather than taken from either side.
-    expect(registry.contentRevision).toBe('c96f4046f85b2fc5121e12690c20d810');
+    //
+    // c96f4046f85b2fc5121e12690c20d810 -> 216edfe4b1d99735d4515ae843d2de67,
+    // when `w28/magic-regimes` authored four more traditions — `chorale`,
+    // `flesh-codex`, `shared-mind`, `witch-bond` — together with the `bounded`
+    // store kind the v1 vocabulary was missing, and gave every tradition record
+    // a required `gloss` and `tuningStatus`.
+    //
+    // Unlike most entries in this list, this one *does* change existing
+    // records: the three v1 traditions each gained two fields. Every tradition
+    // id after `art-of-memory` also renumbers, because four new ids sort in
+    // among three — which is precisely the incompatibility the digest exists to
+    // catch, since a snapshot stores the integer and only the integer names
+    // which tradition. A raid arbitrated under a host whose integer 5 is
+    // `true-naming` against a guest whose integer 5 is something else is not a
+    // disagreement a mismatch check should let through.
+    //
+    // Union for the seventh time in this list, and recomputed rather than taken
+    // from a side: the branch's preimage has the four regimes and none of W35's
+    // stewardship constants or W77's displacement terms, both of which are on
+    // this tree.
+    expect(registry.contentRevision).toBe('216edfe4b1d99735d4515ae843d2de67');
   });
 
   it('is stable across loads of identical content', () => {
