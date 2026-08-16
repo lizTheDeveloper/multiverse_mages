@@ -14,6 +14,7 @@ import { MAGE, MAGE_ROLE, collectRecords } from '@mm/state';
 import { ablationMaskFor } from '@mm/coordination';
 import { BOT_POOL_REGISTRY, adaptAgentSession, policyFor, runEpisode } from '@mm/mc-harness';
 import { agentRng, createSession, isLegal } from '@mm/agent-api';
+import type { CandidateLists } from '@mm/agent-api';
 
 import { auditPool, formatAudit, referenceContent, referenceScenario } from '../../src/index.js';
 
@@ -156,10 +157,15 @@ function play(strategyId: string, seed: number, options: PlayOptions): ArmResult
   };
 
   const inner = policyFor(definition, context);
-  const policy = (observation: Float64Array, mask: Uint8Array, slot: number) => {
+  const policy = (
+    observation: Float64Array,
+    mask: Uint8Array,
+    slot: number,
+    candidates: CandidateLists,
+  ) => {
     drain();
     if (isLegal(mask, OPEN_PORTAL)) legalOpenPortal += 1;
-    const chosen = inner(observation, mask, slot);
+    const chosen = inner(observation, mask, slot, candidates);
     const action = typeof chosen === 'number' ? chosen : chosen.action;
     if (action === ASSIGN_ROLE) submittedAssignRole += 1;
     if (action === OPEN_PORTAL) submittedOpenPortal += 1;
