@@ -424,6 +424,29 @@ Two related traps in the same command:
   content revision.** `provenance.contentHash` is the content revision. Reasoning from the wrong one
   produces confident nonsense — two baselines with different seals can hold identical provenance.
 
+## A state you established earlier is not a state you can trust later
+
+Two failures in one session, and they are the same failure twice.
+
+**A `git commit --amend` that errors leaves the index staged.** Amend refused with *"would make it
+empty"*; the follow-up `git commit` took **the index as it stood** rather than the working tree. The
+branch then carried `main`'s original file while the regenerated one sat uncommitted beside it — two
+commits, **zero net diff**, and `Verify` and `ci/hetzner-lint` both green on a pull request that
+changed nothing. A green check on an empty diff looks exactly like a green check on a real one.
+
+**A branch cut earlier does not know what `main` did since.** An agent spent an evening building a
+module that had landed on `main` mid-session in a more complete form — and only found out because a
+CI failure named a test file it had never written. The branch was deleted unmerged.
+
+So:
+
+- **After an `amend` that errors, re-stage before committing.**
+- **`gh pr view <n> --json files` before every merge.** One call. It has now caught two distinct
+  disasters: a PR carrying someone else's images under my title, and a PR that changed nothing at
+  all.
+- **Re-fetch `main` before building anything substantial**, not only before merging. A session long
+  enough to be worth having is long enough for `main` to move underneath it.
+
 ## A background loop outlives the reasoning that started it
 
 An auto-merger built earlier in a session was still running an hour after the same session wrote down
