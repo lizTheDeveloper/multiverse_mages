@@ -491,7 +491,35 @@ describe('contentRevision', () => {
     // is the only place a JSON file can say *why* Umbra yields passage, and a
     // revision that recorded the number without the reason would be recording
     // half of the decision.
-    expect(registry.contentRevision).toBe('4674cd42d5a3d153abca041d004d7592');
+    //
+    // 4674cd42d5a3d153abca041d004d7592 -> a7cec8683d300801ccfb45d60eeff70e,
+    // when `material-economy`'s group 3 gave the four new kinds a **producer**.
+    // The paragraph above ends *"the faucet arrives in this change's group 3"*,
+    // and this is that commit: seven Intellego tier-1 nodes took a second
+    // effect, `resource-yield` at `magnitude: 128, target: "universe"` — the
+    // shipped tier-1 magnitude — one in each of the seven forms that route to a
+    // new kind. `im-weigh-the-attention` and `il-sense-the-seam` are inside the
+    // **v1 opening square**, which is what makes `insight` and `passage`
+    // reachable from a run rather than only from a fixture.
+    //
+    // Measured before the edit, and it is the reason the edit was necessary:
+    // `resource-yield` at `target: "universe"` appeared on 59 nodes across
+    // exactly the seven forms that yielded a *land* kind — animal, aquam,
+    // auram, herbam, ignem, terram, nomen. So the four new kinds had a column
+    // in `MATERIAL_STOCK`, a weight in `form.json`, and no producer anywhere in
+    // the grid: widening `routeYieldByForm` alone changed nothing a run could
+    // see.
+    //
+    // Intellego for every one of the seven, and that is the sign rule rather
+    // than a preference: `load.ts` refuses a Perdo working that adds to a
+    // world-scale flow, and `technique-sign.test.ts` records that Intellego is
+    // deliberately unconstrained — *"perception is Maxwell's demon"*, nineteen
+    // shipped Intellego nodes already carry positive `resource-yield`.
+    //
+    // **This one does move the balance baselines**, and it is the commit that
+    // should: a mage in a Mentem cell can now choose `GOAL.applyMagic`, which
+    // she could not before, and the stock she fills is one the god spends.
+    expect(registry.contentRevision).toBe('a7cec8683d300801ccfb45d60eeff70e');
   });
 
   it('is stable across loads of identical content', () => {

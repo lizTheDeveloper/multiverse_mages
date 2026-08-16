@@ -282,6 +282,96 @@ describe('shipped content', () => {
   });
 
   /**
+   * ## A weight with no node behind it is a faucet with no tap
+   *
+   * The assertion above says every kind is *routed to* by some form. This says
+   * the stronger thing the economy actually needs: for every kind, some node
+   * carries a `resource-yield` effect at `target: "universe"` **in a cell of a
+   * form that routes to it**. Those are the only nodes `universeEffectIndex`
+   * makes applicable, and applied magic is the only channel the four new kinds
+   * have — territory yields three kinds and no arrangement of acreage yields
+   * `insight`.
+   *
+   * Measured on this branch before the content was authored: `resource-yield`
+   * at `target: "universe"` appears on 59 nodes across **seven** forms —
+   * `animal`, `aquam`, `auram`, `herbam`, `ignem`, `terram`, `nomen` — which is
+   * exactly the set that yielded one of the three land kinds. Widening
+   * `routeYieldByForm` to seven kinds therefore changed nothing a run could
+   * see: `labor`, `essence`, `insight` and `passage` had a column in
+   * `MATERIAL_STOCK`, a weight in `form.json`, and **no producer anywhere in
+   * the grid**.
+   *
+   * Written before that content, and it fails until the content is authored.
+   */
+  it('gives every material kind a node that can actually produce it', () => {
+    const formOfCell = new Map(
+      registry.cells.map((entry) => [entry.record.id, entry.record.form] as const),
+    );
+    const weightsOfForm = new Map(
+      registry.forms.map((entry) => [entry.record.id, entry.record.yieldWeights] as const),
+    );
+
+    const producers = new Map<string, string[]>();
+    for (const entry of registry.nodes) {
+      const carries = entry.record.effects.some(
+        (effect) => effect.target === 'universe' && effect.primitive === 'resource-yield',
+      );
+      if (!carries) continue;
+      const formId = formOfCell.get(entry.record.cell);
+      const weights = formId === undefined ? undefined : weightsOfForm.get(formId);
+      if (weights === undefined) continue;
+      for (const kind of MATERIAL_KINDS) {
+        if (weights[kind] <= 0) continue;
+        producers.set(kind, [...(producers.get(kind) ?? []), entry.record.id]);
+      }
+    }
+
+    const unproducible = MATERIAL_KINDS.filter((kind) => (producers.get(kind) ?? []).length === 0);
+    expect(
+      unproducible,
+      `no node carries resource-yield at universe scale in a cell that routes to: ` +
+        `${unproducible.join(', ')}`,
+    ).toEqual([]);
+  });
+
+  /**
+   * ## And the two that matter most must be producible *inside the v1 square*
+   *
+   * `mentem` and `limen` are in the shipped opening. A producer for `insight`
+   * sitting in a cell no v1 universe can permit is a faucet behind a locked
+   * door: the god who opened on mind-magic still generates no economy, which is
+   * the sentence `proposal.md` opens with.
+   */
+  it('puts an insight and a passage producer inside the v1 opening square', () => {
+    const v1Cells = new Set(
+      registry.cells.filter((entry) => entry.record.v1 === true).map((entry) => entry.record.id),
+    );
+    const formOfCell = new Map(
+      registry.cells.map((entry) => [entry.record.id, entry.record.form] as const),
+    );
+    const weightsOfForm = new Map(
+      registry.forms.map((entry) => [entry.record.id, entry.record.yieldWeights] as const),
+    );
+
+    for (const kind of ['insight', 'passage'] as const) {
+      const found = registry.nodes.some((entry) => {
+        if (!v1Cells.has(entry.record.cell)) return false;
+        if (
+          !entry.record.effects.some(
+            (effect) => effect.target === 'universe' && effect.primitive === 'resource-yield',
+          )
+        ) {
+          return false;
+        }
+        const formId = formOfCell.get(entry.record.cell);
+        const weights = formId === undefined ? undefined : weightsOfForm.get(formId);
+        return weights !== undefined && weights[kind] > 0;
+      });
+      expect(found, `no v1 cell can produce "${kind}"`).toBe(true);
+    }
+  });
+
+  /**
    * Task 1.4's trap, made mechanical.
    *
    * Adding four kinds to `yieldWeights` must not renormalize the seven forms

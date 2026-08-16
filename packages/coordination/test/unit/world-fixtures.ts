@@ -196,6 +196,19 @@ export interface SeedOptions {
    * Art of Memory — see {@link scribingTraditionId} before assuming otherwise.
    */
   readonly traditionId?: number;
+  /**
+   * The permitted-form bitmask, defaulting to all fourteen.
+   *
+   * Present because `material-economy` made seven more forms economically live:
+   * with every form permitted, a mage in this fixture researches whatever the
+   * frontier offers and may apply a node in a form the test is not about, so an
+   * assertion of the shape *"this run produced only `insight`"* is a statement
+   * about what the roster happened to study. Narrowing the ruleset is what
+   * makes such an assertion about the routing table instead.
+   */
+  readonly permittedForms?: number;
+  /** The permitted-technique bitmask, defaulting to all five. */
+  readonly permittedTechniques?: number;
 }
 
 /**
@@ -225,8 +238,8 @@ export function seededWorld(
   const universe = createUniverse(state, {
     // Three techniques × four forms is the v1 rectangle's shape; the exact bits
     // are the shipped content's business and the loop only asks `permits`.
-    permittedTechniques: 0b11111,
-    permittedForms: 0b11111111111111,
+    permittedTechniques: options.permittedTechniques ?? 0b11111,
+    permittedForms: options.permittedForms ?? 0b11111111111111,
     edictBudget: 4,
     traditionId,
     favor: 0,
@@ -293,6 +306,17 @@ export function seededWorld(
   }
 
   return { state, mages };
+}
+
+/** The permitted-form bit for one shipped form, as a mask. */
+export function formMask(...formIds: readonly string[]): number {
+  let mask = 0;
+  for (const formId of formIds) {
+    const form = registry().forms.find((entry) => entry.record.id === formId);
+    if (form === undefined) throw new Error(`form.json declares no "${formId}"`);
+    mask |= 1 << form.record.bit;
+  }
+  return mask;
 }
 
 /** A seeded `RngSource` matching a state's root seed. */

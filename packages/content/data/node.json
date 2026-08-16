@@ -1997,7 +1997,7 @@
     "id": "ic-take-the-pulse",
     "cell": "intellego-corpus",
     "name": "Take the Pulse",
-    "gloss": "Two fingers at a wrist, and the whole of what the body is currently doing about itself. Every physician thinks she can already do this; the ones who can are the ones who stop being surprised.",
+    "gloss": "Two fingers at a wrist, and the whole of what the body is currently doing about itself. Every physician thinks she can already do this; the ones who can are the ones who stop being surprised. A body read is a body that can be worked to the edge of what it will take and no further, which is what person-months of usable work are made of.",
     "tier": 1,
     "prerequisites": [],
     "researchCost": 2048,
@@ -2009,6 +2009,12 @@
         "primitive": "research-rate",
         "magnitude": 128,
         "target": "self",
+        "durationTicks": 0
+      },
+      {
+        "primitive": "resource-yield",
+        "magnitude": 128,
+        "target": "universe",
         "durationTicks": 0
       }
     ],
@@ -2103,7 +2109,7 @@
     "id": "if-cast-the-lots",
     "cell": "intellego-fatum",
     "name": "Cast the Lots",
-    "gloss": "The oldest divination there is, made honest. The lots were always random; this working is the part that makes them not, and every student's first result is indistinguishable from luck.",
+    "gloss": "The oldest divination there is, made honest. The lots were always random; this working is the part that makes them not, and every student's first result is indistinguishable from luck. Lots read before the crossing are what makes a crossing survivable; the reading is stored against the day the door is opened.",
     "tier": 1,
     "prerequisites": [],
     "researchCost": 2048,
@@ -2115,6 +2121,12 @@
         "primitive": "research-rate",
         "magnitude": 128,
         "target": "self",
+        "durationTicks": 0
+      },
+      {
+        "primitive": "resource-yield",
+        "magnitude": 128,
+        "target": "universe",
         "durationTicks": 0
       }
     ],
@@ -2458,7 +2470,7 @@
     "id": "iim-catch-the-painted-thing",
     "cell": "intellego-imaginem",
     "name": "Catch the Painted Thing",
-    "gloss": "Notice that what you are looking at is a picture of itself. The first lesson is that the tell is never in the image; it is in how little the image is bothering to be looked at from the side.",
+    "gloss": "Notice that what you are looking at is a picture of itself. The first lesson is that the tell is never in the image; it is in how little the image is bothering to be looked at from the side. A diagram nobody can hold in the head teaches nothing. Catching the image whole is what turns a demonstration into a lesson somebody else can give.",
     "tier": 1,
     "prerequisites": [],
     "researchCost": 2048,
@@ -2470,6 +2482,12 @@
         "primitive": "research-rate",
         "magnitude": 128,
         "target": "self",
+        "durationTicks": 0
+      },
+      {
+        "primitive": "resource-yield",
+        "magnitude": 128,
+        "target": "universe",
         "durationTicks": 0
       }
     ],
@@ -2565,7 +2583,7 @@
     "id": "il-sense-the-seam",
     "cell": "intellego-limen",
     "name": "Sense the Seam",
-    "gloss": "Feel the exact line at which one place stops being itself. A student who has it stops walking into doorways she did not know were there.",
+    "gloss": "Feel the exact line at which one place stops being itself. A student who has it stops walking into doorways she did not know were there. A seam felt is a seam that can be held open later, and holding one open is what a portal is made of.",
     "tier": 1,
     "prerequisites": [],
     "researchCost": 2048,
@@ -2577,6 +2595,12 @@
         "primitive": "research-rate",
         "magnitude": 128,
         "target": "self",
+        "durationTicks": 0
+      },
+      {
+        "primitive": "resource-yield",
+        "magnitude": 128,
+        "target": "universe",
         "durationTicks": 0
       }
     ],
@@ -2659,7 +2683,7 @@
     "id": "im-weigh-the-attention",
     "cell": "intellego-mentem",
     "name": "Weigh the Attention",
-    "gloss": "Tell whether you are being listened to, and by how much of a mind.",
+    "gloss": "Tell whether you are being listened to, and by how much of a mind. Knowing which minds are listening, and how hard, is what a faculty teaches out of: the same lecture reaches further when the lecturer can tell who has stopped following.",
     "tier": 1,
     "prerequisites": [],
     "researchCost": 2048,
@@ -2671,6 +2695,12 @@
         "primitive": "research-rate",
         "magnitude": 128,
         "target": "self",
+        "durationTicks": 0
+      },
+      {
+        "primitive": "resource-yield",
+        "magnitude": 128,
+        "target": "universe",
         "durationTicks": 0
       }
     ],
@@ -2967,7 +2997,7 @@
     "id": "iu-the-second-shadow",
     "cell": "intellego-umbra",
     "name": "The Second Shadow",
-    "gloss": "Notice that something in the room is casting one shadow more than it is entitled to. Half the students who learn it stop sleeping well; the other half stop being surprised by anything.",
+    "gloss": "Notice that something in the room is casting one shadow more than it is entitled to. Half the students who learn it stop sleeping well; the other half stop being surprised by anything. Everything in the reverb tail and nothing in the dry signal: a shadow read closely is a route through somewhere nobody walked.",
     "tier": 1,
     "prerequisites": [],
     "researchCost": 2048,
@@ -2979,6 +3009,12 @@
         "primitive": "concealment",
         "magnitude": 96,
         "target": "self",
+        "durationTicks": 0
+      },
+      {
+        "primitive": "resource-yield",
+        "magnitude": 128,
+        "target": "universe",
         "durationTicks": 0
       }
     ],
@@ -3099,7 +3135,7 @@
     "id": "iv-feel-the-air-go-tight",
     "cell": "intellego-vim",
     "name": "Feel the Air Go Tight",
-    "gloss": "The small pull in a room in the moment before something is cast in it. Students describe it as a held breath that is not theirs, and the ones who never feel it are usually the ones who die indoors.",
+    "gloss": "The small pull in a room in the moment before something is cast in it. Students describe it as a held breath that is not theirs, and the ones who never feel it are usually the ones who die indoors. Raw magic felt as a pressure in the room is raw magic that can be bottled, and bottled magic is what an enchantment and a dispensation are both paid in.",
     "tier": 1,
     "prerequisites": [],
     "researchCost": 2048,
@@ -3111,6 +3147,12 @@
         "primitive": "research-rate",
         "magnitude": 128,
         "target": "self",
+        "durationTicks": 0
+      },
+      {
+        "primitive": "resource-yield",
+        "magnitude": 128,
+        "target": "universe",
         "durationTicks": 0
       }
     ],
@@ -7362,12 +7404,21 @@
     "name": "Keep the Name Close",
     "gloss": "Hold your own name in your own keeping, so that it does not answer when someone else uses it. Taught in the same term as Compel by Name, by professors who consider that an ethics curriculum.",
     "tier": 2,
-    "prerequisites": ["rn-call-by-name"],
+    "prerequisites": [
+      "rn-call-by-name"
+    ],
     "researchCost": 4096,
     "teachCost": 1024,
     "scribeCost": 2048,
     "rediscoveryMultiplier": 5632,
-    "effects": [{ "primitive": "concealment", "magnitude": 160, "target": "self", "durationTicks": 0 }],
+    "effects": [
+      {
+        "primitive": "concealment",
+        "magnitude": 160,
+        "target": "self",
+        "durationTicks": 0
+      }
+    ],
     "knowledgeKind": "episteme",
     "tuningStatus": "untuned"
   },
