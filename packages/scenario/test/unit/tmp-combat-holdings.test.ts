@@ -20,7 +20,10 @@ const COMBAT = new Set<string>(Object.values(COMBAT_PRIMITIVES));
 
 /** Content node ids whose authored effects carry any combat primitive. */
 const combatNodes = new Set<number>();
-let permittedCombatNodes = 0;
+// Never reassigned: the permitted-cell filter this was going to hold is not
+// applied, which is what the log line below says out loud. `const` rather than
+// `let` so the lint rule and the printed caveat agree.
+const permittedCombatNodes = 0;
 for (const node of content.registry.nodes) {
   if (node.record.effects.some((effect) => COMBAT.has(effect.primitive))) {
     combatNodes.add(node.contentId as number);
