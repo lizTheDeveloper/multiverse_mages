@@ -14,45 +14,42 @@
 /**
  * ## These ids are permanent
  *
- * A goal id is not an implementation detail of the utility-AI. It is reported
- * in the per-tick goal histogram, it will key `winRateByPrimitive`-style
- * ablation output at 0.5.0, and every committed Monte Carlo baseline records it
- * as a number rather than as a name. Renumbering one therefore does not break a
- * build — it silently makes every historical run mean something different, and
- * the symptom is a balance finding nobody can reproduce.
+ * A goal id is not an implementation detail. It is in the per-tick goal
+ * histogram, it will key `winRateByPrimitive`-style ablation output at 0.5.0,
+ * and every committed Monte Carlo baseline records it as a number, not a name.
+ * Renumbering breaks no build — it silently makes every historical run mean
+ * something else, and the symptom is a balance finding nobody can reproduce.
  *
- * This is the same rule `RNG_STREAM` states in `@mm/sim-core` and
- * `GOLDEN_ACTION` states in the golden fixtures, for the same reason. The
- * registry is **append-only**: a new goal takes the next unused id, and nothing
- * already here moves. `goal-registry.test.ts` pins the whole table against a
- * literal copy, and its failure message says what a renumbering costs rather
- * than only that two arrays differ.
+ * Same rule as `RNG_STREAM` in `@mm/sim-core` and `GOLDEN_ACTION` in the golden
+ * fixtures, same reason. **Append-only**: a new goal takes the next unused id,
+ * nothing here moves. `goal-registry.test.ts` pins the table against a literal
+ * copy, and its failure message says what renumbering costs rather than only
+ * that two arrays differ.
  *
  * ## `idle` is id 0, and it is the floor
  *
  * `mages-and-species/design.md`: *"`idle` is always feasible and always scores
  * at the floor, so the argmax is total and there is no 'no goal' branch to get
- * wrong."* Both halves of that live in code — {@link GOAL_BASE_APPEAL} gives
- * `idle` a base of zero and no term touches it, and the feasibility mask never
- * removes it. Id 0 is a convenience on top: the absent-value convention in
- * `contracts.md` §0 is `0`, so a zeroed goal component reads as `idle` rather
- * than as a goal nobody selected.
+ * wrong."* Both halves are in code — {@link GOAL_BASE_APPEAL} gives `idle` a
+ * base of zero and no term touches it; the feasibility mask never removes it.
+ * Id 0 is a convenience on top: `contracts.md` §0's absent value is `0`, so a
+ * zeroed goal component reads as `idle` rather than as a goal nobody selected.
  *
  * ## Two goals here are placeholders for capabilities that do not exist
  *
- * `ward-duty` and `raid-readiness` are scored and selectable at 0.4.0 but the
+ * `ward-duty` and `raid-readiness` are scored and selectable at 0.4.0, but the
  * pressures that make them attractive are `god-agency`'s and
- * `raid-engagement`'s. They are enumerated now rather than appended later
- * because appending them later is free only for the *ids* — the balance
- * baselines taken between now and then would have been taken over a goal set
- * that could not express warding, and every one of them would need retaking.
+ * `raid-engagement`'s. Enumerated now rather than appended later because
+ * appending is free only for the *ids*: every balance baseline taken in between
+ * would have been taken over a goal set that could not express warding, and
+ * would need retaking.
  */
 
 /**
  * Every goal a mage may pursue, with its permanent id.
  *
- * Order of declaration is the id order, and the ids are the numbers a baseline
- * is keyed on. See the module note: append only.
+ * Declaration order is id order, and the ids are what a baseline is keyed on.
+ * See the module note: append only.
  */
 export const GOAL = {
   /** Do nothing productive. Always feasible, always at the score floor. */
@@ -76,11 +73,9 @@ export const GOAL = {
   /**
    * Spend the month casting a node she already holds **at** the world.
    *
-   * The ninth goal, and the first that is not about knowledge. See
-   * `rules-world/src/economy/application.ts` for what it consumes and what it
-   * makes; the short version is that until it existed a mage could *hold* a
-   * node and could never *work* one, so nothing anybody knew ever touched
-   * anything.
+   * The ninth goal, and the first not about knowledge. `economy/application.ts`
+   * has what it consumes and makes. Until it existed a mage could *hold* a node
+   * and never *work* one, so nothing anybody knew ever touched anything.
    */
   applyMagic: 9,
 } as const;
@@ -91,11 +86,10 @@ export type GoalId = (typeof GOAL)[keyof typeof GOAL];
 /**
  * Every goal, ascending by id.
  *
- * The one iteration order for scoring, masking, and histogram reporting.
- * Written as a literal rather than derived from `Object.values(GOAL)` for the
- * reason `OCCUPATIONS_IN_ORDER` gives next door: the order is a declaration a
- * reviewer checks against the spec, not a property of how an object literal
- * happened to be built.
+ * The one iteration order for scoring, masking and histogram reporting. A
+ * literal rather than `Object.values(GOAL)`, for the reason
+ * `OCCUPATIONS_IN_ORDER` gives next door: the order is a declaration a reviewer
+ * checks against the spec, not a side effect of how a literal was built.
  */
 export const GOALS_IN_ORDER: readonly GoalId[] = [
   GOAL.idle,
@@ -117,7 +111,7 @@ export const GOAL_COUNT: number = GOALS_IN_ORDER.length;
  * The spelling of each id, for histogram keys and for error messages.
  *
  * A name is safe to change; an id is not. Nothing mechanical may key on these
- * strings — they exist so that a failure reads "research-node" rather than "1".
+ * strings — they exist so a failure reads "research-node", not "1".
  */
 export const GOAL_NAMES: Readonly<Record<GoalId, string>> = {
   [GOAL.idle]: 'idle',
@@ -140,9 +134,9 @@ export function isGoalId(value: number): value is GoalId {
 /**
  * The goals that need a node to work on.
  *
- * Selection carries a target node id for these and `0` — the §0 absent
- * reference — for the rest. Kept as a set rather than as a `targetRequired`
- * flag on each goal so that adding a goal cannot forget to answer the question.
+ * Selection carries a target node id for these and `0` — §0's absent reference
+ * — for the rest. A set rather than a `targetRequired` flag per goal, so adding
+ * a goal cannot forget to answer the question.
  */
 export const GOALS_NEEDING_A_TARGET: readonly GoalId[] = [
   GOAL.researchNode,
