@@ -60,12 +60,12 @@ describe('shipped content', () => {
       species: 6,
       traditions: 3,
       territories: 5,
-      primitives: 16,
+      primitives: 17,
       // One per action id in contracts.md §4.2, and one per magnitude the
       // god-agency rules read by name. Both coverings are checked by the
       // loader; these are the counts they come out at.
       godCosts: 17,
-      godConstants: 72,
+      godConstants: 74,
       // One per magnitude the raid rules read by name, checked in both
       // directions by the loader for the reason the god constants are. Five of
       // them are the composition root's rather than the engine's — how many
@@ -79,7 +79,37 @@ describe('shipped content', () => {
       // — they price what applied work makes and eats, not what a role wants —
       // and both are in `REQUIRED_AUTONOMY_WEIGHTS`, so the loader checks the
       // set in both directions exactly as it does for the target weights.
-      autonomyWeights: 39,
+      // Forty, and neither side of this merge said so. `main` reached 38 when
+      // `apply-magic` added `apply-output-per-month` and `apply-ration-per-month`
+      // — scalars rather than role-appeal rows, pricing what applied work makes
+      // and eats. This branch reached 38 independently, adding two because the
+      // god's emphasis became a preference the outlook weighs rather than a rate
+      // it multiplies, and a preference needs a weight to be weighed against.
+      // All four are in `REQUIRED_AUTONOMY_WEIGHTS`, the loader checks the set in
+      // both directions, and this tree is the first holding all four — so 38
+      // from either side would be a count the loader rejects. Measured, not
+      // chosen.
+      //
+      // **Forty-one, and it is neither 39 nor the 40 this branch's comment
+      // predicts.** Recounted on the Group F merge, 2026-08-16, straight from
+      // `packages/content/data/autonomy-weight.json` — 41 records — rather than
+      // added up from two comments. `main` is at 39 here, not the 38 the branch
+      // assumed, so the branch's arithmetic was right about the increment and
+      // wrong about the base. This is exactly why the rule for this file is
+      // recount, never union of literals.
+      //
+      // Forty since W116 added the two `goal-affiliate-*` opportunities beside
+      // them. Both pairs are scalars in the same file for the same reason, and
+      // they arrived on separate branches — see `interning.test.ts` for the
+      // revision digest that union produces.
+      //
+      // **Forty-three on the Group F merge of `w116/complete-affiliation`,
+      // 2026-08-16.** Recounted again from the data file — 43 records — after
+      // W116's two `goal-affiliate-*` opportunities joined the 41 above. Every
+      // number in the two comment blocks that precede this one was a prediction
+      // and every one of them was wrong by the time the tree held all the
+      // branches; the count is the only thing here that is evidence.
+      autonomyWeights: 43,
     });
   });
 

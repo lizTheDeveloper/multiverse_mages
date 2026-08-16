@@ -7212,7 +7212,7 @@
     "id": "rm-hold-the-attention",
     "cell": "rego-mentem",
     "name": "Hold the Attention",
-    "gloss": "Keep a mind on the thing in front of it. Unglamorous, and the single largest effect on how fast a university actually teaches.",
+    "gloss": "Keep a mind on the thing in front of it. Unglamorous, and the single largest effect on how fast a university actually teaches — and on how fast a scholar who has stopped teaching gets her own fundamentals back.",
     "tier": 1,
     "prerequisites": [],
     "researchCost": 2039,
@@ -7224,6 +7224,12 @@
         "primitive": "teach-rate",
         "magnitude": 128,
         "target": "single",
+        "durationTicks": 0
+      },
+      {
+        "primitive": "practice-rate",
+        "magnitude": 128,
+        "target": "self",
         "durationTicks": 0
       }
     ],
@@ -7248,6 +7254,12 @@
         "primitive": "teach-rate",
         "magnitude": 256,
         "target": "single",
+        "durationTicks": 0
+      },
+      {
+        "primitive": "practice-rate",
+        "magnitude": 192,
+        "target": "self",
         "durationTicks": 0
       }
     ],

@@ -84,7 +84,7 @@
  */
 
 import type { EntityHandle, Fixed, SimState } from '@mm/sim-core';
-import { FP_ONE } from '@mm/sim-core';
+import { FP_ONE, floorDiv } from '@mm/sim-core';
 import type { ContentId, NodeRecord, SpeciesRecord } from '@mm/content';
 import type { MageRoleValue, OccupationValue } from '@mm/state';
 import {
@@ -114,6 +114,7 @@ import {
   effectiveCapacity,
   isComplete,
   libraryDepth,
+  DEGRADATION_PER_SHORTFALL,
   applyLibraryUpkeep,
   scribingThroughput,
   universityProfile,
@@ -590,6 +591,7 @@ export function runLab(scenario: LabScenario): LabReport {
     scribingQueueDepth: 0,
     universityCapacity: 0,
     standingSoldierTarget: world.standingSoldierTarget,
+    materialsObligation: 0,
   });
 
   for (let tick = 1; tick <= scenario.ticks; tick += 1) {
@@ -682,7 +684,14 @@ export function runLab(scenario: LabScenario): LabReport {
     const upkeep = applyLibraryUpkeep([{ handle: library, depth }], vellum);
     const paid = upkeep.outcomes[0]?.paid ?? 0;
     const shortfall = upkeep.outcomes[0]?.shortfall ?? 0;
-    const degraded = upkeep.outcomes[0]?.degradedInstances ?? 0;
+    // `UpkeepOutcome` stopped reporting an instance count when `w23` made
+    // degradation depend on each book's `durability` — the pricing moved to
+    // `gateway.degradeLibrary`, which needs the grimoire rows this harness does
+    // not build. At the reference affinity a book costs exactly
+    // `DEGRADATION_PER_SHORTFALL`, which is the flat price the old field
+    // charged, so this reproduces the number the harness has always reported
+    // and is labelled as a reference-durability figure rather than a general one.
+    const degraded = floorDiv(shortfall, DEGRADATION_PER_SHORTFALL);
     vellum = upkeep.materialsRemaining;
     vellumUpkeepPaid += paid;
     vellumShortfall += shortfall;
@@ -694,6 +703,20 @@ export function runLab(scenario: LabScenario): LabReport {
       scribingQueueDepth: scribeQueueDepth(world, state, library, residentHandles, counts),
       universityCapacity: effectiveCapacity(row),
       standingSoldierTarget: world.standingSoldierTarget,
+      // Zero, and zero on purpose. `DemandInputs` gained this field in W23 and
+      // it is required rather than defaulted, so it has to be answered here —
+      // but the lab's committed sweep digests were recorded by a build in which
+      // the driver did not exist, and feeding it the library's real bill moves
+      // `adds.demand.0` on four of them. That would be a change to the
+      // *instrument* riding along inside a merge.
+      //
+      // The lab isolates one university against a synthetic populace; the claim
+      // W23 makes is about a whole universe's occupation mix, and
+      // `world-step.ts` is where it is made and measured. Wiring the bill in
+      // here is a real question — it would make the lab's demand answer the
+      // same shape the world's does — and it is a change with a rationale and a
+      // regenerated digest, not a merge conflict resolution.
+      materialsObligation: 0,
     });
 
     log.push({

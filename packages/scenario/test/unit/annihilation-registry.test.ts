@@ -96,11 +96,15 @@ const REGISTERED: ReadonlyMap<string, string> = new Map([
     'Banked, same shape as births. The draw is taken before the early return ' +
       'so the stream advances identically whether or not anyone dies.',
   ],
-  [
-    'promotion:promoteStudentCohort',
-    'Banked. "How many mages a matured student cohort yields, and the single ' +
-      'draw that decides the fraction."',
-  ],
+  // `promotion:promoteStudentCohort` was registered here until W185. It floored
+  // when a *small* matured student cohort yielded no mage at all, and the
+  // reason it no longer fires is that `student` is now filled from `idle` in
+  // whatever quantity the transfer pool allows rather than one frozen cohort at
+  // a time, so the cohorts that mature are no longer small enough to round
+  // their yield away. Removed rather than kept, per this file's own doctrine:
+  // a registration describing something that does not happen is the failure it
+  // exists to prevent. If it returns, it is a real finding about cohort size
+  // and not a re-blessing.
 
   // ---- The floor *is* the meaning. ----
   //
@@ -115,15 +119,60 @@ const REGISTERED: ReadonlyMap<string, string> = new Map([
       'normalizes to 0, which is the intended reading.',
   ],
   ['age:normalizedAge', 'The same normalization, per mage rather than per cohort.'],
+  [
+    'target-appeal:personalityTargetTerm',
+    'The floor *is* the meaning. `floorDiv(ambition - FP_ONE, ' +
+      'ambitionDivisor)` is how far a personality sits from the neutral ' +
+      'midpoint, divided down to a per-tier weight; a mage three units of ' +
+      '`fp` from neutral has a per-tier preference of less than one unit, and ' +
+      'rounding that to nothing is the statement that she has no preference. ' +
+      'Nothing stalls: the term is one of six addends, not a quantity that ' +
+      'must move. Newly reachable since W185 opened the labour valve, which ' +
+      'changed which mages exist and therefore which personalities the target ' +
+      'scorer sees — not a new site, a newly *visited* one.',
+  ],
 
   // ---- Floored, discarded, and documented as such. ----
   [
-    'reallocation:collectSources',
-    'A genuine floor with no banking, and a declared consequence rather than ' +
-      'an oversight: `TRANSFER_RATE_PER_TICK` is `FP_ONE / 16`, and the ' +
-      "module's own note says \"cohorts smaller than 1 / TRANSFER_RATE_PER_TICK " +
-      'never transfer at all". Sixteen is the threshold. If that stops being ' +
-      'the intent, this is the line that says so.',
+    'reallocation:reallocateOccupations',
+    'A genuine floor with no banking, applied where the control law is stated. ' +
+      'It used to be `collectSources` — the same floor, taken once per ' +
+      '**cohort** — and W185 measured what that cost: cohorts are keyed on ' +
+      'species x occupation x birth decade, so nearly all of them sit below ' +
+      'sixteen members, every budget floored to zero, and reallocation moved ' +
+      'zero scribes in either direction on 600 consecutive ticks. The rate is ' +
+      "now the occupation's own pool, `floorDiv(supply * " +
+      'TRANSFER_RATE_PER_TICK, FP_ONE)`, truncated exactly once and therefore ' +
+      'independent of how the occupation is split up. It still annihilates ' +
+      'for an occupation of fewer than sixteen people, which is 6.25% of ' +
+      'fifteen rounded down and the honest reading of a rate with no bank — ' +
+      'and persistence fell from every tick to a third of them. If that stops ' +
+      'being the intent, this is the line that says so.',
+  ],
+
+  [
+    'capital:applyLibraryUpkeep',
+    'A genuine floor with no banking, declared at the site: "a shortfall ' +
+      'smaller than one instance\'s worth costs nothing this tick", because ' +
+      'banking it would need a pending-degradation field §1.5 does not have. ' +
+      'DEGRADATION_PER_SHORTFALL is 32, so that is the threshold. **Newly ' +
+      'reached rather than newly written** — W116 gave `completeAffiliation` a ' +
+      'caller, and a universe whose mages actually join universities is the ' +
+      'first one to keep libraries deep enough to owe upkeep it cannot pay.',
+  ],
+
+  [
+    'terms:shareOfDeviation',
+    'A scoring term, and the floor is a rounding step rather than a lost ' +
+      'quantity: it converts how far a trait sits from `fp(1024)` neutral into ' +
+      'a signed share, so a value one or two units off neutral scores 0 rather ' +
+      'than a fraction of a point. Nothing accumulates and nothing can stall — ' +
+      'the result is compared against other goals in the same tick and ' +
+      '`boundTerm` clamps it anyway. `floorDiv` rather than a shift precisely ' +
+      'so it rounds the same way for both signs, which the site explains. ' +
+      '**Newly reached rather than newly written** — W116 made `affiliate` ' +
+      'score an `ambition` term only on a transfer, so the ternary reaches ' +
+      'this function on ticks where the old unconditional call did not.',
   ],
 
   // ---- Handled at the site. ----

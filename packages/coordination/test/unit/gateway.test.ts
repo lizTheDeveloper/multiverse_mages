@@ -24,7 +24,11 @@ import {
   createUniverse,
   defineWorldStateSchema,
 } from '@mm/state';
-import { KnowledgeSubsystem, MASTERY_ACTIVATION_THRESHOLD } from '@mm/rules-magic';
+import {
+  DEFAULT_TEACH_THRESHOLD,
+  KnowledgeSubsystem,
+  MASTERY_ACTIVATION_THRESHOLD,
+} from '@mm/rules-magic';
 
 import { CoordinatingKnowledgeGateway } from '../../src/index.js';
 
@@ -389,5 +393,70 @@ describe('what the frontier quotes is what research charges', () => {
     // Known once, now gone: the gap `contracts.md` prices at three times, and
     // the half of the old behaviour that was right.
     expect(quoteFor(after, second, nodeId)).toBeGreaterThan(ordinary as number);
+  });
+});
+
+/**
+ * **The candidacy gate on `practice`, pinned because a comment is not a test.**
+ *
+ * `practisableBy` offered any held node below `MASTERY_MAX`, and
+ * `MASTERY_DECAY_PER_TICK` takes a point off every held instance every month —
+ * so the condition was satisfied by every instance in the universe within a
+ * month of acquiring it, and `practice` was feasible for every mage on every
+ * tick forever. It also meant a mage could pay a whole month to practise a node
+ * at `fp(1023)` and get **one point** back against the clamp.
+ *
+ * The gate is `DEFAULT_TEACH_THRESHOLD` now: practice is maintenance of teaching
+ * *standing*, so it is offered to a scholar who has lost it and withdrawn from
+ * one who has not. Nothing in the suite pinned the old boundary either, which is
+ * how it survived to be measured in a two-century run instead of here.
+ */
+describe('practice is offered for lost standing, not for any imperfection', () => {
+  /** A gateway whose mage holds `nodeId` at a stated mastery. */
+  function holding(mastery: number) {
+    const world = universeWithOneMage();
+    const nodeId = world.gateway.researchFrontier(world.mage, 1)[0]?.nodeId;
+    if (nodeId === undefined) throw new Error('the shipped catalog offers no frontier node');
+    world.knowledge.createInstance({
+      nodeId,
+      locationKind: LOCATION_KIND.mind,
+      locationId: world.mage,
+      acquiredTick: 0,
+      mastery,
+    });
+    // A fresh gateway over the mutated state: the instance was created after
+    // `world.gateway` memoized its holdings, and this file's other tests take
+    // the same step for the same reason.
+    const gateway = buildGatewayOver(world.state, world.knowledge, world.gateway);
+    return { gateway, nodeId, mage: world.mage };
+  }
+
+  it('offers a node held below the teaching threshold', () => {
+    const { gateway, mage, nodeId } = holding(DEFAULT_TEACH_THRESHOLD - 1);
+    const candidate = gateway.practisableBy(mage, nodeId);
+    expect(candidate).toBeDefined();
+    expect(candidate?.nodeId).toBe(nodeId);
+    expect(candidate?.remainingCost).toBeGreaterThan(0);
+  });
+
+  it('withdraws the node the moment standing is regained', () => {
+    // Exactly at the threshold is standing regained, not standing lost: this is
+    // the same boundary `canTeach` reads, and the two must agree or a mage
+    // practises to become able to teach and is then told she still cannot.
+    const { gateway, mage, nodeId } = holding(DEFAULT_TEACH_THRESHOLD);
+    expect(gateway.practisableBy(mage, nodeId)).toBeUndefined();
+  });
+
+  it('does not offer a nearly-perfect node, which the month could not pay for', () => {
+    // The case that made the old gate expensive rather than merely permanent.
+    const { gateway, mage, nodeId } = holding(1023);
+    expect(gateway.practisableBy(mage, nodeId)).toBeUndefined();
+  });
+
+  it('offers nothing for a node the mage does not hold', () => {
+    const { gateway, mage } = universeWithOneMage();
+    const nodeId = gateway.researchFrontier(mage, 1)[0]?.nodeId;
+    if (nodeId === undefined) throw new Error('the shipped catalog offers no frontier node');
+    expect(gateway.practisableBy(mage, nodeId)).toBeUndefined();
   });
 });

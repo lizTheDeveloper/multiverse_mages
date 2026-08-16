@@ -63,6 +63,7 @@ export const REQUIRED_GOD_CONSTANTS: readonly string[] = Object.freeze([
   'ascension-canon-cells',
   'ascension-dependence-max',
   'ascension-era-count',
+  'ascension-institutions',
   'ascension-loss-fraction',
   'ascension-loss-max',
   'ascension-min-tick',
@@ -71,6 +72,7 @@ export const REQUIRED_GOD_CONSTANTS: readonly string[] = Object.freeze([
   'ascension-tier-gate',
   'bless-duration-ticks',
   'bless-lifespan-months',
+  'bless-practice-rate',
   'bless-research-rate',
   'bless-teach-rate',
   'encourage-decay-per-tick',
@@ -413,6 +415,20 @@ export function checkGodConstants(
         `ascension-summit-cells is ${String(summitCells)}, so Path A is satisfied by mastering no ` +
           'cell at all. The apotheosis path would then be a worship-tier clock, which is exactly ' +
           'the defect the constant was introduced to close.',
+      ),
+    );
+  }
+
+  const institutions = value('ascension-institutions');
+  if (institutions !== undefined && institutions < 0) {
+    out.push(
+      problem(
+        file,
+        '',
+        `ascension-institutions is ${String(institutions)}. A negative count of completed ` +
+          'universities is satisfied by a universe with none, which is the reading the constant ' +
+          'exists to refuse. Zero is the licensed setting for recovering the shipped predicate; ' +
+          'below zero is not a weaker rule, it is a nonsensical one.',
       ),
     );
   }

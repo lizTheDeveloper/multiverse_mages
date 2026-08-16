@@ -102,6 +102,8 @@ import { FP_ONE as FP_UNIT, TIME_MODE, floorDiv, mul } from '@mm/sim-core';
 import type { Handle, MageRecord, Ruleset } from '@mm/state';
 import {
   EFFORT_KIND,
+  KNOWLEDGE_INSTANCE,
+  LOCATION_KIND,
   MAGE,
   OCCUPATION,
   POPULACE_COHORT,
@@ -130,6 +132,7 @@ import type {
   CastingWeights,
   CapitalEmission,
   CohortDemography,
+  GoalAppealWeights,
   MageGoalCommitment,
   MaterialAmounts,
   MaterialKind,
@@ -148,6 +151,7 @@ import {
   MATERIAL_KINDS,
   NO_STANDING_ARMY,
   advanceConstruction,
+  NO_EMPHASIS,
   appliedYield,
   applicationRations,
   applyLibraryUpkeep,
@@ -157,6 +161,7 @@ import {
   carryingCapacity,
   clearCommitment,
   cohortBirths,
+  completeAffiliation,
   computeOccupationDemand,
   affordableMageMonths,
   castingDemand,
@@ -252,6 +257,11 @@ export interface WorldStepDeps {
    * content is not one of the inputs a tick is allowed to re-read.
    */
   readonly appeal: TargetAppealWeights;
+  /**
+   * Every magnitude goal selection is made of that is content rather than a
+   * table in `terms.ts`, read from the same file and carried the same way.
+   */
+  readonly goalAppeal: GoalAppealWeights;
   /** The universe's resolved `store` hook, from its tradition. */
   readonly store: StorePolicy;
   /**
@@ -374,6 +384,8 @@ export interface WorldStepDeps {
     readonly researchRate: PrimitiveRecord;
     readonly teachRate: PrimitiveRecord;
     readonly scribeRate: PrimitiveRecord;
+    /** `practice-rate`, the fourth of vision §6a's rates. */
+    readonly practiceRate: PrimitiveRecord;
     readonly fertility: PrimitiveRecord;
   };
   /**
@@ -425,10 +437,36 @@ export interface WorldStepDeps {
    * where every month is a month.
    */
   readonly researchBonusesFor?:
-    | ((state: SimState, worldTick: number, mage: Handle, nodeId: number) => readonly Fixed[])
+    | ((state: SimState, worldTick: number, mage: Handle) => readonly Fixed[])
+    | undefined;
+  /**
+   * Which cells the god has encouraged this tick, and how strongly, `fp`.
+   *
+   * Not a rate and not a bonus: it goes to the **outlook**, where
+   * `target-appeal.ts`'s emphasis term reads it, because vision §7's
+   * *"encourage a research direction"* names a cell as a preference and its whole job is now to
+   * change what a mage picks next. An absent hook is a world with no god, whose
+   * mages therefore have no instruction — which is `NO_EMPHASIS` and not an
+   * empty rate.
+   */
+  readonly emphasisFor?:
+    | ((state: SimState, worldTick: number) => ReadonlyMap<number, Fixed>)
     | undefined;
   readonly teachBonusesFor?:
     | ((state: SimState, worldTick: number, mage: Handle) => readonly Fixed[])
+    | undefined;
+  /**
+   * `practice-rate` magnitudes in force on one mage practising one node.
+   *
+   * Takes the node for the reason `researchBonusesFor` does: an encouragement is
+   * keyed on a cell. This is the seam by which the god's verbs reach maintenance
+   * at all — a funded university deepens the library that feeds
+   * `libraryRateMultiplier`, and an encouragement pushes a cell — and a build
+   * that left it unwired would have made every measurement of "does the god
+   * influence practice?" answer no by construction.
+   */
+  readonly practiceBonusesFor?:
+    | ((state: SimState, worldTick: number, mage: Handle, nodeId: number) => readonly Fixed[])
     | undefined;
   /** `lifespan` effect magnitudes in force on one mage, for the shared stacking. */
   readonly lifespanEffectsFor?:
@@ -608,6 +646,15 @@ export interface WorldStepReport {
   readonly lessonsTaught: number;
   /** Books finished this tick. */
   readonly grimoiresScribed: number;
+  /**
+   * Practice projects that reached their requirement and restored a mastery
+   * quantum this tick.
+   *
+   * The cheapest available reading of whether the universe is maintaining
+   * itself. `masteryTeachable` next door says where it has got to; this says
+   * what it did.
+   */
+  readonly practiceCompleted: number;
   /** Materials those books cost, deducted at the desk. `fp`. */
   readonly materialsScribed: Fixed;
   /**
@@ -682,6 +729,36 @@ export interface WorldStepReport {
    * count that doing nothing reaches.
    */
   readonly universitiesUnstaffed: number;
+  /**
+   * Mages who joined or changed university this tick.
+   *
+   * `completeAffiliation` had no caller outside its own tests until
+   * {@link settleAffiliations}, and the shape of that hole was a **falling**
+   * affiliated count: the founders the scenario seeds at tick 0, and nobody
+   * after them, ever. Over 600 ticks on `ad7f80c2` the reference universe made
+   * **zero** 0→non-zero `universityId` transitions while holding 43.6 % of every
+   * committed mage-month on the goal that was supposed to produce them.
+   *
+   * A run where this is zero for every tick after the first university completes
+   * is a run where the wire has come out again, and no other series here would
+   * say so: scribing would simply stop, which is also what a universe short of
+   * vellum does.
+   */
+  readonly magesAffiliated: number;
+  /**
+   * Mages whose first-choice university was full this tick.
+   *
+   * `contracts.md` §1.4's `capacity` had no reader that treated it as a bound
+   * until this change — `completedCapacity` reads the same `u16` as a *demand
+   * signal* for the labour market, which is the opposite direction, and the two
+   * are deliberately not arbitrated against each other. `capacity.ts` says why
+   * the refusal has to be visible rather than merely obeyed: *"a bound that is
+   * never observed to bind is a bound nobody can tune."*
+   *
+   * Not the complement of {@link magesAffiliated}: a mage refused at the deepest
+   * library and admitted at the second-deepest is in both.
+   */
+  readonly affiliationsRefused: number;
 }
 
 /** A world schema with the coordinating loop installed, and its last report. */
@@ -926,7 +1003,12 @@ export function worldSystem(
         worldTick,
         demand: computeOccupationDemand({
           constructionBacklog: constructionBacklog(state),
-          scribingQueueDepth: 0,
+          // §5's written record, asked for. This was the literal `0` until W23,
+          // which made `scribe` an occupation `reallocateOccupations` could only
+          // ever classify as surplus: the founding cohort drained from 24 to 6
+          // over a 200-year run and nothing could backfill it, so vision §6's
+          // *"scribes copy grimoires"* had a workforce that only shrank.
+          scribingQueueDepth: unwrittenNodeCount(state),
           universityCapacity: completedCapacity(state),
           // Zero, by citation rather than by omission. `ages-of-magic.md` §2b:
           // *"A university's stationed mages are its faculty, its researchers
@@ -934,6 +1016,45 @@ export function worldSystem(
           // constant carries the rest of the argument, and the three things
           // that would have to exist before this becomes a number.
           standingSoldierTarget: NO_STANDING_ARMY,
+          // Subsistence plus library upkeep — the bill the universe owes
+          // whether or not anyone planned for it. Without this term total demand
+          // across all four occupations is about a hundred jobs however large the
+          // populace grows, everybody else is `idle`, and an idle person eats a
+          // material and produces none. That is what emptied the stock at tick
+          // 600 and kept it empty.
+          //
+          // ## What this expression is, and the one term it does not carry
+          //
+          // W23 wrote this as `subsistenceReserve + upkeepOwed`, where
+          // `subsistenceReserve` was `subsistenceDemand(cohorts.totalCount())`
+          // and nothing else. The differentiated economy took the *variable*
+          // away — subsistence is food and upkeep is vellum, so there is no
+          // single reserve for a scribe to be held behind any more — but not the
+          // quantity. **The formula below is w23's, inlined, term for term.**
+          //
+          // What it does **not** carry is `applicationRationsOwed`: what the
+          // mages who spend a month casting at the world eat while they do it.
+          // `main`'s `apply-magic` added it to phase 8's subsistence claim
+          // (`subsistenceDemand(...) + applicationRationsOwed`), so on this tree
+          // the universe's real food bill is that sum and this line understates
+          // it by the rations.
+          //
+          // **It is dropped on an ordering constraint, not an oversight, and
+          // there is no successor to reach for.** `applicationRationsOwed` is
+          // `applicationRations(work.applyingMages, ...)`, and `work` is phase
+          // 5's — three phases after this one. Nothing earlier in the tick knows
+          // which mages will choose to apply magic, and no component carries the
+          // previous tick's figure. The alternatives are both worse than the
+          // understatement: moving phase 5 ahead of phase 2 reorders the whole
+          // world step and re-keys every per-actor stream (§6), and inventing a
+          // stored carry-over would be a new component to serve one addend.
+          //
+          // The understatement is bounded by the mage population rather than the
+          // populace — tens against tens of thousands — so it cannot flip this
+          // driver's sign or scale. If applied magic ever becomes a large share
+          // of the food bill, this is the line that has to change, and the fix
+          // is a phase reorder with its own rationale and its own baselines.
+          materialsObligation: subsistenceDemand(cohorts.totalCount()) + upkeepOwed,
         }),
       });
 
@@ -1011,12 +1132,13 @@ export function worldSystem(
       const gateway = gatewayFor();
       // One scan of the shelves for the whole phase, not one per mage. See
       // `universityPreference`.
-      const preferredUniversityFor = universityPreference(state);
+      const preferredUniversityFor = universityPreference(state).preferredFor;
       const autonomy = stepMageAutonomy({
         state,
         worldTick,
         rng,
         appeal: deps.appeal,
+        goalAppeal: deps.goalAppeal,
         // The caller's judgement, which is exactly how `select.ts` asks for it:
         // completion is a fact about the work, and the work happened one phase
         // ago. A mage who finished this month reconsiders this month rather than
@@ -1038,6 +1160,7 @@ export function worldSystem(
             tierOf: (nodeId) => deps.catalog.node(nodeId)?.tier ?? 1,
             facetsOf: deps.facets,
             affinitiesOf: deps.affinitiesOf,
+            emphasis: deps.emphasisFor?.(state, worldTick) ?? NO_EMPHASIS,
             preferredUniversityFor,
             // The authored half of applicability. Absent on a build with no
             // economy index, which makes `apply-magic` masked for every mage —
@@ -1203,10 +1326,13 @@ export function worldSystem(
         researchCompleted: work.researchCompleted,
         lessonsTaught: work.lessonsTaught,
         grimoiresScribed: work.grimoiresScribed,
+        practiceCompleted: work.practiceCompleted,
         materialsScribed,
         staffAssigned: staffing.assigned.length,
         staffPruned: staffing.pruned,
         universitiesUnstaffed: staffing.unstaffed,
+        magesAffiliated: work.magesAffiliated,
+        affiliationsRefused: work.affiliationsRefused,
         materialsApplied: totalAmount(work.applied),
         appliedByKind: work.applied,
         magesApplying: work.applyingMages,
@@ -1596,7 +1722,10 @@ function killTheDead(
 
 /** What the work phase did, and who it freed to reconsider. */
 interface WorkPhaseOutcome {
-  /** Mages whose committed project finished this tick, either side of a lesson. */
+  /**
+   * Mages whose committed project finished this tick, either side of a lesson —
+   * and the mages who affiliated, who finished a goal that never had a project.
+   */
   readonly completedBy: ReadonlySet<Handle>;
   readonly researchCompleted: number;
   readonly lessonsTaught: number;
@@ -1622,8 +1751,14 @@ interface WorkPhaseOutcome {
   readonly castingGranted: Fixed;
   /** Mages who spent the month applying magic. What the rations are owed for. */
   readonly applyingMages: number;
+  /** Mages whose `universityId` changed this tick. */
+  readonly magesAffiliated: number;
+  /** Mages whose first-choice university had no free seat. */
+  readonly affiliationsRefused: number;
   /** Mage-months spent under each goal, indexed by goal id. */
   readonly monthsByGoal: readonly number[];
+  /** Mages who finished a `practice` project this tick. */
+  readonly practiceCompleted: number;
 }
 
 /**
@@ -1723,6 +1858,7 @@ function spendTheMonth(
   const castingShare =
     researchMonths <= 0 ? FP_ONE : floorDiv(grantedMonths * FP_ONE, researchMonths);
 
+  const affiliating: Handle[] = [];
   mages.forEach((row, handle) => {
     if ((alive[row] as number) === 0) return;
     const commitment = readCommitment(state, handle);
@@ -1730,7 +1866,22 @@ function spendTheMonth(
     // Before `workOne`, and unconditionally: a goal with no arm returns from it
     // without touching anything, and a tally taken on the way out would count
     // exactly the goals that are working and miss exactly the ones that are not.
+    //
+    // **And now before the `affiliate` arm below, which is why the ordering is
+    // load-bearing rather than incidental.** W183 measured `affiliate` at 36.5 %
+    // of all committed mage-life while it accrued nothing; this change gives it
+    // an arm that returns from the walk early, so a tally placed after that
+    // return would report zero for the one goal the instrument was built to
+    // see — the same blindness #192 removed, reintroduced by the fix for it.
     monthsByGoal[commitment.goalId] = (monthsByGoal[commitment.goalId] ?? 0) + 1;
+    // Collected, not applied here — and collected *after* the tally, because a
+    // month held on `affiliate` is still a month this phase consumed and
+    // `monthsByGoal` is the series that made its absence visible in the first
+    // place. See `settleAffiliations` for why the move happens after the walk.
+    if (commitment.goalId === GOAL.affiliate) {
+      affiliating.push(handle);
+      return;
+    }
     const cast = workOne(
       state,
       handle,
@@ -1748,16 +1899,23 @@ function spendTheMonth(
     for (const kind of MATERIAL_KINDS) applied[kind] += cast[kind];
   });
 
-  const completedBy = new Set<Handle>();
+  const affiliation = settleAffiliations(state, affiliating);
+  const completedBy = new Set<Handle>(affiliation.completed);
   let researchCompleted = 0;
   let lessonsTaught = 0;
   let grimoiresScribed = 0;
+  let practiceCompleted = 0;
   for (const done of gateway.completions()) {
     completedBy.add(done.subject);
     if (done.counterparty !== 0) completedBy.add(done.counterparty);
+    // Named rather than defaulted. This used to end `else grimoiresScribed += 1`
+    // on the argument that there were only three kinds, and `EFFORT_KIND` said
+    // so — so the first practice completion would have been reported as a book
+    // written, in a counter nobody would have thought to doubt.
     if (done.kind === EFFORT_KIND.research) researchCompleted += 1;
     else if (done.kind === EFFORT_KIND.teaching) lessonsTaught += 1;
-    else grimoiresScribed += 1;
+    else if (done.kind === EFFORT_KIND.scribing) grimoiresScribed += 1;
+    else if (done.kind === EFFORT_KIND.practice) practiceCompleted += 1;
   }
   return {
     castingOwed,
@@ -1766,21 +1924,149 @@ function spendTheMonth(
     researchCompleted,
     lessonsTaught,
     grimoiresScribed,
+    practiceCompleted,
     applied,
     applyingMages,
+    magesAffiliated: affiliation.moved,
+    affiliationsRefused: affiliation.refused,
     monthsByGoal,
   };
 }
 
 /**
+ * Moves every mage who committed to `affiliate` into the university she prefers.
+ *
+ * ## This is the call that was missing, and its absence was not cosmetic
+ *
+ * `completeAffiliation` shipped with `mages-and-species` — task 5.12,
+ * *"instantaneous affiliation change on `affiliate` completion"*, ticked off —
+ * and had **no production caller** until this function. `check:reachability`
+ * printed it as unreached and that was the whole of the signal. The consequence
+ * is a rule nobody wrote down: no mage a universe promotes for itself is ever
+ * affiliated. Only founders are, and invited scholars, who arrive affiliated at
+ * creation. An unaffiliated mage may neither scribe — `scribeThroughputFor`
+ * returns zero for `universityId === 0` — nor ward, so the scribing channel of a
+ * whole universe ran on whoever happened to be founded into it and stopped when
+ * she died.
+ *
+ * Measured on `ad7f80c2`, 600 ticks of the reference universe, no actions:
+ * **17,712 of 40,659 committed mage-months — 43.6 % — were held on
+ * `affiliate`**, against **zero** 0→non-zero `universityId` transitions in the
+ * whole run. `monthsByGoal` is the series that says so, which is why it is the
+ * series a regression here would move.
+ *
+ * ## After the walk, and once for everybody
+ *
+ * Affiliation is **not work**: it accrues no months, which is why it is settled
+ * beside {@link workOne} rather than inside it. Settling it after the walk buys
+ * two properties that settling it during the walk would not have:
+ *
+ * - **One scan, and only when somebody moves.** `universityPreference` tallies
+ *   every knowledge instance in the universe to rank libraries by depth. That is
+ *   a scan no tick should pay for on a tick where nobody is affiliating, and
+ *   this function does not reach it when the list is empty.
+ * - **Every mover is quoted the same shelves.** Computed inside the walk, the
+ *   ranking would be taken at whichever slot the first affiliating mage occupies
+ *   and would therefore depend on how many grimoires the mages ahead of her in
+ *   the roster had finished that month. Deterministic, but a coupling between
+ *   two mages that nothing in the design asks for. Here every mover sees the
+ *   month's work already on the shelves — which is what `completeAffiliation`
+ *   means by *"the outlook from the tick the goal completed in"*.
+ *
+ * ## Seats are spent as the list is walked, not quoted from before it
+ *
+ * The shelf ranking is built once and that is right for the *shelves*. It is
+ * wrong for the *seats*: one reading would tell every mover in one tick about
+ * the same last free desk, and a bound a hundred mages can pass through
+ * simultaneously is not a bound. So each move is reported through `takeSeat` and
+ * the next mage is asked afresh.
+ *
+ * Ascending mage handle, which is the order `spendTheMonth`'s slot-ordered walk
+ * collected them in. `staff.ts` states the argument for the other end of the
+ * same question: which claimant gets the last unit of a shared resource must
+ * depend on the state and not on the destroy history that reached it. **No draw
+ * is taken** — the ordering is total — so no RNG stream moves and
+ * `contracts.md` §6's insertion invariance is untouched.
+ *
+ * A mage whose first choice is full is **refused** rather than truncated into
+ * it, counted, and then offered the deepest library that does have room. She
+ * does not queue: `preferredFor` filters full universities too, so at her next
+ * outlook `betterAffiliationAvailable` is false for a universe with no seats
+ * anywhere and she goes back to work rather than re-adopting a goal that cannot
+ * resolve. That filtering is load-bearing — a bound applied only here would
+ * leave her committed to `affiliate` for life, doing no work, which is strictly
+ * worse than the missing wire this function replaces.
+ *
+ * ## The record write is discarded on purpose
+ *
+ * `collectRecords` and `readRecord` hand back **detached** records, so
+ * `changeAffiliation`'s `mage.universityId = x` lands in a copy and not in the
+ * store — the same shape `killMage` has, which is why `killTheDead` follows it
+ * with `mages.set(handle, 'alive', 0)`. The record is passed anyway rather than
+ * bypassed, because `roles.ts` is where the one-field rule and its argument live
+ * — the `mage-lifecycle` spec requires a role to survive the move — and reaching
+ * around it is how a second writer of `roleId` eventually appears. What persists
+ * is the returned handle, written here.
+ *
+ * @returns The mages whose goal completed, how many moved, and how many were
+ * turned away from their first choice. Completing means they re-evaluate in the
+ * same tick rather than holding a commitment to a move they have already made —
+ * and the point of the move is that scribing and warding are now open to them. A
+ * mage who was refused everywhere completes too: she asked, the universe
+ * answered, and holding the goal for six more months would not change it.
+ */
+function settleAffiliations(
+  state: SimState,
+  affiliating: readonly Handle[],
+): { readonly completed: ReadonlySet<Handle>; readonly moved: number; readonly refused: number } {
+  const completed = new Set<Handle>();
+  if (affiliating.length === 0) return { completed, moved: 0, refused: 0 };
+
+  const standing = universityPreference(state);
+  const mages = componentOf(state, MAGE);
+  let moved = 0;
+  let refused = 0;
+  for (const handle of affiliating) {
+    const entity = handle as EntityHandle;
+    if (!mages.has(entity)) continue;
+    const record = readRecord(state, MAGE, entity);
+    const current = record.universityId;
+    const preferred = standing.preferredFor(current);
+    // Wanted somewhere she could not get into. Not the complement of `moved`: a
+    // mage refused at the deepest library and admitted at the second-deepest is
+    // counted in both, and that is the pair of facts capacity tuning needs.
+    // Without this reading the bound leaves no trace at all — `capacity.ts`:
+    // *"a bound that is never observed to bind is a bound nobody can tune."*
+    const unbounded = standing.unboundedFor(current);
+    if (unbounded !== current && unbounded !== preferred) refused += 1;
+
+    const destination = completeAffiliation(record, {
+      betterAffiliationAvailable: preferred !== current,
+      preferredUniversity: preferred,
+    });
+    if (destination !== current) {
+      standing.takeSeat(destination, current);
+      moved += 1;
+    }
+    mages.set(entity, 'universityId', destination);
+    completed.add(handle);
+  }
+  return { completed, moved, refused };
+}
+
+/**
  * One mage's month, routed to the accrual her goal names.
  *
- * A goal with no accrual behind it — `idle`, `affiliate`, `ward-duty`,
- * `raid-readiness` — falls through and spends nothing, which is honest: two of
- * those wait on capabilities that do not exist, and `affiliate` completes
- * through `completeAffiliation` rather than by accumulating months. A mage whose
- * committed goal needs a counterparty and has none this tick also spends
- * nothing; the feasibility mask moves her on at her next evaluation.
+ * A goal with no accrual behind it — `idle`, `ward-duty`, `raid-readiness` —
+ * falls through and spends nothing, which is honest: both of the latter wait on
+ * capabilities that do not exist. `affiliate` is not in that list because it
+ * never arrives here: it completes through {@link settleAffiliations}, which
+ * `spendTheMonth` routes it to before this function is reached — and note that
+ * a `case GOAL.affiliate:` added to the switch below would be dead code
+ * regardless, because the first two lines return on `targetNodeId === 0` and
+ * `affiliate` takes no target. A mage whose committed goal needs a counterparty
+ * and has none this tick also spends nothing; the feasibility mask moves her on
+ * at her next evaluation.
  *
  * `apply-magic` is the one arm that does not accrue anything, and that is what
  * makes it a different kind of goal rather than a fifth kind of project. There
@@ -1884,7 +2170,13 @@ function workOne(
         rate(
           deps.primitives.researchRate,
           withKnown(
-            deps.researchBonusesFor?.(state, worldTick, mage, nodeId) ?? NO_BONUSES,
+            // Three arguments, not four: `w52/emphasis-reorders` moved the
+            // god's encouragement out of `researchBonusesFor` and into
+            // `target-appeal.ts`'s preference term, so the hook no longer needs
+            // to know which node it is being asked about. The `withKnown`
+            // wrapper is `main`'s and stays — it is the node-driven academic
+            // rate, which is a different source from the god's constants.
+            deps.researchBonusesFor?.(state, worldTick, mage) ?? NO_BONUSES,
             academic.researchRate(mage),
           ),
         ),
@@ -1937,6 +2229,25 @@ function workOne(
       }
       return undefined;
     }
+    case GOAL.practice:
+      // The month is a month and the rate travels separately, exactly as
+      // research's does: `practice.ts` scales the *requirement* rather than the
+      // progress, for the one-place-for-rates reason `research.ts` argues.
+      //
+      // This is where the god's verbs reach maintenance. `shelves` is the
+      // library depth a funded university produces, and `practiceBonusesFor`
+      // carries the blessing and the cell emphasis; both arrive in the same
+      // `(1 + Σ)` channel that research and teaching use, under the same cap.
+      gateway.contributePractice(
+        mage,
+        nodeId,
+        MAGE_MONTHS_PER_TICK,
+        rate(
+          deps.primitives.practiceRate,
+          deps.practiceBonusesFor?.(state, worldTick, mage, nodeId) ?? NO_BONUSES,
+        ),
+      );
+      return;
     case GOAL.scribe:
       // The `universities` requirement names three rates and this is the third.
       // The ceiling gating it is the **author's**, not the reader's: the mage at
@@ -2030,10 +2341,10 @@ function degradeUnkeptLibraries(
   let instances = 0;
   let nodesLost = 0;
   for (const outcome of outcomes) {
-    if (outcome.degradedInstances <= 0) continue;
+    if (outcome.shortfall <= 0) continue;
     const lost = phase.gateway.degradeLibrary(
       outcome.library,
-      outcome.degradedInstances,
+      outcome.shortfall,
       phase.worldTick,
     );
     instances += lost.destroyed;
@@ -2255,6 +2566,57 @@ function constructionBacklog(state: SimState): Fixed {
     if (row.buildProgress < FP_ONE) backlog += FP_ONE - row.buildProgress;
   }
   return backlog;
+}
+
+/**
+ * Nodes this universe holds and has **not written down** — §6's scribing queue.
+ *
+ * A node counts when at least one instance of it exists at `mind:` or `palace:`
+ * and none at `grimoire:` or `library:`. Vision §5 makes a node's existence the
+ * existence of one instance and lists the four places one can be, so the honest
+ * measure of "work waiting for a scribe" is the part of what the universe knows
+ * that dies with the people who know it. §6a's *"a universe can be
+ * knowledge-rich and unable to write any of it down"* is the affordability half
+ * and is enforced at the desk, not here — see `DemandInputs.scribingQueueDepth`.
+ *
+ * ## Why this is recomputed rather than read from `agent-api`'s census
+ *
+ * `knowledgeCensus` reports exactly this figure as `unwrittenNodeIds.length`,
+ * and it is *not* imported: `agent-api` is a §4.4 diagnostic that sits above the
+ * rules, and a rule reading a projection would make the explain channel *"an
+ * input to a rules computation"*, which `contracts.md` §4.4 forbids outright.
+ * The two must agree, and a test pins them together rather than a shared import
+ * doing it.
+ *
+ * ## Cost
+ *
+ * One pass over `KNOWLEDGE_INSTANCE` per tick, plus a bitmask over node ids.
+ * The same order as `libraryCapital`'s per-tick shelf scan, which the loop
+ * already pays. A node is 16-bit content, so the two arrays are bounded by the
+ * catalogue rather than by the run length: a universe with two thousand
+ * instances of fifty nodes costs two thousand array writes, not fifty scans.
+ */
+export function unwrittenNodeCount(state: SimState): number {
+  const instances = componentOf(state, KNOWLEDGE_INSTANCE);
+  const nodeIds = instances.field('nodeId');
+  const locationKinds = instances.field('locationKind');
+
+  const held = new Set<number>();
+  const written = new Set<number>();
+  instances.forEach((row) => {
+    const nodeId = nodeIds[row] as number;
+    const kind = locationKinds[row] as number;
+    if (kind === LOCATION_KIND.mind || kind === LOCATION_KIND.palace) held.add(nodeId);
+    else if (kind === LOCATION_KIND.grimoire || kind === LOCATION_KIND.library) {
+      written.add(nodeId);
+    }
+  });
+
+  let unwritten = 0;
+  for (const nodeId of held) {
+    if (!written.has(nodeId)) unwritten += 1;
+  }
+  return unwritten;
 }
 
 /** Student seats across completed universities. Unfinished ones carry nobody. */

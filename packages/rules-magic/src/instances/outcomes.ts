@@ -109,6 +109,21 @@ export type KnowledgeRefusal =
       readonly nodeId: ContentId;
       readonly supplied: Fp;
       readonly required: Fp;
+    }
+  /**
+   * The subject already holds this node at full mastery, so practice has
+   * nothing to restore.
+   *
+   * A refusal rather than a no-op completion, because the two are different
+   * facts about a mage's month and the autonomy layer masks on the difference:
+   * a goal that "completes" without changing anything is the *"whole career
+   * quietly evaporates"* failure `feasibility.ts` rejects by name.
+   */
+  | {
+      readonly reason: 'mastery-at-maximum';
+      readonly nodeId: ContentId;
+      readonly subject: Handle;
+      readonly mastery: Fp;
     };
 
 /** A refusal rendered for a human. Never parsed; assert on the fields instead. */
@@ -157,6 +172,11 @@ export function describeRefusal(refusal: KnowledgeRefusal): string {
       return (
         `scribing node ${String(refusal.nodeId)} needs ${String(refusal.required)} scribe ` +
         `capacity and ${String(refusal.supplied)} was supplied`
+      );
+    case 'mastery-at-maximum':
+      return (
+        `${String(refusal.subject)} already holds node ${String(refusal.nodeId)} at the maximum ` +
+        `mastery of ${String(refusal.mastery)}, so there is nothing for practice to restore`
       );
   }
 }

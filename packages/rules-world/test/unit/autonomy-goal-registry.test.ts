@@ -35,7 +35,7 @@ import {
 } from '../../src/index.js';
 
 /**
- * The registry as shipped at 0.4.0.
+ * The registry as shipped: ids 0-8 at 0.4.0, then `apply-magic` and `practice`.
  *
  * A second copy, on purpose. Every other pinned table in this repository is
  * pinned the same way — `WORLD_COMPONENTS` in `state-schema.test.ts`,
@@ -56,6 +56,11 @@ const AS_SHIPPED: readonly (readonly [string, number])[] = [
   // Appended by `apply-magic` (w107). Nothing above it moved, which is the only
   // thing this pin is here to check.
   ['apply-magic', 9],
+  // Appended by W53, at 10 rather than the 9 it was authored against, because
+  // `apply-magic` reached `main` first. Nothing above it moved, which is the
+  // whole property this file exists to hold: a baseline taken before this line
+  // is a baseline over a ten-goal world, and it still means what it meant.
+  ['practice', 10],
 ];
 
 const BASELINE_CONSEQUENCE =
@@ -66,7 +71,7 @@ const BASELINE_CONSEQUENCE =
   'there moves.';
 
 describe('the goal registry is append-only', () => {
-  it('holds exactly the goals shipped, at exactly their ids', () => {
+  it('holds exactly the goals shipped so far, at exactly their ids', () => {
     const actual = GOALS_IN_ORDER.map((goal) => [GOAL_NAMES[goal], goal] as const);
     // The message is attached to the assertion rather than left to the diff so
     // that a renumbering explains itself where CI prints it.
@@ -121,7 +126,7 @@ describe('idle is id zero and is the goal nothing can remove', () => {
 });
 
 describe('goals that need a node say so once', () => {
-  it('lists exactly the target-taking goals', () => {
+  it('lists exactly the seven target-taking goals', () => {
     expect([...GOALS_NEEDING_A_TARGET]).toEqual([
       GOAL.researchNode,
       GOAL.rediscoverNode,
@@ -132,6 +137,11 @@ describe('goals that need a node say so once', () => {
       // with no project behind it — every candidate's `remainingCost` is zero,
       // because she already knows them all.
       GOAL.applyMagic,
+      // Practice is pointed at a node she already holds, which is the one thing
+      // that makes it different from every other entry here: the other five name
+      // a node she is trying to get, and this one names a node she is trying to
+      // keep.
+      GOAL.practice,
     ]);
   });
 

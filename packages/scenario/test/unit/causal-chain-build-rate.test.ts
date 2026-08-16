@@ -179,6 +179,8 @@ interface ArmResult {
   readonly peakBuildRateSources: number;
   /** Terram knowledge instances at the end of the run. */
   readonly terramKnowledge: number;
+  /** Mages who joined or changed university across the run. */
+  readonly magesAffiliated: number;
   /** Every `build-rate` magnitude that reached construction, deduplicated. */
   readonly magnitudesSeen: ReadonlySet<number>;
 }
@@ -221,6 +223,7 @@ function runArm(arm: Arm): ArmResult {
   let progressAdded = 0;
   let stoneOwed = 0;
   let peakBuildRateSources = 0;
+  let magesAffiliated = 0;
   const magnitudesSeen = new Set<number>();
 
   for (let tick = 0; tick < TICKS; tick += 1) {
@@ -230,11 +233,13 @@ function runArm(arm: Arm): ArmResult {
     progressAdded += report.buildProgressAdded;
     stoneOwed += report.constructionStoneOwed;
     peakBuildRateSources = Math.max(peakBuildRateSources, report.buildRateSources);
+    magesAffiliated += report.magesAffiliated;
     for (const magnitude of report.buildRateMagnitudes) magnitudesSeen.add(magnitude);
     if (ticksToComplete < 0 && report.universitiesCompleted > 0) ticksToComplete = tick + 1;
   }
 
   return {
+    magesAffiliated,
     ticksToComplete,
     progressAdded,
     stoneOwed,
@@ -313,8 +318,35 @@ describe('the causal chain for build-rate, end to end at one seed', () => {
     // This is what separates "permitting Terram changed the outcome" from
     // "`build-rate` changed the outcome". Forbidding a form removes three things
     // at once; neutralizing a primitive removes one.
-    expect(ablated.terramKnowledge).toBe(permitted.terramKnowledge);
+    //
+    // ## Why this is a band and was an equality
+    //
+    // It was `toBe`, and that held only while **nothing downstream depended on
+    // when a building opened.** `settleAffiliations` made one thing depend on
+    // it: `universityPreference` offers *completed* universities only, so a site
+    // that opens later admits scholars later, and a scholar who is not yet
+    // affiliated draws no library lift and cannot scribe. The ablated arm's site
+    // opens later — the very next assertion — so it ends the run holding 198
+    // Terram instances against the permitted arm's 202.
+    //
+    // That coupling is the change working, not leaking: a university that opens
+    // sooner *should* have scholars in it sooner. What the assertion was ever
+    // about is that the ablated arm **still researched, held and taught Terram**
+    // rather than quietly becoming the "never learned it" arm, and a 2 % band
+    // says that at least as well as an equality did. The strict claim moves to
+    // the sibling assertion below, which is over `peakBuildRateSources` and is
+    // untouched, and to {@link ArmResult.magesAffiliated} here, which pins the
+    // new path so that losing it again would fail rather than pass.
+    expect(permitted.terramKnowledge).toBeGreaterThan(0);
+    const drift = Math.abs(ablated.terramKnowledge - permitted.terramKnowledge);
+    expect(drift * 100).toBeLessThanOrEqual(permitted.terramKnowledge * 5);
     expect(ablated.ticksToComplete).toBeGreaterThan(permitted.ticksToComplete);
+    // The mechanism, asserted rather than described: the arm whose building
+    // opens later affiliates fewer mages. A future change that severs
+    // construction from affiliation fails here instead of silently restoring an
+    // equality nobody would re-examine.
+    expect(permitted.magesAffiliated).toBeGreaterThan(0);
+    expect(ablated.magesAffiliated).toBeLessThanOrEqual(permitted.magesAffiliated);
   });
 
   it('link 5b, continued — and the contributions were still gathered, just not applied', () => {

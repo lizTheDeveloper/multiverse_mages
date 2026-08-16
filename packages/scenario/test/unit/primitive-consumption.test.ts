@@ -159,6 +159,13 @@ describe('god-driven consumption is recorded, and does not count', () => {
     const text = formatPrimitiveConsumptionReport(report);
     expect(text).toContain('Consumed, but never from node effects');
     expect(text).toContain('coordination/god/effects.lifespanEffectsFor');
+    // `w52/emphasis-reorders` (Group F) asserted `toContain('coordination/god/
+    // effects.researchBonusesFor')` under this section header, against the
+    // pre-`godOnly` body of this test. Tried on the Group F merge, 2026-08-16,
+    // and it fails: the report no longer prints non-node consumer *strings* at
+    // all once every primitive has a node-driven consumer, so that assertion is
+    // unsatisfiable on this tree rather than merely unnecessary. Recorded here
+    // instead of silently dropped.
   });
 
   it.each(['research-rate', 'scribe-rate', 'teach-rate'])(

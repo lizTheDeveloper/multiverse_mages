@@ -23,37 +23,34 @@ import { GOAL } from './goals.js';
  * ## The bound is the design pillar, expressed as arithmetic
  *
  * `docs/design/vision.md` §7: *"You set the role; they decide everything
- * else."* `mages-and-species/design.md` rejects role-as-filter twice over — it
- * makes the god a general, and a universe of assigned researchers with nobody
- * willing to teach starves its own next generation with micromanagement as the
- * only recourse.
+ * else."* `mages-and-species/design.md` rejects role-as-filter twice: it makes
+ * the god a general, and a universe of assigned researchers with nobody willing
+ * to teach starves its next generation, micromanagement the only recourse.
  *
- * A bias term with no bound reintroduces the filter by the back door. An entry
- * of `fp(100000)` masks nothing and forces everything, and it would arrive as a
- * tuning edit rather than as a design decision anyone reviewed. So the bound is
- * {@link ROLE_BIAS_MAX} and it is checked in CI: **every entry's magnitude is
- * strictly less than the sum of the other five terms' extremes**, so any
- * combination of species, personality, age and opportunity can outvote any
- * role. That is what "biases but never dictates" means when written down as a
+ * An unbounded bias reintroduces the filter by the back door — `fp(100000)`
+ * masks nothing and forces everything, arriving as a tuning edit rather than a
+ * reviewed design decision. So the bound is {@link ROLE_BIAS_MAX}, checked in
+ * CI: **every entry's magnitude is strictly less than the sum of the other five
+ * terms' extremes**, so any combination of species, personality, age and
+ * opportunity can outvote any role. That is "biases but never dictates" as a
  * number.
  *
- * The check lives in `role-bias.test.ts` and reads {@link ROLE_BIAS_MAX}
- * against the term bounds in `terms.ts`, so raising one without the other fails
- * rather than quietly widening the god's authority.
+ * `role-bias.test.ts` reads {@link ROLE_BIAS_MAX} against `terms.ts`'s bounds,
+ * so raising one without the other fails rather than quietly widening the god's
+ * authority.
  *
  * ## Every magnitude here is untuned
  *
- * There is no balance harness before 0.5.0 (`docs/design/release-plan.md`).
- * These rows encode an *ordering* — a researcher prefers research, a professor
- * prefers teaching — and claim nothing about being right.
+ * No balance harness before 0.5.0 (`docs/design/release-plan.md`). These rows
+ * encode an *ordering* — researcher prefers research, professor prefers
+ * teaching — and claim nothing about being right.
  *
  * ## `idle` carries no bias from any role
  *
- * `idle` is the score floor and the guarantee that the argmax is total. A role
- * that made idling attractive would be a role that can produce a mage who does
- * nothing on purpose, and a role that made it *un*attractive would push the
- * floor above zero and give the clamp something to do. Both are silent; the
- * zero row is neither.
+ * `idle` is the score floor and the guarantee the argmax is total. A role that
+ * made idling attractive could produce a mage who does nothing on purpose; one
+ * that made it *un*attractive would push the floor above zero and give the
+ * clamp something to do. Both fail silently; the zero row does not.
  */
 
 /** Mirrors `@mm/content`'s `TuningStatus` without importing a type for a constant. */
@@ -62,9 +59,9 @@ export const ROLE_BIAS_TUNING_STATUS = 'untuned';
 /**
  * The largest magnitude any role bias entry may have, in fixed point.
  *
- * Not a clamp applied to lookups — a *validated* bound. Clamping would let an
+ * A *validated* bound, not a clamp on lookups. Clamping would let an
  * out-of-range entry sit in the table looking authored while behaving as
- * something else; the test rejects the entry instead, and names it.
+ * something else; the test rejects it instead, and names it.
  */
 export const ROLE_BIAS_MAX: Fixed = 384;
 
@@ -83,6 +80,7 @@ function row(entries: Partial<Record<GoalId, Fixed>>): RoleBiasRow {
     [GOAL.wardDuty]: 0,
     [GOAL.raidReadiness]: 0,
     [GOAL.applyMagic]: 0,
+    [GOAL.practice]: 0,
     ...entries,
   };
 }
@@ -92,36 +90,62 @@ function row(entries: Partial<Record<GoalId, Fixed>>): RoleBiasRow {
  *
  * Read the rows as dispositions rather than duties:
  *
- * - **researcher** leans on both kinds of self-directed work and away from
- *   standing watch. It is the default role, so this row is what an
- *   un-intervened universe behaves like.
- * - **warden** is the only row that raises `ward-duty`, and it raises `scribe`
- *   too: guarding a library and copying its contents are the same instinct
- *   about the same asset.
- * - **professor** raises `teach` most and `seek-teaching` second — a professor
- *   who has run out of things to teach goes and learns some.
- * - **raider** raises `raid-readiness` and, alone among the rows, leans
- *   negative on `scribe`. Somebody has to be unwilling to sit still, or the
- *   universe has no one to send through a portal.
+ * - **researcher** leans on both kinds of self-directed work, away from
+ *   standing watch. The default role, so this row is what an un-intervened
+ *   universe behaves like.
+ * - **warden** alone raises `ward-duty`, and raises `scribe` too: guarding a
+ *   library and copying its contents are one instinct about one asset.
+ * - **professor** raises `teach` most, `seek-teaching` second — a professor out
+ *   of things to teach goes and learns some.
+ * - **raider** raises `raid-readiness` and alone leans negative on `scribe`.
+ *   Somebody has to be unwilling to sit still, or nobody goes through a portal.
  *
- * `apply-magic` is the ninth goal and **no role is for it**, which is a
- * statement rather than an omission: the god's four roles are all about
- * knowledge, and the one that leans toward applied work is the warden, because
- * standing watch and turning a hillside into a quarry are the same instinct
- * about doing something with what the academy already has rather than adding to
- * it. The professor leans hardest away — her month is worth more in a
- * classroom.
+ * ## Every row leans toward `affiliate`, and that is a mechanic rather than a taste
+ *
+ * The `affiliate` column was zero for all four roles until W116, which read as
+ * "no role cares" and was the only zero column in the table for a goal that is
+ * not `idle`. It is false in the loop's own arithmetic: `libraryRateMultiplier`
+ * scales research, teaching and scribing by the depth of *the mage's own*
+ * library, and `capital.depthFor(0)` is nothing at all — so an unaffiliated mage
+ * of any role works at the unmultiplied rate, forever. Vision §6a is the whole
+ * argument: *"a university's output scales with the depth of its library."*
+ *
+ * The ordering follows how much of a role's own work a library actually
+ * accelerates. The **warden** is highest because for her it is not an
+ * acceleration at all — `ward-duty` is masked outright on `universityId === 0`,
+ * so the institution is the job. The **researcher** and the **professor** each
+ * have their own rate multiplied. The **raider** is lowest and not zero: no
+ * library makes a raid faster, but he still reads.
+ *
+ * `apply-magic` is the ninth goal and **no role is for it** — a statement, not
+ * an omission. The god's four roles are all about knowledge; the one leaning
+ * toward applied work is the warden, because standing watch and turning a
+ * hillside into a quarry are one instinct about using what the academy has
+ * rather than adding to it. The professor leans hardest away: her month is
+ * worth more in a classroom.
+ *
+ * `practice` is where the four rows disagree most usefully. A **professor**
+ * maintains her fundamentals because she cannot supervise without them — that
+ * is `ages-of-magic.md` §2c's loop, and it is the largest practice entry in the
+ * table. A **raider** drills because a spell she cannot cast under pressure is
+ * one she does not have. A **researcher** leans slightly away: the frontier is
+ * where her attention is, and letting the fundamentals go stale is exactly the
+ * mistake §2c says the game should let her make. A **warden** is neutral;
+ * standing watch is not practice and nothing in the design says it should be.
  */
 export const ROLE_BIAS: Readonly<Record<MageRoleValue, RoleBiasRow>> = {
   [MAGE_ROLE.researcher]: row({
     [GOAL.researchNode]: 320,
     [GOAL.rediscoverNode]: 256,
+    [GOAL.affiliate]: 256,
     [GOAL.seekTeaching]: 64,
     [GOAL.wardDuty]: -128,
     [GOAL.applyMagic]: -64,
+    [GOAL.practice]: -64,
   }),
   [MAGE_ROLE.warden]: row({
     [GOAL.wardDuty]: 384,
+    [GOAL.affiliate]: 320,
     [GOAL.scribe]: 128,
     [GOAL.researchNode]: -64,
     [GOAL.raidReadiness]: 64,
@@ -129,16 +153,20 @@ export const ROLE_BIAS: Readonly<Record<MageRoleValue, RoleBiasRow>> = {
   }),
   [MAGE_ROLE.professor]: row({
     [GOAL.teach]: 384,
+    [GOAL.affiliate]: 256,
     [GOAL.seekTeaching]: 192,
     [GOAL.scribe]: 128,
     [GOAL.raidReadiness]: -128,
     [GOAL.applyMagic]: -128,
+    [GOAL.practice]: 256,
   }),
   [MAGE_ROLE.raider]: row({
     [GOAL.raidReadiness]: 384,
     [GOAL.wardDuty]: 128,
+    [GOAL.affiliate]: 64,
     [GOAL.scribe]: -128,
     [GOAL.teach]: -64,
+    [GOAL.practice]: 192,
   }),
 };
 
@@ -146,9 +174,9 @@ export const ROLE_BIAS: Readonly<Record<MageRoleValue, RoleBiasRow>> = {
  * The bias one role gives one goal.
  *
  * @throws RangeError on a role outside `contracts.md` §1.2's enumeration. A
- * `uint8` field stores 7 happily, and a lookup that returned zero for it would
- * turn a corrupt role into a mage with no dispositions at all — which reads in
- * the histogram as an unremarkable researcher.
+ * `uint8` stores 7 happily, and returning zero for it would turn a corrupt role
+ * into a mage with no dispositions — which reads in the histogram as an
+ * unremarkable researcher.
  */
 export function roleBiasFor(roleId: MageRoleValue, goal: GoalId): Fixed {
   const biases = ROLE_BIAS[roleId];

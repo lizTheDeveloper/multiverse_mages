@@ -8,7 +8,7 @@
     "examinedSymbolCount": 705,
     "productionFileCount": 263
   },
-  "findingCount": 129,
+  "findingCount": 127,
   "findings": [
     {
       "key": "constant:packages/coordination/src/god/constants.ts:legacyArchiveMaxTier",
@@ -486,14 +486,6 @@
       "kind": "const"
     },
     {
-      "key": "symbol:packages/rules-world/src/autonomy/affiliation.ts:completeAffiliation",
-      "group": "symbol",
-      "category": "unreached",
-      "file": "packages/rules-world/src/autonomy/affiliation.ts",
-      "name": "completeAffiliation",
-      "kind": "function"
-    },
-    {
       "key": "symbol:packages/rules-world/src/autonomy/age-bands.ts:AGE_BANDS_IN_ORDER",
       "group": "symbol",
       "category": "unreached",
@@ -628,13 +620,6 @@
       "file": "packages/rules-world/src/mages/death.ts",
       "name": "isWorkingMage",
       "kind": "function"
-    },
-    {
-      "key": "symbol:packages/rules-world/src/mages/roles.ts:changeAffiliation",
-      "group": "symbol",
-      "category": "reachedOnlyByUnreached",
-      "file": "packages/rules-world/src/mages/roles.ts",
-      "name": "changeAffiliation"
     },
     {
       "key": "symbol:packages/rules-world/src/populace/buckets.ts:BIRTH_BUCKET_TAIL_ALLOWANCE",

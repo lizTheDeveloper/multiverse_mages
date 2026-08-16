@@ -286,6 +286,19 @@ A node **exists in your universe** while at least one instance does. Operations:
 - **Theft** — the `knowledge-steal` primitive, concentrated in *Intellego Mentem* and *Rego
   Nomen*. Reading it from a mind mid-raid, or looting the grimoire that holds it. A True Naming
   universe makes this far more dangerous in both directions.
+- **Practice** — a mage spends a month keeping a node she already holds sharp, and its mastery
+  goes back up. The only operation that raises mastery: forgetting is otherwise monotone, which
+  is why for three releases 93.4% of held instances sat below the threshold at which their holder
+  can teach them (`ages-of-magic.md` §2c). It costs the month, so it competes with research and
+  teaching; it is refused in a forbidden cell, so an interdiction cannot be practised away; and
+  it is what the economy's `resource-yield` reads, so a universe's harvest reflects the magic its
+  mages are *casting* rather than the magic they happen to know.
+
+This list was **six** operations for three releases, and practice was the missing seventh. It was
+missing in the strong sense: `decay.ts` named it in its own prose — *"nothing in this subsystem
+restores mastery; practice does, and practice is an operation somebody has to perform"* — and
+nobody performed it, so the game shipped the perish half of publish-or-perish and none of the
+publish half.
 
 This is what makes losing hurt in a way that losing units never does.
 

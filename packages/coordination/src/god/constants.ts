@@ -88,6 +88,7 @@ export interface GodConstants {
   // Interventions.
   readonly blessResearchRate: Fp;
   readonly blessTeachRate: Fp;
+  readonly blessPracticeRate: Fp;
   readonly blessLifespanMonths: number;
   readonly blessDurationTicks: number;
   readonly encourageMagnitude: Fp;
@@ -119,6 +120,12 @@ export interface GodConstants {
   readonly ascensionCanonCells: number;
   /** Share of the canon a passing era may lose, fp. Floored by `ascensionLossMax`. */
   readonly ascensionLossFraction: Fp;
+  /**
+   * Completed universities both paths require. The one conjunct in either path
+   * that no ruleset edit can produce: the world loop founds no site, so every
+   * university past the scenario's seeded academy was bought.
+   */
+  readonly ascensionInstitutions: number;
 
   // Stagnation.
   readonly stagnationMagelessTicks: number;
@@ -259,6 +266,7 @@ export function resolveGodConstants(registry: ContentRegistry): GodConstants {
 
     blessResearchRate: value('bless-research-rate'),
     blessTeachRate: value('bless-teach-rate'),
+    blessPracticeRate: value('bless-practice-rate'),
     blessLifespanMonths: value('bless-lifespan-months'),
     blessDurationTicks: value('bless-duration-ticks'),
     encourageMagnitude: value('encourage-magnitude'),
@@ -281,6 +289,7 @@ export function resolveGodConstants(registry: ContentRegistry): GodConstants {
     ascensionCanonBreadth: value('ascension-canon-breadth'),
     ascensionCanonCells: value('ascension-canon-cells'),
     ascensionLossFraction: value('ascension-loss-fraction'),
+    ascensionInstitutions: value('ascension-institutions'),
 
     stagnationMagelessTicks: value('stagnation-mageless-ticks'),
     stagnationWorshipFloor: value('stagnation-worship-floor'),

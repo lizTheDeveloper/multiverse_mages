@@ -173,13 +173,48 @@ const CLAIMED_SEPARATIONS: readonly {
     status: 'asserted',
     verdict: 'established',
   },
+  // **Retired on `w185/cohort-source`, 2026-08-14, at 6/12.** It was 12/12 when
+  // it was asserted. W185 opened the occupation transfer valve — which had been
+  // welded shut by a per-cohort floor — and filled university seats from `idle`
+  // only, so *who becomes a student* changed and with it who is promoted and
+  // when. Dwarf's between-set spread widened from single ticks to 3.0, and its
+  // interval now reaches into elf's in half the sets. The paired gap is still
+  // 24.6 SE in dwarf's favour, which is why this is `inconclusive` and not
+  // `refuted`: the effect is real and the interval test cannot state it.
+  // **Reversed on W116, and the reversal is the largest single species movement
+  // this instrument has recorded.** It was established at 12/12 sets; it is now
+  // *refuted* at 0/12, with elf arriving before dwarf by 8.6 paired standard
+  // errors. Dwarf's own mean went from among the fastest to **234.9 ± 23.5
+  // ticks against gnome's 23.8** — the slowest species to tier 3, by an order of
+  // magnitude, where it used to be second-fastest.
+  //
+  // This is a mechanism and not a re-roll, and the two independent readings
+  // agree on which species: `species-occupancy` has dwarf falling 12 → 5 cells
+  // over the same change, the largest move in *that* series too. Dwarf carries
+  // the highest `scribeAffinity` in the content, `completeAffiliation` gained a
+  // caller, and a month spent writing a node down is a month not spent reaching
+  // the next tier. **Time to tier is a breadth measure, and this branch buys
+  // depth with breadth**; the species that trades hardest is the one that
+  // scribes best.
+  //
+  // Recorded as a refutation rather than retired, because the row is the
+  // measurement. Nothing was tuned: every species magnitude still carries
+  // `tuningStatus: "untuned"`.
   {
     faster: 'dwarf',
     slower: 'elf',
-    assertedAs: 'beforeElf.high < elf.low',
-    status: 'asserted',
-    verdict: 'established',
+    assertedAs: 'beforeElf.high < elf.low — refuted on W116, no longer asserted',
+    status: 'retired',
+    verdict: 'refuted',
   },
+  // W116 added a second `gnome < elf` row here, to replace the `dwarf < elf`
+  // row above as the sibling file's other `beforeElf` binding. On the Group F
+  // merge, 2026-08-16, that row is **dropped as a duplicate**: `gnome < elf` is
+  // already the first entry in this list on `main`, so the union of the two
+  // sides listed one claim twice and made `filter(status === 'asserted')` read
+  // three where the sibling file binds two. W116's finding is the *retirement*
+  // above, which stands; the replacement row was only needed on a tree where
+  // `gnome < elf` was not already here.
   {
     faster: 'gnome',
     slower: 'human',
@@ -208,6 +243,16 @@ const CLAIMED_SEPARATIONS: readonly {
   // endpoints travelling 8/378 ticks, against elf's 32.1 ± 0.2 SE. Orc is now
   // the volatile species, and a pair with one volatile member reorders easily.
   // Kept rather than deleted, per this file's own rule.
+  //
+  // **Prior measurement, kept as history**, from `w185/cohort-source` 2026-08-14
+  // (Group F):
+  // Strict in 11 of 12 sets when it was retired — a real effect, and not
+  // reproducible enough for a file with one seed set to assert. **Re-measured
+  // on `w185/cohort-source`, 2026-08-14: 0/12, and the order is backwards.**
+  // Elf now arrives before orc by 2.9 SE. Retiring it was right and the reason
+  // has changed; it is recorded rather than quietly re-verdicted, because a
+  // claim that goes from 11/12 to reversed is a fact about how little the
+  // interval test was ever saying.
   {
     faster: 'orc',
     slower: 'elf',
@@ -231,6 +276,11 @@ const CLAIMED_SEPARATIONS: readonly {
   // Both rows stay `retired`. Nothing here argues for re-asserting either: a
   // verdict that moves when content moves is exactly why this file pins
   // verdicts rather than intervals.
+  //
+  // **Prior measurement, kept as history**, from `w185/cohort-source` 2026-08-14
+  // (Group F): it held in 12/12 sets at 7.3 SE there and was kept retired anyway,
+  // deliberately — this claim has now been true, false and true again across
+  // builds of a subsystem whose magnitudes are all `tuningStatus: "untuned"`.
   {
     faster: 'human',
     slower: 'orc',
@@ -248,8 +298,11 @@ const CLAIMED_SEPARATIONS: readonly {
  * six-seed table will write the same line again. This is the trace.
  */
 const RETIRED_ASSERTIONS: readonly { readonly source: string; readonly heldIn: string }[] = [
-  { source: 'expect(human.high).toBeLessThan(orc.low)', heldIn: '0/12 sets' },
-  { source: 'expect(orc.high).toBeLessThan(elf.low)', heldIn: '11/12 sets' },
+  {
+    source: 'expect(human.high).toBeLessThan(orc.low)',
+    heldIn: '0/12 sets when retired, and 12/12 on w185 — see the row above',
+  },
+  { source: 'expect(orc.high).toBeLessThan(elf.low)', heldIn: '11/12 sets, and 0/12 on w185' },
   { source: 'expect(draconic.low).toBeLessThan(human.low)', heldIn: '5/12 sets' },
   { source: 'expect(overlaps(gnome, dwarf)).toBe(true)', heldIn: '7/12 sets' },
 ];
@@ -343,6 +396,24 @@ describe('every strict separation this repository asserts, re-rolled', () => {
       `overlaps(gnome, dwarf) is false in ${String(pair.strictSets)}/` +
         `${String(pair.comparableSets)} sets — the sibling file asserts it true`,
     );
+    // **This assertion fails on `03d21899` (Group F combined, 2026-08-16) with
+    // `dwarf censored: 9`, and it is left failing on purpose.** Its premise —
+    // *"neither species is censored"* — is what licenses reading `strictSets`
+    // as the complement of the sibling file's overlap claim, so a censored
+    // dwarf does not move a number here, it removes the ground the whole test
+    // stands on. Re-pinning `0` to `9` would leave the reasoning above asserting
+    // something the data contradicts, and deleting the check would lose the one
+    // signal that says so.
+    //
+    // What it is telling you: dwarf fails to reach tier 3 at all in 9 of 12
+    // seed sets on the composed tree. `species-occupancy.test.ts` reads the same
+    // species at **2** occupied cells against 9-12 for the other five. Both are
+    // consequences of `completeAffiliation` gaining a production caller
+    // (`w204/affiliate-writer`) on top of W23's student pool and W116's seat
+    // bound — dwarf has the highest `scribeAffinity` in the content and now
+    // spends its months writing. That is a balance finding for the owner and not
+    // a merge artefact, and it needs a decision before this row can be honest
+    // again.
     for (const speciesId of ['gnome', 'dwarf']) {
       const spread = report.spreads.find((entry) => entry.speciesId === speciesId);
       expect(spread?.censored, `${speciesId} censored`).toBe(0);
@@ -375,14 +446,16 @@ describe('every strict separation this repository asserts, re-rolled', () => {
         'remove the matching row in CLAIMED_SEPARATIONS so that every separation this ' +
         'repository publishes carries the number of seed sets it survives.',
     ).toBe(2);
-    // **Two sites, three asserted separations, and it was four sites and five
-    // before 2026-08-14.** The loop over `beforeElf` is one site and two
-    // separations; `orc` was dropped from it when `orc < elf` was retired at
-    // 11/12. The count is the tripwire and the two lines below say which two
-    // sites it is, so that swapping one claim for another cannot keep the count.
+    // **Two sites, two asserted separations, and it was two sites and three
+    // before `w185/cohort-source`.** The loop over `beforeElf` is one site; it
+    // held two species until `dwarf < elf` fell to 6/12 under W185 and is down
+    // to `gnome` alone. `orc` had been dropped from it earlier, when
+    // `orc < elf` was retired at 11/12. The count is the tripwire and the two
+    // lines below say which two sites it is, so that swapping one claim for
+    // another cannot keep the count.
     expect(sibling).toContain('for (const entry of beforeElf) expect(entry.high)');
     expect(sibling).toContain('expect(gnome.high).toBeLessThan(human.low)');
-    expect(CLAIMED_SEPARATIONS.filter((claim) => claim.status === 'asserted')).toHaveLength(3);
+    expect(CLAIMED_SEPARATIONS.filter((claim) => claim.status === 'asserted')).toHaveLength(2);
   });
 
   it.each(RETIRED_ASSERTIONS)(
@@ -427,11 +500,23 @@ describe("#140's four-species chain", () => {
   });
 
   it('has one link that does reproduce, and it is not new', () => {
-    // `human < elf` is established on `main` too, at 12/12 sets and 64.7 SE. It
-    // is worth naming so that nobody reads "the chain does not reproduce" as
-    // "nothing separates": four relations separate robustly, and they are the
-    // same four before and after #140.
-    const link = separationOf(report, 'human', 'elf');
+    // `human < elf` was the link: established on `main` too, at 12/12 sets and
+    // 64.7 SE, and worth naming so nobody reads "the chain does not reproduce"
+    // as "nothing separates".
+    //
+    // **W116 knocked it to inconclusive — 4/12 sets — and the reason is elf
+    // rather than human.** Human is one of the tightest columns the instrument
+    // has (29.1 ± 0.2, endpoints travelling 3 and 8 ticks); elf's interval
+    // widened enough to reach under it in eight sets of twelve. The paired gap
+    // is still +15.4 ticks at 10.5 SE, so human is *on average* faster and the
+    // per-set endpoint comparison no longer holds reliably — which is exactly
+    // the distinction this file exists to draw.
+    //
+    // `gnome < human` is asserted instead. It is 12/12 sets at **32.1 SE**, the
+    // most robust separation in the report, established before this branch and
+    // unmoved by it. So the claim "not everything separates, but something
+    // does" survives on a stronger link than the one it used to rest on.
+    const link = separationOf(report, 'gnome', 'human');
     expect(verdictOf(link).verdict).toBe('established');
   });
 });

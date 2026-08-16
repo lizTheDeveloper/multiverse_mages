@@ -1413,6 +1413,70 @@ export const SECT_STRATEGIES: readonly StrategyDefinition[] = Object.freeze(
 );
 
 /**
+ * `permit-then-idle` plus one purchase a world year: the reachability probe for
+ * W63's institution conjunct.
+ *
+ * W63 added `ascension-institutions` to both paths after `permit-then-idle` won
+ * 40 of 40 at n=400 by opening the grid and then submitting nothing for 2260
+ * ticks. That conjunct refuses every strategy in the pool, and **a predicate
+ * nothing can satisfy is indistinguishable from a predicate that is correct
+ * over an impoverished pool** — the two readings have opposite consequences and
+ * no committed measurement separated them, because no member both opens the
+ * grid and buys anything. `permissive-breadth` lists `fundUniversity` behind
+ * `permitTechnique`, which is always legal, so it never reaches it;
+ * `archivist` funds constantly and permits nothing, so it sits at the
+ * fifty-one-node content ceiling.
+ *
+ * This is the ablation-complement of `permit-then-idle` and nothing else: the
+ * identical 140-round permit prefix, the identical silence afterwards, with
+ * `fundUniversity` at slot 0 on every twelfth round — one world year — so that
+ * `policyFor` actually reaches it. Placement is the whole of the difference and
+ * it is placement, not effort: a strategy that lists the purchase behind an
+ * always-legal action has not chosen to build, it has been sorted out of
+ * building.
+ *
+ * It is a **verification probe and not part of the shipped pool's argument**,
+ * appended for the reason `idle-then-declare` and `permit-then-idle` were: the
+ * claim it exists to falsify is W63's own.
+ */
+const OPEN_THEN_BUILD: StrategyDefinition = {
+  strategyId: 'open-then-build',
+  version: 1,
+  hypothesis:
+    'Whether W63\'s institution conjunct is satisfiable at all, or whether it closes both paths ' +
+    'for everyone. It differs from permit-then-idle by one submission a world year — founding a ' +
+    'university, the one thing in this build no ruleset edit produces — and by nothing else. If ' +
+    'it also ends at 0 of 40 then the conjunct is unreachable and the predicate is wrong; if it ' +
+    'wins where permit-then-idle no longer does, then the difference between the two is exactly ' +
+    'what the win condition now reads.',
+  ascension: {
+    when: ASCENSION_STANCE.whenEligible,
+    because:
+      'Symmetric with permit-then-idle, which it is the one-action extension of. A difference in ' +
+      'stance would put a second variable inside a comparison that exists to isolate one.',
+  },
+  signatureActions: [GOD_ACTION.fundUniversity, GOD_ACTION.permitTechnique, GOD_ACTION.permitForm],
+  preferences: ({ round }) => {
+    const opening: ActionSubmission[] =
+      round >= 140
+        ? []
+        : [
+            { action: GOD_ACTION.permitTechnique, parameter: technique(round) },
+            { action: GOD_ACTION.permitForm, parameter: form(round) },
+          ];
+    // Parameter 0 is the founding purchase rather than a top-up of an existing
+    // site: §4.2 gives founding and funding one action id, and `god-cost.json`
+    // prices them apart.
+    return round % WORLD_TICKS_PER_YEAR === 0
+      ? [{ action: GOD_ACTION.fundUniversity, parameter: 0 }, ...opening]
+      : opening;
+  },
+};
+
+/** `contracts.md` §1.1's world year. One founding attempt per year, not per tick. */
+const WORLD_TICKS_PER_YEAR = 12;
+
+/**
  * The pool, in registration order.
  *
  * Eight, which is the capability spec's *"at least eight"*. Order is the order
@@ -1420,7 +1484,7 @@ export const SECT_STRATEGIES: readonly StrategyDefinition[] = Object.freeze(
  * sorts the ids it publishes, and this array is what a reader compares against
  * the spec paragraph.
  *
- * The two verification probes and the three sects are appended rather than
+ * The verification probes and the three sects are appended rather than
  * inserted so that `round-robin` assignment — `strategies[replicateIndex % size]`
  * over the *sweep file's* list, not this one — is unaffected for any sweep that
  * does not name them. `balance-gate-ascension.sweep.json` names the original
@@ -1576,6 +1640,7 @@ export const BOT_POOL: readonly StrategyDefinition[] = Object.freeze([
   ALLOCATE_SPREAD,
   ALLIANCE_SEEKER,
   ALLIANCE_ABSTAINER,
+  OPEN_THEN_BUILD,
   ...SECT_STRATEGIES,
 ]);
 
@@ -1838,7 +1903,15 @@ export const POOL_BUILD_LIMITS: Readonly<Record<string, string>> = Object.freeze
     'measured (tools/w29/two-universes.mjs, 200 ticks, seed 589825): food 321443 vs 468099, vellum ' +
     '75733 vs 274403, months to raise a university 30 vs 42. The reason the five strategies ' +
     'converged was that permitting a cell had no economic consequence; it now has one. Re-run the ' +
-    'four factor cells before quoting any figure in this entry.',
+    'four factor cells before quoting any figure in this entry. '  +
+    'W63 RE-MEASUREMENT: the Pareto front is still one point and it has moved onto the permit '  +
+    'axis. At n=400 over five arms, permit-then-idle -- two buttons for 140 of 2400 ticks, then '  +
+    'an empty preference list forever -- ascends 40 of 40, ahead of permissive-breadth at 38 of '  +
+    '40 which does the same AND funds, dispenses and encourages; every other member is at 0. So '  +
+    'the pool separates on exactly one thing and it is not play, it is whether the ruleset was '  +
+    'edited. ascension-institutions is the conjunct added against that, and open-then-build is '  +
+    'the probe that shows it reachable. The sentence to delete this entry on is unchanged and '  +
+    'still unmet.',
   'universities-are-founded-and-never-finished':
     'SUPERSEDED BY W29, kept because the measurement it records is still the measurement — what ' +
     'changed underneath it is the mechanism. The clause "advanceConstruction in rules-world has ' +
@@ -1850,7 +1923,13 @@ export const POOL_BUILD_LIMITS: Readonly<Record<string, string>> = Object.freeze
     'round and founds hundreds. Those are facts about the strategies, not about construction, and ' +
     'a Path A gate on completedUniversities is still inverted for that reason. Re-measure before ' +
     'quoting any number here: every one of them was taken against a build where nothing a laborer ' +
-    'did could finish a site.',
+    'did could finish a site. W63 ACTED ON THIS AND THE INVERSION IS WHY: both ascension paths ' +
+    'now carry an ascension-institutions conjunct, and the inversion recorded above is exactly ' +
+    'what made it untestable from this pool -- permissive-breadth cannot reach fundUniversity ' +
+    'and archivist cannot reach the knowledge conjuncts, so no member both opens the grid and ' +
+    'buys anything. open-then-build is permit-then-idle plus one founding a world year at slot ' +
+    '0, appended for that reason and no other. It is the difference between a predicate that is ' +
+    'wrong and a pool that cannot exhibit it.',
 'noise-floor-submits-axis-actions-bare':
     'uniform-random-legal draws a parameter only when candidateSlotCount says the action has one, ' +
     'and CANDIDATE_SLOTS covers 8–14 alone — actions 1–7 are not §4.4 parameterized actions, so ' +

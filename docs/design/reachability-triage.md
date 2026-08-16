@@ -1,8 +1,8 @@
-# The 129 reachability findings, triaged
+# The 127 reachability findings, triaged
 
 **Measured at `e2b89d8` on 2026-08-14**, by `npm run check:reachability` plus the capability
 analysis described in §5. This is an **inventory, not a fix**: the point is to convert the single
-number "129 findings" into a count of things somebody would act on, because that number is what
+number "127 findings" into a count of things somebody would act on, because that number is what
 nobody currently knows.
 
 Re-derive before acting on it. A measurement is a statement about the tree it was taken on, and §6
@@ -19,7 +19,18 @@ is what happens when you skip that step.
 > debt **61 → 59**, superseded **14 → 16**. The 125 and the per-package totals are unchanged — this
 > is a re-judgement, not a re-measurement, and the per-package split was re-derived from the
 > committed baseline as a control (content 6, coordination 16, primitives 3, rules-magic 27,
-> rules-raid 7, rules-world 40, scenario 15, sim-core 6, state 8 = 129).
+> rules-raid 7, rules-world 38, scenario 15, sim-core 6, state 8 = 127).
+
+> **Corrected 2026-08-15, `w204/affiliate-writer`.** Two findings left the baseline because they
+> were repaired rather than re-judged: `completeAffiliation` (`unreached`) and `changeAffiliation`
+> (`reachedOnlyByUnreached`) both now have a production caller in `settleAffiliations`. The
+> `rules-world` row drops 40 → 38 and its integration debt 19 → 17; the total drops 129 → 127 and
+> the integration-debt total 60 → 58; the **University staffing** mechanism row in §2 drops 9 → 7.
+> Nothing else in this document was re-judged. `staffCohortsOf`, `unstaffUniversity`,
+> `admitStudents`, `AdmissionRefusals`, `effectiveCapacity`, `universityProfile` and `dominantCell`
+> remain in that row — `admitStudents` and `effectiveCapacity` are now reached through
+> `universityPreference`'s seat filter, but the ratchet is the authority on that and it still
+> reports them, so they stay until it does not.
 
 ---
 
@@ -32,13 +43,13 @@ is what happens when you skip that step.
 | `primitives` | 1 | 1 | 1 | 0 | 0 | 3 |
 | `rules-magic` | 16 | 6 | 1 | 4 | 0 | 27 |
 | `rules-raid` | 5 | 0 | 0 | 2 | 0 | 7 |
-| `rules-world` | 19 | 6 | 3 | 12 | 0 | 40 |
+| `rules-world` | 17 | 6 | 3 | 12 | 0 | 38 |
 | `scenario` | 0 | 0 | 15 | 0 | 0 | 15 |
 | `sim-core` | 0 | 1 | 5 | 0 | 0 | 6 |
 | `state` | 5 | 0 | 0 | 3 | 0 | 8 |
-| **Total** | **60** | **16** | **30** | **23** | **0** | **129** |
+| **Total** | **58** | **16** | **30** | **23** | **0** | **127** |
 
-The headline: **60 of the 129 are integration debt** — mechanics that are built, mostly tested,
+The headline: **58 of the 127 are integration debt** — mechanics that are built, mostly tested,
 exported, and that nothing in a running universe calls. That is the number the raw count was hiding.
 The other 66 are noise of three different kinds.
 
@@ -67,7 +78,7 @@ were moved to §3 and are not here.
 
 | Mechanism | Findings | Verified how |
 | --- | ---: | --- |
-| **University staffing** — `completeAffiliation`, `changeAffiliation`, `staffCohortsOf`, `unstaffUniversity`, `admitStudents`, `AdmissionRefusals`, `effectiveCapacity`, `universityProfile`, `dominantCell` | 9 | The only writer of the `UNIVERSITY_STAFF` component in the tree is `staffCohortsOf` itself, which is unreached; `world-step.ts:532` says in a comment that the component "shipped in `WORLD_COMPONENTS` with no writer". `scripts/w117-gate-check.sh` independently reports affiliation **shut** at `e2b89d8`. Universities are created (by `god/interventions.ts:781`) and never staffed. |
+| **University staffing** — `completeAffiliation`, `changeAffiliation`, `staffCohortsOf`, `unstaffUniversity`, `admitStudents`, `AdmissionRefusals`, `effectiveCapacity`, `universityProfile`, `dominantCell` | 7 | The only writer of the `UNIVERSITY_STAFF` component in the tree is `staffCohortsOf` itself, which is unreached; `world-step.ts:532` says in a comment that the component "shipped in `WORLD_COMPONENTS` with no writer". `scripts/w117-gate-check.sh` independently reports affiliation **shut** at `e2b89d8`. Universities are created (by `god/interventions.ts:781`) and never staffed. |
 | **Ascension legacy** — `legacyGrant`, `legacyBudget`, `carriedPrestige`, `LEGACY_CHANNELS`, and eight god constants (`legacy-*`, `prestige-retention`, `legacy-reference-tick`) | 12 | The largest single dead mechanism, and the clearest case for the check's one-hop transitivity: eight authored constants look like knobs to a content author and turn nothing, because their only reader is `legacyGrant` and `legacyGrant` has no caller. |
 | **Spell preparation and its cost half** — `prepare`, `isCastable`, `preparationCost`, `costSplit` | 4 | `castPolicy`, `expendOnCast`, `costPolicy` and `castCost` *are* reached, so casting works. The **preparation** half does not: nothing splits a cost across preparation and cast, and nothing asks whether a spell is castable before it is cast. |
 | **Portal spell transfer** — `populatePreparedSpells`, `releaseAbroad` | 2 | `resolvePortalHooks` is reached and the two functions that would use the resolved hooks are not. Prepared spells do not cross a portal. |
@@ -80,7 +91,7 @@ were moved to §3 and are not here.
 
 One more was dropped from this table on inspection: **`withdrawGrimoire`** is declared deliberately unused by `gateway.ts:107` — *"`withdrawGrimoire` is unused and stays unused"* — which is an accepted design decision rather than debt.
 
-That is 44 of the 60. (It was 46 of 61 until `applyWard` and `replay` moved to §3 in the third
+That is 42 of the 58. (It was 46 of 61 until `applyWard` and `replay` moved to §3 in the third
 correction round, and 44 of 59 until `characterFor` arrived with #201 — see §5.) The remaining 16
 are integration debt of the ordinary kind — an economy input list, a commitment predicate, a
 monoculture threshold, `speciesRediscoveryMultiplier`, `worshipShareOfRegeneration`,

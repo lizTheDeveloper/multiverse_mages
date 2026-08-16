@@ -47,6 +47,7 @@ export {
   ageBandOf,
 } from './age-bands.js';
 
+export type { AffiliationPreference } from './affiliation.js';
 export { completeAffiliation } from './affiliation.js';
 
 export {
@@ -114,6 +115,7 @@ export type { AutonomyTickInput, AutonomyTickReport, MageDecision } from './tick
 export { stepMageAutonomy } from './tick.js';
 
 export type {
+  CellEmphasis,
   SpeciesAffinities,
   TargetAppealOptions,
   TargetAppealSource,
@@ -124,12 +126,14 @@ export type {
 } from './target-appeal.js';
 export {
   NO_AFFINITIES,
+  NO_EMPHASIS,
   TARGET_APPEAL_TUNING_STATUS,
   TARGET_TERM_KINDS,
   affinityTerm,
   ageTargetTerm,
   compareAppeal,
   effortTerm,
+  emphasisTerm,
   personalityTargetTerm,
   readTargetAppeal,
   resolveSpeciesAffinities,
@@ -139,19 +143,27 @@ export {
   targetTerms,
 } from './target-appeal.js';
 
-export type { ScoreTerms, TermKind } from './terms.js';
+export type {
+  AffiliationAppeal,
+  GoalAppealSource,
+  GoalAppealWeights,
+  ScoreTerms,
+  TermKind,
+} from './terms.js';
 export {
-  AFFILIATION_OPPORTUNITY,
   AGE_TERM,
   GOAL_BASE_APPEAL,
   OPPORTUNITY_CANDIDATE_CAP,
   OPPORTUNITY_PER_CANDIDATE,
+  OPPORTUNITY_PER_STALE_HOLDING,
+  STALE_HOLDING_CAP,
   SCORING_TUNING_STATUS,
   TERM_BOUND,
   TERM_KINDS,
   ageTerm,
   opportunityTerm,
   personalityTerm,
+  readGoalAppeal,
   speciesTerm,
   termsFor,
 } from './terms.js';

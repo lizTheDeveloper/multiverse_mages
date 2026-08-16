@@ -31,12 +31,18 @@ import { MAGE_ROLE } from '@mm/state';
 import type { MageRoleValue } from '@mm/state';
 
 import type {
+  GoalAppealWeights,
   KnowledgeTarget,
   MageOutlook,
   SpeciesAffinities,
   TargetAppealWeights,
 } from '../../src/index.js';
-import { readTargetAppeal, resolveSpeciesAffinities } from '../../src/index.js';
+import {
+  NO_EMPHASIS,
+  readGoalAppeal,
+  readTargetAppeal,
+  resolveSpeciesAffinities,
+} from '../../src/index.js';
 
 import { shippedRegistry } from './mage-fixtures.js';
 
@@ -69,6 +75,9 @@ export function speciesNamed(id: string): SpeciesRecord {
  * whether the shipped content differentiates anything.
  */
 export const appealWeights: TargetAppealWeights = readTargetAppeal(registry);
+
+/** The goal-appeal weights, read from the same file for the same reason. */
+export const goalAppealWeights: GoalAppealWeights = readGoalAppeal(registry);
 
 const affinityCache = new Map<string, SpeciesAffinities>();
 
@@ -127,6 +136,7 @@ export function outlook(overrides: Partial<MageOutlook> = {}): MageOutlook {
     mage: 1,
     species: speciesNamed('human'),
     affinities: affinitiesOf('human'),
+    emphasis: NO_EMPHASIS,
     personality: { curiosity: 1024, ambition: 1024, caution: 1024 },
     roleId: MAGE_ROLE.researcher as MageRoleValue,
     // fp(512) — the middle of the prime band for every species, and the
@@ -145,6 +155,8 @@ export function outlook(overrides: Partial<MageOutlook> = {}): MageOutlook {
     preferredUniversity: 0,
     wardPressure: 0,
     raidPressure: 0,
+    practiceTargets: [],
+    staleHoldings: 0,
   };
   return { ...base, ...overrides };
 }
@@ -167,6 +179,10 @@ export function richOutlook(overrides: Partial<MageOutlook> = {}): MageOutlook {
     // `remainingCost` zero, because an applicable node is one she already knows
     // — there is no project left to pay for.
     applicableTargets: [target(61, 1, 0)],
+    // A node she holds and has let go stale. `richOutlook` is "everything is
+    // available", and after W53 that includes having something to keep sharp.
+    practiceTargets: [target(61)],
+    staleHoldings: 1,
     materials: 4096,
     scribeThroughput: 1024,
     betterAffiliationAvailable: true,

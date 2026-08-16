@@ -378,6 +378,27 @@ describe('contentRevision', () => {
     // magic is a goal a mage will choose, so a tick's materials and a tick's
     // goal histogram both move from the first month.
     //
+    // d4e3047657b4fa8a1a74e1d52f9f5c86 -> fcd0825c452084f12210209bfd20665d, when
+    // W63 added a sixth ascension constant, `ascension-institutions`. Same shape
+    // as the five above and the same reason it is not a shrug: it is a conjunct
+    // of both paths, so two universes on either side of this revision would
+    // disagree about whether a game was over. No existing record changed a byte.
+    //
+    // d4e3047657b4fa8a1a74e1d52f9f5c86 -> 92d842243c6c7c9718a74c1c097f81d9,
+    // when W53 added the `practice-rate` primitive, the `bless-practice-rate`
+    // god constant, and the two `rego-mentem` nodes that grant the primitive.
+    // Three value edits and no new file, so the preimage is the same shape and
+    // the digest moving is the whole of what a digest is for: a universe that
+    // does not know `practice-rate` exists cannot restore mastery, and would
+    // run a visibly different economy while claiming to be compatible.
+    // d4e3047657b4fa8a1a74e1d52f9f5c86 -> 158e2dc733c26dd526f481e49a4d43d9,
+    // when W52 added `target-emphasis-divisor` and `target-bound-emphasis` to
+    // `autonomy-weight.json` — what the god's `encourageResearch` is worth to a
+    // mage deciding what to study next, now that it is a preference rather than
+    // a research rate. Two new records and one gloss edit; no existing value
+    // moved. They are in the preimage for the same reason the rest of that file
+    // is: two universes that disagreed about how strongly an encouragement
+    // pulls would develop different magic from the same edicts.
     // d4e3047657b4fa8a1a74e1d52f9f5c86 -> e8442af2c5f91ae6f80ad9a178e0e451,
     // when anti-requisites landed (`vision.md` §4b) and `cell.json` gained an
     // `excludes` array carrying one pair: *Creo Ignem* and *Creo Umbra* exclude
@@ -477,7 +498,90 @@ describe('contentRevision', () => {
     // branch's 0dfdd5ef... is the digest of a content set that predates several
     // of main's own additions. The value below is what the test printed when run
     // against the merged content set.
-    expect(registry.contentRevision).toBe('94073a8c838ca84019f4025810aa2acc');
+    // Both edits above arrived on separate branches and this tree is the first
+    // holding both, so neither branch's literal is a digest over a preimage
+    // containing the other. The union is a third value, read from the test
+    // rather than derived by hand.
+    //
+    // 9b7ca0f7156bf5c6f8036364aa28f952 / 8681bf846bd94be80fdabc447e6e01df ->
+    // RECOMPUTED BELOW, on the Group F merge of `w63/ascension-requires-play`
+    // into `integration/group-f`, 2026-08-16. For the fifth time in this list
+    // neither side's literal is a digest over a preimage holding both edits:
+    // `8681bf84` knows the seventeenth god cost and the signed `pn-the-nameless`
+    // cost but not W63's seventy-third god constant, and `9b7ca0f7` knows the
+    // constant but not the other two. Read from
+    // `node packages/content/bin/validate-content.mjs` on the merged tree and
+    // then confirmed by this test, which is two independent paths to the same
+    // value rather than a literal copied off a failure message.
+    // Both edits arrived on separate branches and this tree is the first holding
+    // both, so the union is necessarily a third value. Read from the test.
+    //
+    // RECOMPUTED AGAIN on the Group F merge of `w53/practice`, 2026-08-16 —
+    // the sixth union in this list and the same reason as the five above it.
+    // Neither `68fc8134` (this group's tree after `w63`) nor `6feb3278` (this
+    // branch's) is a digest over a preimage holding both, so the value below
+    // was read from `node packages/content/bin/validate-content.mjs` on the
+    // merged tree and then confirmed by this test.
+    // Both edits above arrived on separate branches and this tree is the first
+    // holding both, so neither branch's literal is a digest over a preimage
+    // containing the other. The union is a third value, which is what a digest
+    // over a union is supposed to produce, and it was read from the test rather
+    // than derived by hand — guessing it is not an option.
+    //
+    // RECOMPUTED AGAIN on the Group F merge of `w52/emphasis-reorders`,
+    // 2026-08-16 — the seventh union in this list. Read from
+    // `node packages/content/bin/validate-content.mjs` on the merged tree and
+    // confirmed by this test.
+    //
+    // 162f80bf169296d0e5fd516cc3c5257a -> f49b406d509a1d0e0ed4e152f7b90fb5 (on this branch,
+    // before the merge below: b37b15fc7f882af127057304f72a7522),
+    // when `affiliate` stopped being priced with one number. Two autonomy
+    // weights were added — the opportunity a mage with no university sees in
+    // getting one, and the much smaller opportunity a mage who has one sees in
+    // moving to a deeper one. In the preimage for the plainest possible reason:
+    // they change which goal a mage picks, and two universes that disagreed
+    // about whether their mages join institutions would not be playing the same
+    // game for five minutes. Unlike the god constants above, this one **does**
+    // change every run from its first year, and the balance baselines it moves
+    // are reported in the change that added it rather than regenerated.
+    //
+    // Union, for the fifth time in this list, and the last two entries are
+    // independent: `main` reached this merge asserting `0dfdd5ef` — a digest
+    // over a preimage holding the exclusion pair and the seventeenth god cost
+    // but not W116's two affiliation weights — while this branch reached it
+    // asserting `68cea590`, over one holding the affiliation weights and
+    // neither of those. Neither is a competing claim about *this* tree, whose
+    // preimage strictly contains both, so the value below is the union
+    // arriving rather than a disagreement being settled.
+    //
+    // MEASURED on the merged tree rather than carried from either side, which
+    // is the only way a digest over a union can be pinned: a revision literal
+    // is a statement about the tree it was read on, and neither parent is that
+    // tree. `201d3719` was read back from `loadContent(shippedContentSource())`
+    // on this merge commit. It is a **revision re-pin** and nothing else: no
+    // gated metric was measured into any baseline for it. The three gate
+    // baselines carry this same digest in `provenance.contentHash` by way of a
+    // provenance-only re-seal (`reseal-baseline.mjs`, PR #184), which runs the
+    // sweep, refuses if any metric has moved, and passes every metric line
+    // through byte for byte — the verification reported 0.00 SE on every gated
+    // metric of all three gates, so this merge is behaviourally inert and only
+    // the seal was stale.
+    //
+    // RECOMPUTED AGAIN on the Group F merge of `w116/complete-affiliation`,
+    // 2026-08-16 — the eighth union in this list. Read from
+    // `node packages/content/bin/validate-content.mjs` on the merged tree and
+    // confirmed by this test.
+    //
+    // RECOMPUTED AGAIN on the combine of Groups A, C, B, D and F into
+    // `integration/all-branches`, 2026-08-16 — the ninth union in this list and
+    // the same reason as the eight above it. Group B's `w80` repricing of 299
+    // `researchCost` values and Group F's node-effect additions are both in the
+    // preimage here and neither parent's literal is a digest over a set holding
+    // both: `94073a8c` (Group B's tree) knows the repricing and not Group F's
+    // effects, `08f5fc0d` (Group F's) the reverse. Read from
+    // `node packages/content/bin/validate-content.mjs` on the merged tree and
+    // then confirmed by this test.
+    expect(registry.contentRevision).toBe('67caa64523465b3fe1b16760400a028a');
   });
 
   it('is stable across loads of identical content', () => {

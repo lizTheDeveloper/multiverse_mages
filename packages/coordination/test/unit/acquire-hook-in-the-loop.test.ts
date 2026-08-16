@@ -219,14 +219,29 @@ describe('the acquire hook reaches a running universe', () => {
     // Read at the end of twenty years, so the top of the distribution is a
     // decayed `instanceMastery` rather than the declared one — `MASTERY_MAX` is
     // where these instances started, and the ceiling is the bound worth
-    // asserting. The standard universe's ceiling is its placeholder mastery,
-    // which nothing in the loop ever raises.
+    // asserting.
     expect(Math.max(...withHook.masteries)).toBeGreaterThan(DEFAULT_TEACH_THRESHOLD);
     expect(Math.max(...withHook.masteries)).toBeLessThanOrEqual(MASTERY_MAX);
-    expect(Math.max(...withoutHook.masteries)).toBeLessThanOrEqual(DEFAULT_INITIAL_MASTERY);
+
+    // This assertion used to read `toBeLessThanOrEqual(DEFAULT_INITIAL_MASTERY)`,
+    // on the argument — written into the comment above it — that *"the standard
+    // universe's ceiling is its placeholder mastery, which nothing in the loop
+    // ever raises."* That sentence was true of every build until W53 and is now
+    // false: `practice` raises it, which is the whole of what W53 built. The
+    // standard universe reaches 1019 here rather than 256, and teaches lessons
+    // it could not previously teach at all — so the hook's remaining claim is
+    // about the mastery an instance *arrives* at, not about a ceiling only True
+    // Naming could reach.
+    expect(Math.max(...withoutHook.masteries)).toBeGreaterThan(DEFAULT_INITIAL_MASTERY);
+    expect(Math.max(...withoutHook.masteries)).toBeLessThanOrEqual(MASTERY_MAX);
 
     expect(withHook.lessonsTaught).toBeGreaterThan(0);
-    expect(withoutHook.lessonsTaught).toBe(0);
+    // Was `toBe(0)`. A standard universe whose scholars never restored a node
+    // held everything below the teach threshold and transmitted nothing for
+    // twenty years; it now teaches, and teaching less than the True Naming arm
+    // is the difference that survives.
+    expect(withoutHook.lessonsTaught).toBeGreaterThan(0);
+    expect(withoutHook.lessonsTaught).toBeLessThan(withHook.lessonsTaught);
   });
 
   it('is reproducible: the same seeded universe twice', () => {

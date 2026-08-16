@@ -44,8 +44,9 @@ import {
   storePolicy,
   traditionTableFrom,
 } from '@mm/rules-magic';
-import type { TargetAppealWeights } from '@mm/rules-world';
+import type { GoalAppealWeights, TargetAppealWeights } from '@mm/rules-world';
 import {
+  readGoalAppeal,
   readApplicationWeights,
   readTargetAppeal,
   resolveSpeciesAffinities,
@@ -127,6 +128,11 @@ export function appealWeights(): TargetAppealWeights {
   return readTargetAppeal(registry());
 }
 
+/** The goal-appeal weights, read from the same file. */
+export function goalAppealWeights(): GoalAppealWeights {
+  return readGoalAppeal(registry());
+}
+
 /** The deps a world simulation is built from, over shipped content. */
 export function worldDeps(traditionId: number): WorldStepDeps {
   const { catalog, cells } = catalogAndCells();
@@ -138,6 +144,7 @@ export function worldDeps(traditionId: number): WorldStepDeps {
     facets: nodeFacets(),
     affinitiesOf: (species) => resolveSpeciesAffinities(species, registry()),
     appeal: appealWeights(),
+    goalAppeal: goalAppealWeights(),
     // Shipped, like every other magnitude here. `apply-magic` is nonetheless
     // masked for every mage in this fixture, because applicability also needs
     // `universeEffects` and that is deliberately absent — see the note below.
@@ -163,6 +170,7 @@ export function worldDeps(traditionId: number): WorldStepDeps {
       researchRate: primitiveNamed('research-rate'),
       teachRate: primitiveNamed('teach-rate'),
       scribeRate: primitiveNamed('scribe-rate'),
+      practiceRate: primitiveNamed('practice-rate'),
       fertility: primitiveNamed('fertility'),
     },
     knowledgeFor: (state) => KnowledgeSubsystem.fromState(state, catalog.nodeCount),

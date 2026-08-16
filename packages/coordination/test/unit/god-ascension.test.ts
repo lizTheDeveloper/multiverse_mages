@@ -108,6 +108,7 @@ function apotheosisFacts(overrides: Partial<ApotheosisFacts> = {}): ApotheosisFa
     cellOf: SHALLOW.cellOf,
     deepest: deepestNodesByCell(SHALLOW.catalog, SHALLOW.cellOf),
     worshipTier: C.ascensionTierGate,
+    completedUniversities: C.ascensionInstitutions,
     ...overrides,
   };
 }

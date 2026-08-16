@@ -487,6 +487,38 @@ describe('invalid content is a hard load failure', () => {
   });
 });
 
+describe('the two affiliation weights keep their ordering', () => {
+  it('refuses a transfer priced at or above a first affiliation', () => {
+    // The design statement §2.11 records, as a check rather than as a gloss: an
+    // unaffiliated mage may neither scribe nor ward, so her first university
+    // unlocks two goals, while a transfer trades one library for a deeper one.
+    // Authored the other way round the population churns between institutions
+    // and never joins one — which in an affiliation metric reads as success.
+    const diagnostics = expectHardFail(
+      brokenSource((documents) => {
+        recordById(documents, 'autonomy-weight.json', 'goal-affiliate-transfer-opportunity')[
+          'value'
+        ] = 512;
+      }),
+    );
+    expect(messages(diagnostics)).toContain('goal-affiliate-first-opportunity');
+    expect(messages(diagnostics)).toContain('strictly the larger');
+  });
+
+  it('refuses a set that drops one of them, because the rules read it by name', () => {
+    const diagnostics = expectHardFail(
+      brokenSource((documents) => {
+        const records = recordsOf(documents, 'autonomy-weight.json');
+        const index = records.findIndex(
+          (record) => record['id'] === 'goal-affiliate-first-opportunity',
+        );
+        records.splice(index, 1);
+      }),
+    );
+    expect(messages(diagnostics)).toContain('goal-affiliate-first-opportunity');
+  });
+});
+
 describe('tradition hooks are a closed enumeration', () => {
   it('rejects a fifth hook, naming the disallowed key', () => {
     const diagnostics = expectHardFail(

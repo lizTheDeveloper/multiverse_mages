@@ -79,7 +79,7 @@ describe('the ablation conformance check over shipped content', () => {
     const fromDocument = contractPrimitiveIds();
     // Guard against the parser silently matching nothing and the check below
     // then passing over an empty set.
-    expect(fromDocument.length).toBe(16);
+    expect(fromDocument.length).toBe(17);
     expect([...report.checked].map((row) => row.primitiveId).sort()).toEqual(
       [...fromDocument].sort(),
     );

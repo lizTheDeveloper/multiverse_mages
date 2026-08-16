@@ -1,6 +1,6 @@
 /*
- * Multiverse Mages — the target-appeal weight table, and the one invariant that
- * keeps a role from becoming an order.
+ * Multiverse Mages — the target-appeal weight table, and the two invariants
+ * that keep a role and an encouragement from becoming orders.
  * Copyright (C) 2026 Ann Kelner
  *
  * This program is free software: you can redistribute it and/or modify it under
@@ -54,6 +54,12 @@
  * requires every role-appeal magnitude to fit inside the role bound. Raising one
  * without the other fails the load rather than quietly widening the god's
  * authority over what an individual mage studies.
+ *
+ * **There are now two god-owned terms and therefore two of that check.** The
+ * emphasis bound — what `encourageResearch` is worth to a mage deciding what to
+ * study next — is checked against the *same five* mage-owned bounds, separately
+ * and not as part of a sum that includes the role bound. See
+ * {@link NON_ROLE_BOUND_IDS} for why folding them together would defeat both.
  */
 
 import type { ContentDiagnostic } from './diagnostics.js';
@@ -87,7 +93,15 @@ export const REQUIRED_AUTONOMY_WEIGHTS = [
   'target-bound-age',
   'target-bound-personality',
   'target-bound-role',
+  'target-emphasis-divisor',
+  'target-bound-emphasis',
   'target-appeal-ceiling',
+  // Goal selection, not target selection. Every other scalar here answers
+  // *which node*; these two answer *whether to join an institution at all*, and
+  // they are two rather than one because `completeAffiliation` and
+  // `changeAffiliation` are two functions. See `terms.ts`.
+  'goal-affiliate-first-opportunity',
+  'goal-affiliate-transfer-opportunity',
   // The two applied-work magnitudes. Not target-selection weights — they price
   // what `GOAL.applyMagic` makes and what it eats — but they belong in this
   // file for the reason the file exists: the rules read each by name, so the id
@@ -110,9 +124,22 @@ const DIVISOR_IDS = [
   'target-curiosity-divisor',
   'target-ambition-divisor',
   'target-caution-divisor',
+  'target-emphasis-divisor',
 ] as const;
 
-/** The five bounds the role bound is checked against. */
+/**
+ * The five bounds the role bound and the emphasis bound are each checked
+ * against.
+ *
+ * **Five, not six, and the emphasis bound is deliberately not among them.**
+ * These are the terms a mage owns — what a project costs her, what her species
+ * is good at, how curious it is, how old she is, who she is. The role bound and
+ * the emphasis bound are the two the *god* writes, and each is checked against
+ * this sum separately rather than against a sum that includes the other. Folding
+ * them together would let a future role bound hide behind the god's own second
+ * instruction and still pass: two god-owned terms summing to more than the mage
+ * keeps is exactly the puppeteer the check exists to refuse.
+ */
 const NON_ROLE_BOUND_IDS = [
   'target-bound-effort',
   'target-bound-affinity',
@@ -214,9 +241,10 @@ export function checkAutonomyWeights(
     out.push(
       problem(
         '',
-        `weight "${id}" is not declared, and target selection reads it by name. An absent weight ` +
-          'would arrive in the score as 0 — a divisor of zero, or a bound that silences a whole ' +
-          'term, either of which is a plausible-looking answer to a question nobody asked.',
+        `weight "${id}" is not declared, and the autonomy scoring path reads it by name. An ` +
+          'absent weight would arrive in the score as 0 — a divisor of zero, or a bound that ' +
+          'silences a whole term, either of which is a plausible-looking answer to a question ' +
+          'nobody asked.',
       ),
     );
   }
@@ -233,6 +261,26 @@ export function checkAutonomyWeights(
   }
 
   const value = (id: string): number | undefined => byId.get(id)?.value;
+
+  // The design statement the two weights exist to make, as a check rather than
+  // as a gloss: getting a first university is a near-necessity and moving
+  // between universities is a preference. Authored the other way round they
+  // would produce a population that churns between institutions and never joins
+  // one, which reads in a metric as affiliation working.
+  const first = value('goal-affiliate-first-opportunity');
+  const transfer = value('goal-affiliate-transfer-opportunity');
+  if (first !== undefined && transfer !== undefined && first <= transfer) {
+    out.push(
+      problem(
+        '',
+        `"goal-affiliate-first-opportunity" is ${String(first)} and ` +
+          `"goal-affiliate-transfer-opportunity" is ${String(transfer)}. The first must be ` +
+          'strictly the larger: an unaffiliated mage may neither scribe nor ward, so her first ' +
+          'affiliation unlocks two goals, while a transfer only trades one library for a deeper ' +
+          'one.',
+      ),
+    );
+  }
 
   for (const id of DIVISOR_IDS) {
     const divisor = value(id);
@@ -279,6 +327,31 @@ export function checkAutonomyWeights(
     );
   }
 
+  const emphasisBound = value('target-bound-emphasis');
+  if (emphasisBound !== undefined && emphasisBound < 1) {
+    out.push(
+      problem(
+        '',
+        `"target-bound-emphasis" is ${String(emphasisBound)}. A bound below 1 removes the god's ` +
+          'emphasis from target selection entirely, which is an ablation rather than a tuning ' +
+          'value — run it through the divisor if that is what you want, so the arm says so.',
+      ),
+    );
+  }
+  if (emphasisBound !== undefined && boundsKnown && emphasisBound >= otherBounds) {
+    out.push(
+      problem(
+        '',
+        `"target-bound-emphasis" is ${String(emphasisBound)} and the five mage-owned bounds sum ` +
+          `to ${String(otherBounds)}. An encouragement must never be able to outvote everything a ` +
+          'mage knows about her own situation at once. Vision §7 is "You set the role; they ' +
+          'decide everything else. You never issue direct orders" — and an emphasis that ' +
+          'dominates the sum is a direct order arriving by tuning edit. It ' +
+          'deletes the autonomy the whole design rests on.',
+      ),
+    );
+  }
+
   if (roleBound !== undefined) {
     for (const record of records) {
       if (!isRoleAppeal(record)) continue;
@@ -295,13 +368,13 @@ export function checkAutonomyWeights(
   }
 
   const ceiling = value('target-appeal-ceiling');
-  if (ceiling !== undefined && boundsKnown && roleBound !== undefined) {
-    const totalBound = otherBounds + roleBound;
+  if (ceiling !== undefined && boundsKnown && roleBound !== undefined && emphasisBound !== undefined) {
+    const totalBound = otherBounds + roleBound + emphasisBound;
     if (ceiling < totalBound) {
       out.push(
         problem(
           '',
-          `"target-appeal-ceiling" is ${String(ceiling)} but the six bounds sum to ` +
+          `"target-appeal-ceiling" is ${String(ceiling)} but the seven bounds sum to ` +
             `${String(totalBound)}. A clamp that binds on an ordinary outlook flattens real ` +
             'differences into ties, and a score whose ceiling is reachable by summing its own ' +
             'bounds is a score that quietly stops discriminating at the top.',

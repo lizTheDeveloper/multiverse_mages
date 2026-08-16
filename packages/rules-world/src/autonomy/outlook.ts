@@ -18,97 +18,92 @@ import type { Handle, MageRoleValue } from '@mm/state';
 
 import type { KnowledgeTarget, MageHandle, UniversityHandle } from '../coordination.js';
 import type { Personality } from '../mages/personality.js';
-import type { SpeciesAffinities } from './target-appeal.js';
+import type { CellEmphasis, SpeciesAffinities } from './target-appeal.js';
 
 /**
- * ## The point of gathering this first
+ * ## Why gather first
  *
- * Masking, scoring, and selection are pure functions of this record. Nothing in
- * the autonomy directory reads the entity store, calls the knowledge gateway,
- * or touches the clock — `gatherFrontier` in `candidates.ts` and its caller does all of
- * that once, and everything downstream is arithmetic over the result.
+ * Masking, scoring and selection are pure functions of this record. `autonomy/`
+ * touches no entity store, no gateway, no clock — `gatherFrontier`
+ * (`candidates.ts`) and its caller do it once.
  *
- * Three things fall out of that shape, and each of them is a requirement
- * somewhere:
+ * Three requirements met by that shape alone, all in
+ * `openspec/changes/mages-and-species/specs/mage-autonomy/spec.md`:
  *
- * - **The position ban becomes structural** (`contracts.md` §0, and the
- *   `mage-autonomy` spec's "Autonomy is position-free"). There is no coordinate
- *   in this record, so the scoring path cannot read one even by accident. The
- *   conformance check in `autonomy-no-position.test.ts` scans the directory
- *   anyway, because a structural argument stops being one the moment somebody
- *   adds a field.
- * - **Candidate scanning is bounded once, not per goal.** The spec requires a
- *   documented constant; it is `MAX_CANDIDATE_TARGETS`, applied where the
- *   frontier is fetched rather than at each of the five target-taking goals.
- * - **Ablation is cheap.** Zeroing a scoring term and re-running needs the same
- *   outlook, not a re-simulated universe, which is what makes
- *   `scoring-ablation.test.ts` a unit test rather than a scenario.
+ * - `:212` position-free — no coordinate field, so scoring cannot read one.
+ *   Structural, but fragile: `autonomy-no-position.test.ts` scans anyway.
+ * - `:236` bounded in cost — `MAX_CANDIDATE_TARGETS`, applied at the frontier
+ *   fetch, not at each of the five target-taking goals.
+ * - `:119` individually ablatable — zero a term, re-run the same outlook, no
+ *   re-simulated universe. Hence `scoring-ablation.test.ts` is a unit test.
  *
- * ## Why the lists are `KnowledgeTarget` and not node ids
+ * ## Why `KnowledgeTarget`, not node ids
  *
- * `coordination.ts` chose `KnowledgeTarget` — id, tier, remaining cost —
- * because scoring needs a cost and depth gating needs a tier, and nothing on
- * this side of the port may need more. Passing bare ids here would force the
- * scoring code to ask the gateway a second question per candidate, which is the
- * unbounded scan the port was shaped to prevent.
+ * id + tier + remaining cost (`coordination.ts`): scoring needs the cost, depth
+ * gating the tier. Bare ids cost a second gateway call per candidate — the
+ * unbounded scan the port prevents.
  */
 
 /**
- * One mage's situation, as of one world tick.
+ * One mage's situation at one world tick.
  *
- * Every field is either read from her own components or supplied by the
- * coordinating layer through the `KnowledgeGateway` port. None of it is cached in
- * state: `contracts.md` §1.5's "existence is derived, never cached" applies to
- * everything derived from knowledge, and an outlook is rebuilt per evaluation.
+ * Fields from her components or the `KnowledgeGateway` port. Never cached
+ * (`contracts.md` §1.5); rebuilt per evaluation.
  */
 export interface MageOutlook {
-  /** The mage's handle. The actor key for tie-breaking, and the stagger phase. */
+  /** Actor key for tie-breaking, and the stagger phase. */
   readonly mage: MageHandle;
-  /** Her species record, for the trait-driven scoring terms. */
+  /** Species record, for trait-driven scoring terms. */
   readonly species: SpeciesRecord;
   /**
-   * Her species' `affinities`, resolved from author-facing strings onto
-   * interned cell and form ids.
+   * Her species' `affinities`, interned onto cell and form ids.
    *
-   * Beside {@link MageOutlook.species} rather than inside it because
-   * `SpeciesRecord` is `@mm/content`'s shape and its `affinities` are keyed by
-   * strings. Interning them per candidate per tick is the string hashing in the
-   * hot loop that `catalog.ts` refuses for prerequisites, and resolving them
-   * needs the registry, which the scoring path deliberately cannot reach.
+   * Outside {@link MageOutlook.species}: `SpeciesRecord` (`@mm/content`) keys
+   * affinities by string. Interning per candidate per tick is the hot-loop
+   * hashing `catalog.ts` refuses for prerequisites, and needs the registry,
+   * which scoring cannot reach.
    *
-   * §6 lists *"technique/form affinities"* among the seven things a species is
-   * tuned on. Until this field existed it was the only one of the seven that no
-   * rule read.
+   * §6 tunes a species on seven things. This was the one no rule read.
    */
   readonly affinities: SpeciesAffinities;
+  /**
+   * Which cells the god has encouraged, and how strongly, on this tick.
+   *
+   * The one field on this record that is a fact about the *universe* rather than
+   * about the mage, and it is here because the outlook is the only thing the
+   * utility-AI reads: a term that could not reach it could not exist. Every mage
+   * in a universe sees the identical map, which is what makes an encouragement a
+   * public instruction rather than a private nudge — and what makes it able to
+   * move a whole universe's node set rather than one mage's.
+   *
+   * Empty for a universe whose god has encouraged nothing, which is every
+   * universe under `passive-control`.
+   */
+  readonly emphasis: CellEmphasis;
   /** Her rolled personality, from her own component fields. */
   readonly personality: Personality;
-  /** Her standing role. Only the god writes this; autonomy only reads it. */
+  /** Standing role. God writes, autonomy reads. */
   readonly roleId: MageRoleValue;
   /** Age as a fraction of effective lifespan, `fp`. Derived, never stored. */
   readonly normalizedAge: Fixed;
-  /** Her current affiliation, or `0` for unaffiliated (`contracts.md` §0). */
+  /** Current affiliation, or `0` for unaffiliated (`contracts.md` §0). */
   readonly universityId: Handle;
 
   /**
-   * Nodes she could begin researching that this universe has never held,
-   * already filtered to her species `depthCeiling` and already bounded.
+   * Nodes she could start on, never held here. Filtered to species
+   * `depthCeiling`, bounded.
    */
   readonly discoveryTargets: readonly KnowledgeTarget[];
   /**
-   * Nodes this universe knew and lost that she could research again. Separate
-   * from {@link discoveryTargets} because they are separate goals with separate
-   * ids, and a baseline that could not tell them apart could not report the
-   * cost of forgetting.
+   * Nodes this universe knew and lost. Separate from {@link discoveryTargets}:
+   * separate goals, separate ids. Merged, a baseline could not report the cost
+   * of forgetting.
    */
   readonly rediscoveryTargets: readonly KnowledgeTarget[];
   /**
-   * Nodes a living, willing holder could teach her.
-   *
-   * The `mage-autonomy` spec: *"eligibility depends on whether a living,
-   * willing holder of the node exists, not on where that holder is."* The
-   * gateway answers that question; this list is its answer, so no distance can
-   * enter even in principle.
+   * Nodes a living, willing holder could teach her —
+   * `mage-autonomy/spec.md:174`.
+   * The gateway's answer, so no distance can enter even in principle.
    */
   readonly teachableToMe: readonly KnowledgeTarget[];
   /** Nodes she could pass to a student who can receive them. */
@@ -118,53 +113,72 @@ export interface MageOutlook {
   /**
    * Nodes she could spend the month **casting at the world**, already gated.
    *
-   * The four gates are the coordinating layer's, and every one of them is a
-   * question this package may not ask: held at a mind or a memory palace, at or
-   * above `MASTERY_ACTIVATION_THRESHOLD`, in a cell the ruleset permits *now*,
-   * and carrying a `resource-yield` effect whose form routes to a material.
-   * They are the same gates `universe-effects.ts` applies to the ambient
-   * multiplier, deliberately: two answers to "can she cast this" would diverge,
-   * and the one without the adversarial test would be the one the economy used.
+   * Four gates, each a question this package may not ask: held at a mind or
+   * memory palace; at or above `MASTERY_ACTIVATION_THRESHOLD`; cell permitted
+   * *now*; a `resource-yield` effect whose form routes to a material. Same
+   * gates the ambient multiplier uses (`universe-effects.ts:35`, counted there
+   * as two) — shared deliberately: two answers to "can she cast this" would
+   * diverge and the economy would use the untested one.
    *
-   * `remainingCost` is zero for every entry — she already knows them — so
-   * `compareTargets`' cost ordering falls straight through to the appeal score
-   * and then to node id, which is exactly what is wanted when there is no
-   * project to finish.
+   * `remainingCost` is zero throughout, so `compareTargets` falls past cost to
+   * appeal score, then node id. Right, when there is no project to finish.
    */
   readonly applicableTargets: readonly KnowledgeTarget[];
+  /**
+   * Nodes she already holds and could keep sharp, with the months one restore
+   * quantum costs as `remainingCost`.
+   *
+   * The gateway builds this from her own held instances, filtered to permitted
+   * cells and to instances below full mastery — the same three conditions
+   * `practice` refuses on — and sorted **stalest first**, so a truncation at
+   * `MAX_CANDIDATE_TARGETS` drops the nodes she is closest to full on rather
+   * than the ones she has lost standing in. That ordering is the publish-or-
+   * perish half of `ages-of-magic.md` §2c arriving as a candidate list rather
+   * than as a scoring weight: a weight can be outvoted, and this cannot.
+   */
+  readonly practiceTargets: readonly KnowledgeTarget[];
 
-  /** The universe's materials stock, `fp`. Scribing is masked without enough. */
+  /** Universe materials stock, `fp`. Scribing is masked without enough. */
   readonly materials: Fixed;
   /**
-   * Her university's scribing throughput this tick, `fp`.
-   *
-   * Zero for an unaffiliated mage and for a university with no scribe staff —
-   * the `universities` spec requires `scribe` to be masked in the second case,
-   * and there is no third case where a mage scribes out of nowhere.
+   * Her university's scribing throughput this tick, `fp`. Zero for an
+   * unaffiliated mage, and for a university with no scribe staff
+   * (`universities/spec.md:66`). No third case.
    */
   readonly scribeThroughput: Fixed;
   /**
-   * Whether some other university would suit her better than her current one.
+   * Whether another university would suit her better.
    *
-   * A boolean rather than a handle because `affiliate`'s *target* is chosen
-   * when the goal completes, not when it is scored, and holding a handle here
-   * for several ticks of commitment would be holding a handle that may have
-   * been destroyed. Which university she moves to is `select.ts`'s to resolve
-   * from a fresh outlook.
+   * Boolean, not a handle: `affiliate` picks its target at completion, not at
+   * scoring, and a handle held across ticks of commitment can dangle.
+   * `select.ts` resolves the move from a fresh outlook.
    */
   readonly betterAffiliationAvailable: boolean;
-  /** The university she would move to, or `0`. Resolved at completion. */
+  /** University she would move to, or `0`. Resolved at completion. */
   readonly preferredUniversity: UniversityHandle;
 
   /**
    * How much the universe wants its libraries watched, `fp`.
    *
-   * Zero at 0.4.0. `ward-duty` is enumerated and scorable now, but what makes
-   * warding attractive is a threat, and threats are `raid-engagement`'s. Fed as
-   * an input rather than computed here so that capability supplies a number
-   * instead of amending the goal set.
+   * Zero at 0.4.0. `ward-duty` is enumerated and scorable, but warding attracts
+   * only under threat, and threats are `raid-engagement`'s. An input, not a
+   * computation: that capability supplies a number instead of amending the
+   * goal set.
    */
   readonly wardPressure: Fixed;
   /** How much the universe wants raiders ready, `fp`. Zero at 0.4.0, same reason. */
   readonly raidPressure: Fixed;
+
+  /**
+   * How many nodes she holds at a mastery below the teaching threshold.
+   *
+   * Not derivable from {@link practiceTargets}: that list is bounded at
+   * `MAX_CANDIDATE_TARGETS` and is a *cost* device, and reading a count off a
+   * truncated list is the "reading a truncation as a fact about the world"
+   * mistake `select.ts` records at length. This is the untruncated count, and it
+   * is what makes `practice` attractive to a scholar who has lost the standing
+   * to supervise anything — `ages-of-magic.md` §2c's *"faculty who have not had
+   * a new result in twenty years"*.
+   */
+  readonly staleHoldings: number;
 }

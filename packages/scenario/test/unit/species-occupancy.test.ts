@@ -162,7 +162,7 @@ describe('twenty world years in', () => {
     }
   });
 
-  it('has five species at the ruleset ceiling and one below it', () => {
+  it('measures which species reach the ruleset ceiling and which fall short', () => {
     // **Re-measured on the merge of `main` (5a1ce6c) into
     // `w108/university-fidelity`, 2026-08-14.** Not inherited from either side:
     // both sides of that merge re-recorded this block for different reasons and
@@ -207,53 +207,123 @@ describe('twenty world years in', () => {
     // line: the campaign's knowledge-vitality wire, and `main`'s own merges.
     // Taking either hunk verbatim would pin a number no build produces, which
     // is exactly what the conflict resolution had to avoid.
-    // **Re-measured 2026-08-16 on the Group B integration branch, and this time
-    // the cause is content rather than a re-roll.** `12/12/11/9/11/9` became
-    // `12/12/12/12/12/9` (dwarf, human, orc, draconic, elf, gnome), and the
-    // *title of this test changed with it*: five species now stand at the
-    // twelve-cell ruleset ceiling and one below, where it used to be three and
-    // three.
     //
-    // The cause is `w80/research-cost-variation`, merged into this branch. It
-    // reprices 299 of `node.json`'s `researchCost` values off their powers of
-    // two and onto a swept price — 2048 -> 2477, 4096 -> 5066, 8192 -> 9154 —
-    // which is the branch's entire purpose. Cheaper marginal nodes let the four
-    // species that were short of the ceiling reach it inside twenty years.
+    // **Re-recorded on `w185/cohort-source`, 2026-08-14.** W185 opened the
+    // occupation transfer valve, which had been welded shut by a per-cohort
+    // floor, and filled university seats from `idle` only. Both change *who is
+    // a student*, so both change who is promoted, so the mage population at
+    // twenty years is a different set of individuals — 56 living mages here
+    // against the old run's. One species reaches the ceiling instead of three,
+    // and orc falls furthest. The durable reading is unchanged and is the one
+    // this test's name states: the spread is neither flat nor a hegemony. The
+    // membership is a pin.
     //
-    // **This is not the handle re-roll the two comments above describe**, and
-    // the distinction matters for whoever reads this next. Those were RNG
-    // reallocation: movement in both directions, no direction to it. This is
-    // monotone and it has a mechanism — every species that moved, moved *up*,
-    // and the one that did not (gnome) is the one the sibling assertions
-    // already single out as short. A re-roll does not do that.
+    // **Re-measured again on the Group F merge of `w23/populace-and-record-current`
+    // into `integration/group-f`, 2026-08-16, and for the third time neither
+    // side's numbers survived.** `integration/group-f` (carrying `w204`'s
+    // affiliate writer) had `12/12/11/9/11/9` and this branch had
+    // `12/9/12/10/10/5`; the merged run reads `12/12/12/12/12/10` — five
+    // species at the ceiling and gnome alone below it. The cause is the class
+    // this block has now named three times: `w204` gave `affiliate` a writer
+    // and W23/W185 changed who becomes a student, and both allocate entity
+    // handles, so every handle-keyed draw after them re-rolls. Pinned, not
+    // softened, and the pin is membership rather than finding.
     //
-    // Read off the run, not hand-computed, exactly as the content digest in
-    // `interning.test.ts` was.
-    expect(bySpecies('dwarf').occupiedCells).toBe(12);
-    expect(bySpecies('human').occupiedCells).toBe(12);
-    expect(bySpecies('orc').occupiedCells).toBe(12);
-    expect(bySpecies('draconic').occupiedCells).toBe(12);
+    // The `it` name was renamed with this re-measurement: it said *three at the
+    // ceiling and three below*, which was already false of the pre-merge pin
+    // (`12/12/11/9/11/9` is two at the ceiling) and is false of this one. A
+    // test whose name states a measurement it does not make is the doc-rot this
+    // repository keeps paying for.
+    // **Re-measured on W116, 2026-08-14: `12/12/12/11/11/9` became
+    // `12/12/11/10/9/5`** (elf, orc, draconic, human, gnome, dwarf), and the
+    // title of this test changed with it — three species at the ceiling became
+    // two. The composition note above still applies and gains a third cause,
+    // which is the interesting one:
+    //
+    // 3. **Affiliation (W116).** `completeAffiliation` gained a caller, so mages
+    //    join universities and may scribe. That is not a re-roll: a month spent
+    //    writing a node down is a month not spent reaching into a new cell, and
+    //    this metric counts cells reached. **Occupancy falling is the cost side
+    //    of the trade the change buys** — `referenceGrimoires` goes 90 → 412 on
+    //    the five-year gate over the same period.
+    //
+    // **Dwarf at 5 is the row to read.** It is the largest single move this
+    // metric has ever recorded and dwarf is the species with the highest
+    // `scribeAffinity` in the content, which is exactly the species that should
+    // trade breadth for books hardest if the mechanism is what it claims to be.
+    // That is a *consistent* reading, not a verified one: nothing here isolates
+    // it, and the honest alternative — that a re-roll happened to land on dwarf —
+    // is not excluded by anything in this file. If the next agent sees dwarf
+    // move back without anyone touching scribing, that alternative wins.
+    //
+    // **Re-measured once for the whole of Group F, on `03d21899`, 2026-08-16.**
+    // Not per merge: this row moved on four of the twelve and re-pinning it
+    // each time would have recorded four numbers no released tree ever holds.
+    // `12/12/11/12/12/9` for elf/orc/draconic/human/gnome/dwarf became
+    // `12/11/12/12/9/2`.
+    //
+    // **Dwarf is the finding and it is not a re-roll.** W116 predicted dwarf
+    // falling 12 → 5 when `completeAffiliation` gained a caller, because dwarf
+    // carries the highest `scribeAffinity` in the content and a month spent
+    // writing a node down is a month not spent reaching the next tier. On the
+    // composed tree it falls to **2**, further than either branch measured
+    // alone — W204's affiliate writer, W23's student pool and W116's seat bound
+    // all push the same way. `species-separation-spread.test.ts` reads the same
+    // species censored in 9 of 12 seed sets over the same change, which is two
+    // independent instruments agreeing on the mechanism rather than one pin
+    // moving.
     expect(bySpecies('elf').occupiedCells).toBe(12);
+    expect(bySpecies('orc').occupiedCells).toBe(11);
+    expect(bySpecies('draconic').occupiedCells).toBe(12);
+    expect(bySpecies('human').occupiedCells).toBe(12);
     expect(bySpecies('gnome').occupiedCells).toBe(9);
+    expect(bySpecies('dwarf').occupiedCells).toBe(2);
   });
 
   it('measures a spread that is neither flat nor a hegemony', () => {
     const entry = collectSpeciesCellOccupancy(telemetryFor(sample));
     expect(entry.status).toBe('measured');
-    // 0.0362 at this horizon, re-measured 2026-08-16 on the Group B integration
-    // branch — was 0.0625 before `w80/research-cost-variation` was merged into
-    // it, 0.0473 on the w108 merge, 0.0729 before either change, 0.0714 on
-    // `main` alone and 0.0645 on that branch alone. Pinned to four places: the
-    // point of the metric is that this number moves, and a test that only
+    // 0.0473 at this horizon, re-measured on the merge described above — was
+    // 0.0729 before either change, 0.0714 on `main` alone and 0.0645 on the
+    // branch alone. Pinned to four places: the point of the metric is that this
+    // number moves, and a test that only asserted "greater than zero" would let
+    // it move to anything.
+    // 0.1296 at this horizon, re-recorded on `w185/cohort-source`, 2026-08-14
+    // — was 0.0473 before W185, 0.0729 before the merge described above, 0.0714
+    // on `main` alone and 0.0645 on the branch alone. Pinned to four places:
+    // the point of the metric is that this number moves, and a test that only
     // asserted "greater than zero" would let it move to anything.
     //
-    // The fall is the same repricing the block above records, seen from the
-    // other side: four species climbing to the ceiling makes the distribution
-    // *more* even, so the spread drops. The two assertions below still hold and
-    // are the ones carrying the claim in this test's title — not flat, because
-    // gnome is still short at 9, and not a hegemony, because five species share
-    // the ceiling rather than one holding it.
-    expect((entry as { value: number }).value).toBeCloseTo(0.0362, 4);
+    // It roughly trebled, and that is the largest single move this row has
+    // recorded. It is a consequence of who becomes a mage rather than of magic:
+    // before W185 the labour market could not move anybody, so the student
+    // population — and therefore the promotion pool — was whatever the founding
+    // position happened to seed. It is now the one the demand model asks for.
+    //
+    // **0.0238 on the Group F merge, 2026-08-16** — was 0.1296 on this branch
+    // and 0.0625 on `integration/group-f`. It fell by a factor of five because
+    // the merged run puts five of six species at the ceiling: the spread this
+    // metric measures is small precisely when occupancy is near-uniform, which
+    // is what the accompanying `everySpeciesEqual: false` still denies is
+    // *exactly* uniform.
+    // 0.1271 at this horizon on W116 — was 0.0473 on the merge described above,
+    // 0.0729 before any of it, 0.0714 on `main` alone and 0.0645 on the
+    // `w108` branch alone. Pinned to four places: the point of the metric is
+    // that this number moves, and a test that only asserted "greater than zero"
+    // would let it move to anything.
+    //
+    // The rise is the largest in the series and it is the same event as the
+    // occupancy block above: affiliation makes mages write rather than reach,
+    // the species do not all trade at the same rate, and a metric of *spread*
+    // rises when they diverge. Still neither flat nor a hegemony, which is what
+    // this test is for — the concentration would have to reach 1 for one species
+    // to own the grid.
+    //
+    // **0.1724 on `03d21899`, 2026-08-16**, re-measured with the row above and
+    // for the same reason. It rises because dwarf falls: the metric is a spread
+    // over occupancy, and one species at 2 against five between 9 and 12 is a
+    // wider spread than the arrangement either branch measured.
+    expect((entry as { value: number }).value).toBeCloseTo(0.1724, 4);
     expect(entry).toMatchObject({ detail: { everySpeciesEqual: false, everySpeciesZero: false } });
   });
 
@@ -292,19 +362,44 @@ describe('twenty world years in', () => {
     // move should not read the movement as a defect.
     const cellName = new Map(content.registry.cells.map((e) => [e.contentId, e.record.id]));
     const held = new Set(bySpecies('gnome').occupiedCellIds.map((id) => cellName.get(id)));
-    const dwarfHeld = bySpecies('dwarf').occupiedCellIds.map((id) => cellName.get(id));
+    // Re-pinned 2026-08-14 on the rebase onto `main` (245e04f1): `rego-terram`
+    // out, `perdo-limen` in. Which is precisely what the paragraph above says
+    // to expect — the set reorders under a handle-keyed re-roll, the durable
+    // reading is *"gnome is short, and disproportionately short in Perdo"*, and
+    // that reading is unchanged: all three are still Perdo but one.
     //
-    // **Third measurement, on the merge with #125 landed, 2026-08-15: the set is
-    // `perdo-limen`, `perdo-mentem`, `perdo-terram` — three cells, all three
-    // Perdo.** The two-entry list that stood here was not measured on any build:
-    // #125 dropped `perdo-limen` from the four-entry original and W18 dropped
-    // `rego-terram`, both deletions merged cleanly, and the result was the
-    // intersection rather than anything a run produces. Read together with the
-    // note above, the durable statement is the one that has survived every
-    // re-roll — **gnome is short, and disproportionately short in Perdo** —
-    // while the exact membership has now been three different sets in three
-    // measurements and should be treated as a pin rather than a finding.
-    expect(dwarfHeld.filter((cell) => !held.has(cell)).sort()).toEqual([
+    // **Re-recorded on `w185/cohort-source`, 2026-08-14**, and the paragraph
+    // above predicted this: the membership moved again, to four cells of which
+    // three are Perdo. The durable reading — "gnome is short, and
+    // disproportionately short in Perdo" — survived a second re-roll, which is
+    // more than the membership did.
+    //
+    // **Re-derived on the Group F merge, 2026-08-16.** The membership moved a
+    // third time and shrank: gnome is now two cells short, `perdo-limen` and
+    // `perdo-mentem`, both Perdo. `perdo-terram` dropped out; `rego-terram`,
+    // which this branch had re-added, stayed out. Neither side's list is what
+    // this tree produces — `integration/group-f` had three and the branch four.
+    // The durable reading survives a third re-roll where the membership did
+    // not: gnome is short, and its shortfall is entirely Perdo.
+    // Against **every cell any species reached**, not against dwarf's. The
+    // reference used to be dwarf because dwarf sat at the ceiling; on W116 dwarf
+    // is the species that fell furthest (12 → 5), so the old comparison now
+    // measures dwarf's shortfall through gnome's, which is two findings tangled
+    // into one assertion. The union is the reading the prose above was always
+    // making — *which cells is gnome missing* — and it does not move when the
+    // species used as a yardstick moves.
+    const reached = new Set<string | undefined>();
+    for (const entry of sample.species) {
+      for (const id of entry.occupiedCellIds) reached.add(cellName.get(id));
+    }
+    //
+    // **W116, 2026-08-14: `perdo-mentem/perdo-terram/rego-terram` became
+    // `perdo-limen/perdo-mentem/perdo-terram`.** Membership moved for the third
+    // time and the durable reading survived it again — still three cells, still
+    // disproportionately Perdo, and this time *all three* are Perdo. Read that
+    // as the prose above instructs: the count and the technique skew are the
+    // finding, the exact membership is a pin.
+    expect([...reached].filter((cell) => !held.has(cell)).sort()).toEqual([
       'perdo-limen',
       'perdo-mentem',
       'perdo-terram',
@@ -314,6 +409,18 @@ describe('twenty world years in', () => {
   it('has every occupied cell shared, so the concentration is not specialisation', () => {
     const entry = collectSpeciesCellOccupancy(telemetryFor(sample));
     expect(entry).toMatchObject({
+      // Re-recorded on `w185/cohort-source`, 2026-08-14: two of the twelve now
+      // have a sole occupant, both of them dwarf's. The test's claim is weaker
+      // than it was — ten of twelve shared rather than twelve — and it is
+      // recorded here rather than softened, because "two cells are held by one
+      // species" is exactly what this row exists to surface.
+      //
+      // **Re-recorded on the Group F merge, 2026-08-16: back to zero.** This
+      // line auto-merged without a conflict — it sits below the conflict
+      // region — so the branch's `2` was installed silently on a tree that
+      // produces `0`. With five species at the ceiling there is no sole
+      // occupant left, and the row's original claim holds again at full
+      // strength.
       detail: { cellsOccupiedByAnySpecies: 12, cellsWithASoleOccupant: 0 },
     });
   });
