@@ -42,6 +42,21 @@ import type { MageOutlook } from './outlook.js';
  */
 
 /**
+ * The two fields {@link completeAffiliation} reads out of a mage's situation.
+ *
+ * A `Pick` rather than the whole {@link MageOutlook}, because the world loop
+ * resolves affiliation in a phase of its own — one pass over living mages with
+ * an `affiliate` commitment — and building a full outlook there would mean
+ * gathering a research frontier, a teaching graph and a scribable list per mage
+ * for two booleans. A `MageOutlook` satisfies this type, so every existing
+ * caller and every test that already holds one passes it unchanged.
+ */
+export type AffiliationPreference = Pick<
+  MageOutlook,
+  'betterAffiliationAvailable' | 'preferredUniversity'
+>;
+
+/**
  * Applies a completed `affiliate` goal.
  *
  * @param outlook - The outlook from the tick the goal *completed* in, not the
@@ -55,7 +70,10 @@ import type { MageOutlook } from './outlook.js';
  * nothing rather than an error — the universe may have lost the university she
  * was aiming at while she was deciding.
  */
-export function completeAffiliation(mage: MageRecord, outlook: MageOutlook): UniversityHandle {
+export function completeAffiliation(
+  mage: MageRecord,
+  outlook: AffiliationPreference,
+): UniversityHandle {
   const destination = outlook.betterAffiliationAvailable ? outlook.preferredUniversity : mage.universityId;
   changeAffiliation(mage, destination);
   return destination;

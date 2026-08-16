@@ -47,6 +47,7 @@ export {
   ageBandOf,
 } from './age-bands.js';
 
+export type { AffiliationPreference } from './affiliation.js';
 export { completeAffiliation } from './affiliation.js';
 
 export {

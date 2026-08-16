@@ -122,9 +122,21 @@ console.log(
 console.log(`${'id'.padStart(3)}  ${'goal'.padEnd(18)}${'mage-ticks'.padStart(12)}${'share'.padStart(9)}${'with target'.padStart(13)}  accrual in workOne`);
 console.log('-'.repeat(84));
 
-// The four goals `workOne` has no branch for. Named here rather than derived,
+// The goals `workOne` has no branch for. Named here rather than derived,
 // because the switch is in `world-step.ts` and not reachable from a tool.
-const NO_ACCRUAL = new Set(['idle', 'affiliate', 'wardDuty', 'raidReadiness']);
+//
+// **These are `GOAL_NAMES` spellings, and they were not.** The set held
+// `wardDuty` and `raidReadiness` while `GOAL_NAMES` spells them `ward-duty` and
+// `raid-readiness`, so the two goals this instrument was built to expose printed
+// `yes` in the accrual column — the checker answering confidently about the
+// wrong input, in the file whose subject is exactly that. Nothing threw, and the
+// rows read as healthy for as long as they were empty.
+const NO_ACCRUAL = new Set(['idle', 'ward-duty', 'raid-readiness']);
+// `affiliate` is no longer in that set and is not in the accrual set either: it
+// completes through `settleAffiliations` in the work phase, which writes
+// `universityId` and accrues no months. The affiliation counters below are the
+// column that answers for it.
+const SETTLED_NOT_ACCRUED = new Set(['affiliate']);
 const totalCommitted = [...mageTicks.values()].reduce((a, b) => a + b, 0);
 
 for (const goal of GOALS_IN_ORDER) {
@@ -133,7 +145,7 @@ for (const goal of GOALS_IN_ORDER) {
   const share = totalCommitted === 0 ? 0 : (ticks / totalCommitted) * 100;
   console.log(
     `${String(goal).padStart(3)}  ${name.padEnd(18)}${String(ticks).padStart(12)}${`${share.toFixed(1)}%`.padStart(9)}` +
-      `${String(targeted.get(goal) ?? 0).padStart(13)}  ${NO_ACCRUAL.has(name) ? 'NONE — falls through to `return undefined`' : 'yes'}`,
+      `${String(targeted.get(goal) ?? 0).padStart(13)}  ${NO_ACCRUAL.has(name) ? 'NONE — falls through to `return undefined`' : SETTLED_NOT_ACCRUED.has(name) ? 'settled in `settleAffiliations`, accrues nothing' : 'yes'}`,
   );
 }
 console.log('-'.repeat(84));
