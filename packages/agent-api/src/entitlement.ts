@@ -251,25 +251,41 @@ export const TRAIT_CLASSIFICATION: Readonly<
     nodesLost: undecided(),
     passed: undecided(),
   },
-  // Summed across three of the seven fields of one row — a sum, not a histogram
-  // over entities. An agent cannot tell a food shortage from a vellum one.
+  // **All seven are `observable` since `material-economy` task 5.1**, and the
+  // change is the one the previous row here predicted in as many words: *"That
+  // is task 5.1's to change, by adding a named per-kind block to `PlayerState`,
+  // which is not the vector and carries no digest; until then
+  // `not-yet-decided` is the honest reading."* The block exists now —
+  // `PlayerResources.stocks`, a `MaterialStockRecord` — so every kind reaches
+  // the player under its own name and the reading has changed with it.
   //
-  // The four kinds `material-economy` added are **withheld**, not aggregated,
-  // and the distinction is the point: `resources[39]` carries
-  // `food + stone + vellum` and nothing else, because §4.1's block is fixed at
-  // five slots and *"a resize invalidates every trained agent."* An agent
-  // cannot see `labor`, `essence`, `insight` or `passage` at all — not even
-  // folded into a total. That is `material-economy` task 5.1's to change, by
-  // adding a named per-kind block to `PlayerState`, which is not the vector and
-  // carries no digest; until then `not-yet-decided` is the honest reading.
+  // The criterion is this scheme's own, from `observation-entitlement.md`'s
+  // reducer: **OBSERVABLE means projected into `PlayerState`**, and whether the
+  // projection then reaches a slot is the *second* stage of that diagram, not
+  // this one.
+  //
+  // **`food`, `stone` and `vellum` moved too, from `aggregated`, and that is
+  // more than task 5.3 asked for.** It is required by consistency rather than
+  // chosen: `aggregated` is defined as *"reaches the player **only** inside an
+  // aggregate"*, and once all seven sit in `resources.stocks` under their own
+  // names, that word is false for the three exactly as it is for the four.
+  // Leaving them `aggregated` would say the projection carries `labor` by name
+  // and not `food`, which no reader of this file could act on.
+  //
+  // **What has *not* changed is what an agent sees, and that is the point worth
+  // not blurring.** `resources[39]` still carries `food + stone + vellum` and
+  // nothing else; `OBSERVATION_SIZE` is 400 and `OBSERVATION_LAYOUT_DIGEST` is
+  // unchanged. A *policy* still cannot tell a food shortage from a vellum one
+  // and cannot see the other four at all. A *client* now can. The `via` below
+  // names the projection path rather than a slot for that reason, and says so.
   'material-stock': {
-    food: aggregated('resources[39]'),
-    stone: aggregated('resources[39]'),
-    vellum: aggregated('resources[39]'),
-    labor: undecided(),
-    essence: undecided(),
-    insight: undecided(),
-    passage: undecided(),
+    food: observable('resources.stocks.food (projection; summed into resources[39])'),
+    stone: observable('resources.stocks.stone (projection; summed into resources[39])'),
+    vellum: observable('resources.stocks.vellum (projection; summed into resources[39])'),
+    labor: observable('resources.stocks.labor (projection; reaches no slot)'),
+    essence: observable('resources.stocks.essence (projection; reaches no slot)'),
+    insight: observable('resources.stocks.insight (projection; reaches no slot)'),
+    passage: observable('resources.stocks.passage (projection; reaches no slot)'),
   },
   // God action 8's budget: a second bound in exactly the shape of action cost,
   // one the agent is subject to and cannot see.

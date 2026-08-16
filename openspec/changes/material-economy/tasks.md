@@ -39,10 +39,10 @@
 
 ## 5. Entitlement: the player can see it
 
-- [ ] 5.1 Add a named per-kind block to `PlayerState` in `packages/agent-api/src/player-state.ts`, leaving `resources.materials` as the documented `food + stone + vellum` sum
-- [ ] 5.2 Confirm `OBSERVATION_LAYOUT_DIGEST` did **not** move — `PlayerState` is not the vector, and this is the property that makes the change cheap
-- [ ] 5.3 Update `docs/design/observable-trait-inventory.md`: four kinds move from withheld to entitled, and the count of withheld traits changes
-- [ ] 5.4 Expose the seven stocks on the play server's frame so a UI can draw them
+- [x] 5.1 Add a named per-kind block to `PlayerState` in `packages/agent-api/src/player-state.ts`, leaving `resources.materials` as the documented `food + stone + vellum` sum
+- [x] 5.2 Confirm `OBSERVATION_LAYOUT_DIGEST` did **not** move — `PlayerState` is not the vector, and this is the property that makes the change cheap
+- [x] 5.3 Update `docs/design/observable-trait-inventory.md`: four kinds move from withheld to entitled, and the count of withheld traits changes
+- [x] 5.4 Expose the seven stocks on the play server's frame so a UI can draw them
 
 ## 6. The ledger, which is the part that can fail loudly
 

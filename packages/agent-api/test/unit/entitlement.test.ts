@@ -25,7 +25,7 @@
 import { describe, expect, it } from 'vitest';
 
 import type { ComponentFields, ComponentSpec } from '@mm/sim-core';
-import { ENGAGEMENT_COMPONENTS, WORLD_COMPONENTS } from '@mm/state';
+import { ENGAGEMENT_COMPONENTS, MATERIAL_STOCK, WORLD_COMPONENTS } from '@mm/state';
 
 import type { TraitClassification } from '@mm/agent-api';
 import {
@@ -42,7 +42,7 @@ import {
 } from '@mm/agent-api';
 import { RAID_SIDE } from '@mm/state';
 
-import { FIXTURE_CATALOGUE, engageWorld, firstUniverse } from './fixtures.js';
+import { FIXTURE_CATALOGUE, FP, engageWorld, firstUniverse } from './fixtures.js';
 
 /** A projection taken during a raid, so the engagement fields are present. */
 function engagedProjection() {
@@ -168,10 +168,19 @@ describe('unclassifiedTraits (step 2)', () => {
         byReason.set(reason, (byReason.get(reason) ?? 0) + 1);
       }
     }
-    // 70 at be446a6, plus `material-stock`'s four new kinds at revision 7. They
-    // are `not-yet-decided` rather than aggregated because `resources[39]` still
-    // carries `food + stone + vellum` and nothing else — the vector did not move.
-    expect(byReason.get('not-yet-decided')).toBe(74);
+    // 70 at be446a6; 74 at revision 7 when `material-stock` gained four kinds
+    // nobody had classified; and **70 again** now that `material-economy` task
+    // 5.1's per-kind block on `PlayerState` exists and all seven are
+    // `observable`. The round trip is a coincidence of arithmetic and not a
+    // revert — the four rows that left this bucket are not the four that
+    // entered it, and `material-stock` now contributes none.
+    //
+    // Nothing about the *vector* moved for it: `resources[39]` still carries
+    // `food + stone + vellum` and `OBSERVATION_LAYOUT_DIGEST` is unchanged.
+    // OBSERVABLE in this scheme means *projected into `PlayerState`*, which is
+    // the first stage of `observation-entitlement.md`'s reducer; reaching a slot
+    // is the second, and `DECLARED_UNENCODED` is where that half is recorded.
+    expect(byReason.get('not-yet-decided')).toBe(70);
     expect(byReason.get('internal-bookkeeping')).toBe(6);
     // Unused until there is an opponent-facing projection to hide anything
     // from. Asserted at zero so that the day it stops being zero is a diff.
@@ -286,6 +295,53 @@ describe('steps 1 to 3 move no baseline', () => {
    * update both and say why in the same diff.
    */
   it('leaves OBSERVATION_LAYOUT_DIGEST at its pre-change value', () => {
+    expect(OBSERVATION_LAYOUT_DIGEST).toBe('46182c35d829b205');
+    expect(OBSERVATION_SIZE).toBe(400);
+  });
+});
+
+/**
+ * `material-economy` task 5.1–5.2: the player may read every stock by name, and
+ * the vector does not move for it.
+ *
+ * These are two halves of one claim and both are needed. The projection carrying
+ * seven kinds is worth nothing if it cost a resize, and an unmoved digest is
+ * worth nothing if the kinds did not actually arrive.
+ */
+describe('the player projection names every material kind', () => {
+  const world = firstUniverse();
+  const player = project({ state: world.state, catalogue: FIXTURE_CATALOGUE });
+
+  it('exposes each of the seven kinds under its own name', () => {
+    // Against `MATERIAL_STOCK.fields` rather than a transcribed list, so an
+    // eighth kind added to the schema and forgotten here fails rather than
+    // being silently dropped from every client.
+    expect(Object.keys(player.resources.stocks).sort()).toEqual(
+      Object.keys(MATERIAL_STOCK.fields).sort(),
+    );
+  });
+
+  it('reads the stock the fixture actually seeded, not a zero-shaped placeholder', () => {
+    // The positive control on the block. A projection that returned the right
+    // *shape* full of zeros would satisfy the assertion above and tell a client
+    // that a stocked universe is empty — `undefined === 0` is false, and so is
+    // `0 === 500 * FP`, so this is the arm that discriminates.
+    expect(player.resources.stocks.food).toBe(500 * FP);
+    expect(player.resources.stocks.stone).toBe(0);
+    expect(player.resources.stocks.insight).toBe(0);
+  });
+
+  it('keeps `materials` the documented food + stone + vellum sum', () => {
+    // Not the sum of all seven. The observation's one slot carries this exact
+    // quantity and a widened meaning here would make one field mean two things
+    // depending on which side of the encoder read it.
+    const { food, stone, vellum } = player.resources.stocks;
+    expect(player.resources.materials).toBe(food + stone + vellum);
+  });
+
+  it('costs no observation slot, which is what makes the block cheap', () => {
+    // Restated at the site that added the fields, rather than trusted from the
+    // block above: this is the property `PlayerState` is allowed to grow under.
     expect(OBSERVATION_LAYOUT_DIGEST).toBe('46182c35d829b205');
     expect(OBSERVATION_SIZE).toBe(400);
   });

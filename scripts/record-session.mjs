@@ -151,6 +151,25 @@ const record = () => {
     // Integer fp, reconstructed. Not what the session returned — see above.
     obs,
     sat,
+    // The one thing `obs` structurally cannot carry: `material-stock`'s seven
+    // kinds, which §4.1 sums three of into the single `resources[39]` slot and
+    // has no slot at all for the other four. Taken from the §4.4 player
+    // projection, which is not the observation and is not bounded by its width
+    // — see `AgentSession.playerState`.
+    //
+    // The stocks and no more. `favor`, `worship` and `prestige` are already in
+    // `obs`, and emitting them here as well would put one fact in two places per
+    // frame, where they can disagree: `obs` is reconstructed through a divisor
+    // and saturates, this is exact, and a view reading whichever it happened to
+    // reach would report two different universes.
+    //
+    // **Kept in step with `play-server.mjs` by hand.** A comment elsewhere in
+    // this repository refers to `scripts/play-control.mjs --shape` as the thing
+    // that holds the recorder and the live server equivalent; that script does
+    // not exist, so nothing automated checks it. A live server serving a
+    // different frame shape than the recorder makes every page work against one
+    // and not the other.
+    stocks: { ...session.playerState().resources.stocks },
     mask: [...mask],
     // Candidate lists are slot-indexed per parameterized action (§4.4).
     // `CandidateLists` is a ReadonlyMap keyed by action id, not a plain object —
