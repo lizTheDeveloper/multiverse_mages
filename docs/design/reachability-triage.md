@@ -1,8 +1,8 @@
-# The 125 reachability findings, triaged
+# The 129 reachability findings, triaged
 
 **Measured at `e2b89d8` on 2026-08-14**, by `npm run check:reachability` plus the capability
 analysis described in §5. This is an **inventory, not a fix**: the point is to convert the single
-number "125 findings" into a count of things somebody would act on, because that number is what
+number "129 findings" into a count of things somebody would act on, because that number is what
 nobody currently knows.
 
 Re-derive before acting on it. A measurement is a statement about the tree it was taken on, and §6
@@ -19,7 +19,7 @@ is what happens when you skip that step.
 > debt **61 → 59**, superseded **14 → 16**. The 125 and the per-package totals are unchanged — this
 > is a re-judgement, not a re-measurement, and the per-package split was re-derived from the
 > committed baseline as a control (content 6, coordination 16, primitives 3, rules-magic 27,
-> rules-raid 7, rules-world 40, scenario 12, sim-core 6, state 8 = 125).
+> rules-raid 7, rules-world 40, scenario 15, sim-core 6, state 8 = 129).
 
 ---
 
@@ -27,18 +27,18 @@ is what happens when you skip that step.
 
 | Package | Integration debt | Superseded | Tooling-only | Dead | False positive | Total |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: |
-| `content` | 0 | 0 | 5 | 1 | 0 | 6 |
+| `content` | 1 | 0 | 5 | 1 | 0 | 7 |
 | `coordination` | 13 | 2 | 0 | 1 | 0 | 16 |
 | `primitives` | 1 | 1 | 1 | 0 | 0 | 3 |
 | `rules-magic` | 16 | 6 | 1 | 4 | 0 | 27 |
 | `rules-raid` | 5 | 0 | 0 | 2 | 0 | 7 |
 | `rules-world` | 19 | 6 | 3 | 12 | 0 | 40 |
-| `scenario` | 0 | 0 | 12 | 0 | 0 | 12 |
+| `scenario` | 0 | 0 | 15 | 0 | 0 | 15 |
 | `sim-core` | 0 | 1 | 5 | 0 | 0 | 6 |
 | `state` | 5 | 0 | 0 | 3 | 0 | 8 |
-| **Total** | **59** | **16** | **27** | **23** | **0** | **125** |
+| **Total** | **60** | **16** | **30** | **23** | **0** | **129** |
 
-The headline: **59 of the 125 are integration debt** — mechanics that are built, mostly tested,
+The headline: **60 of the 129 are integration debt** — mechanics that are built, mostly tested,
 exported, and that nothing in a running universe calls. That is the number the raw count was hiding.
 The other 66 are noise of three different kinds.
 
@@ -80,10 +80,11 @@ were moved to §3 and are not here.
 
 One more was dropped from this table on inspection: **`withdrawGrimoire`** is declared deliberately unused by `gateway.ts:107` — *"`withdrawGrimoire` is unused and stays unused"* — which is an accepted design decision rather than debt.
 
-That is 44 of the 59. (It was 46 of 61 until `applyWard` and `replay` moved to §3 in the third
-correction round.) The remaining 15 are integration debt of the ordinary kind — an economy input
-list, a commitment predicate, a monoculture threshold, `speciesRediscoveryMultiplier`,
-`worshipShareOfRegeneration` — worth wiring, not worth a row.
+That is 44 of the 60. (It was 46 of 61 until `applyWard` and `replay` moved to §3 in the third
+correction round, and 44 of 59 until `characterFor` arrived with #201 — see §5.) The remaining 16
+are integration debt of the ordinary kind — an economy input list, a commitment predicate, a
+monoculture threshold, `speciesRediscoveryMultiplier`, `worshipShareOfRegeneration`,
+`characterFor` — worth wiring, not worth a row.
 
 ---
 
@@ -181,24 +182,24 @@ production file, which is what a false positive looks like. Every one dissolved 
 (`completeAffiliation` in `world-step.ts`, `destroyLibrary` in `consequences.ts`, `ECONOMIC_INPUTS`
 in `components.ts`, `REFERENCE_SWEEP` in `scenario.mjs`), a barrel re-export, an unrelated English
 word (`replay`, `prepare`), or a same-named method on a different object (`gateway.heldNodes`). The
-checker's stated bias — resolve conservatively, under-report rather than cry wolf — held on all 125.
+checker's stated bias — resolve conservatively, under-report rather than cry wolf — held on all 125 as first triaged; the four added since are argued in §5.
 
 ### Two broken probes, both caught by implausibility rather than by failure
 
 - The first mention pass used `git grep -- 'packages/*/test'` and reported **zero** test callers for
-  all 125 symbols. Wildcard git pathspecs match against the full path, so a directory prefix with no
+  all symbols. Wildcard git pathspecs match against the full path, so a directory prefix with no
   trailing glob matches nothing; the correct form is `packages/*/test/**`.
 - A capability sweep for ward application grepped `\bward\b` and matched *toward* and *forward* —
   the exact substring trap `rules-magic/src/effects/consumption.ts` documents in its own exclusion
   note, fallen into while checking a finding in the file next door.
 - `ui/design-dashboard/data.json` embeds these findings verbatim and therefore matches **every**
-  symbol name. Any mention analysis that counts it finds all 125 "referenced in production".
+  symbol name. Any mention analysis that counts it finds all of them "referenced in production".
 
 ---
 
 ## 6. What was already fixed, or was never on this ref
 
-Three of the four findings that motivated this work are **not** in the 125:
+Three of the four findings that motivated this work are **not** among the original 125:
 
 - **`gatherEffects` is reached** — `coordination/src/universe-effects.ts:330` calls it. The belief
   that `gateway.ts` called it came from a doc comment, and that error was real; but the symbol has a
@@ -206,7 +207,7 @@ Three of the four findings that motivated this work are **not** in the 125:
 - **`applyDirective` and `runPlanFor` do not exist at `e2b89d8`.** They are on an unmerged branch. A
   check cannot report a symbol that is not on the ref it ran against.
 
-`completeAffiliation` is the one that is in the 125, and it heads §2 for that reason.
+`completeAffiliation` is the one that is among them, and it heads §2 for that reason.
 
 ---
 
@@ -221,3 +222,29 @@ is broken. Fixing a finding therefore requires re-pinning:
 and the diff on that file is the progress record. An entry removed is a repair; an entry added is a
 debt someone accepted. The counts above are worth writing down once; the baseline diff keeps them
 current for free.
+
+## §5 — The four that arrived with #201
+
+[added 2026-08-15; the ratchet slipped from 125 to 129 on `main` @ 574e4e65 and named them]
+
+`#201` — *"Integration debt: every primitive wired, magnitudes signed, and the ablation that says
+which wires actually bind"* — exported four symbols nothing outside a test calls. The ratchet
+reported them precisely, in both directions, and its message names the three ways out: wire it,
+delete it, or accept the debt and say so. This is the third, with the argument for each.
+
+| symbol | package | category | why it is debt and not a defect |
+|---|---|---|---|
+| `characterFor` | `content` | integration debt | Hashes a mage handle into the authored character pool, exactly as `audioSelect` does for cues. **No caller at all — not production, not test.** It is staged ahead of a client that draws a mage, which does not exist yet. Deleting it would delete the content wire with it; the pool it reads is authored and shipped. |
+| `FOUNDING_PROBE` | `scenario` | tooling-only | The probe's declaration. `reachedOnlyByUnreached`, which is the ratchet correctly refusing to count a symbol as live because the only thing reaching it is itself unreached. |
+| `auditFounding` | `scenario` | tooling-only | Drives a scripted god at the reference universe and reports what it founded. Called by `founding-instrument.test.ts` and by nothing in a running universe, which is what an instrument is. |
+| `formatFounding` | `scenario` | tooling-only | Renders that audit for a human. Same argument. |
+
+**The distinction the table draws is the one worth keeping.** `characterFor` is *integration debt*:
+something a running universe should eventually call and does not. The three `scenario` symbols are
+*tooling-only*: measurement apparatus, which a running universe should **never** call, and whose
+appearance here is the check working rather than a backlog growing.
+
+Pinned rather than argued away, because the ratchet's whole value is that the pinned set is a list
+somebody wrote down on purpose. A finding that is pinned without an entry here is a finding nobody
+decided about — and `reachability-triage-doc.test.ts` fails the build if this document and the
+baseline disagree, which is why it is impossible to pin quietly.
