@@ -2100,6 +2100,20 @@ function workOne(
       const authored = deps.universeEffects?.appliedYieldOf(nodeId);
       if (authored === undefined) return undefined;
       if (!gateway.castableNodes(mage).includes(nodeId)) return undefined;
+      // Casting **is** practice, and the same arithmetic runs under both
+      // triggers rather than a second one that could disagree. A mage who
+      // spends her career casting *identify object* at the world keeps her hand
+      // in on it for as long as she keeps casting, which is the whole of the
+      // design's *"you need low level spell casters to stay in the population
+      // to continuously cast"*: her mastery is maintained by the work itself
+      // and she never needs a month at the desk to stay useful.
+      //
+      // It cannot *bootstrap* anything, and that is why `GOAL.practice` exists
+      // separately. `castableNodes` gates at `MASTERY_ACTIVATION_THRESHOLD`,
+      // which is the teach threshold, so nothing a mage researched for herself
+      // is ever castable in the first place. This trigger maintains; the goal
+      // is what lifts.
+      gateway.contributePractice(mage, nodeId, MAGE_MONTHS_PER_TICK);
       // The library does **not** multiply this. §6a's loop is about the rates at
       // which a mage learns, teaches and copies — `libraryRateMultiplier` is
       // named for exactly those three — and a deep shelf making the harvest
@@ -2116,6 +2130,18 @@ function workOne(
         ...(deps.ablation === undefined ? {} : { ablation: deps.ablation }),
       });
     }
+    case GOAL.practice:
+      // The library does **not** multiply this, for the reason the branch above
+      // gives about applied work: `libraryRateMultiplier` is named for the
+      // three rates §6a's loop is about — how fast a mage learns, teaches and
+      // copies — and a deep shelf making practice faster would be a fourth
+      // reading of the capital term that no balance assertion is written over.
+      // What a library is for on this path is `study` (`rules-magic`'s reading
+      // edge), which puts a *new* instance in a mind; practice improves one
+      // that is already there, and improves it at a rate set by her species and
+      // bounded by her reach.
+      gateway.contributePractice(mage, nodeId, MAGE_MONTHS_PER_TICK);
+      return undefined;
     default:
       return undefined;
   }

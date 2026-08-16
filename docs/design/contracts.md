@@ -1368,6 +1368,11 @@ the earlier one lands. That is the check working. The alternative — each branc
 number it personally sees free — is three PRs shipping one ID and three baselines that silently stop
 describing the game they were measured on.
 
+**`w207/mastery-and-vellum` reached the same conclusion independently**, renumbering `detachment`
+14 → 13 against its own stack (#183, which appends no stream, plus #186 onto a `main` ending at 12)
+on 2026-08-15. Two branches, two different queues, one arithmetic — which is the strongest available
+evidence that the general rule below is the thing to read and none of the individual assignments is.
+
 Stated generally, because the assignment above is one queue's arithmetic and not a rule: **an
 append's ID is valid only once every ID below it has landed.** So an ID is settled by a branch's
 position in the merge queue rather than at the moment it is authored, and **re-checking it is part

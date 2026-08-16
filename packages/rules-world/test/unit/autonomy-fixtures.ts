@@ -139,6 +139,7 @@ export function outlook(overrides: Partial<MageOutlook> = {}): MageOutlook {
     teachableByMe: [],
     scribableTargets: [],
     applicableTargets: [],
+    practiceTargets: [],
     materials: 0,
     scribeThroughput: 0,
     betterAffiliationAvailable: false,
@@ -167,6 +168,9 @@ export function richOutlook(overrides: Partial<MageOutlook> = {}): MageOutlook {
     // `remainingCost` zero, because an applicable node is one she already knows
     // — there is no project left to pay for.
     applicableTargets: [target(61, 1, 0)],
+    // `remainingCost` zero for the same reason: practice has no project, only a
+    // mastery that is higher this month than last.
+    practiceTargets: [target(71, 1, 0)],
     materials: 4096,
     scribeThroughput: 1024,
     betterAffiliationAvailable: true,

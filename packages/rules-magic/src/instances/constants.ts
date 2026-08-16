@@ -136,3 +136,58 @@ export const MASTERY_FLOOR_SHARE = 256;
  * century, slow enough that it is not the dominant term in anything.
  */
 export const MASTERY_DECAY_PER_TICK = 8;
+
+/**
+ * Mastery one full mage-month of practice adds at neutral `learnRate`.
+ * **Untuned.**
+ *
+ * Chosen, like everything else here, to make the mechanism *observable* rather
+ * than because anybody measured it. Three magnitudes bracket it. It must exceed
+ * {@link MASTERY_DECAY_PER_TICK} (8) or practice would be a month spent losing
+ * ground more slowly; it must not be so large that one month at the desk
+ * replaces the whole knowledge lifecycle; and — the one that was found by
+ * measurement rather than by argument — **it has to fit inside a commitment.**
+ *
+ * At 32 a crossing took about eleven months of *sustained* practice net of
+ * decay, which is longer than a mage typically holds one goal. The measured
+ * consequence was 21,564 mage-months of practice buying 26 crossings, because
+ * a mage who drilled for six months and then went back to research lost the
+ * whole gain to decay before she next sat down. At 64 the same crossing takes
+ * about five months, which a commitment covers, and the operation converts
+ * effort into teachable knowledge instead of into a treadmill. See
+ * `tools/w196/mastery-crossings.mjs` for both numbers.
+ */
+export const PRACTICE_GAIN_PER_MONTH = 64;
+
+/**
+ * The mastery practice reaches for a node at the very top of a mage's reach.
+ * **Untuned.**
+ *
+ * Equal to {@link DEFAULT_TEACH_THRESHOLD} on purpose, and the equality is the
+ * design rather than a coincidence to be tidied away: a mage practising at her
+ * species' limit arrives at *exactly* teachable and one tick of decay takes it
+ * away again. She can pass on what she barely grasps only while she keeps her
+ * hand in. Raising this above the threshold would give her a window she did not
+ * earn; lowering it would make the deepest tier of every species' reach
+ * permanently untransmittable, which is a wall rather than a gradient.
+ *
+ * `scenario`'s `teachableWindowTicks` measures the same span from the other
+ * end — how long a *granted* instance at full mastery stays transmissible — and
+ * it is deliberately **not** rewritten in terms of this constant. That metric
+ * answers a question about a god's grant, which arrives at 1024 whatever a
+ * mage's reach; the ceiling here answers a question about what she can reach on
+ * her own. Two spans, two questions, and folding them together would make a
+ * published metric mean something different without renaming it.
+ */
+export const PRACTICE_CEILING_BASE = DEFAULT_TEACH_THRESHOLD;
+
+/**
+ * How much further practice reaches per tier of headroom below a mage's
+ * `depthCeiling`. **Untuned.**
+ *
+ * At 256, two tiers inside her reach is full mastery. See `practice.ts` for the
+ * table and for why the ceiling is per-mage-per-node rather than global: it is
+ * the whole of the answer to *"mastery rising must not mean everybody converges
+ * on mastery."*
+ */
+export const PRACTICE_CEILING_PER_TIER = 256;

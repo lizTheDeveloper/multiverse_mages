@@ -145,6 +145,23 @@ export const GOAL_BASE_APPEAL: Readonly<Record<GoalId, Fixed>> = {
    * sweep should move first.
    */
   [GOAL.applyMagic]: 384,
+  /**
+   * Level with `scribe` and `apply-magic`, **below both teaching goals**.
+   *
+   * Perfecting what she has is worth less than learning something new and less
+   * than passing something on: a universe whose mages all drilled what they
+   * already knew would stop discovering, and vision §5 makes the appetite for
+   * discovery the reason a universe has an academy.
+   *
+   * The ordering against `teach` was measured rather than argued. At 448 —
+   * level with the teaching goals — practice won the argmax often enough to
+   * take teaching down by 94%, which is the opposite of the point: practice
+   * exists to give teaching something to transmit, and a value that starves the
+   * consumer of the stock it produces is wrong however good the stock is.
+   * **Untuned**, and this is one of the two numbers the sweep should move
+   * first — the other is `PRACTICE_GAIN_PER_MONTH`.
+   */
+  [GOAL.practice]: 384,
 };
 
 /**
@@ -174,6 +191,11 @@ export const AGE_TERM: Readonly<Record<AgeBandValue, Readonly<Record<GoalId, Fix
     [GOAL.wardDuty]: -64,
     [GOAL.raidReadiness]: 64,
     [GOAL.applyMagic]: 0,
+    // Drill is what a student does. `mages-and-species` has the young seeking
+    // teachers rather than teaching, and practice is the same phase of a
+    // career from the inside: the months between being taught a thing badly
+    // and holding it well enough to pass on.
+    [GOAL.practice]: 128,
   },
   [AGE_BAND.prime]: {
     [GOAL.idle]: 0,
@@ -186,6 +208,7 @@ export const AGE_TERM: Readonly<Record<AgeBandValue, Readonly<Record<GoalId, Fix
     [GOAL.wardDuty]: 0,
     [GOAL.raidReadiness]: 0,
     [GOAL.applyMagic]: 0,
+    [GOAL.practice]: 0,
   },
   [AGE_BAND.senescent]: {
     [GOAL.idle]: 0,
@@ -201,6 +224,11 @@ export const AGE_TERM: Readonly<Record<AgeBandValue, Readonly<Record<GoalId, Fix
     // mage knows leaves the universe when she does unless she spends it on
     // something. A harvest is a use that outlives her exactly as a book is.
     [GOAL.applyMagic]: 128,
+    // Positive, for a third version of the same reason. An old mage at her
+    // species' limit holds her deepest nodes at exactly the teach threshold,
+    // and one tick of decay takes them below it. Keeping her hand in is the
+    // only thing that keeps her able to teach at all in her last years.
+    [GOAL.practice]: 128,
   },
 };
 
@@ -342,6 +370,8 @@ export function opportunityTerm(goal: GoalId, outlook: MageOutlook): Fixed {
       return boundTerm('opportunity', outlook.raidPressure);
     case GOAL.applyMagic:
       return boundTerm('opportunity', candidateOpportunity(outlook.applicableTargets.length));
+    case GOAL.practice:
+      return boundTerm('opportunity', candidateOpportunity(outlook.practiceTargets.length));
     default:
       return 0;
   }

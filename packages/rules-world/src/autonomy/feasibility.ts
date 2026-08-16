@@ -130,6 +130,14 @@ export function isFeasible(goal: GoalId, outlook: MageOutlook): boolean {
       // one of those is a question this package may not ask (`contracts.md` §5
       // rule 3) and the coordinating layer answers them all in one pass.
       return anyOf(outlook.applicableTargets);
+    case GOAL.practice:
+      // A mage with nothing left to perfect has nothing to practise. The list
+      // is already filtered by the coordinating layer to nodes she holds, in
+      // cells permitted now, whose mastery is **below** what `practiceCeiling`
+      // allows her — so a month of practice is never a month spent on a node
+      // that cannot improve. Every one of those is again a question this
+      // package may not ask (`contracts.md` §5 rule 3).
+      return anyOf(outlook.practiceTargets);
     default:
       throw new RangeError(
         `${String(goal)} is not a goal id; the registry in goals.ts is append-only and this ` +

@@ -83,6 +83,7 @@ function row(entries: Partial<Record<GoalId, Fixed>>): RoleBiasRow {
     [GOAL.wardDuty]: 0,
     [GOAL.raidReadiness]: 0,
     [GOAL.applyMagic]: 0,
+    [GOAL.practice]: 0,
     ...entries,
   };
 }
@@ -181,6 +182,22 @@ function row(entries: Partial<Record<GoalId, Fixed>>): RoleBiasRow {
  * adding to it. The professor leans hardest away — her month is worth more in a
  * classroom. The populace row is what that paragraph was describing the absence
  * of.
+ *
+ * - **`practice` is the row that gives the professor a supply** (W207). A
+ *   professor can only teach what she holds above the teach threshold, and
+ *   practice is the only operation that puts anything there, so a role that
+ *   raises `teach` and not `practice` would be a role that consumes a stock
+ *   nothing produces. The researcher leans away — her instinct is to extend what
+ *   the universe knows rather than to perfect what she has — and the raider
+ *   leans slightly toward it, because drilling what you already know is the
+ *   martial instinct as much as the academic one.
+ *
+ *   W207's own paragraph here also said *"`apply-magic` is the ninth goal and no
+ *   role is for it"*. **That sentence is dropped rather than merged**: W197
+ *   added the `populace` row above, which is for exactly that goal, so keeping
+ *   both would have left the file asserting and denying the same fact eight
+ *   lines apart. The clause survives in the paragraph above, in the past tense
+ *   the merged tree makes true.
  */
 export const ROLE_BIAS: Readonly<Record<MageRoleValue, RoleBiasRow>> = {
   [MAGE_ROLE.researcher]: row({
@@ -189,6 +206,7 @@ export const ROLE_BIAS: Readonly<Record<MageRoleValue, RoleBiasRow>> = {
     [GOAL.seekTeaching]: 64,
     [GOAL.wardDuty]: -128,
     [GOAL.applyMagic]: -64,
+    [GOAL.practice]: -64,
   }),
   [MAGE_ROLE.warden]: row({
     [GOAL.wardDuty]: 384,
@@ -203,12 +221,14 @@ export const ROLE_BIAS: Readonly<Record<MageRoleValue, RoleBiasRow>> = {
     [GOAL.scribe]: 128,
     [GOAL.raidReadiness]: -128,
     [GOAL.applyMagic]: -128,
+    [GOAL.practice]: 192,
   }),
   [MAGE_ROLE.raider]: row({
     [GOAL.raidReadiness]: 384,
     [GOAL.wardDuty]: 128,
     [GOAL.scribe]: -128,
     [GOAL.teach]: -64,
+    [GOAL.practice]: 64,
   }),
   [MAGE_ROLE.populace]: row({
     [GOAL.applyMagic]: 384,

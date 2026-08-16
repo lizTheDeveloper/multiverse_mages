@@ -519,6 +519,18 @@ describe('contentRevision', () => {
     // the sixth time, and for the sixth time neither literal survives: this tree
     // is the first holding both the signed/vellum preimage above and W193's
     // `prevalence` field.
+    //
+    // **Unmoved by the `w207/mastery-and-vellum` merge, and that is the finding.**
+    // W207 pinned `3fa982e302f5b191c417d6bce36d1660` here, which is `w200`'s
+    // vellum edit re-keyed against W207's own stack — a literal this tree passed
+    // through two merges ago. Taking its side would have walked the revision
+    // *backwards* while every content file stayed where it was. W207 changes no
+    // file under `packages/content/data` on this tree (`git diff --stat` is
+    // empty), because its only content contribution is that same vellum edit,
+    // already here.
+    //
+    // MEASURED rather than assumed: `node packages/content/bin/validate-content.mjs`
+    // on the merged tree still reports `1f5036f71cd6a1b6e2036c70e32a7530`.
     expect(registry.contentRevision).toBe('1f5036f71cd6a1b6e2036c70e32a7530');
   });
 

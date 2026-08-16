@@ -142,6 +142,7 @@ import type {
   KnowledgeRng,
   KnowledgeSubsystem,
   NodeCatalog,
+  PracticeOutcome,
   StoreHook,
   StorePolicy,
 } from '@mm/rules-magic';
@@ -150,6 +151,8 @@ import {
   MASTERY_ACTIVATION_THRESHOLD,
   disownGrimoire,
   isRediscovery,
+  practice,
+  practiceCeiling,
   research,
   researchRequirement,
   scribe,
@@ -544,6 +547,85 @@ export class CoordinatingKnowledgeGateway implements KnowledgeGateway {
       best = nodeId;
     }
     return best;
+  }
+
+  /**
+   * Every node this mage could spend a month **improving**, ascending by id.
+   *
+   * Three gates, and the third is the one that is particular to practice:
+   *
+   * 1. she holds it in mind or palace (`#holdings` walks exactly those),
+   * 2. the cell is permitted **now** — practice is a use of magic and an
+   *    interdicted art cannot be used, which is the same gate `castableNodes`
+   *    applies,
+   * 3. her mastery is **below** `practiceCeiling(tier, depthCeiling)`.
+   *
+   * The third gate is why `practice` is never a month thrown away, and it is
+   * the population-level rule as well: a mage's list empties as she perfects
+   * what is well inside her reach, and what is left at the top of it she cannot
+   * improve at all.
+   *
+   * ## The depth filter is this method's, not `practice()`'s
+   *
+   * `node.tier > depthCeiling` is checked **here** and nowhere else, matching
+   * `teachableTo`'s use of the same trait so that the list a mage is offered
+   * cannot disagree with the frontier about what she may work on.
+   *
+   * `practice()` itself does **not** refuse an over-deep node, and that is a
+   * decision rather than an oversight. Two paths put a node above a mage's
+   * ceiling into her mind without consulting the frontier — a god's founding
+   * grant and raid theft — and for those `practiceCeiling` clamps headroom at
+   * zero, so she can drill something beyond her only as far as
+   * `PRACTICE_CEILING_BASE` and no further: barely held, teachable for a tick,
+   * gone by the next sweep unless she stays at it. That is the right shape for
+   * knowledge somebody handed her that she was never equipped for, and
+   * `practice.test.ts` pins it. What it is *not* is an implication of the
+   * ceiling arithmetic, which is what this comment used to claim.
+   */
+  practicableNodes(mage: MageHandle): readonly ContentId[] {
+    const rates = this.#ratesOf(mage);
+    if (rates === undefined) return [];
+    const found: ContentId[] = [];
+    for (const [nodeId, mastery] of this.#holdings(mage)) {
+      const node = this.#deps.catalog.node(nodeId);
+      if (node === undefined || node.tier > rates.depthCeiling) continue;
+      if (!permits(this.#deps.ruleset, this.#deps.cells.cellOf(nodeId))) continue;
+      if (mastery >= practiceCeiling(node.tier, rates.depthCeiling)) continue;
+      found.push(nodeId);
+    }
+    return found.sort((a, b) => a - b);
+  }
+
+  /**
+   * Spends mage-months drilling a node she already holds.
+   *
+   * **No effort ledger, and that is the difference from every other
+   * contribution on this class.** Research, teaching and scribing are projects:
+   * they bank progress against an authored requirement and produce an instance
+   * on the tick the requirement is met, so the running total has to live
+   * somewhere between two calls. Practice has no completion — there is nothing
+   * to finish, only a mastery that is higher this month than it was last month
+   * — so the month is spent immediately and the state it moves is the
+   * instance's own `mastery` field. That is one fewer `EFFORT_PROGRESS` row per
+   * practising mage per node, and one fewer thing a save has to carry.
+   *
+   * A refusal — an interdicted cell, a node she has since lost — writes
+   * nothing, exactly as `contributeResearch`'s does.
+   */
+  contributePractice(mage: MageHandle, nodeId: ContentId, mageMonths: Fixed): PracticeOutcome | undefined {
+    const rates = this.#ratesOf(mage);
+    if (rates === undefined) return undefined;
+    return practice({
+      knowledge: this.#deps.knowledge,
+      catalog: this.#deps.catalog,
+      cells: this.#deps.cells,
+      ruleset: this.#deps.ruleset,
+      subject: mage,
+      nodeId,
+      effort: mageMonths,
+      learnRate: rates.learnRate,
+      depthCeiling: rates.depthCeiling,
+    });
   }
 
   scribableBy(mage: MageHandle, nodeId: ContentId): KnowledgeTarget | undefined {

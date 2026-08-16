@@ -201,6 +201,21 @@ const REGISTERED: ReadonlyMap<string, string> = new Map([
       'newly reaches -- rather than a defect introduced. The consequence is ' +
       'bounded by the same argument the function makes, and if it stops being ' +
       'bounded the economy report is where it shows up.',
+
+  // W207 registered `terms:shareOfDeviation` too, independently, with a
+  // different and stronger argument for the same site — and only one entry may
+  // carry the key. Its reasoning is kept here rather than lost, because it is a
+  // proof where the entry above is an observation: every species trait in
+  // `species.json` is a multiple of 128, so a *species* deviation cannot floor
+  // to zero under a divisor of 2 or 4 unless it is already zero. The numerator
+  // can therefore only be a **rolled personality axis** — a mage whose roll
+  // landed 2/1024 from neutral gets no shading on a goal whose divisor is 4.
+  // Nothing accumulates: the score is recomputed from the outlook every tick and
+  // a stall would require the floored quantity to feed its own next value, which
+  // an appeal term never does. W207 also measured that neither
+  // `w196/mastery-rises` nor `w200/layer-one-fixes` reaches the site alone
+  // (2026-08-15), which agrees with the entry above that it is a reachability
+  // change and not a new floor.
   ],
 
   // ---- Handled at the site. ----
