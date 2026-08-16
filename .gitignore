@@ -84,3 +84,6 @@ assets/portraits/
 # committed CSV in a second format that could then drift from it.
 balance/w99/records/
 .w158post/
+
+# Per-machine Claude Code settings — the chosen output style is a local preference.
+.claude/settings.local.json

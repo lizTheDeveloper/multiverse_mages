@@ -115,7 +115,7 @@ if [ "$docs_only" -eq 1 ]; then
   echo
 fi
 
-echo "=== verify (typecheck, lint, purity, content, audio, primitive coverage, tests) ==="
+echo "=== verify (typecheck, lint, purity, content, audio, primitive coverage, generated, refs, tests) ==="
 echo "The three balance gates are NOT here. They run per-commit in the"
 echo "non-blocking \`balance\` Actions job, and are required at release —"
 echo "\`npm run verify:balance\` runs them, \`verify:full\` runs everything."
