@@ -122,6 +122,89 @@ export function applyRegeneration(
 }
 
 /**
+ * What one tick of ruleset stewardship costs, before the pool is consulted.
+ *
+ * `perAxis x max(axes - free, 0) + perKnownNode x knownNodes`, and the two
+ * terms are two different frictions on purpose:
+ *
+ * - The **breadth term** is static friction — an automatic outflow proportional
+ *   to how much constitution the god is keeping legal. It is zero at the v1
+ *   rectangle's seven switches, so the shipped starting position does not open
+ *   in debt and the drain prices *expansion* rather than existence.
+ * - The **doctrine term** is dynamic friction: it scales with the state of
+ *   another element, namely how much magic the universe actually knows. This is
+ *   the term that answers Cook's source/sink power matching. Worship grows with
+ *   populace without bound in practice, so a fixed sink falls behind it forever;
+ *   a sink that grows with the knowledge the breadth bought does not.
+ *
+ * Linear in both, with no draw and no floating point. A quadratic or
+ * exponential drain was considered and rejected for the reason a lockout was
+ * rejected in {@link hysteresisMultiplier}: an agent reads a linear gradient
+ * off the observation directly, and a curve it has to model is a hidden rule.
+ */
+export function stewardshipUpkeep(
+  permittedAxes: number,
+  knownNodes: number,
+  constants: GodConstants,
+): Fixed {
+  const chargeable = Math.max(permittedAxes - constants.stewardshipFreeAxes, 0);
+  return (
+    chargeable * constants.stewardshipPerAxis +
+    Math.max(knownNodes, 0) * constants.stewardshipPerKnownNode
+  );
+}
+
+/** What one tick of stewardship actually took, and what it could not take. */
+export interface UpkeepOutcome {
+  /** The pool after the drain, never below the reserve and never above where it started. */
+  readonly favor: Fixed;
+  /** What the drain actually removed. */
+  readonly drained: Fixed;
+  /**
+   * What the drain wanted and the pool could not give. **Reporting only.** It
+   * is not stored, not carried, and not owed.
+   */
+  readonly lapsed: Fixed;
+}
+
+/**
+ * Applies a tick of stewardship to the pool.
+ *
+ * ## Unmet upkeep lapses; it never banks as debt
+ *
+ * The drain takes what is there down to {@link GodConstants.stewardshipReserve}
+ * and no further, and the remainder is *reported and forgotten*. A debt stock
+ * would be the worse design for a measured reason: a pool allowed to go
+ * negative absorbs every unit of inflow before anything downstream can pull
+ * from it, which is how an institution ends up at zero for a thousand ticks
+ * with a healthy-looking income. A drain that cannot be paid should destroy
+ * capability, not create an obligation.
+ *
+ * ## The reserve is what keeps the engine from capturing itself
+ *
+ * A drain that could take the pool to zero would be able to hold a universe at
+ * a favor level from which it can never afford to *narrow* the ruleset that is
+ * draining it — the drain would have created a state no play removes. The
+ * content loader asserts the reserve is at least what forbidding a form costs,
+ * so the exit is always purchasable. That, together with the unconditional
+ * {@link GodConstants.favorRegenBase}, is the weak static engine this drain is
+ * paired with.
+ *
+ * Total over every arrangement of its inputs, including a pool that opens
+ * *below* the reserve: such a pool is left exactly where it is and the whole
+ * upkeep lapses, rather than being pulled *up* to the reserve.
+ */
+export function applyStewardship(
+  favor: Fixed,
+  upkeep: Fixed,
+  reserve: Fixed,
+): UpkeepOutcome {
+  const available = Math.max(favor - Math.max(reserve, 0), 0);
+  const drained = Math.min(Math.max(upkeep, 0), available);
+  return { favor: favor - drained, drained, lapsed: Math.max(upkeep, 0) - drained };
+}
+
+/**
  * The cost multiplier an axis's recent-change counter produces.
  *
  * `fp(1024) + counter × HYSTERESIS_STEP`: the second flip inside the decay
@@ -195,6 +278,17 @@ export interface FavorLedgerEntry {
   readonly opening: Fixed;
   readonly regenerated: Fixed;
   readonly discarded: Fixed;
+  /**
+   * Favor the stewardship drain removed this tick — the economy's first outflow
+   * that is neither a purchase nor a truncation at a ceiling.
+   */
+  readonly drained: Fixed;
+  /**
+   * Upkeep the pool could not meet. **Reported, never owed**, and it is here
+   * precisely so that the fact it is not carried is visible in the one place a
+   * reader would look for a debt.
+   */
+  readonly lapsed: Fixed;
   /** Favor spent, by `contracts.md` §4.2 action id. */
   readonly spentByAction: Readonly<Record<number, Fixed>>;
   readonly closing: Fixed;
@@ -213,7 +307,13 @@ export interface FavorLedgerEntry {
 export function ledgerBalances(entry: FavorLedgerEntry): boolean {
   let spent = 0;
   for (const amount of Object.values(entry.spentByAction)) spent += amount;
-  return entry.closing === entry.opening + entry.regenerated - entry.discarded - spent;
+  // `lapsed` is deliberately absent from the identity. It is upkeep that never
+  // happened, not favor that moved, and adding it here would be the arithmetic
+  // form of banking it as debt.
+  return (
+    entry.closing ===
+    entry.opening + entry.regenerated - entry.discarded - entry.drained - spent
+  );
 }
 
 /**

@@ -33,7 +33,7 @@
 import type { ContentDiagnostic, ContentDiagnosticCode } from './diagnostics.js';
 import { ContentValidationError, pointerAppend, sortDiagnostics } from './diagnostics.js';
 import { checkAutonomyWeights, isRoleAppeal } from './autonomy.js';
-import { checkGodConstants, checkGodCosts } from './god.js';
+import { checkGodConstants, checkGodCosts, checkGodEconomy } from './god.js';
 import { checkRaidConstants } from './raid.js';
 import { HOOK_KINDS, HOOK_POINTS, checkHookParams, hookPointOwning, permittedKinds } from './hooks.js';
 import {
@@ -425,6 +425,9 @@ function checkGraph(documents: ParsedDocuments): readonly ContentDiagnostic[] {
   // Schema cannot express — see `god.ts`.
   out.push(...checkGodCosts(documents.godCost));
   out.push(...checkGodConstants(documents.godConstant));
+  // The one identity that spans both tables: the stewardship drain's floor must
+  // leave a god able to afford the action that ends the drain.
+  out.push(...checkGodEconomy(documents.godCost, documents.godConstant));
   // `raid-engagement`'s table. Two of its checks are not tuning hygiene but the
   // termination proof — see `raid.ts`.
   out.push(...checkRaidConstants(documents.raidConstant, documents.primitive));

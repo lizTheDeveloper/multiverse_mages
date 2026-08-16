@@ -481,7 +481,19 @@ describe('contentRevision', () => {
     // neither side's literal is a digest over a preimage holding both. This
     // tree is the first one holding both, and the value here was recomputed
     // from it rather than copied from either parent.
-    expect(registry.contentRevision).toBe('57c4db8d16329e8d4b16503531f6dcc7');
+    //
+    // 57c4db8d16329e8d4b16503531f6dcc7 -> 5a7f36e2e3b7d1a349b0e3802cb8fb79,
+    // when `w35/permit-cost` appended the four `stewardship-*` magnitudes to
+    // `god-constant.json` — the recurring favor cost of holding a permissive
+    // ruleset open, and the economy's first drain. Union for the fifth time in
+    // this list, and this one is worth naming precisely: the branch recorded
+    // `d4e30476… -> 0baf4644…`, over a preimage that has the four stewardship
+    // constants and neither the seventeenth god cost, nor the exclusion pair,
+    // nor the deep-magic nodes. Every one of those is on this tree. Neither
+    // parent's literal is a digest over a preimage holding all of it, so the
+    // value here was recomputed from the merged content — 76 constants and 17
+    // costs — rather than taken from a side.
+    expect(registry.contentRevision).toBe('5a7f36e2e3b7d1a349b0e3802cb8fb79');
   });
 
   it('is stable across loads of identical content', () => {

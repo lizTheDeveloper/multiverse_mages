@@ -133,6 +133,34 @@
     "tuningStatus": "untuned"
   },
   {
+    "id": "stewardship-per-axis",
+    "value": 192,
+    "unit": "fp",
+    "gloss": "Favor drained per world tick per permitted axis beyond the free allowance — the breadth term of ruleset stewardship. A constitution is not a purchase, it is a standing commitment: a god who has legalised nineteen doctrine families is governing nineteen, every tick, forever. Static friction in Dormans' sense, and it exists because the favor pool was measured pinned at its cap for 96% of a run with nothing consuming the surplus.",
+    "tuningStatus": "untuned"
+  },
+  {
+    "id": "stewardship-free-axes",
+    "value": 7,
+    "unit": "count",
+    "gloss": "Permitted axes governed at no cost. Seven, because the v1 rectangle is three techniques by four forms and the shipped starting position must not open in debt — the drain prices *expansion*, not existence.",
+    "tuningStatus": "untuned"
+  },
+  {
+    "id": "stewardship-per-known-node",
+    "value": 8,
+    "unit": "fp",
+    "gloss": "Favor drained per world tick per node the universe currently knows — the doctrine term, and the one that scales. Cook's rule is that a growing source needs a growing sink, and worship grows with populace while the spend menu does not; this is the sink that grows with what breadth actually bought. Dynamic friction in Dormans' sense: consumption that scales with the state of other elements, whose stated use is balancing games where resources are produced too fast.",
+    "tuningStatus": "untuned"
+  },
+  {
+    "id": "stewardship-reserve",
+    "value": 4096,
+    "unit": "fp",
+    "gloss": "The floor the stewardship drain may never take the pool below. It is exactly what forbidding a form costs, and that identity is the point: a drain that could impoverish a god past the price of narrowing their own ruleset would be a deadlock the drain invented, and the remedy for a captured engine is a floor the drain cannot reach. Unmet upkeep lapses — the drain simply takes less — and never banks as debt, because a negative pool absorbs all inflow before anything downstream can pull from it.",
+    "tuningStatus": "untuned"
+  },
+  {
     "id": "hysteresis-decay-ticks",
     "value": 60,
     "unit": "ticks",

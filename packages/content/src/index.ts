@@ -107,6 +107,7 @@ export {
   REQUIRED_GOD_CONSTANTS,
   checkGodConstants,
   checkGodCosts,
+  checkGodEconomy,
 } from './god.js';
 
 export type { AutonomyRoleName } from './autonomy.js';

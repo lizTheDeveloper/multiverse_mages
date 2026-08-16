@@ -96,16 +96,25 @@ describe('the god systems are installed, and the world loop still runs', () => {
   });
 
   it('regenerates favor once per world tick, into a pool that is never negative', () => {
+    // The pool used to be asserted *strictly increasing* here, and that was
+    // true only while regeneration was the economy's one flow. Ruleset
+    // stewardship is a drain, so a tick in which upkeep exceeds regeneration
+    // now leaves the pool level at its reserve or lower than it opened — which
+    // is the whole point of adding an outflow, and an assertion that forbade it
+    // would forbid the drain rather than test it.
+    //
+    // What survives, and is the property that actually matters: the pool never
+    // goes negative, the drain never takes it below the reserve, and income
+    // still arrives — over twelve ticks the pool ends above where it started.
     const { state, source } = world();
     let current = state;
-    let previous = universeOf(current).favor;
+    const opening = universeOf(current).favor;
     for (let tick = 0; tick < 12; tick += 1) {
       current = step(current, [], source);
       const favor = universeOf(current).favor;
-      expect(favor).toBeGreaterThan(previous);
       expect(favor).toBeGreaterThanOrEqual(0);
-      previous = favor;
     }
+    expect(universeOf(current).favor).toBeGreaterThan(opening);
   });
 
   it('recomputes the tier, the edict budget and the favor cap from the worship it just wrote', () => {

@@ -73,6 +73,10 @@ import {
   UNIVERSITY,
   UPHEAVAL,
   AXIS_CHANGE_COUNTER,
+  AXIS_KIND,
+  GRID_FORM_COUNT,
+  GRID_TECHNIQUE_COUNT,
+  isCellId,
   activeBlessings,
   activeUpheavals,
   attachRecord,
@@ -97,7 +101,15 @@ import {
 } from './ascension.js';
 import type { GodContent } from './constants.js';
 import type { FavorLedgerEntry } from './favor.js';
-import { applyRegeneration, favorRegeneration, ledgerBalances } from './favor.js';
+import {
+  applyRegeneration,
+  applyStewardship,
+  favorRegeneration,
+  ledgerBalances,
+  stewardshipUpkeep,
+} from './favor.js';
+import type { AxisRef, StewardshipReport } from './stewardship.js';
+import { axisToLapse, permittedAxes } from './stewardship.js';
 import { godState, writeGodState } from './god-state.js';
 import type { InterventionReport } from './interventions.js';
 import { resolveInterventions } from './interventions.js';
@@ -172,6 +184,8 @@ export interface GodTickReport {
   /** Per-class saturated contributions, so a snowball is attributable. */
   readonly worshipByClass: { mages: Fixed; universities: Fixed; populace: Fixed };
   readonly ledger: FavorLedgerEntry;
+  /** What ruleset stewardship drained this tick, and what it took instead. */
+  readonly stewardship: StewardshipReport;
   readonly interventions: InterventionReport;
   readonly ascensionPath: number;
   readonly terminalReason: number;
@@ -348,6 +362,34 @@ function decayHysteresis(state: SimState, worldTick: number, deps: GodDeps): voi
 }
 
 /**
+ * Known nodes the universe holds in *currently permitted* cells on one axis.
+ *
+ * The permitted filter matters: a cell already dark holds inert knowledge, and
+ * counting it would let a family the god already closed protect a family they
+ * still keep open. Cell ids are row-major over the 5x14 grid, which is the same
+ * decomposition `strandedByAxis` uses in `interventions.ts` — deliberately, so
+ * that "how much of the civilization is on this axis" has exactly one answer.
+ */
+function knownNodesOnAxis(
+  known: readonly number[],
+  deps: GodDeps,
+  kind: number,
+  bit: number,
+): number {
+  let count = 0;
+  for (const nodeId of known) {
+    const cellId = deps.cells.cellOf(nodeId);
+    if (!isCellId(cellId)) continue;
+    const onAxis =
+      kind === AXIS_KIND.technique
+        ? Math.floor((cellId - 1) / GRID_FORM_COUNT) === bit
+        : (cellId - 1) % GRID_FORM_COUNT === bit;
+    if (onAxis) count += 1;
+  }
+  return count;
+}
+
+/**
  * The system that measures the civilization and decides whether the run is over.
  *
  * Order inside the tick matters and is stated because every later reader will
@@ -418,10 +460,51 @@ function outcomeSystem(
         deps.clampCounters,
       );
       const outcome = applyRegeneration(opening, regenerated, favorCap);
-      universeStore.set(universe, 'favor', outcome.favor);
+
+      // ---- 5b. Stewardship: the drain on a broad ruleset ----------------------
+      // Runs after regeneration and before anything reads the pool, because the
+      // thing being modelled is a standing cost of governing what is legal —
+      // the god pays for the constitution before the constitution pays them.
+      // The known-node count is hoisted from step 6 for the doctrine term; it
+      // is a pure read and takes no draw, so hoisting it cannot re-roll
+      // anything.
+      const known = knowledge.knownNodes();
+      const techniqueMask = universeStore.get(universe, 'permittedTechniques');
+      const formMask = universeStore.get(universe, 'permittedForms');
+      const upkeep = stewardshipUpkeep(
+        permittedAxes(techniqueMask, formMask),
+        known.length,
+        constants,
+      );
+      const stewardship = applyStewardship(outcome.favor, upkeep, constants.stewardshipReserve);
+      universeStore.set(universe, 'favor', stewardship.favor);
+
+      // The lapse. What the pool could not pay is not owed — it is taken out of
+      // the constitution instead, one axis per tick, and the axis taken is the
+      // one the civilization uses least. This is the competitor that keeps the
+      // drain from being a flat tax: every permitted axis is bidding against
+      // every other for the same favor, and the loser is switched off.
+      let lapsedAxis: AxisRef | undefined;
+      if (stewardship.lapsed > 0) {
+        lapsedAxis = axisToLapse(
+          techniqueMask,
+          formMask,
+          constants.stewardshipFreeAxes,
+          AXIS_KIND.technique,
+          AXIS_KIND.form,
+          GRID_TECHNIQUE_COUNT,
+          GRID_FORM_COUNT,
+          (kind, bit) => knownNodesOnAxis(known, deps, kind, bit),
+        );
+        if (lapsedAxis !== undefined) {
+          const field =
+            lapsedAxis.kind === AXIS_KIND.technique ? 'permittedTechniques' : 'permittedForms';
+          const mask = lapsedAxis.kind === AXIS_KIND.technique ? techniqueMask : formMask;
+          universeStore.set(universe, field, mask & ~(1 << lapsedAxis.bit));
+        }
+      }
 
       // ---- 6. The era boundary ----------------------------------------------
-      const known = knowledge.knownNodes();
       const everKnown = componentOf(state, EVER_KNOWN).size;
       const lost = deps.nodesLostThisTick?.(ctx.tick) ?? 0;
       god = { ...god, eraNodesLost: god.eraNodesLost + lost };
@@ -550,14 +633,17 @@ function outcomeSystem(
         opening: opening + spentThisTick,
         regenerated: outcome.gained + outcome.discarded,
         discarded: outcome.discarded,
+        drained: stewardship.drained,
+        lapsed: stewardship.lapsed,
         spentByAction: interventions.spentByAction,
-        closing: outcome.favor,
+        closing: stewardship.favor,
       };
       if (!ledgerBalances(ledger)) {
         throw new Error(
           `The favor ledger for world tick ${String(ctx.tick)} does not balance: opened at ` +
             `${String(ledger.opening)}, regenerated ${String(ledger.regenerated)}, discarded ` +
-            `${String(ledger.discarded)}, spent ${String(spentThisTick)}, closed at ` +
+            `${String(ledger.discarded)}, drained ${String(ledger.drained)}, spent ` +
+            `${String(spentThisTick)}, closed at ` +
             `${String(ledger.closing)}. Favor was created or destroyed outside regeneration and ` +
             'intervention, which are the only two paths permitted to move it.',
         );
@@ -569,7 +655,7 @@ function outcomeSystem(
         worshipTarget: shocked,
         worshipTier,
         edictBudget,
-        favor: outcome.favor,
+        favor: stewardship.favor,
         favorCap,
         favorWasted: god.favorWasted,
         worshipByClass: {
@@ -578,6 +664,12 @@ function outcomeSystem(
           populace: target.populace.saturated,
         },
         ledger,
+        stewardship: {
+          upkeep,
+          drained: stewardship.drained,
+          lapsed: stewardship.lapsed,
+          lapsedAxis,
+        },
         interventions,
         ascensionPath: path,
         terminalReason,
