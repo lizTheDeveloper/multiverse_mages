@@ -100,7 +100,14 @@ describe('shipped content', () => {
       // — they price what applied work makes and eats, not what a role wants —
       // and both are in `REQUIRED_AUTONOMY_WEIGHTS`, so the loader checks the
       // set in both directions exactly as it does for the target weights.
-      autonomyWeights: 39,
+      //
+      // Forty-two since `material-economy` priced its two world-loop sinks:
+      // `teaching-insight-per-month` and `teaching-insight-bonus` for the
+      // insight that funds university teaching throughput, and
+      // `construction-labor-per-month` for the labor that hires extra
+      // person-months onto a building site. Same discipline — all three are
+      // read by name, so a weight nothing reads fails the load.
+      autonomyWeights: 42,
     });
   });
 

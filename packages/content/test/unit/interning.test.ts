@@ -519,7 +519,32 @@ describe('contentRevision', () => {
     // **This one does move the balance baselines**, and it is the commit that
     // should: a mage in a Mentem cell can now choose `GOAL.applyMagic`, which
     // she could not before, and the stock she fills is one the god spends.
-    expect(registry.contentRevision).toBe('a7cec8683d300801ccfb45d60eeff70e');
+    //
+    // a7cec8683d300801ccfb45d60eeff70e -> 1a70954598f2a5acdd7d06bfa1c1eafc, in
+    // one union covering the rest of `material-economy`'s groups 3 and 4. Four
+    // value edits, and the digest is over values, so this is the ordinary case
+    // rather than a branch reconciliation:
+    //
+    // 1. **Three `autonomy-weight.json` scalars**, for the two sinks that live
+    //    in the world loop: `teaching-insight-per-month` and
+    //    `teaching-insight-bonus` (insight funds university teaching
+    //    throughput), and `construction-labor-per-month` (labor hires extra
+    //    person-months onto a building site). A weight nothing reads fails the
+    //    load, so each arrived with its consumer.
+    // 2. **Five `god-cost.json` rows take a `materialCost`** —
+    //    `issue-dispensation` essence, `grant-founding-knowledge` vellum,
+    //    `bless-mage` insight, `fund-university` stone, `open-portal` passage.
+    //    This is the half of the change that makes the god's verbs reach the
+    //    economy magic produces; until it, the two never met.
+    // 3. **`construction-labor-per-month` was retuned 4 -> 256** after the
+    //    causal-chain instrument stopped separating its arms under it, and
+    //    **`fund-university` lost its `labor` price** after the same stock's
+    //    automatic per-tick sink left the verb legal on 8 ticks of 585. Both
+    //    are recorded on the glosses they moved.
+    // 4. The glosses of every row above moved with the values, which is a value
+    //    edit inside the preimage in its own right and deliberate: the gloss is
+    //    the only place a JSON file can say *why*.
+    expect(registry.contentRevision).toBe('1a70954598f2a5acdd7d06bfa1c1eafc');
   });
 
   it('is stable across loads of identical content', () => {

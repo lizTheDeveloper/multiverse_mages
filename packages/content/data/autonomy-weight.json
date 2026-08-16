@@ -330,9 +330,9 @@
   },
   {
     "id": "construction-labor-per-month",
-    "value": 4,
+    "value": 256,
     "unit": "fp",
-    "gloss": "Labor spent to hire one extra person-month onto a building site, matching MATERIALS_PER_LABOR_MONTH (4) so a hired month and a laborer month cost the same in their own stock. Corpus makes bodies of work; a crew may at most be doubled by them, because magically-made work still has to be directed by somebody who is there.",
+    "gloss": "Labor spent to hire one extra person-month onto a building site. Sixty-four times the stone a laborer month costs, and measured rather than chosen: the hire drains per tick with the crew while labor arrives only from a mage casting Corpus, so at parity an endowment vanishes in three ticks and the build-rate causal chain stops being measurable. A crew may at most be doubled.",
     "tuningStatus": "untuned"
   }
 ]

@@ -132,15 +132,24 @@ const STARTING_MATERIALS = 1000 * FP_ONE;
 /**
  * The founding endowment of the four kinds `material-economy` added, `fp`.
  *
- * Each is **a multiple of what the verb it unblocks costs in `god-cost.json`**,
- * not a round number: `fund-university` costs `labor` 4,096, so eight fundings
- * is 32,768. Written as the multiplication so that a retune of the price makes
- * the arithmetic here visibly stale rather than quietly wrong.
+ * Three of them are **a multiple of what the verb they unblock costs in
+ * `god-cost.json`**, not a round number: `issue-dispensation` costs `essence`
+ * 4,096, so eight dispensations is 32,768. Written as the multiplication so
+ * that a retune of the price makes the arithmetic here visibly stale rather
+ * than quietly wrong. Eight uses for the two kinds the v1 opening square cannot
+ * produce at all, and two portals for `passage`, which it can.
  *
- * Eight uses for the three kinds the v1 opening square cannot produce, and two
- * portals for `passage`, which it can — see the long note at the row itself for
- * the measurement that produced these. **Untuned**, and a starting position
- * rather than a rule.
+ * **`FOUNDING_LABOR` is the exception and is not a verb multiple.** It was one
+ * — `fund-university` was priced in `labor` as well as `stone` — and the
+ * measurement that removed that price is recorded on the verb's own gloss: an
+ * automatic per-tick sink and a discretionary verb on one stock is a race the
+ * sink always wins, and action 11 came back legal on 8 ticks of 585. So `labor`
+ * has exactly one claimant now, the construction hire, and this figure is sized
+ * against *it*: 32,768 at 256 per hired month is about 128 person-months, a few
+ * ticks of a doubled crew. Large enough to be visible, small enough that the
+ * `build-rate` causal chain stays measurable under it.
+ *
+ * **Untuned**, and a starting position rather than a rule.
  */
 const FOUNDING_LABOR = 8 * 4096;
 const FOUNDING_ESSENCE = 8 * 4096;
@@ -698,7 +707,7 @@ export function buildReferenceState(input: {
   // | --- | --- | --- |
   // | `passage` | yes — positive at tick 2, 61,344 by tick 240 | `open-portal` |
   // | `insight` | **no** — 0 for all 240 ticks | `bless-mage` |
-  // | `labor` | **no**, and structurally | `fund-university` |
+  // | `labor` | **no**, and structurally | the construction hire |
   // | `essence` | **no**, and structurally | `issue-dispensation` |
   //
   // `insight` is producible inside the opening square — Mentem is one of its
@@ -706,9 +715,10 @@ export function buildReferenceState(input: {
   // Mentem node over the Limen one in twenty world years. `labor` and `essence`
   // are worse than unlucky. Corpus and Vim are **outside** the twelve v1 cells,
   // so producing either takes a `permit-form` first, and until then
-  // `fund-university` and `issue-dispensation` are correctly masked and
-  // permanently unavailable. That is *"a mask that is correct and a game that is
-  // stuck"* — the game cannot start, rather than the god cannot afford.
+  // `issue-dispensation` is correctly masked and permanently unavailable and
+  // no site can hire a single extra month. That is *"a mask that is correct and
+  // a game that is stuck"* — the game cannot start, rather than the god cannot
+  // afford.
   //
   // So the founding endowment. Sized in multiples of what the verbs it unblocks
   // actually cost, at **eight uses** for the three that v1 cannot replenish and

@@ -687,13 +687,22 @@ it bounds.
   "id": "forbid-technique",
   "actionId": 2,                 // the §4.2 action id. Permanent, like the action
   "favorCost": 8192,             // fp. Base price, before hysteresis and node-tier scaling
+  "materialCost": { "stone": 8192 },  // optional. fp per material kind; unscaled by hysteresis or tier
   "gloss": "Exactly what permitting costs.",
   "tuningStatus": "untuned"
 }
 ```
 
-What each action in §4.2 costs the god in favor, as data rather than as literals in the rules
-path — so that retuning a price is a content change a sweep can turn rather than a code change,
+What each action in §4.2 costs the god in favor — and, since `material-economy`, optionally in
+**materials** as well. `materialCost` is absent on most rows: an unpriced verb is one that makes
+nothing out of anything. Where it is present the rule is systemic — *a verb that makes a thing in
+the world spends the material that thing is made of* — and it is denominated per kind, never
+against a total, because paying a `passage` price out of a heap of stone would be a market and the
+seven kinds exist precisely to make two universes' economies differ. A kind outside the seven fails
+the load, named. Favor remains the pacing currency.
+
+The rest of this section is about the favor price, and holds for both: each is data rather than a
+literal in the rules path — so that retuning a price is a content change a sweep can turn rather than a code change,
 and so that the price is inside `contentRevision`. Two universes that disagreed about the cost of
 forbidding a technique while agreeing they were compatible would be playing different games.
 

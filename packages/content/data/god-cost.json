@@ -89,11 +89,10 @@
     "id": "fund-university",
     "actionId": 11,
     "favorCost": 3072,
-    "gloss": "Advancing an existing build. Founding a new one costs the separate `found-university-cost` constant, because §4.2 gives the two one action id and they are not the same purchase. It also costs stone and labor. Building a university should take wood and labour, not just favour: the verb that raises a thing spends the materials the thing is made of.",
+    "gloss": "Advancing an existing build. Founding a new one costs the separate `found-university-cost` constant, because §4.2 gives the two one action id and they are not the same purchase. It also costs stone, because raising a building should take stone and not only favour. Not labor: the world loop already spends that stock hiring the person-months, and charging it here too starved the verb.",
     "tuningStatus": "untuned",
     "materialCost": {
-      "stone": 8192,
-      "labor": 4096
+      "stone": 8192
     }
   },
   {
