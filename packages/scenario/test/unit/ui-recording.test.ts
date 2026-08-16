@@ -60,6 +60,9 @@ import { fileURLToPath } from 'node:url';
 
 import { afterAll, describe, expect, it } from 'vitest';
 
+import { MagicGrid, heldNodes } from '@mm/rules-magic';
+import { referenceContent } from '@mm/scenario';
+
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../../..');
 const scratch = mkdtempSync(path.join(tmpdir(), 'mm-ui-recording-'));
 
@@ -93,7 +96,59 @@ interface Frame {
     readonly mages: Readonly<Record<string, { readonly handle: number; readonly speciesId: number; readonly ageTicks: number }>>;
     readonly universities: Readonly<Record<string, { readonly handle: number }>>;
   };
+  /**
+   * §4.4's academy projection — every college, its roster, its shelf, the
+   * lessons in it, and the cells the ruleset permits. The whole of what
+   * `ui/university/` is drawn from, and none of it is in §4.1.
+   */
+  readonly academy: {
+    readonly universities: Readonly<Record<string, Dossier>>;
+    readonly mages: Readonly<Record<string, { readonly handle: number; readonly speciesId: number }>>;
+    readonly permittedCells: readonly number[];
+    readonly unaffiliated: number;
+  };
   readonly status: string;
+}
+
+interface Dossier {
+  readonly college: {
+    readonly handle: number;
+    readonly capacity: number;
+    readonly buildProgress: number;
+    readonly hasLibrary: boolean;
+    readonly libraryNodes: number;
+    readonly affiliatedMages: number;
+    readonly staffCohorts: number;
+  };
+  readonly roster: readonly { readonly handle: number; readonly nodeIds: readonly number[] }[];
+  readonly shelf: readonly {
+    readonly nodeId: number;
+    readonly copies: number;
+    readonly bestMastery: number;
+  }[];
+  readonly teaching: readonly {
+    readonly teacher: number;
+    readonly student: number;
+    readonly nodeId: number;
+    readonly progress: number;
+    readonly teacherHere: boolean;
+    readonly studentHere: boolean;
+  }[];
+  readonly staffHeadcount: number;
+}
+
+/** One row of {@link collegeFrontier}'s four lists. */
+interface FrontierRow {
+  readonly nodeId: number;
+  readonly by: readonly number[];
+  readonly missing?: readonly number[];
+}
+
+interface Frontier {
+  readonly reachable: readonly FrontierRow[];
+  readonly blockedByAxis: readonly FrontierRow[];
+  readonly blockedByPrerequisite: readonly FrontierRow[];
+  readonly blockedByDepth: readonly FrontierRow[];
 }
 
 interface Recording {
@@ -112,9 +167,18 @@ interface Recording {
   readonly actions: Readonly<Record<string, string>>;
   readonly content: {
     readonly cells: readonly { readonly cellId: number; readonly id: string }[];
-    readonly species: readonly { readonly id: string }[];
+    readonly species: readonly { readonly id: string; readonly speciesId: number; readonly depthCeiling: number }[];
     readonly actionCosts: Readonly<Record<string, number>>;
     readonly candidateSlots: Readonly<Record<string, number>>;
+    /** §2.3's research graph — the header field `ui/university/` is drawn from. */
+    readonly nodes: readonly {
+      readonly nodeId: number;
+      readonly id: string;
+      readonly name: string;
+      readonly cellId: number;
+      readonly tier: number;
+      readonly prerequisites: readonly number[];
+    }[];
   };
   readonly frames: readonly Frame[];
 }
@@ -303,5 +367,217 @@ describe('the recording `npm run ui:record` produces', () => {
     expect(JSON.stringify(recording.provenance)).not.toMatch(/\d{4}-\d{2}-\d{2}/u);
     expect(Object.keys(recording.provenance)).not.toContain('generatedAt');
     expect(Object.keys(recording.provenance)).not.toContain('recordedAt');
+  });
+});
+
+/**
+ * `ui/shared/session.js`'s own frontier arithmetic, imported rather than
+ * transcribed.
+ *
+ * A test that reimplemented `collegeFrontier` could agree with itself while
+ * both had drifted from the page — the same argument the header of this file
+ * makes about re-running the recorder rather than re-writing its loop. The
+ * import is dynamic and by path because `ui/` is deliberately a build-free set
+ * of static files with no package of its own; the shape is declared above so
+ * nothing here is `any`.
+ */
+const uiSession = (await import(
+  /*
+   * A **literal** specifier, and it has to be. `module-boundaries.test.ts`
+   * reports any `import()` whose specifier it cannot read as a §5 violation
+   * rather than skipping it — *"an import that cannot be proven safe is
+   * reported rather than assumed safe"* — and a path built from `ROOT` at
+   * runtime is exactly that shape. So the path is written out, and the
+   * suppression below is for TypeScript rather than for the boundary check:
+   * `ui/` is deliberately build-free, has no package and no declarations, and
+   * sits outside every `rootDir`. The shape is declared on the cast, so nothing
+   * past this line is untyped.
+   */
+  // @ts-expect-error -- ui/ is a set of static files with no types to resolve.
+  '../../../../ui/shared/session.js'
+)) as unknown as {
+  collegeFrontier: (
+    content: Recording['content'],
+    dossier: Dossier,
+    academy: { mage: (h: number) => unknown; permittedCells: ReadonlySet<number> },
+  ) => Frontier;
+};
+
+describe("the recording's research graph, against the grid that owns it", () => {
+  /**
+   * The runtime grid, built from the same content the recorder published from.
+   *
+   * This is the positive control the graph assertion needs. "Every prerequisite
+   * resolves to a shipped node" would pass against an empty list; comparing to
+   * `prerequisitesOf` cannot, because a recorder that emitted nothing would
+   * disagree with 292 real edges.
+   */
+  const grid = MagicGrid.from(referenceContent().registry);
+
+  it('publishes exactly the edges `MagicGrid.prerequisitesOf` holds', () => {
+    let edges = 0;
+    let crossing = 0;
+    for (const node of recording.content.nodes) {
+      const expected = [...grid.prerequisitesOf(node.nodeId)].sort((a, b) => a - b);
+      const actual = [...node.prerequisites].sort((a, b) => a - b);
+      expect(actual, `node ${node.id} ships the wrong prerequisites`).toEqual(expected);
+      edges += actual.length;
+      for (const prerequisite of actual) {
+        // The reserved null in a prerequisite list would read to a client as a
+        // requirement nothing can satisfy — a node quietly unreachable forever.
+        expect(prerequisite, `node ${node.id} names the reserved null`).toBeGreaterThan(0);
+        const source = recording.content.nodes.find((n) => n.nodeId === prerequisite);
+        expect(source, `node ${node.id} names node ${String(prerequisite)}, which is not shipped`).toBeDefined();
+        // §2.3's loader guarantee, restated where a client can rely on it: a
+        // prerequisite is never deeper than the node it gates, so a frontier
+        // walk cannot cycle.
+        expect(source?.tier ?? 0).toBeLessThanOrEqual(node.tier);
+        if ((source?.cellId ?? 0) !== node.cellId) crossing += 1;
+      }
+    }
+    // Measured on this content set. Written as a floor rather than a literal
+    // because content is authored and a new node is not a regression — what is
+    // a regression is the graph arriving empty, which is what every "is it
+    // present" assertion above would happily accept.
+    expect(edges).toBeGreaterThanOrEqual(292);
+    expect(crossing).toBeGreaterThanOrEqual(36);
+  });
+
+  it('permits only cells `permits()` permits, and only ones content populates', () => {
+    const populated = new Set(recording.content.nodes.map((n) => n.cellId));
+    for (const [i, frame] of recording.frames.entries()) {
+      for (const cellId of frame.academy.permittedCells) {
+        expect(populated.has(cellId), `frame ${String(i)} permits empty cell ${String(cellId)}`).toBe(
+          true,
+        );
+      }
+    }
+  });
+
+  /**
+   * The one that matters: **is the page's reachable frontier the frontier the
+   * rules would give?**
+   *
+   * `collegeFrontier` is set arithmetic in a browser file, and set arithmetic
+   * that is confidently wrong is exactly the shape this repository keeps
+   * finding. So every row it calls reachable is put back through
+   * `MagicGrid.prerequisiteStatus` — the function
+   * `CoordinatingKnowledgeGateway.researchFrontier` itself consults — against
+   * that mage's own holdings, and the converse is checked too: a node the rules
+   * would admit and the page dropped is the failure nobody would ever notice.
+   */
+  it('calls reachable exactly what `prerequisiteStatus` calls satisfied', () => {
+    const depthOf = new Map(recording.content.species.map((x) => [x.speciesId, x.depthCeiling]));
+    let checkedRows = 0;
+    for (const [i, frame] of recording.frames.entries()) {
+      const academy = {
+        mage: (handle: number) => frame.academy.mages[String(handle)],
+        permittedCells: new Set(frame.academy.permittedCells),
+      };
+      for (const dossier of Object.values(frame.academy.universities)) {
+        const frontier = uiSession.collegeFrontier(recording.content, dossier, academy);
+        const held = new Map(dossier.roster.map((r) => [r.handle, new Set(r.nodeIds)]));
+
+        for (const row of frontier.reachable) {
+          checkedRows += 1;
+          const node = recording.content.nodes.find((n) => n.nodeId === row.nodeId);
+          expect(node, `frame ${String(i)}: reachable node ${String(row.nodeId)} is not content`).toBeDefined();
+          expect(academy.permittedCells.has(node?.cellId ?? 0)).toBe(true);
+          for (const handle of row.by) {
+            const mine = held.get(handle) ?? new Set<number>();
+            expect(mine.has(row.nodeId), `${String(handle)} already holds ${String(row.nodeId)}`).toBe(
+              false,
+            );
+            const status = grid.prerequisiteStatus(row.nodeId, heldNodes(mine));
+            expect(
+              status.satisfied,
+              `frame ${String(i)}: the page offers node ${String(row.nodeId)} to mage ` +
+                `${String(handle)}, who is missing ${status.missing.join(', ')}`,
+            ).toBe(true);
+            const species = frame.academy.mages[String(handle)]?.speciesId ?? 0;
+            expect(node?.tier ?? 0).toBeLessThanOrEqual(depthOf.get(species) ?? 7);
+          }
+        }
+
+        // The converse. Without it the assertion above passes on an empty
+        // frontier, which is the failure mode this repository names in
+        // CLAUDE.md: a checker that answers about the wrong input.
+        for (const entry of dossier.roster) {
+          const mine = new Set(entry.nodeIds);
+          const species = frame.academy.mages[String(entry.handle)]?.speciesId ?? 0;
+          const ceiling = depthOf.get(species) ?? 7;
+          const offered = new Set(
+            frontier.reachable.filter((r) => r.by.includes(entry.handle)).map((r) => r.nodeId),
+          );
+          for (const node of recording.content.nodes) {
+            if (mine.has(node.nodeId)) continue;
+            if (!academy.permittedCells.has(node.cellId)) continue;
+            if (node.tier > ceiling) continue;
+            if (!grid.prerequisiteStatus(node.nodeId, heldNodes(mine)).satisfied) continue;
+            expect(
+              offered.has(node.nodeId),
+              `frame ${String(i)}: the rules admit node ${node.id} for mage ` +
+                `${String(entry.handle)} and the page does not offer it`,
+            ).toBe(true);
+          }
+        }
+      }
+    }
+    // A positive control on the loop itself: a run whose colleges were empty
+    // would satisfy every assertion above without checking anything.
+    expect(checkedRows, 'no reachable row was ever checked').toBeGreaterThan(0);
+  });
+});
+
+describe("the recording's academy projection", () => {
+  it('gives every frame a college, its roster, its shelf and the permitted cells', () => {
+    for (const [i, frame] of recording.frames.entries()) {
+      const academy = frame.academy;
+      expect(academy, `frame ${String(i)} carries no academy`).toBeDefined();
+      expect(Array.isArray(academy.permittedCells)).toBe(true);
+      expect(typeof academy.unaffiliated).toBe('number');
+      for (const dossier of Object.values(academy.universities)) {
+        // The roster is the join §4.1 cannot express, so the count on the
+        // summary and the list beside it must agree — they come from two passes
+        // over the mage store and a page prints both.
+        expect(
+          dossier.roster.length,
+          `frame ${String(i)}: college #${String(dossier.college.handle)} lists ` +
+            `${String(dossier.roster.length)} on a roster of ${String(dossier.college.affiliatedMages)}`,
+        ).toBe(dossier.college.affiliatedMages);
+        // Every roster mage is in the per-handle table. A row pointing at a
+        // table that does not hold it draws a blank line, which reads as a mage
+        // about whom nothing is known rather than as a lost lookup.
+        for (const entry of dossier.roster) {
+          expect(academy.mages[String(entry.handle)]).toBeDefined();
+        }
+        // `libraryNodes` on the summary is the distinct count; `shelf` is the
+        // list it was made from. Two derivations of one fact, and a page shows
+        // the number at the head and the list underneath.
+        expect(dossier.shelf.length).toBe(dossier.college.libraryNodes);
+        for (const entry of dossier.shelf) expect(entry.copies).toBeGreaterThan(0);
+        // A teaching row belongs to a pair, and this list is the join that
+        // places it. At least one party must be here or the row would not be on
+        // this college's screen at all.
+        for (const lesson of dossier.teaching) {
+          expect(lesson.teacherHere || lesson.studentHere).toBe(true);
+          expect(academy.mages[String(lesson.teacher)]).toBeDefined();
+          expect(academy.mages[String(lesson.student)]).toBeDefined();
+        }
+      }
+    }
+  });
+
+  it('never leaves a college with a library it cannot describe', () => {
+    // `hasLibrary` false and a non-empty shelf would mean the shelf was
+    // attributed to a library that is not this one — the join going wrong in
+    // the direction that still renders.
+    for (const [i, frame] of recording.frames.entries()) {
+      for (const dossier of Object.values(frame.academy.universities)) {
+        if (!dossier.college.hasLibrary) {
+          expect(dossier.shelf, `frame ${String(i)} shelves books in no library`).toEqual([]);
+        }
+      }
+    }
   });
 });

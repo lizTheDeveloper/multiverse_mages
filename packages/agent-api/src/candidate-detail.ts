@@ -346,8 +346,17 @@ function detailFor(
   }
 }
 
-/** The mage rows named by the lists, with their knowledge and their goal. */
-function describeMages(
+/**
+ * The mage rows named by the lists, with their knowledge and their goal.
+ *
+ * Exported for `./academy.ts`, which describes the roster of a college and the
+ * two parties of a lesson. **One definition of what a mage looks like to a
+ * reader**, called twice on one state, rather than two projections that agree
+ * today: a mage on a bless chip and the same mage on her college's roster must
+ * be the same sentence, and the only way to guarantee that is for it to be the
+ * same function.
+ */
+export function describeMages(
   state: SimState,
   catalogue: ContentCatalogue,
   handles: ReadonlySet<number>,
@@ -421,8 +430,14 @@ function describeMages(
   return out;
 }
 
-/** The university rows named by the lists, with what is on their shelves. */
-function describeUniversities(
+/**
+ * The university rows named by the lists, with what is on their shelves.
+ *
+ * Exported for `./academy.ts` for the reason {@link describeMages} is: the
+ * summary that captions a funding chip and the summary at the head of a college
+ * screen are one summary.
+ */
+export function describeUniversities(
   state: SimState,
   handles: ReadonlySet<number>,
 ): ReadonlyMap<number, UniversityDescriptor> {

@@ -96,6 +96,35 @@ const { registry } = content;
  * interned `cellId`. One map, built once, rather than a `find` per node.
  */
 const cellIdByStringId = new Map(registry.cells.map(({ contentId, record: c }) => [c.id, contentId]));
+
+/**
+ * A node's authored id to its interned `nodeId`, so `prerequisites` — which
+ * content states as authored ids — can be published as the numbers every client
+ * index already uses.
+ */
+const nodeIdByStringId = new Map(registry.nodes.map(({ contentId, record: n }) => [n.id, contentId]));
+
+/**
+ * An authored prerequisite list, interned.
+ *
+ * **Throws rather than emitting `0`.** A `0` here would be the reserved null
+ * (§0) sitting in a prerequisite list, and a client's reachability arithmetic
+ * would read it as a requirement nothing can satisfy — a node quietly
+ * unreachable forever, with no error anywhere. The content loader already
+ * refuses an unresolvable prerequisite; this is the second lock, on the one
+ * translation between the two id spaces.
+ */
+const internPrerequisites = (node) =>
+  (node.prerequisites ?? []).map((id) => {
+    const nodeId = nodeIdByStringId.get(id);
+    if (nodeId === undefined) {
+      throw new Error(
+        `Node ${node.id} declares prerequisite ${id}, which content does not name. A client ` +
+          'reading this graph would draw an edge from nowhere.',
+      );
+    }
+    return nodeId;
+  });
 const { scenario } = referenceScenario(content, { raids: true });
 const session = createSession({ scenario, strategyId: 'ui-recording' });
 
@@ -140,6 +169,34 @@ if (nonInvertible.length > 0) {
   );
 }
 
+
+/**
+ * The §4.4 academy projection, as JSON.
+ *
+ * Maps keyed by number do not survive `JSON.stringify`, so both tables become
+ * objects keyed by the decimal handle — the same treatment
+ * {@link encodeCandidateDetail} gives, read back the same way through
+ * `Number(key)`. Nothing is reshaped beyond that.
+ */
+function encodeAcademy(academy) {
+  return {
+    universities: Object.fromEntries(
+      [...academy.universities].map(([handle, dossier]) => [
+        handle,
+        {
+          college: { ...dossier.college },
+          roster: dossier.roster.map((entry) => ({ ...entry, nodeIds: [...entry.nodeIds] })),
+          shelf: dossier.shelf.map((entry) => ({ ...entry })),
+          teaching: dossier.teaching.map((entry) => ({ ...entry })),
+          staffHeadcount: dossier.staffHeadcount,
+        },
+      ]),
+    ),
+    mages: Object.fromEntries([...academy.mages].map(([handle, mage]) => [handle, { ...mage }])),
+    permittedCells: [...academy.permittedCells],
+    unaffiliated: academy.unaffiliated,
+  };
+}
 
 /**
  * The §4.4 candidate projection, as JSON.
@@ -211,6 +268,24 @@ const record = () => {
      * chosen" and "chose idle".
      */
     candidateDetail: encodeCandidateDetail(session.candidateDetails()),
+    /**
+     * §4.4's academy projection — every college, its roster, its shelf, the
+     * lessons in progress, and the cells the ruleset permits.
+     *
+     * Same surface and the same reasoning as `stocks` and `candidateDetail`
+     * above: emitted on request from a running session, read by no rule, outside
+     * the observation, so `OBSERVATION_SIZE` and the layout digest do not move.
+     * §4.1 has none of it — `MAGE.universityId` reaches no slot, `EFFORT_PROGRESS`
+     * reaches no slot, and the mage block is 6 species x 8 tiers of counts, so a
+     * policy cannot tell a college of five from five hermits.
+     *
+     * `permittedCells` is the one field here that is a *rule* rather than a
+     * reading. It is `permits()` over the cells content populates, computed in
+     * `agent-api` precisely so that a page does not reconstruct it out of the
+     * ruleset block's nineteen bits and eight edict slots — which is what §5's
+     * "the client computes no rules" forbids.
+     */
+    academy: encodeAcademy(session.academy()),
     mask: [...mask],
     // Candidate lists are slot-indexed per parameterized action (§4.4).
     // `CandidateLists` is a ReadonlyMap keyed by action id, not a plain object —
@@ -288,6 +363,13 @@ const doc = {
       speciesId: contentId,
       id: s.id,
       name: s.name,
+      /**
+       * §1.3's depth ceiling — the deepest tier this species can research at
+       * all. `gatherFrontier` applies it *after* the gateway's prerequisite and
+       * legality filter, so a frontier drawn without it overstates what a gnome
+       * of forty can actually begin. Content, like the graph above.
+       */
+      depthCeiling: s.depthCeiling,
     })),
     actionCosts: Object.fromEntries(
       registry.godCosts.map(({ record: g }) => [g.actionId, g.favorCost]),
@@ -311,6 +393,30 @@ const doc = {
       name: n.name,
       cellId: cellIdByStringId.get(n.cell) ?? 0,
       tier: n.tier,
+      /**
+       * §2.3's prerequisite edges, interned — **the research graph, which no
+       * client has ever been shipped.**
+       *
+       * The grid the pages draw is seventy cells of counts, and a count cannot
+       * say what comes next. 300 nodes carry 292 edges between them, 36 of which
+       * cross cells, and every one of those was invisible: a page could show
+       * that a college knows four nodes in *creo animal* and not that the fifth
+       * is gated behind a node in a cell the god has forbidden.
+       *
+       * This is **content**, published where content is published. Nothing about
+       * the observation moves — `OBSERVATION_SIZE` is 400, the digest is
+       * 46182c35d829b205, no schema revision, no baseline — because a header is
+       * not a frame and the graph is the same in every universe this content
+       * builds.
+       *
+       * What it buys is that "what could this college learn next" becomes set
+       * arithmetic a client can do: a node is within reach when every id in this
+       * list is held and its cell is in the frame's `academy.permittedCells`,
+       * which is the same filter `CoordinatingKnowledgeGateway.researchFrontier`
+       * applies. The *rule* — which cells are permitted — is still computed by
+       * `agent-api`; only the graph walk is here.
+       */
+      prerequisites: internPrerequisites(n),
     })),
     /**
      * `MAGE_ROLE`'s words. §1.2 stores a role as a `u8` and the enum lives in

@@ -247,6 +247,23 @@ export type {
 } from './candidate-detail.js';
 export { describeCandidates } from './candidate-detail.js';
 
+/**
+ * §4.4's fourth projection: one college, whole.
+ *
+ * Same placement and the same reasoning as the three above — emitted on
+ * request, unreachable from {@link AgentView}, read by no rule.
+ * `./academy.ts` argues it, and it is what a university screen is drawn from.
+ */
+export type {
+  AcademyInput,
+  AcademyProjection,
+  RosterEntry,
+  ShelfEntry,
+  TeachingEffort,
+  UniversityDossier,
+} from './academy.js';
+export { describeAcademy } from './academy.js';
+
 export type { AgentRng, AgentRngInput } from './agent-rng.js';
 export { agentRng } from './agent-rng.js';
 

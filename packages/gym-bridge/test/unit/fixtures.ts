@@ -32,6 +32,7 @@
  */
 
 import type {
+  AcademyProjection,
   AgentSession,
   CandidateDetailProjection,
   CandidateLists,
@@ -222,6 +223,22 @@ export function fixedSession(options: FixedSessionOptions = {}): AgentSession {
      */
     candidateDetails: (): CandidateDetailProjection =>
       Object.freeze({ byAction: new Map(), mages: new Map(), universities: new Map() }),
+    /*
+     * Empty for the same reason `candidateDetails` is: this double holds no
+     * world, so it has no colleges, nobody in them and no ruleset — and an
+     * empty academy is the honest description of that rather than a stand-in.
+     * `permittedCells` empty is the one that could mislead if this double ever
+     * fed a frontier test: it reads as "the god has forbidden everything", and
+     * a test wanting the other answer must build a session over a real
+     * scenario.
+     */
+    academy: (): AcademyProjection =>
+      Object.freeze({
+        universities: new Map(),
+        mages: new Map(),
+        permittedCells: Object.freeze([]),
+        unaffiliated: 0,
+      }),
     submit: (): SubmitResult => {
       submitted += 1;
       return {
