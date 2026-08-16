@@ -415,7 +415,8 @@ function panel(v1, fan, form) {
     const laneX = PAD_L + lane * (LANE_W + LANE_GAP);
     const count = v1.filter((n) => n.cell === `${tech}-${form}`).length;
     out.push(
-      `<text class="lanelab" x="${laneX + LANE_W / 2}" y="26" text-anchor="middle">${tech} · ${count}</text>`,
+      `<text class="lanelab" data-tech="${tech}" x="${laneX + LANE_W / 2}" y="26" ` +
+        `text-anchor="middle">${tech} · ${count}</text>`,
     );
   });
 
@@ -424,7 +425,10 @@ function panel(v1, fan, form) {
     for (const p of n.prerequisites) {
       if (!pos.has(p) || !pos.has(n.id)) continue;
       const cross = byId.get(p).cell !== n.cell;
-      out.push(`<path class="${cross ? 'edge cross' : 'edge'}" d="${edgePath(pos.get(p), pos.get(n.id))}"/>`);
+      out.push(
+        `<path class="${cross ? 'edge cross' : 'edge'}" data-tech="${techOf(n.cell)}" ` +
+          `data-from-tech="${techOf(byId.get(p).cell)}" d="${edgePath(pos.get(p), pos.get(n.id))}"/>`,
+      );
     }
   }
 
@@ -435,7 +439,10 @@ function panel(v1, fan, form) {
     const external = n.prerequisites
       .filter((q) => byId.has(q) && formOf(byId.get(q).cell) !== form)
       .map((q) => formOf(byId.get(q).cell));
-    out.push(`<g class="node ${techOf(n.cell)}${keystone ? ' keystone' : ''}">`);
+    out.push(
+      `<g class="node ${techOf(n.cell)}${keystone ? ' keystone' : ''}" ` +
+        `data-node="${id}" data-tech="${techOf(n.cell)}" data-cell="${n.cell}" data-tier="${n.tier}">`,
+    );
     out.push(`<rect x="${p.x}" y="${p.y}" width="${p.w}" height="${p.h}" rx="1"/>`);
     const { lines, size } = wrapLabel(n.name, p.w);
     const cx = p.x + p.w / 2;
