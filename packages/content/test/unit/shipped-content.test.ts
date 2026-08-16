@@ -21,6 +21,7 @@
 import { describe, expect, it } from 'vitest';
 
 import {
+  MATERIAL_KIND_IDS,
   MAX_CONTENT_NODES,
   REQUIRED_V1_CELL,
   V1_CELL_COUNT,
@@ -48,6 +49,26 @@ const V1_CELLS = [
   'rego-nomen',
   'rego-terram',
 ];
+
+/**
+ * The seven material kinds, spelled out so a silent swap fails — the same
+ * convention {@link V1_CELLS} above follows, and for the same reason.
+ *
+ * `material-economy`'s spec fixes this list: *"The material kinds SHALL be
+ * `food`, `stone`, `vellum`, `labor`, `essence`, `insight` and `passage`, and a
+ * form declaring a kind outside that set MUST fail the load."* Transcribed here
+ * rather than imported so that a test asserting the shipped set covers all seven
+ * cannot be made to pass by shrinking the exported list.
+ */
+const MATERIAL_KINDS = [
+  'food',
+  'stone',
+  'vellum',
+  'labor',
+  'essence',
+  'insight',
+  'passage',
+] as const;
 
 describe('shipped content', () => {
   it('loads and reports its counts', () => {
@@ -193,10 +214,12 @@ describe('shipped content', () => {
    * that no field is out of range. A content set where every form authored
    * `vellum: 0` by mistake would still load clean.
    */
-  it('routes a resource-yield magnitude to food, stone, and vellum without leaving any unreachable', () => {
+  it('routes a resource-yield magnitude to every kind without leaving any unreachable', () => {
+    expect(MATERIAL_KIND_IDS).toEqual(MATERIAL_KINDS);
+
     for (const entry of registry.forms) {
       const weights = entry.record.yieldWeights;
-      for (const kind of ['food', 'stone', 'vellum'] as const) {
+      for (const kind of MATERIAL_KINDS) {
         expect(weights[kind], `${entry.record.id}.yieldWeights.${kind}`).toBeGreaterThanOrEqual(0);
         expect(weights[kind], `${entry.record.id}.yieldWeights.${kind}`).toBeLessThanOrEqual(1024);
       }
@@ -206,7 +229,7 @@ describe('shipped content', () => {
       expect(entry.record.yieldPerLandUnit, `${entry.record.id} carries yieldPerLandUnit`).toBeDefined();
     }
 
-    for (const kind of ['food', 'stone', 'vellum'] as const) {
+    for (const kind of MATERIAL_KINDS) {
       expect(
         registry.forms.some((entry) => entry.record.yieldWeights[kind] > 0),
         `no form routes any weight to "${kind}" — that material kind is unproducible`,
@@ -235,16 +258,63 @@ describe('shipped content', () => {
    * first: a test added afterwards proves only that somebody wrote a test.
    */
   it('leaves no form producing nothing at all', () => {
+    for (const entry of registry.forms) {
+      expect(
+        Object.keys(entry.record.yieldWeights).sort(),
+        `form "${entry.record.id}" does not declare every material kind`,
+      ).toEqual([...MATERIAL_KINDS].sort());
+    }
+
+    // Phrased as "no kind carries a positive weight" rather than "every kind is
+    // exactly zero", and the difference is the whole point. While the four new
+    // kinds were still unauthored, `weights.labor` was `undefined`, and
+    // `undefined === 0` is false — so the strict-equality form went **green the
+    // moment the kinds list widened and before a single weight was written**.
+    // A checker that answers about the wrong input is worse than no checker.
     const inert = registry.forms
-      .filter((entry) =>
-        (['food', 'stone', 'vellum'] as const).every((kind) => entry.record.yieldWeights[kind] === 0),
-      )
+      .filter((entry) => !MATERIAL_KINDS.some((kind) => entry.record.yieldWeights[kind] > 0))
       .map((entry) => entry.record.id);
 
     expect(
       inert,
       `these forms yield nothing, so magic acting on them moves no economy: ${inert.join(', ')}`,
     ).toEqual([]);
+  });
+
+  /**
+   * Task 1.4's trap, made mechanical.
+   *
+   * Adding four kinds to `yieldWeights` must not renormalize the seven forms
+   * that already yielded — a "tidy up so the weights sum to fp(1024)" pass over
+   * the whole file would be a silent balance change wearing the clothes of a
+   * schema migration. The expected values are transcribed from `form.json` as
+   * it stood at `57bcbc44`, before the four kinds existed, so this fails if any
+   * of them moves for any reason.
+   *
+   * `animal` and `herbam` are the rows that make the check worth having: they
+   * are the two that name more than one kind, so they are where a
+   * renormalization would show up first and be hardest to spot by eye.
+   */
+  it('leaves the seven pre-existing yield rows exactly where they were', () => {
+    const before: Record<string, { food: number; stone: number; vellum: number }> = {
+      animal: { food: 512, stone: 0, vellum: 512 },
+      aquam: { food: 768, stone: 256, vellum: 0 },
+      auram: { food: 256, stone: 768, vellum: 0 },
+      herbam: { food: 512, stone: 0, vellum: 512 },
+      ignem: { food: 0, stone: 1024, vellum: 0 },
+      terram: { food: 0, stone: 1024, vellum: 0 },
+      nomen: { food: 0, stone: 0, vellum: 1024 },
+    };
+
+    for (const [id, expected] of Object.entries(before)) {
+      const record = registry.forms.find((entry) => entry.record.id === id)?.record;
+      expect(record, `form "${id}" is missing from the shipped set`).toBeDefined();
+      const weights = record?.yieldWeights;
+      expect(
+        { food: weights?.food, stone: weights?.stone, vellum: weights?.vellum },
+        `form "${id}" had its pre-existing weights rewritten`,
+      ).toEqual(expected);
+    }
   });
 
   it('never authors a mētis node cheaper to rediscover than an episteme peer', () => {

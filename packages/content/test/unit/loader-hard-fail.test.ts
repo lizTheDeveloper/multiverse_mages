@@ -557,3 +557,90 @@ describe('tradition hooks are a closed enumeration', () => {
     expect(messages(params)).toContain('declares no param "shelves"');
   });
 });
+
+describe('every form yields at least one material', () => {
+  /**
+   * `material-economy`'s first requirement, and the one it exists for: *"Every
+   * form declared in content SHALL declare a non-zero `yieldWeights` entry for
+   * at least one material kind. A form that yields nothing is a part of the
+   * grid that magic can act on and the economy cannot see, and the loader MUST
+   * reject it rather than accept a silent zero."*
+   *
+   * The invariant lives in the loader rather than in the schema because JSON
+   * Schema bounds a field at a time. `{"food": 0, "stone": 0, …}` conforms to
+   * every per-field rule and is exactly the shape being refused, so a schema
+   * that could express it would have to say "not all of these seven are zero" —
+   * which it cannot, per-property.
+   */
+  it('rejects a form that yields nothing at all, naming the form', () => {
+    const diagnostics = expectHardFail(
+      brokenSource((documents) => {
+        const form = recordById(documents, 'form.json', 'terram');
+        form['yieldWeights'] = {
+          food: 0,
+          stone: 0,
+          vellum: 0,
+          labor: 0,
+          essence: 0,
+          insight: 0,
+          passage: 0,
+        };
+      }),
+    );
+    const invariant = diagnostics.filter((d) => d.code === 'content-invariant');
+    expect(invariant).toHaveLength(1);
+    expect(invariant[0]?.file).toBe('form.json');
+    expect(invariant[0]?.message).toContain('terram');
+    expect(invariant[0]?.pointer).toContain('/yieldWeights');
+  });
+
+  it('accepts a form yielding a single unit of a single kind', () => {
+    // The passing control, so the rejection above is about the row being empty
+    // rather than about `yieldWeights` having been touched at all. One unit is
+    // the smallest weight the schema admits above zero.
+    const source = brokenSource((documents) => {
+      const form = recordById(documents, 'form.json', 'terram');
+      form['yieldWeights'] = {
+        food: 0,
+        stone: 0,
+        vellum: 0,
+        labor: 0,
+        essence: 0,
+        insight: 1,
+        passage: 0,
+      };
+    });
+    expect(validateContent(source).diagnostics).toEqual([]);
+  });
+
+  it('rejects a form declaring a material kind the schema does not know', () => {
+    const diagnostics = expectHardFail(
+      brokenSource((documents) => {
+        const form = recordById(documents, 'form.json', 'terram');
+        (form['yieldWeights'] as Record<string, number>)['glory'] = 512;
+      }),
+    );
+    // Schema-level, and that is the right level: the seven kinds are a closed
+    // set, so `additionalProperties: false` is the whole rule. What matters is
+    // that the report names both ends — `nameTheRecord` supplies the form id and
+    // the schema supplies the key.
+    expect(messages(diagnostics)).toContain('terram');
+    expect(messages(diagnostics)).toContain('glory');
+  });
+
+  it('rejects a form that omits one of the seven kinds', () => {
+    const diagnostics = expectHardFail(
+      brokenSource((documents) => {
+        const weights = recordById(documents, 'form.json', 'terram')['yieldWeights'] as Record<
+          string,
+          number
+        >;
+        delete weights['passage'];
+      }),
+    );
+    // Required rather than defaulted, per task 1.2: an unlisted kind must fail
+    // the load rather than silently read as zero, because zero is a claim.
+    expect(messages(diagnostics)).toContain('terram');
+    expect(messages(diagnostics)).toContain('passage');
+  });
+});
