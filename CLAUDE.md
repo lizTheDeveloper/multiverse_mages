@@ -87,7 +87,8 @@ imports it — and that is what makes its unusually wide edge list safe. Two fur
 `mages-and-species` expected to need. A third, from **§1.1**, is the `grant-budget` component: god
 action 8 is no longer unlimited, and an absent row means unbounded so that every older save and
 every hand-built test world keeps the behaviour it was written against. Each cost a world-schema
-revision — `WORLD_SCHEMA_VERSION` is now 6, after `material-stock` took revision 5 — and none of
+revision — `WORLD_SCHEMA_VERSION` is now 7, after `material-economy` widened `material-stock`
+from three kinds to seven and `material-stock` itself took revision 5 — and none of
 them moved `sim-core`'s
 `SNAPSHOT_VERSION`, which is inside the hashed header and would break every golden fixture with a
 version error instead of a behaviour diff.
