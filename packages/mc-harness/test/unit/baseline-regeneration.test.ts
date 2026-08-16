@@ -320,7 +320,12 @@ describe('the regeneration entrypoint is unreachable from anything automated (ta
     // Not vacuous: the gate *is* wired in, so the assertion above is about
     // reachability and not about an empty script table.
     expect(manifest.scripts['balance:gate']).toContain('balance-gate.mjs');
-    expect(manifest.scripts['verify']).toContain('balance:gate');
+    // `verify:balance`, not `verify`: the three Monte Carlo gates moved out of
+    // the merge path on 2026-08-14 and are required at release instead. The
+    // positive control still holds — the gate is wired into a script the repo
+    // runs, so the assertion above is about reachability of the *regeneration*
+    // entrypoint and not about an empty script table.
+    expect(manifest.scripts['verify:balance']).toContain('balance:gate');
   });
 
   it('is not reachable from any test file in this workspace', () => {

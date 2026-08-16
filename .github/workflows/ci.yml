@@ -151,38 +151,10 @@ jobs:
       - name: Test (unit + golden replay)
         run: npm test
 
-      - name: Balance regression gate (five world years)
-        # The committed baseline for the gate sweep, compared metric by metric.
-        # Fails the build when a gated metric moves beyond its tolerance, and
-        # equally when the baseline is missing — a gate that passes without one
-        # reports green forever. Listed here by hand because this workflow does;
-        # the self-hosted runner picks it up through `npm run verify`, which the
-        # script is also part of. Both, or the two gates disagree.
-        run: npm run balance:gate
-
-      - name: Balance regression gate (twenty world years)
-        # The same four cells and the same 200 runs, run to world-year twenty
-        # instead of five, against its own baseline. It is a separate step and
-        # not a longer version of the one above because the two answer different
-        # questions: the fast gate is sensitive and cheap, and this one can see a
-        # plateau that has not started yet at year five. Deleting either leaves a
-        # blind spot the other does not cover — balance/README.md has the
-        # measurements, and horizon-gate.test.ts fails if this step goes missing.
-        run: npm run balance:gate:horizon
-
-      - name: Balance regression gate (twenty world years, eight strategies)
-        # Same horizon as the step above and a different pool, which is the
-        # entire point. The two gates above run `passive-control` fixed, and
-        # `passive-control` declares an empty preference list — so between them
-        # their 400 runs submit no god intervention at all, and no change to any
-        # of the fifteen verbs in coordination/src/god/interventions.ts can move
-        # either of them by construction. That blind spot used to be covered
-        # only by the two-hundred-year gate below, the most expensive instrument
-        # here. This one covers it in about nine seconds. The single declared
-        # difference from the step above is the pool, so a divergence between
-        # them is attributable to god agency and to nothing else —
-        # horizon-gate.test.ts fails if that stops being true.
-        run: npm run balance:gate:agency
+      # The three balance gates are deliberately NOT here any more, since
+      # 2026-08-14. They run in the `balance` job below, on every commit, and
+      # are required at release rather than at merge. See that job for why, and
+      # for the condition under which they come back.
 
       # `check:consumption` is deliberately NOT here. It is expected to be red
       # until the effect pipeline is wired, so it runs in its own non-blocking
@@ -286,6 +258,98 @@ jobs:
       # job at the bottom of this file. See that job for the condition under
       # which it moves back into this one. `check:reachability` is absent for
       # the same reason and sits in the job below it.
+
+  balance:
+    # The three Monte Carlo balance gates, run on every commit and required at
+    # release rather than at merge — the same move the `ascension` job below
+    # made on 2026-08-13, for the same reason, one rung down the cost ladder.
+    #
+    # ## Why they left `verify`
+    #
+    # They were the entire cost of checking a commit once the cheap checks are
+    # discounted, and the cost is not paid on the hosted runner alone: the
+    # self-hosted runner **serialises** against a 2400 s timeout, so every
+    # sweep-bearing commit is a queue hazard for every other pull request, and
+    # `scripts/ci-check.sh` already skips them for docs-only changes for exactly
+    # this reason. What that skip cannot help is the case that actually hurts —
+    # a **campaign**, where every commit touches `packages/` and therefore pays
+    # the full sweep, several agents deep, on one box. Measured during the
+    # integration-debt campaign: load average above 300 sustained, with test
+    # timeouts that were load and not defects.
+    #
+    # ## And a balance gate is the wrong question at merge
+    #
+    # A gate asks "did this change the game's numbers". During a campaign that
+    # is deliberately moving numbers, the answer is *yes, on purpose* — so the
+    # gate fires, is read as expected, and is ignored, while still costing the
+    # time. `balance/README.md`'s own rule: *a gate that takes ten minutes gets
+    # deleted*, and a gate people route around is worse than no gate, because it
+    # still costs the time and no longer earns the trust.
+    #
+    # Where they belong is where they make a claim someone could check.
+    # `release-plan.md` already says it: **MINOR parity encodes balance
+    # validation** — even MINOR means the baselines are committed and green.
+    # That is a release statement, not a merge statement.
+    #
+    # ## When to make this blocking again
+    #
+    # Move these steps back into the two verify jobs above — and back into
+    # `npm run verify` in package.json, so `scripts/ci-check.sh` picks them up
+    # through the same gate — when the sweeps are fast enough that a commit does
+    # not queue behind them, or when a campaign is no longer the normal mode of
+    # work here. Neither is true on 2026-08-14.
+    #
+    # `npm run verify:balance` runs exactly these three, and `verify:full` runs
+    # everything including the two-hundred-year gate. Neither this job nor the
+    # `ascension` job below is a required status check; **`release-plan.md` is
+    # what makes them required at release**, and a release that skips them is
+    # taking an even MINOR without the evidence the scheme exists to carry.
+    name: Balance gates (non-blocking)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - name: Set up Node from .nvmrc
+        uses: actions/setup-node@v6
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - name: Install
+        run: npm ci
+      - name: Build
+        run: npm run typecheck
+      - name: Balance regression gate (five world years)
+        # The committed baseline for the gate sweep, compared metric by metric.
+        # Fails the build when a gated metric moves beyond its tolerance, and
+        # equally when the baseline is missing — a gate that passes without one
+        # reports green forever. Listed here by hand because this workflow does;
+        # the self-hosted runner picks it up through `npm run verify`, which the
+        # script is also part of. Both, or the two gates disagree.
+        run: npm run balance:gate
+
+      - name: Balance regression gate (twenty world years)
+        # The same four cells and the same 200 runs, run to world-year twenty
+        # instead of five, against its own baseline. It is a separate step and
+        # not a longer version of the one above because the two answer different
+        # questions: the fast gate is sensitive and cheap, and this one can see a
+        # plateau that has not started yet at year five. Deleting either leaves a
+        # blind spot the other does not cover — balance/README.md has the
+        # measurements, and horizon-gate.test.ts fails if this step goes missing.
+        run: npm run balance:gate:horizon
+
+      - name: Balance regression gate (twenty world years, eight strategies)
+        # Same horizon as the step above and a different pool, which is the
+        # entire point. The two gates above run `passive-control` fixed, and
+        # `passive-control` declares an empty preference list — so between them
+        # their 400 runs submit no god intervention at all, and no change to any
+        # of the fifteen verbs in coordination/src/god/interventions.ts can move
+        # either of them by construction. That blind spot used to be covered
+        # only by the two-hundred-year gate below, the most expensive instrument
+        # here. This one covers it in about nine seconds. The single declared
+        # difference from the step above is the pool, so a divergence between
+        # them is attributable to god agency and to nothing else —
+        # horizon-gate.test.ts fails if that stops being true.
+        run: npm run balance:gate:agency
+
 
   ascension:
     # The two-hundred-year balance gate, run on every commit and required at

@@ -193,12 +193,13 @@ export function subsistenceDemand(population: number): Fixed {
  */
 export const CONSUMPTION_ORDER = [
   'subsistence',
+  'casting',
   'libraryUpkeep',
   'scribing',
   'construction',
 ] as const;
 
-/** One of the four claims. */
+/** One of the five claims. */
 export type ConsumptionKind = (typeof CONSUMPTION_ORDER)[number];
 
 /**
@@ -212,6 +213,32 @@ export type ConsumptionKind = (typeof CONSUMPTION_ORDER)[number];
  */
 export const CLAIMANT_KIND: Readonly<Record<ConsumptionKind, MaterialKind>> = {
   subsistence: 'food',
+  // **Vellum, and the choice was measured rather than argued.**
+  //
+  // `substrate.md` §6 asks for a `casting` claim so that working magic is
+  // priced against the economy instead of being free. Which stock it comes out
+  // of decides whether the claim means anything, because of a property of
+  // `consumeMaterials` that is easy to miss: `remaining` is tracked **per
+  // kind**, so `CONSUMPTION_ORDER` only ranks claimants that *share* a kind. A
+  // claimant's position is otherwise inert.
+  //
+  // Stone was the intuitive answer — reagents, foci, apparatus — and it is
+  // wrong. Measured over the 2,400-tick reference run: stone is **never short**
+  // and grows monotonically to 4.4M, because construction demand falls to zero
+  // once the buildings are up. A claim on a surplus stock is a cost that never
+  // costs anything, which is the same failure as an unconsumed primitive
+  // wearing different clothes.
+  //
+  // Vellum is contended: it reaches **zero** by world-tick 1200 and is short on
+  // **530 of 2,400 ticks**. So a casting claim here actually binds — and it
+  // binds against `libraryUpkeep` and `scribing`, which is what makes
+  // `substrate.md` §7.1's recorded decision *"magic competes with the library,
+  // not with bread"* true rather than merely stated. Under stone that sentence
+  // would have been false, and nothing would have caught it.
+  //
+  // The reading is not a stretch: a working consumes its notes, its diagrams,
+  // its prepared surfaces. Magic and the archive want the same skins.
+  casting: 'vellum',
   libraryUpkeep: 'vellum',
   scribing: 'vellum',
   construction: 'stone',

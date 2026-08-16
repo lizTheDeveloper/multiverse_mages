@@ -66,6 +66,7 @@ import {
 import type { SpeciesAffinities } from '@mm/rules-world';
 import {
   readApplicationWeights,
+  readCastingWeights,
   readTargetAppeal,
   resolveSpeciesAffinities,
   territoryExtent,
@@ -78,7 +79,9 @@ import {
   godEffectHooks,
   nodeFacetsFrom,
   resolveGodContent,
+  academicEffectIndex,
   universeEffectIndex,
+  vitalityIndex,
 } from '@mm/coordination';
 
 /** The permitted-axis halves of a ruleset (`contracts.md` §1.1). */
@@ -659,11 +662,11 @@ export function worldDeps(
 
   // The god hooks stack blessing and encouragement *constants*, never a node's
   // authored magnitude — a blessed mage researches faster because the god blessed
-  // her, not because anyone discovered anything. Recorded so the consumption
-  // report can say "consumed, but never from node effects" about these three
-  // rather than leaving a reader to wonder how `research-rate` can be in use and
-  // unconsumed at the same time. A non-node registration never counts toward
-  // consumption; it only explains.
+  // her, not because anyone discovered anything. Recorded so a reader of the
+  // report can tell the god's contribution apart from the knowledge-driven one
+  // beside it. A non-node registration never counts toward consumption; it only
+  // explains, which is why these three stay here now that two of the primitives
+  // they name have a node-driven consumer as well.
   registerNonNodeConsumer(
     recorder,
     'research-rate',
@@ -686,11 +689,13 @@ export function worldDeps(
     'fertility',
     'rules-world/economy/carrying-capacity (species.fertility)',
   );
-  // `scribe-rate` is deliberately *not* registered. Its primitive record is
-  // handed to the loop, but `world-step.ts` passes `NO_BONUSES` — a literal
-  // empty source list — so it stacks to the identity every tick and nothing,
-  // node or god, can move it. Registering it would be a claim this file cannot
-  // support; it belongs in the failure list, and it is there.
+  // `scribe-rate` used to be named here as *deliberately unregistered*, because
+  // `world-step.ts` passed it `NO_BONUSES` — a literal empty source list — so it
+  // stacked to the identity every tick and nothing, node or god, could move it.
+  // W18 ended that: the scribe goal now takes `academic.scribeRate(mage)`, and
+  // `research-rate` and `teach-rate` take the same treatment on top of the god's
+  // constants. All three register from `academicEffectIndex` below, at the line
+  // that reads the authored magnitudes.
   //
   // `resource-yield` used to be in that sentence and no longer is. W29 wired
   // the economy: `world-step.ts` now passes `economy.resourceYield` and
@@ -734,6 +739,7 @@ export function worldDeps(
     },
     appeal: readTargetAppeal(registry),
     application: readApplicationWeights(registry),
+    casting: readCastingWeights(registry),
     store: storeHookOf(registry, traditionId),
     acquire: acquireHookOf(registry, traditionId),
     territory: territoryExtent(registry.territories.map((entry) => entry.record)),
@@ -745,6 +751,27 @@ export function worldDeps(
     // `universe-effects.ts`, which explains at length what was not connected
     // before it existed.
     universeEffects: universeEffectIndex(registry, recorder),
+    // The same wire for the three rates a scholar's own knowledge moves. Built
+    // here for the same reason and registered from the same place — see
+    // `academic-effects.ts` for why a per-mage effect could not travel through
+    // `universeEffects`, and for the ten `target: "universe"` `research-rate`
+    // effects it deliberately does not route.
+    academicEffects: academicEffectIndex(registry, recorder),
+    // The same wire, one primitive pair over: `lifespan` and `fertility`. Both
+    // were declared exclusions in the consumption check, parked with a written
+    // reason — *"both sit on non-v1 nodes and are moved by species traits and
+    // blessing constants rather than by anything a mage can learn"* — and that
+    // reason has expired. The index is built here for the reason every other
+    // one is: this is the function that decides what a running universe is made
+    // of, and the fetch is what registers the consumer.
+    //
+    // The two `registerNonNodeConsumer` calls above stay, and stay true: a
+    // blessing still contributes months from a constant, and a cohort's births
+    // still scale by its species' own `fertility`. What changes is that they
+    // are no longer the *only* sources — so the check will stop printing these
+    // two under *"consumed, but never from node effects"*, which is the line
+    // this campaign exists to shorten.
+    vitality: vitalityIndex(registry, recorder),
     primitives: {
       lifespan,
       resourceYield: primitiveNamed(registry, 'resource-yield'),

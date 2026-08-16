@@ -5904,6 +5904,12 @@
         "magnitude": 320,
         "target": "self",
         "durationTicks": 0
+      },
+      {
+        "primitive": "teach-rate",
+        "magnitude": -192,
+        "target": "single",
+        "durationTicks": 0
       }
     ],
     "knowledgeKind": "metis",
