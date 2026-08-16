@@ -80,12 +80,12 @@ import {
   LIBRARY,
   LOCATION_KIND,
   MAGE,
-  MAGE_ROLE,
   TERMINAL_REASON,
   UNIVERSE,
   UNIVERSITY,
   UPHEAVAL,
   GRANT_BUDGET,
+  isGodAssignableRole,
   activeBlessings,
   activeEncouragements,
   attachRecord,
@@ -765,7 +765,11 @@ function rolePlan(
   deps: InterventionDeps,
 ): Plan | undefined {
   if (mageId === undefined || roleId === undefined) return undefined;
-  if (!Object.values(MAGE_ROLE).includes(roleId as never)) return undefined;
+  // `isGodAssignableRole`, not `Object.values(MAGE_ROLE)`. W193 appended
+  // `student` to the enumeration, and a membership test derived from the whole
+  // enum would have handed the god an un-graduate action nobody designed —
+  // silently, because it reads as validation rather than as a policy.
+  if (!isGodAssignableRole(roleId)) return undefined;
   if (!isLivingMage(state, mageId)) return undefined;
 
   const store = componentOf(state, MAGE);

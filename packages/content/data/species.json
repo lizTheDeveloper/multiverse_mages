@@ -13,6 +13,7 @@
     "scribeAffinity": 1024,
     "rediscoveryAffinity": 1024,
     "mageAptitude": 512,
+    "prevalence": 102,
     "laborAffinity": 1024,
     "affinities": {},
     "tuningStatus": "untuned"
@@ -31,6 +32,7 @@
     "scribeAffinity": 1024,
     "rediscoveryAffinity": 896,
     "mageAptitude": 768,
+    "prevalence": 1024,
     "laborAffinity": 768,
     "affinities": { "herbam": 1536, "mentem": 1280 },
     "tuningStatus": "untuned"
@@ -67,6 +69,7 @@
     "scribeAffinity": 640,
     "rediscoveryAffinity": 640,
     "mageAptitude": 896,
+    "prevalence": 1024,
     "laborAffinity": 512,
     "affinities": { "ignem": 1792, "vim": 1536, "nomen": 1280 },
     "tuningStatus": "untuned"
@@ -103,6 +106,7 @@
     "scribeAffinity": 384,
     "rediscoveryAffinity": 512,
     "mageAptitude": 192,
+    "prevalence": 51,
     "laborAffinity": 1536,
     "affinities": { "terram": 1280, "corpus": 1280 },
     "tuningStatus": "untuned"

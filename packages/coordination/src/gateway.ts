@@ -131,6 +131,7 @@ import {
   LIBRARY,
   LOCATION_KIND,
   MAGE,
+  MAGE_ROLE,
   UNIVERSITY,
   componentOf,
   permits,
@@ -346,6 +347,8 @@ export class CoordinatingKnowledgeGateway implements KnowledgeGateway {
    * rule `capital.ts` states for the depth reading.
    */
   readonly #shelfContents = new Map<Handle, ReadonlySet<ContentId>>();
+  /** Non-student mages per university, built once per phase. See {@link #facultyOf}. */
+  #faculty: Map<UniversityHandle, MageHandle[]> | undefined;
   /** Books in mages' hands, from one pass. See {@link #grimoiresHeldBy}. */
   #grimoiresByHolder: Map<MageHandle, Handle[]> | undefined;
 
@@ -496,7 +499,22 @@ export class CoordinatingKnowledgeGateway implements KnowledgeGateway {
     return found.length > limit ? found.slice(0, limit) : found;
   }
 
+  /**
+   * Whether this mage holds `nodeId` well enough to pass it on.
+   *
+   * **A student never does, however well she holds it.** Since W193 a student is
+   * a `MAGE` row like any other, so without this line every enrolled student
+   * would join the teaching roster the month she learned her first node — wrong
+   * on the fiction, and worse as a measurement: `lessonsTaught` would rise for a
+   * reason that is not teaching, and the before/after comparison that diagnosed
+   * `teach-rate` as inert would stop being a comparison of like with like.
+   *
+   * Asked here rather than in each of the three callers, because
+   * {@link teachableTo}, {@link teacherFor} and {@link studentFor} all mean *the
+   * teacher's half* by it and the fourth caller is the one that would forget.
+   */
   canTeach(teacher: MageHandle, nodeId: ContentId): boolean {
+    if (this.#isStudent(teacher)) return false;
     const mastery = this.#holdings(teacher).get(nodeId);
     return mastery !== undefined && mastery >= DEFAULT_TEACH_THRESHOLD;
   }
@@ -510,6 +528,7 @@ export class CoordinatingKnowledgeGateway implements KnowledgeGateway {
    */
   teachableTo(teacher: MageHandle, student: MageHandle): ContentId | undefined {
     if (teacher === student) return undefined;
+    if (this.#isStudent(teacher)) return undefined;
     const rates = this.#ratesOf(student);
     if (rates === undefined) return undefined;
 
@@ -557,16 +576,7 @@ export class CoordinatingKnowledgeGateway implements KnowledgeGateway {
   #shelfHolds(mage: MageHandle, nodeId: ContentId): boolean {
     const shelf = this.#shelfFor(mage);
     if (shelf === 0) return false;
-    let held = this.#shelfContents.get(shelf);
-    if (held === undefined) {
-      held = new Set(
-        this.#deps.knowledge
-          .instancesAt(LOCATION_KIND.library, shelf)
-          .map((instance) => this.#deps.knowledge.read(instance).nodeId),
-      );
-      this.#shelfContents.set(shelf, held);
-    }
-    return held.has(nodeId);
+    return this.#shelfNodes(shelf).has(nodeId);
   }
 
   /**
@@ -600,6 +610,152 @@ export class CoordinatingKnowledgeGateway implements KnowledgeGateway {
       if (this.canTeach(teacher, nodeId)) return teacher;
     }
     return undefined;
+  }
+
+  /**
+   * Whether the university this student is enrolled at still has **anything**
+   * to teach her — from a colleague's mind or from its own shelf.
+   *
+   * ## This is the graduation condition, and it replaces an age
+   *
+   * *"They're students until they learn everything that the university they
+   * enrolled in can teach them."* The old rule was
+   * `worldTick - birthTickBucket >= maturityMonths`: promotion was gated on
+   * **age since birth**, so nothing a university did could move the date a mage
+   * arrived, and `teach-rate` was consequently inert — measured at `+0.1%` on
+   * lessons and flat on living mages while research completions moved `+28.8%`.
+   * A date that is *when she has learned it all* responds to every rate that
+   * makes learning faster, which is the point.
+   *
+   * ## Scoped to her own institution, deliberately
+   *
+   * Not `teacherFor`, which scans the whole universe. A curriculum that meant
+   * *"every node any living mage anywhere holds"* would make graduation a
+   * property of the world rather than of the school, and would delete the two
+   * consequences the design wants: that **university depth is what matters**,
+   * and that a graduate of a shallow school has somewhere to transfer *to*.
+   *
+   * Faculty are her university's non-student mages. Her shelf is her
+   * university's library, which is exactly {@link #shelfFor} — so an
+   * unaffiliated student has no curriculum at all, and by construction there is
+   * no such thing: enrolment refuses to seat anyone without a university.
+   *
+   * **Both halves ask {@link #admitsLesson}**, the same admission test a lesson
+   * gets, so a node beyond her depth ceiling, in a forbidden cell, or missing a
+   * prerequisite is not part of any curriculum. Her ceiling is hers: two
+   * students of different species at the same university graduate at different
+   * times, and the deeper one stays longer.
+   */
+  hasCurriculumFor(student: MageHandle): boolean {
+    const university = this.#universityOf(student);
+    if (university === 0) return false;
+
+    for (const teacher of this.#facultyOf(university)) {
+      if (teacher === student) continue;
+      for (const [nodeId, mastery] of this.#holdings(teacher)) {
+        if (mastery < DEFAULT_TEACH_THRESHOLD) continue;
+        if (this.#admitsLesson(student, nodeId)) return true;
+      }
+    }
+
+    const shelf = this.#shelfFor(student);
+    if (shelf === 0) return false;
+    for (const nodeId of this.#shelfNodes(shelf)) {
+      if (this.#admitsLesson(student, nodeId)) return true;
+    }
+    return false;
+  }
+
+  /**
+   * Whether this university can teach **anybody** anything.
+   *
+   * The door-side counterpart to {@link hasCurriculumFor}, and deliberately not
+   * the same question. That one is asked of a named student, so it can check her
+   * depth ceiling and her prerequisites; this one is asked before a student
+   * exists, so it can only ask whether the institution holds *any* legal,
+   * teachable knowledge — a faculty member at or above the teaching threshold,
+   * or a book on the shelf, in a cell this universe's ruleset permits.
+   *
+   * A `false` here is what stops a bare founding from being a mage factory. It
+   * is a weaker test than the per-student one on purpose: a university that
+   * passes it may still have nothing for a *particular* student, and she simply
+   * graduates immediately — which is correct, and is why the graduation path
+   * keeps its own floor.
+   */
+  hasCurriculum(university: UniversityHandle): boolean {
+    for (const teacher of this.#facultyOf(university)) {
+      for (const [nodeId, mastery] of this.#holdings(teacher)) {
+        if (mastery < DEFAULT_TEACH_THRESHOLD) continue;
+        if (permits(this.#deps.ruleset, this.#deps.cells.cellOf(nodeId))) return true;
+      }
+    }
+    const shelf = this.#libraryOf(university);
+    if (shelf === 0) return false;
+    for (const nodeId of this.#shelfNodes(shelf)) {
+      if (permits(this.#deps.ruleset, this.#deps.cells.cellOf(nodeId))) return true;
+    }
+    return false;
+  }
+
+  /**
+   * The non-student living mages affiliated to one university, ascending.
+   *
+   * One pass over the roster for the whole phase rather than one per student,
+   * because the graduation walk asks once per student and the roster is already
+   * the bounded list {@link livingMages} returns. Without the index the phase
+   * would be `students × mages`, which is the cost shape `#holdings` exists to
+   * collapse and which would arrive on the same commit that made students
+   * numerous.
+   */
+  #facultyOf(university: UniversityHandle): readonly MageHandle[] {
+    if (this.#faculty === undefined) {
+      const index = new Map<UniversityHandle, MageHandle[]>();
+      for (const mage of this.livingMages()) {
+        if (this.#isStudent(mage)) continue;
+        const at = this.#universityOf(mage);
+        if (at === 0) continue;
+        const row = index.get(at);
+        if (row === undefined) index.set(at, [mage]);
+        else row.push(mage);
+      }
+      this.#faculty = index;
+    }
+    return this.#faculty.get(university) ?? EMPTY_FACULTY;
+  }
+
+  /** Distinct node ids on one library's shelf, memoised for the phase. */
+  #shelfNodes(shelf: Handle): ReadonlySet<ContentId> {
+    let held = this.#shelfContents.get(shelf);
+    if (held === undefined) {
+      held = new Set(
+        this.#deps.knowledge
+          .instancesAt(LOCATION_KIND.library, shelf)
+          .map((instance) => this.#deps.knowledge.read(instance).nodeId),
+      );
+      this.#shelfContents.set(shelf, held);
+    }
+    return held;
+  }
+
+  /** This mage's university handle, or `0`. */
+  #universityOf(mage: MageHandle): UniversityHandle {
+    const mages = componentOf(this.#deps.state, MAGE);
+    if (!mages.has(mage as EntityHandle)) return 0;
+    return mages.get(mage as EntityHandle, 'universityId') as UniversityHandle;
+  }
+
+  /**
+   * Whether this handle names an enrolled student.
+   *
+   * A field read per call rather than a memo: the answer changes **inside** the
+   * phase that reads it — graduation writes `roleId` while the same gateway is
+   * alive — and a cached `true` would let a mage who graduated this tick keep
+   * being refused as a teacher until the next one.
+   */
+  #isStudent(mage: MageHandle): boolean {
+    const mages = componentOf(this.#deps.state, MAGE);
+    if (!mages.has(mage as EntityHandle)) return false;
+    return mages.get(mage as EntityHandle, 'roleId') === MAGE_ROLE.student;
   }
 
   /**
@@ -1242,6 +1398,9 @@ const EMPTY_HOLDINGS: ReadonlyMap<ContentId, Fp> = new Map<ContentId, Fp>();
 
 /** A mage with no books. Shared, and never written to. */
 const EMPTY_BOOKS: readonly Handle[] = Object.freeze([]);
+
+/** Shared so a university with no faculty allocates nothing per student. */
+const EMPTY_FACULTY: readonly Handle[] = Object.freeze([]);
 
 /** Whether a location kind is one a mage carries in her own head. */
 export function isHeldAtMind(locationKind: number): boolean {

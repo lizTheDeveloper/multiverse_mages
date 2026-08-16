@@ -196,6 +196,9 @@ describe('the subsystem stream registry', () => {
       terrain: 11,
       openingSquare: 12,
       detachment: 13,
+      // 14, not 15: `detachment` landed at 13 ahead of it, so the next free id
+      // at this branch's merge position was 14. See `streams.ts`.
+      career: 14,
     });
   });
 

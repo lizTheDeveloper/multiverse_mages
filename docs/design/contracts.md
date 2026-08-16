@@ -531,8 +531,16 @@ prerequisite has a higher `tier`.
   "rediscoveryAffinity": 768,       // fp DIVISOR against rediscoveryMultiplier. Higher is better,
                                     // uniform with every other trait -- so this dwarf is a
                                     // below-average rediscoverer, and gnomes lead (vision §5)
-  "maturityMonths": 600,            // before which a mage cannot be promoted from a student cohort
-  "mageAptitude": 448,              // fp; share of matured students who become mages at all
+  "maturityMonths": 600,            // before which a person cannot enrol from a populace cohort
+  "mageAptitude": 448,              // fp; share of the LATENT who are strong enough to be found
+                                    // and seated. Stage two of magical-prevalence.md's pipeline;
+                                    // applied at enrolment, never at graduation
+  "prevalence": 512,                // OPTIONAL fp <= 1024; share of this species born able to do
+                                    // magic at all (magical-prevalence.md). ABSENT IS MEANINGFUL:
+                                    // the author authored four of the six species and left dwarf
+                                    // and gnome unstated rather than mix an author's number with
+                                    // a machine's. An absent value reads as rules-world's
+                                    // PREVALENCE_WHEN_UNAUTHORED, which is not authored content
   "laborAffinity": 1280,            // fp multiplier on non-magical labour productivity
   "affinities": { "terram": 1536, "ignem": 1152 },  // by form or by cell id
   "personality": { "curiosity": 512, "ambition": 1024, "caution": 1024 },  // optional; means, each
@@ -1328,8 +1336,9 @@ invalidates every committed balance baseline.**
 | 11 | terrain generation and combatant deployment |
 | 12 | the opening square — which techniques and forms a universe is founded holding |
 | 13 | the partial-detachment draw at portal open — whether a soldier cohort with fewer people left than `detachment-strength` fields one more detachment |
+| 14 | the career sort at graduation — academic track or populace mage |
 
-**Stream 12 is the first append since the baselines were committed, and it is what taught us that
+**Stream 12 was the first append since the baselines were committed, and it is what taught us that
 appending is not free.** The gate compares `provenance.rngRegistryHash` as a block-level refusal,
 and that hash is taken over this whole table — so adding a row invalidates every committed
 baseline *by identity*, before a single number has moved. That is conservative rather than wrong,
@@ -1367,6 +1376,17 @@ next one and renumber if it is not. That costs nothing extra: the `rngRegistryHa
 re-baseline for any append regardless. "Take the next free number" is correct only when nothing else
 is in flight, and is precisely wrong when something is, because both changes see the same number
 free.
+
+**Stream 14 is the second append of that queue, and it is the same rule fired twice.**
+`w197/aptitude-sorts-careers` authored `career` as **15**, behind the ruling above, and wrote a
+paragraph predicting its own density assertion would stay red until #170 and #186 landed ahead of
+it. On `integration/group-e` #186 landed first and took 13, #170 had not landed at all, and the next
+free ID at W197's merge position was **14** — so the row was renumbered 15 → 14 at merge and the
+table is dense rather than gapped.
+
+That is now three successive rulings — *13/14/15*, then *#186 takes 13*, then *W197 takes 14* — each
+correct for its own queue and wrong for the next. Read the general rule below, not any of the three
+assignments: **an append's ID is settled by merge position, and re-checking it is part of merging.**
 
 Draws key on `(rootSeed, stream, tick, actorKey, drawOrdinal)` where `actorKey` is stable identity,
 never array index. This gives **insertion invariance**: adding a combatant, or adding a draw,

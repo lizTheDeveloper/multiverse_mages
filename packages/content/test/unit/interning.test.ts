@@ -510,7 +510,16 @@ describe('contentRevision', () => {
     // `node packages/content/bin/validate-content.mjs` reports
     // `contentRevision cbcfb32c8fcf886ca381ccb81bed1a0a`, and this assertion
     // agrees with it.
-    expect(registry.contentRevision).toBe('cbcfb32c8fcf886ca381ccb81bed1a0a');
+    // W193 moves it again, to `3f23c8da`, and the cause is one content edit:
+    // `prevalence` authored on four of the six species in `species.json`. The
+    // digest is over the preimage, so a field added to four records changes it
+    // exactly as a new node would — which is the check working, not a surprise.
+    //
+    // cbcfb32c8fcf886ca381ccb81bed1a0a -> 1f5036f71cd6a1b6e2036c70e32a7530, on this merge. Union for
+    // the sixth time, and for the sixth time neither literal survives: this tree
+    // is the first holding both the signed/vellum preimage above and W193's
+    // `prevalence` field.
+    expect(registry.contentRevision).toBe('1f5036f71cd6a1b6e2036c70e32a7530');
   });
 
   it('is stable across loads of identical content', () => {

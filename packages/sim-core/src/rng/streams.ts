@@ -110,6 +110,30 @@ export const RNG_STREAM = {
    * as the ruling that read "this is 14" already turned out to be.
    */
   detachment: 13,
+  /**
+   * The career sort at graduation: whether a graduate takes the academic track
+   * or joins the populace (`magical-prevalence.md`, "Not all mages should be
+   * equal").
+   *
+   * Its own id rather than `mageBirth`'s, which is where every other decision
+   * about *who this mage is* is drawn. The two are taken from different ends of
+   * a life but from the same subsystem in spirit, and sharing a cursor would
+   * mean that adding a graduate this tick re-rolled the personality of every
+   * mage enrolled in it — the insertion-variance defect that §6's per-actor
+   * streams exist to remove, arriving through the stream registry instead.
+   *
+   * **14, renumbered from 15 on `integration/group-e` (2026-08-16), and that is
+   * the rule above being applied rather than quoted.** This branch was authored
+   * against a ruling that read #170 (`corruption`) = 13, #186 (`detachment`) =
+   * 14, this = 15, and it said so in a paragraph that also predicted the density
+   * assertion would be red until the two branches ahead landed. **That queue did
+   * not happen either.** In this tree #186 landed first and took 13, #170 has
+   * not landed yet, and the next free id at the moment this branch merged was
+   * 14. So the id follows the merge position, not the authoring, and the density
+   * assertion is green rather than red — which is the whole of what the
+   * paragraph above asks of an append.
+   */
+  career: 14,
 } as const;
 
 /** Any ID in the permanent registry. */

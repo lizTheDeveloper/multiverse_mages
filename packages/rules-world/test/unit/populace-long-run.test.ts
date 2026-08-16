@@ -144,6 +144,11 @@ function runReferenceCentury(rootSeed: number): RunResult {
       constructionBacklog: FP_ONE * (1 + (tick % 5)),
       scribingQueueDepth: floorDiv(population, 4_000),
       universityCapacity: floorDiv(population, 20),
+      // W193: the fifth input. Generous here on purpose — this harness is about
+      // reallocation under a moving target, and a latent count that bound before
+      // capacity did would turn the student channel into a constant and stop
+      // exercising the thing the test is for.
+      latentMagicUsers: population,
       standingSoldierTarget: floorDiv(population, 40),
     });
 

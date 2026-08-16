@@ -49,6 +49,7 @@ export {
   EDICT_BUDGET_MAX,
   EDICT_KIND,
   EFFORT_KIND,
+  GOD_ASSIGNABLE_MAGE_ROLES,
   HOLDER_KIND,
   LOCATION_KIND,
   MAGE_ROLE,
@@ -57,6 +58,7 @@ export {
   OCCUPATION,
   RAID_SIDE,
   TERMINAL_REASON,
+  isGodAssignableRole,
 } from './enums.js';
 export type {
   AscensionPathValue,

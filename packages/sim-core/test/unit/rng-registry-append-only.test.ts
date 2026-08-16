@@ -94,6 +94,18 @@ const PERMANENT_IDS: Readonly<Record<string, number>> = {
   // assignment here as an instruction; it is one queue's arithmetic, and the
   // arithmetic already changed once.
   detachment: 13,
+  // Appended by `w197/aptitude-sorts-careers`: the graduate career draw —
+  // academic track or populace mage — which has its own id rather than borrowing
+  // `mageBirth`'s because a shared cursor would have adding a graduate re-roll
+  // the personality of every mage enrolled in the same tick.
+  //
+  // **14, renumbered from 15 on `integration/group-e` (2026-08-16).** The branch
+  // was authored against a ruling of #170 = 13, #186 = 14, this = 15, and
+  // predicted its own density assertion would be red until the two ahead landed.
+  // In this tree #186 landed first at 13 and #170 has not landed at all, so the
+  // next free id here was 14 and the table is dense rather than gapped. Same
+  // rule, different queue — see the paragraph above.
+  career: 14,
 };
 
 /**
@@ -127,6 +139,7 @@ const DOC_TEXT_BY_SUBSYSTEM: Readonly<Record<string, string>> = {
   terrain: 'terrain generation and combatant deployment',
   openingSquare: 'the opening square',
   detachment: 'the partial-detachment draw at portal open',
+  career: 'the career sort at graduation',
 };
 
 /** The consequence sentence every failure from this file has to carry. */
