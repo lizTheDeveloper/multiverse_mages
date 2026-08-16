@@ -13219,3 +13219,53 @@ What would bite instead — stated, not taken, because it is a design decision:
 
 The rule: **a price only discriminates between strategies that spend.** Against a strategy whose
 whole method is not spending, any cost denominated in the currency it hoards is free.
+
+## W251 — The baseline nobody blocks on is the baseline nobody updates
+
+[executed, 2026-08-15, `origin/main` @ 93a6747a; job conclusions read from the GitHub API,
+baseline provenance read from the committed files, history from `git log -- <path>`]
+
+Six corrections in a row landed on one structure. Setting them out, because the errors are the
+evidence:
+
+1. *"`balance:gate:ascension` is never run."* **Wrong.** It is a deliberate release gate — 830–1154 s
+   against the other gates' ~40 s on a runner that serialises — and it runs on every commit in its
+   own non-required job, with `balance-ci-wiring.test.ts` asserting it cannot decay.
+2. *"`worship-yield` has no consumer."* **Wrong.** 11 nodes → `god/system.yieldSources`. I grepped
+   the wrong packages.
+3. *"Pricing the ending fixes the win condition."* **Wrong twice** — inert in the gate sweep and in
+   the search sweep, for the structural reason in W250.
+4. *"Pricing drove the 23 regressions."* **Wrong.** Clean `main` reproduces them exactly.
+
+**What the repository already knew, better than I did.** The primitive-consumption check on `main`
+prints:
+
+    FAIL: primitive(s) with no node-driven consumer: research-rate, scribe-rate, teach-rate
+    Declared exclusions: fertility, lifespan
+
+It asks *"can what the academics know change it"* rather than *"does anything read it"* — the
+sharper question — and `fertility` and `lifespan` are **declared exclusions**, known and recorded.
+An evening of hand-rediscovery produced a worse version of a check that was already failing in CI.
+
+**And the 23 regressions have a mundane cause.** Baseline provenance versus history:
+
+    balance-gate-v1            (gated)      last re-recorded by #126 alliances, #161 anti-requisites
+    balance-gate-ascension-v1  (not gated)  last re-recorded by #132 apply-magic, nothing since
+
+Its `contentHash` is `d4e30476`, which `interning.test.ts` names as the revision that *"has the
+applied-magic scalars and no exclusions"*. The ascension baseline is two content-changing PRs
+behind. #161's own title says *"the eighth loses 39% of its knowledge"* — and the largest
+regression is `permissive-breadth` knowledge instances 5,124 → 2,534. **The drift is that PR's
+intended, documented effect, propagated to the two gated baselines and not to the ungated one.**
+
+Nothing was broken. The merges were correct, the change was measured, the baselines that gate got
+updated. The one that does not gate did not, because nothing made it.
+
+The rule: **a gate's blocking status decides whether its baseline gets maintained.** Not policy,
+not diligence — the blocking one gets re-recorded because a red PR forces it, and the non-blocking
+one rots because nobody is ever stopped. Three jobs on `main` were red for six consecutive commits
+while `Verify` was green on every one.
+
+#202 lands a scheduled read-only watcher so a red non-required job produces a red *scheduled* run,
+away from a commit somebody already approved. It fixes none of the three. It makes them visible,
+which is the smaller half and the one that was missing.
