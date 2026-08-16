@@ -134,12 +134,15 @@ describe('the accessor records the fetch, because that is the whole mechanism', 
   });
 
   it('scans the whole grid, exactly as the wiring it replaced did', () => {
-    // `lifespan` is a declared *coverage* exclusion — no **v1** node carries it —
-    // and seventeen non-v1 nodes in the pre-authored grid do. The accessor must
-    // still find those seventeen, because the production helper it replaced
+    // `lifespan` was a declared *coverage* exclusion — no v1 node carried it —
+    // and seventeen nodes elsewhere in the pre-authored grid did. All seventy
+    // cells are enabled now, so those seventeen are the same seventeen and are
+    // also v1; the count is unchanged and the claim is not. The accessor must
+    // find every one of them because the production helper it replaced
     // (`scenario`'s `nodesCarrying`) scanned every node and legality is decided
     // later, per node, by `permits()`. Filtering to v1 here would be a silent
-    // behaviour change dressed up as a check.
+    // behaviour change dressed up as a check — and it would go on being one the
+    // day a content set flags a proper subset again.
     const found = nodeEffectMagnitudes(
       shippedRegistry(),
       'lifespan',
@@ -301,19 +304,26 @@ describe('direction three: a wire with no authored content behind it', () => {
 
 describe('direction four: an excluded primitive gains a node consumer', () => {
   it('fails, so closing the gap is a deliberate diff', () => {
+    // The shipped exclusion list is empty since all seventy cells were enabled,
+    // so `lifespan` is required rather than excluded and this direction has to
+    // supply its own exclusion. `['lifespan']` is passed to both `required()` and
+    // the check, which is the pair the default used to supply together.
+    const exclusions = ['lifespan'];
     const registry = shippedRegistry();
     const recorder = createConsumptionRecorder();
-    for (const primitiveId of required()) {
+    for (const primitiveId of required(exclusions)) {
       nodeEffectMagnitudes(registry, primitiveId, `test/${primitiveId}.sink`, recorder);
     }
     // An exclusion that quietly becomes covered is the failure `coverage.ts`
     // argues about at length, and it rots the same way here.
-    //
-    // The exclusion list is passed explicitly, because the shipped one is empty
-    // — which is the campaign's exit condition and not a reason to stop testing
-    // the direction. `direct-damage` stands in for whatever the next parked
-    // primitive would be.
-    const report = checkPrimitiveConsumption(registry, recorder, ['direct-damage']);
+    recorder.register({
+      primitiveId: 'lifespan',
+      consumer: 'test/mortality.sink',
+      kind: 'node',
+      nodeCount: 4,
+    });
+
+    const report = checkPrimitiveConsumption(registry, recorder, exclusions);
     expect(report.ok).toBe(false);
     expect(report.consumedExclusions).toEqual(['direct-damage']);
     expect(formatPrimitiveConsumptionReport(report)).toContain(
@@ -397,10 +407,20 @@ describe('the two checks no longer share one exclusion list', () => {
   });
 
   it('states the exclusions in the formatted report, so a reader sees the gap', () => {
+    // The shared list is empty since all seventy cells were enabled, so this
+    // reads in two halves for the reason the coverage test's twin does: the line
+    // must still be printed when there is no gap, and the names must still appear
+    // when there is one.
     const { recorder, registry } = fullyConsumed();
-    const text = formatPrimitiveConsumptionReport(
+    const shipped = formatPrimitiveConsumptionReport(
+      checkPrimitiveConsumption(registry, recorder),
+    );
+    expect(shipped).toContain('Declared exclusions:');
+    expect(shipped).not.toMatch(/Declared exclusions: \w/u);
+
+    const withGap = formatPrimitiveConsumptionReport(
       checkPrimitiveConsumption(registry, recorder, ['fertility', 'lifespan']),
     );
-    expect(text).toContain('Declared exclusions: fertility, lifespan');
+    expect(withGap).toContain('Declared exclusions: fertility, lifespan');
   });
 });

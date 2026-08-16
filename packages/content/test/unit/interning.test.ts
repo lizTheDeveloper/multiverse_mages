@@ -464,7 +464,15 @@ describe('contentRevision', () => {
     // revision is a digest over the values, so this is the ordinary case rather
     // than a union of branches. It changes every run in which any mage learns
     // The Nameless — which is the point of the change, not a side effect of it.
-    expect(registry.contentRevision).toBe('8681bf846bd94be80fdabc447e6e01df');
+    //
+    // 8681bf846bd94be80fdabc447e6e01df -> e0e4b84fb8669c0fcc8bd6aa443b7e8d,
+    // when `w115/enable-all-cells` flagged all seventy cells `v1` instead of
+    // twelve. No node changed a byte; the enabled subset did, and that is a
+    // content value like any other — a universe that permits seventy cells and
+    // one that permits twelve are not playing the same game, so the digest has
+    // to move. Recomputed on the merged tree, which also keeps both `excludes`
+    // arrays the branch's `cell.json` predates.
+    expect(registry.contentRevision).toBe('e0e4b84fb8669c0fcc8bd6aa443b7e8d');
   });
 
   it('is stable across loads of identical content', () => {

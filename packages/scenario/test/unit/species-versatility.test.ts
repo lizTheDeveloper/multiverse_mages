@@ -40,9 +40,14 @@ function bySpecies(id: string) {
 }
 
 describe('the grid the measurement is taken against', () => {
-  it('is the full seventy, of which the v1 ruleset permits twelve', () => {
+  it('is the full seventy, all of which the v1 ruleset now permits', () => {
+    // `enabledCells` was 12. Every cell carries `"v1": true` now, and this
+    // sample's ruleset is `v1RulesetAxes` — the OR of the enabled cells' axes —
+    // so the two coincide. Both asserted anyway: they are separate numbers that
+    // happen to be equal, and the whole point of the affinity-liveness block at
+    // the bottom of this file is the difference between them.
     expect(sample.gridCells).toBe(70);
-    expect(sample.enabledCells).toBe(12);
+    expect(sample.enabledCells).toBe(70);
   });
 
   it('covers every species content declares', () => {
@@ -67,12 +72,16 @@ describe('breadth: every species can staff the whole grid', () => {
    * distinguishes the shipped species — it is universal, which is a different
    * and more serious problem than one species having it.
    */
-  it('gives all six species 70/70 and 12/12', () => {
+  it('gives all six species 70/70 and 70/70', () => {
+    // Was `70/70 and 12/12`. The finding is unchanged and is now stated without
+    // the ruleset softening it: entry to every cell is free for every species,
+    // and the twelve-cell figure that used to sit beside it was a fact about the
+    // ruleset rather than about the species.
     for (const entry of sample.species) {
       expect([entry.speciesId, entry.staffableCells, entry.staffableEnabledCells]).toEqual([
         entry.speciesId,
         70,
-        12,
+        70,
       ]);
     }
   });
@@ -154,20 +163,49 @@ describe('the teachable window, which is where the separation actually lives', (
 
 describe('affinity liveness against the permitted cells', () => {
   /**
-   * Seven of the eleven authored affinity entries name a form no permitted cell
-   * uses, and two species have no live entry at all. That does not bias them —
+   * **This is the measurement enabling all seventy cells was made for, and it is
+   * the one that moved cleanly.**
+   *
+   * It read *four live, seven inert*: seven of the eleven authored affinity
+   * entries named a form no permitted cell used, and two species — human and
+   * gnome — had no live entry at all. That did not *bias* them, because
    * `affinityTerm` defaults a missing key to `FP_ONE` and subtracts it, so an
-   * undeclared species scores exactly zero rather than badly — but it does mean
-   * seven authored numbers cannot influence anything in this ruleset.
+   * undeclared species scores exactly zero rather than badly. It meant something
+   * worse: seven authored numbers could not influence anything, and `w80` had
+   * measured species affinity as the term doing most of the ordering work in
+   * acquisition. The strongest lever in the system was pointed at almost nothing.
+   *
+   * The twelve enabled cells covered four forms — `limen`, `mentem`, `nomen`,
+   * `terram` — against the eight the six species name between them. So:
+   *
+   *     species    affinities                        live before   live now
+   *     elf        herbam 1536, mentem 1280          mentem only   both
+   *     dwarf      terram 1536, ignem 1152           terram only   both
+   *     draconic   ignem 1792, vim 1536, nomen 1280  nomen only    all three
+   *     orc        terram 1280, corpus 1280          terram only   both
+   *     gnome      imaginem, vim                     none          both
+   *     human      (none authored)                   none          none
+   *
+   * Eleven of eleven live, zero inert. Human still has no live entry and that is
+   * not a reachability problem: `species.json` authors it no affinities at all,
+   * which is `affinityTerm`'s documented "no opinion" case rather than a gap this
+   * change could close.
    */
-  it('finds four live entries and seven inert ones', () => {
+  it('finds every authored entry live and none inert', () => {
     const live = sample.species.reduce((sum, entry) => sum + entry.liveAffinityEntries, 0);
     const inert = sample.species.reduce((sum, entry) => sum + entry.inertAffinityEntries, 0);
-    expect([live, inert]).toEqual([4, 7]);
+    expect([live, inert]).toEqual([11, 0]);
   });
 
-  it('leaves human and gnome with no live entry', () => {
+  it('leaves human alone with no live entry, because it authors none', () => {
+    // Gnome was the other one, on two entries — `imaginem` and `vim`, two of the
+    // ten forms the twelve never covered — and both are live now.
     expect(bySpecies('human').liveAffinityEntries).toBe(0);
-    expect(bySpecies('gnome').liveAffinityEntries).toBe(0);
+    expect(bySpecies('human').inertAffinityEntries).toBe(0);
+    expect(bySpecies('gnome').liveAffinityEntries).toBe(2);
+
+    // Draconic is the sharpest case: its authored character is `ignem 1792` and
+    // `vim 1536`, and neither could act. Only `nomen 1280`, its weakest, was live.
+    expect(bySpecies('draconic').liveAffinityEntries).toBe(3);
   });
 });
