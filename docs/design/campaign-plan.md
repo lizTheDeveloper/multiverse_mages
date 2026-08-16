@@ -13358,3 +13358,62 @@ It removes the only thing that was maintaining its baseline.** The split is stil
 argument is real — but it needs a replacement forcing function: a scheduled re-record, a release
 checklist item, or a gate that fails on provenance age rather than on a metric. #202's watcher makes
 the red visible; it does not make anybody re-record.
+
+## W254 — The watcher watched itself, and the third exit caught it
+
+[executed, 2026-08-16; #211 merged, #209 merged]
+
+#202 added a scheduled watcher so a red non-required job would be visible away from a commit
+somebody already approved. It had two bugs and it found the first one itself.
+
+**It read "the newest completed run for the branch".** Once its own scheduled workflow began
+running on `main`, that *was* the newest run — one job, none of the watched names:
+
+    Watching main @ ad7f80c2 (run 31938332487)
+    PROBE BROKEN: no job matches "Balance gate, two hundred world years"
+    EXIT=1
+
+**It exited 1, not 0.** That is the entire argument for the third exit, validated on its first
+real failure, against its own author. A watcher that reported green because it could not find the
+jobs would have been the sixth entry in this repository's list of checkers answering about the
+wrong input — and would have done it while claiming to be the thing that prevents them.
+
+I also read the resulting red on `main`'s check list as *the watcher working*. It was failing as a
+broken probe. Believing a red for the wrong reason is the same error as believing a green.
+
+**And it watched three of four.** The script is named *"are the non-required jobs green"* and
+listed three. The omitted one — `Next Node major` — was red and unread, and its own comment says
+why that matters: *"a failure here means the next Node major may change simulation behaviour,
+which we want to know about before it is pinned."* A determinism change arriving with a runtime
+upgrade is the thing a fixed-point core can least afford to learn late.
+
+## W255 — A one-second check for the thing the sweeps take minutes to discover
+
+[executed, 2026-08-16; #209 merged, `npm run check:baselines` live on `main`]
+
+W253 found all four baselines stale two days after the gates stopped blocking. #209 is the
+forcing signal, restored without the cost:
+
+    Shipped content revision: 8681bf84
+      STALE  balance-gate-agency-v1     0dfdd5ef
+      STALE  balance-gate-ascension-v1  d4e30476
+      STALE  balance-gate-horizon-v1    0dfdd5ef
+      STALE  balance-gate-v1            0dfdd5ef
+    4 of 4 baseline(s) were taken on different content.   EXIT=42
+
+A sweep is minutes; asking whether a baseline still names the current content revision is a file
+read. It answers a **strictly weaker** question — *is this baseline about this build*, never *did a
+metric move* — and that weaker question is the one that went unanswered for two days.
+
+Two traps avoided by reading the right thing: the **loader's** revision rather than
+`interning.test.ts`'s pinned literal (a stale test and a stale baseline would otherwise agree with
+each other and pass), and **`provenance.contentHash`** rather than the top-level tamper seal.
+
+Its own job rather than a step in `balance`: a `continue-on-error` step anywhere in that job makes
+`balance-ci-wiring` read the gates as softened, and they must not be. Not in `verify` while four of
+four are stale — that would block every unrelated pull request on a re-record nobody has scheduled,
+which is what the 2026-08-14 split was avoiding. The job comment carries the promotion condition.
+
+**It cannot re-record and must not.** `regenerate-baseline.mjs` and `reseal-baseline.mjs` are the
+only two things that write a baseline, neither is reachable from CI, and two tests assert that. A
+re-record is a claim that behaviour changed on purpose and needs a person to make it.
