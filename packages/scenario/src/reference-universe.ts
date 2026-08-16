@@ -60,7 +60,7 @@
  */
 
 import type { ContentId, ContentRegistry } from '@mm/content';
-import type { EntityHandle, SimState, StepContext, WorldSchema } from '@mm/sim-core';
+import type { EntityHandle, SimState, StepContext, System, WorldSchema } from '@mm/sim-core';
 import { RNG_STREAM, createState, rngFromRootSeed } from '@mm/sim-core';
 import type { Scenario, ScenarioConfig } from '@mm/agent-api';
 import {
@@ -102,6 +102,14 @@ import {
   worldDeps,
 } from './content-set.js';
 import { withAxisPriceScale } from './axis-price.js';
+import type { NormalizedSandbox, SandboxSpec } from './sandbox.js';
+import {
+  applyFoundingCheats,
+  defineSandboxWorldSchema,
+  normalizeSandbox,
+  sandboxScenarioId,
+  sandboxSystem,
+} from './sandbox.js';
 import { BalanceTelemetryRecorder, balanceTelemetrySystem } from './balance-telemetry.js';
 import type { BalanceRunTelemetry } from './balance-telemetry.js';
 import type { RaidRecord } from './raids.js';
@@ -933,6 +941,16 @@ export interface ReferenceRun {
    * sample, which is the one a system cannot take. See `balance-telemetry.ts`.
    */
   balanceTelemetry: () => BalanceRunTelemetry;
+  /**
+   * The cheat sheet this run was built with, canonicalized, or `undefined` on
+   * an honest run.
+   *
+   * Reported rather than inferred: a caller that wants to stamp a harness
+   * provenance block, print a banner, or refuse to record a result needs the
+   * digest, and re-normalizing the spec at each of those sites would be a
+   * second answer to which cheats are in force.
+   */
+  readonly sandbox?: NormalizedSandbox;
 }
 
 /** The scenario id every reference run records. Stable; a baseline is keyed on it. */
@@ -987,6 +1005,26 @@ export interface ReferenceScenarioOptions {
    * path with baselines attached.
    */
   readonly ablation?: AblationMask;
+  /**
+   * The sandbox cheat sheet, or absent for an honest universe. **Absent is the
+   * default and absent is every shipped build.**
+   *
+   * The whole of the sandbox's contact with this file is this one optional
+   * field and the four places below that read it. With it absent, every line of
+   * this function is the line it ran before `sandbox.ts` existed — the same
+   * `defineWorldStateSchema`, the same system list, the same
+   * {@link REFERENCE_SCENARIO_ID}, the same state out of the builder — which is
+   * what makes "off by default" a property with a snapshot-hash test rather
+   * than an assurance. The precedent is
+   * {@link ReferenceScenarioOptions.telemetry} and it is the same argument: an
+   * inertness claim is worth nothing unless the other arm can be built and
+   * compared.
+   *
+   * Present, the universe is built on a schema carrying `sandbox-brand`, is
+   * branded before anybody sees it, and records a scenario id that is not the
+   * reference one. See `sandbox.ts` for why none of that can be laundered off.
+   */
+  readonly sandbox?: SandboxSpec;
 }
 
 /**
@@ -1008,6 +1046,40 @@ export function referenceScenario(
   );
   const raiding = options.raids ?? true;
 
+  // The sandbox, resolved once. Four reads follow — the schema builder, the
+  // system list, the scenario id, the founding cheats — and every one of them
+  // is a ternary whose absent branch is the expression that was there before.
+  // Nothing further down this function, and nothing at all in `coordination` or
+  // `rules-*`, knows the layer exists.
+  const sandbox = options.sandbox === undefined ? undefined : normalizeSandbox(options.sandbox);
+  const buildSchema = (systems: readonly System[]): WorldSchema =>
+    sandbox === undefined ? defineWorldStateSchema(systems) : defineSandboxWorldSchema(systems);
+  const sandboxSystems: readonly System[] = sandbox === undefined ? [] : [sandboxSystem(sandbox)];
+  const scenarioId =
+    sandbox === undefined
+      ? REFERENCE_SCENARIO_ID
+      : sandboxScenarioId(REFERENCE_SCENARIO_ID, sandbox.digest);
+  const sandboxReport = sandbox === undefined ? {} : { sandbox };
+  /**
+   * Applies the founding cheats to a state the builder just produced.
+   *
+   * Inside `create`, deliberately: `Scenario.create` must be a pure function of
+   * `(runSeed, config)` and this is one — the cheat sheet is fixed for the life
+   * of the scenario, so two sessions reset with the same coordinates build the
+   * same cheated universe. Doing it outside would mean handing out a state that
+   * was honest for a moment and became cheated later, which is exactly the
+   * window the brand exists to close.
+   */
+  const cheat = (state: SimState): SimState => {
+    if (sandbox === undefined) return state;
+    applyFoundingCheats(state, sandbox, {
+      allTechniques: content.registry.techniques.reduce((bits, { record }) => bits | record.bit, 0),
+      allForms: content.registry.forms.reduce((bits, { record }) => bits | record.bit, 0),
+      nodeCount: content.deps.catalog.nodeCount,
+    });
+    return state;
+  };
+
   // Per run, like the report closures and the raid log, and installed **first**
   // so that the tick it labels a sample with is the tick the state arrived at.
   // It writes nothing and draws nothing; see `balance-telemetry.ts`.
@@ -1020,21 +1092,24 @@ export function referenceScenario(
   };
 
   if (!raiding) {
-    const raidlessSchema = defineWorldStateSchema([
+    const raidlessSchema = buildSchema([
+      ...sandboxSystems,
       ...telemetrySystems,
       ...simulation.schema.systems,
     ]);
     return {
       scenario: {
-        scenarioId: REFERENCE_SCENARIO_ID,
+        scenarioId,
         catalogue: content.catalogue,
         create: (runSeed: number, config: ScenarioConfig): SimState => {
-          const state = buildReferenceState({
-            runSeed,
-            options: referenceOptions(config),
-            content,
-            schema: raidlessSchema,
-          });
+          const state = cheat(
+            buildReferenceState({
+              runSeed,
+              options: referenceOptions(config),
+              content,
+              schema: raidlessSchema,
+            }),
+          );
           recorder.begin(state);
           return state;
         },
@@ -1043,6 +1118,7 @@ export function referenceScenario(
       lastGodReport: simulation.lastGodReport,
       raids: () => [],
       balanceTelemetry,
+      ...sandboxReport,
     };
   }
 
@@ -1058,7 +1134,8 @@ export function referenceScenario(
   //
   // Last in the list, so the god's action 14 has already been resolved and paid
   // for by the time this reads it.
-  const schema = defineWorldStateSchema([
+  const schema = buildSchema([
+    ...sandboxSystems,
     ...telemetrySystems,
     ...simulation.schema.systems,
     raidSystem({
@@ -1084,7 +1161,7 @@ export function referenceScenario(
 
   return {
     scenario: {
-      scenarioId: REFERENCE_SCENARIO_ID,
+      scenarioId,
       catalogue: content.catalogue,
       portalTargets: portalTargetIds(constants),
       // The roster the god may invite from, and it is every species the content
@@ -1102,12 +1179,14 @@ export function referenceScenario(
         // scenario reused across two would report the first one's raids in the
         // second one's record.
         records.length = 0;
-        const state = buildReferenceState({
-          runSeed,
-          options: referenceOptions(config),
-          content,
-          schema,
-        });
+        const state = cheat(
+          buildReferenceState({
+            runSeed,
+            options: referenceOptions(config),
+            content,
+            schema,
+          }),
+        );
         // The census belongs to one episode too, and for the identical reason.
         recorder.begin(state);
         return state;
@@ -1117,5 +1196,6 @@ export function referenceScenario(
     lastGodReport: simulation.lastGodReport,
     raids: () => records,
     balanceTelemetry,
+    ...sandboxReport,
   };
 }

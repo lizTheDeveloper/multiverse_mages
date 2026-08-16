@@ -95,6 +95,36 @@ export {
   referenceScenario,
 } from './reference-universe.js';
 
+export type {
+  KnowledgeGrant,
+  MaterialLevels,
+  NormalizedSandbox,
+  SandboxBrand,
+  SandboxFoundingDeps,
+  SandboxSpec,
+} from './sandbox.js';
+export {
+  SANDBOX_BRAND,
+  SANDBOX_BRAND_VERSION,
+  SANDBOX_CHEAT,
+  SANDBOX_CLAIMANTS,
+  SANDBOX_CLAIMANT_KIND,
+  SANDBOX_GRIMOIRE_DURABILITY,
+  SANDBOX_MATERIAL_KINDS,
+  SANDBOX_SATISFY_FLOOR,
+  applyFoundingCheats,
+  applyKnowledgeCheats,
+  defineSandboxWorldSchema,
+  foundUniversity,
+  isSandboxSchema,
+  normalizeSandbox,
+  sandboxBrandOf,
+  sandboxDigest,
+  sandboxProvenance,
+  sandboxScenarioId,
+  sandboxSystem,
+} from './sandbox.js';
+
 export type { ReferenceExecutorOptions, ReferenceRunResult } from './executor.js';
 export {
   CENSUS_INTERVAL_TICKS,
