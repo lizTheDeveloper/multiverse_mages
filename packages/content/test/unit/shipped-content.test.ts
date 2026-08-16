@@ -56,7 +56,7 @@ describe('shipped content', () => {
       forms: 14,
       cells: 70,
       v1Cells: 12,
-      nodes: 337,
+      nodes: 300,
       species: 6,
       traditions: 3,
       territories: 5,

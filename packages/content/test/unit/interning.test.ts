@@ -145,14 +145,8 @@ describe('interning', () => {
     // side of that merge shared. Node ids intern in sort order, so it lands at
     // 285 and every node after it shifts by one — the renumbering these
     // assertions exist to surface.
-    //
-    // 285 -> 321 and 300 -> 337, when the deep-magic set added 37 nodes for the
-    // late game (`content/deep-magic`). Nothing was renamed and nothing moved
-    // cell; the shift is the sort order absorbing thirty-seven new ids, and
-    // these two pins are here precisely so that a content merge cannot add
-    // records without saying so out loud.
-    expect(registry.intern('node', 'rn-keep-the-name-close')).toBe(321);
-    expect(registry.intern('node', 'rv-turn-the-casting')).toBe(337);
+    expect(registry.intern('node', 'rn-keep-the-name-close')).toBe(285);
+    expect(registry.intern('node', 'rv-turn-the-casting')).toBe(300);
     expect(registry.intern('species', 'draconic')).toBe(1);
     expect(registry.intern('tradition', 'art-of-memory')).toBe(1);
     expect(registry.intern('primitive', 'area-denial')).toBe(1);
@@ -493,7 +487,18 @@ describe('contentRevision', () => {
     // parent's literal is a digest over a preimage holding all of it, so the
     // value here was recomputed from the merged content — 76 constants and 17
     // costs — rather than taken from a side.
-    expect(registry.contentRevision).toBe('5a7f36e2e3b7d1a349b0e3802cb8fb79');
+    //
+    // 5a7f36e2e3b7d1a349b0e3802cb8fb79 -> 5dede81afebb971eba5784765321a035,
+    // when the `content/deep-magic` merge was reverted on the Group D
+    // integration branch, pending the author's ruling on the set. The 37 nodes
+    // and the 31 cells' node lists leave the preimage again; the four
+    // `stewardship-*` constants stay, because W35 is independent of them. So
+    // this is a *fourth* distinct value rather than a return to `8681bf84…` —
+    // that literal is a digest over a preimage with neither the deep-magic
+    // nodes nor the stewardship constants, and this tree has the second. The
+    // two entries above are left standing on purpose: they are the record of a
+    // digest that was computed, not a claim about this tree.
+    expect(registry.contentRevision).toBe('5dede81afebb971eba5784765321a035');
   });
 
   it('is stable across loads of identical content', () => {
