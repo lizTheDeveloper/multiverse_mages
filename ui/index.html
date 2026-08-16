@@ -128,6 +128,14 @@
 </div>
 
 <script type="module">
+  // The bar that says where else there is. Its own block, not folded into the
+  // script below: nav.js imports nothing, so a sibling module that fails to
+  // evaluate cannot take the navigation down with it.
+  import { mountNav } from './shared/nav.js';
+  mountNav({ base: './' });
+</script>
+
+<script type="module">
   // Uses `src`, never `href`: ui-index.test.ts reads every href on this page as
   // a prototype directory and asserts an index.html behind it, so a stylesheet
   // link here would fail the suite. The script tag is invisible to that regex.

@@ -170,6 +170,14 @@
 </div>
 
 <script type="module">
+  // The bar that says where else there is. Its own block, not folded into the
+  // script below: nav.js imports nothing, so a sibling module that fails to
+  // evaluate cannot take the navigation down with it.
+  import { mountNav } from '../shared/nav.js';
+  mountNav();
+</script>
+
+<script type="module">
 const DATA = await (await fetch('../ruleset/content.json')).json();
 const BUDGET = 8;
 const T = ['intellego', 'perdo', 'rego'];

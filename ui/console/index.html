@@ -257,11 +257,19 @@
     <code>npm run play</code>, or from <code>ui/session.json</code> under <code>npm run ui</code>.
     Reads decode; the only writes are the cast controls, and they post a <code>{kind, params}</code>
     at <code>agent-api</code>'s admission gate rather than deciding anything here.
-    The per-surface studies are at <a href="../">ui/</a>; what wiring them found is in
+    The per-surface studies are at ui/; what wiring them found is in
     <a href="../shared/README.md">shared/README.md</a>.<br>
     Multiverse Mages © 2026 Ann Kelner · AGPL-3.0-or-later
   </footer>
 </div>
+
+<script type="module">
+  // The bar that says where else there is. Its own block, not folded into the
+  // script below: nav.js imports nothing, so a sibling module that fails to
+  // evaluate cannot take the navigation down with it.
+  import { mountNav } from '../shared/nav.js';
+  mountNav();
+</script>
 
 <script type="module">
 import { mountThemeControl } from '../shared/theme.js';
