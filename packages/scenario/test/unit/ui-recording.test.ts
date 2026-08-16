@@ -80,7 +80,19 @@ interface Frame {
     readonly vellum: number;
   };
   readonly mask: readonly number[];
-  readonly candidates: Readonly<Record<string, readonly number[]>>;
+  readonly candidates: Readonly<Record<string, readonly { readonly params: readonly number[] }[]>>;
+  /**
+   * §4.4's candidate **descriptors** — what each slot is, beside what it
+   * submits. `byAction` is aligned slot-for-slot with `candidates`, which is the
+   * property the test below exists for: the parameter submitted is still a slot
+   * index, so a descriptor list one entry out of step shows a player one mage
+   * and blesses another, and nothing refuses it.
+   */
+  readonly candidateDetail: {
+    readonly byAction: Readonly<Record<string, readonly { readonly kind: string; readonly handle?: number }[]>>;
+    readonly mages: Readonly<Record<string, { readonly handle: number; readonly speciesId: number; readonly ageTicks: number }>>;
+    readonly universities: Readonly<Record<string, { readonly handle: number }>>;
+  };
   readonly status: string;
 }
 
@@ -211,6 +223,44 @@ describe('the recording `npm run ui:record` produces', () => {
       expect(food + stone + vellum, `frame ${String(i)}'s stocks do not sum to resources[39]`).toBe(
         frame.obs[slot],
       );
+    }
+  });
+
+  it('describes every candidate slot, in the slot order the parameter is submitted in', () => {
+    // The alignment invariant, on a real run rather than on a fixture. It is
+    // worth checking here as well as in `agent-api` because this file is what a
+    // *client* reads: `ui/play` and `ui/console` index the descriptor list by
+    // the same integer they put in `params[0]`, and a row that described the
+    // wrong slot would produce a legal, admitted action on the wrong subject —
+    // no rejection, no counter, nothing to notice.
+    for (const [i, frame] of recording.frames.entries()) {
+      const detail = frame.candidateDetail;
+      expect(Object.keys(detail.byAction).sort()).toEqual(Object.keys(frame.candidates).sort());
+      for (const [action, slots] of Object.entries(frame.candidates)) {
+        const rows = detail.byAction[action] ?? [];
+        expect(rows.length, `frame ${String(i)}, action ${action}`).toBe(slots.length);
+        slots.forEach((candidate, slot) => {
+          const row = rows[slot];
+          // Where a descriptor names a handle it must be *this* slot's handle.
+          // The kinds that name none — `found-university`, `portal-target`, a
+          // cell, a tradition, a species — carry no handle to compare, and
+          // `mage-node` names the mage in `params[0]` exactly as bless does.
+          if (row !== undefined && row.handle !== undefined) {
+            expect(row.handle, `frame ${String(i)}, action ${action}, slot ${String(slot)}`).toBe(
+              candidate.params[0],
+            );
+          }
+        });
+      }
+      // Every mage a slot names is in the per-handle table, once. A slot
+      // pointing at a table that does not hold it draws a blank row.
+      for (const rows of Object.values(detail.byAction)) {
+        for (const row of rows) {
+          if (row.kind === 'mage' || row.kind === 'mage-role' || row.kind === 'mage-node') {
+            expect(detail.mages[String(row.handle)], `frame ${String(i)} lost mage ${String(row.handle)}`).toBeDefined();
+          }
+        }
+      }
     }
   });
 

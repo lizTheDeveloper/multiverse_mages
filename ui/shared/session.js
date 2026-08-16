@@ -71,6 +71,22 @@ const hasStocks = (stocks) =>
     (kind) => typeof stocks[kind] === 'number' && Number.isFinite(stocks[kind]),
   );
 
+/**
+ * Whether a frame carries the §4.4 candidate-descriptor sidecar.
+ *
+ * The three tables or none, for the reason {@link hasStocks} gives one field
+ * over: a half-present projection would let a page draw some slots as people and
+ * the rest as numbers, which reads as *"these four are special"* rather than as
+ * *"this recording predates the field"*. A recording made before it existed is
+ * still a valid recording, so a view asks rather than assumes.
+ */
+const hasCandidateDetail = (detail) =>
+  detail !== null &&
+  typeof detail === 'object' &&
+  ['byAction', 'mages', 'universities'].every(
+    (table) => detail[table] !== null && typeof detail[table] === 'object',
+  );
+
 const KNOWLEDGE_CHANNELS = 3;
 const SPECIES_COUNT = 6;
 const MAGE_TIER_SLOTS = 8;
@@ -94,7 +110,20 @@ export const WHY_ABSENT = {
   eventDeltas:
     'A frame is a state. Diffing two frames cannot tell a last-instance loss from an ordinary ' +
     'one, and that distinction is what sound-design §6.5 is built on.',
-  mageNames: 'Candidate slots carry entity handles. Nothing on the read path turns one into a name.',
+  mageNames:
+    'Candidate slots carry entity handles, and no component holds a name — `MAGE` is ' +
+    '`speciesId, birthTick, roleId, universityId, curiosity, ambition, caution, vigor, maxVigor, ' +
+    'alive` and that is the whole of what a mage is in state. A description is not a name, so a ' +
+    'slot can say what she is and never who she is; a personal name is content nobody has ' +
+    'authored (interface-findings §1.11).',
+  mageLifespan:
+    'How long a mage has left is not in state. Lifespan is a species figure in `@mm/content` and ' +
+    'the roll that fixes hers is `rules-world`\'s, so a candidate row can say how old she is and ' +
+    'not how near the end.',
+  portalTargetDetail:
+    'A portal target is an id and nothing else. `rival-universe.ts` builds the rival from the run ' +
+    'seed and that id *when the raid resolves*, so before the portal opens there is no entity, no ' +
+    'ruleset and no population to read.',
   maskReason:
     'The mask is one bit. `mask.ts` uses the same zero for an unaffordable action and an ' +
     'impossible one, so a dark control cannot say whether it means *wait* or *change something*.',
@@ -306,10 +335,228 @@ class Frame {
     return out;
   }
 
+  /**
+   * §4.4's candidate **descriptors**, or `null` when the frame carries none.
+   *
+   * `null` and not an empty projection: absent means *this source cannot say*,
+   * and empty would mean *there is nothing to say about these slots*, which is a
+   * claim about the world. A page tests for it and falls back to the numbered
+   * chips it drew before, with `WHY_ABSENT` under them.
+   *
+   * `slots(action)` is aligned index-for-index with
+   * {@link Frame#candidateLists}, because the parameter submitted is still the
+   * slot index — `agent-api` builds both halves from one list so they cannot
+   * drift. `mage` and `university` are the per-handle lookups those rows point
+   * into: a mage named by bless, by assign-role and by a founding grant is
+   * shipped once and is the same object each time she is asked for.
+   */
+  candidateDetails() {
+    const raw = this.raw.candidateDetail;
+    if (!hasCandidateDetail(raw)) return null;
+    return {
+      slots: (action) => raw.byAction[String(action)] ?? [],
+      mage: (handle) => raw.mages[String(handle)],
+      university: (handle) => raw.universities[String(handle)],
+    };
+  }
+
   /** `running` | `ascended` | `stagnated` | `truncated`. */
   status() {
     return this.raw.status;
   }
+}
+
+/**
+ * Entity handles carry a generation in their top twelve bits
+ * (`sim-core/src/handle.ts`: `(generation << 20) | index`). A page prints the
+ * index alone, because a college the player has been funding for two hundred
+ * years should not be called `#1048578` — and the full handle rides in the
+ * title so nothing is lost. Two entities can share an index across generations;
+ * they are never both live, so a live list cannot show the ambiguity.
+ */
+const shortHandle = (handle) => handle & 0xfffff;
+
+/**
+ * Turns §4.4's candidate descriptors into the words a player chooses between.
+ *
+ * **Here rather than in a page**, and that is the point: two pages formatting
+ * one projection differently is two vocabularies for one fact, and the console
+ * and the play page already disagreed about how to caption a slot they could not
+ * name. Both now read this.
+ *
+ * **Nothing here invents a name.** No component holds one — see
+ * {@link WHY_ABSENT.mageNames} — so every word below is either a state field, a
+ * content name for an id, or arithmetic over the two. *"A gnome researcher of
+ * three hundred, at college #6, who knows one thing"* is a description; "Mira"
+ * would be fiction, and a page that invents is worse than one that admits.
+ *
+ * @param content - `session.content`, for the names ids stand for.
+ * @returns `(view, action, slot, params) => { head, sub, title } | null`, where
+ * `view` is {@link Frame#candidateDetails}. `null` means this source carries no
+ * descriptors and the caller should fall back to numbered slots and say why.
+ */
+export function candidateNamer(content) {
+  const speciesName = new Map((content.species ?? []).map((x) => [x.speciesId, x.name ?? x.id]));
+  const traditionName = new Map((content.traditions ?? []).map((t) => [t.traditionId, t.name ?? t.id]));
+  const nodeById = new Map((content.nodes ?? []).map((n) => [n.nodeId, n]));
+  const cellName = new Map(
+    (content.cells ?? []).map((c) => {
+      const t = (content.techniques ?? []).find((x) => x.id === c.technique);
+      const f = (content.forms ?? []).find((x) => x.id === c.form);
+      return [c.cellId, `${t?.name ?? c.technique} ${f?.name ?? c.form}`];
+    }),
+  );
+  /* `??` throughout: a recording made before these tables shipped is still a
+     valid recording, and an id is a truthful fallback for a name it does not
+     carry. */
+  const roleName = (id) => content.mageRoles?.[String(id)] ?? `role ${id}`;
+  const goalName = (id) => content.goals?.[String(id)] ?? `goal ${id}`;
+
+  /** Months into years, because a mage's age is only ever discussed in years. */
+  const age = (ticks) => (ticks >= 12 ? `${Math.floor(ticks / 12)}y` : `${ticks}mo`);
+
+  /** The loudest of the three §1.2 personality figures. Ties go to the first. */
+  const temper = (m) => {
+    const top = Math.max(m.curiosity, m.ambition, m.caution);
+    if (top === m.curiosity) return 'curious';
+    return top === m.ambition ? 'ambitious' : 'cautious';
+  };
+
+  const knows = (m) =>
+    m.nodesKnown === 0 ? 'knows nothing' : `knows ${m.nodesKnown}, to tier ${m.deepestTier}`;
+
+  const vigour = (m) =>
+    m.maxVigor > 0 ? `vigor ${Math.round((m.vigor / m.maxVigor) * 100)}%` : 'vigor unknown';
+
+  const doing = (m) =>
+    m.goal === undefined
+      ? 'has not chosen'
+      : m.goal.targetNodeId === 0
+        ? `now ${goalName(m.goal.goalId)}`
+        : `now ${goalName(m.goal.goalId)} → ${nodeById.get(m.goal.targetNodeId)?.name ?? `node ${m.goal.targetNodeId}`}`;
+
+  const where = (m) => (m.universityId === 0 ? 'unaffiliated' : `at college #${shortHandle(m.universityId)}`);
+
+  const mageSub = (m) => [knows(m), vigour(m), where(m), doing(m), temper(m)].join(' · ');
+
+  const mageTitle = (m) =>
+    `handle ${m.handle} · ${m.ageTicks} months · vigor ${m.vigor}/${m.maxVigor} fp · ` +
+    `curiosity ${m.curiosity}, ambition ${m.ambition}, caution ${m.caution} fp · ${where(m)}` +
+    /* The long form of the gap the caption states in six words. It rides here
+       rather than under the list because it is the same sentence for all
+       thirty-two rows, and a catalogued absence that is printed nowhere is a
+       catalogue entry nobody can check. */
+    ` · ${WHY_ABSENT.mageLifespan}`;
+
+  /**
+   * The line under a described list: what the descriptions still cannot say.
+   *
+   * Per kind, because the old single sentence was about mages and got printed
+   * under a list of colleges. What is absent from a candidate row is a property
+   * of what the row describes, not of the mechanism describing it.
+   */
+  const missing = (view, action) => {
+    const rows = view === null || view === undefined ? [] : view.slots(action);
+    /* One sentence. The long form of each is in {@link WHY_ABSENT} and rides in
+       the row's own title — three cards side by side, each carrying the same
+       five-line disclaimer, buries the descriptions it is a footnote to. */
+    if (rows.some((r) => r.kind === 'portal-target')) {
+      return 'Nothing else is knowable: the rival is built from the seed when the portal opens.';
+    }
+    if (rows.some((r) => r.kind === 'mage' || r.kind === 'mage-role' || r.kind === 'mage-node')) {
+      return 'Still absent: a name — no component holds one — and how long she has left.';
+    }
+    return '';
+  };
+
+  const namer = (view, action, slot, params = []) => {
+    if (view === null || view === undefined) return null;
+    const row = view.slots(action)[slot];
+    if (row === undefined) return null;
+    const tail = `slot ${slot} · params ${params.join(', ')}`;
+
+    if (row.kind === 'mage' || row.kind === 'mage-role' || row.kind === 'mage-node') {
+      const m = view.mage(row.handle);
+      if (m === undefined) return { head: `slot ${slot} — gone`, sub: WHY_ABSENT.mageNames, title: tail };
+      const who = `${speciesName.get(m.speciesId) ?? `species ${m.speciesId}`} ${roleName(m.roleId)}, ${age(m.ageTicks)}`;
+      if (row.kind === 'mage') return { head: who, sub: mageSub(m), title: `${mageTitle(m)} · ${tail}` };
+      if (row.kind === 'mage-role') {
+        return {
+          head: `${who} → ${roleName(row.toRoleId)}`,
+          sub: mageSub(m),
+          title: `${mageTitle(m)} · ${tail}`,
+        };
+      }
+      const node = nodeById.get(row.nodeId);
+      return {
+        head: `${node?.name ?? `node ${row.nodeId}`} → ${who}`,
+        /* The node leads, because action 8's list is one mage against many
+           nodes: sixteen rows differing only in their tail read as sixteen of
+           the same thing. */
+        sub:
+          `tier ${node?.tier ?? '?'} · ${cellName.get(node?.cellId) ?? 'cell unknown'} · ` +
+          `she ${knows(m)} · ${doing(m)}`,
+        title: `${mageTitle(m)} · node ${row.nodeId} · ${tail}`,
+      };
+    }
+
+    if (row.kind === 'university') {
+      const u = view.university(row.handle);
+      if (u === undefined) return { head: `slot ${slot} — gone`, sub: '', title: tail };
+      const built = `${Math.round((u.buildProgress / FP) * 100)}% built`;
+      return {
+        head: `college #${shortHandle(u.handle)}, ${built}`,
+        sub:
+          `${u.capacity} seats · ` +
+          `${u.hasLibrary ? `${u.libraryNodes} nodes shelved` : 'no library yet'} · ` +
+          `${u.affiliatedMages} mages affiliated · ${u.staffCohorts} staff cohorts`,
+        title: `handle ${u.handle} · buildProgress ${u.buildProgress} fp · ${tail}`,
+      };
+    }
+
+    if (row.kind === 'found-university') {
+      return {
+        head: 'found a new one',
+        /* Not an entity, which is exactly what the old anonymous label could not
+           say: §4.2 gives founding and funding one action id and slot 0 is the
+           founding half. */
+        sub: '§4.2 puts founding and funding under one verb, and this is the founding half — there is no college here yet to describe.',
+        title: `slot 0 · params 0 — §4.2's "universityId | 0 to found new"`,
+      };
+    }
+
+    if (row.kind === 'portal-target') {
+      return {
+        head: `target #${row.targetId}`,
+        /* Short here and long once under the list. The full reason is
+           {@link WHY_ABSENT.portalTargetDetail}, and repeating a paragraph on
+           every row of an eight-slot list would bury the one thing that differs
+           between them, which is the id. */
+        sub: 'no entity yet — the rival is built from the seed when the portal opens',
+        title: `${WHY_ABSENT.portalTargetDetail} · ${tail}`,
+      };
+    }
+
+    if (row.kind === 'cell') {
+      return { head: cellName.get(row.cellId) ?? `cell ${row.cellId}`, sub: '', title: tail };
+    }
+    if (row.kind === 'tradition') {
+      return { head: traditionName.get(row.traditionId) ?? `tradition ${row.traditionId}`, sub: '', title: tail };
+    }
+    if (row.kind === 'species') {
+      return { head: speciesName.get(row.speciesId) ?? `species ${row.speciesId}`, sub: '', title: tail };
+    }
+
+    return {
+      head: `slot ${slot} — gone`,
+      sub: 'The handle in this slot names nobody living in the world as it stands now. §4.4 calls submitting it an ordinary illegal action.',
+      title: tail,
+    };
+  };
+
+  /** `namer.missing(view, action)` — the honesty line for one verb's list. */
+  namer.missing = missing;
+  return namer;
 }
 
 /**
@@ -405,6 +652,12 @@ function buildSession(doc, extras = {}) {
         knowledgeAggregates: f.knowledge().some((c) => c.live),
         mageBuckets: f.mageBuckets().some((s) => s.living > 0),
         candidates: f.candidateLists().size > 0,
+        /**
+         * Whether a slot can say what it is rather than only what index it has.
+         * Read off the frame for the same reason `materialBreakdown` is — a
+         * recording made before the sidecar existed is still valid.
+         */
+        candidateDetail: f.candidateDetails() !== null,
         engagement: anyEngagement(),
         // Absent from the read path, not from this recording. See WHY_ABSENT.
         individualMages: false,

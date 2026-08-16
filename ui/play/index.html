@@ -442,6 +442,55 @@
     border-color: var(--good);
     background: color-mix(in oklab, var(--good) 20%, transparent);
   }
+  /*
+   * A candidate is a person, a college, or the standing option to found one —
+   * and it stopped being a number here. Rows rather than chips, because the
+   * whole point is that each one carries a sentence: twenty enriched chips is a
+   * wall of text with no edges, and twenty rows in a scroller is a list you read
+   * down. The container is capped so a 32-slot verb cannot push the button that
+   * casts it off the card.
+   */
+  .cands {
+    display: flex;
+    flex-direction: column;
+    gap: 0.14rem;
+    margin: 0 0 0.5rem;
+    max-height: 13rem;
+    overflow-y: auto;
+    padding-right: 0.15rem;
+  }
+  .cand {
+    display: block;
+    width: 100%;
+    text-align: left;
+    padding: 0.3rem 0.45rem;
+    font-size: 0.78rem;
+    border-radius: 0.35rem;
+    background: transparent;
+  }
+  .cand[aria-pressed='true'] {
+    border-color: var(--god);
+    background: color-mix(in oklab, var(--god) 10%, transparent);
+  }
+  .cand .cix {
+    color: var(--faint);
+    font-size: 0.66rem;
+    margin-right: 0.35rem;
+  }
+  .cand .chead {
+    font-weight: 600;
+    color: var(--ink);
+  }
+  /* Not `.sub`: the page already has a `.sub` for its own header line, at
+     opacity .72, and inheriting it dropped this row's second line to 3.68:1
+     against the ground — measured, not guessed. */
+  .cand .csub {
+    display: block;
+    margin-top: 0.12rem;
+    font-size: 0.7rem;
+    line-height: 1.45;
+    color: var(--soft);
+  }
   .aim {
     font-size: 0.76rem;
     margin: 0 0 0.5rem;
@@ -550,7 +599,7 @@
 <p class="footnote" id="footnote"></p>
 
 <script type="module">
-  import { openSession, units, reconstructedCharge, WHY_ABSENT } from '../shared/session.js';
+  import { openSession, units, reconstructedCharge, candidateNamer, WHY_ABSENT } from '../shared/session.js';
   import { mountThemeControl } from '../shared/theme.js';
   import { mountNav } from '../shared/nav.js';
 
@@ -1061,6 +1110,12 @@
   function drawVerbs(frame) {
     const nameFor = namers(session.content);
     const candidates = frame.candidateLists();
+    /* §4.4's descriptors and the shared formatter over them. `null` when this
+       source predates the sidecar, which the branch below tests rather than
+       assumes. */
+    const detail = frame.candidateDetails();
+    const describe = candidateNamer(session.content);
+    const scrollNotes = [];
     const { favor } = frame.resources();
     const host = $('verbs');
     host.innerHTML = '';
@@ -1136,24 +1191,82 @@
           }));
           valueLabel = options.find((o) => o.value === value)?.label ?? null;
         } else if (slots > 0) {
-          /* Honest about what it cannot name: numbered chips, and a line saying
-             the numbers are all there is. */
-          const ranked = Array.from({ length: slots }, (_, slot) => ({
-            value: slot,
-            label: String(slot + 1),
-          }));
           if (value === undefined || value >= slots) {
             value = 0;
             picked.set(action.id, value);
           }
-          card.append(chips(ranked, value, (v) => {
-            picked.set(action.id, v);
-            drawVerbs(session.last());
-          }, `${slots} candidates, in §4.4's ranked order`));
-          const note = document.createElement('p');
-          note.className = 'unnamed';
-          note.textContent = WHY_ABSENT.mageNames;
-          card.append(note);
+          const list = candidates.get(action.id) ?? [];
+          /*
+             §4.4's descriptors, when the source carries them. The value stays
+             the **slot index** — that is what `gate.ts` resolves and changing it
+             would break every one of these verbs — and only the label grows.
+             When they are absent the page falls back to what it drew before:
+             numbered chips and a sentence saying the numbers are all there is.
+          */
+          const described = detail === null
+            ? null
+            : list.map((c, slot) => ({ slot, text: describe(detail, action.id, slot, c.params) }));
+
+          if (described && described.every((row) => row.text !== null)) {
+            const wrap = document.createElement('div');
+            wrap.className = 'cands';
+            for (const { slot, text } of described) {
+              const row = document.createElement('button');
+              row.className = 'cand';
+              row.type = 'button';
+              row.title = text.title;
+              row.setAttribute('aria-pressed', String(slot === value));
+              row.innerHTML =
+                `<span class="cix">${slot + 1}</span><span class="chead"></span>` +
+                (text.sub ? '<span class="csub"></span>' : '');
+              /* textContent after the fact, not interpolated: every string here
+                 comes from content the run was built with, and a page that
+                 injects a name into markup is a page that will inject the wrong
+                 thing the day content carries an apostrophe. */
+              row.querySelector('.chead').textContent = text.head;
+              if (text.sub) row.querySelector('.csub').textContent = text.sub;
+              row.addEventListener('click', () => {
+                picked.set(action.id, slot);
+                drawVerbs(session.last());
+              });
+              wrap.append(row);
+            }
+            const cap = document.createElement('p');
+            cap.className = 'unnamed';
+            /* The gap line is per verb, not per page: what a description cannot
+               say about a college is not what it cannot say about a mage, and
+               one sentence for both said "how long she has left" under a list
+               of buildings. */
+            cap.textContent =
+              `${slots} candidates, in §4.4's ranked order. ${describe.missing(detail, action.id)}`.trim();
+            card.append(wrap, cap);
+            /* A capped list that ends on a whole row looks like a list with
+               three entries in it. Whether it actually scrolls is a layout
+               fact, so it is measured after the card is in the document rather
+               than guessed from the count — a four-row list does not scroll and
+               must not claim to. */
+            scrollNotes.push({ wrap, cap, base: cap.textContent });
+            /* The cast button restates the choice, and an enriched head is a
+               sentence — cut so the button stays a button. The full row is
+               above it and unabridged. */
+            const head = described[value]?.text?.head ?? null;
+            valueLabel = head === null || head.length <= 44 ? head : `${head.slice(0, 43)}…`;
+          } else {
+            /* Honest about what it cannot name: numbered chips, and a line saying
+               the numbers are all there is. */
+            const ranked = Array.from({ length: slots }, (_, slot) => ({
+              value: slot,
+              label: String(slot + 1),
+            }));
+            card.append(chips(ranked, value, (v) => {
+              picked.set(action.id, v);
+              drawVerbs(session.last());
+            }, `${slots} candidates, in §4.4's ranked order`));
+            const note = document.createElement('p');
+            note.className = 'unnamed';
+            note.textContent = WHY_ABSENT.mageNames;
+            card.append(note);
+          }
         }
 
         const go = document.createElement('button');
@@ -1181,6 +1294,12 @@
       }
 
       host.append(card);
+    }
+
+    for (const { wrap, cap, base } of scrollNotes) {
+      if (wrap.scrollHeight > wrap.clientHeight + 1) {
+        cap.textContent = `${base.replace(', in §4.4', ' — the list scrolls — in §4.4')}`;
+      }
     }
   }
 

@@ -155,6 +155,9 @@
     background: var(--sunk); border-radius: 2px; font-variant-numeric: tabular-nums; }
   .cands .row .ix { color: var(--faint); }
   .cands .row .p { color: var(--ink); }
+  /* The description beside the integers. The integers stay — this pane's job is
+     to show what is actually submitted — and the words say what they mean. */
+  .cands .row .d { color: var(--soft); grid-column: 2; }
   .cands .more { padding: .22rem .4rem; color: var(--faint); }
 
   /* the cast panel — the only controls in ui/ that write */
@@ -175,6 +178,22 @@
   .cast .chip:hover { border-color: var(--god); color: var(--ink); }
   .cast .chip[aria-pressed="true"] { border-color: var(--god); color: var(--god); font-weight: 600; }
   .cast .chip:focus-visible { outline: 2px solid var(--god); outline-offset: 1px; }
+  /* When a slot names a person or a college, a chip cannot hold what tells one
+     from another — so those verbs get rows instead. Still not a dropdown:
+     every candidate is on the screen at the moment of deciding, which is the
+     whole argument the chips were making. Capped and scrolled, because
+     thirty-two two-line rows would push the cast button off the panel. */
+  .cast .picks { display: flex; flex-direction: column; gap: 2px; max-height: 15rem; overflow-y: auto; }
+  .cast .pick { display: grid; grid-template-columns: 1.35rem 1fr; gap: .4rem; text-align: left;
+    font: 10.5px/1.5 var(--mono); padding: .22rem .4rem; border: 1px solid var(--edge);
+    border-radius: 2px; background: var(--plate); color: var(--soft); cursor: pointer; }
+  .cast .pick:hover { border-color: var(--god); }
+  .cast .pick:focus-visible { outline: 2px solid var(--god); outline-offset: 1px; }
+  .cast .pick[aria-pressed="true"] { border-color: var(--god); background: var(--sunk); }
+  .cast .pick .ix { color: var(--faint); font-variant-numeric: tabular-nums; }
+  .cast .pick .hd { color: var(--ink); font-weight: 600; }
+  .cast .pick[aria-pressed="true"] .hd { color: var(--god); }
+  .cast .pick .sb { display: block; color: var(--soft); font-weight: 400; margin-top: .1rem; }
   /* The caption under a chip row takes the console's own quiet-label scale
      rather than the serif `.note`: three lines of italic serif under sixteen
      chips read louder than the chips, which are the thing being chosen. */
@@ -303,7 +322,7 @@
 
 <script type="module">
 import { mountThemeControl } from '../shared/theme.js';
-import { mountSourceNote, openSession, reconstructedCharge } from '../shared/session.js';
+import { candidateNamer, mountSourceNote, openSession, reconstructedCharge } from '../shared/session.js';
 
 /*
   Live first, recording second, and never a third thing.
@@ -635,7 +654,16 @@ function boot() {
     const hit = rows.find((x) => x.bit + 1 === value);
     return hit === undefined ? undefined : (hit.name ?? hit.id);
   };
-  /** One §4.4 slot, labelled with whatever the content can honestly name. */
+  /**
+   * One §4.4 slot, described from `agent-api`'s candidate projection.
+   *
+   * `candidateNamer` is in `ui/shared/session.js` and the play page reads the
+   * same function: two pages formatting one projection differently is two
+   * vocabularies for one fact, which is how this page and that one came to
+   * caption an unnameable slot two different ways.
+   */
+  const describeSlot = candidateNamer(session.content);
+  /** The fallback when a source predates the descriptors: content names, or an index. */
   const slotLabel = (verb, candidate, i) => {
     const first = candidate.params[0];
     if (verb === 12) return cellNameById.get(first) ?? `cell ${first}`;
@@ -708,15 +736,55 @@ function boot() {
         return false;
       }
       if (state.slot >= list.length) state.slot = 0;
+      const detail = f.candidateDetails();
+      const described = detail === null
+        ? null
+        : list.map((c, i) => describeSlot(detail, state.verb, i, c.params));
+
+      /*
+       * A slot whose description is a sentence gets a row; a slot content can
+       * name in two words stays a chip. The split is the descriptor's own
+       * `sub`: a cell, a tradition and a species are named and that is the
+       * whole of them, while a mage is a person and a chip cannot hold what
+       * tells her from the next one. Either way the **value is the slot
+       * index**, which is what `gate.ts` resolves.
+       */
+      if (described !== null && described.every((d) => d !== null) && described.some((d) => d.sub)) {
+        const box = document.createElement('div');
+        box.className = 'picks';
+        described.forEach((d, i) => {
+          const row = document.createElement('button');
+          row.type = 'button';
+          row.className = 'pick';
+          row.title = d.title;
+          row.setAttribute('aria-pressed', String(i === state.slot));
+          row.innerHTML = `<span class="ix">${i}</span><span><span class="hd"></span>`
+            + (d.sub ? '<span class="sb"></span>' : '') + '</span>';
+          row.querySelector('.hd').textContent = d.head;
+          if (d.sub) row.querySelector('.sb').textContent = d.sub;
+          row.addEventListener('click', () => { state.slot = i; paint(); });
+          box.append(row);
+        });
+        const cap = document.createElement('div');
+        cap.className = 'chipcap';
+        cap.textContent =
+          `${list.length} candidate${list.length === 1 ? '' : 's'} · §4.4's ranked order, described `
+          + `from state; the raw parameters are in the list at the right. ${describeSlot.missing(detail, state.verb)}`;
+        const host = document.createElement('div');
+        host.append(box, cap);
+        pick.replaceChildren(host);
+        return false;
+      }
+
       const named = state.verb === 12 || state.verb === 13 || state.verb === 16;
       const options = list.map((c, i) => ({
         value: i,
-        label: slotLabel(state.verb, c, i),
-        title: `slot ${i} — params ${c.params.join(' , ')}`,
+        label: described?.[i]?.head ?? slotLabel(state.verb, c, i),
+        title: described?.[i]?.title ?? `slot ${i} — params ${c.params.join(' , ')}`,
       }));
       pick.replaceChildren(chips(options, state.slot, (v) => { state.slot = v; paint(); },
         `${list.length} candidate${list.length === 1 ? '' : 's'} · §4.4's ranked order`
-        + (named
+        + (named || described !== null
           ? ', named from the content — their raw parameters are in the list at the right'
           : '. A slot names a handle and a handle names nobody, so the numbers are all this '
             + 'page can honestly print; the raw parameters are in the list at the right')));
@@ -934,10 +1002,28 @@ function boot() {
     if (list.length === 0) {
       cands.innerHTML = '<div class="more">no candidates for this verb this tick</div>';
     } else {
-      cands.innerHTML = list.slice(0, 16).map((c, i) =>
-        `<div class="row" data-slot="${i}" data-k="${session.live}" data-sel="${i === state.slot}">`
-        + `<span class="ix">${i}</span><span class="p">${c.params.join(' , ')}</span></div>`).join('')
-        + (list.length > 16 ? `<div class="more">+ ${list.length - 16} more — and every slot is handles, not names</div>` : '');
+      /* The integers stay: this pane's job is to show what is actually
+         submitted. What is new beside them is what those integers *are* — and
+         the tail line stops claiming the handles are all there is when they no
+         longer are. */
+      const detail = f.candidateDetails();
+      cands.innerHTML = list.slice(0, 16).map((c, i) => {
+        const d = detail === null ? null : describeSlot(detail, state.verb, i, c.params);
+        return `<div class="row" data-slot="${i}" data-k="${session.live}" data-sel="${i === state.slot}">`
+          + `<span class="ix">${i}</span><span class="p">${c.params.join(' , ')}</span>`
+          + (d === null ? '' : `<span class="d"></span>`)
+          + '</div>';
+      }).join('')
+        + (list.length > 16
+          ? `<div class="more">+ ${list.length - 16} more${detail === null ? ' — and every slot is handles, not names' : ''}</div>`
+          : '');
+      if (detail !== null) {
+        cands.querySelectorAll('.row').forEach((row, i) => {
+          const d = describeSlot(detail, state.verb, i, list[i]?.params ?? []);
+          const cell = row.querySelector('.d');
+          if (cell !== null && d !== null) cell.textContent = d.head;
+        });
+      }
       if (session.live) {
         for (const row of cands.querySelectorAll('.row')) {
           row.addEventListener('click', () => { state.slot = Number(row.dataset.slot); paint(); });

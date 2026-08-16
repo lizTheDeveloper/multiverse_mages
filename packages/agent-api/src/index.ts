@@ -229,6 +229,24 @@ export {
   mageContainment,
 } from './knowledge-census.js';
 
+/**
+ * §4.4's third projection: what a candidate slot *is*, for a reader who is not
+ * a policy.
+ *
+ * Same placement and the same reasoning as the census above — emitted on
+ * request, unreachable from {@link AgentView}, read by no rule.
+ * `./candidate-detail.ts` argues it, and `docs/design/interface-findings.md`
+ * §1.11 is the finding it answers.
+ */
+export type {
+  CandidateDetail,
+  CandidateDetailInput,
+  CandidateDetailProjection,
+  MageDescriptor,
+  UniversityDescriptor,
+} from './candidate-detail.js';
+export { describeCandidates } from './candidate-detail.js';
+
 export type { AgentRng, AgentRngInput } from './agent-rng.js';
 export { agentRng } from './agent-rng.js';
 

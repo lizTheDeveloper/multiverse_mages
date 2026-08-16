@@ -76,7 +76,9 @@ import {
   OBSERVATION_SCHEMA_VERSION,
   createSession,
 } from '../packages/agent-api/dist/index.js';
+import { GOAL_NAMES } from '../packages/rules-world/dist/index.js';
 import { referenceContent, referenceScenario } from '../packages/scenario/dist/index.js';
+import { MAGE_ROLE } from '../packages/state/dist/index.js';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.join(HERE, '..');
@@ -115,6 +117,13 @@ const WARM = Math.max(0, Math.min(2000, Number(arg('warm', '40'))));
  */
 const content = referenceContent();
 const { registry } = content;
+
+/**
+ * `cell` on a node record is the cell's **string** id; every client index is by
+ * interned `cellId`. One map, built once, rather than a `find` per node.
+ */
+const cellIdByStringId = new Map(registry.cells.map(({ contentId, record: c }) => [c.id, contentId]));
+
 
 /** The one non-invertible-rule guard `record-session.mjs` documents at length. */
 const INVERTIBLE = new Set(['ratio', 'flag']);
@@ -169,11 +178,52 @@ function encodeFrame(session) {
     // `obs`. A live server that served a different frame shape than the
     // recorder would make every page work against one and not the other.
     stocks: { ...session.playerState().resources.stocks },
+    /**
+     * §4.4's candidate descriptors — what each slot *is*, beside what it
+     * submits.
+     *
+     * `candidates` above carries `params` and nothing else, which is everything
+     * a policy needs and nothing at all to a person: `docs/design/
+     * interface-findings.md` §1.11 is that finding, and *"1 of 19, by §4.4
+     * ranking"* is what a page can print without this. Taken from the same §4.4
+     * projection surface `stocks` comes from — emitted on request, read by no
+     * rule, and outside the observation, so `OBSERVATION_SIZE` and the layout
+     * digest do not move.
+     *
+     * `byAction` is aligned slot-for-slot with `candidates`; `mages` and
+     * `universities` are per-handle lookups, so a mage named by three verbs is
+     * shipped once. `goal` is **absent** rather than null for a mage who has
+     * never committed — `JSON.stringify` drops an undefined field, and that is
+     * the distinction `GOAL_COMMITMENT` makes load-bearing between "has not
+     * chosen" and "chose idle".
+     */
+    candidateDetail: encodeCandidateDetail(session.candidateDetails()),
     mask: [...mask],
     candidates: Object.fromEntries(
       [...candidates].map(([action, list]) => [action, [...(list ?? [])]]),
     ),
     status: session.status(),
+  };
+}
+
+
+/**
+ * The §4.4 candidate projection, as JSON.
+ *
+ * Maps keyed by number do not survive `JSON.stringify`, so both are turned into
+ * objects keyed by the decimal handle — which is what `ui/shared/session.js`
+ * reads back through `Number(key)`. Nothing is reshaped beyond that: a field
+ * renamed here would be a second vocabulary for one projection.
+ */
+function encodeCandidateDetail(detail) {
+  return {
+    byAction: Object.fromEntries(
+      [...detail.byAction].map(([action, rows]) => [action, rows.map((row) => ({ ...row }))]),
+    ),
+    mages: Object.fromEntries([...detail.mages].map(([handle, mage]) => [handle, { ...mage }])),
+    universities: Object.fromEntries(
+      [...detail.universities].map(([handle, university]) => [handle, { ...university }]),
+    ),
   };
 }
 
@@ -228,6 +278,36 @@ function header(r) {
       actionCosts: Object.fromEntries(
         registry.godCosts.map(({ record: g }) => [g.actionId, g.favorCost]),
       ),
+    /**
+     * Every node, so a founding grant can say *which* node it would found.
+     *
+     * `agent-api`'s catalogue carries a node's cell and tier and deliberately no
+     * name — it is a projection for an encoder, and §5 keeps `@mm/content` out
+     * of a package a renderer imports. A *name* is content, and this is where
+     * content is published to the client. `cellId` rides along so a page can
+     * place the node on the grid it is already drawing.
+     */
+    nodes: registry.nodes.map(({ contentId, record: n }) => ({
+      nodeId: contentId,
+      id: n.id,
+      name: n.name,
+      cellId: cellIdByStringId.get(n.cell) ?? 0,
+      tier: n.tier,
+    })),
+    /**
+     * `MAGE_ROLE`'s words. §1.2 stores a role as a `u8` and the enum lives in
+     * `@mm/state`; publishing the mapping here keeps the client from carrying a
+     * hand-copied table that a fifth role would silently break.
+     */
+    mageRoles: Object.fromEntries(Object.entries(MAGE_ROLE).map(([name, id]) => [id, name])),
+    /**
+     * `rules-world`'s permanent goal registry, by id — what a mage is currently
+     * working on. `@mm/state` records why the table cannot live anywhere else:
+     * *"it would be a second copy of a table whose whole contract is that there
+     * is one"*. This script may read it because a script is not a package; the
+     * projection that carries `goalId` may not, and does not.
+     */
+    goals: { ...GOAL_NAMES },
       candidateSlots: { ...CANDIDATE_SLOTS },
       /**
        * The traditions, so the console can name action 13's parameter. Not in a

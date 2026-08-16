@@ -76,6 +76,8 @@ import { OBSERVATION_LAYOUT_DIGEST, OBSERVATION_SCHEMA_VERSION } from './digest.
 import type { RejectionReason } from './gate.js';
 import { admit } from './gate.js';
 import type { OutcomeRecord } from './outcome.js';
+import type { CandidateDetailProjection } from './candidate-detail.js';
+import { describeCandidates } from './candidate-detail.js';
 import type { PlayerState } from './player-state.js';
 import { project } from './player-state.js';
 import type { AgentView } from './view.js';
@@ -282,6 +284,21 @@ export interface AgentSession {
    * ship quietly.
    */
   playerState(): PlayerState;
+  /**
+   * §4.4's candidate descriptors for the lists {@link candidates} returns.
+   *
+   * The same entitlement argument {@link playerState} makes, one level down. A
+   * slot index is everything a *policy* needs — §4.4 hands it a categorical
+   * choice and an outcome to learn from — and it is nothing at all to a
+   * *person*, who is offered nineteen numbers and no reason to prefer one.
+   * `docs/design/interface-findings.md` §1.11 is that finding.
+   *
+   * Aligned slot-for-slot with {@link candidates} **by construction**: it is
+   * handed the very lists that method returns rather than rebuilding them, so
+   * the two cannot describe different worlds. Nothing here reaches
+   * {@link observe}, and no rule reads it.
+   */
+  candidateDetails(): CandidateDetailProjection;
 }
 
 /** Builds a session. The episode does not exist until {@link AgentSession.reset}. */
@@ -517,6 +534,18 @@ export function createSession(options: SessionOptions): AgentSession {
       // a second cache invalidated in `submit()` is a second thing that can be
       // forgotten there and serve a tick-old universe as the current one.
       return project({ state: live(), catalogue: scenario.catalogue });
+    },
+
+    candidateDetails(): CandidateDetailProjection {
+      // `currentView().candidates` and not a fresh `buildCandidates`: the
+      // alignment this projection promises is only real if both halves come
+      // from one list. Built fresh per call otherwise, for the same reason
+      // `playerState` is — a client asks, a policy does not.
+      return describeCandidates({
+        state: live(),
+        catalogue: scenario.catalogue,
+        lists: currentView().candidates,
+      });
     },
   };
 }

@@ -33,6 +33,7 @@
 
 import type {
   AgentSession,
+  CandidateDetailProjection,
   CandidateLists,
   EpisodeAccounting,
   EpisodeStatus,
@@ -212,6 +213,15 @@ export function fixedSession(options: FixedSessionOptions = {}): AgentSession {
         'fixedSession does not model player state — build a session over a real scenario for that',
       );
     },
+    /*
+     * Empty rather than a throw, and the difference from `playerState` above is
+     * real: this double's `candidates()` returns an empty map, so an empty
+     * projection is the *correct* description of it rather than a stand-in for
+     * a world it does not have. The alignment invariant — one descriptor per
+     * candidate — holds at zero.
+     */
+    candidateDetails: (): CandidateDetailProjection =>
+      Object.freeze({ byAction: new Map(), mages: new Map(), universities: new Map() }),
     submit: (): SubmitResult => {
       submitted += 1;
       return {

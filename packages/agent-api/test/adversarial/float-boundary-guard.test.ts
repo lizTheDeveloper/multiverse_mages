@@ -102,6 +102,11 @@ const eslint = new ESLint({ cwd: repoRoot });
 const INTEGER_SIDE = [
   'actions.ts',
   'agent-rng.ts',
+  // Reads integer component fields and hands them on unchanged. The only
+  // arithmetic is a subtraction (`worldTick - birthTick`) and a comparison; a
+  // client turns months into years and vigor into a percentage, on its own side
+  // of the boundary.
+  'candidate-detail.ts',
   'candidates.ts',
   'catalogue.ts',
   'digest.ts',
