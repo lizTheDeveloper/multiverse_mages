@@ -68,6 +68,7 @@ import type {
   TerritoryRecord,
   TraditionRecord,
 } from './types.js';
+import { MATERIAL_KIND_IDS } from './types.js';
 
 /**
  * The cell every v1 build must contain (`contracts.md` §8). Without it there is
@@ -416,6 +417,7 @@ function checkGraph(documents: ParsedDocuments): readonly ContentDiagnostic[] {
 
   checkBits(documents.technique, 'technique.json', TECHNIQUE_COUNT, out);
   checkBits(documents.form, 'form.json', FORM_COUNT, out);
+  checkFormYields(documents.form, out);
 
   checkCells(documents.cell, techniqueById, formById, nodeById, out);
   checkNodes(documents.node, cellById, nodeById, primitiveById, out);
@@ -503,6 +505,42 @@ function checkBits(
         ),
       );
     }
+  }
+}
+
+/**
+ * Every form yields at least one material.
+ *
+ * `material-economy`: *"A form that yields nothing is a part of the grid that
+ * magic can act on and the economy cannot see, and the loader MUST reject it
+ * rather than accept a silent zero."*
+ *
+ * Here rather than in `form.schema.json` because JSON Schema bounds one property
+ * at a time. `{"food": 0, "stone": 0, …}` satisfies every per-field rule and is
+ * exactly the row being refused; expressing "not all seven of these are zero"
+ * per-property is not something the vocabulary has. The schema still does the
+ * half it can — all seven keys required, nothing else admitted, each `0..1024` —
+ * so an unlisted kind fails there and never reaches this.
+ *
+ * The floor stays `0` **per kind**, and that is not a softening. Most forms yield
+ * exactly one kind at full weight; what is refused is the *row*, not the field.
+ */
+function checkFormYields(forms: readonly FormRecord[], out: ContentDiagnostic[]): void {
+  for (let position = 0; position < forms.length; position += 1) {
+    const form = forms[position];
+    if (form === undefined) continue;
+    if (MATERIAL_KIND_IDS.some((kind) => form.yieldWeights[kind] > 0)) continue;
+    out.push(
+      diagnostic(
+        'form.json',
+        `${pointerAppend('', position)}/yieldWeights`,
+        'content-invariant',
+        `form "${form.id}" yields nothing: every one of the ${String(MATERIAL_KIND_IDS.length)} ` +
+          `material kinds (${MATERIAL_KIND_IDS.join(', ')}) is zero, so magic acting on this ` +
+          'form moves no economy at all and no interface can say why. Give it a weight in the ' +
+          'kind its magic actually is.',
+      ),
+    );
   }
 }
 

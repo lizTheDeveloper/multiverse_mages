@@ -7,11 +7,11 @@
 
 ## 1. Content: the materials exist and every form yields one
 
-- [ ] 1.1 Write a failing content test asserting **no form has an all-zero `yieldWeights`**. This is the assertion the whole change exists to satisfy and it must fail before anything else is written
-- [ ] 1.2 Extend `form.schema.json`'s `yieldWeights` to require the seven keys, so an unlisted kind fails the load rather than defaulting to zero
-- [ ] 1.3 Author `yieldWeights` for the seven inert forms in `packages/content/data/form.json`, keeping `tuningStatus: untuned`, each with a gloss naming the fiction: corpus→labor, vim→essence, mentem/imaginem→insight, limen/fatum/umbra→passage
-- [ ] 1.4 Re-check the seven forms that already yield: adding kinds must not silently renormalize their existing weights. Assert the existing seven rows are byte-identical apart from the four appended keys
-- [ ] 1.5 Update `interning.test.ts`'s `contentRevision` literal **once**, keeping the prior comment block and adding the new one — this file's convention is that neither side's literal survives a union and the history is the record
+- [x] 1.1 Write a failing content test asserting **no form has an all-zero `yieldWeights`**. This is the assertion the whole change exists to satisfy and it must fail before anything else is written
+- [x] 1.2 Extend `form.schema.json`'s `yieldWeights` to require the seven keys, so an unlisted kind fails the load rather than defaulting to zero
+- [x] 1.3 Author `yieldWeights` for the seven inert forms in `packages/content/data/form.json`, keeping `tuningStatus: untuned`, each with a gloss naming the fiction: corpus→labor, vim→essence, mentem/imaginem→insight, limen/fatum/umbra→passage
+- [x] 1.4 Re-check the seven forms that already yield: adding kinds must not silently renormalize their existing weights. Assert the existing seven rows are byte-identical apart from the four appended keys
+- [x] 1.5 Update `interning.test.ts`'s `contentRevision` literal **once**, keeping the prior comment block and adding the new one — this file's convention is that neither side's literal survives a union and the history is the record
 
 ## 2. State: the component and the migration
 

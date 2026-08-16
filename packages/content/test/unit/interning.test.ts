@@ -464,7 +464,34 @@ describe('contentRevision', () => {
     // revision is a digest over the values, so this is the ordinary case rather
     // than a union of branches. It changes every run in which any mage learns
     // The Nameless — which is the point of the change, not a side effect of it.
-    expect(registry.contentRevision).toBe('8681bf846bd94be80fdabc447e6e01df');
+    //
+    // 8681bf846bd94be80fdabc447e6e01df -> 4674cd42d5a3d153abca041d004d7592,
+    // when `material-economy` made every form yield something. `form.json`'s
+    // `yieldWeights` went from three kinds to seven — `labor`, `essence`,
+    // `insight`, `passage` beside `food`, `stone`, `vellum` — and the seven
+    // forms that were `{0, 0, 0}` took `1024` in the kind their magic actually
+    // is: corpus→labor, vim→essence, mentem and imaginem→insight, limen, fatum
+    // and umbra→passage. The seven forms that already yielded took the four new
+    // keys at zero and kept their existing three byte-identical, which is
+    // asserted in `shipped-content.test.ts` rather than left to review.
+    //
+    // In the preimage for the sharpest version of the reason the material split
+    // is: two universes that disagreed about what a form's magic yields would be
+    // running different economies while their revisions called them compatible.
+    // And unlike the founding-grant constants, this is **not** inert at ship —
+    // `mentem` and `limen` are two of the v1 opening square's four forms, so the
+    // reference universe reaches the new kinds from its first tick. What keeps
+    // the shipped baselines still *for now* is that `rules-world`'s
+    // `routeYieldByForm` still routes only three kinds; the faucet arrives in
+    // this change's group 3, and the balance move belongs to that commit rather
+    // than to this one.
+    //
+    // The glosses of those seven forms moved with the weights, which is a value
+    // edit inside the preimage in its own right. That is deliberate: the gloss
+    // is the only place a JSON file can say *why* Umbra yields passage, and a
+    // revision that recorded the number without the reason would be recording
+    // half of the decision.
+    expect(registry.contentRevision).toBe('4674cd42d5a3d153abca041d004d7592');
   });
 
   it('is stable across loads of identical content', () => {

@@ -61,7 +61,16 @@ function form(yieldWeights: Partial<Record<'food' | 'stone' | 'vellum', number>>
     name: 'Fixture Form',
     gloss: 'A synthetic form for the routing arithmetic.',
     bit: 0,
-    yieldWeights: { food: 0, stone: 0, vellum: 0, ...yieldWeights },
+    yieldWeights: {
+      food: 0,
+      stone: 0,
+      vellum: 0,
+      labor: 0,
+      essence: 0,
+      insight: 0,
+      passage: 0,
+      ...yieldWeights,
+    },
     tuningStatus: 'untuned',
   };
 }

@@ -54,7 +54,36 @@ export interface TechniqueRecord {
 }
 
 /**
- * ## There is deliberately no named `{ food, stone, vellum }` type in this file
+ * The seven material kinds, in a fixed order.
+ *
+ * A literal tuple rather than the keys of an object, so that "exactly seven
+ * kinds, these seven, in this order" is something a test counts rather than
+ * something prose asserts. `rules-world`'s `MATERIAL_KINDS` is the same list at
+ * the other end of the pipe and cannot be shared: `contracts.md` §5 makes
+ * `content` a leaf, so an edge from here to the rules packages would invert the
+ * dependency graph. The two are held in agreement by assertion instead.
+ *
+ * Three of the seven — `food`, `stone`, `vellum` — are `city-and-supply-chain`'s
+ * and predate this list. The other four exist because seven of the fourteen
+ * forms yielded nothing at all, two of them (`mentem`, `limen`) inside the v1
+ * opening square, so a god who opened on mind-magic and thresholds generated no
+ * economy and the interface offered no way to find out why.
+ */
+export const MATERIAL_KIND_IDS = [
+  'food',
+  'stone',
+  'vellum',
+  'labor',
+  'essence',
+  'insight',
+  'passage',
+] as const;
+
+/** One of the seven. */
+export type MaterialKindId = (typeof MATERIAL_KIND_IDS)[number];
+
+/**
+ * ## There is deliberately no named per-kind record type in this file
  *
  * Both `yieldWeights` and `yieldPerLandUnit` below are written out inline, which
  * looks like a missed abstraction and is not. A named triple here would be a
@@ -75,6 +104,11 @@ export interface TechniqueRecord {
  * a fixed-point share of a magnitude, bounded `0..1024`, while
  * {@link TerritoryRecord.yieldPerLandUnit} is a fixed-point rate with no such
  * ceiling. The schema enforces each bound separately.
+ *
+ * They are no longer even the same *arity*, which settles the question: a form's
+ * weights name all seven kinds ({@link MATERIAL_KIND_IDS}), while a territory's
+ * yield names the three that come out of land. A shared type would have had to
+ * choose, and either choice would have been wrong somewhere.
  */
 
 export interface FormRecord {
@@ -100,21 +134,38 @@ export interface FormRecord {
    * collapsing Animal or Herbam to one kind would be inventing a constraint
    * §4.2 never states.
    *
-   * **All-zero weights are not a placeholder; they are the correct value for a
-   * form whose magic is not a material at all.** §4.2 says so by name for
-   * three of these: Mentem "has no reverb… it is not in the world" — mind
-   * magic touches no substance a granary or a shelf could hold. Vim "is the
-   * carrier itself, unfiltered" — the medium magic runs on, not a stuff
-   * conjured or moved. Umbra "is only tail… you never hear the thing, only the
-   * room's response to it" — shadow is what magic does to a space, not
-   * something taken out of one. Corpus, Imaginem, Fatum and Limen are zero for
-   * the same shape of reason: body, image, fate and threshold are things
-   * magic *does*, not things a mage stores on a shelf or eats. A schema that
-   * required a nonzero weight somewhere would be asserting every one of these
-   * forms secretly yields a material, which is false, so the floor here is
-   * `0`, not `1`.
+   * **An all-zero row is now refused, and the argument that used to sit here is
+   * the record of why.** It read, in part: *"All-zero weights are not a
+   * placeholder; they are the correct value for a form whose magic is not a
+   * material at all… A schema that required a nonzero weight somewhere would be
+   * asserting every one of these forms secretly yields a material, which is
+   * false."* That was a sound argument about **three kinds**, and it is the
+   * wrong conclusion drawn from it. §4.2 says Mentem *"has no reverb… it is not
+   * in the world"* — true, and the reading that follows is not that mind-magic
+   * produces nothing, but that what it produces is not food. It produces
+   * `insight`. Vim *"is the carrier itself, unfiltered"* is `essence`; Umbra
+   * *"is only tail… the room's response"* is `passage`, which is what a
+   * threshold yields. Corpus is `labor` — a body is what work is made of.
+   *
+   * So the floor is still `0` **per kind** — a form is not required to yield
+   * every kind, and most yield exactly one — while the loader refuses a row
+   * that is zero in all seven. `material-economy`'s spec states the reason:
+   * *"A form that yields nothing is a part of the grid that magic can act on
+   * and the economy cannot see."*
    */
-  readonly yieldWeights: { readonly food: Fp; readonly stone: Fp; readonly vellum: Fp };
+  readonly yieldWeights: {
+    readonly food: Fp;
+    readonly stone: Fp;
+    readonly vellum: Fp;
+    /** Corpus. Person-months of work, spent raising what stone alone cannot. */
+    readonly labor: Fp;
+    /** Vim. Raw magic held as stuff, spent enchanting and on dispensations. */
+    readonly essence: Fp;
+    /** Mentem and Imaginem. What a faculty teaches out of. */
+    readonly insight: Fp;
+    /** Limen, Fatum, Umbra. Spent opening a threshold and holding it open. */
+    readonly passage: Fp;
+  };
   readonly tuningStatus: TuningStatus;
 }
 
