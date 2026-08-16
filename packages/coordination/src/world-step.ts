@@ -127,6 +127,7 @@ import type { AblationMask, RediscoveryClampCounter } from '@mm/primitives';
 import { ClampCounters, createRediscoveryClampCounter } from '@mm/primitives';
 import type {
   ApplicationWeights,
+  CastingWeights,
   CapitalEmission,
   CohortDemography,
   MageGoalCommitment,
@@ -157,6 +158,8 @@ import {
   clearCommitment,
   cohortBirths,
   computeOccupationDemand,
+  affordableMageMonths,
+  castingDemand,
   consumeMaterials,
   createMage,
   effectiveLifespan,
@@ -180,6 +183,10 @@ import {
 
 import type { UniverseEconomyBonuses, UniverseEffectIndex } from './universe-effects.js';
 import { NO_ECONOMY_BONUSES, universeEconomyBonuses } from './universe-effects.js';
+import type { AcademicEffectIndex, AcademicRateBonuses } from './academic-effects.js';
+import { NO_ACADEMIC_BONUSES, academicRateBonuses } from './academic-effects.js';
+import type { VitalityBonuses, VitalityIndex } from './knowledge-vitality.js';
+import { NO_VITALITY_BONUSES, lifespanBonusesFor, vitalityBonuses } from './knowledge-vitality.js';
 import type { LibraryCapital } from './capital.js';
 import { libraryCapital } from './capital.js';
 import { EffortLedger } from './effort-store.js';
@@ -204,10 +211,12 @@ const FP_ONE = FP_UNIT;
  *
  * What scales it is every source of `research-rate`, `teach-rate` and
  * `scribe-rate` there is, stacked once into `(1 + Σ)` and clamped once at
- * `fp(4096)` — a blessing, an encouragement, and, since this change, the depth
- * of the library the mage works in (vision §6a). A mage's `vigor` and a
- * professor's teaching load are still absent, and still belong to mechanisms
- * that are not built.
+ * `fp(4096)` — a blessing, an encouragement, the depth of the library the mage
+ * works in (vision §6a), and **what the mage herself knows**
+ * (`academic-effects.ts`). The last of those is the newest and was the longest
+ * missing: until it arrived a god could bless a mage into productivity and a
+ * century of scholarship could not. A mage's `vigor` and a professor's teaching
+ * load are still absent, and still belong to mechanisms that are not built.
  */
 const MAGE_MONTHS_PER_TICK: Fixed = FP_ONE;
 
@@ -288,6 +297,41 @@ export interface WorldStepDeps {
    */
   readonly universeEffects?: UniverseEffectIndex | undefined;
   /**
+   * Every node's personally-targeted academic effect, precomputed from content.
+   *
+   * The companion wire to `universeEffects`, and the one that took longer to
+   * notice because its primitives were not *unconsumed* — they were consumed by
+   * the god and by nobody else. `academic-effects.ts` is the long version;
+   * the short one is that a blessing could make a mage research faster and
+   * a lifetime of scholarship could not.
+   *
+   * Optional for the same reason `universeEffects` is: a caller building a world
+   * for a knowledge test need not supply one, and when it is absent every rate is
+   * exactly the god-and-library-only rate this change replaced — a thing a test
+   * can assert against rather than a silent degradation.
+   */
+  readonly academicEffects?: AcademicEffectIndex | undefined;
+  /**
+   * The wire from knowledge to bodies: `lifespan` and `fertility`.
+   *
+   * Sibling of {@link WorldStepDeps.universeEffects} and optional for the same
+   * reason — a world built for a knowledge test need not supply one, and its
+   * absence is exactly the inert behaviour this wire replaced, which is a thing
+   * a test can assert against rather than a silent degradation. Absent means
+   * `fertilityBonuses: []` and a mage's `lifespan` coming from god blessings
+   * alone, which is what every build before it did.
+   */
+  readonly vitality?: VitalityIndex | undefined;
+  /**
+   * What a mage-month of magical work costs the archive, read from content.
+   *
+   * `substrate.md` §6's `casting` claim. Required rather than optional, unlike
+   * the effect indices beside it: an absent cost is not a degraded behaviour a
+   * test can assert against, it is magic going back to being free, which is the
+   * thing this exists to end.
+   */
+  readonly casting: CastingWeights;
+  /**
    * What a month of applied magic makes and what it eats, read from content.
    *
    * Two scalars out of `autonomy-weight.json`. Required rather than defaulted,
@@ -316,6 +360,8 @@ export interface WorldStepDeps {
    * library's contribution is a bonus into the *same* `(1 + Σ)` accumulator as
    * every node-sourced and god-sourced bonus, so this file has to hold the
    * registry records that declare how that accumulator stacks and where it caps.
+   * *"Node-sourced"* was aspirational when that sentence was written and is
+   * literally true since `academic-effects.ts`.
    * Before the loop, the two were held only by `god/effects.ts`, which stacked
    * its own sources and handed back a finished multiplier — and a finished
    * multiplier is exactly what cannot be added to.
@@ -364,14 +410,16 @@ export interface WorldStepDeps {
    * multiplier*, which was correct while the god was the only source: one
    * accumulator, one cap, one answer.
    *
-   * A library is a second source of the same primitives. Multiplying a stacked
-   * god multiplier by a stacked library multiplier would be two `(1 + Σ)`
-   * channels and two `fp(4096)` caps on one quantity, which
+   * A library is a second source of the same primitives, and the mage's own
+   * castable knowledge is a **third** ({@link WorldStepDeps.academicEffects}).
+   * Multiplying a stacked god multiplier by a stacked library multiplier would
+   * be two `(1 + Σ)` channels and two `fp(4096)` caps on one quantity, which
    * `mages-and-species/design.md` rejects by name: *"two caps on the same
    * quantity is how a rate ends up at 4.0 × 2.0 without anyone deciding it
-   * should be 8.0."* So the god hands over its magnitudes, the library's
-   * contribution joins them in one array, and `libraryRateMultiplier` stacks and
-   * clamps the lot exactly once.
+   * should be 8.0."* Three sources make the argument three times over. So the
+   * god hands over its magnitudes, the library's contribution and the mage's
+   * node-sourced magnitudes join them in one array, and `libraryRateMultiplier`
+   * stacks and clamps the lot exactly once.
    *
    * An empty array is an unaffected mage, so a world with no god is a world
    * where every month is a month.
@@ -418,6 +466,19 @@ export interface WorldStepReport {
    * bonus list nobody noticed was empty for three releases.
    */
   readonly economicNodes: number;
+  /**
+   * Contributions that reached a **body** this tick: `lifespan` and `fertility`
+   * magnitudes from castable, permitted knowledge.
+   *
+   * The sibling of {@link WorldStepReport.economicNodes}, emitted for the same
+   * reason. Both primitives were declared exclusions in the consumption check
+   * until `knowledge-vitality.ts`, and under v1 content this figure is **zero**
+   * on every tick — every node authoring either sits outside the twelve enabled
+   * cells, so `permits()` refuses it. A zero here and a zero in the birth rate
+   * therefore mean different things, and without this counter they would look
+   * the same.
+   */
+  readonly vitalityContributions: number;
   /**
    * `build-rate` magnitudes reaching construction this tick.
    *
@@ -732,11 +793,34 @@ export function worldSystem(
               ruleset,
             });
 
+      // The same shape, one primitive pair over: what the universe's castable,
+      // permitted knowledge is worth to its bodies rather than to its economy.
+      // Read here, beside the economy, because both are functions of the tick's
+      // ruleset and both are memoized on the state object.
+      const vitality: VitalityBonuses =
+        deps.vitality === undefined
+          ? NO_VITALITY_BONUSES
+          : vitalityBonuses(state, { index: deps.vitality, cells: deps.cells, ruleset });
+
       // Labour is exclusive between the fields and the building sites, so the
       // split is decided once, here, before either phase spends it.
       // The opening stone is read before production because a crew is hired at
       // the start of the month out of what is already in the yard, not out of
       // what the quarry will deliver by the end of it.
+      // And what it is worth to the scholars themselves. Read here rather than
+      // in the work phase because the ruleset is here: the permission gate is
+      // re-asked every tick, so an interdiction switches a scholar's own
+      // acceleration off without destroying what she knows — the same
+      // application-time reading `universe-effects.ts` argues for at length.
+      const academic: AcademicRateBonuses =
+        deps.academicEffects === undefined
+          ? NO_ACADEMIC_BONUSES
+          : academicRateBonuses(state, {
+              index: deps.academicEffects,
+              cells: deps.cells,
+              ruleset,
+            });
+
       const labour = planConstructionLabour(
         state,
         cohorts,
@@ -872,13 +956,23 @@ export function worldSystem(
         gateway: gatewayFor(),
         efforts,
         deps,
+        vitality,
       });
 
       // ---- 4. Promotion -----------------------------------------------------
       const promoted = promoteMaturedStudents(state, cohorts, { rng, worldTick, deps });
 
       // ---- 5. Work -----------------------------------------------------------
-      const work = spendTheMonth(state, gatewayFor(), deps, worldTick, capital, rateClamps);
+      const work = spendTheMonth(
+        state,
+        gatewayFor(),
+        deps,
+        worldTick,
+        capital,
+        rateClamps,
+        academic,
+        stock.vellum,
+      );
 
       // ---- 5a. What the mages who cast at the world made ----------------------
       // Banked through the phase and settled once, so that a mage adding vellum
@@ -923,7 +1017,7 @@ export function worldSystem(
             worldTick,
             speciesOf: deps.speciesOf,
             effectiveLifespanOf: (handle, record, species) =>
-              lifespanMonths(state, handle, record, species, deps),
+              lifespanMonths(state, handle, record, species, deps, vitality),
             materials: stockAtDecisionTime,
             scribeThroughputOf: (universityId) =>
               scribeThroughputFor(state, universityId, staffedBy, cohorts, deps),
@@ -998,6 +1092,7 @@ export function worldSystem(
         worldTick,
         brake: fertilityBrake(cohorts.totalCount(), capacity),
         deps,
+        fertility: vitality.fertility,
       });
 
       // ---- 8a. Construction ---------------------------------------------------
@@ -1029,6 +1124,12 @@ export function worldSystem(
         // would be tidier to read and would quietly stop feeding every child born
         // this month — a second behaviour change riding along with this one.
         subsistence: subsistenceDemand(cohorts.totalCount()) + applicationRationsOwed,
+        // `substrate.md` §6's spell materials, and the figure the work phase
+        // already granted rather than the one it wanted: a researcher whose
+        // month the archive could not supply did not spend it, so charging the
+        // full demand here would bill for work that never happened. The unmet
+        // remainder is reported as `castingShortfall`, not hidden.
+        casting: work.castingGranted,
         // Brake 4, charged once. The same figure the work phase reserved out of
         // the scribes' stock at the top of the tick, so the priority order is
         // honoured by a claimant paid out of order and by one paid in it.
@@ -1065,6 +1166,7 @@ export function worldSystem(
         remainingByKind: closing,
         shortKinds: consumption.shortKinds,
         economicNodes: economy.contributingNodes,
+        vitalityContributions: vitality.contributingNodes,
         buildRateSources: economy.buildRate.length,
         buildRateMagnitudes: economy.buildRate,
         buildProgressAdded: construction.progressAdded,
@@ -1400,6 +1502,17 @@ interface MortalityPhase {
   readonly gateway: CoordinatingKnowledgeGateway;
   readonly efforts: EffortLedger;
   readonly deps: WorldStepDeps;
+  /**
+   * This tick's `lifespan` contributions from knowledge, gathered once at the
+   * top of the step under the tick's ruleset.
+   *
+   * Passed rather than re-read, so that a hazard roll cannot be taken against a
+   * different reading from the one the rest of the tick saw — `vitalityBonuses`
+   * memoizes on the state and would agree, but a value that is *handed over*
+   * cannot disagree, and a mage's death is the worst place to discover that it
+   * could.
+   */
+  readonly vitality: VitalityBonuses;
 }
 
 /**
@@ -1421,7 +1534,7 @@ function killTheDead(
     if (row.alive === 0) continue;
     const species = phase.deps.speciesOf(row.speciesId);
     if (species === undefined) continue;
-    const months = lifespanMonths(state, handle, row, species, phase.deps);
+    const months = lifespanMonths(state, handle, row, species, phase.deps, phase.vitality);
     const dies = rollMortality(phase.rng, handle, {
       worldTick: phase.worldTick,
       birthTick: row.birthTick,
@@ -1484,6 +1597,15 @@ interface WorkPhaseOutcome {
    * nobody chose. The basket is banked and settled once the phase is over.
    */
   readonly applied: MaterialAmounts;
+  /**
+   * Vellum the tick's magical work owes, and what it could be granted, `fp`.
+   *
+   * Both are returned rather than settled inside the walk, for the reason
+   * {@link WorkPhaseOutcome.applied} gives: a claim taken mid-walk would change
+   * what every mage visited afterwards could afford, keyed on slot order.
+   */
+  readonly castingOwed: Fixed;
+  readonly castingGranted: Fixed;
   /** Mages who spent the month applying magic. What the rations are owed for. */
   readonly applyingMages: number;
   /** Mage-months spent under each goal, indexed by goal id. */
@@ -1524,6 +1646,8 @@ function spendTheMonth(
   worldTick: number,
   capital: LibraryCapital,
   rateClamps: ClampCounters,
+  academic: AcademicRateBonuses,
+  vellumOnHand: Fixed,
 ): WorkPhaseOutcome {
   // The `alive` column and the handle, rather than a `MageRecord` per mage: the
   // two fields below are all this phase reads, and `collectRecords` builds an
@@ -1540,6 +1664,51 @@ function spendTheMonth(
   // an increment and no second pass — see `WorldStepReport.monthsByGoal` for
   // why the number has to exist at all.
   const monthsByGoal = new Array<number>(GOAL_COUNT).fill(0);
+
+  // `monthsByGoal` above is filled *during* the walk; the pre-pass below has to
+  // finish *before* it, so the two cannot be folded into one traversal however
+  // similar they look. The affordable share is an input to the first mage's
+  // month, and a tally taken on the way past cannot be.
+
+  // ---- The `casting` claim, decided before a single month is spent. ----
+  //
+  // `substrate.md` §6: magical work costs materials, or it is free and the
+  // whole economy is priced as though the academy were weightless. The claim is
+  // on the **act** — mage-months of research actually spent — and never on the
+  // standing effects a universe holds, which would be an upkeep on knowledge
+  // and would make forgetting a node a saving.
+  //
+  // **A pre-pass, and that is not an optimisation.** The affordable share has
+  // to be known before any mage is granted her month, or the grant depends on
+  // slot order: the researchers the walk happened to reach first would be paid
+  // in full and the rest would starve, which is exactly the order-keyed
+  // outcome `contracts.md` §6 spends real effort preventing. Counting first and
+  // scaling everyone by one fraction is order-independent by construction.
+  let researchMonths = 0;
+  mages.forEach((row, handle) => {
+    if ((alive[row] as number) === 0) return;
+    const commitment = readCommitment(state, handle);
+    if (commitment === undefined) return;
+    if (commitment.goalId === GOAL.researchNode || commitment.goalId === GOAL.rediscoverNode) {
+      researchMonths += MAGE_MONTHS_PER_TICK;
+    }
+  });
+  const castingOwed = castingDemand(researchMonths, deps.casting);
+  // What is left for casting after the claimants ahead of it in
+  // `CONSUMPTION_ORDER` that share its kind. Casting is the *first* vellum
+  // claimant, so nothing shares the stock ahead of it — subsistence is food —
+  // and the whole shelf is available. Written as a subtraction anyway so that
+  // inserting a vellum claimant before casting is a one-line change here rather
+  // than a silent over-draw.
+  const castingAvailable = Math.max(vellumOnHand, 0);
+  const grantedMonths = affordableMageMonths(researchMonths, castingAvailable, deps.casting);
+  const castingGranted = castingDemand(grantedMonths, deps.casting);
+  // The fraction every researcher's month is scaled by. `FP_ONE` when the
+  // archive can carry the work, less when it cannot, and the same number for
+  // everybody.
+  const castingShare =
+    researchMonths <= 0 ? FP_ONE : floorDiv(grantedMonths * FP_ONE, researchMonths);
+
   mages.forEach((row, handle) => {
     if ((alive[row] as number) === 0) return;
     const commitment = readCommitment(state, handle);
@@ -1548,7 +1717,18 @@ function spendTheMonth(
     // without touching anything, and a tally taken on the way out would count
     // exactly the goals that are working and miss exactly the ones that are not.
     monthsByGoal[commitment.goalId] = (monthsByGoal[commitment.goalId] ?? 0) + 1;
-    const cast = workOne(state, handle, commitment, gateway, deps, worldTick, capital, rateClamps);
+    const cast = workOne(
+      state,
+      handle,
+      commitment,
+      gateway,
+      deps,
+      worldTick,
+      capital,
+      rateClamps,
+      academic,
+      castingShare,
+    );
     if (cast === undefined) return;
     applyingMages += 1;
     for (const kind of MATERIAL_KINDS) applied[kind] += cast[kind];
@@ -1566,6 +1746,8 @@ function spendTheMonth(
     else grimoiresScribed += 1;
   }
   return {
+    castingOwed,
+    castingGranted,
     completedBy,
     researchCompleted,
     lessonsTaught,
@@ -1607,6 +1789,8 @@ function workOne(
   worldTick: number,
   capital: LibraryCapital,
   rateClamps: ClampCounters,
+  academic: AcademicRateBonuses,
+  castingShare: Fixed,
 ): MaterialAmounts | undefined {
   const nodeId = commitment.targetNodeId;
   if (nodeId === 0) return undefined;
@@ -1628,14 +1812,38 @@ function workOne(
   /**
    * The stacked, capped multiplier for one primitive on this mage this month.
    *
-   * The god's magnitudes and the library's contribution go into one array and
-   * through `stackMagnitudes` once, so `contracts.md` §3's `(1 + Σ)` rule and
-   * its `fp(4096)` cap apply to their sum. That is the whole of the bound on
-   * the §6a loop, and it is a contract already committed rather than a second
-   * cap invented for the occasion.
+   * The god's magnitudes, **the mage's own castable knowledge**, and the
+   * library's contribution go into one array and through `stackMagnitudes`
+   * once, so `contracts.md` §3's `(1 + Σ)` rule and its `fp(4096)` cap apply to
+   * their sum. That is the whole of the bound on the §6a loop, and it is a
+   * contract already committed rather than a second cap invented for the
+   * occasion.
+   *
+   * The mask reaches `stackMagnitudes` through the same call, which is the only
+   * place §9 permits it to be applied. Before `academic-effects.ts` there was
+   * nothing here for a mask naming one of these three rates to neutralize, so
+   * the omission cost nothing; it would cost a false negative now.
    */
   const rate = (primitive: PrimitiveRecord, bonuses: readonly Fixed[]): Fixed =>
-    libraryRateMultiplier(primitive, bonuses, shelves, ceiling, rateClamps).multiplier;
+    libraryRateMultiplier(primitive, bonuses, shelves, ceiling, rateClamps, deps.ablation)
+      .multiplier;
+
+  /**
+   * The god's magnitudes and the mage's own, in one array for one accumulator.
+   *
+   * Concatenated rather than stacked: combining two sources of one primitive is
+   * `stackMagnitudes`' job and `BAN_INLINE_PRIMITIVE_STACKING` says so. An
+   * empty result is an unblessed mage who knows nothing relevant, which is most
+   * of a young universe, and `rate` then returns the identity.
+   */
+  const withKnown = (
+    godBonuses: readonly Fixed[],
+    known: readonly Fixed[],
+  ): readonly Fixed[] => {
+    if (known.length === 0) return godBonuses;
+    if (godBonuses.length === 0) return known;
+    return [...godBonuses, ...known];
+  };
 
   switch (commitment.goalId) {
     case GOAL.researchNode:
@@ -1652,10 +1860,19 @@ function workOne(
       gateway.contributeResearch(
         mage,
         nodeId,
-        MAGE_MONTHS_PER_TICK,
+        // Scaled by what the archive could supply. `FP_ONE` in the ordinary
+        // case; less when the vellum ran thin, and the same fraction for every
+        // researcher this tick. A month that cannot be paid for is a month that
+        // does not accrue — the banked effort stays banked and the frontier
+        // stalls until the economy can carry it, which is `casting.ts`'s
+        // deliberately gentle shortfall rather than a voided project.
+        mul(MAGE_MONTHS_PER_TICK, castingShare),
         rate(
           deps.primitives.researchRate,
-          deps.researchBonusesFor?.(state, worldTick, mage, nodeId) ?? NO_BONUSES,
+          withKnown(
+            deps.researchBonusesFor?.(state, worldTick, mage, nodeId) ?? NO_BONUSES,
+            academic.researchRate(mage),
+          ),
         ),
       );
       return undefined;
@@ -1675,7 +1892,10 @@ function workOne(
             MAGE_MONTHS_PER_TICK,
             rate(
               deps.primitives.teachRate,
-              deps.teachBonusesFor?.(state, worldTick, mage) ?? NO_BONUSES,
+              withKnown(
+                deps.teachBonusesFor?.(state, worldTick, mage) ?? NO_BONUSES,
+                academic.teachRate(mage),
+              ),
             ),
           ),
         );
@@ -1693,7 +1913,10 @@ function workOne(
             MAGE_MONTHS_PER_TICK,
             rate(
               deps.primitives.teachRate,
-              deps.teachBonusesFor?.(state, worldTick, mage) ?? NO_BONUSES,
+              withKnown(
+                deps.teachBonusesFor?.(state, worldTick, mage) ?? NO_BONUSES,
+                academic.teachRate(mage),
+              ),
             ),
           ),
         );
@@ -1705,10 +1928,19 @@ function workOne(
       // The ceiling gating it is the **author's**, not the reader's: the mage at
       // the desk is the one the library is helping, and she cannot copy out of a
       // book she could not read.
+      //
+      // No god hook here, and that is not an omission: no god action contributes
+      // `scribe-rate`. This line passed a literal `NO_BONUSES` until W18, so the
+      // primitive stacked to the identity every tick and neither node nor god
+      // could move it — `content-set.ts` recorded that as a deliberate
+      // non-registration, and it is now the mage's own knowledge that fills it.
       gateway.contributeScribing(
         mage,
         nodeId,
-        mul(MAGE_MONTHS_PER_TICK, rate(deps.primitives.scribeRate, NO_BONUSES)),
+        mul(
+          MAGE_MONTHS_PER_TICK,
+          rate(deps.primitives.scribeRate, academic.scribeRate(mage)),
+        ),
       );
       return undefined;
     case GOAL.applyMagic: {
@@ -1862,6 +2094,14 @@ interface BirthPhase {
   readonly worldTick: number;
   readonly brake: Fixed;
   readonly deps: WorldStepDeps;
+  /**
+   * `fertility` magnitudes from castable, permitted knowledge, unstacked.
+   *
+   * Handed in rather than gathered here, because the gather is memoized on the
+   * state and the same reading is the one the rest of the tick saw. Empty is
+   * the ordinary case and the only case under v1 content.
+   */
+  readonly fertility: readonly Fixed[];
 }
 
 /**
@@ -1891,7 +2131,7 @@ function deliverBirths(cohorts: CohortStore, phase: BirthPhase): number {
       count: entry.count,
       fertility: species.fertility,
       fertilityPrimitive: phase.deps.primitives.fertility,
-      fertilityBonuses: [],
+      fertilityBonuses: phase.fertility,
       brake: phase.brake,
     });
     if (count > 0) {
@@ -1933,6 +2173,7 @@ function lifespanMonths(
   row: MageRecord,
   species: SpeciesRecord,
   deps: WorldStepDeps,
+  vitality: VitalityBonuses,
 ): number {
   return effectiveLifespan({
     species,
@@ -1940,10 +2181,26 @@ function lifespanMonths(
     birthTick: row.birthTick,
     rootSeed: state.rootSeed,
     lifespanPrimitive: deps.primitives.lifespan,
-    // `god-agency` issues these now — a blessing contributes to `lifespan`
-    // through the shared stacking arithmetic — but only when a god was
-    // installed. Empty stays the ordinary case for a world without one.
-    effectMagnitudes: deps.lifespanEffectsFor?.(state, state.clock.worldTick, mage) ?? [],
+    // Two sources, **one list**, because `contracts.md` §3's cap bounds the
+    // stack rather than each contributor: a god's blessing and a mage's own
+    // extension magic share one `additive` fold and one
+    // `fraction-of-species-base` ceiling. Capping them separately would be two
+    // ceilings on one quantity, which is the arithmetic
+    // `mages-and-species/design.md` rejects by name.
+    //
+    // `god-agency` issues the first — a blessing contributes to `lifespan` —
+    // but only when a god was installed. The second is `knowledge-vitality.ts`:
+    // `target: "self"` nodes the mage can cast, plus `target: "universe"` ones
+    // anybody in the universe can. Both are empty in the ordinary case, and the
+    // second is empty in every v1 universe, because no v1 node authors the
+    // primitive.
+    //
+    // `vitalityBonuses` is memoized on the state object, so this is the same
+    // reading the birth phase took and costs one `WeakMap` hit.
+    effectMagnitudes: [
+      ...(deps.lifespanEffectsFor?.(state, state.clock.worldTick, mage) ?? []),
+      ...lifespanBonusesFor(vitality, mage),
+    ],
   }).months;
 }
 

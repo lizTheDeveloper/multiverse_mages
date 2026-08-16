@@ -83,7 +83,11 @@ const GATE_SCRIPTS = [
  *
  * Three of the four, and they cost about forty seconds together.
  */
-const PUSH_GATES = ['balance:gate', 'balance:gate:horizon', 'balance:gate:agency'] as const;
+// **Empty since 2026-08-14.** The three Monte Carlo gates moved to
+// {@link RELEASE_GATES}; nothing is required at merge any more. Kept as a live
+// list rather than deleted, because every assertion below is written against it
+// and putting a gate back at merge should be one edit here, not a rewrite.
+const PUSH_GATES = [] as const;
 
 /**
  * The gates required at release rather than at merge: `npm run verify:full`.
@@ -105,7 +109,18 @@ const PUSH_GATES = ['balance:gate', 'balance:gate:horizon', 'balance:gate:agency
  * act as running it less often, and the assertions below exist so that it cannot
  * quietly decay into the same thing.
  */
-const RELEASE_GATES = ['balance:gate:ascension'] as const;
+// **Three joined the two-hundred-year gate on 2026-08-14**, one rung down the
+// cost ladder and for the same argument the comment above makes. The
+// self-hosted runner serialises against a 2400 s timeout, so a sweep-bearing
+// commit queues every other pull request behind it — and during a campaign
+// *every* commit is sweep-bearing. `ci.yml`'s `balance` job carries the full
+// reasoning and the condition for reversing it.
+const RELEASE_GATES = [
+  'balance:gate',
+  'balance:gate:horizon',
+  'balance:gate:agency',
+  'balance:gate:ascension',
+] as const;
 
 /**
  * Whether a job block actually sets the `continue-on-error` key.
@@ -170,7 +185,15 @@ describe('every gate is a build-failing step in both CI systems', () => {
     // release checklist naming a command that no longer runs the thing the
     // checklist is about.
     expect(manifest.scripts['verify:full'], 'verify:full is missing').toBeDefined();
-    expect(manifest.scripts['verify:full']).toContain(`npm run ${script}`);
+    // Reachable from `verify:full` directly, or through `verify:balance` — the
+    // grouping the three that moved on 2026-08-14 share. Either satisfies the
+    // property; what must not happen is a release gate reachable from neither.
+    const full = manifest.scripts['verify:full'] as string;
+    const balance = (manifest.scripts['verify:balance'] ?? '') as string;
+    expect(
+      full.includes(`npm run ${script}`) || balance.includes(`npm run ${script}`),
+      `verify:full cannot reach ${script}`,
+    ).toBe(true);
     expect(manifest.scripts['verify']).not.toContain(`npm run ${script}`);
   });
 
@@ -178,10 +201,19 @@ describe('every gate is a build-failing step in both CI systems', () => {
     // Derived, not compared to a literal: a step added to `verify` has to reach
     // `verify:full` too, and building it by composition rather than by copying
     // the chain is what makes that automatic.
-    const expected = ['npm run verify', ...RELEASE_GATES.map((gate) => `npm run ${gate}`)].join(
-      ' && ',
+    // `verify:balance` groups the three that moved, so `verify:full` composes
+    // three names rather than five. The property is unchanged: it is `verify`
+    // plus everything not required at merge, built by composition so a step
+    // added to `verify` reaches `verify:full` automatically.
+    expect(manifest.scripts['verify:full']).toBe(
+      'npm run verify && npm run verify:balance && npm run balance:gate:ascension',
     );
-    expect(manifest.scripts['verify:full']).toBe(expected);
+    // And the three that moved are reachable through it, one level down.
+    for (const gate of RELEASE_GATES) {
+      const direct = (manifest.scripts['verify:full'] as string).includes(`npm run ${gate}`);
+      const viaBalance = (manifest.scripts['verify:balance'] as string).includes(`npm run ${gate}`);
+      expect(direct || viaBalance, `verify:full cannot reach ${gate}`).toBe(true);
+    }
   });
 
   it.each(GATE_SCRIPTS)(
@@ -194,7 +226,11 @@ describe('every gate is a build-failing step in both CI systems', () => {
       // Push gates: once per full-suite job — the pinned-Node gate and the
       // next-major early warning. Release gates: once, in the parallel job of
       // their own that is not required to merge.
-      expect(steps).toHaveLength((PUSH_GATES as readonly string[]).includes(script) ? 2 : 1);
+      // The two-hundred-year gate runs once, in its own job. The three that
+      // moved on 2026-08-14 run twice: once in the non-blocking `balance` job,
+      // and once in `next-node`, which keeps them because an early warning
+      // about the next Node major is more useful complete than fast.
+      expect(steps).toHaveLength(script === 'balance:gate:ascension' ? 1 : 2);
       expect(workflow).toContain('Balance regression gate');
     },
   );
@@ -211,7 +247,13 @@ describe('every gate is a build-failing step in both CI systems', () => {
 
   it.each(RELEASE_GATES)('%s runs in a job of its own, and is not softened', (script) => {
     const workflow = read('.github/workflows/ci.yml');
-    const job = workflow.slice(workflow.indexOf('  ascension:'), workflow.indexOf('  consumption:'));
+    // Two jobs hold release gates now: `balance` for the three that moved on
+    // 2026-08-14, `ascension` for the two-hundred-year one. Both are parallel
+    // and neither is required to merge; the property asserted is the same.
+    const job =
+      script === 'balance:gate:ascension'
+        ? workflow.slice(workflow.indexOf('  ascension:'), workflow.indexOf('  consumption:'))
+        : workflow.slice(workflow.indexOf('  balance:'), workflow.indexOf('  ascension:'));
     expect(job, 'the ascension job is missing from the workflow').not.toBe('');
     expect(job).toContain(`npm run ${script}`);
     // The two non-blocking jobs in this workflow are *expected* red and carry
@@ -340,18 +382,22 @@ describe('the docs-only sweep skip cannot silently exempt code', () => {
   // the gate — so the two things that make it safe are asserted here rather
   // than trusted to review.
 
-  it('verify:nosweeps is exactly verify minus the four balance gates', () => {
+  it('verify:nosweeps is an alias of verify, because verify no longer runs sweeps', () => {
     const verify = manifest.scripts['verify'] as string;
     const nosweeps = manifest.scripts['verify:nosweeps'] as string;
     expect(nosweeps, 'verify:nosweeps is missing').toBeDefined();
 
-    // Derive rather than compare to a literal: a new step added to `verify`
-    // must appear in `verify:nosweeps` too, and this fails until it does.
-    const derived = verify
-      .split(' && ')
-      .filter((step) => !GATE_SCRIPTS.some((gate) => step === `npm run ${gate}`))
-      .join(' && ');
-    expect(nosweeps).toBe(derived);
+    // **It is now an alias, not a second copy of the list.** `verify` stopped
+    // running the sweeps on 2026-08-14, so "verify minus the gates" and
+    // "verify" became the same command — and two identical script bodies drift
+    // the first time someone edits one. The name is kept because `docs/` cites
+    // it as a historical measurement in several places.
+    expect(nosweeps).toBe('npm run verify');
+    for (const gate of GATE_SCRIPTS) {
+      expect(verify, `verify runs ${gate}, which moved to release`).not.toContain(
+        `npm run ${gate}`,
+      );
+    }
   });
 
   it('runs no balance gate, so the skip cannot be a no-op that still sweeps', () => {
@@ -390,9 +436,17 @@ describe('the docs-only sweep skip cannot silently exempt code', () => {
     expect(runner).toContain('if changed="$(git diff --name-only "$base"...HEAD 2>/dev/null)"');
   });
 
-  it('still runs the full verify when anything outside docs changed', () => {
+  it('runs one verify on every path, because there is no longer a sweep to skip', () => {
     const runner = read('scripts/ci-check.sh');
-    expect(runner).toContain('npm run verify:nosweeps');
+    // The docs-only branch used to choose between `verify:nosweeps` and
+    // `verify`. Since 2026-08-14 `verify` runs no sweeps at all, so both arms
+    // would be the same command and the runner just runs it. The detection is
+    // kept — it prints the reason into the log and keeps a live allowlist for
+    // the day the sweeps come back — but it no longer selects a command.
     expect(runner).toContain('npm run verify\n');
+    expect(runner).not.toContain('npm run verify:nosweeps');
+    // And the runner still names no gate of its own, so the two CI systems
+    // cannot disagree about what a merge requires.
+    for (const gate of GATE_SCRIPTS) expect(runner).not.toContain(gate);
   });
 });

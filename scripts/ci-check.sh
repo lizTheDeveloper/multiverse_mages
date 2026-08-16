@@ -101,18 +101,24 @@ if git rev-parse --verify --quiet "$base" >/dev/null 2>&1; then
   fi
 fi
 
+# The docs-only detection above is now **belt and braces**, and deliberately
+# kept rather than deleted. Since 2026-08-14 `npm run verify` does not run the
+# Monte Carlo sweeps at all — they moved to `verify:balance`, a non-blocking
+# Actions job, and `release-plan.md` — so a docs-only commit and a code commit
+# cost the same here. What the detection still buys is a *reason* printed into
+# the log, and a live allowlist that keeps working the day the sweeps come back.
 if [ "$docs_only" -eq 1 ]; then
-  echo "=== docs-only diff against ${base}: skipping the balance sweeps ==="
+  echo "=== docs-only diff against ${base} ==="
   echo "Changed paths:"
   echo "$changed" | sed 's/^/  /'
-  echo "Everything else in \`verify\` still runs. To force the full gate, unset"
-  echo "the condition by touching any path outside docs/, openspec/, .claude/ or *.md."
+  echo "(No sweeps to skip: \`verify\` has not run them since 2026-08-14.)"
   echo
-  echo "=== verify minus sweeps (typecheck, lint, purity, content, audio, coverage, tests) ==="
-  npm run verify:nosweeps
-else
-  echo "=== verify (typecheck, lint, purity, content, audio, primitive coverage, tests, balance gates) ==="
-  npm run verify
 fi
+
+echo "=== verify (typecheck, lint, purity, content, audio, primitive coverage, tests) ==="
+echo "The three balance gates are NOT here. They run per-commit in the"
+echo "non-blocking \`balance\` Actions job, and are required at release —"
+echo "\`npm run verify:balance\` runs them, \`verify:full\` runs everything."
+npm run verify
 
 echo "=== ci-check passed ==="

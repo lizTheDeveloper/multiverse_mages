@@ -4,9 +4,47 @@ How a commit in this repository gets checked, and what would have to be true for
 deployed. Written down because the arrangement is non-obvious: there are **two** CI systems, on
 purpose, and they are not redundant.
 
+## The balance gates left the merge path — 2026-08-14
+
+`npm run verify` ran the three Monte Carlo gates until this date. It does not any more. They live in
+`npm run verify:balance`, run on every commit in a **non-blocking** `balance` job in `ci.yml`, and
+are **required at release** through `release-plan.md`'s `verify:full`.
+
+**Why.** Three things compounded:
+
+- The sweeps were the entire cost of a commit check once the cheap checks are discounted, and the
+  self-hosted runner **serialises against a 2400 s timeout** — so a sweep-bearing commit is a queue
+  hazard for every other pull request, which is the queue documented above.
+- `scripts/ci-check.sh` already skipped them for docs-only diffs for exactly this reason. That skip
+  cannot help the case that actually hurts: a **campaign**, where every commit touches `packages/`
+  and pays the full sweep, several agents deep, on one box. Measured during the integration-debt
+  campaign: sustained load average above 300, with test timeouts that were load and not defects —
+  and a determinism test that timed out at 30 s under load above 400, which reads exactly like a
+  real defect and was not.
+- **A balance gate is the wrong question at merge.** It asks *"did this change the game's
+  numbers"*. During work that is deliberately moving numbers the answer is *yes, on purpose*, so the
+  gate fires, is read as expected, and is ignored — while still costing the time. `balance/README.md`
+  already states the rule: *a gate that takes ten minutes gets deleted*, and a gate people route
+  around is worse than no gate, because it still costs the time and no longer earns the trust.
+
+**Why this is safe.** `release-plan.md` already encodes balance validation in **MINOR parity** — an
+even MINOR means the baselines are committed and green, and it requires `verify:full` on the commit
+being tagged. `verify:full` runs `verify` + `verify:balance` + the ascension gate. So the sweeps did
+not become optional; they moved to where they make a claim someone could check.
+
+This is the **same move the two-hundred-year ascension gate made on 2026-08-13**, one rung down the
+cost ladder, and `ci.yml`'s `balance` job carries the full argument plus the condition for reversing
+it. `horizon-gate.test.ts` fails if a gate stops running anywhere in Actions, and separately fails if
+one reappears in a required merge job — so both directions are a deliberate diff rather than a drift.
+
+**What is unchanged.** `scripts/ci-check.sh` still delegates to `npm run verify` and names no gate of
+its own, so the two systems cannot disagree about what a merge requires.
+
 ## Two CI systems, different threat models
 
-(Two *systems*. There are **three** balance gates, and they run inside both — see below.)
+(Two *systems*. There are **three** balance gates, and since 2026-08-14 they run inside
+**neither** merge gate — they have their own non-blocking Actions job and are required at release.
+See *"The balance gates left the merge path"* below.)
 
 | | GitHub Actions (`.github/workflows/ci.yml`) | Self-hosted runner (`ci/hetzner-lint`) |
 |---|---|---|
@@ -329,9 +367,10 @@ The self-hosted runner is **serialized**. With five pull requests open, all five
 `ci/hetzner-lint` reporting *"Queued -- another CI run in progress"* while every GitHub Actions check
 was already green. Nothing was failing; the queue was the whole delay.
 
-Each run is the full `npm run verify` — typecheck, lint, purity, content, audio, coverage,
-generated artifacts, ~3,900 tests, **and three Monte Carlo balance gates**. One test alone (`reference-long-run`) takes 332s in
-isolation.
+Each run is `npm run verify` — typecheck, lint, purity, content, audio, coverage, generated
+artifacts, ~4,700 tests. It **no longer includes the three Monte Carlo balance gates**; see
+below. One test alone (`reference-long-run`) takes 332s in isolation, so the suite is still the
+thing to watch.
 
 That last number matters more than it looks, because **the receiver kills a run at 600 seconds**. The
 existing box is already inside a factor of two of that ceiling on the test suite alone. A second
