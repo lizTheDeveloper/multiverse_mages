@@ -13417,3 +13417,39 @@ which is what the 2026-08-14 split was avoiding. The job comment carries the pro
 **It cannot re-record and must not.** `regenerate-baseline.mjs` and `reseal-baseline.mjs` are the
 only two things that write a baseline, neither is reachable from CI, and two tests assert that. A
 re-record is a claim that behaviour changed on purpose and needs a person to make it.
+
+## W256 — The slow test has nothing to optimise, measured rather than assumed
+
+[executed, 2026-08-16, `origin/main` @ f9184959, machine at load 5.06 — quiet]
+
+Three pull requests were held up today by `species-separation-spread.test.ts` timing out
+`ci/hetzner-lint` with a vitest **worker RPC** timeout. I twice said the remedy was
+infrastructure rather than the test, without measuring where the time went. Measuring it:
+
+    reads the same arrivals out of the same call    14,111 ms
+    the other 15 tests                              0-2 ms each
+    Duration                                       167.18 s
+
+**About 152 s of that is `beforeAll`** — the shared sweep, twelve seed sets of six seeds at
+720 ticks, seventy-two full runs. The assertions themselves cost nothing; the one 14-second
+test is the control that re-runs `runLongReference` to check the shared run is telling the
+truth.
+
+So the file is **already** structured the cheap way: one expensive setup, fifteen free
+assertions, one deliberate control. Splitting the control into its own file would save 14 s of
+167. There is no accidental cost to remove — the 152 s *is* the measurement.
+
+And it is **not load-dependent**: 167 s at load 5.06, 169 s at load 39. What load changes is
+whether the reporter channel survives it in a 349-file parallel run.
+
+So the options are exactly two, both of which are somebody's decision rather than a fix:
+
+- **fewer seed sets**, which weakens a measurement whose whole point is that twelve independent
+  sets agree; or
+- **isolate the file** — its own pool, or a vitest pool-timeout — which costs nothing except
+  configuration.
+
+The rule: **"the fix is elsewhere" is a claim, and it is cheap to check.** I said it twice
+before measuring, and the measurement happens to agree — but it agreed by luck until it was
+run, and a wrong version of that sentence would have sent someone rewriting a test that was
+already right.
