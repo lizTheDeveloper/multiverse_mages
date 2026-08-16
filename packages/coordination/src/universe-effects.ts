@@ -350,8 +350,10 @@ export function universeEconomyBonuses(
       // wider test was free. `permitsNegativeMagnitude` covers **every**
       // `additive-into-multiplier` primitive, `build-rate` included, so a node
       // authoring a construction cost would otherwise validate, ship, and be
-      // silently swallowed here. `stackMagnitudes` floors the `(1 + Σ)` at
-      // zero, so what leaves this list is bounded however negative the sum is.
+      // silently swallowed here. A negative `build-rate` is a node that makes
+      // building *slower*, and it has to reach the shared stacking to be
+      // bounded there: `stackMagnitudes` floors the `(1 + Σ)` at zero, so what
+      // leaves this list is bounded however negative the sum is.
       if (contribution.magnitude !== 0) buildRate.push(contribution.magnitude);
       continue;
     }

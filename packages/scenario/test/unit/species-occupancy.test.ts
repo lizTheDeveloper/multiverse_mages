@@ -162,7 +162,7 @@ describe('twenty world years in', () => {
     }
   });
 
-  it('has three species at the ruleset ceiling and three below it', () => {
+  it('has two species at the ruleset ceiling and four below it', () => {
     // **Re-measured on the merge of `main` (5a1ce6c) into
     // `w108/university-fidelity`, 2026-08-14.** Not inherited from either side:
     // both sides of that merge re-recorded this block for different reasons and
@@ -212,17 +212,24 @@ describe('twenty world years in', () => {
     expect(bySpecies('orc').occupiedCells).toBe(11);
     expect(bySpecies('draconic').occupiedCells).toBe(9);
     expect(bySpecies('elf').occupiedCells).toBe(11);
+    expect(bySpecies('orc').occupiedCells).toBe(11);
+    expect(bySpecies('draconic').occupiedCells).toBe(9);
     expect(bySpecies('gnome').occupiedCells).toBe(9);
   });
 
   it('measures a spread that is neither flat nor a hegemony', () => {
     const entry = collectSpeciesCellOccupancy(telemetryFor(sample));
     expect(entry.status).toBe('measured');
-    // 0.0473 at this horizon, re-measured on the merge described above — was
-    // 0.0729 before either change, 0.0714 on `main` alone and 0.0645 on the
-    // branch alone. Pinned to four places: the point of the metric is that this
-    // number moves, and a test that only asserted "greater than zero" would let
-    // it move to anything.
+    // 0.0625 at this horizon, re-measured on the merge described above — was
+    // 0.0729 before any of these changes, 0.0714 on `main` before #125, 0.0645
+    // on #125 alone, 0.0473 on #125 merged with #127, and 0.0473 again on W18
+    // measured against a pre-#125 base. Pinned to four places: the point of the
+    // metric is that this number moves, and a test that only asserted "greater
+    // than zero" would let it move to anything.
+    //
+    // It moves **up** from 0.0473 rather than further down, and the reason is in
+    // the pin above: the spread widens because draconic drops to 9, not because
+    // any leader pulled ahead — the two at the ceiling are capped and cannot.
     expect((entry as { value: number }).value).toBeCloseTo(0.0625, 4);
     expect(entry).toMatchObject({ detail: { everySpeciesEqual: false, everySpeciesZero: false } });
   });
@@ -263,11 +270,17 @@ describe('twenty world years in', () => {
     const cellName = new Map(content.registry.cells.map((e) => [e.contentId, e.record.id]));
     const held = new Set(bySpecies('gnome').occupiedCellIds.map((id) => cellName.get(id)));
     const dwarfHeld = bySpecies('dwarf').occupiedCellIds.map((id) => cellName.get(id));
-    // Re-pinned 2026-08-14 on the rebase onto `main` (245e04f1): `rego-terram`
-    // out, `perdo-limen` in. Which is precisely what the paragraph above says
-    // to expect — the set reorders under a handle-keyed re-roll, the durable
-    // reading is *"gnome is short, and disproportionately short in Perdo"*, and
-    // that reading is unchanged: all three are still Perdo but one.
+    //
+    // **Third measurement, on the merge with #125 landed, 2026-08-15: the set is
+    // `perdo-limen`, `perdo-mentem`, `perdo-terram` — three cells, all three
+    // Perdo.** The two-entry list that stood here was not measured on any build:
+    // #125 dropped `perdo-limen` from the four-entry original and W18 dropped
+    // `rego-terram`, both deletions merged cleanly, and the result was the
+    // intersection rather than anything a run produces. Read together with the
+    // note above, the durable statement is the one that has survived every
+    // re-roll — **gnome is short, and disproportionately short in Perdo** —
+    // while the exact membership has now been three different sets in three
+    // measurements and should be treated as a pin rather than a finding.
     expect(dwarfHeld.filter((cell) => !held.has(cell)).sort()).toEqual([
       'perdo-limen',
       'perdo-mentem',

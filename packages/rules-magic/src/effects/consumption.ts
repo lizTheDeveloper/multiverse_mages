@@ -145,6 +145,62 @@
  * `coverage.ts`'s did not. See {@link PRIMITIVE_CONSUMPTION_EXCLUSIONS} for
  * what the split costs and what it does not.
  *
+ * ## What a green here still does not establish: the magnitude may never bind
+ *
+ * **This check cannot tell a live wire from one whose magnitude never binds**,
+ * and that is the same failure class it exists to catch, one layer up. It
+ * proves a path from an authored node effect to something the assembled
+ * simulation applies. It says nothing about whether applying it changes an
+ * outcome.
+ *
+ * The worked example is `teach-rate`, which is wired, registered against
+ * `coordination/academic-effects.academicRateBonuses` over twenty nodes, green
+ * here — and moves the **completion count** almost not at all. The suite's own
+ * numbers, from
+ * `packages/coordination/test/unit/academic-effects.test.ts`, ablating each rate
+ * against the same control:
+ *
+ * | ablated | measure | control | treatment | gain |
+ * |---|---|--:|--:|--:|
+ * | `research-rate` | completions | 4,278 | 5,508 | +28.8% |
+ * | `research-rate` | `nodesKnown` | 29 | 46 | +58.6% |
+ * | `scribe-rate` | grimoires | 141 | 185 | +31.2% |
+ * | `teach-rate` | lessons | 3,174 | 3,271 | **+3.1%** |
+ *
+ * That last row is small for a structural reason rather than a tuning one, and
+ * the test that produces it is named after the reason: *"finds no
+ * completion-count gain for `teach-rate`, because a lesson already fits in a
+ * month."* The rate divides a duration that is already under the tick, so
+ * dividing it further buys nothing **a completion count** can see.
+ *
+ * **State that narrowly, because the wider version of it was wrong.** An
+ * earlier draft of this paragraph said `teach-rate` was *"behaviourally inert
+ * under v1 content"* and that all nineteen `single`-target effects *"reach a
+ * consumer and move no outcome"*. Neither survives measurement. PR #173 swept
+ * 14 opening squares over 168 runs: the twelve enabled cells hold **11 tier-4
+ * and 2 tier-5 nodes**, reach a mean deepest tier of **3.89**, and carry **5 of
+ * the grid's 19 `teach-rate` sources**. The primitive is *live* at width twelve.
+ * What is flat is one metric in one harness — and the binding constraint on
+ * teaching in that harness is `LIBRARY_CONTRIBUTION`'s knot at 24 shelved nodes,
+ * not a tier gate and not the width of the opening square.
+ *
+ * The moral for this file is the moral of the section: a number that does not
+ * move is evidence about *that number*, and turning it into a claim about the
+ * mechanic is the same over-reach as turning a registration into a claim about
+ * behaviour.
+ *
+ * **Do not add `teach-rate` to {@link PRIMITIVE_CONSUMPTION_EXCLUSIONS} over
+ * this, and do not weaken the wire.** It is genuinely consumed; whether it
+ * *binds* is a content, tuning and **founding-position** question, answered by
+ * ablation runs and sweeps rather than by a registry walk. #173's sharpest
+ * result is that the founding position dominates the square: the same twelve
+ * cells reach **49.0** shelved nodes under the scenario default and **7.3**
+ * under `LONG_RUN_OPTIONS`, same seeds. The honest statement of what a
+ * green here buys is the one `portal` and `worship-yield` already get: *the
+ * assembled simulation fetched these node magnitudes and applied them.* The
+ * check that would catch an inert magnitude is an ablation whose arms differ,
+ * and `§9`'s `winRateByPrimitive` mask is the instrument for it.
+ *
  * ## It fails in both directions, like its sibling
  *
  * `coverage.ts` argues that a one-directional check rots: it passes forever

@@ -331,14 +331,20 @@ export function academicRateBonuses(
       // loader refuses to author one at all, so this is a guard against a
       // hand-built registry rather than against the shipped grid.
       //
-      // **A negative one is a cost and belongs here.** This filter read
-      // `<= 0` for as long as `node.schema.json` said `"minimum": 1` — under
-      // which the two conditions were indistinguishable, so the wider one was
-      // free. It is not free now: dropping a negative here would let a node
-      // author a teaching cost that validates, ships, reads correctly in its
-      // gloss and moves no number, which is the same defect this module was
-      // written to end, one sign over. `stackMagnitudes` floors the `(1 + Σ)`
-      // at zero, so what arrives downstream is bounded whatever the sum is.
+      // **Zero, not non-positive — a negative one is a cost, and it belongs
+      // here.** This filter read `<= 0` for as long as `node.schema.json` said
+      // `"minimum": 1`, under which the two conditions were indistinguishable
+      // and the wider one was free. It is not free now: a negative magnitude is
+      // a node expressing a *cost*, which is the whole point of signed
+      // magnitudes, and dropping it here would let a node author a teaching
+      // cost that validates, ships, reads correctly in its gloss and moves no
+      // number — the exact "reads as a rule and behaves as a comment" failure
+      // `check:consumption` exists to catch, reintroduced one layer up.
+      //
+      // The floor that keeps a stacked rate sane belongs in `@mm/primitives`,
+      // where every consumer shares one, rather than in each consumer inventing
+      // its own: `stackMagnitudes` floors the `(1 + Σ)` at zero, so what arrives
+      // downstream is bounded whatever the sum is.
       if (contribution.magnitude === 0) continue;
       contributingNodes += 1;
       if (held === undefined) {

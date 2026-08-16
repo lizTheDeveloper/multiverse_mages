@@ -236,6 +236,73 @@ const RUN_TIMEOUT_MS = 300_000;
  * control, `not.toEqual` fails, and both `toBeLessThan` assertions fail with
  * `expected 3190 to be less than 3190`. Restoring the three lines returns all
  * six tests to green.
+ *
+ * ## A second, independent reason the equality had to go — `w187/effects-union`
+ *
+ * The paragraphs above were written against the `anti-requisites` failure. The
+ * union of the two effect campaigns hit the same assertion from a different
+ * direction, and the diagnosis is worth keeping because it is the stronger form
+ * of the claim: *the equality was never structural, and it was not structural
+ * before any of these changes landed.*
+ *
+ * It passes at `d11e09c` (the academic rate wire alone) and at `3219c62` (the
+ * vitality wire alone) and failed on their merge, which reads exactly like an
+ * interaction defect. Measured across six seeds instead of one, on this tree,
+ * it is not. Each cell is `ablated.population − control.population`:
+ *
+ * | seed | both wires off | academic only | vitality only | both |
+ * |---|--:|--:|--:|--:|
+ * | `0x12345678` | 0 | +1 | 0 | **+1** |
+ * | `0x00000001` | **−5** | **−2** | **−5** | **−2** |
+ * | `0x00000002` | 0 | 0 | 0 | 0 |
+ * | `0xdeadbeef` | 0 | 0 | 0 | 0 |
+ * | `0x0badc0de` | 0 | **−1** | 0 | **−1** |
+ * | `0x5eed0007` | 0 | 0 | 0 | 0 |
+ *
+ * **The first column is not all zeroes.** It is also not a simulation of the
+ * past: the same sweep was run on an unmodified checkout of `e2b89d8`, this
+ * branch's merge base, with no instrumentation and neither wire present, and
+ * seed `0x00000001` finishes **three** people apart there too. So "it passed
+ * before and fails now" is a statement about `0x12345678`, and the sign is not
+ * systematic: +1, −1, −2, −3 and −5 all appear.
+ *
+ * The channel predates every wire. `resource-yield` feeds `stock.food`; food is
+ * the only kind `carryingCapacity` reads; capacity sets `fertilityBrake`; and
+ * `deliverBirths` is stochastic. Two arms whose food histories differ take
+ * different draws.
+ *
+ * ## And the vitality column is zero for a reason worth its own paragraph
+ *
+ * On the pre-`anti-requisites` base this table looked very different: the
+ * vitality wire raised population from 325 to 392 on its own and to 494 with
+ * the academic wire, over 2,592 gathered contributions. **On this tree, with
+ * `#161` merged, the vitality wire gathers zero contributions at all six seeds
+ * whenever the academic rate wire is on** — and 650 to 739 at three of the six
+ * when it is off, worth 283 → 365, 311 → 382 and 328 → 408 in population.
+ *
+ * That is not the wire breaking. It is `creo-ignem ⊥ creo-umbra` resolving
+ * `destructive` under a faster research rate: the sooner a mage reaches the
+ * other half of an excluded pair, the sooner she burns the school, and the
+ * `lifespan` and `fertility` nodes live in `creo-animal`, `creo-corpus` and
+ * `creo-fatum`'s neighbourhood rather than in the v1 rectangle. The agency
+ * baseline records the same mechanism at gate scale, where it is not seed
+ * anecdote: `referenceNodesKnown@permissive-breadth` **42.5 → 36.625** when
+ * these wires land on top of `#161`, against `#161` itself having taken it from
+ * 68.63 to 42.50. **That delta was read off a baseline re-record that has since
+ * been reverted** — no baseline in this tree was regenerated, by standing rule —
+ * so it is a measurement someone took once and not a number this repository
+ * currently commits. **Do not re-derive it to check: that means running a gate,
+ * and gates are deferred until the wiring is finished.** Treat it as a lead. The
+ * six-seed instrumentation above is the evidence that lives in the tree, and the
+ * 68.63 → 42.50 half of the comparison is committed — `docs/design/anti-requisites.md`
+ * and the agency baseline's own rationale both carry it.
+ *
+ * **Three separate mechanics now meet on `permissive-breadth` and are invisible
+ * everywhere else**, which is a fact about the opening square rather than about
+ * any of them.
+ *
+ * Measured 2026-08-14 on `w187/effects-union` merged with `origin/main`
+ * `1e2651a`; the pre-wire control on an unmodified `e2b89d8`.
  */
 const POPULATION_FLOOR_PERCENT = 95;
 
