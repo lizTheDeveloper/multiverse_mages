@@ -21,6 +21,17 @@
  * samples, and every statement the harness makes about it at 0.5.0 will be
  * about code nothing has ever run.
  *
+ * `library-legacy` is the third exclusion and is a different kind of gap from
+ * the other two. `lifespan` and `fertility` are species traits: no node could
+ * carry them. `library-legacy` *could* be carried by a node and deliberately is
+ * not — its magnitude is a function of how many distinct titles stand on a
+ * shelf, which is a property of the civilization rather than of any working, so
+ * a node authoring it would be authoring the wrong thing. It reaches
+ * `stackMagnitudes` under its own primitive id, which is what
+ * `winRateByPrimitive` ablates, so it is measurable in the one way that matters
+ * even though `check:coverage` cannot see it. That asymmetry is why it is named
+ * here rather than quietly excluded.
+ *
  * The design accepted exactly two such gaps — `lifespan` and `fertility`, both
  * Corpus- and Animal-bound, both arriving with the second content wave — and
  * recorded them as *asserted rather than discovered*. This check is that
@@ -85,7 +96,11 @@ import type { ContentRegistry, NodeRecord } from '@mm/content';
  * wiring. {@link PRIMITIVE_CONSUMPTION_EXCLUSIONS} in `consumption.ts` is now
  * the other list, and it is empty.
  */
-export const PRIMITIVE_COVERAGE_EXCLUSIONS: readonly string[] = ['fertility', 'lifespan'];
+export const PRIMITIVE_COVERAGE_EXCLUSIONS: readonly string[] = [
+  'fertility',
+  'library-legacy',
+  'lifespan',
+];
 
 /** The primitive whose cell `contracts.md` §8 mandates. */
 export const PORTAL_PRIMITIVE_ID = 'portal';

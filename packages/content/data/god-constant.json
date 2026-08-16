@@ -1,275 +1,16 @@
 [
   {
-    "id": "worship-mage-per-head",
-    "value": 1024,
-    "unit": "fp",
-    "gloss": "Raw worship a living mage contributes before saturation. One mage is the unit the other two classes are priced against.",
-    "tuningStatus": "untuned"
-  },
-  {
-    "id": "worship-mage-blessed-bonus",
-    "value": 512,
-    "unit": "fp",
-    "gloss": "Extra raw worship while a mage is blessed. Half a mage again, because a visibly favoured scholar is evidence of the god rather than a second scholar.",
-    "tuningStatus": "untuned"
-  },
-  {
-    "id": "worship-mage-cap",
-    "value": 4096,
-    "unit": "fp",
-    "gloss": "Ceiling of the mage class. Lowered first when worshipSnowball exceeds its threshold.",
-    "tuningStatus": "untuned"
-  },
-  {
-    "id": "worship-mage-half",
-    "value": 51200,
-    "unit": "fp",
-    "gloss": "Raw mage input at which the class yields half its cap — about fifty mages. Raised second in the worshipSnowball retune order.",
-    "tuningStatus": "untuned"
-  },
-  {
-    "id": "worship-university-per-unit",
-    "value": 2048,
-    "unit": "fp",
-    "gloss": "Raw worship a completed university contributes. An unfinished one contributes nothing at all.",
-    "tuningStatus": "untuned"
-  },
-  {
-    "id": "worship-university-cap",
-    "value": 3072,
-    "unit": "fp",
-    "gloss": "Ceiling of the university class.",
-    "tuningStatus": "untuned"
-  },
-  {
-    "id": "worship-university-half",
-    "value": 20480,
-    "unit": "fp",
-    "gloss": "Raw university input at which the class yields half its cap — about ten completed universities.",
-    "tuningStatus": "untuned"
-  },
-  {
-    "id": "worship-populace-per-head",
-    "value": 16,
-    "unit": "fp",
-    "gloss": "Raw worship one member of the populace contributes. Small on purpose: the populace is the most numerous class and would otherwise dominate the sum before saturation could bite.",
-    "tuningStatus": "untuned"
-  },
-  {
-    "id": "worship-populace-cap",
-    "value": 2048,
-    "unit": "fp",
-    "gloss": "Ceiling of the populace class.",
-    "tuningStatus": "untuned"
-  },
-  {
-    "id": "worship-populace-half",
-    "value": 16384,
-    "unit": "fp",
-    "gloss": "Raw populace input at which the class yields half its cap — about a thousand heads.",
-    "tuningStatus": "untuned"
-  },
-  {
-    "id": "worship-max",
-    "value": 9216,
-    "unit": "fp",
-    "gloss": "The sum of the three class caps, restated so the loader can check it rather than trusting arithmetic done by hand. It is a property of the formula, not a clamp applied afterwards.",
-    "tuningStatus": "untuned"
-  },
-  {
-    "id": "worship-lag-rise",
-    "value": 51,
-    "unit": "fp",
-    "gloss": "Fraction of the gap to the target closed per world tick while worship is rising — about 5%, so devotion takes about twenty years to settle.",
-    "tuningStatus": "untuned"
-  },
-  {
-    "id": "worship-lag-fall",
-    "value": 154,
-    "unit": "fp",
-    "gloss": "The same while worship is falling — about 15%. Strictly greater than the rise rate: a setback is felt in about five ticks and takes about twenty to earn back, and that asymmetry is the loop's damping.",
-    "tuningStatus": "untuned"
-  },
-  {
-    "id": "worship-tier-base",
-    "value": 512,
-    "unit": "fp",
-    "gloss": "The first geometric tier threshold. Tier t is reached at base × 2^t, so the thresholds are 512, 1024, 2048, 4096, 8192 against a ceiling of 9216.",
-    "tuningStatus": "untuned"
-  },
-  {
-    "id": "worship-tier-count",
-    "value": 5,
+    "id": "ascension-canon-breadth",
+    "value": 77,
     "unit": "count",
-    "gloss": "How many thresholds exist, giving tiers 0 through 5 and an edict budget of 1 + tier that reaches 6 against EDICT_BUDGET_MAX = 8. The count is NOT a tuning knob — the observation's shape depends on it.",
+    "gloss": "Nodes a passing era boundary must hold — the 'knowledge' in §8a's 'held its knowledge intact across enough eras'. Before this the predicate asked only that nothing had gone wrong, so a universe nobody touches was a perfect custodian. Anchored to the passive baseline: the v1 rectangle holds exactly 51 nodes and an unattended universe learns all 51, so 51 is content exhaustion. 77 is 1.5x it. A count, not a fraction of the graph, so the summit cannot recede as content grows.",
     "tuningStatus": "untuned"
   },
   {
-    "id": "favor-regen-base",
-    "value": 1024,
-    "unit": "fp",
-    "gloss": "Favor a universe regenerates per world tick with no worship at all. Non-zero deliberately: a zero floor makes a bad start unrecoverable and produces long, uninformative Monte Carlo runs.",
-    "tuningStatus": "untuned"
-  },
-  {
-    "id": "favor-per-worship",
-    "value": 512,
-    "unit": "fp",
-    "gloss": "Favor per unit of worship per world tick. With the ceiling above, a maximally worshipped universe regenerates 5.5× a bare one. Lowered third in the worshipSnowball retune order.",
-    "tuningStatus": "untuned"
-  },
-  {
-    "id": "favor-cap-base",
-    "value": 20480,
-    "unit": "fp",
-    "gloss": "The favor pool's ceiling at worship tier 0. The cap is what converts a worship lead from power into tempo — a high-worship god cannot do more things, only sooner.",
-    "tuningStatus": "untuned"
-  },
-  {
-    "id": "favor-cap-per-tier",
-    "value": 10240,
-    "unit": "fp",
-    "gloss": "How much each worship tier adds to the cap. Lowered fourth and last in the worshipSnowball retune order.",
-    "tuningStatus": "untuned"
-  },
-  {
-    "id": "hysteresis-decay-ticks",
-    "value": 60,
-    "unit": "ticks",
-    "gloss": "World ticks between decrements of an axis's recent-change counter — five world years.",
-    "tuningStatus": "untuned"
-  },
-  {
-    "id": "hysteresis-step",
-    "value": 1024,
-    "unit": "fp",
-    "gloss": "Added to the cost multiplier per outstanding change on that axis, so the second flip inside the decay window costs double and the third triple. An escalating price rather than a lockout: a price is a gradient an agent sees in the affordability mask, a lockout is a hidden timer it has to learn to model.",
-    "tuningStatus": "untuned"
-  },
-  {
-    "id": "upheaval-ticks",
-    "value": 24,
-    "unit": "ticks",
-    "gloss": "How long a forbidding shock holds the worship target down — two world years.",
-    "tuningStatus": "untuned"
-  },
-  {
-    "id": "upheaval-shock-floor",
-    "value": 512,
-    "unit": "fp",
-    "gloss": "The strongest a forbidding shock may be: the worship target is at worst halved. Forbidding an axis nobody uses lands near fp(1024) and costs nothing.",
-    "tuningStatus": "untuned"
-  },
-  {
-    "id": "tradition-shock",
-    "value": 256,
-    "unit": "fp",
-    "gloss": "The tradition-change shock factor — the worship target quartered. A decade of ruin is the mechanical form of vision §4a's 'throws the civilization into upheaval'.",
-    "tuningStatus": "untuned"
-  },
-  {
-    "id": "tradition-shock-ticks",
-    "value": 120,
-    "unit": "ticks",
-    "gloss": "How long the tradition shock holds — ten world years, five times a forbidding.",
-    "tuningStatus": "untuned"
-  },
-  {
-    "id": "bless-research-rate",
-    "value": 256,
-    "unit": "fp",
-    "gloss": "A blessing's contribution to the shared research-rate channel. An existing primitive, not a new one: an effect the ablation sweep cannot see is an effect winRateByPrimitive cannot attribute.",
-    "tuningStatus": "untuned"
-  },
-  {
-    "id": "bless-teach-rate",
-    "value": 256,
-    "unit": "fp",
-    "gloss": "A blessing's contribution to the shared teach-rate channel.",
-    "tuningStatus": "untuned"
-  },
-  {
-    "id": "bless-lifespan-months",
-    "value": 60,
-    "unit": "months",
-    "gloss": "A blessing's contribution to the shared lifespan channel, in months, for as long as it lasts.",
-    "tuningStatus": "untuned"
-  },
-  {
-    "id": "bless-duration-ticks",
-    "value": 120,
-    "unit": "ticks",
-    "gloss": "How long a blessing lasts. Re-blessing refreshes this rather than stacking the magnitude.",
-    "tuningStatus": "untuned"
-  },
-  {
-    "id": "encourage-magnitude",
-    "value": 256,
-    "unit": "fp",
-    "gloss": "A fresh encouragement's contribution to one cell's research-rate, into the same (1 + Σ) channel and the same cap as every other source.",
-    "tuningStatus": "untuned"
-  },
-  {
-    "id": "encourage-decay-per-tick",
-    "value": 4,
-    "unit": "fp",
-    "gloss": "How much of that magnitude drains away each world tick. At fp(256) and fp(4) an emphasis lasts 64 ticks and then the slot is free.",
-    "tuningStatus": "untuned"
-  },
-  {
-    "id": "encourage-max-cells",
-    "value": 3,
+    "id": "ascension-canon-cells",
+    "value": 18,
     "unit": "count",
-    "gloss": "How many cells may carry a non-zero emphasis at once. A bound, not a budget: the fourth encouragement is masked rather than displacing one.",
-    "tuningStatus": "untuned"
-  },
-  {
-    "id": "grant-mastery",
-    "value": 1024,
-    "unit": "fp",
-    "gloss": "Mastery a founding grant arrives at — full, so the recipient can teach it without loss. A grant at the research default would sit below the teach threshold and never leave the founder's head.",
-    "tuningStatus": "untuned"
-  },
-  {
-    "id": "fund-progress",
-    "value": 256,
-    "unit": "fp",
-    "gloss": "buildProgress one funding action buys, so four fundings complete a university. Invented here: §1.4 gives a university buildProgress and no content field supplied a rate, because funding is god action 11 and the god had no verbs.",
-    "tuningStatus": "untuned"
-  },
-  {
-    "id": "found-university-cost",
-    "value": 10240,
-    "unit": "fp",
-    "gloss": "What action 11 costs with a target of 0. Separate from the fund cost because §4.2 gives founding and funding one action id and they are not the same purchase.",
-    "tuningStatus": "untuned"
-  },
-  {
-    "id": "found-university-capacity",
-    "value": 32,
-    "unit": "count",
-    "gloss": "Student seats a newly founded university will hold once complete. Invented for the same reason fund-progress is.",
-    "tuningStatus": "untuned"
-  },
-  {
-    "id": "ascension-min-tick",
-    "value": 600,
-    "unit": "ticks",
-    "gloss": "No ascension may be declared before this — fifty world years. The floor against a rush that would make the ascension band measure content rather than play.",
-    "tuningStatus": "untuned"
-  },
-  {
-    "id": "ascension-tier-gate",
-    "value": 4,
-    "unit": "tier",
-    "gloss": "Worship tier Path A requires. The first knob turned when ascensionRate leaves its 5–20% band.",
-    "tuningStatus": "untuned"
-  },
-  {
-    "id": "ascension-era-count",
-    "value": 4,
-    "unit": "count",
-    "gloss": "Consecutive passing era boundaries Path B requires. The second knob in the ascension retune order.",
+    "gloss": "Distinct cells a passing era boundary must hold at least one node in. The spread half of 'its knowledge': a canon of the right size crammed into three cells is depth, and Path A already rewards depth. Anchored to the same passive baseline of twelve cells, at the same 1.5x. Set it to 0 to recover the predicate exactly as it shipped.",
     "tuningStatus": "untuned"
   },
   {
@@ -280,10 +21,31 @@
     "tuningStatus": "untuned"
   },
   {
+    "id": "ascension-era-count",
+    "value": 4,
+    "unit": "count",
+    "gloss": "Consecutive passing era boundaries Path B requires. The second knob in the ascension retune order.",
+    "tuningStatus": "untuned"
+  },
+  {
+    "id": "ascension-loss-fraction",
+    "value": 51,
+    "unit": "fp",
+    "gloss": "Share of the canon a passing era may lose — 5% — floored by ascension-loss-max. An absolute cap over a quantity that scales measures scale rather than custodianship: measured on this build, a passive universe holds 51 nodes and loses none while a broad one holds 220 and loses seven, so a flat allowance of two disqualified the civilization that was doing something and waved through the one in stasis. Set it to 0 to recover the predicate exactly as it shipped.",
+    "tuningStatus": "untuned"
+  },
+  {
     "id": "ascension-loss-max",
     "value": 2,
     "unit": "count",
     "gloss": "Nodes that may leave the universe during a passing era, as a floor. The scale-relative allowance in ascension-loss-fraction takes over once the canon is large enough for a share of it to exceed this.",
+    "tuningStatus": "untuned"
+  },
+  {
+    "id": "ascension-min-tick",
+    "value": 600,
+    "unit": "ticks",
+    "gloss": "No ascension may be declared before this — fifty world years. The floor against a rush that would make the ascension band measure content rather than play.",
     "tuningStatus": "untuned"
   },
   {
@@ -301,80 +63,199 @@
     "tuningStatus": "untuned"
   },
   {
-    "id": "ascension-canon-breadth",
-    "value": 77,
-    "unit": "count",
-    "gloss": "Nodes a passing era boundary must hold — the 'knowledge' in §8a's 'held its knowledge intact across enough eras'. Before this the predicate asked only that nothing had gone wrong, so a universe nobody touches was a perfect custodian. Anchored to the passive baseline: the v1 rectangle holds exactly 51 nodes and an unattended universe learns all 51, so 51 is content exhaustion. 77 is 1.5x it. A count, not a fraction of the graph, so the summit cannot recede as content grows.",
+    "id": "ascension-tier-gate",
+    "value": 4,
+    "unit": "tier",
+    "gloss": "Worship tier Path A requires. The first knob turned when ascensionRate leaves its 5–20% band.",
     "tuningStatus": "untuned"
   },
   {
-    "id": "ascension-canon-cells",
-    "value": 18,
-    "unit": "count",
-    "gloss": "Distinct cells a passing era boundary must hold at least one node in. The spread half of 'its knowledge': a canon of the right size crammed into three cells is depth, and Path A already rewards depth. Anchored to the same passive baseline of twelve cells, at the same 1.5x. Set it to 0 to recover the predicate exactly as it shipped.",
+    "id": "bless-duration-ticks",
+    "value": 120,
+    "unit": "ticks",
+    "gloss": "How long a blessing lasts. Re-blessing refreshes this rather than stacking the magnitude.",
     "tuningStatus": "untuned"
   },
   {
-    "id": "ascension-loss-fraction",
-    "value": 51,
+    "id": "bless-lifespan-months",
+    "value": 60,
+    "unit": "months",
+    "gloss": "A blessing's contribution to the shared lifespan channel, in months, for as long as it lasts.",
+    "tuningStatus": "untuned"
+  },
+  {
+    "id": "bless-research-rate",
+    "value": 256,
     "unit": "fp",
-    "gloss": "Share of the canon a passing era may lose — 5% — floored by ascension-loss-max. An absolute cap over a quantity that scales measures scale rather than custodianship: measured on this build, a passive universe holds 51 nodes and loses none while a broad one holds 220 and loses seven, so a flat allowance of two disqualified the civilization that was doing something and waved through the one in stasis. Set it to 0 to recover the predicate exactly as it shipped.",
+    "gloss": "A blessing's contribution to the shared research-rate channel. An existing primitive, not a new one: an effect the ablation sweep cannot see is an effect winRateByPrimitive cannot attribute.",
     "tuningStatus": "untuned"
   },
   {
-    "id": "stagnation-mageless-ticks",
+    "id": "bless-teach-rate",
+    "value": 256,
+    "unit": "fp",
+    "gloss": "A blessing's contribution to the shared teach-rate channel.",
+    "tuningStatus": "untuned"
+  },
+  {
+    "id": "encourage-decay-per-tick",
+    "value": 4,
+    "unit": "fp",
+    "gloss": "How much of that magnitude drains away each world tick. At fp(256) and fp(4) an emphasis lasts 64 ticks and then the slot is free.",
+    "tuningStatus": "untuned"
+  },
+  {
+    "id": "encourage-magnitude",
+    "value": 256,
+    "unit": "fp",
+    "gloss": "A fresh encouragement's contribution to one cell's research-rate, into the same (1 + Σ) channel and the same cap as every other source.",
+    "tuningStatus": "untuned"
+  },
+  {
+    "id": "encourage-max-cells",
+    "value": 3,
+    "unit": "count",
+    "gloss": "How many cells may carry a non-zero emphasis at once. A bound, not a budget: the fourth encouragement is masked rather than displacing one.",
+    "tuningStatus": "untuned"
+  },
+  {
+    "id": "favor-cap-base",
+    "value": 20480,
+    "unit": "fp",
+    "gloss": "The favor pool's ceiling at worship tier 0. The cap is what converts a worship lead from power into tempo — a high-worship god cannot do more things, only sooner.",
+    "tuningStatus": "untuned"
+  },
+  {
+    "id": "favor-cap-per-tier",
+    "value": 10240,
+    "unit": "fp",
+    "gloss": "How much each worship tier adds to the cap. Lowered fourth and last in the worshipSnowball retune order.",
+    "tuningStatus": "untuned"
+  },
+  {
+    "id": "favor-per-worship",
+    "value": 512,
+    "unit": "fp",
+    "gloss": "Favor per unit of worship per world tick. With the ceiling above, a maximally worshipped universe regenerates 5.5× a bare one. Lowered third in the worshipSnowball retune order.",
+    "tuningStatus": "untuned"
+  },
+  {
+    "id": "favor-regen-base",
+    "value": 1024,
+    "unit": "fp",
+    "gloss": "Favor a universe regenerates per world tick with no worship at all. Non-zero deliberately: a zero floor makes a bad start unrecoverable and produces long, uninformative Monte Carlo runs.",
+    "tuningStatus": "untuned"
+  },
+  {
+    "id": "found-university-capacity",
+    "value": 32,
+    "unit": "count",
+    "gloss": "Student seats a newly founded university will hold once complete. Invented for the same reason fund-progress is.",
+    "tuningStatus": "untuned"
+  },
+  {
+    "id": "found-university-cost",
+    "value": 10240,
+    "unit": "fp",
+    "gloss": "What action 11 costs with a target of 0. Separate from the fund cost because §4.2 gives founding and funding one action id and they are not the same purchase.",
+    "tuningStatus": "untuned"
+  },
+  {
+    "id": "fund-progress",
+    "value": 256,
+    "unit": "fp",
+    "gloss": "buildProgress one funding action buys, so four fundings complete a university. Invented here: §1.4 gives a university buildProgress and no content field supplied a rate, because funding is god action 11 and the god had no verbs.",
+    "tuningStatus": "untuned"
+  },
+  {
+    "id": "grant-mastery",
+    "value": 1024,
+    "unit": "fp",
+    "gloss": "Mastery a founding grant arrives at — full, so the recipient can teach it without loss. A grant at the research default would sit below the teach threshold and never leave the founder's head.",
+    "tuningStatus": "untuned"
+  },
+  {
+    "id": "hysteresis-decay-ticks",
     "value": 60,
     "unit": "ticks",
-    "gloss": "Consecutive world ticks with no living mage before the run ends as stagnated.",
+    "gloss": "World ticks between decrements of an axis's recent-change counter — five world years.",
     "tuningStatus": "untuned"
   },
   {
-    "id": "stagnation-worship-floor",
-    "value": 128,
+    "id": "hysteresis-step",
+    "value": 1024,
     "unit": "fp",
-    "gloss": "Worship below which the slow-death clock runs.",
+    "gloss": "Added to the cost multiplier per outstanding change on that axis, so the second flip inside the decay window costs double and the third triple. An escalating price rather than a lockout: a price is a gradient an agent sees in the affordability mask, a lockout is a hidden timer it has to learn to model.",
     "tuningStatus": "untuned"
   },
   {
-    "id": "stagnation-worship-ticks",
-    "value": 240,
-    "unit": "ticks",
-    "gloss": "Consecutive world ticks below that floor before the run ends as stagnated — twenty world years.",
+    "id": "legacy-archive-max-tier",
+    "value": 3,
+    "unit": "count",
+    "gloss": "The deepest tier a seeded instance may be. A legacy that could seed the summit would be prestige buying the ascension condition.",
     "tuningStatus": "untuned"
   },
   {
-    "id": "stagnation-stasis-ticks",
-    "value": 480,
-    "unit": "ticks",
-    "gloss": "Consecutive world ticks with no node newly entering the universe before the stasis trigger fires — but only while worship is simultaneously below the health floor.",
+    "id": "legacy-archive-nodes",
+    "value": 3,
+    "unit": "count",
+    "gloss": "Knowledge instances a maximally prestiged universe may be seeded with, placed in a library where they are lootable and burnable like any other.",
     "tuningStatus": "untuned"
   },
   {
-    "id": "stagnation-health-floor",
+    "id": "legacy-baseline-favor",
+    "value": 20480,
+    "unit": "fp",
+    "gloss": "Placeholder for the median unaided universe's favor pool at the reference tick. A measurement that has not been taken: the first prestigeAdvantage sweep replaces it, and until then it is the pool cap, which is the honest upper bound.",
+    "tuningStatus": "untuned"
+  },
+  {
+    "id": "legacy-baseline-materials",
+    "value": 1024000,
+    "unit": "fp",
+    "gloss": "Placeholder for the median unaided universe's materials stock at the reference tick — the reference scenario's starting stock, which the first sweep replaces with a measured median.",
+    "tuningStatus": "untuned"
+  },
+  {
+    "id": "legacy-baseline-populace",
+    "value": 72,
+    "unit": "count",
+    "gloss": "Placeholder for the median unaided universe's headcount at the reference tick — the reference scenario's founding population, which the first sweep replaces with a measured median.",
+    "tuningStatus": "untuned"
+  },
+  {
+    "id": "legacy-cap",
+    "value": 1024,
+    "unit": "fp",
+    "gloss": "The ceiling of the saturating prestige-to-legacy conversion. Half the maximum prestige already buys 83% of the attainable head start, so the back half of the prestige range is nearly worthless — the second damping stage in series.",
+    "tuningStatus": "untuned"
+  },
+  {
+    "id": "legacy-half",
     "value": 2048,
     "unit": "fp",
-    "gloss": "The worship the stasis trigger is conjunctive on. A perfect custodian with a completed graph acquires no new nodes either, and terminating it as ruin would execute Path B's best players at tick 480 for a path that qualifies at tick 960. Stagnation must mean decline, not completion, and only worship separates the two.",
+    "gloss": "The half-point of that conversion.",
     "tuningStatus": "untuned"
   },
   {
-    "id": "prestige-earn-max",
-    "value": 2048,
+    "id": "legacy-headstart-fraction",
+    "value": 256,
     "unit": "fp",
-    "gloss": "The most one run may earn. With the retention below it fixes the carry-over's analytic limit.",
+    "gloss": "25% of the median unaided universe's value at the reference tick. THE single knob prestigeAdvantage turns — if it reaches zero and the metric still fails, the model is wrong and gets redesigned rather than retuned.",
     "tuningStatus": "untuned"
   },
   {
-    "id": "prestige-retention",
-    "value": 768,
-    "unit": "fp",
-    "gloss": "The fraction of carried prestige that survives into the next run — 75%. The recurrence prestige' = prestige × retention + earned converges, and its limit is the cap below.",
+    "id": "legacy-reference-tick",
+    "value": 120,
+    "unit": "ticks",
+    "gloss": "The world tick the unaided baselines below are measured at — ten world years.",
     "tuningStatus": "untuned"
   },
   {
-    "id": "prestige-cap",
-    "value": 8192,
+    "id": "legacy-yield-per-node",
+    "value": 8,
     "unit": "fp",
-    "gloss": "earn-max ÷ (1 − retention). A property of the arithmetic, not an arbitrary clamp: an infinite streak of perfect runs approaches it and never exceeds it. The loader asserts the identity, so a retune that breaks the relationship fails the load.",
+    "gloss": "Favor-regeneration bonus per distinct node on a library shelf, stacked into the `library-legacy` channel. The compounding half of the pair vision §6a warns about: a deeper library pays a god more, and a better-paid god buys a deeper library. Declared rather than emergent so the harness can neutralise it — `winRateByPrimitive` ablates a primitive id and cannot see a loop nobody declared. fp(8) saturates the fp(1536) cap at 64 shelved nodes; the reference universe reaches 36.",
     "tuningStatus": "untuned"
   },
   {
@@ -399,10 +280,17 @@
     "tuningStatus": "untuned"
   },
   {
-    "id": "prestige-per-tier",
-    "value": 96,
+    "id": "prestige-cap",
+    "value": 8192,
     "unit": "fp",
-    "gloss": "Per deepest node tier the universe ever reached.",
+    "gloss": "earn-max ÷ (1 − retention). A property of the arithmetic, not an arbitrary clamp: an infinite streak of perfect runs approaches it and never exceeds it. The loader asserts the identity, so a retune that breaks the relationship fails the load.",
+    "tuningStatus": "untuned"
+  },
+  {
+    "id": "prestige-earn-max",
+    "value": 2048,
+    "unit": "fp",
+    "gloss": "The most one run may earn. With the retention below it fixes the carry-over's analytic limit.",
     "tuningStatus": "untuned"
   },
   {
@@ -413,6 +301,13 @@
     "tuningStatus": "untuned"
   },
   {
+    "id": "prestige-per-tier",
+    "value": 96,
+    "unit": "fp",
+    "gloss": "Per deepest node tier the universe ever reached.",
+    "tuningStatus": "untuned"
+  },
+  {
     "id": "prestige-per-worship-tier",
     "value": 128,
     "unit": "fp",
@@ -420,66 +315,178 @@
     "tuningStatus": "untuned"
   },
   {
-    "id": "legacy-cap",
-    "value": 1024,
+    "id": "prestige-retention",
+    "value": 768,
     "unit": "fp",
-    "gloss": "The ceiling of the saturating prestige-to-legacy conversion. Half the maximum prestige already buys 83% of the attainable head start, so the back half of the prestige range is nearly worthless — the second damping stage in series.",
+    "gloss": "The fraction of carried prestige that survives into the next run — 75%. The recurrence prestige' = prestige × retention + earned converges, and its limit is the cap below.",
     "tuningStatus": "untuned"
   },
   {
-    "id": "legacy-half",
+    "id": "stagnation-health-floor",
     "value": 2048,
     "unit": "fp",
-    "gloss": "The half-point of that conversion.",
+    "gloss": "The worship the stasis trigger is conjunctive on. A perfect custodian with a completed graph acquires no new nodes either, and terminating it as ruin would execute Path B's best players at tick 480 for a path that qualifies at tick 960. Stagnation must mean decline, not completion, and only worship separates the two.",
     "tuningStatus": "untuned"
   },
   {
-    "id": "legacy-archive-nodes",
-    "value": 3,
-    "unit": "count",
-    "gloss": "Knowledge instances a maximally prestiged universe may be seeded with, placed in a library where they are lootable and burnable like any other.",
+    "id": "stagnation-mageless-ticks",
+    "value": 60,
+    "unit": "ticks",
+    "gloss": "Consecutive world ticks with no living mage before the run ends as stagnated.",
     "tuningStatus": "untuned"
   },
   {
-    "id": "legacy-archive-max-tier",
-    "value": 3,
-    "unit": "count",
-    "gloss": "The deepest tier a seeded instance may be. A legacy that could seed the summit would be prestige buying the ascension condition.",
+    "id": "stagnation-stasis-ticks",
+    "value": 480,
+    "unit": "ticks",
+    "gloss": "Consecutive world ticks with no node newly entering the universe before the stasis trigger fires — but only while worship is simultaneously below the health floor.",
     "tuningStatus": "untuned"
   },
   {
-    "id": "legacy-headstart-fraction",
+    "id": "stagnation-worship-floor",
+    "value": 128,
+    "unit": "fp",
+    "gloss": "Worship below which the slow-death clock runs.",
+    "tuningStatus": "untuned"
+  },
+  {
+    "id": "stagnation-worship-ticks",
+    "value": 240,
+    "unit": "ticks",
+    "gloss": "Consecutive world ticks below that floor before the run ends as stagnated — twenty world years.",
+    "tuningStatus": "untuned"
+  },
+  {
+    "id": "tradition-shock",
     "value": 256,
     "unit": "fp",
-    "gloss": "25% of the median unaided universe's value at the reference tick. THE single knob prestigeAdvantage turns — if it reaches zero and the metric still fails, the model is wrong and gets redesigned rather than retuned.",
+    "gloss": "The tradition-change shock factor — the worship target quartered. A decade of ruin is the mechanical form of vision §4a's 'throws the civilization into upheaval'.",
     "tuningStatus": "untuned"
   },
   {
-    "id": "legacy-reference-tick",
+    "id": "tradition-shock-ticks",
     "value": 120,
     "unit": "ticks",
-    "gloss": "The world tick the unaided baselines below are measured at — ten world years.",
+    "gloss": "How long the tradition shock holds — ten world years, five times a forbidding.",
     "tuningStatus": "untuned"
   },
   {
-    "id": "legacy-baseline-favor",
+    "id": "upheaval-shock-floor",
+    "value": 512,
+    "unit": "fp",
+    "gloss": "The strongest a forbidding shock may be: the worship target is at worst halved. Forbidding an axis nobody uses lands near fp(1024) and costs nothing.",
+    "tuningStatus": "untuned"
+  },
+  {
+    "id": "upheaval-ticks",
+    "value": 24,
+    "unit": "ticks",
+    "gloss": "How long a forbidding shock holds the worship target down — two world years.",
+    "tuningStatus": "untuned"
+  },
+  {
+    "id": "worship-lag-fall",
+    "value": 154,
+    "unit": "fp",
+    "gloss": "The same while worship is falling — about 15%. Strictly greater than the rise rate: a setback is felt in about five ticks and takes about twenty to earn back, and that asymmetry is the loop's damping.",
+    "tuningStatus": "untuned"
+  },
+  {
+    "id": "worship-lag-rise",
+    "value": 51,
+    "unit": "fp",
+    "gloss": "Fraction of the gap to the target closed per world tick while worship is rising — about 5%, so devotion takes about twenty years to settle.",
+    "tuningStatus": "untuned"
+  },
+  {
+    "id": "worship-mage-blessed-bonus",
+    "value": 512,
+    "unit": "fp",
+    "gloss": "Extra raw worship while a mage is blessed. Half a mage again, because a visibly favoured scholar is evidence of the god rather than a second scholar.",
+    "tuningStatus": "untuned"
+  },
+  {
+    "id": "worship-mage-cap",
+    "value": 4096,
+    "unit": "fp",
+    "gloss": "Ceiling of the mage class. Lowered first when worshipSnowball exceeds its threshold.",
+    "tuningStatus": "untuned"
+  },
+  {
+    "id": "worship-mage-half",
+    "value": 51200,
+    "unit": "fp",
+    "gloss": "Raw mage input at which the class yields half its cap — about fifty mages. Raised second in the worshipSnowball retune order.",
+    "tuningStatus": "untuned"
+  },
+  {
+    "id": "worship-mage-per-head",
+    "value": 1024,
+    "unit": "fp",
+    "gloss": "Raw worship a living mage contributes before saturation. One mage is the unit the other two classes are priced against.",
+    "tuningStatus": "untuned"
+  },
+  {
+    "id": "worship-max",
+    "value": 9216,
+    "unit": "fp",
+    "gloss": "The sum of the three class caps, restated so the loader can check it rather than trusting arithmetic done by hand. It is a property of the formula, not a clamp applied afterwards.",
+    "tuningStatus": "untuned"
+  },
+  {
+    "id": "worship-populace-cap",
+    "value": 2048,
+    "unit": "fp",
+    "gloss": "Ceiling of the populace class.",
+    "tuningStatus": "untuned"
+  },
+  {
+    "id": "worship-populace-half",
+    "value": 16384,
+    "unit": "fp",
+    "gloss": "Raw populace input at which the class yields half its cap — about a thousand heads.",
+    "tuningStatus": "untuned"
+  },
+  {
+    "id": "worship-populace-per-head",
+    "value": 16,
+    "unit": "fp",
+    "gloss": "Raw worship one member of the populace contributes. Small on purpose: the populace is the most numerous class and would otherwise dominate the sum before saturation could bite.",
+    "tuningStatus": "untuned"
+  },
+  {
+    "id": "worship-tier-base",
+    "value": 512,
+    "unit": "fp",
+    "gloss": "The first geometric tier threshold. Tier t is reached at base × 2^t, so the thresholds are 512, 1024, 2048, 4096, 8192 against a ceiling of 9216.",
+    "tuningStatus": "untuned"
+  },
+  {
+    "id": "worship-tier-count",
+    "value": 5,
+    "unit": "count",
+    "gloss": "How many thresholds exist, giving tiers 0 through 5 and an edict budget of 1 + tier that reaches 6 against EDICT_BUDGET_MAX = 8. The count is NOT a tuning knob — the observation's shape depends on it.",
+    "tuningStatus": "untuned"
+  },
+  {
+    "id": "worship-university-cap",
+    "value": 3072,
+    "unit": "fp",
+    "gloss": "Ceiling of the university class.",
+    "tuningStatus": "untuned"
+  },
+  {
+    "id": "worship-university-half",
     "value": 20480,
     "unit": "fp",
-    "gloss": "Placeholder for the median unaided universe's favor pool at the reference tick. A measurement that has not been taken: the first prestigeAdvantage sweep replaces it, and until then it is the pool cap, which is the honest upper bound.",
+    "gloss": "Raw university input at which the class yields half its cap — about ten completed universities.",
     "tuningStatus": "untuned"
   },
   {
-    "id": "legacy-baseline-materials",
-    "value": 1024000,
+    "id": "worship-university-per-unit",
+    "value": 2048,
     "unit": "fp",
-    "gloss": "Placeholder for the median unaided universe's materials stock at the reference tick — the reference scenario's starting stock, which the first sweep replaces with a measured median.",
-    "tuningStatus": "untuned"
-  },
-  {
-    "id": "legacy-baseline-populace",
-    "value": 72,
-    "unit": "count",
-    "gloss": "Placeholder for the median unaided universe's headcount at the reference tick — the reference scenario's founding population, which the first sweep replaces with a measured median.",
+    "gloss": "Raw worship a completed university contributes. An unfinished one contributes nothing at all.",
     "tuningStatus": "untuned"
   },
   {

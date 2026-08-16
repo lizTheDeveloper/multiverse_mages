@@ -445,6 +445,18 @@ serialized into snapshots.
   "form": "corpus",
   "classicalLabels": ["necromancy"],                 // display only, never mechanical.
                                                      // Vision §4's mapping table is authoritative
+  "dailyRelevance": 576,                             // fp; the share of ordinary people whose daily
+                                                     // life this cell touches. fp(1024) is everyone
+                                                     // (water, healing, bread); fp(64) is a cell only
+                                                     // mages can perceive. It multiplies every
+                                                     // worship-yield magnitude a node in the cell
+                                                     // carries, so water and crops and roads
+                                                     // out-worship spectacular destruction. Authored,
+                                                     // never derived; the principle and all seventy
+                                                     // calls are in docs/design/daily-relevance-authoring.md
+  "relevanceGloss": "Surgery and labour.",           // required; why the number is what it is.
+                                                     // Never read by a rule; <= 600 chars
+  "tuningStatus": "untuned",                         // "untuned" | "tuned"
   "v1": true,                                        // optional; flags membership of the 12-cell
                                                      // v1 rectangle. Absent means not in v1
   "edicts": [],                                      // optional; "dispensation" | "interdiction".
@@ -466,6 +478,17 @@ serialized into snapshots.
 
 70 cells exist in schema. The **v1 subset** is flagged per-cell with `"v1": true`; exactly 12 cells
 (3 techniques × 4 forms) carry it, and the set must include `rego-limen`.
+
+`dailyRelevance` is the one term in the §7 favor economy that is **bounded by population share
+rather than by power**. Worship buys favor, favor buys permits, permits buy worship, and §7 admits
+that loop can snowball; a multiplier a player can only raise by permitting cells that touch more
+lives has a ceiling that is a property of the ruleset instead of a property of the run. It is also
+what gives a permissive ruleset a shape: permitting broadly is otherwise strictly safe, and under
+this you can permit a great deal of magic nobody's life touches and be paid for none of it.
+
+Note what it does **not** scale. `worship-yield` multiplies favor *regeneration* and never
+`favorCap` (§8), so relevance cannot raise the pool's ceiling either — a god who over-invests in
+low-relevance yield does not get a smaller pool, she gets the same pool more slowly.
 
 ### 2.3 `node.json`
 
@@ -816,6 +839,7 @@ all of them.
 | `lifespan` | additive months | world | additive, cap `+50%` of species base. **Recomputed from active effects at each hazard evaluation, never accumulated into a stored field** — which is also why mortality is a per-tick hazard rather than a death date rolled at birth |
 | `fertility` | multiplier on cohort birth rate | world | additive into `(1 + Σ)`, cap `fp(3072)` |
 | `worship-yield` | multiplier on favor regeneration | world | additive into `(1 + Σ)`, cap `fp(2048)` |
+| `library-legacy` | multiplier on favor regeneration | world | additive into `(1 + Σ)`, cap `fp(1536)` |
 | `concealment` | fp probability of evading targeting/detection | both | multiplicative on the remainder, cap `fp(870)` = 85% |
 | `knowledge-steal` | fp probability per attempt of copying an instance | engagement | max, not sum |
 | `portal` | boolean gate; enables raid initiation | world | n/a — presence only |
@@ -842,6 +866,19 @@ and `expectedBirths` multiply through and get zero for free; research scales the
 the progress, so it says it as zero effort — `researchRequirement` has no requirement that means
 "unreachable" without a sentinel, and a sentinel in a fixed-point field is a number some later
 arithmetic will multiply.
+`library-legacy` is the only primitive **no node carries**, and that is deliberate rather than an
+authoring gap. Its magnitude is `legacy-yield-per-node × distinct titles on a library shelf` — a
+property of the civilization, not of any working — so a node declaring it would be authoring the
+wrong thing. It is nonetheless a declared primitive, stacked through `stackMagnitudes` under its own
+id, because **you cannot ablate what you did not declare**: `winRateByPrimitive` neutralises one
+primitive id, so a compounding loop left emergent is invisible to the harness by construction. It is
+excluded from `check:coverage` with that reasoning recorded there.
+
+It also exists to be *opposed*. `dailyRelevance` (§2.2) damps the §7 loop — it is bounded by
+population share, so it cannot be grown by playing well — and `library-legacy` feeds the §6a one.
+Two knobs pulling opposite ways on the same quantity, each separately ablatable, is the first
+testable claim this project can make about which loop dominates. Fusing them into one multiplier
+would replace an un-ablatable emergent quantity with an un-ablatable declared one and buy nothing.
 
 **Why the caps exist:** every uncapped multiplicative rate in a game with two compounding loops
 (worship §7, knowledge-as-capital §6a) is a runaway waiting to happen. The caps are deliberately

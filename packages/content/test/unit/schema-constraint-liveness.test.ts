@@ -156,6 +156,7 @@ const SHADOWED: readonly { readonly constraint: string; readonly why: string }[]
   ...[
     'cell.schema.json#/$defs/cell/properties/edicts/items',
     'cell.schema.json#/$defs/exclusion/properties/resolution',
+    'cell.schema.json#/$defs/cell/properties/tuningStatus',
     'node.schema.json#/$defs/node/properties/knowledgeKind',
     'node.schema.json#/$defs/node/properties/tuningStatus',
     'node.schema.json#/$defs/effect/properties/target',

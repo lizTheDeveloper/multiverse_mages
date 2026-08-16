@@ -6,6 +6,9 @@
     "classicalLabels": [
       "conjuration"
     ],
+    "dailyRelevance": 704,
+    "relevanceGloss": "The ox that pulls and the beast that dies of a fever are the same animal, and a village's whole surplus is standing in its pasture. Nearly every household owns something that eats grass; healing it is healing them.",
+    "tuningStatus": "untuned",
     "nodes": [
       "can-mend-the-beast",
       "can-quicken-the-herd",
@@ -19,6 +22,9 @@
     "technique": "creo",
     "form": "aquam",
     "classicalLabels": [],
+    "dailyRelevance": 1024,
+    "relevanceGloss": "Sweet water, drawn where there was none. Nobody is exempt from thirst, and a well that does not fail is the one working every person in reach of it uses every day of their life without ever seeing it cast.",
+    "tuningStatus": "untuned",
     "nodes": [
       "caq-draw-the-sweet-water",
       "caq-the-unfailing-well",
@@ -33,6 +39,9 @@
     "classicalLabels": [
       "evocation"
     ],
+    "dailyRelevance": 512,
+    "relevanceGloss": "Weather made rather than read. Everyone lives under the sky and a cleared harvest sky is worth a year, but three of these five workings are storms, and a storm is something done to a district rather than for it.",
+    "tuningStatus": "untuned",
     "nodes": [
       "cau-turn-the-wind",
       "cau-clear-the-sky",
@@ -49,6 +58,9 @@
       "conjuration",
       "necromancy"
     ],
+    "dailyRelevance": 960,
+    "relevanceGloss": "A closed wound and a mended decade. Every person has a body and every body fails; this is the cell whose absence is felt at every childbed and every harvest accident, by people who will never meet a mage.",
+    "tuningStatus": "untuned",
     "nodes": [
       "cc-close-the-wound",
       "cc-the-mended-decade",
@@ -62,6 +74,9 @@
     "technique": "creo",
     "form": "herbam",
     "classicalLabels": [],
+    "dailyRelevance": 960,
+    "relevanceGloss": "Bread, beam and cloth. The seed quickened and the timber grown are what the year is made of, and the fourth node makes paper without rags — which is to say it touches even the people whose lives are otherwise untouched by fields.",
+    "tuningStatus": "untuned",
     "nodes": [
       "ch-quicken-the-seed",
       "ch-grow-the-beam",
@@ -76,6 +91,9 @@
     "classicalLabels": [
       "evocation"
     ],
+    "dailyRelevance": 640,
+    "relevanceGloss": "Light struck and heat held. The hearth end of this cell is universal and daily; the far end is a furnace and an uncontained hour, which are a foundry's business and a disaster's. The average lands between them.",
+    "tuningStatus": "untuned",
     "nodes": [
       "cig-strike-the-light",
       "cig-hold-the-temperature",
@@ -98,6 +116,9 @@
     "classicalLabels": [
       "illusion"
     ],
+    "dailyRelevance": 256,
+    "relevanceGloss": "Appearances made: a likeness, a crowded hall, a forgery. Ordinary people meet this cell at a fair or in a fraud, which is to say occasionally and mostly as an audience.",
+    "tuningStatus": "untuned",
     "nodes": [
       "cim-cast-the-likeness",
       "cim-the-shown-interior",
@@ -111,6 +132,9 @@
     "technique": "creo",
     "form": "mentem",
     "classicalLabels": [],
+    "dailyRelevance": 384,
+    "relevanceGloss": "Kindled questions and given memories. Schooling is real and general, but this cell's subjects are scholars and its deep end makes one, so what it touches is a classroom rather than a parish.",
+    "tuningStatus": "untuned",
     "nodes": [
       "cm-kindle-the-question",
       "cm-the-given-memory",
@@ -125,6 +149,9 @@
     "classicalLabels": [
       "conjuration"
     ],
+    "dailyRelevance": 768,
+    "relevanceGloss": "Brick, wall and bastion. Almost everybody lives inside something somebody built out of the ground, and the difference between a poured wall and a season of carting stone is a difference the whole village feels.",
+    "tuningStatus": "untuned",
     "nodes": [
       "ct-make-the-brick",
       "ct-the-poured-wall",
@@ -137,6 +164,9 @@
     "technique": "creo",
     "form": "vim",
     "classicalLabels": [],
+    "dailyRelevance": 64,
+    "relevanceGloss": "Aura, vis, and the warded precinct. This is magic about magic: the cell is entirely legible to mages and entirely invisible to everyone else, which is exactly what a low relevance is for.",
+    "tuningStatus": "untuned",
     "nodes": [
       "cv-kindle-the-aura",
       "cv-feed-the-working",
@@ -150,6 +180,9 @@
     "technique": "creo",
     "form": "umbra",
     "classicalLabels": [],
+    "dailyRelevance": 160,
+    "relevanceGloss": "Shade cast and dusk lengthened. In a hot month an unlit hall is a mercy, but shadow is atmosphere before it is infrastructure, and no one's year turns on it.",
+    "tuningStatus": "untuned",
     "nodes": [
       "cu-cast-the-shadow",
       "cu-the-lengthened-dusk",
@@ -169,6 +202,9 @@
     "technique": "creo",
     "form": "fatum",
     "classicalLabels": [],
+    "dailyRelevance": 512,
+    "relevanceGloss": "Small luck made, and a year promised. The promised year is a harvest guarantee and touches everyone under it; the rest of the cell writes one person's ending. A cell of two halves, and the number says so.",
+    "tuningStatus": "untuned",
     "nodes": [
       "cf-make-the-small-luck",
       "cf-the-promised-year",
@@ -182,6 +218,9 @@
     "technique": "creo",
     "form": "limen",
     "classicalLabels": [],
+    "dailyRelevance": 288,
+    "relevanceGloss": "A doorstep set, a circle drawn, a door made where there was none. Thresholds are everywhere in a life and this cell's workings are almost nowhere in one — it is an architect's art practised on a universal object.",
+    "tuningStatus": "untuned",
     "nodes": [
       "cl-set-the-doorstep",
       "cl-draw-the-circle",
@@ -194,6 +233,9 @@
     "technique": "creo",
     "form": "nomen",
     "classicalLabels": [],
+    "dailyRelevance": 320,
+    "relevanceGloss": "Use-names given and unnamed things named. Every person carries a name; almost nobody's name was ever conjured. The cell's business is scholars, catalogues and the naming of what has not been named.",
+    "tuningStatus": "untuned",
     "nodes": [
       "cn-give-the-use-name",
       "cn-name-the-unnamed",
@@ -208,6 +250,9 @@
     "classicalLabels": [
       "divination"
     ],
+    "dailyRelevance": 512,
+    "relevanceGloss": "Reading sign, numbering the herd, charting a migration. A herder's and a hunter's daily competence, which in an agrarian universe is a large minority of adults and not the whole of one.",
+    "tuningStatus": "untuned",
     "nodes": [
       "ian-cut-the-sign",
       "ian-number-the-herd",
@@ -222,6 +267,9 @@
     "classicalLabels": [
       "divination"
     ],
+    "dailyRelevance": 704,
+    "relevanceGloss": "Sounding a well and sipping a standing pool. Is this water safe is a question every traveller and every household asks, and the answer is the difference between a summer and a fever.",
+    "tuningStatus": "untuned",
     "nodes": [
       "iaq-sound-the-well",
       "iaq-sip-the-standing-pool",
@@ -236,6 +284,9 @@
     "classicalLabels": [
       "divination"
     ],
+    "dailyRelevance": 768,
+    "relevanceGloss": "The ache before rain, the season reckoned. Everyone who plants, sails, roofs or travels is guessing at the weather constantly; this cell is the guess made reliable, and almost everybody is guessing.",
+    "tuningStatus": "untuned",
     "nodes": [
       "iau-the-ache-before-rain",
       "iau-gauge-the-winds-road",
@@ -250,6 +301,9 @@
     "classicalLabels": [
       "divination"
     ],
+    "dailyRelevance": 832,
+    "relevanceGloss": "Taking the pulse, sifting the humours, telling the hour of a body. Diagnosis reaches every person eventually and reaches the sick every day, and it is the half of medicine that is only knowing.",
+    "tuningStatus": "untuned",
     "nodes": [
       "ic-take-the-pulse",
       "ic-sift-the-humours",
@@ -264,6 +318,9 @@
     "classicalLabels": [
       "divination"
     ],
+    "dailyRelevance": 832,
+    "relevanceGloss": "Blight sighted and the simple picked out from the four things in the same hedge that will kill the patient instead. Field and herbal: the two places a household's food and medicine actually come from.",
+    "tuningStatus": "untuned",
     "nodes": [
       "ih-sight-the-blight",
       "ih-question-the-orchard",
@@ -278,6 +335,9 @@
     "classicalLabels": [
       "divination"
     ],
+    "dailyRelevance": 448,
+    "relevanceGloss": "Judging a kiln, the colour of ready iron. This is a trade's eye — smiths, potters, bakers, limeburners — and a trade is a fraction of a town rather than the whole of it.",
+    "tuningStatus": "untuned",
     "nodes": [
       "iig-judge-the-kiln",
       "iig-the-colour-of-ready-iron",
@@ -292,6 +352,9 @@
     "classicalLabels": [
       "divination"
     ],
+    "dailyRelevance": 224,
+    "relevanceGloss": "Catching the painted thing; nothing painted passes. It matters at a market stall and in a courtroom, which is to say it matters sharply on the few days it matters at all.",
+    "tuningStatus": "untuned",
     "nodes": [
       "iim-catch-the-painted-thing",
       "iim-watch-the-light-lie",
@@ -306,6 +369,9 @@
     "classicalLabels": [
       "divination"
     ],
+    "dailyRelevance": 448,
+    "relevanceGloss": "Weighing attention, reading a surface, opening a locked room. Everyone reads faces; almost nobody has their mind read. The cell's reach is wide as a fear and narrow as a practice.",
+    "tuningStatus": "untuned",
     "nodes": [
       "im-weigh-the-attention",
       "im-follow-the-thought",
@@ -321,6 +387,9 @@
     "classicalLabels": [
       "divination"
     ],
+    "dailyRelevance": 576,
+    "relevanceGloss": "Tasting the soil, surveying strata, finding the deep seam. Soil quality is every farmer's question and the deep seam is a mining company's, so the cell straddles a very large audience and a very small one.",
+    "tuningStatus": "untuned",
     "nodes": [
       "it-taste-the-soil",
       "it-survey-the-strata",
@@ -336,6 +405,9 @@
     "classicalLabels": [
       "divination"
     ],
+    "dailyRelevance": 64,
+    "relevanceGloss": "Feeling the air go tight, pricing a working, knowing the hand that cast it. Mage-facing without remainder: this is the cell by which magic examines itself.",
+    "tuningStatus": "untuned",
     "nodes": [
       "iv-feel-the-air-go-tight",
       "iv-price-the-working",
@@ -350,6 +422,9 @@
     "classicalLabels": [
       "divination"
     ],
+    "dailyRelevance": 128,
+    "relevanceGloss": "Second shadows, and what a shadow remembers. Beautiful, and no household's week contains it.",
+    "tuningStatus": "untuned",
     "nodes": [
       "iu-the-second-shadow",
       "iu-what-the-shadow-remembers",
@@ -365,6 +440,9 @@
     "classicalLabels": [
       "divination"
     ],
+    "dailyRelevance": 448,
+    "relevanceGloss": "Casting the lots and telling an omen from a coincidence. Divination is genuinely popular — people consult it constantly — but consulting it changes nothing that was going to happen, and relevance here is measured in lives touched rather than in appetite.",
+    "tuningStatus": "untuned",
     "nodes": [
       "if-cast-the-lots",
       "if-the-omen-and-the-coincidence",
@@ -380,6 +458,9 @@
     "classicalLabels": [
       "divination"
     ],
+    "dailyRelevance": 192,
+    "relevanceGloss": "Sensing a seam, counting doors, reading a binding. A specialist's survey of a structure ordinary people simply walk through.",
+    "tuningStatus": "untuned",
     "nodes": [
       "il-sense-the-seam",
       "il-count-the-doors",
@@ -395,6 +476,9 @@
     "classicalLabels": [
       "divination"
     ],
+    "dailyRelevance": 256,
+    "relevanceGloss": "Hearing a name spoken, deriving a true one, keeping the catalogue. Clerks, lawyers and scholars; the catalogue is a library's spine and not a village's.",
+    "tuningStatus": "untuned",
     "nodes": [
       "in-hear-the-name-spoken",
       "in-spell-the-lesser-name",
@@ -410,6 +494,9 @@
     "classicalLabels": [
       "transmutation"
     ],
+    "dailyRelevance": 512,
+    "relevanceGloss": "Turning a coat, making an ox willing. A willing ox is a plough that does not fight, which is a real and daily gain for the households that own one.",
+    "tuningStatus": "untuned",
     "nodes": [
       "ma-turn-the-coat",
       "ma-the-willing-ox",
@@ -424,6 +511,9 @@
     "classicalLabels": [
       "transmutation"
     ],
+    "dailyRelevance": 768,
+    "relevanceGloss": "Sweetening the cistern, thickening the ford. A cistern turned drinkable is the difference between a town's summer and its epidemic, and everybody drinks from the cistern.",
+    "tuningStatus": "untuned",
     "nodes": [
       "maq-sweeten-the-cistern",
       "maq-thicken-the-ford",
@@ -438,6 +528,9 @@
     "classicalLabels": [
       "transmutation"
     ],
+    "dailyRelevance": 448,
+    "relevanceGloss": "A mild season, air that carries nothing. Weather softened rather than made — general in effect, rare in practice, and one node is a storm turned inward.",
+    "tuningStatus": "untuned",
     "nodes": [
       "mau-turn-the-wind",
       "mau-the-mild-season",
@@ -452,6 +545,9 @@
     "classicalLabels": [
       "transmutation"
     ],
+    "dailyRelevance": 576,
+    "relevanceGloss": "Borrowed hands, a body fitted to the work, another face worn. Half of this is labour capacity, which is a livelihood, and half is disguise, which is a plot.",
+    "tuningStatus": "untuned",
     "nodes": [
       "mc-borrowed-hands",
       "mc-the-body-for-the-work",
@@ -467,6 +563,9 @@
     "classicalLabels": [
       "transmutation"
     ],
+    "dailyRelevance": 832,
+    "relevanceGloss": "Green wood seasoned and a second harvest taken. A second harvest is food in a year that had none; seasoning green wood is every roof, barrel and cart that was going to warp.",
+    "tuningStatus": "untuned",
     "nodes": [
       "mh-season-the-green-wood",
       "mh-the-second-harvest",
@@ -481,6 +580,9 @@
     "classicalLabels": [
       "transmutation"
     ],
+    "dailyRelevance": 512,
+    "relevanceGloss": "The forge banked, the fire taught what to eat. Hearth and forge — daily for the household that keeps one, professional for the smith, and this cell is more the smith's than the hearth's.",
+    "tuningStatus": "untuned",
     "nodes": [
       "mi-bank-the-forge",
       "mi-the-cold-flame",
@@ -495,6 +597,9 @@
     "classicalLabels": [
       "transmutation"
     ],
+    "dailyRelevance": 224,
+    "relevanceGloss": "Diagrams turned, lectures made visible, a room worn. A teaching aid and a disguise; the lecture hall is not a parish.",
+    "tuningStatus": "untuned",
     "nodes": [
       "mim-turn-the-diagram",
       "mim-the-lecture-made-visible",
@@ -509,6 +614,9 @@
     "classicalLabels": [
       "transmutation"
     ],
+    "dailyRelevance": 384,
+    "relevanceGloss": "Turning a difficulty, translating an expert, making a mind a library. Scholarship's own cell — enormously valuable to a university and barely visible from a field.",
+    "tuningStatus": "untuned",
     "nodes": [
       "mm-turn-the-difficulty",
       "mm-the-changed-appetite",
@@ -523,6 +631,9 @@
     "classicalLabels": [
       "transmutation"
     ],
+    "dailyRelevance": 576,
+    "relevanceGloss": "Softening stone, turning poor ore, sand made stone. A quarry's and a smelter's art, on which every roof and every blade downstream depends without knowing it.",
+    "tuningStatus": "untuned",
     "nodes": [
       "mt-soften-the-stone",
       "mt-turn-the-poor-ore",
@@ -537,6 +648,9 @@
     "classicalLabels": [
       "transmutation"
     ],
+    "dailyRelevance": 64,
+    "relevanceGloss": "Turning a working, converting a form, the common root of the traditions. Magic transformed into other magic, which no one outside the craft can perceive at all.",
+    "tuningStatus": "untuned",
     "nodes": [
       "mv-turn-the-working",
       "mv-convert-the-form",
@@ -552,6 +666,9 @@
     "classicalLabels": [
       "transmutation"
     ],
+    "dailyRelevance": 128,
+    "relevanceGloss": "Shadows turned, traded, given weight. An art with almost no ordinary purchaser.",
+    "tuningStatus": "untuned",
     "nodes": [
       "mu-turn-the-shadow",
       "mu-the-shadow-of-something-else",
@@ -566,6 +683,9 @@
     "classicalLabels": [
       "transmutation"
     ],
+    "dailyRelevance": 512,
+    "relevanceGloss": "Small luck turned, a debt changed, an inheritance divided among the heirs. Debt and inheritance are the two pieces of fate every family in the universe already has, which is why this ranks well above the rest of shadow-and-spectacle.",
+    "tuningStatus": "untuned",
     "nodes": [
       "mf-turn-the-small-luck",
       "mf-change-the-debt",
@@ -581,6 +701,9 @@
     "classicalLabels": [
       "transmutation"
     ],
+    "dailyRelevance": 224,
+    "relevanceGloss": "A wall made to mean something else; a door that was a window. Which side of the courtyard you are on is a question for the person redesigning the courtyard.",
+    "tuningStatus": "untuned",
     "nodes": [
       "ml-change-what-the-wall-means",
       "ml-the-door-that-was-a-window",
@@ -595,6 +718,9 @@
     "classicalLabels": [
       "transmutation"
     ],
+    "dailyRelevance": 288,
+    "relevanceGloss": "One letter altered, a name lent, iron called iron until it is. Scribes, forgers and the true-name traditions; a narrow and very literate audience.",
+    "tuningStatus": "untuned",
     "nodes": [
       "mn-alter-one-letter",
       "mn-lend-the-name",
@@ -608,6 +734,9 @@
     "technique": "perdo",
     "form": "animal",
     "classicalLabels": [],
+    "dailyRelevance": 320,
+    "relevanceGloss": "Foundering a horse, emptying a pasture. Livestock destruction is felt hard by the household that owned the livestock and by nobody else, and nothing in this cell is a service anyone asks for.",
+    "tuningStatus": "untuned",
     "nodes": [
       "pan-founder-the-horse",
       "pan-nothing-takes-the-scent",
@@ -620,6 +749,9 @@
     "technique": "perdo",
     "form": "aquam",
     "classicalLabels": [],
+    "dailyRelevance": 224,
+    "relevanceGloss": "Thirst, the dry season, the salt left behind. Water taken away — a siege weapon and a curse. Draining a marsh would rank higher; this cell does not contain it.",
+    "tuningStatus": "untuned",
     "nodes": [
       "paq-thirst",
       "paq-unwrite",
@@ -632,6 +764,9 @@
     "technique": "perdo",
     "form": "auram",
     "classicalLabels": [],
+    "dailyRelevance": 128,
+    "relevanceGloss": "Breath taken, the airless room, the sky withdrawn. Suffocation. Its whole reach is the person it is aimed at.",
+    "tuningStatus": "untuned",
     "nodes": [
       "pau-take-the-breath",
       "pau-unmake-the-gale",
@@ -644,6 +779,9 @@
     "technique": "perdo",
     "form": "corpus",
     "classicalLabels": [],
+    "dailyRelevance": 256,
+    "relevanceGloss": "A withered hand, a long fever, years taken. Everyone fears this and almost no one's day contains it; fear is not the same as being touched, and relevance is a share of lives rather than a share of nightmares.",
+    "tuningStatus": "untuned",
     "nodes": [
       "pc-wither-the-hand",
       "pc-the-long-fever",
@@ -656,6 +794,9 @@
     "technique": "perdo",
     "form": "herbam",
     "classicalLabels": [],
+    "dailyRelevance": 288,
+    "relevanceGloss": "A withered row, a failed harvest, shelves that give way. Famine as an instrument: catastrophic where it lands, and never once useful to the people it lands on.",
+    "tuningStatus": "untuned",
     "nodes": [
       "ph-wither-the-row",
       "ph-take-the-haft",
@@ -668,6 +809,9 @@
     "technique": "perdo",
     "form": "ignem",
     "classicalLabels": [],
+    "dailyRelevance": 704,
+    "relevanceGloss": "Snuff. Take the warmth. Nothing will catch. In a universe of thatch, timber and open hearths, a working that stops fire spreading is the single most civic thing on the destruction row — this is the fire brigade, and it is the reason this document exists rather than a rule that reads perdo as spectacle.",
+    "tuningStatus": "untuned",
     "nodes": [
       "pig-snuff",
       "pig-take-the-warmth",
@@ -680,6 +824,9 @@
     "technique": "perdo",
     "form": "imaginem",
     "classicalLabels": [],
+    "dailyRelevance": 192,
+    "relevanceGloss": "A likeness taken, a demonstration unmade, a thing no one can describe. Counter-illusion: a court's tool and a spy's.",
+    "tuningStatus": "untuned",
     "nodes": [
       "pim-take-the-likeness",
       "pim-the-quiet-working",
@@ -692,6 +839,9 @@
     "technique": "perdo",
     "form": "mentem",
     "classicalLabels": [],
+    "dailyRelevance": 192,
+    "relevanceGloss": "The edge blunted, a lesson scattered, a mind unmade. Harm aimed at one person at a time, and the deep end of it is the cruellest thing in the file.",
+    "tuningStatus": "untuned",
     "nodes": [
       "pm-blunt-the-edge",
       "pm-the-misplaced-hour",
@@ -706,6 +856,9 @@
     "technique": "perdo",
     "form": "terram",
     "classicalLabels": [],
+    "dailyRelevance": 320,
+    "relevanceGloss": "Crumble, open the ground, pull down the arch. Demolition is real work — a shaft sunk, a ruin cleared — but this cell is written as siege, and the swallowed hall is what it is for.",
+    "tuningStatus": "untuned",
     "nodes": [
       "pt-crumble",
       "pt-open-the-ground",
@@ -721,6 +874,9 @@
     "classicalLabels": [
       "abjuration"
     ],
+    "dailyRelevance": 64,
+    "relevanceGloss": "Letting a working lapse; where nothing takes. Magic ended by magic, perceptible only to the people who could perceive it in the first place.",
+    "tuningStatus": "untuned",
     "nodes": [
       "pv-let-it-lapse",
       "pv-the-unfinished-sentence",
@@ -732,6 +888,9 @@
     "technique": "perdo",
     "form": "umbra",
     "classicalLabels": [],
+    "dailyRelevance": 96,
+    "relevanceGloss": "Thinning the shade, making sure nothing casts here. An assassin's housekeeping.",
+    "tuningStatus": "untuned",
     "nodes": [
       "pu-thin-the-shade",
       "pu-lay-the-shade",
@@ -744,6 +903,9 @@
     "technique": "perdo",
     "form": "fatum",
     "classicalLabels": [],
+    "dailyRelevance": 256,
+    "relevanceGloss": "The omen spoiled, the luck taken, nothing owed. A cancelled debt touches a family sharply, but this is a curse cell wearing one useful node, and the rest of it unmakes discoveries.",
+    "tuningStatus": "untuned",
     "nodes": [
       "pf-spoil-the-omen",
       "pf-take-the-luck",
@@ -759,6 +921,9 @@
     "classicalLabels": [
       "abjuration"
     ],
+    "dailyRelevance": 160,
+    "relevanceGloss": "A frayed edge, an unhinged door, an open wound in a boundary. Breaking into somewhere, mostly.",
+    "tuningStatus": "untuned",
     "nodes": [
       "pl-fray-the-edge",
       "pl-unhinge",
@@ -772,6 +937,9 @@
     "technique": "perdo",
     "form": "nomen",
     "classicalLabels": [],
+    "dailyRelevance": 192,
+    "relevanceGloss": "Mispronounced, unsaid, nameless. Erasure — devastating to its subject and invisible to everyone else, which is the exact shape of a low relevance.",
+    "tuningStatus": "untuned",
     "nodes": [
       "pn-mispronounce",
       "pn-shed-the-use-name",
@@ -785,6 +953,9 @@
     "technique": "rego",
     "form": "animal",
     "classicalLabels": [],
+    "dailyRelevance": 704,
+    "relevanceGloss": "The quiet halter, the herd driven, the pack brought to heel. Every herder every day, plus the wolves kept off everyone else's winter.",
+    "tuningStatus": "untuned",
     "nodes": [
       "ran-the-quiet-halter",
       "ran-drive-the-herd",
@@ -797,6 +968,9 @@
     "technique": "rego",
     "form": "aquam",
     "classicalLabels": [],
+    "dailyRelevance": 960,
+    "relevanceGloss": "Turn the channel. Raise the weir. Stand the water off. Irrigation and flood defence — the two workings that decide whether a district eats and whether it drowns, on behalf of every person living in it.",
+    "tuningStatus": "untuned",
     "nodes": [
       "raq-turn-the-channel",
       "raq-raise-the-weir",
@@ -810,6 +984,9 @@
     "technique": "rego",
     "form": "auram",
     "classicalLabels": [],
+    "dailyRelevance": 512,
+    "relevanceGloss": "Wind set, a storm turned aside, a gale held. A coast and a fleet care enormously; an inland month does not notice.",
+    "tuningStatus": "untuned",
     "nodes": [
       "rau-set-the-wind",
       "rau-step-on-the-air",
@@ -824,6 +1001,9 @@
     "classicalLabels": [
       "necromancy"
     ],
+    "dailyRelevance": 576,
+    "relevanceGloss": "A limb stilled, a steady hand, a lengthened term. Surgery and labour: the moments when holding a body still is the whole of the medicine.",
+    "tuningStatus": "untuned",
     "nodes": [
       "rc-still-the-limb",
       "rc-the-steady-hand",
@@ -837,6 +1017,9 @@
     "technique": "rego",
     "form": "herbam",
     "classicalLabels": [],
+    "dailyRelevance": 832,
+    "relevanceGloss": "The graft set, the coppice made obedient, the hedge closed, the timber left standing. The managed landscape — orchard, hedgerow, woodlot — which is the countryside everybody actually lives in rather than the wild one.",
+    "tuningStatus": "untuned",
     "nodes": [
       "rh-set-the-graft",
       "rh-the-obedient-coppice",
@@ -849,6 +1032,9 @@
     "technique": "rego",
     "form": "ignem",
     "classicalLabels": [],
+    "dailyRelevance": 768,
+    "relevanceGloss": "The forge banked, the fire held off, the walled fire. Fire kept where it was put: a hearth that does not take the roof with it, in a place where roofs are straw.",
+    "tuningStatus": "untuned",
     "nodes": [
       "rig-bank-the-forge",
       "rig-hold-the-fire-off",
@@ -861,6 +1047,9 @@
     "technique": "rego",
     "form": "imaginem",
     "classicalLabels": [],
+    "dailyRelevance": 224,
+    "relevanceGloss": "A likeness held, a glance turned, a demonstration made to stand. Lecture-hall furniture and a conjuror's.",
+    "tuningStatus": "untuned",
     "nodes": [
       "rim-hold-the-likeness",
       "rim-the-turned-glance",
@@ -875,6 +1064,9 @@
     "classicalLabels": [
       "enchantment"
     ],
+    "dailyRelevance": 448,
+    "relevanceGloss": "Attention held, a lesson made patient, devotion kindled, minds shared. A congregation and a classroom — a real share of a population and nothing like all of it, which is worth stating plainly because this is the one worship-bearing cell the v1 rectangle already enables.",
+    "tuningStatus": "untuned",
     "nodes": [
       "rm-hold-the-attention",
       "rm-the-patient-lesson",
@@ -888,6 +1080,9 @@
     "technique": "rego",
     "form": "terram",
     "classicalLabels": [],
+    "dailyRelevance": 896,
+    "relevanceGloss": "Set the stone. Raise the course. The vaulted hall. Roads, walls, bridges and buildings: the cell the phrase water and crops and roads was pointing at, and the one whose products outlive everyone who used them.",
+    "tuningStatus": "untuned",
     "nodes": [
       "rt-set-the-stone",
       "rt-raise-the-course",
@@ -903,6 +1098,9 @@
     "classicalLabels": [
       "abjuration"
     ],
+    "dailyRelevance": 96,
+    "relevanceGloss": "The working steadied, the casting forbidden, the standing prohibition. A cell about governing magic, felt entirely by the governed, who are mages.",
+    "tuningStatus": "untuned",
     "nodes": [
       "rv-steady-the-working",
       "rv-turn-the-casting",
@@ -916,6 +1114,9 @@
     "technique": "rego",
     "form": "umbra",
     "classicalLabels": [],
+    "dailyRelevance": 160,
+    "relevanceGloss": "Shadow held still, lent, stepped through. Elegant, and no one's harvest depends on it.",
+    "tuningStatus": "untuned",
     "nodes": [
       "ru-hold-the-shadow-still",
       "ru-the-lent-shadow",
@@ -928,6 +1129,9 @@
     "technique": "rego",
     "form": "fatum",
     "classicalLabels": [],
+    "dailyRelevance": 576,
+    "relevanceGloss": "The lot held, the oath kept, the question settled. Oath and settlement are how an illiterate village does law: every bargain, every betrothal, every boundary dispute. The highest of the fate cells, and it earns it on the strength of one node.",
+    "tuningStatus": "untuned",
     "nodes": [
       "rf-hold-the-lot",
       "rf-the-kept-oath",
@@ -943,6 +1147,9 @@
     "classicalLabels": [
       "abjuration"
     ],
+    "dailyRelevance": 288,
+    "relevanceGloss": "The door held, the way sealed, the portal opened. A doorway is universal and a portal is not; this cell's fame is the second thing and its daily use is the first.",
+    "tuningStatus": "untuned",
     "nodes": [
       "rl-hold-the-door",
       "rl-step-across",
@@ -959,6 +1166,9 @@
     "classicalLabels": [
       "incantation"
     ],
+    "dailyRelevance": 384,
+    "relevanceGloss": "Called by name, the name written down, compelled by name. Records and law reach everybody eventually — and the deep end of this cell binds a servant, which reaches exactly one.",
+    "tuningStatus": "untuned",
     "nodes": [
       "rn-call-by-name",
       "rn-write-the-name-down",

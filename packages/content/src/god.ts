@@ -79,6 +79,7 @@ export const REQUIRED_GOD_CONSTANTS: readonly string[] = Object.freeze([
   'favor-cap-base',
   'favor-cap-per-tier',
   'favor-per-worship',
+  'legacy-yield-per-node',
   'favor-regen-base',
   'found-university-capacity',
   'found-university-cost',
