@@ -26,15 +26,29 @@ export const SURFACES = [
   { href: 'ruleset-symmetry/', label: 'symmetry', hint: 'the ruleset read as a ledger', group: 'rules' },
   { href: 'edicts/', label: 'edicts', hint: 'eight exceptions to your own policy', group: 'rules' },
 
-  { href: 'targets/', label: 'targets', hint: 'choosing who', group: 'verbs' },
-  { href: 'commitments/', label: 'commitments', hint: 'verbs that pay out later', group: 'verbs' },
-  { href: 'ascension/', label: 'ascension', hint: 'the ending you have to choose', group: 'verbs' },
-  { href: 'raid/', label: 'raid', hint: 'muster, contact, resolution', group: 'verbs' },
+  /*
+   * The academy. Grouped this way on the author's instruction: the university
+   * is not a surface of its own so much as the thing these four are each a
+   * view of — who the mages are, what they hold, which one you pick, and what
+   * you fund. A university screen, when there is one, belongs here.
+   */
+  { href: 'mage/', label: 'mage', hint: 'one mage, and why she chose it', group: 'academy' },
+  { href: 'knowledge/', label: 'knowledge', hint: 'where the knowledge is', group: 'academy' },
+  { href: 'targets/', label: 'targets', hint: 'choosing who', group: 'academy' },
+  { href: 'commitments/', label: 'commitments', hint: 'what you fund, and when it pays', group: 'academy' },
 
-  { href: 'mage/', label: 'mage', hint: 'one mage, and why she chose it', group: 'look' },
-  { href: 'knowledge/', label: 'knowledge', hint: 'where the knowledge is', group: 'look' },
-  { href: 'tempo/', label: 'tempo', hint: 'pacing, and what may interrupt', group: 'look' },
-  { href: 'glow/', label: 'glow', hint: 'the light rule', group: 'look' },
+  /*
+   * Attention, and what is allowed to take it. The author's framing, and it
+   * puts `raid/` here rather than beside the other verbs: a raid is not a place
+   * you go, it is the thing that interrupts the academy and the economy while
+   * you are managing them. `tempo/` exists to answer which events may do that,
+   * and `glow/` is the light that says where your attention is being asked for.
+   */
+  { href: 'raid/', label: 'raid', hint: 'the interruption — muster, contact, resolution', group: 'attention' },
+  { href: 'tempo/', label: 'tempo', hint: 'pacing, and what is allowed to interrupt', group: 'attention' },
+  { href: 'glow/', label: 'glow', hint: 'the light that says you may act', group: 'attention' },
+
+  { href: 'ascension/', label: 'ascension', hint: 'the ending you have to choose', group: 'ending' },
 
   { href: 'design-dashboard/', label: 'dashboard', hint: 'the state of the design', group: 'meta' },
   { href: '', label: 'index', hint: 'all fourteen, with what each answers', group: 'meta' },
