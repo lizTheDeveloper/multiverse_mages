@@ -75,6 +75,7 @@ import {
   legacyGrant,
   resolveGodContent,
 } from '@mm/coordination';
+import { MATERIAL_KINDS } from '@mm/rules-world';
 import { describe, expect, it } from 'vitest';
 
 /** One content resolution for the whole file. It is read-only. */
@@ -124,12 +125,21 @@ function stocksOf(state: SimState) {
   const universe = findUniverse(state);
   const row = readUniverse(state, universe);
   const materials = componentOf(state, MATERIAL_STOCK);
+  // Every kind the component declares, derived rather than transcribed. Three
+  // were named here by hand and the split has been across seven since
+  // `material-economy`, so the sum below was adding 3/7 of the channel and
+  // asserting it was the whole of it — 87,750 against 204,750, exactly the
+  // ratio. A derived map cannot lose a kind the same way twice.
+  const byKind = Object.fromEntries(
+    MATERIAL_KINDS.map((kind) => [kind, materials.get(universe, kind) ?? 0]),
+  ) as Readonly<Record<(typeof MATERIAL_KINDS)[number], number>>;
   return {
     favor: row.favor,
     prestige: row.prestige,
-    food: materials.get(universe, 'food') ?? 0,
-    stone: materials.get(universe, 'stone') ?? 0,
-    vellum: materials.get(universe, 'vellum') ?? 0,
+    byKind,
+    food: byKind.food,
+    stone: byKind.stone,
+    vellum: byKind.vellum,
     populace: collectRecords(state, POPULACE_COHORT).reduce((sum, { row: c }) => sum + c.count, 0),
     grimoires: collectRecords(state, GRIMOIRE).length,
     instances: collectRecords(state, KNOWLEDGE_INSTANCE).length,
@@ -256,10 +266,20 @@ describe('a universe seeded from a legacy starts materially ahead', () => {
     expect(seeded.stone - control.stone).toBe(split.stone);
     expect(seeded.vellum - control.vellum).toBe(split.vellum);
     // Nothing is lost to the floor: the record does not claim to grant more than
-    // it grants.
-    expect(seeded.food + seeded.stone + seeded.vellum - (control.food + control.stone + control.vellum)).toBe(
-      record.channels.materials,
+    // it grants. Summed over **every** kind `MATERIAL_STOCK` declares, because
+    // `splitLegacyMaterials` divides the channel across all of them — and a sum
+    // over a hand-written subset is not a conservation check, it is a smaller
+    // number that happens to have a name.
+    const carried = MATERIAL_KINDS.reduce(
+      (total, kind) => total + (seeded.byKind[kind] - control.byKind[kind]),
+      0,
     );
+    expect(carried).toBe(record.channels.materials);
+    // And the per-kind rows really are the split, all seven of them, so the
+    // total above cannot be right by two errors cancelling.
+    for (const kind of MATERIAL_KINDS) {
+      expect(seeded.byKind[kind] - control.byKind[kind], kind).toBe(split[kind]);
+    }
   });
 
   it('holds more people, by exactly the populace channel, in the cohorts it already had', () => {
