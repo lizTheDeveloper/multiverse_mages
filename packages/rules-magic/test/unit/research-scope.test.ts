@@ -99,7 +99,11 @@ describe('a node scopes to the widest target any of its effects carries', () => 
       expect(node.scopeMultiplier).toBe(registry.autonomyWeight(`scope-multiplier-${target}`));
       checked += 1;
     }
-    expect(checked).toBe(300);
+    // The registry's own count rather than a literal: a pinned node count is a
+    // second place to edit when content grows, and this repository has watched
+    // one rot. What matters is that the loop saw every node and saw some.
+    expect(checked).toBe(registry.nodes.length);
+    expect(checked).toBeGreaterThan(0);
   });
 
   it('is not diluted by narrow effects riding along with a wide one', () => {
