@@ -186,6 +186,7 @@ import {
   fundedTeachingShare,
   hazardAt,
   heldTerritoryExtent,
+  heldTerritoryYieldShares,
   hireableMonths,
   insertNewborns,
   insightTeachingBonus,
@@ -378,19 +379,6 @@ export interface WorldStepDeps {
    * does to its seats and to its library's upkeep.
    */
   readonly territoryKinds: readonly TerritoryKind[];
-  /**
-   * What this universe's land yields, as shares over the three material kinds
-   * summing to `fp(1024)` — `territoryYieldShares` of the same content records
-   * {@link WorldStepDeps.territory} was summed from.
-   *
-   * Beside the extent and for the same reason: it is a function of content that
-   * is fixed for the length of a run, so recomputing it per tick would invite
-   * somebody to make it depend on something that is not. It is what makes a
-   * supply chain **sited** — a universe of river delta and one of highland waste
-   * put the same person-months in and get differently-shaped baskets out —
-   * without any entity acquiring a coordinate (vision §7a).
-   */
-  readonly yieldShares: MaterialAmounts;
   /**
    * Every node's universe-scoped economic effect, precomputed from content.
    *
@@ -1252,6 +1240,23 @@ export function worldSystem(
       // migration — and leaves this line holding exactly the land it always did.
       materializeTerritoryHoldings(state, deps.territoryKinds);
       const kindIndex = territoryKindIndex(deps.territoryKinds);
+      // **What this universe's land yields, read off the ground it holds.**
+      //
+      // This was a `WorldStepDeps` field computed once at the composition root
+      // from every territory in the content set, documented there as *"fixed
+      // for the length of a run"* — so every universe in a run produced the
+      // identical basket mix however much or little of each country it actually
+      // held, and `territory.json`'s prose distinctions (`upland-pasture`
+      // *"carries herds rather than fields"*, `deep-forest` *"timber and
+      // game"*) reached nothing. `kinds.ts` had already written the design
+      // down: *"territory decides the mix and labour decides the magnitude."*
+      //
+      // Computed here, one line after the holdings are materialized, because
+      // that is the earliest point at which the answer exists and the latest at
+      // which it is still the same for every phase that reads it. It is
+      // `O(holdings)` — five rows in the shipped content — against an
+      // `O(cohorts)` production loop, so per-tick is free.
+      const yieldShares = heldTerritoryYieldShares(state, deps.territoryKinds);
       // Two reads of one relationship, resolved once for the tick. Both take a
       // university handle, because §1.4 pins the site on the university and a
       // library carries no back-link to its owner.
@@ -1322,7 +1327,7 @@ export function worldSystem(
         readMaterialStock(state, universe).stone,
         deps,
       );
-      const produced = produceMaterials(cohorts, deps, economy, labour.onSites);
+      const produced = produceMaterials(cohorts, deps, economy, labour.onSites, yieldShares);
       const opening = readMaterialStock(state, universe);
       const stock = zeroAmounts();
       for (const kind of MATERIAL_KINDS) stock[kind] = opening[kind] + produced[kind];
@@ -1957,12 +1962,19 @@ export function worldSystem(
  * Per cohort and summed, never averaged: `laborAffinity` is a species trait and
  * a universe holds several species, so an average would let one able cohort
  * raise the output of every other.
+ *
+ * `shares` is passed in rather than read off `deps` because it is no longer a
+ * property of the content set: it is `heldTerritoryYieldShares` of this
+ * universe's own `territory-holding` rows, resolved once in phase 0. A
+ * parameter rather than a field is the point — a field is what let the run-wide
+ * answer sit here unnoticed for a release.
  */
 function produceMaterials(
   cohorts: CohortStore,
   deps: WorldStepDeps,
   economy: UniverseEconomyBonuses,
   onSites: ReadonlyMap<EntityHandle, number>,
+  shares: MaterialAmounts,
 ): MaterialAmounts {
   const produced = zeroAmounts();
   cohorts.forEach((handle, key, count) => {
@@ -1977,7 +1989,7 @@ function produceMaterials(
     const share = materialsProduced({
       laborerCount: inFields,
       laborAffinity: species.laborAffinity,
-      shares: deps.yieldShares,
+      shares,
       resourceYield: deps.primitives.resourceYield,
       resourceYieldBonuses: economy.resourceYield,
       production: deps.production,

@@ -57,7 +57,6 @@ import {
   readTargetAppeal,
   resolveSpeciesAffinities,
   territoryExtent,
-  territoryYieldShares,
 } from '@mm/rules-world';
 import type { NodeFacetResolver, TraditionResolver, WorldStepDeps } from '../../src/index.js';
 import { nodeFacetsFrom } from '../../src/index.js';
@@ -211,14 +210,9 @@ export function worldDeps(traditionId: number): WorldStepDeps {
       kindId: entry.contentId,
       landUnits: entry.record.landUnits,
       capacityPerLandUnit: entry.record.capacityPerLandUnit,
+      yieldPerLandUnit: entry.record.yieldPerLandUnit,
       libraryUpkeepMultiplier: entry.record.libraryUpkeepMultiplier,
     })),
-    // The same records the extent is summed from, read for their yield mix
-    // instead of their capacity — `scenario`'s composition root does the same
-    // (`content-set.ts`). Required on `WorldStepDeps` since `w29`, so a fixture
-    // that omitted it would fail to compile rather than silently step a
-    // universe whose land yields nothing.
-    yieldShares: territoryYieldShares(registry().territories.map((entry) => entry.record)),
     primitives: {
       lifespan: primitiveNamed('lifespan'),
       resourceYield: primitiveNamed('resource-yield'),

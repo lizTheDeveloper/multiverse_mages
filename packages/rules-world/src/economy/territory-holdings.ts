@@ -59,6 +59,8 @@ import { TERRITORY_HOLDING, attachRecord, collectRecords } from '@mm/state';
 
 import type { TerritoryExtent } from './carrying-capacity.js';
 import { NO_TERRITORY } from './carrying-capacity.js';
+import type { LandMaterialKind, LandYield, MaterialAmounts } from './kinds.js';
+import { landYieldShares } from './kinds.js';
 
 /**
  * What one kind of country is like, and what a universe founded on it starts
@@ -76,6 +78,16 @@ export interface TerritoryKind {
   readonly landUnits: number;
   /** People one land unit of this kind carries, `fp`. */
   readonly capacityPerLandUnit: Fp;
+  /**
+   * What one land unit of this kind produces, per land material kind, `fp`.
+   *
+   * The content half of §2.7's split again, and it belongs on this record for
+   * exactly the reason `capacityPerLandUnit` does: *"a property of the kind of
+   * country and not of who holds it."* A delta yields grain whoever the delta
+   * belongs to. How much delta this universe has is the holding row's answer,
+   * and {@link heldTerritoryYieldShares} is where the two meet.
+   */
+  readonly yieldPerLandUnit: Readonly<Record<LandMaterialKind, Fp>>;
   /** Multiplier on what a library standing here pays in upkeep, `fp`. */
   readonly libraryUpkeepMultiplier: Fp;
 }
@@ -163,6 +175,59 @@ export function heldTerritoryExtent(
     baseCapacity += floorDiv(held * Math.max(0, capacityOf.get(row.kindId) ?? 0), FP_ONE);
   }
   return any ? { landUnits, baseCapacity } : NO_TERRITORY;
+}
+
+/**
+ * What this universe's land yields, as shares over the three land kinds — read
+ * off **what it holds** rather than off what the content set describes.
+ *
+ * The exact counterpart of {@link heldTerritoryExtent}, and a second function
+ * rather than a widened first one for the same §2.7 reason: `kinds.ts`'
+ * `territoryYieldShares` answers *"what mix does this content set describe"*,
+ * which is what a founding endowment is stated in terms of, and this answers
+ * *"what mix does this universe's ground give it"*, which is what production
+ * spends.
+ *
+ * ## Why this is not a refactor
+ *
+ * `WorldStepDeps` carried the content answer as a field computed once at the
+ * composition root, documented as *"fixed for the length of a run"*. Every
+ * universe in a run therefore produced the identical basket mix regardless of
+ * its land, and `territory.json`'s own prose — `upland-pasture` *"carries herds
+ * rather than fields"*, `deep-forest` *"timber and game"*, `river-delta`
+ * *"three harvests a year"* — reached nothing. `kinds.ts` had already written
+ * the intended design down: *"territory decides the mix and labour decides the
+ * magnitude."* The mechanism existed and was switched off at the wire.
+ *
+ * On a freshly materialized world the two agree field for field, because
+ * {@link materializeTerritoryHoldings} seeds exactly the content endowment;
+ * `territory-holdings.test.ts` proves that rather than assuming it, and that
+ * agreement is what makes this a wire rather than a balance change. They part
+ * the moment a universe's holdings stop being the endowment.
+ *
+ * A holding whose kind the content set does not declare contributes **nothing**,
+ * which is the same conservative reading {@link heldTerritoryExtent} takes for
+ * `baseCapacity`: country of an unknown kind is credited with yielding nothing
+ * rather than with yielding a guess.
+ *
+ * @returns Shares in `fp` summing to exactly `fp(1024)`. A universe with no
+ * rows, or one holding only land that yields nothing, gets the whole share in
+ * `food` — `landYieldShares`' answer, and the reason is there.
+ */
+export function heldTerritoryYieldShares(
+  state: SimState,
+  kinds: readonly TerritoryKind[],
+): MaterialAmounts {
+  const yieldOf = new Map<ContentId, Readonly<Record<LandMaterialKind, Fp>>>();
+  for (const kind of kinds) yieldOf.set(kind.kindId, kind.yieldPerLandUnit);
+
+  const held: LandYield[] = [];
+  for (const { row } of collectRecords(state, TERRITORY_HOLDING)) {
+    const yields = yieldOf.get(row.kindId);
+    if (yields === undefined) continue;
+    held.push({ landUnits: Math.max(0, row.landUnits), yieldPerLandUnit: yields });
+  }
+  return landYieldShares(held);
 }
 
 /**

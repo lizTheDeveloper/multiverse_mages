@@ -76,7 +76,6 @@ import {
   readTargetAppeal,
   resolveSpeciesAffinities,
   territoryExtent,
-  territoryYieldShares,
 } from '@mm/rules-world';
 import type { CombatEffectIndex } from '@mm/rules-raid';
 import { combatEffectIndex } from '@mm/rules-raid';
@@ -862,11 +861,9 @@ export function worldDeps(
       kindId: entry.contentId,
       landUnits: entry.record.landUnits,
       capacityPerLandUnit: entry.record.capacityPerLandUnit,
+      yieldPerLandUnit: entry.record.yieldPerLandUnit,
       libraryUpkeepMultiplier: entry.record.libraryUpkeepMultiplier,
     })),
-    // The same records the extent is summed from, read for their yield mix
-    // instead of their capacity. Both are fixed for the length of a run.
-    yieldShares: territoryYieldShares(registry.territories.map((entry) => entry.record)),
     // The wire from knowledge to the economy. Built here, at the composition
     // root, because it is a pure projection of the content set — see
     // `universe-effects.ts`, which explains at length what was not connected

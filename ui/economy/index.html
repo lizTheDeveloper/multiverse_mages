@@ -999,7 +999,9 @@
     yieldShares:
       'A universe’s territory yield shares decide how one pool of labour splits across the three ' +
       'kinds — the whole reason two universes with the same workforce have different economies. ' +
-      'They are `WorldStepDeps.yieldShares`, not a projection field.',
+      'They are no longer a dep: the world step reads them per universe from its ' +
+      '`territory-holding` rows (`heldTerritoryYieldShares`). Still not a projection field, so ' +
+      'this page cannot show which country a universe is actually working.',
     formRouting:
       'Which material a form raises is content (`form.json`), and the projection publishes a form ' +
       'as `{bit, id, name}`. The table above is copied rather than fed, and is marked as such.',
