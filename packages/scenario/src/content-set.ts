@@ -67,6 +67,8 @@ import {
 import type { TraditionResolver } from '@mm/coordination';
 import type { SpeciesAffinities } from '@mm/rules-world';
 import {
+  NEUTRAL_LAND_APTITUDE,
+  landAptitudeTable,
   readGoalAppeal,
   readApplicationWeights,
   readCastingWeights,
@@ -730,6 +732,15 @@ export function worldDeps(
   // a pure function of the species record and the registry.
   const affinityCache = new Map<string, SpeciesAffinities>();
 
+  // The same six records read for the other half of the trait: what each species
+  // is good at *producing*, derived from those affinities through `form.json`'s
+  // yield weights. Built eagerly because it is six species against fourteen
+  // forms and constant for the run — see `aptitude.ts`.
+  const landAptitude = landAptitudeTable(
+    registry.species.map((entry) => entry.record),
+    registry.forms.map((entry) => entry.record),
+  );
+
   // The god hooks stack blessing and encouragement *constants*, never a node's
   // authored magnitude — a blessed mage researches faster because the god blessed
   // her, not because anyone discovered anything. Recorded so a reader of the
@@ -818,6 +829,17 @@ export function worldDeps(
       affinityCache.set(species.id, resolved);
       return resolved;
     },
+    // The **economy** half of the same trait, and the half that did not exist.
+    // Every consumer of `species.affinities` was in the research-targeting path
+    // — a dwarf's `terram: 1536` biased what she studied and moved nothing she
+    // dug up. `aptitude.ts` derives the tilt from those same authored entries
+    // through `form.json`'s weights, so nothing here is a second number an
+    // author has to keep in step with the first.
+    //
+    // Resolved once against the whole content set rather than per species on
+    // demand: it is `O(species × forms)` and constant for the run, and the map
+    // is the same shape `affinityCache` above is.
+    landAptitudeOf: (species) => landAptitude.get(species.id) ?? NEUTRAL_LAND_APTITUDE,
     appeal: readTargetAppeal(registry),
     goalAppeal: readGoalAppeal(registry),
     application: readApplicationWeights(registry),

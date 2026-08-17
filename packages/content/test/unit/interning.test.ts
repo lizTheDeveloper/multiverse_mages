@@ -937,7 +937,21 @@ describe('contentRevision', () => {
     // Not a union. This is a single edit to a single file on a preimage that is
     // `4621db1a` unchanged, which is why one arrow suffices where every entry
     // above needed two.
-    expect(registry.contentRevision).toBe('6cae4c8f82d6cad4a47ecb10d7efb15c');
+    //
+    // 6cae4c8f82d6cad4a47ecb10d7efb15c -> 3343812bdf9bab44f768b440e2009a6f, on
+    // the same branch. **`species.json`: human gains `animal: 1152` and
+    // `herbam: 1280`.** Human was the only species declaring no affinity entry
+    // at all, which was a defensible reading while `affinities` reached only
+    // research targeting — §6 calls human *"broad average aptitude"* and neutral
+    // is what broad average means. It stopped being defensible when the same
+    // entries began deriving a species' **land aptitude**: with none authored,
+    // the author's *"humans are a little bit better at agrarian stuff"* had no
+    // expression anywhere in the simulation. Two entries, both modest, and
+    // `species-versatility.test.ts` re-pins the live count from eleven to
+    // thirteen as the content decision it is.
+    //
+    // Also not a union, and also one file.
+    expect(registry.contentRevision).toBe('3343812bdf9bab44f768b440e2009a6f');
   });
 
   it('is stable across loads of identical content', () => {

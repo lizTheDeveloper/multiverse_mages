@@ -169,36 +169,46 @@ describe('the teachable window, which is where the separation actually lives', (
 
 describe('affinity liveness against the permitted cells', () => {
   /**
-   * **All eleven authored affinity entries are live, and none is inert.** This
-   * read `[4, 7]` while twelve cells were enabled: seven of the eleven named a
-   * form no permitted cell used, and human and gnome had no live entry at all.
-   * It did not bias them — `affinityTerm` defaults a missing key to `FP_ONE`
-   * and subtracts it, so an undeclared species scores exactly zero rather than
-   * badly — but seven authored numbers could not influence anything.
+   * **All thirteen authored affinity entries are live, and none is inert.** This
+   * read `[4, 7]` while twelve cells were enabled: seven of the eleven then
+   * authored named a form no permitted cell used, and human and gnome had no
+   * live entry at all. It did not bias them — `affinityTerm` defaults a missing
+   * key to `FP_ONE` and subtracts it, so an undeclared species scores exactly
+   * zero rather than badly — but seven authored numbers could not influence
+   * anything.
    *
    * `material-economy` flags every cell `"v1": true`, so every form is in a
    * permitted cell and every authored entry now bites. Re-pinned as a
    * **content decision**: the numbers are a function of `cell.json` and
    * `species.json` and are recomputable from them without running anything.
    *
+   * Eleven became **thirteen** on `w/exp-yields`, 2026-08-16: human gained
+   * `animal: 1152` and `herbam: 1280`. Two reasons, and both are deliberate.
+   * The economic one is that `species.affinities` now also derives a species'
+   * **land aptitude** (`rules-world`'s `aptitude.ts`), and a human with no
+   * authored entry derives exactly neutral — so the author's *"humans are a
+   * little bit better at agrarian stuff"* had no expression at all. The
+   * research one is the side the entries always had: humans now also *study*
+   * beasts and plants a little more readily, which is the same sentence read
+   * the other way and is accepted rather than hidden.
+   *
    * This is the shape the campaign is looking for — authored content that the
-   * ruleset made unreachable, becoming reachable. Seven numbers stopped being
-   * comments.
+   * ruleset made unreachable, becoming reachable.
    */
-  it('finds all eleven entries live and none inert', () => {
+  it('finds all thirteen entries live and none inert', () => {
     const live = sample.species.reduce((sum, entry) => sum + entry.liveAffinityEntries, 0);
     const inert = sample.species.reduce((sum, entry) => sum + entry.inertAffinityEntries, 0);
-    expect([live, inert]).toEqual([11, 0]);
+    expect([live, inert]).toEqual([13, 0]);
   });
 
-  it('leaves human with no entry at all, and gnome with two that now bite', () => {
-    // Two different zeroes, which is the whole reason this assertion is here.
-    // Gnome had **two authored entries and neither was live**; both are live
-    // now. Human's zero has not moved and cannot: it declares no affinity
-    // entries in `species.json` at all, which is why its inert count is zero
-    // too. A test that only checked `liveAffinityEntries === 0` could not have
-    // told those apart, so the inert count is asserted beside it.
-    expect(bySpecies('human').liveAffinityEntries).toBe(0);
+  it('gives human the two agrarian entries it did not have, and gnome its two', () => {
+    // Human's zero used to be one of two different zeroes and the reason this
+    // assertion carried an inert count beside a live one: gnome had **two
+    // authored entries and neither was live**, while human declared none at all.
+    // Human now declares two and both are live, so the inert count is still
+    // zero — and it is still asserted, because "no entries" and "no live
+    // entries" must never collapse into one reading again.
+    expect(bySpecies('human').liveAffinityEntries).toBe(2);
     expect(bySpecies('human').inertAffinityEntries).toBe(0);
     expect(bySpecies('gnome').liveAffinityEntries).toBe(2);
   });

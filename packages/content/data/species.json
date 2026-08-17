@@ -15,7 +15,7 @@
     "mageAptitude": 512,
     "prevalence": 102,
     "laborAffinity": 1024,
-    "affinities": {},
+    "affinities": { "animal": 1152, "herbam": 1280 },
     "tuningStatus": "untuned"
   },
   {

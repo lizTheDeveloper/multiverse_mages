@@ -139,6 +139,7 @@ import type {
   CohortDemography,
   ConservationBreach,
   GoalAppealWeights,
+  LandAptitude,
   MageGoalCommitment,
   MaterialAmounts,
   MaterialKind,
@@ -311,6 +312,29 @@ export interface WorldStepDeps {
    */
   readonly facets: NodeFacetResolver;
   readonly affinitiesOf: (species: SpeciesRecord) => SpeciesAffinities;
+  /**
+   * How a species tilts the land mix it works, `fp` per land kind.
+   *
+   * The economy half of §6's *"technique/form affinities"*, and until this
+   * existed there was no such half: **every consumer of `species.affinities`
+   * was in the research-targeting path**, so a dwarf's `terram: 1536` decided
+   * what she chose to study and moved not one unit of what she dug up. The
+   * author's *"dwarves are more likely to be good at digging stuff up out of
+   * the ground"* was a statement about the library.
+   *
+   * Resolved at the composition root like {@link WorldStepDeps.affinitiesOf}
+   * beside it, because it is a pure projection of `species.json` and
+   * `form.json` — `rules-world`'s `landAptitudeTable` builds it, and
+   * `aptitude.ts` says why the mapping between the two files is `yieldWeights`
+   * rather than a second authored table.
+   *
+   * Optional, and absent means `NEUTRAL_LAND_APTITUDE`, whose renormalization
+   * in `materialsProduced` is exactly the identity. A world built for a
+   * knowledge test therefore produces the byte-identical basket it always did,
+   * which is a thing a test can assert against rather than a silent
+   * degradation.
+   */
+  readonly landAptitudeOf?: ((species: SpeciesRecord) => LandAptitude) | undefined;
   /**
    * Every magnitude target selection is made of, read once from
    * `autonomy-weight.json`.
@@ -1990,6 +2014,10 @@ function produceMaterials(
       laborerCount: inFields,
       laborAffinity: species.laborAffinity,
       shares,
+      // Absent resolver is neutral, and neutral is the exact identity — see
+      // `aptitude.ts`. Spread rather than passed as `undefined` for the reason
+      // every other optional on this call is: `exactOptionalPropertyTypes`.
+      ...(deps.landAptitudeOf === undefined ? {} : { aptitude: deps.landAptitudeOf(species) }),
       resourceYield: deps.primitives.resourceYield,
       resourceYieldBonuses: economy.resourceYield,
       production: deps.production,
