@@ -155,9 +155,15 @@ export function addAmounts(a: MaterialAmounts, b: MaterialAmounts): MaterialAmou
  *
  * The one place a total is taken, and it exists for **reporting and for the
  * observation block**, never for spending. Nothing may pay a claimant out of a
- * total: that would be cross-kind substitution, which is a market, and a market
- * is a mechanic nobody asked for that would undo the differentiation this module
- * exists to create.
+ * total: that would be cross-kind substitution, and no substitution is
+ * implemented — it would undo the differentiation this module exists to create.
+ *
+ * An earlier revision added "a market is a mechanic nobody asked for". That was
+ * an agent's caution written in the register of a design ruling; the author has
+ * since said it was not his. See `materials.ts`'s note for the full account and
+ * why the class matters. The mechanical claim above stands and the prohibition
+ * on spending from a total stands; **the question of whether this game has a
+ * market is open, and this comment does not close it.**
  */
 export function totalAmount(amounts: MaterialAmounts): Fixed {
   let total = 0;
