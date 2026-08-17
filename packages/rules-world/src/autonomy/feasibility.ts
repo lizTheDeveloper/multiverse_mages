@@ -136,6 +136,18 @@ export function isFeasible(goal: GoalId, outlook: MageOutlook): boolean {
       // that cannot improve. Every one of those is again a question this
       // package may not ask (`contracts.md` §5 rule 3).
       return anyOf(outlook.practiceTargets);
+    case GOAL.sustainWorking:
+      // A mage with no duration-bearing node she can cast has no working to
+      // light and none to renew. The list is already filtered by the
+      // coordinating layer — held, permitted now, at or above the activation
+      // threshold, and authored with a non-zero `durationTicks` — every one of
+      // which is a question this package may not ask (`contracts.md` §5 rule 3).
+      //
+      // **Feasibility here is deliberately *not* "a working stands".** Requiring
+      // one would make lighting the first working impossible: nobody could ever
+      // sustain what nobody had ever lit, and the goal would be masked in every
+      // universe forever while looking perfectly well wired.
+      return anyOf(outlook.sustainableTargets);
     default:
       throw new RangeError(
         `${String(goal)} is not a goal id; the registry in goals.ts is append-only and this ` +

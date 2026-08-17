@@ -228,6 +228,28 @@ export const TRAIT_CLASSIFICATION: Readonly<
   // universe works, and a site is which kind its academy stands in; §4.1's
   // observation has no channel for either, and a PvP opponent learning where a
   // rival's academy stands is a disclosure question nobody has ruled on yet.
+  // `working-duration`'s section, world-schema revision 12. All five
+  // `undecided()`, and the reason is sharper than the rows above it.
+  //
+  // A standing working is the first piece of world state that a rival's *timing*
+  // depends on. Knowing when a wall's upkeep runs out is knowing when to raid,
+  // and §4.1's observation has no channel that could carry it — nor is there any
+  // ruling on whether it should. **`expiresTick` is the field to think hardest
+  // about before anybody classifies it.** The effect a working holds up is
+  // already partly visible through the economy an agent can measure; the *date*
+  // is not, and publishing it would turn upkeep from a rota into a countdown a
+  // besieger reads off the observation.
+  //
+  // `renewals` is the tempting one to disclose — it is history rather than
+  // schedule — and it is left undecided too, because a renewal count and an
+  // authored duration together reconstruct `expiresTick` exactly.
+  'standing-working': {
+    holder: undecided(),
+    nodeId: undecided(),
+    litTick: undecided(),
+    expiresTick: undecided(),
+    renewals: undecided(),
+  },
   'territory-holding': { kindId: undecided(), landUnits: undecided() },
   'university-site': { kindId: undecided() },
   // The entire rediscovery signal. An agent cannot distinguish a node never

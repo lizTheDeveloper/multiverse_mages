@@ -176,6 +176,24 @@ export const GOAL_BASE_APPEAL: Readonly<Record<GoalId, Fixed>> = {
    * first — the other is `PRACTICE_GAIN_PER_MONTH`.
    */
   [GOAL.practice]: 384,
+  /**
+   * **Below every goal that produces something, and above only `idle`.**
+   *
+   * Upkeep must not win the argmax on its own merits — a universe whose mages
+   * all renewed would stop discovering, which is the failure `practice` was
+   * tuned away from one goal earlier. What makes a working get renewed is not
+   * this number: it is the **urgency term** in `opportunityTerm` below, which
+   * rises as a working approaches its expiry, and the warden's `+256` role
+   * bias. So the shape is *"nobody renews a working that has years left, and
+   * somebody renews one that is about to go out"*, which is what a rota is.
+   *
+   * A literal, like the ten rows above it, rather than a scalar in
+   * `autonomy-weight.json`. That file is the right home for a magnitude the
+   * economy spends; this table is a single tuning surface a reviewer reads top
+   * to bottom, and moving one row out of it into content would leave two places
+   * to look for the same kind of number. **Untuned.**
+   */
+  [GOAL.sustainWorking]: 128,
 };
 
 /**
@@ -210,6 +228,12 @@ export const AGE_TERM: Readonly<Record<AgeBandValue, Readonly<Record<GoalId, Fix
     // career from the inside: the months between being taught a thing badly
     // and holding it well enough to pass on.
     [GOAL.practice]: 128,
+    // Negative for the young, and it is the one age term that is a statement
+    // about the *institution* rather than about the mage. A working is renewed
+    // by whoever lit it, and a novice has lit nothing; putting her on the rota
+    // would mean a universe staffing its upkeep out of the people who should be
+    // in a classroom.
+    [GOAL.sustainWorking]: -128,
   },
   [AGE_BAND.prime]: {
     [GOAL.idle]: 0,
@@ -223,6 +247,7 @@ export const AGE_TERM: Readonly<Record<AgeBandValue, Readonly<Record<GoalId, Fix
     [GOAL.raidReadiness]: 0,
     [GOAL.applyMagic]: 0,
     [GOAL.practice]: 0,
+    [GOAL.sustainWorking]: 0,
   },
   [AGE_BAND.senescent]: {
     [GOAL.idle]: 0,
@@ -243,6 +268,12 @@ export const AGE_TERM: Readonly<Record<AgeBandValue, Readonly<Record<GoalId, Fix
     // and one tick of decay takes them below it. Keeping her hand in is the
     // only thing that keeps her able to teach at all in her last years.
     [GOAL.practice]: 128,
+    // Positive, for the fourth version of the same reason the two rows above
+    // it give. Everything an old mage knows leaves the universe when she does —
+    // and a working she is holding up leaves *sooner*, on the tick after her
+    // last renewal. Keeping it standing is the one thing she can do that
+    // outlives her by exactly as long as somebody else takes to notice.
+    [GOAL.sustainWorking]: 128,
   },
 };
 
@@ -478,6 +509,23 @@ export function opportunityTerm(
       return boundTerm('opportunity', candidateOpportunity(outlook.applicableTargets.length));
     case GOAL.practice:
       return boundTerm('opportunity', candidateOpportunity(outlook.practiceTargets.length));
+    case GOAL.sustainWorking:
+      // **The one opportunity term with two summands, and it is the whole shape
+      // of the upkeep economy.**
+      //
+      // The candidate half says *"there is something here to light"* and is the
+      // same function every other goal uses. The urgency half says *"and one of
+      // them is about to go out"*, rising from zero on the tick a working is lit
+      // to just under `fp(1024)` on the last tick it stands.
+      //
+      // Summed rather than maxed, so a mage holding several workings — every
+      // one of them a candidate — is more likely to be on the rota than a mage
+      // holding one. `boundTerm` clamps the sum, so neither half can be the only
+      // thing that decides a career.
+      return boundTerm(
+        'opportunity',
+        candidateOpportunity(outlook.sustainableTargets.length) + outlook.workingUrgency,
+      );
     default:
       return 0;
   }

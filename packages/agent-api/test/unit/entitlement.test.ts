@@ -146,7 +146,7 @@ describe('unclassifiedTraits (step 2)', () => {
    * undecided count below moves by the same five and no existing row was
    * reclassified to absorb them.
    */
-  it('covers the 124 traits: 108 at be446a6, plus six merged changes', () => {
+  it('covers the 129 traits: 108 at be446a6, plus seven merged changes', () => {
     let traits = 0;
     for (const spec of [...WORLD_COMPONENTS, ...ENGAGEMENT_COMPONENTS]) {
       traits += Object.keys(spec.fields).length;
@@ -156,7 +156,8 @@ describe('unclassifiedTraits (step 2)', () => {
     // two and `university-site`'s one (W24), and `knowledge-fidelity`'s two
     // (W190) — plus `material-economy`'s four new `material-stock` *fields*,
     // which add traits without adding a component. 108 + 2 + 5 + 3 + 2 + 4 =
-    // **124**. The count is the point of the test, so it moves with the field
+    // **124**, plus `standing-working`'s five (`working-duration`, revision 12)
+    // for **129**. The count is the point of the test, so it moves with the field
     // set rather than being loosened to `>=`;
     // `docs/design/observable-trait-inventory.md` is the document this is
     // keeping honest.
@@ -165,7 +166,7 @@ describe('unclassifiedTraits (step 2)', () => {
     // W182 reached 113 on its own tree, Group E reached 120, and
     // `material-economy` reached 112; the merged tree is none of those, because
     // each branch counted its own additions over a base missing the others'.
-    expect(traits).toBe(124);
+    expect(traits).toBe(129);
 
     let classified = 0;
     for (const rows of Object.values(TRAIT_CLASSIFICATION)) {
@@ -201,7 +202,11 @@ describe('unclassifiedTraits (step 2)', () => {
     // OBSERVABLE in this scheme means *projected into `PlayerState`*, which is
     // the first stage of `observation-entitlement.md`'s reducer; reaching a slot
     // is the second, and `DECLARED_UNENCODED` is where that half is recorded.
-    expect(byReason.get('not-yet-decided')).toBe(82);
+    // And 87 since `working-duration`: `standing-working`'s five are all
+    // undecided, which moves this bucket by exactly the five the trait count
+    // moved by — so no existing row was reclassified to absorb them, which is
+    // what the paired assertion is for.
+    expect(byReason.get('not-yet-decided')).toBe(87);
     expect(byReason.get('internal-bookkeeping')).toBe(6);
     // Unused until there is an opponent-facing projection to hide anything
     // from. Asserted at zero so that the day it stops being zero is a diff.

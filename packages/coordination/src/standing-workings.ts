@@ -50,10 +50,11 @@
  * wall come down.
  */
 
-import type { ContentId } from '@mm/content';
-import type { SimState } from '@mm/sim-core';
+import type { ContentId, ContentRegistry } from '@mm/content';
+import type { Fixed, SimState } from '@mm/sim-core';
+import { FP_ONE, floorDiv } from '@mm/sim-core';
 import type { StandingWorkings } from '@mm/rules-magic';
-import { expiryTickOf, isLive } from '@mm/rules-magic';
+import { authoredDurationOf, expiryTickOf, isLive } from '@mm/rules-magic';
 import type { Handle, StandingWorkingRecord } from '@mm/state';
 import { STANDING_WORKING, attachRecord, collectRecords, componentOf } from '@mm/state';
 
@@ -242,4 +243,105 @@ export function endWorkingsOf(state: SimState, holder: Handle): number {
     state.entities.destroy(handle);
   }
   return ending.length;
+}
+
+/**
+ * Every node's authored working duration, precomputed from content.
+ *
+ * The sibling of `universe-effects.ts`' `UniverseEffectIndex`, and built for the
+ * same reason: the answer is a pure function of the content, the world loop asks
+ * it per mage per tick, and `rules-magic`'s `NodeCatalog` deliberately cannot see
+ * `effects` at all — *"a type that cannot see `effects` cannot quietly start
+ * applying them here"*.
+ *
+ * **A node's non-zero durations must all be the same number**, and the loader
+ * refuses a node that breaks it. Two different durations on one node would need
+ * two workings, or one working whose expiry silently extends the shorter effect;
+ * the second is the kind of quiet wrongness this project spends its comments on.
+ */
+export interface WorkingDurations {
+  /** Ticks a working over this node stands for. `0` — the common case — means no working. */
+  durationOf(nodeId: ContentId): number;
+  /** How many nodes declare a duration at all. For diagnostics and for the report. */
+  readonly durableNodeCount: number;
+}
+
+/** Nothing in this content set expires. What a build with no index behaves as. */
+export const NO_WORKING_DURATIONS: WorkingDurations = Object.freeze({
+  durationOf: () => 0,
+  durableNodeCount: 0,
+});
+
+/**
+ * Reads every node's authored duration once per content load.
+ *
+ * Walks `registry.nodes` directly rather than going through
+ * `rules-magic/effects/consumption.ts`. That module's registrations are about
+ * *magnitudes* — "can what the academics know move this primitive" — and a
+ * duration is not a magnitude: it is a structural fact about the effect entry,
+ * read for every primitive at once rather than for one. Registering this walk as
+ * a consumption would put a node on the coverage report for a primitive nothing
+ * here spends.
+ */
+export function buildWorkingDurations(registry: ContentRegistry): WorkingDurations {
+  const byNode = new Map<ContentId, number>();
+  for (const entry of registry.nodes) {
+    const duration = authoredDurationOf(entry.record.effects);
+    if (duration !== 0) byNode.set(entry.contentId, duration);
+  }
+  return {
+    durationOf: (nodeId) => byNode.get(nodeId) ?? 0,
+    durableNodeCount: byNode.size,
+  };
+}
+
+/**
+ * How close this mage's most urgent working is to lapsing, `fp`.
+ *
+ * `0` for a mage holding nothing up, and — deliberately — also `0` on the tick a
+ * working is lit, rising to just under `FP_ONE` on the last tick it stands. It
+ * is the fraction of the authored duration already elapsed, taken over her most
+ * urgent working.
+ *
+ * A working whose node has since lost its duration (content changed under a
+ * save) contributes nothing rather than dividing by zero. It will be swept when
+ * its tick comes, like any other.
+ */
+export function workingUrgencyOf(
+  state: SimState,
+  holder: Handle,
+  worldTick: number,
+  durations: WorkingDurations,
+): Fixed {
+  let worst = 0;
+  for (const { row } of collectRecords(state, STANDING_WORKING)) {
+    if (row.holder !== holder) continue;
+    const duration = durations.durationOf(row.nodeId);
+    if (duration <= 0) continue;
+    const remaining = row.expiresTick - worldTick;
+    if (remaining <= 0) {
+      // Already lapsed and not yet swept. Maximally urgent, and clamped rather
+      // than allowed to go negative — a negative urgency would *subtract* from
+      // the opportunity term, so a universe whose workings had all gone out
+      // would be the one least inclined to relight them.
+      return FP_ONE;
+    }
+    if (remaining >= duration) continue;
+    const elapsed = FP_ONE - floorDiv(remaining * FP_ONE, duration);
+    if (elapsed > worst) worst = elapsed;
+  }
+  return worst;
+}
+
+/** Ticks before this mage's working over `nodeId` lapses, or the full duration if unlit. */
+export function ticksBeforeLapse(
+  state: SimState,
+  holder: Handle,
+  nodeId: ContentId,
+  worldTick: number,
+  durations: WorkingDurations,
+): number {
+  const existing = findWorking(state, holder, nodeId);
+  if (existing === undefined) return durations.durationOf(nodeId);
+  return Math.max(0, existing.row.expiresTick - worldTick);
 }

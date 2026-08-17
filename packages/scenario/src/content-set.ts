@@ -88,6 +88,7 @@ import {
   nodeFacetsFrom,
   resolveGodContent,
   universeEffectIndex,
+  buildWorkingDurations,
   vitalityIndex,
 } from '@mm/coordination';
 
@@ -893,6 +894,18 @@ export function worldDeps(
     // two under *"consumed, but never from node effects"*, which is the line
     // this campaign exists to shorten.
     vitality: vitalityIndex(registry, recorder),
+    // Every node's authored working duration, read once. This is the wire that
+    // makes `durationTicks` mean something: without it no working is ever lit,
+    // `sustain-working` is masked for every mage, and the field goes on being
+    // what it was for three releases — authored on 419 effect entries and read
+    // by nothing.
+    //
+    // No `recorder`, unlike its four neighbours, and that is not an oversight.
+    // The consumption check asks *"can what the academics know move this
+    // primitive"*, which is a question about magnitudes; a duration is not one.
+    // Registering this walk would put every durable node on the coverage report
+    // for a primitive nothing here spends.
+    workingDurations: buildWorkingDurations(registry),
     primitives: {
       lifespan,
       resourceYield: primitiveNamed(registry, 'resource-yield'),

@@ -145,6 +145,49 @@ export interface MageOutlook {
    * and can be done again next month.
    */
   readonly practiceTargets: readonly KnowledgeTarget[];
+  /**
+   * Nodes she could spend the month **keeping standing**, already gated.
+   *
+   * The coordinating layer's gates, as with every other list here: an instance
+   * held at a mind or a memory palace at or above the activation threshold, in
+   * a cell the ruleset permits *now*, on a node whose authored effects declare
+   * a non-zero `durationTicks`. That last filter is the one particular to this
+   * goal, and it is what keeps the eleventh goal from being offered over the
+   * 381 of 419 effect entries that have no duration to keep.
+   *
+   * Both halves of upkeep are in this one list. A node with no working over it
+   * yet is a working to **light**; one with a working already standing is a
+   * working to **renew**. They are the same month and the same commitment, so
+   * splitting them into two goals would have made a mage who lit one on Monday
+   * unable to keep it on Tuesday without a second goal switch.
+   *
+   * `remainingCost` is the **ticks left before it lapses** — the authored
+   * duration for a working not yet lit. That is not a project cost and is not
+   * pretending to be one; it is put there because `compareTargets` breaks ties
+   * cheapest-first, so the working nearest to going out is the one a mage
+   * reaches for when the appeal scores tie.
+   */
+  readonly sustainableTargets: readonly KnowledgeTarget[];
+  /**
+   * How close her nearest working is to lapsing, `fp`, `0` to `fp(1024)`.
+   *
+   * `0` when she is holding nothing up — and, deliberately, also `0` on the
+   * tick a working is lit, rising to just under `fp(1024)` on the last tick it
+   * stands. It is the *fraction of the working's authored duration already
+   * elapsed*, taken over her most urgent working.
+   *
+   * **This is what makes upkeep a rota rather than a treadmill.**
+   * `GOAL_BASE_APPEAL` puts `sustain-working` below every goal that produces
+   * something, so a working with years left never wins the argmax. This term is
+   * what makes one that is about to go out win it — *"renewed about as often as
+   * a sentry is changed"*, which is a thing you do when the watch ends and not
+   * continuously.
+   *
+   * A mage with nothing standing therefore reaches `sustain-working` only
+   * through the candidate half of `opportunityTerm`, which is how a working
+   * gets lit in the first place.
+   */
+  readonly workingUrgency: Fixed;
 
   /** Universe materials stock, `fp`. Scribing is masked without enough. */
   readonly materials: Fixed;

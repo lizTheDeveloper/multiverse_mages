@@ -123,6 +123,33 @@ export const GOAL = {
    * stratified while mastery rises.
    */
   practice: 10,
+  /**
+   * Spend the month **keeping a working standing** — lighting one over a node
+   * she holds, or renewing one before it lapses.
+   *
+   * The eleventh goal, and the first whose whole content is *upkeep*. The other
+   * ten either produce something — a node, an instance, a book, a harvest — or
+   * stand watch. This one buys nothing new. It buys the continued existence of
+   * something already bought.
+   *
+   * That is the tradeoff `node.json`'s Muto glosses have been describing since
+   * the grid was authored and the rules had never charged for: *"the change is
+   * worn, not granted"*, *"renewed about as often as a sentry is changed"*, *"a
+   * wall you have agreed to build twice"*. A month spent renewing is a month not
+   * spent researching, and a universe that has lit more workings than it can
+   * staff watches some of them go out — which is a strategic position rather
+   * than a failure state, and the first one in this game a player can reach by
+   * succeeding too fast.
+   *
+   * It **competes**, exactly as `practice` does and for the same reason. An
+   * upkeep that ran in the background for free would rank gods by how many
+   * workings they could accumulate, which is a resource counter rather than a
+   * decision.
+   *
+   * See `rules-magic`'s `workings/standing.ts` for what a working is, and
+   * `coordination`'s `standing-workings.ts` for the sweep that ends one.
+   */
+  sustainWorking: 11,
 } as const;
 
 /** Any id in the permanent registry. */
@@ -148,6 +175,7 @@ export const GOALS_IN_ORDER: readonly GoalId[] = [
   GOAL.raidReadiness,
   GOAL.applyMagic,
   GOAL.practice,
+  GOAL.sustainWorking,
 ];
 
 /** How many goals the enumeration holds. Grows; never shrinks. */
@@ -171,6 +199,7 @@ export const GOAL_NAMES: Readonly<Record<GoalId, string>> = {
   [GOAL.raidReadiness]: 'raid-readiness',
   [GOAL.applyMagic]: 'apply-magic',
   [GOAL.practice]: 'practice',
+  [GOAL.sustainWorking]: 'sustain-working',
 };
 
 /** Whether a number names a goal in the permanent registry. */
@@ -193,6 +222,10 @@ export const GOALS_NEEDING_A_TARGET: readonly GoalId[] = [
   GOAL.scribe,
   GOAL.applyMagic,
   GOAL.practice,
+  // A working stands over a *node*. Without one there is nothing to renew, and
+  // a `sustain-working` commitment carrying `targetNodeId: 0` would be a month
+  // spent on nothing that the report would nonetheless count as upkeep.
+  GOAL.sustainWorking,
 ];
 
 /** Whether a goal is meaningless without a node to point it at. */

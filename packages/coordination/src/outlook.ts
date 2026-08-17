@@ -56,6 +56,8 @@ import {
 import type { CoordinatingKnowledgeGateway } from './gateway.js';
 import type { NodeFacetResolver } from './node-facets.js';
 import type { UniverseEffectIndex } from './universe-effects.js';
+import type { WorkingDurations } from './standing-workings.js';
+import { ticksBeforeLapse, workingUrgencyOf } from './standing-workings.js';
 
 /** Everything an outlook needs beyond the mage's own row. */
 export interface OutlookDeps {
@@ -95,6 +97,15 @@ export interface OutlookDeps {
    * is.
    */
   readonly emphasis: CellEmphasis;
+  /**
+   * Every node's authored working duration, or absent.
+   *
+   * Optional for the reason `universeEffects` is: a world built for a knowledge
+   * test need not supply one, and without it `sustain-working` is masked for
+   * every mage — exactly the behaviour every build before this change had, which
+   * a test can assert against rather than discover.
+   */
+  readonly workingDurations?: WorkingDurations | undefined;
   /**
    * The university this mage would rather be at, given the one she is at.
    *
@@ -156,6 +167,11 @@ export function buildOutlook(
     scribableTargets: boundCandidates(scribableBy(mage, deps), species),
     applicableTargets: boundCandidates(applicableBy(mage, deps), species),
     practiceTargets: boundCandidates(practicableBy(mage, deps), species),
+    sustainableTargets: boundCandidates(sustainableBy(mage, deps), species),
+    workingUrgency:
+      deps.workingDurations === undefined
+        ? 0
+        : workingUrgencyOf(deps.state, mage, deps.worldTick, deps.workingDurations),
 
     materials: deps.materials,
     scribeThroughput: deps.scribeThroughputOf(row.universityId),
@@ -375,6 +391,53 @@ function practicableBy(mage: Handle, deps: OutlookDeps): KnowledgeTarget[] {
       nodeId,
       tier: deps.tierOf(nodeId),
       remainingCost: 0,
+      cellId: facets.cellId,
+      formId: facets.formId,
+      primitives: facets.primitives,
+      libraryHolds: false,
+    });
+  }
+  return found;
+}
+
+/**
+ * Nodes this mage could spend the month **keeping standing** — lighting a
+ * working over one, or renewing the one she has.
+ *
+ * Three of the four gates are `castableNodes`', which is the same set
+ * `apply-magic` draws on and deliberately so: a working is cast, and what a mage
+ * can keep standing is a subset of what she can cast. The fourth is the authored
+ * duration — a node whose effects are all `durationTicks: 0` has no working to
+ * keep, which is 381 of the 419 effect entries in the shipped grid.
+ *
+ * **A working already standing stays in the list**, and that is the whole reason
+ * there is one goal here and not two. A node with no working over it is a
+ * working to *light*; one with a working standing is a working to *renew*. Same
+ * month, same commitment. Splitting them would have made a mage who lit one on
+ * Monday need a goal switch to keep it on Tuesday, and `MIN_COMMITMENT_TICKS`
+ * would then have decided how many workings a universe could hold.
+ *
+ * **An absent index means an empty list, and therefore a masked goal.** The same
+ * shape `applicableTargets` uses for an absent `universeEffects`: a build with no
+ * duration index behaves exactly as every build before this change did, which is
+ * a thing a test can assert against rather than a silent degradation.
+ *
+ * `remainingCost` is ticks-before-lapse rather than a project cost, and
+ * `rules-world`'s `outlook.ts` says why: `compareTargets` breaks ties
+ * cheapest-first, so the working nearest to going out is the one she reaches for
+ * when the appeal scores tie.
+ */
+function sustainableBy(mage: Handle, deps: OutlookDeps): KnowledgeTarget[] {
+  const durations = deps.workingDurations;
+  if (durations === undefined) return [];
+  const found: KnowledgeTarget[] = [];
+  for (const nodeId of deps.gateway.castableNodes(mage)) {
+    if (durations.durationOf(nodeId) === 0) continue;
+    const facets = deps.facetsOf(nodeId);
+    found.push({
+      nodeId,
+      tier: deps.tierOf(nodeId),
+      remainingCost: ticksBeforeLapse(deps.state, mage, nodeId, deps.worldTick, durations),
       cellId: facets.cellId,
       formId: facets.formId,
       primitives: facets.primitives,

@@ -150,6 +150,8 @@ export function outlook(overrides: Partial<MageOutlook> = {}): MageOutlook {
     scribableTargets: [],
     applicableTargets: [],
     practiceTargets: [],
+    sustainableTargets: [],
+    workingUrgency: 0,
     materials: 0,
     scribeThroughput: 0,
     betterAffiliationAvailable: false,
@@ -181,6 +183,14 @@ export function richOutlook(overrides: Partial<MageOutlook> = {}): MageOutlook {
     // `remainingCost` zero for the same reason: practice has no project, only a
     // mastery that is higher this month than last.
     practiceTargets: [target(71, 1, 0)],
+    // `remainingCost` is ticks-before-lapse for this goal rather than a project
+    // cost — the full authored duration for a working not yet lit, which is what
+    // `24` is here. See `outlook.ts`.
+    sustainableTargets: [target(81, 1, 24)],
+    // Nothing near lapsing. The rich outlook is "everything is available", not
+    // "everything is urgent", and an urgency here would make every mask test in
+    // the file quietly a test about a rota.
+    workingUrgency: 0,
     materials: 4096,
     scribeThroughput: 1024,
     betterAffiliationAvailable: true,
