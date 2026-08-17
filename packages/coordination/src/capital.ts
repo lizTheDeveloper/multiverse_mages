@@ -62,11 +62,21 @@
  */
 
 import type { EntityHandle, SimState } from '@mm/sim-core';
+import { floorDiv, FP_ONE } from '@mm/sim-core';
 import type { Handle, Ruleset } from '@mm/state';
-import { UNIVERSITY, collectRecords, permits } from '@mm/state';
-import type { CellResolver, NodeCatalog } from '@mm/rules-magic';
+import {
+  KNOWLEDGE_INSTANCE,
+  LOCATION_KIND,
+  MAGE,
+  UNIVERSITY,
+  collectRecords,
+  componentOf,
+  permits,
+} from '@mm/state';
+import type { CellResolver, NodeCatalog, PalaceContribution, StorePolicy } from '@mm/rules-magic';
+import { MASTERY_ACTIVATION_THRESHOLD, palaceLibraryDepth } from '@mm/rules-magic';
 import type { CapitalEmission, LibraryDepth } from '@mm/rules-world';
-import { emitCapital, emptyLibraryDepth, libraryDepths } from '@mm/rules-world';
+import { TIER_COUNT, emitCapital, emptyLibraryDepth, libraryDepths } from '@mm/rules-world';
 
 /** `fp(1.0)` — `buildProgress` at which a university is complete (`contracts.md` §1.4). */
 const COMPLETE = 1024;
@@ -76,6 +86,23 @@ export interface LibraryCapitalDeps {
   readonly catalog: NodeCatalog;
   readonly cells: CellResolver;
   readonly ruleset: Ruleset;
+  /**
+   * The universe's `store` hook, for the depth a memory palace contributes.
+   *
+   * Optional, and absent means shelves only — which is what every caller
+   * written before this did, and what a `standard` tradition's answer is anyway
+   * because its `libraryDepthCoefficient` is zero.
+   *
+   * It matters for exactly one tradition and it matters completely.
+   * `store: palace` creates no grimoire and no library instance at all, so
+   * before this an Art of Memory universe had **zero library depth by
+   * construction** and vision §6a's knowledge-as-capital loop was switched off
+   * for one of the three v1 traditions — not balanced differently, switched off.
+   * `palaceLibraryDepth` was written for precisely this and had no production
+   * caller; the coefficient it reads is authored at `fp(768)` in
+   * `tradition.json` and turned nothing.
+   */
+  readonly store?: StorePolicy | undefined;
 }
 
 /** One tick's reading of every library, keyed by the university that owns it. */
@@ -109,6 +136,8 @@ export function libraryCapital(state: SimState, deps: LibraryCapitalDeps): Libra
     counts: (nodeId) => permits(deps.ruleset, deps.cells.cellOf(nodeId)),
   });
 
+  const palaces = palaceDepthByUniversity(state, deps);
+
   // University handle to its library's depth. Only completed universities, and
   // only ones that keep a library at all: `libraryId` of `0` is §0's absent
   // reference, and a book shelved into it would sit at a location nothing can
@@ -123,7 +152,10 @@ export function libraryCapital(state: SimState, deps: LibraryCapitalDeps): Libra
     // equal, which is the direction a snowball guard must never lie in.
     byUniversity.set(handle, {
       library: row.libraryId as EntityHandle,
-      depth: depths.get(row.libraryId as EntityHandle) ?? emptyLibraryDepth(),
+      depth: withPalaces(
+        depths.get(row.libraryId as EntityHandle) ?? emptyLibraryDepth(),
+        palaces.get(handle),
+      ),
     });
   }
 
@@ -144,5 +176,141 @@ export function libraryCapital(state: SimState, deps: LibraryCapitalDeps): Libra
         .map(([university, entry]) =>
           emitCapital(university as EntityHandle, entry.depth, depthCeiling, clampCount),
         ),
+  };
+}
+
+/**
+ * Per-tier palace depth, per university, from its living affiliated mages.
+ *
+ * Returns `fp` depth per tier, already through {@link palaceLibraryDepth} so the
+ * coefficient is applied by the function that owns it. Empty under any policy
+ * whose coefficient is zero — which is every `standard` tradition, and is why a
+ * universe that has never seen the Art of Memory pays nothing for this existing.
+ *
+ * The gates are the shelf's gates, deliberately: a node counts only if its cell
+ * is currently **permitted** and the instance is above the activation threshold.
+ * `library-depth.ts` states the first as a rule — *"a library full of
+ * interdicted books still stands and reports zero depth"* — and a palace that
+ * kept counting through an interdiction would make forbidding a cell cost a
+ * standard university its research advantage and cost an Art of Memory one
+ * nothing.
+ *
+ * Distinct **per mage**, not per university: two scholars who both hold a node
+ * in their palaces are two copies of it, because that is what a palace is. This
+ * is the one place the two units genuinely differ from a shelf's, and it is
+ * `palaceLibraryDepth`'s own arithmetic — it sums contributions and does not
+ * de-duplicate across holders.
+ */
+function palaceDepthByUniversity(
+  state: SimState,
+  deps: LibraryCapitalDeps,
+): ReadonlyMap<Handle, readonly number[]> {
+  const empty = new Map<Handle, readonly number[]>();
+  const store = deps.store;
+  if (store === undefined || store.libraryDepthCoefficient === 0) return empty;
+
+  // Which university each living mage belongs to. A dead mage contributes
+  // nothing, which is the entire bargain: this capital is mortal and has to be
+  // continuously replaced.
+  const affiliation = new Map<Handle, Handle>();
+  for (const { handle, row } of collectRecords(state, MAGE)) {
+    if (row.alive === 0 || row.universityId === 0) continue;
+    affiliation.set(handle, row.universityId);
+  }
+  if (affiliation.size === 0) return empty;
+
+  // (university, tier) -> one entry per contributing mage, her distinct usable
+  // palace nodes at that tier. Built from a single pass over the instances.
+  const perMage = new Map<Handle, Map<number, Set<number>>>();
+  const instances = componentOf(state, KNOWLEDGE_INSTANCE);
+  const kinds = instances.field('locationKind');
+  const ids = instances.field('locationId');
+  const nodes = instances.field('nodeId');
+  const masteries = instances.field('mastery');
+  instances.forEach((row) => {
+    if ((kinds[row] as number) !== LOCATION_KIND.palace) return;
+    if ((masteries[row] as number) < MASTERY_ACTIVATION_THRESHOLD) return;
+    const mage = ids[row] as Handle;
+    if (!affiliation.has(mage)) return;
+    const nodeId = nodes[row] as number;
+    if (!permits(deps.ruleset, deps.cells.cellOf(nodeId))) return;
+    const tier = deps.catalog.node(nodeId)?.tier ?? 1;
+    if (!Number.isInteger(tier) || tier < 1 || tier > TIER_COUNT) return;
+    let byTier = perMage.get(mage);
+    if (byTier === undefined) {
+      byTier = new Map<number, Set<number>>();
+      perMage.set(mage, byTier);
+    }
+    let held = byTier.get(tier);
+    if (held === undefined) {
+      held = new Set<number>();
+      byTier.set(tier, held);
+    }
+    held.add(nodeId);
+  });
+
+  const contributions = new Map<Handle, Map<number, PalaceContribution[]>>();
+  for (const [mage, byTier] of perMage) {
+    const university = affiliation.get(mage) as Handle;
+    let forUniversity = contributions.get(university);
+    if (forUniversity === undefined) {
+      forUniversity = new Map<number, PalaceContribution[]>();
+      contributions.set(university, forUniversity);
+    }
+    for (const [tier, held] of byTier) {
+      const list = forUniversity.get(tier) ?? [];
+      list.push({ mageId: mage, tierWeightedCount: held.size });
+      forUniversity.set(tier, list);
+    }
+  }
+
+  const depths = new Map<Handle, readonly number[]>();
+  for (const [university, byTier] of contributions) {
+    const perTier = Array.from({ length: TIER_COUNT }, () => 0);
+    for (const [tier, list] of byTier) {
+      perTier[tier - 1] = palaceLibraryDepth(store, list);
+    }
+    depths.set(university, perTier);
+  }
+  return depths;
+}
+
+/**
+ * One library's depth with its university's palaces folded in.
+ *
+ * **`instanceCount` and `grimoireCount` are untouched, and that is the rule
+ * rather than an omission.** `instanceCount` is what library upkeep is charged
+ * on, and a memory palace costs no vellum to keep — there is nothing to keep.
+ * Adding it there would bill a tradition that writes nothing for the shelving it
+ * cannot do, and would make the Art of Memory strictly worse than having no
+ * library at all.
+ *
+ * The `fp` depth is floored to whole nodes, because everything downstream —
+ * `relevantDepth`, the `LIBRARY_CONTRIBUTION` table — is indexed by a node
+ * count. Flooring rather than rounding, so a coefficient can never turn half a
+ * node into a whole one.
+ */
+function withPalaces(depth: LibraryDepth, palace: readonly number[] | undefined): LibraryDepth {
+  if (palace === undefined) return depth;
+
+  const distinctByTier = Array.from({ length: TIER_COUNT }, () => 0);
+  const cumulativeByTier = Array.from({ length: TIER_COUNT }, () => 0);
+  let running = 0;
+  let moved = false;
+  for (let index = 0; index < TIER_COUNT; index += 1) {
+    const added = floorDiv(palace[index] ?? 0, FP_ONE);
+    if (added > 0) moved = true;
+    distinctByTier[index] = (depth.distinctByTier[index] ?? 0) + added;
+    running += distinctByTier[index] as number;
+    cumulativeByTier[index] = running;
+  }
+  if (!moved) return depth;
+
+  return {
+    distinctByTier,
+    cumulativeByTier,
+    distinctNodes: running,
+    instanceCount: depth.instanceCount,
+    grimoireCount: depth.grimoireCount,
   };
 }

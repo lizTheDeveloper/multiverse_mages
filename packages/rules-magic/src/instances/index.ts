@@ -80,7 +80,7 @@ export type { TeachingInputs, TeachingOutcome } from './teaching.js';
 export { heldMastery, teach, transmittedMastery } from './teaching.js';
 
 export type { ScribingInputs, ScribingOutcome, StoreHook } from './scribing.js';
-export { PALACE_STORE, STANDARD_STORE, scribe, scribeCapacityCost } from './scribing.js';
+export { scribe, scribeCapacityCost } from './scribing.js';
 
 export {
   destroyGrimoire,

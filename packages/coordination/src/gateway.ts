@@ -123,7 +123,7 @@
 import type { ContentId, Fp } from '@mm/content';
 import type { EntityHandle, Fixed, SimState } from '@mm/sim-core';
 import { floorDiv } from '@mm/sim-core';
-import type { EffortKindValue, Handle, Ruleset } from '@mm/state';
+import type { EffortKindValue, Handle, LocationKindValue, Ruleset } from '@mm/state';
 import {
   EFFORT_KIND,
   GRIMOIRE,
@@ -151,11 +151,13 @@ import {
   MASTERY_ACTIVATION_THRESHOLD,
   disownGrimoire,
   isRediscovery,
+  perishesWithHolder,
   practice,
   practiceRequirement,
   research,
   researchRequirement,
   scribe,
+  scribeAvailability,
   scribeCapacityCost,
   shelveGrimoire,
   teach,
@@ -561,8 +563,11 @@ export class CoordinatingKnowledgeGateway implements KnowledgeGateway {
     // A tradition whose `store` hook keeps no written copies cannot scribe at
     // all — the Art of Memory's whole cost. Asking the hook rather than
     // checking a tradition id keeps the four extension points the only place a
-    // tradition changes anything.
-    if (!this.#deps.store.scribingAvailable) return undefined;
+    // tradition changes anything, and asking it through `scribeAvailability`
+    // rather than by reading `scribingAvailable` here keeps the *refusal* — the
+    // sentence naming the hook that refused — a thing `rules-magic` writes once
+    // rather than a boolean each caller re-explains.
+    if (!scribeAvailability(this.#deps.store).available) return undefined;
     const node = this.#deps.catalog.node(nodeId);
     if (node === undefined) return undefined;
     if (!permits(this.#deps.ruleset, this.#deps.cells.cellOf(nodeId))) return undefined;
@@ -1058,7 +1063,24 @@ export class CoordinatingKnowledgeGateway implements KnowledgeGateway {
    * and a caller that omitted it no longer silently leaves books on a corpse.
    */
   onMageDied(mage: MageHandle, inheritor: UniversityHandle): void {
-    this.#deps.knowledge.destroyInstancesHeldBy(mage, this.#deps.state.clock.worldTick);
+    const knowledge = this.#deps.knowledge;
+    // **Which locations a death takes is the `store` hook's answer, not this
+    // method's.** It used to be `destroyInstancesHeldBy`, which destroys mind
+    // *and* palace unconditionally — the right answer under both v1 store kinds,
+    // and right by coincidence rather than by rule: `perishesWithHolder` is the
+    // declaration that says so, and it had no production caller anywhere. A
+    // fourth store kind that let a palace outlive its holder would have been
+    // written, loaded, and silently ignored here.
+    //
+    // A book is untouched either way: a grimoire's instance sits at `grimoire`
+    // or `library`, and no store kind in the enumeration lists either as
+    // perishing. Burning one takes a fire.
+    const perishing = knowledge
+      .instancesHeldBy(mage)
+      .filter((instance) =>
+        perishesWithHolder(this.#deps.store, knowledge.read(instance).locationKind as LocationKindValue),
+      );
+    knowledge.destroyAll(perishing, this.#deps.state.clock.worldTick);
     this.#settleEstate(mage, inheritor);
     this.#deps.onGrimoiresInherited?.(mage, inheritor);
   }
@@ -1574,7 +1596,7 @@ export function effortKey(
  * only place a tradition changes anything.
  */
 function storeHookOf(policy: StorePolicy): StoreHook {
-  return { kind: policy.kind, keepsWrittenCopies: policy.scribingAvailable };
+  return { kind: policy.kind, keepsWrittenCopies: scribeAvailability(policy).available };
 }
 
 /** `fp(1.0)` — an unmodified rate (`contracts.md` §2.4's convention). */

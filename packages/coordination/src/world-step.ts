@@ -1002,6 +1002,10 @@ export function worldSystem(
         catalog: deps.catalog,
         cells: deps.cells,
         ruleset,
+        // The tradition in force this tick, so an Art of Memory universe's
+        // §6a loop runs off its scholars' palaces instead of off a shelf it
+        // cannot build. See `capital.ts`.
+        store: tradition.store,
       });
       // One counter per tick, for the §7 emission. `contracts.md` §3's cap is
       // the only bound on the capital loop, so how often it binds is the
