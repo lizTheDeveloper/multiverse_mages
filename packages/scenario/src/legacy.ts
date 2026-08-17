@@ -65,6 +65,23 @@
  * - **favor** — written straight onto the universe row's pool. It is the one
  *   channel that needed a check rather than a decision, and the check is in
  *   {@link seedLegacy}.
+ *
+ * ## What this does not do, and it is the thing that would move a policy
+ *
+ * **The ending this layer prices is free.** `god-cost.json`'s `declare-ascension`
+ * carries `favorCost: 0` — glossed *"charging for the ending would make a god who
+ * spent well unable to stop"* — and `discriminating-ascension` has 0 of its 38
+ * tasks done. So an agent now sees a *value* attached to ending a run and still
+ * sees no *price* attached to declaring one.
+ *
+ * That asymmetry is worth stating plainly because it bounds what this change can
+ * be expected to show. Pricing the other verbs while the ending stays free does
+ * not move the optimal policy: whatever an agent would have done before, ending
+ * remains a free action taken whenever its gate opens, and the legacy only
+ * changes what the *next* universe starts with. A measurement that found this
+ * wiring did not shift agent behaviour would be measuring the free ending, not a
+ * failure of the carry — and a sweep run before `discriminating-ascension` lands
+ * should say so rather than record a null.
  */
 
 import type { ContentId, ContentRegistry } from '@mm/content';
