@@ -86,6 +86,9 @@ export { UNKNOWN_NODE_FACETS, nodeFacetsFrom } from './node-facets.js';
 export type { OutlookDeps } from './outlook.js';
 export { buildOutlook, universityPreference } from './outlook.js';
 
+export type { AdmissionOptions, StudentAdmissions, StudentRefusal } from './admissions.js';
+export { admitStudentBodies } from './admissions.js';
+
 /**
  * `god-agency` — the player's verbs, and the loop that pays for them.
  *

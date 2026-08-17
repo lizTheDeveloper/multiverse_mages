@@ -202,6 +202,8 @@ import type { NodeFacetResolver } from './node-facets.js';
 import type { GodDeps, GodTickReport } from './god/index.js';
 import { frozenWhenTerminal, godSystems } from './god/index.js';
 import { buildOutlook, universityPreference } from './outlook.js';
+import type { StudentRefusal } from './admissions.js';
+import { admitStudentBodies } from './admissions.js';
 
 /** `fp(1.0)`. `buildProgress` at which a university is complete (`contracts.md` §1.4). */
 const FP_ONE = FP_UNIT;
@@ -759,6 +761,46 @@ export interface WorldStepReport {
    * library and admitted at the second-deepest is in both.
    */
   readonly affiliationsRefused: number;
+  /**
+   * People who would have taken a university seat this tick.
+   *
+   * Students already studying plus the idle who are eligible to study, on the
+   * same predicate the mover applies. This is the *want* — `demand.ts` draws
+   * the same distinction for the scribing queue — and it is reported beside the
+   * grant so that a universe short of seats can be told from a universe with no
+   * appetite for study. `capacity.ts` names that as the whole difference
+   * between refusing and truncating.
+   */
+  readonly studentApplicants: number;
+  /**
+   * Seats granted across every completed university, and therefore
+   * `demand[student]`.
+   *
+   * Equal to {@link WorldStepReport.studentApplicants} whenever there are seats
+   * to spare and to the universe's effective capacity whenever there are not.
+   */
+  readonly studentSeatsGranted: number;
+  /**
+   * Applicants who got a seat nowhere — the number `contracts.md` §1.4's
+   * `capacity` had no way to produce before `admissions.ts` existed.
+   *
+   * A run where this is zero at every tick while the idle population grows past
+   * the seat count is a run where the wire has come out: the reference universe
+   * pins `student` at exactly 64 from tick 480 onward while `idle` passes 130,
+   * and until this series existed that bound left no trace at all.
+   */
+  readonly studentsRefused: number;
+  /**
+   * Which universities turned somebody away, ascending by handle.
+   *
+   * Offers refused per door, so an applicant refused at a full university and
+   * admitted at the next is counted here and not in
+   * {@link WorldStepReport.studentsRefused}. `admissions.ts` states why both
+   * readings are wanted: this one is *"how many more seats would this
+   * university have filled"*, which is the per-institution figure capacity
+   * tuning needs, and it is empty rather than zero-filled when nobody refused.
+   */
+  readonly studentRefusalsByUniversity: readonly StudentRefusal[];
 }
 
 /** A world schema with the coordinating loop installed, and its last report. */
@@ -996,6 +1038,14 @@ export function worldSystem(
         });
 
       // ---- 2. Populace ----------------------------------------------------
+      // Admission first, because its answer *is* `demand[student]`. See
+      // `admissions.ts`: `universityCapacity` used to be the raw seat count,
+      // which made the capacity bound bind through the demand signal and leave
+      // no trace — the silent truncation `capacity.ts` says the spec forbids.
+      const admissions = admitStudentBodies(state, cohorts, {
+        species: (speciesId) => demographyOf(speciesId, deps),
+        worldTick,
+      });
       const populace = stepPopulace(cohorts, {
         hazard,
         species: (speciesId) => demographyOf(speciesId, deps),
@@ -1009,7 +1059,14 @@ export function worldSystem(
           // over a 200-year run and nothing could backfill it, so vision §6's
           // *"scribes copy grimoires"* had a workforce that only shrank.
           scribingQueueDepth: unwrittenNodeCount(state),
-          universityCapacity: completedCapacity(state),
+          // Seats *granted*, not seats that exist. The two are the same number
+          // whenever there are more applicants than seats, which is the state
+          // the reference universe is in from tick 480 onward; below that the
+          // old reading asked the labour market for people who were not
+          // eligible to go, and `unmetDemand[student]` reported the gap as
+          // though a workforce shortage had caused it. `admissions.ts` carries
+          // the arithmetic showing this cannot reduce anybody's intake.
+          universityCapacity: admissions.granted,
           // Zero, by citation rather than by omission. `ages-of-magic.md` §2b:
           // *"A university's stationed mages are its faculty, its researchers
           // and its garrison at once. There is no separate military."* The
@@ -1333,6 +1390,10 @@ export function worldSystem(
         universitiesUnstaffed: staffing.unstaffed,
         magesAffiliated: work.magesAffiliated,
         affiliationsRefused: work.affiliationsRefused,
+        studentApplicants: admissions.applicants,
+        studentSeatsGranted: admissions.granted,
+        studentsRefused: admissions.refused,
+        studentRefusalsByUniversity: admissions.byUniversity,
         materialsApplied: totalAmount(work.applied),
         appliedByKind: work.applied,
         magesApplying: work.applyingMages,
