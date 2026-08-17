@@ -1,14 +1,14 @@
 {
   "note": "Pinned reachability findings. Generated — do not hand-edit. Regenerate with `npm run reachability:pin` and explain the diff in the commit message: an entry removed is a repair, an entry added is a debt someone accepted.",
   "scan": {
-    "examinedSymbolCount": 1064,
-    "productionFileCount": 368
+    "examinedSymbolCount": 1098,
+    "productionFileCount": 374
   },
   "scanFloor": {
-    "examinedSymbolCount": 851,
-    "productionFileCount": 294
+    "examinedSymbolCount": 878,
+    "productionFileCount": 299
   },
-  "findingCount": 110,
+  "findingCount": 111,
   "findings": [
     {
       "key": "symbol:packages/content/src/audio-selection-merge.ts:assetIdOf",
@@ -457,6 +457,14 @@
       "category": "unreached",
       "file": "packages/rules-world/src/economy/kinds.ts",
       "name": "addAmounts",
+      "kind": "function"
+    },
+    {
+      "key": "symbol:packages/rules-world/src/economy/kinds.ts:territoryYieldShares",
+      "group": "symbol",
+      "category": "unreached",
+      "file": "packages/rules-world/src/economy/kinds.ts",
+      "name": "territoryYieldShares",
       "kind": "function"
     },
     {

@@ -105,7 +105,7 @@ describe('the reachability triage document', () => {
     }
   });
 
-  it('has a totals row equal to the sum of the package rows, and to 110', () => {
+  it('has a totals row equal to the sum of the package rows, and to 111', () => {
     expect(totalsRow).toHaveLength(1);
     const totals = totalsRow[0]!.slice(1);
 
@@ -131,11 +131,22 @@ describe('the reachability triage document', () => {
     // material economy — each documenting a requirement its reader restates as a
     // string literal, accepted as debt for the reason §1's sixth-round note
     // gives — and `NO_YIELD_BONUSES` was repaired by the composition itself.
+    // 110 until seven merges landed on `integration/all-branches` — the two
+    // flow branches, the three experiment branches, the invention docs and
+    // `origin/main` itself: **111**, and the whole of the move is one symbol.
+    // `territoryYieldShares` is the residue of `w/exp-yields`' repair: the
+    // production path now asks `heldTerritoryYieldShares` about a universe's own
+    // land, and the content-side question this function answers has no caller
+    // left. **A mechanism became more wired and the count went up**, which is
+    // the clearest available statement of what this number does and does not
+    // measure. Six merges bringing two world-schema revisions, a nineteenth
+    // metric, a new content namespace and a per-tick flow ledger added no
+    // finding at all.
     // The literal is deliberate — a total derived from the document could not
     // catch a document that had drifted from the tree — so it moves only with a
     // change that says why, and `describes the same tree the ratchet baseline
     // pins` below is the other half of the tie.
-    expect(totals.at(-1)).toBe(110);
+    expect(totals.at(-1)).toBe(111);
   });
 
   it('has a §2 table whose counts sum to the total its closing sentence claims', () => {

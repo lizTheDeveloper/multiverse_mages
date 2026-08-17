@@ -1,12 +1,33 @@
-# The 110 reachability findings, triaged
+# The 111 reachability findings, triaged
 
-**Measured at `bf96bdfb` on 2026-08-16**, by `npm run check:reachability` plus the capability
+**Measured at `d7af4468` on 2026-08-17**, by `npm run check:reachability` plus the capability
 analysis described in §5. This is an **inventory, not a fix**: the point is to convert the single
-number "110 findings" into a count of things somebody would act on, because that number is what
+number "111 findings" into a count of things somebody would act on, because that number is what
 nobody currently knows.
 
+> **Seventh round — 2026-08-17, re-derived at `d7af4468` after seven merges onto
+> `integration/all-branches`: `docs/invention-and-machines`, `w/flow-ledger`, `w/flow-map`,
+> `w/exp-yields`, `w/exp-grades`, `w/exp-duration` and `origin/main` itself. 110 → 111, and the
+> whole of the move is one symbol.**
+>
+> `territoryYieldShares` — `packages/rules-world/src/economy/kinds.ts` — is new debt, and it is
+> the *residue of a wiring*, which is the shape worth naming. `w/exp-yields` found that this
+> function was a `WorldStepDeps` field computed once per run, so every universe in a run produced
+> one basket mix however much ground it actually held. The repair extracted the arithmetic into
+> `landYieldShares` and routed the world step through
+> `territory-holdings.ts`' `heldTerritoryYieldShares`, which reads a universe's own
+> `territory-holding` rows. What is left is the **content-side** question — what all the land an
+> author wrote down would yield — which a founding endowment and a documented bound are still
+> stated in terms of, and which no production path now asks. So a mechanism became *more* wired
+> and the count went *up*: the number counts symbols with no caller, not mechanisms that do not
+> run, and the two part company exactly here.
+>
+> Six merges brought two new world-schema revisions, a nineteenth metric, a new content namespace
+> and a per-tick flow ledger, and **not one of them added a finding.** That is the fact this round
+> reports; the single arrival above is the exception it is worth having a document for.
+
 > **Sixth round — 2026-08-16, re-derived at `bf96bdfb` after `w247/material-economy-build` and
-> `ui/legible-and-linked` merged into `integration/all-branches`: 108 → 110.** This is the first
+> `ui/legible-and-linked` merged into `integration/all-branches`: 108 → 110.** This was the first
 > round in which the number went **up**, and saying so plainly is the point of keeping the
 > document. It moved by four findings, not two:
 >
@@ -137,7 +158,7 @@ is what happens when you skip that step.
 > What replaces it is what can be **derived rather than judged**: the per-package totals come
 > straight from `scripts/reachability-baseline.json`, and the debt column is the count of symbols
 > §2 names *and the pin still holds*. Every §2 row below was re-checked symbol by symbol against
-> the new pin, which is a mechanical test and is recorded as one. The other 89 are unclassified at
+> the new pin, which is a mechanical test and is recorded as one. The other 92 are unclassified at
 > this measurement and are owed a re-judgement — that is a debt this document is now explicit
 > about instead of implying it had already been paid.
 
@@ -148,15 +169,15 @@ is what happens when you skip that step.
 | `primitives` | 6 | 3 | 9 |
 | `rules-magic` | 4 | 10 | 14 |
 | `rules-raid` | 5 | 6 | 11 |
-| `rules-world` | 2 | 31 | 33 |
+| `rules-world` | 2 | 32 | 34 |
 | `scenario` | 0 | 19 | 19 |
 | `sim-core` | 0 | 6 | 6 |
 | `state` | 2 | 5 | 7 |
-| **Total** | **19** | **91** | **110** |
+| **Total** | **19** | **92** | **111** |
 
 The headline is no longer a proportion, because a proportion needs a denominator somebody judged.
 It is a direction, and for the first time the last step of it is upward: **129 at `origin/main`,
-125 on the combined base, 108 after the five wiring merges, 110 here.** The nineteen that closed
+125 on the combined base, 108 after the five wiring merges, 110 at `bf96bdfb`, 111 here.** The nineteen that closed
 between `origin/main` and the wiring round are not spread thinly, and the two that re-opened are
 three arrivals against one repair — see the sixth-round note above for all four by name. Four whole §2 rows went to zero — spell preparation and its cost
 half, the tradition store policy, `changeTradition` and its two companions, and three of the seven
