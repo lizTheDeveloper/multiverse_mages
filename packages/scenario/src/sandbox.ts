@@ -507,12 +507,17 @@ export function normalizeSandbox(spec: SandboxSpec): NormalizedSandbox {
     completeConstruction: spec.completeConstruction === true,
     foundUniversities: spec.foundUniversities ?? 0,
     studentSeats: spec.studentSeats ?? null,
+    // Truncated here, like every other number on the sheet, and for a reason
+    // one level down: `ComponentStore.set` refuses a non-integer outright — the
+    // rules path is float-free — so a `mastery` of `0.5` arriving over HTTP
+    // would throw inside `Scenario.create` and surface as a 500 rather than as
+    // the 400 that names the field. The refusal is right; the place is not.
     grantKnowledge: [...(spec.grantKnowledge ?? [])].map((grant) => ({
-      nodeId: grant.nodeId,
-      holderIndex: grant.holderIndex ?? 0,
-      mastery: grant.mastery ?? MASTERY_MAX,
+      nodeId: Math.trunc(grant.nodeId),
+      holderIndex: Math.trunc(grant.holderIndex ?? 0),
+      mastery: Math.trunc(grant.mastery ?? MASTERY_MAX),
     })),
-    shelveKnowledge: [...(spec.shelveKnowledge ?? [])],
+    shelveKnowledge: [...(spec.shelveKnowledge ?? [])].map((nodeId) => Math.trunc(nodeId)),
     floors: sortedLevels(floors),
     ceilings: sortedLevels(ceilings),
   };
@@ -688,8 +693,15 @@ export function applyKnowledgeCheats(
   nodeCount: number,
   tick: number,
 ): void {
-  const grants = spec.grantKnowledge ?? [];
-  const shelves = spec.shelveKnowledge ?? [];
+  // Truncated at the point of use as well as in `normalizeSandbox`, because
+  // this function is exported and a caller can reach it without normalizing.
+  // Two guards rather than one, and the cheap one is the one at the door.
+  const grants = (spec.grantKnowledge ?? []).map((grant) => ({
+    nodeId: Math.trunc(grant.nodeId),
+    holderIndex: Math.trunc(grant.holderIndex ?? 0),
+    mastery: Math.trunc(grant.mastery ?? MASTERY_MAX),
+  }));
+  const shelves = (spec.shelveKnowledge ?? []).map((nodeId) => Math.trunc(nodeId));
   if (grants.length === 0 && shelves.length === 0) return;
 
   const knowledge = KnowledgeSubsystem.fromState(state, nodeCount);

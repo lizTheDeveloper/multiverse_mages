@@ -741,6 +741,8 @@
       else if (key === 'studentSeats') spec.studentSeats = value;
       else if (key === 'foundUniversities') spec.foundUniversities = value;
       else if (key === 'edictBudget') spec.edictBudget = value;
+      else if (key === 'grantNode' && value > 0) spec.grantKnowledge = [{ nodeId: value }];
+      else if (key === 'shelveNode' && value > 0) spec.shelveKnowledge = [value];
     }
     return spec;
   }
@@ -819,6 +821,19 @@
       group('Ruleset and institutions', [
         chip('arm every technique and form', 'armEverything', false),
         chip('finish every construction', 'completeConstruction', false),
+      ]),
+      /*
+       * Knowledge, by node id, and a number rather than a chip.
+       *
+       * Three hundred nodes will not fit as chips and a `<select>` of three
+       * hundred is the dropdown this page refuses on principle. A number input
+       * is the honest middle: it names no node it cannot name, and the ids are
+       * visible in `/live/session.json`'s content block. A named picker is a
+       * real piece of work and belongs beside the grid view, not bolted here.
+       */
+      group('Knowledge, by node id (0 for none)', [
+        number('into the first mage’s mind', 'grantNode', '0'),
+        number('onto the first library’s shelf', 'shelveNode', '0'),
       ]),
       group('Set outright', [
         number('favor', 'favor', '0'),
