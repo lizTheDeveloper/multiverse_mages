@@ -96,8 +96,31 @@ const TICKS = 240;
  * verbs this arm exists to exercise are played from the first tick — the edict
  * budget is available immediately — so the coverage that matters survives the
  * cut intact.
+ *
+ * **The pool is no longer eight.** `BOT_POOL` holds **18** strategies as of
+ * 2026-08-17 — the three sect bots and the alliance pair among them — and the
+ * paragraph above is left as written because its arithmetic is the reason the
+ * number below is 60 and not 240. Timed on this tree, per arm under the
+ * sentinel at 60 ticks: 6.3–9.4 s, **136 s for all eighteen**, zero violations.
+ * That is over the 120 s this case declared and is the whole of why it was
+ * red; see {@link SENTINEL_SWEEP_MS}.
  */
 const ARM_TICKS = 60;
+
+/**
+ * The budget for the eighteen-arm sweep.
+ *
+ * Measured at 136 s (above), so this is roughly a 2x margin — the same shape as
+ * `balance-telemetry.test.ts`'s `SLOW_TEST_MS`, and chosen for the same reason:
+ * the cost is real rather than accidental, and the alternative is making the
+ * invariant cover less. The per-arm `await yieldToRunner()` is what keeps the
+ * worker answering the runner's RPC across a sweep this long, so the failure
+ * mode the note above describes does not come back with the budget.
+ *
+ * If this needs raising again, check the size of `BOT_POOL` first: this number
+ * is linear in it, and a pool that has grown is the expected cause.
+ */
+const SENTINEL_SWEEP_MS = 300_000;
 
 /** Renders a violation the way a reader needs it: which value, where, which door. */
 function describeViolation(violation: ComponentValueViolation): string {
@@ -226,7 +249,7 @@ describe('an assembled universe writes no non-finite value into state', () => {
 
       expect(violations.map(describeViolation)).toEqual([]);
     },
-    120_000,
+    SENTINEL_SWEEP_MS,
   );
 });
 
