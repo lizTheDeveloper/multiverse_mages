@@ -1460,19 +1460,24 @@ export const WORLD_COMPONENTS = [
   // `KNOWLEDGE_INSTANCE`. It goes last, because section order is this list's
   // order and every revision-6 save on disk was written with twenty sections.
   KNOWLEDGE_FIDELITY,
-  // Revision 12, and the rule has not bent once in eleven revisions:
+  // Revision 13, and the rule has not bent once in twelve revisions:
   // `standing-working` is appended, never inserted. It hangs off a mage handle
   // and a node id and so reads as if it belonged beside `KNOWLEDGE_INSTANCE`;
   // section order in a snapshot is this list's order, and every revision-11 save
   // on disk was written with twenty-one sections.
   //
-  // The number was checked against every ref in the repository before it was
-  // taken, per `docs/design/sim-rigor-2026-08-15.md` §4.4. One unmerged branch
-  // (`16e5fa4c`, "sustain — a standing condition") adds a *different* component
-  // named `sustained-working` and claims a revision of its own; the names are
-  // deliberately distinct because the mechanisms are — that one gates an effect
-  // on **who** still holds it, this one on **how long ago** it was cast — and
-  // whoever merges it takes 13.
+  // Authored as revision 12, and renumbered to 13. `w/exp-grades` took 12 with
+  // a `material-grade` component off this same base; both branches checked every
+  // ref in the repository and both found 12 free, six hours apart.
+  // `docs/design/sim-rigor-2026-08-15.md` §4.4 settles a collision by arrival,
+  // and this one arrived second. `migrations.ts` carries the bridge that keeps
+  // the walk whole while 12 is a hole.
+  //
+  // A third unmerged branch (`16e5fa4c`, "sustain — a standing condition") adds
+  // a *different* component named `sustained-working` and claims a revision of
+  // its own; the names are deliberately distinct because the mechanisms are —
+  // that one gates an effect on **who** still holds it, this one on **how long
+  // ago** it was cast — and whoever merges it takes the next free number.
   STANDING_WORKING,
 ] as const satisfies readonly ComponentSpec<ComponentFields>[];
 

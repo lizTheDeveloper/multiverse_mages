@@ -54,6 +54,7 @@ import {
   UNIVERSITY_SITE,
   UPHEAVAL,
   WORLD_COMPONENTS,
+  WORLD_SCHEMA_MIGRATIONS,
   WORLD_SCHEMA_VERSION,
   addEffortProgress,
   addGoalCommitment,
@@ -251,10 +252,57 @@ function revisionTenEnvelope(): SnapshotEnvelope {
   return envelopeWithout(KNOWLEDGE_FIDELITY.name, STANDING_WORKING.name);
 }
 
-/** The world as the last build before a working could expire saw it. */
+/**
+ * The world as the last build before a working could expire saw it.
+ *
+ * Revision **11**, not 12: revision 12 is `material-grade` on `w/exp-grades`,
+ * which is not in this tree, and `addStandingWorking` bridges `11 -> 13` while
+ * that hole is open. So this envelope is what the walk's last real step
+ * produced, and it is the input the bridge is exercised on.
+ */
 function revisionElevenEnvelope(): SnapshotEnvelope {
   return envelopeWithout(STANDING_WORKING.name);
 }
+
+describe('revision 12 is a reserved hole, and 13 bridges it', () => {
+  it('walks a revision-11 save all the way to 13, through the bridge', () => {
+    // The failure this pins throws on **every save on disk** and is the one
+    // `w/exp-grades` hit from the other side of the same collision:
+    // `migrateWorldEnvelope` walks by `from`, so a `{ from: 12 }` step with
+    // nothing beneath it cannot be reached from 11 and the walk dies with "no
+    // world-schema migration is registered from revision 11".
+    const walked = migrateWorldEnvelope(revisionElevenEnvelope());
+    expect(worldSchemaVersionOf(walked)).toBe(WORLD_SCHEMA_VERSION);
+    expect(walked.components.map((component) => component.name)).toContain(
+      STANDING_WORKING.name,
+    );
+  });
+
+  it('registers no step from 12, and exactly one that spans it', () => {
+    // The shape of the bridge, asserted rather than described, so that the merge
+    // with `material-grade` has something to fail against: that merge must
+    // narrow this step to `{ from: 12, to: 13 }` **in the same commit** that adds
+    // the `{ from: 11, to: 12 }` beneath it, and leaving the bridge in place
+    // would skip the other branch's migration on every revision-11 save.
+    expect(WORLD_SCHEMA_MIGRATIONS.filter((step) => step.from === 12)).toEqual([]);
+    const bridge = WORLD_SCHEMA_MIGRATIONS.filter((step) => step.to - step.from > 1);
+    expect(bridge).toHaveLength(1);
+    expect(bridge[0]?.from).toBe(11);
+    expect(bridge[0]?.to).toBe(13);
+  });
+
+  it('has a step for every revision below it, which is what makes the hole the only one', () => {
+    // The positive control. "No step from 12" is satisfied by a walk with no
+    // steps at all, so the complement is asserted too: every other revision from
+    // 1 up to the current one is either a `from` somewhere or is inside the
+    // bridge's span.
+    const froms = new Set(WORLD_SCHEMA_MIGRATIONS.map((step) => step.from));
+    for (let revision = 1; revision < WORLD_SCHEMA_VERSION; revision += 1) {
+      if (revision === 12) continue;
+      expect(froms.has(revision)).toBe(true);
+    }
+  });
+});
 
 describe('the world-schema revision is read off the snapshot itself', () => {
   it('reads each revision from the newest component it carries', () => {
@@ -286,7 +334,7 @@ describe('the world-schema revision is read off the snapshot itself', () => {
     // hash in the project and fails the fixtures with a version error rather
     // than a behaviour diff.
     expect(SNAPSHOT_VERSION).toBe(1);
-    expect(WORLD_SCHEMA_VERSION).toBe(12);
+    expect(WORLD_SCHEMA_VERSION).toBe(13);
   });
 });
 
