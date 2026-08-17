@@ -133,6 +133,10 @@ describe('materialsProduced floors each share, and the sentinel sees every one',
       shares: { ...zeroAmounts(), food: 1004, stone: 10, vellum: 10 },
       resourceYield: primitiveNamed(registry, 'resource-yield'),
       resourceYieldBonuses: NO_YIELD_BONUSES,
+      // Zero, so the base reaches the three `floorDiv` calls whole. This test
+      // counts annihilations, and a hireable share would take a fourth path
+      // through `mul` and change the count it is asserting.
+      production: { hireableShare: 0 },
     };
 
     const events: FixedPointAnnihilation[] = [];
@@ -169,6 +173,9 @@ describe('materialsProduced floors each share, and the sentinel sees every one',
       shares: { ...zeroAmounts(), food: 512, stone: 256, vellum: 256 },
       resourceYield: primitiveNamed(registry, 'resource-yield'),
       resourceYieldBonuses: NO_YIELD_BONUSES,
+      // Zero, for the reason the case above gives: this counts annihilations,
+      // and the hireable share is a fourth `mul` that would change the count.
+      production: { hireableShare: 0 },
     };
 
     const events: FixedPointAnnihilation[] = [];

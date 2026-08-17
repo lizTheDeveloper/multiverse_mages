@@ -69,6 +69,7 @@ import {
   readCastingWeights,
   readHiredLabourWeights,
   readTeachingWeights,
+  readProductionWeights,
   readTargetAppeal,
   resolveSpeciesAffinities,
   territoryExtent,
@@ -744,6 +745,13 @@ export function worldDeps(
     application: readApplicationWeights(registry),
     casting: readCastingWeights(registry),
     teaching: readTeachingWeights(registry),
+    // The **faucet** for `labor`, beside the three drains. Read from the same
+    // table for the same reason, and required here rather than defaulted so
+    // that a composition root which forgot it would fail to compile instead of
+    // running a universe whose only source of hireable hands is its founding
+    // endowment. That state has been measured — `fund-university` legal on 13
+    // ticks of 600 — and it is what this row ends.
+    production: readProductionWeights(registry),
     // The hire's rate from `autonomy-weight.json`, and its **reserve** from
     // `god-cost.json` — `fund-university`'s own declared `labor` price, read
     // rather than restated. The automatic per-tick hire may not draw the stock

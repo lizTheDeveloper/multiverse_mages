@@ -72,6 +72,10 @@ const production = (
   shares: EXACT_SHARES,
   resourceYield: primitiveNamed('resource-yield'),
   resourceYieldBonuses,
+  // No hireable share, so `base` reaches the land split whole and every
+  // expectation below is the arithmetic these tests were written against. The
+  // allocation itself is asserted in `economy-labor-faucet.test.ts`.
+  production: { hireableShare: 0 },
 });
 
 const demand = (overrides: Partial<ConsumptionDemand> = {}): ConsumptionDemand => ({

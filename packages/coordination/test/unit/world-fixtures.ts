@@ -149,6 +149,13 @@ export function worldDeps(traditionId: number): WorldStepDeps {
     // default nobody authored.
     teaching: { insightPerMonth: 0, insightTeachBonus: 0 },
     hiredLabour: { laborPerMonth: 0 },
+    // Zero for the same reason, and it is worth naming that this one is a
+    // **faucet** rather than a sink: at zero, a laborer's whole month goes to
+    // the land and the `labor` stock stays exactly where a test put it. That
+    // keeps every fixture-driven number in this package unchanged by
+    // `material-economy`'s populace faucet, and a test that wants the faucet to
+    // run supplies its own share — `material-ledger.test.ts` does.
+    production: { hireableShare: 0 },
     store: shippedStorePolicy(traditionId),
     acquire: shippedAcquirePolicy(traditionId),
     territory: territoryExtent(registry().territories.map((entry) => entry.record)),

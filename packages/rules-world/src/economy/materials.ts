@@ -19,7 +19,7 @@ import type { AblationMask, ClampCounters } from '@mm/primitives';
 import { stackMagnitudes } from '@mm/primitives';
 
 import type { MaterialAmounts, MaterialKind } from './kinds.js';
-import { MATERIAL_KINDS, zeroAmounts } from './kinds.js';
+import { LAND_MATERIAL_KINDS, MATERIAL_KINDS, zeroAmounts } from './kinds.js';
 
 /**
  * ## Three stocks, four claimants, and an order that is still a decision
@@ -88,6 +88,98 @@ export const MATERIALS_PER_LABORER: Fixed = 16;
 /** Food one person consumes per world tick to stay alive, `fp`. **Untuned.** */
 export const SUBSISTENCE_PER_PERSON: Fixed = 1;
 
+/**
+ * ## `labor` is people, not magic, and that is why its faucet is here
+ *
+ * Every other kind is made by a mage spending a month — `application.ts`'s
+ * channel — and `labor` was authored the same way: Corpus is the only form whose
+ * `yieldWeights` name it. Measured over 600 reference ticks on
+ * `w247/material-economy-build`, **`labor` production was exactly zero**, and
+ * the reason is not that the wire was missing. It is that `labor`'s **sink has a
+ * different shape from every other kind's**.
+ *
+ * | kind | sink | fires |
+ * | --- | --- | --- |
+ * | `essence` | `issue-dispensation` | when the god chooses |
+ * | `passage` | `open-portal` | when the god chooses |
+ * | `insight` | `bless-mage`, and teaching | teaching is continuous |
+ * | **`labor`** | **the construction hire, and `fund-university`** | **every tick, automatically** |
+ *
+ * A faucet that fires when *a mage chooses to spend a month* cannot feed a drain
+ * that fires *every tick whatever anybody chooses*. That race has already been
+ * measured twice: pricing `fund-university` in `labor` left it legal on **8
+ * ticks of 585**, and a reserve floor under the hire — the correct fix for the
+ * race, and kept — could only reach **13 of 600**, with a bounding experiment at
+ * **46 of 600** for a reserve so high the hire never drew at all. A finite
+ * endowment redistributed between two claimants is a runway, not an income.
+ *
+ * So the faucet takes the shape of the sink: **automatic, per tick, proportional
+ * to the populace**. Hands for hire are the one material a universe makes
+ * without magic, which is also the truer fiction — Corpus magic is what
+ * *amplifies* a workforce, and it still does, through
+ * {@link ProductionInput.resourceYieldBonuses}.
+ *
+ * ## It is an allocation, not new supply
+ *
+ * The share comes off {@link MATERIALS_PER_LABORER} **before** the territory
+ * split, by subtraction, so a laborer's month is divided between working the
+ * land and standing available for hire — the total she produces is unchanged.
+ * The alternative, adding `labor` on top, would have every laborer working a
+ * full month in the fields *and* a further fraction of a month on a building
+ * site, which is the "labour is exclusive" defect `assignedToSites` exists to
+ * prevent, re-introduced one layer down.
+ *
+ * Subtraction rather than a second multiply is also what keeps the split exact
+ * in fixed point: `worked = base − hireable` cannot lose a unit to two
+ * independent roundings.
+ *
+ * ## The magnitude is content, and it is untuned
+ *
+ * `labor-share-of-month` in `autonomy-weight.json`. At `fp(64)` — one part in
+ * sixteen — and `MATERIALS_PER_LABORER` of sixteen, a neutral laborer offers
+ * exactly **one `fp` of `labor` per tick**, the same unit as
+ * {@link SUBSISTENCE_PER_PERSON}. That is an anchor rather than a tuning:
+ * `carrying-capacity.ts` records that the food margin is structural for any
+ * laborer share above one eighth, so one sixteenth is half of the headroom the
+ * economy already had and cannot be what starves a run. **Untuned**, and no
+ * release before 0.5.0 may claim otherwise.
+ */
+export const REQUIRED_PRODUCTION_WEIGHTS = ['labor-share-of-month'] as const;
+
+/** The one `autonomy-weight.json` scalar land production is priced in. */
+export interface ProductionWeights {
+  /**
+   * The fraction of a laborer's month that is hands for hire rather than work
+   * on the land, `fp` in `0..fp(1024)`.
+   */
+  readonly hireableShare: Fixed;
+}
+
+/** Anything that can answer an `autonomy-weight.json` id by name. */
+export interface ProductionWeightSource {
+  autonomyWeight(id: string): number;
+}
+
+/**
+ * Reads the hireable share, once.
+ *
+ * Eager, and range-checked here rather than per tick: a share above `fp(1024)`
+ * would make `worked` negative and turn the land into a *sink*, which is a
+ * content mistake that should fail before a single field has been worked rather
+ * than surface as an unexplained shortfall two hundred ticks in.
+ */
+export function readProductionWeights(source: ProductionWeightSource): ProductionWeights {
+  const hireableShare = source.autonomyWeight('labor-share-of-month');
+  if (!Number.isInteger(hireableShare) || hireableShare < 0 || hireableShare > FP_ONE) {
+    throw new RangeError(
+      `labor-share-of-month is ${String(hireableShare)}; it is the fraction of a laborer's month ` +
+        `that is hands for hire and must be an integer in 0..${String(FP_ONE)}. Above fp(1024) the ` +
+        'land would consume rather than produce',
+    );
+  }
+  return Object.freeze({ hireableShare });
+}
+
 /** What materials production is made of. */
 export interface ProductionInput {
   /** Laborer cohort members. */
@@ -111,6 +203,15 @@ export interface ProductionInput {
    * another. `routeYieldByForm` is what fills these.
    */
   readonly resourceYieldBonuses: Readonly<Record<MaterialKind, readonly Fixed[]>>;
+  /**
+   * How much of the month is hands for hire rather than work on the land.
+   *
+   * Required rather than defaulted to zero, and the friction is the point: a
+   * caller that forgot it would get a silently dry `labor` faucet, which is
+   * precisely the defect this field exists to end. See
+   * {@link REQUIRED_PRODUCTION_WEIGHTS}.
+   */
+  readonly production: ProductionWeights;
   readonly counters?: ClampCounters | undefined;
   /**
    * §9's ablation mask, for the arm that neutralizes `resource-yield`.
@@ -162,6 +263,18 @@ export function resourceYieldMultiplier(input: ProductionInput, kind: MaterialKi
  * whose land yields little stone gets a proportionally small absolute return
  * from stone magic rather than a large one on a small base. That is the reading
  * that makes siting matter: magic amplifies what the land already does.
+ *
+ * `labor` comes off the top rather than out of the territory split, because a
+ * share of land is a fact about acreage and hands for hire are not — see
+ * {@link REQUIRED_PRODUCTION_WEIGHTS} for why the faucet is here at all. It
+ * takes the same `resource-yield` multiplier as every other kind, so a universe
+ * that permitted Corpus amplifies its workforce exactly as one that permitted
+ * Terram amplifies its quarries.
+ *
+ * The three kinds that are neither land nor labour — `essence`, `insight`,
+ * `passage` — are untouched here and stay at zero. They are made by a mage
+ * spending a month, in `application.ts`, and a laborer in a field produces none
+ * of them.
  */
 export function materialsProduced(input: ProductionInput): MaterialAmounts {
   if (!Number.isInteger(input.laborerCount) || input.laborerCount < 0) {
@@ -170,11 +283,16 @@ export function materialsProduced(input: ProductionInput): MaterialAmounts {
     );
   }
   const base = mul(input.laborerCount * MATERIALS_PER_LABORER, input.laborAffinity);
+  // Allocation, by subtraction. The two halves sum to `base` exactly whatever
+  // the rounding does, which a second `mul` for the land half would not.
+  const hireable = mul(base, Math.min(FP_ONE, Math.max(0, input.production.hireableShare)));
+  const worked = base - hireable;
   const produced = zeroAmounts();
-  for (const kind of MATERIAL_KINDS) {
-    const ofKind = floorDiv(base * Math.max(0, input.shares[kind]), FP_ONE);
+  for (const kind of LAND_MATERIAL_KINDS) {
+    const ofKind = floorDiv(worked * Math.max(0, input.shares[kind]), FP_ONE);
     produced[kind] = mul(ofKind, resourceYieldMultiplier(input, kind));
   }
+  produced.labor = mul(hireable, resourceYieldMultiplier(input, 'labor'));
   return produced;
 }
 

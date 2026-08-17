@@ -275,6 +275,10 @@ describe('routeYieldByForm splits a resource-yield magnitude by content weights'
         shares: { ...zeroAmounts(), food: FP_ONE, stone: 0, vellum: 0 },
         resourceYield,
         resourceYieldBonuses: { ...NO_YIELD_BONUSES, food: bonuses, stone: [], vellum: [] },
+        // No hireable share: this asserts the `resource-yield` stacking joints,
+        // and an allocation off the top would move every expectation below
+        // without saying anything about stacking.
+        production: { hireableShare: 0 },
       }).food;
 
     expect(produced([])).toBe(1600);

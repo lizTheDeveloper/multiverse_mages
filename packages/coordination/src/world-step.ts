@@ -130,6 +130,7 @@ import type {
   CastingWeights,
   CapitalEmission,
   HiredLabourWeights,
+  ProductionWeights,
   TeachingWeights,
   CohortDemography,
   ConservationBreach,
@@ -370,6 +371,18 @@ export interface WorldStepDeps {
    * `material-economy`'s sink for `labor`. Required for the same reason.
    */
   readonly hiredLabour: HiredLabourWeights;
+  /**
+   * What share of a laborer's month is hands for hire rather than work on the
+   * land. Read from content.
+   *
+   * `material-economy`'s **faucet** for `labor`, and the only one of these four
+   * that is a source rather than a drain. Required for the same reason the three
+   * above are, and the measurement that makes it load-bearing is in
+   * `materials.ts`'s {@link REQUIRED_PRODUCTION_WEIGHTS}: with no faucet, the
+   * automatic hire and `fund-university` split a founding endowment and the verb
+   * came back legal on 13 ticks of 600.
+   */
+  readonly production: ProductionWeights;
   /**
    * A deliberately unrecorded drain, for testing the conservation assertion.
    *
@@ -1472,6 +1485,7 @@ function produceMaterials(
       shares: deps.yieldShares,
       resourceYield: deps.primitives.resourceYield,
       resourceYieldBonuses: economy.resourceYield,
+      production: deps.production,
       ...(deps.ablation === undefined ? {} : { ablation: deps.ablation }),
     });
     for (const kind of MATERIAL_KINDS) produced[kind] += share[kind];

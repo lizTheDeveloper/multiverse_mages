@@ -109,6 +109,14 @@ export const REQUIRED_AUTONOMY_WEIGHTS = [
   'teaching-insight-per-month',
   'teaching-insight-bonus',
   'construction-labor-per-month',
+  // `material-economy`'s **faucet** for `labor`, and the only production
+  // magnitude in this table. It is here rather than beside the territory yields
+  // because it is not a fact about land: it is the share of a laborer's month
+  // that is hands for hire rather than work on the land, and territory decides
+  // the mix of what the *other* half produces. `materials.ts`'s
+  // `REQUIRED_PRODUCTION_WEIGHTS` reads it by name, which is why the id is a
+  // contract checked in both directions while the value stays untuned.
+  'labor-share-of-month',
 ] as const;
 
 /** The scalar ids that must be at least 1, because they are divisors. */

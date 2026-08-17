@@ -108,12 +108,15 @@ export type {
   ConsumptionKind,
   ConsumptionOutcome,
   ProductionInput,
+  ProductionWeightSource,
+  ProductionWeights,
 } from './materials.js';
 export {
   CLAIMANT_KIND,
   CONSUMPTION_ORDER,
   MATERIAL_STOCK_CEILING,
   MATERIALS_PER_LABORER,
+  REQUIRED_PRODUCTION_WEIGHTS,
   applyStockCeiling,
   assertMaterialsConserved,
   conservationBreaches,
@@ -122,6 +125,7 @@ export {
   assertMaterialsNonNegative,
   consumeMaterials,
   materialsProduced,
+  readProductionWeights,
   resourceYieldMultiplier,
   subsistenceDemand,
 } from './materials.js';
