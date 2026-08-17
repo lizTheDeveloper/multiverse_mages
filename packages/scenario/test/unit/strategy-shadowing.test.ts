@@ -65,13 +65,27 @@ import {
  * check fails on a stale one.
  */
 const KNOWN_SHADOWED: Readonly<Record<string, string>> = Object.freeze({
-  'portal-rush/1':
-    'permitTechnique is portal-rush\'s tempo move and sits fourth, behind openPortal, assignRole ' +
-    'and encourageResearch. assignRole is legal on all but one tick of a run, so the tempo line ' +
-    'is never reached and the technique the strategy names is never permitted by it. Its own ' +
-    'version-4 note predicted this for the version-3 build and it is still true at version 4: ' +
-    '"it sits third, behind openPortal and encourageResearch". Not a signature action, which is ' +
-    'why degeneracyOf reports the strategy healthy.',
+  // `portal-rush/1` was here and is **gone on `integration/all-branches`**,
+  // 2026-08-17, deleted rather than left for the reason the next comment gives:
+  // a stale entry says a defect is known and accepted when it is in fact gone.
+  //
+  // What it said: *"permitTechnique is portal-rush's tempo move and sits
+  // fourth, behind openPortal, assignRole and encourageResearch. assignRole is
+  // legal on all but one tick of a run, so the tempo line is never reached."*
+  //
+  // **It is not shadowed now because it is not legal now.** `auditPool` on this
+  // tree reports action 1 at `ticksLegal 0 / unreachable` for every strategy
+  // that lists it: the campaign's opening square is the whole grid, so a
+  // universe founded on it already permits all five techniques and
+  // `permitTechnique` is `not-a-change` on every tick of every run. A verb the
+  // mask never offers cannot be shadowed by the verb in front of it.
+  //
+  // So this is **not** the shadow lifting and not a fix. The tempo move is
+  // still never played; the reason moved one layer down, from "something ahead
+  // of it is always legal" to "there is nothing left to permit". Worth saying
+  // plainly, because a reader who sees only the deletion would read it as
+  // progress: opening the whole grid did not make `portal-rush`'s ruleset move
+  // reachable, it made it meaningless.
   // `portal-rush/12` was here and is **gone on `w190/scribing-fidelity`**, so it
   // is deleted rather than left: this file's own rule is that a stale entry is
   // worse than a missing one, because it says a defect is known and accepted
@@ -214,14 +228,23 @@ describe('every verb a strategy asks for is a verb it can reach', () => {
           'legal every time it is.',
       }));
 
-    // **LEFT RED, `integration/group-e`, 2026-08-16.** One surprise:
-    // `narrow-depth` lists `grantFoundingKnowledge` (action 8), the mask allows
-    // it on 6 ticks, and it is never submitted — something ahead of it in its
-    // preference list is legal every time it is.
+    // **LEFT RED, `integration/group-e`, 2026-08-16 — and still red, wider, on
+    // `integration/all-branches`, 2026-08-17.** Three surprises now, measured by
+    // `auditPool` on this tree:
+    //
+    // - `narrow-depth` lists `grantFoundingKnowledge` (action 8); the mask
+    //   allows it on **11** ticks (it was 6 when this note was written) and it
+    //   is never submitted.
+    // - `denial-warden` lists `forbidTechnique` (action 2); allowed on 483
+    //   ticks, never submitted.
+    // - `portal-rush` lists `encourageResearch` (action 12); allowed on 599
+    //   ticks, never submitted. This entry was deleted from `KNOWN_SHADOWED` on
+    //   `w190/scribing-fidelity` when it stopped being shadowed, with a note
+    //   saying it *"can come back the same way"*. It came back.
     //
     // This instrument's whole purpose is to report a verb a strategy asks for
-    // and cannot reach, and adding the entry to `KNOWN_SHADOWED` would convert
-    // exactly that report into silence. It is not pinned: a strategy that
+    // and cannot reach, and adding the entries to `KNOWN_SHADOWED` would convert
+    // exactly that report into silence. They are not pinned: a strategy that
     // silently never plays a verb is measuring a different agent than the one
     // its name describes, and every balance number taken from `narrow-depth`
     // since this merge is a number about eight verbs, not nine.
