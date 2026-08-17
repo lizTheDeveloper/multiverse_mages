@@ -92,3 +92,43 @@ describe('a node authors one working duration, or none', () => {
     expect(durable.length).toBeGreaterThan(0);
   });
 });
+
+describe('a working duration is a world-scale fact', () => {
+  it('counts the nine authored nodes and none of the thirty-eight fields', () => {
+    // The defect this pins was live: reading *every* effect made all 38 shipped
+    // `area-denial` nodes durable — 47 rather than 9 — and `area-denial` is an
+    // **engagement** primitive. Nothing would have said so. A mage who could
+    // cast one would have spent real months lighting a working that holds
+    // nothing up, because a world-mode gather drops `area-denial` on
+    // `primitiveAppliesInMode` before the standing gate is ever reached, and
+    // `rules-raid` reads the node record directly and never asks about
+    // workings. Its `durationTicks` are engagement ticks besides, so they would
+    // have been read as world months in a unit nobody declared.
+    //
+    // Both arms, because a count alone would be satisfied by nine wrong nodes.
+    const registry = loadContent(shippedContentSource());
+    const world = new Set(
+      registry.primitives.filter((e) => e.record.scale === 'world').map((e) => e.record.id),
+    );
+    const durable = registry.nodes.filter((entry) =>
+      entry.record.effects.some(
+        (effect) => effect.durationTicks !== 0 && world.has(effect.primitive),
+      ),
+    );
+    expect(durable.length).toBe(9);
+    expect(durable.map((entry) => entry.record.id)).toContain('mh-the-grown-beam');
+
+    // And the engagement half is still there, unchanged and excluded — so this
+    // is a statement about the filter rather than about content that happens to
+    // carry no engagement durations.
+    const engagementDurable = registry.nodes.filter((entry) =>
+      entry.record.effects.some(
+        (effect) => effect.durationTicks !== 0 && !world.has(effect.primitive),
+      ),
+    );
+    expect(engagementDurable.length).toBe(38);
+    for (const entry of engagementDurable) {
+      expect(durable.map((node) => node.record.id)).not.toContain(entry.record.id);
+    }
+  });
+});

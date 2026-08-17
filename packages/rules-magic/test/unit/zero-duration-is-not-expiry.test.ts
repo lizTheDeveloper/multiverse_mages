@@ -138,7 +138,6 @@ describe('durationTicks: 0 is what it has always been', () => {
     expect(nothing.length).toBeGreaterThan(0);
 
     // Every zero-duration contribution survives both views, in order and value.
-    expect(everything.slice(0, 0)).toEqual([]);
     const key = (c: { nodeId: number; primitiveId: string; magnitude: number }): string =>
       `${String(c.nodeId)}/${c.primitiveId}/${String(c.magnitude)}`;
     const refusing = nothing.map(key);

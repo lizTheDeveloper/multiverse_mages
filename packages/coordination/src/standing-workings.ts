@@ -270,6 +270,28 @@ export function endWorkingsOf(state: SimState, holder: Handle): number {
  * refuses a node that breaks it. Two different durations on one node would need
  * two workings, or one working whose expiry silently extends the shorter effect;
  * the second is the kind of quiet wrongness this project spends its comments on.
+ *
+ * ## World-scale effects only, and this was a live defect
+ *
+ * The first version of this index read every effect on a node. That made all 38
+ * shipped `area-denial` nodes "durable" — 47 rather than 9 — and `area-denial`
+ * is an **engagement** primitive. The consequences were all silent:
+ *
+ * - A mage who could cast one got it in `sustainableTargets` at saturating
+ *   upkeep pressure and would spend real months lighting a working that does
+ *   nothing. A world-mode gather drops `area-denial` on `primitiveAppliesInMode`
+ *   *before* the standing gate is reached, and `rules-raid` reads the node
+ *   record directly and never asks about workings at all.
+ * - Its `durationTicks` are **engagement** ticks. Read as world months they are
+ *   a different unit entirely, and nothing would have said so.
+ * - `workingsStanding` would have carried rows for workings that hold nothing
+ *   up, in a series whose whole job is to say what the universe is maintaining.
+ *
+ * So the index asks `primitive.json` for the scale. It is also what makes the
+ * no-op claim structural rather than lucky: on content with no *world-scale*
+ * duration, `sustainableTargets` is empty for every mage, the goal is masked
+ * before it is ever scored, and it can never create a tie for
+ * `argmaxWithTieBreak` to spend a draw on.
  */
 export interface WorkingDurations {
   /** Ticks a working over this node stands for. `0` — the common case — means no working. */
@@ -296,9 +318,15 @@ export const NO_WORKING_DURATIONS: WorkingDurations = Object.freeze({
  * here spends.
  */
 export function buildWorkingDurations(registry: ContentRegistry): WorkingDurations {
+  const worldScale = new Set<string>();
+  for (const entry of registry.primitives) {
+    if (entry.record.scale === 'world') worldScale.add(entry.record.id);
+  }
   const byNode = new Map<ContentId, number>();
   for (const entry of registry.nodes) {
-    const duration = authoredDurationOf(entry.record.effects);
+    const duration = authoredDurationOf(
+      entry.record.effects.filter((effect) => worldScale.has(effect.primitive)),
+    );
     if (duration !== 0) byNode.set(entry.contentId, duration);
   }
   return {

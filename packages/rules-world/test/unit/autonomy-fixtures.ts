@@ -187,9 +187,13 @@ export function richOutlook(overrides: Partial<MageOutlook> = {}): MageOutlook {
     // cost — the full authored duration for a working not yet lit, which is what
     // `24` is here. See `outlook.ts`.
     sustainableTargets: [target(81, 1, 24)],
-    // Nothing near lapsing. The rich outlook is "everything is available", not
-    // "everything is urgent", and an urgency here would make every mask test in
-    // the file quietly a test about a rota.
+    // **Deliberately not a shape the coordinating layer can produce.** An unlit
+    // candidate saturates `workingUrgency` at `fp(1024)` — `outlook.ts` says
+    // why — so a real outlook carrying a sustainable target never carries zero
+    // pressure. The pair is held apart here because the rich outlook's job is
+    // "every goal is feasible", and giving it maximal upkeep pressure would make
+    // every mask test in the file quietly a test about a rota. Nothing in this
+    // file asserts the two fields agree, and nothing should.
     workingUrgency: 0,
     materials: 4096,
     scribeThroughput: 1024,
