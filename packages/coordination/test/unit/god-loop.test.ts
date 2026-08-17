@@ -224,6 +224,27 @@ describe("an encouragement reaches what a mage decides to study", () => {
     // and never made it arrive *first*; the emphasis term in `target-appeal.ts`
     // is what makes it a choice. Two universes on one seed, one of which is told
     // where to look.
+    //
+    // ## The cadence changed on 2026-08-17, and the reason is the open grid
+    //
+    // The god used to speak **once every forty months** and that was enough to
+    // move the least-populated cell of a twelve-cell grid. This campaign flagged
+    // all seventy cells `"v1": true`, so the same universe's mages spread across
+    // 17 occupied cells instead, and four pulses over 160 months no longer reach
+    // the bottom of that distribution: measured on this tree at `tick % 40`, the
+    // least-populated cell holds **1** instance in the silent universe and
+    // **1** in the instructed one. The wire is not out — the two snapshots still
+    // differ, which is asserted below and was the only half of this test that
+    // stayed green — the signal is diluted.
+    //
+    // So the god speaks every month here. That is a change to the *instrument*
+    // and not to the claim, and the claim is now asserted more strictly than it
+    // was to make sure the extra input is not what is being measured: the total
+    // knowledge in the two universes must be **equal**. Measured at 160 ticks,
+    // `tick % 1`: 95 instances in both, and the encouraged cell goes from 1 to
+    // **7**. An encouragement that raised a *rate* would have moved the total;
+    // this moves only where the same months were spent, which is exactly what
+    // "a preference and not a rate" means and what W52 was about.
     const { cells } = catalogAndCells();
     const cellOf = (nodeId: number): number => cells.cellOf(nodeId);
     const TICKS = 160;
@@ -234,14 +255,16 @@ describe("an encouragement reaches what a mage decides to study", () => {
       for (let tick = 0; tick < TICKS; tick += 1) {
         current = step(
           current,
-          encouraged !== 0 && tick % 40 === 0
-            ? [{ kind: ACTION.encourageResearch, params: [encouraged] }]
-            : [],
+          encouraged !== 0 ? [{ kind: ACTION.encourageResearch, params: [encouraged] }] : [],
           source,
         );
       }
       return current;
     };
+
+    /** Every knowledge instance in the universe, however it is distributed. */
+    const totalHeld = (byCell: Map<number, number>): number =>
+      [...byCell.values()].reduce((sum, count) => sum + count, 0);
 
     // The cell the god names is chosen from what the *silent* universe reached
     // on its own — the least-populated cell it holds anything in. Choosing a
@@ -263,7 +286,14 @@ describe("an encouragement reaches what a mage decides to study", () => {
 
     // Two universes that ran the same seed and disagree about what they know.
     expect(snapshotHash(instructed)).not.toBe(snapshotHash(silent));
-    expect(heldByCell(instructed, cellOf).get(encouraged) ?? 0).toBeGreaterThan(fewest);
+    const after = heldByCell(instructed, cellOf);
+    expect(after.get(encouraged) ?? 0).toBeGreaterThan(fewest);
+    // A preference, not a rate. The same universe spent the same months and
+    // learned the same number of things; the god changed *which* things. If
+    // `encourageResearch` ever starts feeding a rate again — which is the
+    // regression W52 fixed — this is the line that fails, and the assertion
+    // above would not have noticed.
+    expect(totalHeld(after)).toBe(totalHeld(baseline));
   });
 });
 

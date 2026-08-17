@@ -176,7 +176,15 @@ interface NodeFacts {
   readonly primitives: ReadonlySet<string>;
 }
 
-/** Every v1 node, with the facts the arms are matched on. Content, not fixture. */
+/**
+ * Every enabled node, with the facts the arms are matched on. Content, not fixture.
+ *
+ * **This used to mean "the twelve-cell v1 rectangle" and now means the whole
+ * grid**, without a line of it changing: this campaign flagged all seventy cells
+ * `"v1": true`, so the filter that once selected 52 nodes now selects 301. That
+ * is the decision this file's arms are downstream of and it is named here rather
+ * than left to be inferred from a treatment set that grew eight-fold.
+ */
 function v1Nodes(): readonly NodeFacts[] {
   const content = registry();
   const v1 = new Set(
@@ -193,17 +201,69 @@ function v1Nodes(): readonly NodeFacts[] {
     .sort((left, right) => left.contentId - right.contentId);
 }
 
+/** Nodes whose every effect is inert, ascending — the pool a control is drawn from. */
+function inertPool(): readonly NodeFacts[] {
+  return v1Nodes().filter(
+    (node) =>
+      node.primitives.size > 0 && [...node.primitives].every((id) => INERT_PRIMITIVES.has(id)),
+  );
+}
+
 /** Every v1 node carrying `primitive`. The treatment set. */
 function treatmentSet(primitive: AcademicPrimitive): readonly NodeFacts[] {
-  const found = v1Nodes().filter((node) => node.primitives.has(primitive));
-  if (found.length === 0) {
+  const carrying = v1Nodes().filter((node) => node.primitives.has(primitive));
+  if (carrying.length === 0) {
     throw new Error(
-      `No v1 node carries ${primitive}. This file's whole claim is that the shipped v1 rectangle ` +
+      `No enabled node carries ${primitive}. This file's whole claim is that the shipped content ` +
         'authors these effects, so an empty set is a content change that invalidates the test ' +
         'rather than a test that should pass vacuously.',
     );
   }
-  return found;
+
+  // ## Trimmed to what the control pool can match, 2026-08-17
+  //
+  // `controlSet` below has to hold tier for tier — its own error message says
+  // why, and the reason is the whole design of this file: *"an unmatched arm
+  // would confound the rate with the graph."* While `v1` meant twelve cells the
+  // two sets happened to be matchable and nothing had to say so. Opening all
+  // seventy made the treatment sets eight times larger **without deepening the
+  // inert pool**, which tops out at tier 5, and `research-rate` reaches tier 6.
+  //
+  // Measured on this content set: the inert pool holds 21/29/43/30/4 nodes at
+  // tiers 1-5 and none above. `research-rate` carries 55 nodes at 15/8/14/10/7/1,
+  // so **four of the fifty-five cannot be matched** — three at tier 5 and the one
+  // at tier 6, `cf-the-given-destiny`. `teach-rate` (20 nodes) and `scribe-rate`
+  // (19) are matchable entire, so this trims exactly one of the three arms and
+  // by 7% of it.
+  //
+  // The alternative was to keep the whole treatment set and let the control run
+  // short at the deep end, which is the confound the file exists to avoid, or to
+  // hardcode the old twelve-cell rectangle, which would be a fixture premise the
+  // game has abandoned. Trimming is stated rather than silent: `the control sets
+  // are inert by construction` asserts the trim below, so a content change that
+  // deepens the inert pool shows up as the arm getting larger.
+  const available = new Map<number, number>();
+  for (const node of inertPool()) available.set(node.tier, (available.get(node.tier) ?? 0) + 1);
+  const taken = new Map<number, number>();
+  const matched: NodeFacts[] = [];
+  for (const node of carrying) {
+    const used = taken.get(node.tier) ?? 0;
+    if (used >= (available.get(node.tier) ?? 0)) continue;
+    taken.set(node.tier, used + 1);
+    matched.push(node);
+  }
+  if (matched.length === 0) {
+    throw new Error(
+      `Every node carrying ${primitive} sits at a tier the inert pool cannot match, so this ` +
+        'file has no control arm at all. That is a content change rather than a test to relax.',
+    );
+  }
+  return matched;
+}
+
+/** How many nodes {@link treatmentSet} dropped for want of a tier-matched control. */
+function untrimmedTreatmentCount(primitive: AcademicPrimitive): number {
+  return v1Nodes().filter((node) => node.primitives.has(primitive)).length;
 }
 
 /**
@@ -213,10 +273,7 @@ function treatmentSet(primitive: AcademicPrimitive): readonly NodeFacts[] {
  * of iteration order — the same reason `foundingCandidates` sorts.
  */
 function controlSet(treatment: readonly NodeFacts[]): readonly NodeFacts[] {
-  const pool = v1Nodes().filter(
-    (node) =>
-      node.primitives.size > 0 && [...node.primitives].every((id) => INERT_PRIMITIVES.has(id)),
-  );
+  const pool = inertPool();
   const taken = new Set<number>();
   const chosen: NodeFacts[] = [];
   for (const node of treatment) {
@@ -420,6 +477,24 @@ describe('the control sets are inert by construction', () => {
         for (const id of node.primitives) expect(INERT_PRIMITIVES.has(id)).toBe(true);
       }
     }
+  });
+
+  it('says how much of each treatment set the inert pool cannot reach', () => {
+    // The trim, asserted rather than left to happen quietly — see
+    // `treatmentSet`. Two of the three arms are matchable entire and the third
+    // loses four nodes of fifty-five at tiers 5 and 6, where the inert pool holds
+    // four nodes and none respectively. A content change that authors deeper
+    // inert nodes, or that moves an academic effect above tier 5, shows up here
+    // as the arm changing size — which is a review, not a silent re-weighting.
+    expect({
+      'research-rate': [treatmentSet('research-rate').length, untrimmedTreatmentCount('research-rate')],
+      'teach-rate': [treatmentSet('teach-rate').length, untrimmedTreatmentCount('teach-rate')],
+      'scribe-rate': [treatmentSet('scribe-rate').length, untrimmedTreatmentCount('scribe-rate')],
+    }).toEqual({
+      'research-rate': [51, 55],
+      'teach-rate': [20, 20],
+      'scribe-rate': [19, 19],
+    });
   });
 });
 

@@ -33,8 +33,13 @@
 import { describe, expect, it } from 'vitest';
 
 import { installValueSentinel, rngFromRootSeed, snapshotHash, step } from '@mm/sim-core';
-import { KNOWLEDGE_INSTANCE, collectRecords } from '@mm/state';
-import { executeReferenceRun, referenceContent, referenceScenario } from '@mm/scenario';
+import { KNOWLEDGE_INSTANCE, collectRecords, permits } from '@mm/state';
+import {
+  executeReferenceRun,
+  referenceContent,
+  referenceScenario,
+  standardOpeningAxes,
+} from '@mm/scenario';
 import type { ComponentValueViolation, SimState } from '@mm/sim-core';
 
 /**
@@ -82,8 +87,39 @@ const content = referenceContent();
  * re-derive a pure function of its argument.
  */
 const played = new Map<string, ReturnType<typeof executeReferenceRun>>();
-function runOf(strategy: string): ReturnType<typeof executeReferenceRun> {
-  const cached = played.get(strategy);
+
+/**
+ * The levels the looting arm plays, and **every one of the last three is load
+ * bearing** — see the re-authoring note on the looting test below.
+ *
+ * `openingTechniqueCount: 5, openingFormCount: 13` is the narrowest square
+ * `standardOpeningAxes` can draw that still contains `rego-limen`, which is
+ * where both `portal`-carrying nodes live. It permits 65 of the seventy cells
+ * and forbids the five Nomen ones, so this universe's god has something to
+ * forbid — which is the whole precondition `shelveForeignBooks` needs and which
+ * the open grid took away.
+ *
+ * `foundingPortalMagic: 1` puts the shallowest portal node in a founder's head.
+ * Without it this universe never reaches action 14's gate inside 400 ticks and
+ * the arm resolves **zero** outbound raids, measured; the flag's own docstring
+ * declares it exists precisely to separate *"the verb does nothing"* from *"the
+ * verb never ran"*.
+ */
+const LOOTING_LEVELS: Readonly<Record<string, number>> = Object.freeze({
+  cohortSize: 12,
+  foundingMages: 2,
+  foundingNodes: 4,
+  openingTechniqueCount: 5,
+  openingFormCount: 13,
+  foundingPortalMagic: 1,
+});
+
+function runOf(
+  strategy: string,
+  levels: Readonly<Record<string, number>> = { cohortSize: 12, foundingMages: 2, foundingNodes: 4 },
+): ReturnType<typeof executeReferenceRun> {
+  const key = `${strategy}:${JSON.stringify(levels)}`;
+  const cached = played.get(key);
   if (cached !== undefined) return cached;
   const result = executeReferenceRun(
     {
@@ -94,7 +130,7 @@ function runOf(strategy: string): ReturnType<typeof executeReferenceRun> {
         replicateIndex: 0,
       },
       runSeed: 0x1234_5678,
-      levels: { cohortSize: 12, foundingMages: 2, foundingNodes: 4 },
+      levels: { ...levels },
       strategies: [strategy],
       worldTickCap: 400,
       metrics: [],
@@ -102,7 +138,7 @@ function runOf(strategy: string): ReturnType<typeof executeReferenceRun> {
     },
     { content },
   );
-  played.set(strategy, result);
+  played.set(key, result);
   return result;
 }
 
@@ -344,14 +380,68 @@ describe('looting reaches what research cannot', () => {
     // `portal-rush` and not the passive control, and outbound and not inbound:
     // an inbound raid makes this universe the host, and the host is the side
     // that *loses* books.
-    const rushed = runOf('portal-rush');
+    //
+    // ## Re-authored on `integration/all-branches`, 2026-08-17
+    //
+    // **This measured zero, and the zero had no question behind it.** The
+    // paragraph above describes a universe whose god permits twelve cells of
+    // seventy; this campaign flagged all seventy `"v1": true`, and
+    // `shelveForeignBooks` picks a rival's loot shelf from the cells *this*
+    // universe's ruleset forbids. A universe that forbids nothing is offered
+    // nothing, the function early-returns, and *"raids bring home 0 nodes"* was
+    // a statement about an empty shelf rather than about looting.
+    //
+    // So the arm is given a god who forbids something. `LOOTING_LEVELS` above
+    // has the details; in short, a 5x13 opening square forbids the five Nomen
+    // cells and keeps `rego-limen`, where portal magic lives, and
+    // `foundingPortalMagic` puts the universe at action 14's gate rather than
+    // upstream of it.
+    //
+    // Measured on this tree at these coordinates, 400 ticks:
+    //
+    // | arm | raids | outbound | nodes gained |
+    // |---|---:|---:|---:|
+    // | `portal-rush`, 5x13 square, portal magic | 4 | 2 | **4** |
+    // | `portal-rush`, open grid, portal magic   | 4 | 2 | **0** |
+    // | `portal-rush`, open grid, no portal magic| 1 | 0 |   0 |
+    // | `passive-control`, 5x13 square           | 1 | 0 |   0 |
+    //
+    // The middle row is the finding this re-authoring preserves rather than
+    // erases: **with the grid fully open, an outbound raid that resolves still
+    // brings home nothing**, because there is nothing on the rival's shelf that
+    // this universe could not have derived. Vision §8's *"raids reach what
+    // research cannot"* is a claim about a god who forbids, and the reference
+    // universe as this campaign leaves it forbids nothing.
+    const rushed = runOf('portal-rush', LOOTING_LEVELS);
     const outbound = rushed.rawRaids.filter((raid) => raid.outbound);
     expect(outbound.length).toBeGreaterThan(0);
     expect(outbound.reduce((sum, raid) => sum + raid.nodesGainedLocally, 0)).toBeGreaterThan(0);
+
+    // The precondition, asserted so that a later widening of the opening square
+    // turns this into a failure rather than into a silent zero again: the square
+    // this arm plays must actually forbid cells that hold nodes.
+    const ruleset = {
+      ...standardOpeningAxes(content.registry, { techniqueCount: 5, formCount: 13 }),
+      edicts: [],
+    };
+    const forbiddenCells = content.registry.cells.filter(
+      (entry) => !permits(ruleset, entry.contentId),
+    );
+    const cellIdOf = new Map(content.registry.cells.map((e) => [e.record.id, e.contentId]));
+    const forbiddenCellIds = new Set(forbiddenCells.map((entry) => entry.contentId));
+    const forbiddenNodes = content.registry.nodes.filter((entry) =>
+      forbiddenCellIds.has(cellIdOf.get(entry.record.cell) ?? -1),
+    );
+    expect(forbiddenCells).toHaveLength(5);
+    expect(forbiddenNodes.length).toBeGreaterThan(0);
   });
 
   it('leaves a universe that never opened a portal with nothing it did not derive', { timeout: 60_000 }, () => {
-    const passive = runOf('passive-control');
+    // The same god, the same forbidden Nomen cells, the same portal magic in a
+    // founder's head — and a strategy that never submits action 14. It resolves
+    // only inbound raids and gains nothing, which is what makes the arm above a
+    // statement about *looting* rather than about the levels it plays.
+    const passive = runOf('passive-control', LOOTING_LEVELS);
     expect(passive.rawRaids.every((raid) => !raid.outbound)).toBe(true);
     expect(passive.rawRaids.reduce((sum, raid) => sum + raid.nodesGainedLocally, 0)).toBe(0);
   });
