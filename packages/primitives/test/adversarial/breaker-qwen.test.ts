@@ -442,7 +442,7 @@ describe('breaker: determinism of stacking results', () => {
 // Verify the exclusion list has not been expanded.
 // ---------------------------------------------------------------------------
 describe('breaker: consumption check exclusion list integrity', () => {
-  it('the exclusion list in coverage.ts has not been expanded beyond fertility and lifespan', () => {
+  it('the exclusion list in coverage.ts has not been expanded beyond lifespan', () => {
     // Read the actual source file to verify no builder added to the exclusion
     // list to make check:consumption pass. This is "the exact failure the check
     // exists to catch" per .github/workflows/ci.yml.
@@ -471,8 +471,12 @@ describe('breaker: consumption check exclusion list integrity', () => {
       .map((s) => s.trim().replace(/'/g, ''))
       .filter(Boolean);
 
-    // Must be exactly ['fertility', 'lifespan'] — no more, no less
-    expect(exclusions.sort()).toEqual(['fertility', 'lifespan']);
+    // Must be exactly ['lifespan'] — no more, no less. `fertility` was here
+    // until the v1 rectangle widened from 3x4 to 4x5 and `creo-animal` brought
+    // three `fertility` carriers inside it. The attack this test defends is
+    // *expansion* — an exclusion added to make a red check green — so a
+    // deletion backed by a content diff is the permitted direction.
+    expect(exclusions.sort()).toEqual(['lifespan']);
 
     // Specifically, research-rate, teach-rate, scribe-rate must NOT be excluded
     expect(exclusions).not.toContain('research-rate');

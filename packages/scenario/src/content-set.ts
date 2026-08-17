@@ -141,8 +141,8 @@ export function primitiveNamed(registry: ContentRegistry, id: string): Primitive
  * The ruleset the **v1 rectangle** implies: every technique and every form that
  * a `v1` cell occupies.
  *
- * `contracts.md` §2.2 makes the v1 subset exactly twelve cells forming a
- * 3-technique × 4-form rectangle, and the loader refuses content where it is
+ * `contracts.md` §2.2 makes the v1 subset exactly twenty cells forming a
+ * 4-technique × 5-form rectangle, and the loader refuses content where it is
  * anything else. So OR-ing the axes of the flagged cells re-derives precisely
  * those twelve and permits no thirteenth — the rectangle property is what makes
  * an axis mask able to express the subset at all, and it is content's to keep,

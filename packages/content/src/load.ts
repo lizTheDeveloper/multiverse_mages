@@ -76,13 +76,29 @@ import type {
 export const REQUIRED_V1_CELL = 'rego-limen';
 
 /** The v1 subset is a rectangle of this many cells (`contracts.md` §2.2). */
-export const V1_CELL_COUNT = 12;
+export const V1_CELL_COUNT = 20;
 
-/** Techniques in the v1 rectangle. */
-export const V1_TECHNIQUE_COUNT = 3;
+/**
+ * Techniques in the v1 rectangle.
+ *
+ * Four since the square widened from 3×4 to 4×5. The fourth is **Creo**, and
+ * its absence was the defect: a universe that could perceive, unmake and
+ * control but not *make* had no magical route to any material a Terram cell
+ * does not yield. Measured on `ad7f80c2`, all five `resource-yield` nodes in
+ * the 3×4 square sat in Terram cells, so the shipped square held five magical
+ * sources of `stone` and **none of `vellum`** against three claimants on it.
+ */
+export const V1_TECHNIQUE_COUNT = 4;
 
-/** Forms in the v1 rectangle. */
-export const V1_FORM_COUNT = 4;
+/**
+ * Forms in the v1 rectangle.
+ *
+ * Five since the square widened. The fifth is **Animal**, whose `yieldWeights`
+ * route half to `food` and half to `vellum` (`form.json`) — the cheapest form
+ * that puts a magical source under the parchment economy without also being
+ * the only source of `stone`.
+ */
+export const V1_FORM_COUNT = 5;
 
 /**
  * The most nodes a content set may declare, because every one of them is
@@ -775,10 +791,15 @@ function checkExclusions(cells: readonly CellRecord[], out: ContentDiagnostic[])
 }
 
 /**
- * The v1 subset must be exactly twelve cells forming a 3-technique × 4-form
+ * The v1 subset must be exactly twenty cells forming a 4-technique × 5-form
  * rectangle, and must include `rego-limen` (`contracts.md` §2.2 and §8;
- * `knowledge-model` owns which twelve, and chose
- * `{intellego, perdo, rego} × {limen, mentem, nomen, terram}`).
+ * `knowledge-model` owns which cells, and chose
+ * `{creo, intellego, perdo, rego} × {animal, limen, mentem, nomen, terram}`).
+ *
+ * **The invariant is the rectangle, not the number.** It exists so the subset
+ * is a shape a god can reason about rather than an arbitrary set of cells, and
+ * it survived the 3×4 → 4×5 widening unchanged in kind: three constants moved,
+ * the three checks below did not.
  */
 function checkV1Subset(v1Cells: readonly CellRecord[], out: ContentDiagnostic[]): void {
   const file = 'cell.json';

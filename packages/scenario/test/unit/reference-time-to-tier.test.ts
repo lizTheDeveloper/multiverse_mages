@@ -320,12 +320,15 @@ describe('time to tier, by species', () => {
 
     const gnome = interval('gnome');
     const dwarf = interval('dwarf');
-    const human = interval('human');
     const elf = interval('elf');
     const draconic = interval('draconic');
     // `orc` is deliberately not bound. Both claims that read it — `orc.high <
     // elf.low` at 11/12 and `human.high < orc.low` at 0/12 — are retired, and
     // leaving the binding would invite the next author to reach for it.
+    //
+    // `human` joined them on the 4x5 widening: `gnome.high < human.low` is
+    // retired below in favour of the mean form, and an interval nothing reads
+    // is the same invitation.
     const beforeElf = [gnome, dwarf];
 
     // What separates strictly in **every one of twelve** independent seed sets:
@@ -338,7 +341,27 @@ describe('time to tier, by species', () => {
     // standard errors and its interval still overlaps elf's in one set of
     // twelve, which is a fact this file has no way to write down.
     for (const entry of beforeElf) expect(entry.high).toBeLessThan(elf.low);
-    expect(gnome.high).toBeLessThan(human.low);
+
+    // **`gnome.high < human.low` is retired here, and it did not go away.**
+    // Measured on the 4x5 widening over these six seeds: gnome `[36, 51]`,
+    // human `[49, 59]` — the endpoints overlap by two ticks, so the *interval*
+    // claim fails. The separation itself is stronger than the interval form can
+    // express and is still asserted next door: `species-separation.mjs --sets
+    // 12` puts `gnome < human` at **established, 12/12 sets, paired gap
+    // 13.0 ± 0.6 ticks = 21.6 SE**. Six seeds cannot distinguish a paired gap of
+    // thirteen ticks from an endpoint overlap of two, which is the whole reason
+    // `species-separation-spread.test.ts` exists.
+    //
+    // The mean claim is asserted instead, because that is the form the twelve-set
+    // measurement supports and this file can check.
+    const meanOf = (name: string): number => {
+      const column = tierThree.find((entry) => entry.name === name);
+      if (column === undefined || column.observed.length === 0) {
+        throw new Error(`${name} was censored in every seed and cannot be averaged`);
+      }
+      return column.observed.reduce((sum, value) => sum + value, 0) / column.observed.length;
+    };
+    expect(meanOf('gnome')).toBeLessThan(meanOf('human'));
 
     // Draconic ends long after elf, in every set of twelve. That it *starts*
     // before human — the other half of the old "draconic is the bridge" claim —

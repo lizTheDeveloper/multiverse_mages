@@ -7,13 +7,13 @@ availability is decided, and how prerequisites and dormancy follow from that dec
 ## Requirements
 ### Requirement: The v1 cell subset
 
-Content SHALL flag exactly twelve cells with `"v1": true`, and those twelve MUST be the full
-rectangle of techniques `intellego`, `perdo`, `rego` crossed with forms `limen`, `mentem`, `nomen`,
-`terram`. The subset MUST include `rego-limen`, and the loader MUST reject content that violates
-either condition.
+Content SHALL flag exactly twenty cells with `"v1": true`, and those twenty MUST be the full
+rectangle of techniques `creo`, `intellego`, `perdo`, `rego` crossed with forms `animal`, `limen`,
+`mentem`, `nomen`, `terram`. The subset MUST include `rego-limen`, and the loader MUST reject
+content that violates either condition.
 
 Nodes MAY be authored in cells outside the subset. The grid holds seventy cells and this release
-enables twelve; the remaining fifty-eight are written but inert, which is how a later release turns
+enables twenty; the remaining fifty are written but inert, which is how a later release turns
 a cell on without authoring it under time pressure. What the loader MUST reject instead is a
 *playable* node made permanently unreachable — one in a v1 cell whose prerequisite lies in a cell
 this release does not enable. Nothing else in the pipeline would notice that node can never be
@@ -22,18 +22,19 @@ acquired.
 #### Scenario: The subset is exactly the declared rectangle
 
 - **WHEN** the content loader completes and the set of cells flagged `v1` is collected
-- **THEN** it contains exactly `intellego-limen`, `intellego-mentem`, `intellego-nomen`,
-  `intellego-terram`, `perdo-limen`, `perdo-mentem`, `perdo-nomen`, `perdo-terram`, `rego-limen`,
-  `rego-mentem`, `rego-nomen`, and `rego-terram`
+- **THEN** it contains exactly `creo-animal`, `creo-limen`, `creo-mentem`, `creo-nomen`,
+  `creo-terram`, `intellego-animal`, `intellego-limen`, `intellego-mentem`, `intellego-nomen`,
+  `intellego-terram`, `perdo-animal`, `perdo-limen`, `perdo-mentem`, `perdo-nomen`, `perdo-terram`,
+  `rego-animal`, `rego-limen`, `rego-mentem`, `rego-nomen`, and `rego-terram`
 
-#### Scenario: A thirteenth v1 cell is rejected
+#### Scenario: A twenty-first v1 cell is rejected
 
-- **WHEN** content flags a thirteenth cell with `"v1": true`
-- **THEN** the load fails and the error names the offending cell id and the expected count of twelve
+- **WHEN** content flags a twenty-first cell with `"v1": true`
+- **THEN** the load fails and the error names the offending cell id and the expected count of twenty
 
 #### Scenario: The subset is not a rectangle
 
-- **WHEN** content flags twelve cells that do not form a 3-technique × 4-form rectangle
+- **WHEN** content flags twenty cells that do not form a 4-technique × 5-form rectangle
 - **THEN** the load fails and the error names the techniques and forms that are unevenly covered
 
 #### Scenario: A node outside the subset is accepted and inert

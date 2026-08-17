@@ -191,7 +191,7 @@ describe('invalid content is a hard load failure', () => {
     expect(validateContent(source).diagnostics).toEqual([]);
   });
 
-  it('rejects a thirteenth v1 cell, naming it and the expected count', () => {
+  it('rejects a twenty-first v1 cell, naming it and the expected count', () => {
     const diagnostics = expectHardFail(
       brokenSource((documents) => {
         recordById(documents, 'cell.json', 'creo-ignem')['v1'] = true;
@@ -200,27 +200,30 @@ describe('invalid content is a hard load failure', () => {
     const subset = diagnostics.filter((d) => d.code === 'v1-subset');
     expect(subset.length).toBeGreaterThanOrEqual(1);
     expect(messages(subset)).toContain('creo-ignem');
-    expect(messages(subset)).toContain('exactly 12');
+    expect(messages(subset)).toContain('exactly 20');
   });
 
   it('rejects a v1 set that is not a rectangle, naming the uneven axes and the cells on them', () => {
     const diagnostics = expectHardFail(
       brokenSource((documents) => {
-        // Swap one cell out of the rectangle for one outside it: still twelve.
+        // Swap one cell out of the rectangle for one outside it: still twenty.
+        // `muto-ignem` because both its axes are outside the 4x5 rectangle —
+        // the swap has to land on a technique *and* a form the subset does not
+        // already cover, or the count stays right and no axis goes uneven.
         recordById(documents, 'cell.json', 'perdo-terram')['v1'] = false;
-        recordById(documents, 'cell.json', 'creo-ignem')['v1'] = true;
+        recordById(documents, 'cell.json', 'muto-ignem')['v1'] = true;
       }),
     );
     const subset = diagnostics.filter((d) => d.code === 'v1-subset');
     expect(messages(subset)).toContain('rectangle');
-    expect(messages(subset)).toContain('technique "creo" covers 1 forms');
+    expect(messages(subset)).toContain('technique "muto" covers 1 forms');
     expect(messages(subset)).toContain('form "ignem" covers 1 techniques');
     // tasks.md 2.2 asks the error to name the offending *cells*, not only the
-    // axes. An author reading "technique creo covers 1 forms" still has to grep
+    // axes. An author reading "technique muto covers 1 forms" still has to grep
     // cell.json to find which one; naming it closes that gap. The intact axes
     // stay unnamed, so the message points at the defect rather than listing the
     // whole subset back.
-    expect(messages(subset)).toContain('creo-ignem');
+    expect(messages(subset)).toContain('muto-ignem');
     expect(messages(subset)).not.toContain('rego-limen');
   });
 
@@ -376,25 +379,28 @@ describe('invalid content is a hard load failure', () => {
   });
 
   // Authoring outside the v1 subset is permitted -- the grid holds seventy cells and
-  // only twelve are enabled, so the rest are written but inert. What is NOT permitted
+  // only twenty are enabled, so the rest are written but inert. What is NOT permitted
   // is a playable node sitting behind content the release does not enable: it would be
   // permanently unreachable, and nothing else in the pipeline would notice.
   it('rejects a v1 node whose prerequisite lies outside the v1 subset', () => {
     const diagnostics = expectHardFail(
       brokenSource((documents) => {
         // Park a fresh node in a non-v1 cell, then make a playable node depend on it.
+        // `muto-terram`, not `creo-terram`: Creo joined the rectangle when it
+        // widened to 4x5, and parking the stranded node in a cell the subset
+        // now contains would test nothing.
         const donor = recordById(documents, 'node.json', 'rt-set-the-stone');
-        const stranded = { ...donor, id: 'ct-stranded-course', cell: 'creo-terram' };
+        const stranded = { ...donor, id: 'mt-stranded-course', cell: 'muto-terram' };
         (documents['node.json'] as unknown[]).push(stranded);
-        recordById(documents, 'cell.json', 'creo-terram')['nodes'] = ['ct-stranded-course'];
+        recordById(documents, 'cell.json', 'muto-terram')['nodes'] = ['mt-stranded-course'];
         const playable = recordById(documents, 'node.json', 'rt-raise-the-course');
-        playable['prerequisites'] = ['ct-stranded-course'];
+        playable['prerequisites'] = ['mt-stranded-course'];
       }),
     );
     const unreachable = diagnostics.filter((d) => d.code === 'v1-unreachable-prerequisite');
     expect(unreachable).toHaveLength(1);
     expect(unreachable[0]?.message).toContain('rt-raise-the-course');
-    expect(unreachable[0]?.message).toContain('creo-terram');
+    expect(unreachable[0]?.message).toContain('muto-terram');
   });
 
   it('rejects an effect naming a primitive the registry does not define', () => {

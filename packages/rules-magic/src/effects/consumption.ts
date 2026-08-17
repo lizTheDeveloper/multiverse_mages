@@ -17,8 +17,9 @@
  *
  * `checkPrimitiveCoverage` asks an **authorship** question: does at least one
  * v1 node declare an effect on this primitive? It loads the content registry
- * and counts. It passes today over 51 nodes and 14 primitives, and every word
- * of that output is true.
+ * and counts. It passed over 51 nodes and 14 primitives when this was written
+ * and over 84 nodes and 15 primitives since the v1 rectangle widened to 4×5,
+ * and every word of that output is true.
  *
  * It is also compatible with the effect pipeline being connected to nothing.
  * `gatherEffects` and `stackContributions` — the documented route from
@@ -174,19 +175,24 @@ import type { ContentId, ContentRegistry, EffectRecord, Fp } from '@mm/content';
  * the two scopes agreed on the only two entries. They no longer do.
  * `lifespan` and `fertility` have a node-driven consumer as of
  * `coordination/knowledge-vitality.ts` — this check's question, answered yes —
- * and still no **v1** node declares either, which is `coverage.ts`'s question,
- * answered no. One list cannot hold two answers, and the failure direction each
- * check owns is what forced the split: a shared list would make this check fail
- * on `consumedExclusions` and that one fail on `unexercised`, whichever way it
- * was written.
+ * and at the time no **v1** node declared either, which is `coverage.ts`'s
+ * question, answered no. One list cannot hold two answers, and the failure
+ * direction each check owns is what forced the split: a shared list would make
+ * this check fail on `consumedExclusions` and that one fail on `unexercised`,
+ * whichever way it was written. The split has since earned itself twice over —
+ * the 4×5 widening moved `coverage.ts`'s answer for `fertility` and left this
+ * file's untouched.
  *
  * The two checks are still adjacent in `verify` and still tighter together than
  * apart. What is lost is the composed claim for these two primitives
  * specifically: coverage no longer certifies that the node whose magnitude
- * reaches the consumer is one a mage could legally learn. For `lifespan` and
- * `fertility` it is not — every authored node sits outside the twelve enabled
- * cells — and `knowledge-vitality.ts` says so in its own module note rather
- * than leaving a reader to infer it from a green check.
+ * reaches the consumer is one a mage could legally learn. For `lifespan` it is
+ * not — all seventeen authored carriers are Corpus, which sits outside the
+ * enabled rectangle — and `knowledge-vitality.ts` says so in its own module
+ * note rather than leaving a reader to infer it from a green check. For
+ * `fertility` it now is: the 4×5 rectangle contains `creo-animal`, so the
+ * composed claim holds again for that primitive and `coverage.ts` no longer
+ * excludes it.
  */
 export const PRIMITIVE_CONSUMPTION_EXCLUSIONS: readonly string[] = [];
 

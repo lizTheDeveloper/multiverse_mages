@@ -40,8 +40,8 @@ import {
 } from '@mm/scenario';
 import { describe, expect, it } from 'vitest';
 
-/** The v1 rectangle: three techniques × four forms (`contracts.md` §2.2). */
-const V1_CELL_COUNT = 12;
+/** The v1 rectangle: four techniques × five forms (`contracts.md` §2.2). */
+const V1_CELL_COUNT = 20;
 
 const CONFIG = { worldTickCap: 24, options: { cohortSize: 4, foundingNodes: 4 } } as const;
 
@@ -49,7 +49,7 @@ const CONFIG = { worldTickCap: 24, options: { cohortSize: 4, foundingNodes: 4 } 
 const content = referenceContent();
 
 describe('the reference universe starts from shipped content', () => {
-  it('permits exactly the twelve cells content flags v1, and no thirteenth', () => {
+  it('permits exactly the twenty cells content flags v1, and no twenty-first', () => {
     const state = referenceScenario(content).scenario.create(0x0005_0001, CONFIG);
     const ruleset = readRulesetForObservation(state, findUniverse(state));
 
@@ -59,7 +59,7 @@ describe('the reference universe starts from shipped content', () => {
     }
     expect(permitted).toHaveLength(V1_CELL_COUNT);
 
-    // And they are the twelve content named, not twelve of the same shape. A
+    // And they are the twenty content named, not twenty of the same shape. A
     // rectangle of the right size in the wrong place would hold no v1 nodes.
     const registry = shippedContent();
     const v1CellIds = registry.cells

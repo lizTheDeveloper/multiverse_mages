@@ -83,10 +83,10 @@ function runTo(ticks: number) {
 }
 
 describe('the grid the reading is taken against', () => {
-  it('is the full seventy, of which the v1 ruleset permits twelve', () => {
+  it('is the full seventy, of which the v1 ruleset permits twenty', () => {
     const sample = runTo(0);
     expect(sample.gridCells).toBe(70);
-    expect(sample.enabledCells).toBe(12);
+    expect(sample.enabledCells).toBe(20);
   });
 
   it('covers every species content declares, in content order', () => {
@@ -128,13 +128,23 @@ describe('the founding position', () => {
         entry.speciesId,
         entry.occupiedCellIds.map((id) => cellName.get(id)),
       ]),
+    //
+    // **Every one of the six moved when the v1 rectangle widened to 4x5.**
+    // `foundingCandidates` deals prerequisite-free nodes in ascending interned
+    // id and the eight cells the widening added all intern below the old set,
+    // so the six founders slid down the list: `intellego-limen…perdo-mentem`
+    // became `creo-animal…intellego-animal`. Nothing about the *rule* changed —
+    // one apiece, no two the same — which is why this assertion is still the
+    // one worth making. It is also the root cause of the species separations
+    // re-recorded in `species-separation-spread.test.ts`: those compare species
+    // whose starting cells all moved at once.
     ).toEqual([
-      ['draconic', ['intellego-limen']],
-      ['dwarf', ['intellego-mentem']],
-      ['elf', ['intellego-nomen']],
-      ['gnome', ['intellego-terram']],
-      ['human', ['perdo-limen']],
-      ['orc', ['perdo-mentem']],
+      ['draconic', ['creo-animal']],
+      ['dwarf', ['creo-limen']],
+      ['elf', ['creo-mentem']],
+      ['gnome', ['creo-nomen']],
+      ['human', ['creo-terram']],
+      ['orc', ['intellego-animal']],
     ]);
     expect(collectSpeciesCellOccupancy(telemetryFor(sample))).toMatchObject({
       detail: { cellsOccupiedByAnySpecies: 6, cellsWithASoleOccupant: 6 },
@@ -207,12 +217,19 @@ describe('twenty world years in', () => {
     // line: the campaign's knowledge-vitality wire, and `main`'s own merges.
     // Taking either hunk verbatim would pin a number no build produces, which
     // is exactly what the conflict resolution had to avoid.
-    expect(bySpecies('dwarf').occupiedCells).toBe(12);
-    expect(bySpecies('human').occupiedCells).toBe(12);
-    expect(bySpecies('orc').occupiedCells).toBe(11);
-    expect(bySpecies('draconic').occupiedCells).toBe(9);
-    expect(bySpecies('elf').occupiedCells).toBe(11);
-    expect(bySpecies('gnome').occupiedCells).toBe(9);
+    //
+    // **Re-measured on the 4x5 widening.** The ceiling is twenty cells now, not
+    // twelve, so nobody is at it: `12/12/11/9/11/9` out of twelve became
+    // `17/16/14/15/17/10` out of twenty. That is the substantive change this
+    // block reports — a universe that used to exhaust its rectangle inside
+    // twenty world years no longer does, and the spread between species is
+    // therefore visible for longer rather than compressed against a ceiling.
+    expect(bySpecies('dwarf').occupiedCells).toBe(17);
+    expect(bySpecies('human').occupiedCells).toBe(16);
+    expect(bySpecies('orc').occupiedCells).toBe(14);
+    expect(bySpecies('draconic').occupiedCells).toBe(15);
+    expect(bySpecies('elf').occupiedCells).toBe(17);
+    expect(bySpecies('gnome').occupiedCells).toBe(10);
   });
 
   it('measures a spread that is neither flat nor a hegemony', () => {
@@ -223,7 +240,9 @@ describe('twenty world years in', () => {
     // branch alone. Pinned to four places: the point of the metric is that this
     // number moves, and a test that only asserted "greater than zero" would let
     // it move to anything.
-    expect((entry as { value: number }).value).toBeCloseTo(0.0625, 4);
+    // 0.08427 since the rectangle widened to 4x5 — the spread grew, because
+    // nobody is pressed against a twelve-cell ceiling any more.
+    expect((entry as { value: number }).value).toBeCloseTo(0.08427, 4);
     expect(entry).toMatchObject({ detail: { everySpeciesEqual: false, everySpeciesZero: false } });
   });
 
@@ -238,9 +257,9 @@ describe('twenty world years in', () => {
   });
 
   it('names which cells each species is missing, not just how many', () => {
-    // **The reading a count cannot give.** Gnome is three cells short at this
-    // horizon and the three have a shape: two of the three are Perdo. A count of
-    // 9 says "behind"; this says "mostly behind in Perdo", which is the
+    // **The reading a count cannot give.** Gnome is seven cells short at this
+    // horizon and the seven have a shape: five of the seven are Rego. A count of
+    // 10 says "behind"; this says "mostly behind in Rego", which is the
     // difference between a species that is slow and a species that is locked out
     // of a technique.
     //
@@ -268,17 +287,34 @@ describe('twenty world years in', () => {
     // to expect — the set reorders under a handle-keyed re-roll, the durable
     // reading is *"gnome is short, and disproportionately short in Perdo"*, and
     // that reading is unchanged: all three are still Perdo but one.
+    //
+    // **Re-derived on the 4x5 widening, and the durable reading did not
+    // survive it.** Gnome is now seven cells behind dwarf rather than three,
+    // and the shape moved from Perdo to **Rego**: two Perdo and all five Rego.
+    // Stated rather than smoothed over, because the paragraphs above spent two
+    // re-pins arguing that "short, and disproportionately short in Perdo" was
+    // the part that outlived the seed — and a rectangle two-thirds larger is
+    // the first thing that has actually tested that claim, which fails it. The
+    // Rego cells are the ones `frontier-scan-window.test.ts` shows interning
+    // above the historic window; whether that is the cause is not established
+    // here, and it should not be read as established.
     expect(dwarfHeld.filter((cell) => !held.has(cell)).sort()).toEqual([
-      'perdo-limen',
       'perdo-mentem',
-      'perdo-terram',
+      'perdo-nomen',
+      'rego-animal',
+      'rego-limen',
+      'rego-mentem',
+      'rego-nomen',
+      'rego-terram',
     ]);
   });
 
   it('has every occupied cell shared, so the concentration is not specialisation', () => {
     const entry = collectSpeciesCellOccupancy(telemetryFor(sample));
     expect(entry).toMatchObject({
-      detail: { cellsOccupiedByAnySpecies: 12, cellsWithASoleOccupant: 0 },
+      // 17 of 20 since the widening — three cells of the rectangle are held by
+      // nobody at this horizon, which twelve-of-twelve could not show.
+      detail: { cellsOccupiedByAnySpecies: 17, cellsWithASoleOccupant: 0 },
     });
   });
 

@@ -12,7 +12,8 @@
       "can-call-the-pack",
       "can-the-fat-year",
       "can-the-made-beast"
-    ]
+    ],
+    "v1": true
   },
   {
     "id": "creo-aquam",
@@ -116,7 +117,8 @@
       "cm-the-given-memory",
       "cm-the-second-attention",
       "cm-the-made-scholar"
-    ]
+    ],
+    "v1": true
   },
   {
     "id": "creo-terram",
@@ -130,7 +132,8 @@
       "ct-the-poured-wall",
       "ct-the-conjured-vein",
       "ct-the-raised-bastion"
-    ]
+    ],
+    "v1": true
   },
   {
     "id": "creo-vim",
@@ -187,7 +190,8 @@
       "cl-draw-the-circle",
       "cl-the-made-door",
       "cl-the-threshold-that-was-always-there"
-    ]
+    ],
+    "v1": true
   },
   {
     "id": "creo-nomen",
@@ -199,7 +203,8 @@
       "cn-name-the-unnamed",
       "cn-the-name-that-teaches",
       "cn-the-second-name"
-    ]
+    ],
+    "v1": true
   },
   {
     "id": "intellego-animal",
@@ -213,7 +218,8 @@
       "ian-number-the-herd",
       "ian-chart-the-migration",
       "ian-the-beasts-own-eye"
-    ]
+    ],
+    "v1": true
   },
   {
     "id": "intellego-aquam",
@@ -613,7 +619,8 @@
       "pan-nothing-takes-the-scent",
       "pan-empty-the-pasture",
       "pan-nothing-answers-the-horn"
-    ]
+    ],
+    "v1": true
   },
   {
     "id": "perdo-aquam",
@@ -790,7 +797,8 @@
       "ran-drive-the-herd",
       "ran-the-borrowed-eye",
       "ran-bring-the-pack-to-heel"
-    ]
+    ],
+    "v1": true
   },
   {
     "id": "rego-aquam",

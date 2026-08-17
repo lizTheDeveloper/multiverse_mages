@@ -25,10 +25,11 @@
  * `MAX_FRONTIER_SCAN` was 256 and the shipped catalog holds 300 nodes, so the
  * frontier was not a *bounded scan* of the catalog — it was a **prefix window
  * over interned node id**. Nodes 257..300 were invisible to every mage, at every
- * tick, for the life of the universe. Eighteen of the fifty-one v1 nodes live
- * there: the whole `rego` technique, four cells of the twelve, including four
- * tier-1 roots that have no prerequisites at all and could otherwise be picked
- * up on day one.
+ * tick, for the life of the universe. Eighteen of the v1 nodes live there — of
+ * fifty-one when this was diagnosed, of eighty-four since the rectangle widened
+ * to 4x5, and the same eighteen both times: the whole `rego` technique's four
+ * original cells, including four tier-1 roots that have no prerequisites at all
+ * and could otherwise be picked up on day one.
  *
  * That is not what the constant's own documentation claimed it did — *"a catalog
  * of ten thousand nodes costs the same per mage as one of three hundred"* — and
@@ -286,9 +287,9 @@ describe('the frontier scan is bounded by legality, not by a range of node ids',
 
   it('offers only what the ruleset permits, and every v1 root inside it', () => {
     // The legality half of the bound, on the rectangle a v1 universe actually
-    // runs. Every offered node is in the twelve permitted cells — a scan that
+    // runs. Every offered node is in the twenty permitted cells — a scan that
     // walked the index and skipped `permits` would fail here — and every one of
-    // the rectangle's twelve roots is offered, including the four `rego` roots
+    // the rectangle's twenty roots is offered, including the four `rego` roots
     // the window used to hide.
     const { gateway, mage, nodeCount } = universeOnTheV1Rectangle();
     const offered = gateway.researchFrontier(mage, nodeCount).map((t) => t.nodeId);
@@ -318,7 +319,7 @@ describe('the frontier scan is bounded by legality, not by a range of node ids',
 });
 
 describe('what the window cost the shipped v1 subset', () => {
-  it('put eighteen of the fifty-one v1 nodes permanently out of reach', () => {
+  it('put eighteen of the eighty-four v1 nodes permanently out of reach', () => {
     const v1 = v1NodeIds();
     const beyond = v1.filter((nodeId) => nodeId > HISTORIC_SCAN_WINDOW);
 
@@ -327,7 +328,12 @@ describe('what the window cost the shipped v1 subset', () => {
     // moving a v1 cell across id 256 used to be a silent balance change — and
     // the `check:content` assertion in `@mm/content`'s loader now refuses the
     // class of reshuffle that would make an id range matter again.
-    expect(v1).toHaveLength(51);
+    // 84 since the v1 rectangle widened from 3x4 to 4x5. The blocked count did
+    // not move with it: the eight cells the widening added all intern below the
+    // historic window, so the block is still exactly the four `rego` cells it
+    // always was — which is the point the paragraph above makes, measured again
+    // on a rectangle two-thirds larger.
+    expect(v1).toHaveLength(84);
     expect(beyond).toHaveLength(18);
 
     // And they were one contiguous block — the four `rego` cells of the v1

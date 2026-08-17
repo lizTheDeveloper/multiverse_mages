@@ -40,9 +40,9 @@ function bySpecies(id: string) {
 }
 
 describe('the grid the measurement is taken against', () => {
-  it('is the full seventy, of which the v1 ruleset permits twelve', () => {
+  it('is the full seventy, of which the v1 ruleset permits twenty', () => {
     expect(sample.gridCells).toBe(70);
-    expect(sample.enabledCells).toBe(12);
+    expect(sample.enabledCells).toBe(20);
   });
 
   it('covers every species content declares', () => {
@@ -67,12 +67,12 @@ describe('breadth: every species can staff the whole grid', () => {
    * distinguishes the shipped species — it is universal, which is a different
    * and more serious problem than one species having it.
    */
-  it('gives all six species 70/70 and 12/12', () => {
+  it('gives all six species 70/70 and 20/20', () => {
     for (const entry of sample.species) {
       expect([entry.speciesId, entry.staffableCells, entry.staffableEnabledCells]).toEqual([
         entry.speciesId,
         70,
-        12,
+        20,
       ]);
     }
   });

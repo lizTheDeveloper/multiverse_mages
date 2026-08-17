@@ -96,7 +96,11 @@ function runOf(strategy: string): ReturnType<typeof executeReferenceRun> {
       runSeed: 0x1234_5678,
       levels: { cohortSize: 12, foundingMages: 2, foundingNodes: 4 },
       strategies: [strategy],
-      worldTickCap: 400,
+      // 600 since the v1 rectangle widened to 4x5. At 400 this build resolves
+      // no outbound raid at all and both tests below would be hollow — see the
+      // measured table on `RAIDING_HORIZON` in `raid-metrics.test.ts` for why
+      // the delay is a research-frontier effect and not a favor one.
+      worldTickCap: 600,
       metrics: [],
       ablatedPrimitives: [],
     },
@@ -285,8 +289,8 @@ describe('raids off is the build before this one', () => {
 describe('looting reaches what research cannot', () => {
   it('brings home nodes from cells this universe would never have permitted', { timeout: 60_000 }, () => {
     // The measurement behind the content-exhaustion finding. Seventy cells are
-    // authored and twelve are enabled, and those twelve hold 51 of the 300
-    // nodes — so an undisturbed universe learns all 51 and stops, whatever it
+    // authored and twenty are enabled, and those twenty hold 84 of the 300
+    // nodes — so an undisturbed universe learns all 84 and stops, whatever it
     // plays. Vision §3 makes a god's ruleset the thing that decides what can
     // exist *at home*; §8 makes a raid the thing that reaches what cannot. A
     // strategy that opens portals must end holding nodes a strategy that does

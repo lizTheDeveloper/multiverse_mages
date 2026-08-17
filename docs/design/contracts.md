@@ -445,7 +445,7 @@ serialized into snapshots.
   "form": "corpus",
   "classicalLabels": ["necromancy"],                 // display only, never mechanical.
                                                      // Vision §4's mapping table is authoritative
-  "v1": true,                                        // optional; flags membership of the 12-cell
+  "v1": true,                                        // optional; flags membership of the 20-cell
                                                      // v1 rectangle. Absent means not in v1
   "edicts": [],                                      // optional; "dispensation" | "interdiction".
                                                      // §1.1 requires the loader to reject a cell
@@ -464,8 +464,22 @@ serialized into snapshots.
 }
 ```
 
-70 cells exist in schema. The **v1 subset** is flagged per-cell with `"v1": true`; exactly 12 cells
-(3 techniques × 4 forms) carry it, and the set must include `rego-limen`.
+70 cells exist in schema. The **v1 subset** is flagged per-cell with `"v1": true`; exactly 20 cells
+(4 techniques × 5 forms) carry it, and the set must include `rego-limen`.
+
+The invariant the loader enforces is the **rectangle**, not the number: `V1_CELL_COUNT`,
+`V1_TECHNIQUE_COUNT` and `V1_FORM_COUNT` in `packages/content/src/load.ts` are three constants and
+`checkV1Subset` reads them, so widening the square is a content decision rather than a rewrite of
+the check.
+
+It widened once, from 3 × 4 to 4 × 5, adding technique `creo` and form `animal`. The reason was
+measured on `ad7f80c2` rather than argued: the 3 × 4 square `{intellego, perdo, rego} ×
+{limen, mentem, nomen, terram}` contained **no Creo at all**, so a universe could perceive, unmake
+and control and could not *make* — and all five of its `resource-yield` nodes sat in Terram cells,
+which `form.json` routes entirely to `stone`. That is five magical sources of stone and **none of
+`vellum`**, against three claimants on vellum (`casting`, `libraryUpkeep`, `scribing`). Animal
+routes half its yield to vellum. Over 2,400 ticks at one seed the widening takes the reference
+universe from 51 nodes and 86 books to 84 nodes and 643 books.
 
 ### 2.3 `node.json`
 
@@ -1416,4 +1430,4 @@ Deliberately left to the capabilities that own them, so that implementation expe
   choosing independently produces a divergence determinism cannot catch, because both sides are
   individually correct
 - Snapshot wire format for network transport — `pvp-server`
-- Which 12 cells make the v1 subset — `knowledge-model`, constrained only to include `rego-limen`
+- Which 20 cells make the v1 subset — `knowledge-model`, constrained only to include `rego-limen`

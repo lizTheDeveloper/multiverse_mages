@@ -464,7 +464,11 @@ describe('contentRevision', () => {
     // revision is a digest over the values, so this is the ordinary case rather
     // than a union of branches. It changes every run in which any mage learns
     // The Nameless — which is the point of the change, not a side effect of it.
-    expect(registry.contentRevision).toBe('8681bf846bd94be80fdabc447e6e01df');
+    // 8681bf84... -> b180d8b6..., when the v1 rectangle widened from 3x4 to
+    // 4x5. Eight `"v1": true` flags, no other authored value touched — and the
+    // digest moved, which is the check working: the flag is a content value and
+    // it decides which cells a universe opens on.
+    expect(registry.contentRevision).toBe('b180d8b681d82fa6c9b6c52edbc390fc');
   });
 
   it('is stable across loads of identical content', () => {

@@ -173,17 +173,52 @@ const CLAIMED_SEPARATIONS: readonly {
     status: 'asserted',
     verdict: 'established',
   },
+  // **Re-measured on the 4x5 widening** with
+  // `node packages/scenario/bin/species-separation.mjs --sets 12`, because that
+  // change moved every species' founding cell at once: `foundingCandidates`
+  // deals prerequisite-free nodes in ascending interned id and the eight cells
+  // the widening added all intern below the old six, so the founders slid from
+  // `intellego-limen…perdo-mentem` to `creo-animal…intellego-animal`. A
+  // separation between species whose starting positions all moved is a
+  // different measurement, not a drifted one.
+  //
+  // `dwarf < elf` fell from established to **inconclusive**: strict in 10/12
+  // sets, paired gap 38.8 ± 1.3 ticks = 29.3 SE. The effect is large and it no
+  // longer reproduces in every set, which is exactly the reading this file's
+  // verdict scale exists to keep separate from "it went away".
   {
     faster: 'dwarf',
     slower: 'elf',
     assertedAs: 'beforeElf.high < elf.low',
     status: 'asserted',
-    verdict: 'established',
+    verdict: 'inconclusive',
   },
   {
     faster: 'gnome',
     slower: 'human',
     assertedAs: 'gnome.high < human.low',
+    status: 'asserted',
+    verdict: 'established',
+  },
+  // `human < elf` was established at 12/12 and 64.7 SE on the 3x4 square and is
+  // **inconclusive** on 4x5: strict in 10/12, paired gap 32.7 ± 1.4 = 23.3 SE.
+  // Recorded as its own row because the test below reads it by name as *"the one
+  // link of #140's chain that does reproduce"*, and that sentence is now false.
+  {
+    faster: 'human',
+    slower: 'elf',
+    assertedAs: "#140's chain, third link",
+    status: 'asserted',
+    verdict: 'inconclusive',
+  },
+  // Newly established on the 4x5 square, at 12/12 sets and 9.9 SE. Added rather
+  // than left unrecorded: a separation that appears is as much a fact about the
+  // widening as one that disappears, and an unlisted one cannot go stale
+  // visibly.
+  {
+    faster: 'gnome',
+    slower: 'orc',
+    assertedAs: 'new on the 4x5 square',
     status: 'asserted',
     verdict: 'established',
   },
@@ -218,6 +253,12 @@ const RETIRED_ASSERTIONS: readonly { readonly source: string; readonly heldIn: s
   { source: 'expect(orc.high).toBeLessThan(elf.low)', heldIn: '11/12 sets' },
   { source: 'expect(draconic.low).toBeLessThan(human.low)', heldIn: '5/12 sets' },
   { source: 'expect(overlaps(gnome, dwarf)).toBe(true)', heldIn: '7/12 sets' },
+  // Retired on the 4x5 widening, and for a different reason from the four
+  // above: the separation is **established** at 12/12 sets and 21.6 SE. It is
+  // the interval form that fails — six seeds put gnome at [36, 51] and human at
+  // [49, 59], a two-tick overlap around a thirteen-tick paired gap. The sibling
+  // asserts `meanOf('gnome') < meanOf('human')` instead.
+  { source: 'expect(gnome.high).toBeLessThan(human.low)', heldIn: '12/12 sets, but not as intervals' },
 ];
 
 /** #140's claim, judged here because it is the reason this file exists. */
@@ -340,15 +381,21 @@ describe('every strict separation this repository asserts, re-rolled', () => {
       'reference-time-to-tier.test.ts changed how many strict separations it asserts. Add or ' +
         'remove the matching row in CLAIMED_SEPARATIONS so that every separation this ' +
         'repository publishes carries the number of seed sets it survives.',
-    ).toBe(2);
-    // **Two sites, three asserted separations, and it was four sites and five
-    // before 2026-08-14.** The loop over `beforeElf` is one site and two
-    // separations; `orc` was dropped from it when `orc < elf` was retired at
-    // 11/12. The count is the tripwire and the two lines below say which two
-    // sites it is, so that swapping one claim for another cannot keep the count.
+    ).toBe(1);
+    // **One site, two asserted separations, and it was four sites and five
+    // before 2026-08-14.** The loop over `beforeElf` is the site and it carries
+    // two separations; `orc` was dropped from it when `orc < elf` was retired at
+    // 11/12, and `gnome.high < human.low` was dropped on the 4x5 widening — the
+    // pair's separation survives at 12/12 sets and 21.6 SE, but its *interval*
+    // form does not, because gnome `[36, 51]` and human `[49, 59]` overlap by
+    // two ticks over six seeds. The sibling asserts the mean instead, which is
+    // not a `.high < .low` site and correctly does not count here.
+    //
+    // The count is the tripwire and the line below says which site it is, so
+    // that swapping one claim for another cannot keep the count.
     expect(sibling).toContain('for (const entry of beforeElf) expect(entry.high)');
-    expect(sibling).toContain('expect(gnome.high).toBeLessThan(human.low)');
-    expect(CLAIMED_SEPARATIONS.filter((claim) => claim.status === 'asserted')).toHaveLength(3);
+    expect(sibling).toContain("expect(meanOf('gnome')).toBeLessThan(meanOf('human'))");
+    expect(CLAIMED_SEPARATIONS.filter((claim) => claim.status === 'asserted')).toHaveLength(5);
   });
 
   it.each(RETIRED_ASSERTIONS)(
@@ -392,12 +439,21 @@ describe("#140's four-species chain", () => {
     expect(verdict.verdict).not.toBe('established');
   });
 
-  it('has one link that does reproduce, and it is not new', () => {
-    // `human < elf` is established on `main` too, at 12/12 sets and 64.7 SE. It
-    // is worth naming so that nobody reads "the chain does not reproduce" as
-    // "nothing separates": four relations separate robustly, and they are the
-    // same four before and after #140.
+  it('has one link that no longer reproduces, and the loss is the 4x5 widening', () => {
+    // `human < elf` was established on `main` at 12/12 sets and 64.7 SE, and was
+    // named here so that nobody read "the chain does not reproduce" as "nothing
+    // separates". **Re-measured after the v1 rectangle widened to 4x5 it is
+    // inconclusive** — strict in 10/12, 23.3 SE — so the chain now has no link
+    // that reproduces everywhere.
+    //
+    // What separates robustly on this square is gnome against everything:
+    // `gnome < elf` (12/12, 44.2 SE), `gnome < human` (12/12, 21.6 SE) and
+    // `gnome < orc` (12/12, 9.9 SE), all asserted as rows above. Kept as a named
+    // test rather than deleted, because "the chain's surviving link stopped
+    // surviving" is the finding and a deleted test states nothing.
     const link = separationOf(report, 'human', 'elf');
-    expect(verdictOf(link).verdict).toBe('established');
+    expect(verdictOf(link).verdict).toBe('inconclusive');
+    expect(verdictOf(separationOf(report, 'gnome', 'elf')).verdict).toBe('established');
+    expect(verdictOf(separationOf(report, 'gnome', 'human')).verdict).toBe('established');
   });
 });

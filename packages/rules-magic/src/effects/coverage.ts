@@ -21,10 +21,11 @@
  * samples, and every statement the harness makes about it at 0.5.0 will be
  * about code nothing has ever run.
  *
- * The design accepted exactly two such gaps — `lifespan` and `fertility`, both
- * Corpus- and Animal-bound, both arriving with the second content wave — and
+ * The design accepted exactly two such gaps — `lifespan` and `fertility` — and
  * recorded them as *asserted rather than discovered*. This check is that
- * assertion.
+ * assertion. One of the two has since closed: widening the v1 rectangle to 4×5
+ * brought `creo-animal` inside it and with it three `fertility` carriers, so
+ * the list below names `lifespan` alone.
  *
  * ## It fails in both directions, and that is the whole point
  *
@@ -56,16 +57,32 @@
 import type { ContentRegistry, NodeRecord } from '@mm/content';
 
 /**
- * The two primitives no v1 node exercises, and the reason.
+ * The one primitive no v1 node exercises, and the reason.
  *
- * `lifespan` and `fertility` are Corpus- and Animal-bound; including `corpus`
- * in the v1 form set would have cost either Nomen — stranding True Naming with
- * no form to bite on — or Terram, and neither primitive has anything to act on
- * until mages age, which is `mages-and-species` at 0.4.0.
+ * `lifespan` is Corpus-bound, and Corpus is not in the v1 form set: including
+ * it would have cost either Nomen — stranding True Naming with no form to bite
+ * on — or Terram, and the primitive has nothing to act on until mages age,
+ * which is `mages-and-species` at 0.4.0.
  *
- * Sorted, and asserted to be exactly this pair by test. Adding a third entry is
- * a claim that a third primitive is unmeasurable at 0.5.0, and should be as
- * hard to do quietly as this list makes it.
+ * Sorted, and asserted to be exactly this list by test. Adding an entry is a
+ * claim that another primitive is unmeasurable at 0.5.0, and should be as hard
+ * to do quietly as this list makes it.
+ *
+ * ## `fertility` was the second entry, and content closed it
+ *
+ * The old note said the gap was *"an authoring gap … closed by content — an
+ * authored effect on a v1 node, or a v1 rectangle that includes Corpus — not by
+ * wiring"*, and named Corpus because `fertility` was read as Corpus-bound
+ * alongside `lifespan`. It is not: **Animal** carries it. Widening the v1
+ * rectangle from 3×4 to 4×5 — adding `creo` and `animal` — put three
+ * `fertility` carriers inside it, all in `creo-animal`: `Quicken the Herd`
+ * (128), `The Fat Year` (256) and `The Made Beast` (192). The check fails in
+ * both directions precisely so that this diff had to be written by hand.
+ *
+ * `lifespan` did **not** close. Its seventeen carriers are all Corpus, and
+ * Corpus is still outside the rectangle — so the widening is a real test of the
+ * two-directional rule rather than a blanket amnesty: one exclusion died, one
+ * survived, and each for a reason a reader can check against `node.json`.
  *
  * ## This list is no longer the consumption check's
  *
@@ -75,17 +92,15 @@ import type { ContentRegistry, NodeRecord } from '@mm/content';
  * Both halves of that sentence were true and the second one is now false.
  * `coordination/knowledge-vitality.ts` fetches both primitives' authored
  * magnitudes and the world loop applies them, so a **node-driven consumer
- * exists** — while **no v1 node still declares either**, which is the only
+ * exists** — while no v1 node still declares `lifespan`, which is the only
  * question this file asks.
  *
  * So the exclusion here has narrowed rather than lapsed. It no longer says
  * *"knowledge cannot move this"*; it says *"no learnable node authors this
- * yet"*, which is an authoring gap and is closed by content — an authored
- * effect on a v1 node, or a v1 rectangle that includes *Corpus* — not by
- * wiring. {@link PRIMITIVE_CONSUMPTION_EXCLUSIONS} in `consumption.ts` is now
+ * yet"*. {@link PRIMITIVE_CONSUMPTION_EXCLUSIONS} in `consumption.ts` is now
  * the other list, and it is empty.
  */
-export const PRIMITIVE_COVERAGE_EXCLUSIONS: readonly string[] = ['fertility', 'lifespan'];
+export const PRIMITIVE_COVERAGE_EXCLUSIONS: readonly string[] = ['lifespan'];
 
 /** The primitive whose cell `contracts.md` §8 mandates. */
 export const PORTAL_PRIMITIVE_ID = 'portal';

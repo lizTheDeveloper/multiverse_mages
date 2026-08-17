@@ -126,17 +126,69 @@ const REGISTERED: ReadonlyMap<string, string> = new Map([
       'the intent, this is the line that says so.',
   ],
 
-  // ---- Handled at the site. ----
+  // ---- Ranking terms: the floor means "no opinion", and nothing is lost. ----
+  //
+  // All three arrived when the v1 rectangle widened from 3x4 to 4x5. None of
+  // them is new code and none of them started annihilating for a new reason:
+  // a rectangle of twenty cells offers 84 candidate nodes instead of 51, so
+  // these three see argument values they had not seen before, several of which
+  // are one unit from neutral. That is the recorder working — it reports the
+  // arm it was given, and the arm got wider.
+  //
+  // None can stall. Each is one addend of a six-term sum that is argmaxed;
+  // a term flooring to zero withdraws that term's vote for that candidate, and
+  // `GOAL_BASE_APPEAL[idle]` guarantees the argmax always has something to
+  // return. Contrast `laggedWorship` below, which had to be handled because a
+  // floor there stopped a quantity converging.
   [
-    'worship:laggedWorship',
-    'Handled. A rising gap of one unit floors to zero, and the function moves ' +
-      'one unit instead of returning the stalled value, so worship still ' +
-      'converges on its target.',
+    'terms:shareOfDeviation',
+    'Floored and discarded, deliberately. It is a *signed share of a deviation ' +
+      'from neutral*, so `floorDiv(1, 2) -> 0` reads "one unit off neutral, ' +
+      'divided two ways, is not an opinion" — which is the intended meaning ' +
+      'rather than a lost quantity.',
   ],
+  [
+    'target-appeal:personalityTargetTerm',
+    'The same shape, per tier: `floorDiv(ambition - FP_ONE, divisor)` on a ' +
+      'personality one unit from neutral is no preference between tiers. One ' +
+      'of six terms summed and then clamped once, so a zero here cannot empty ' +
+      'the candidate ranking.',
+  ],
+  [
+    'target-appeal:effortTerm',
+    'Floored and discarded, and the floor is the *generous* direction: ' +
+      '`-floorDiv(remainingCost, effortDivisor)` at `floorDiv(53, 64) -> 0` ' +
+      'means a target within one divisor of completion carries no effort ' +
+      'penalty. A stall would need the opposite sign.',
+  ],
+
 ]);
 
+/**
+ * Sites that were registered and are no longer *reached* by this arm.
+ *
+ * Kept as a record rather than deleted, because the registry above fails in
+ * both directions on purpose — a registered site that stops being seen is a
+ * fact about the arm, and a silent deletion loses it.
+ *
+ * - **`worship:laggedWorship`** — registered as *"Handled. A rising gap of one
+ *   unit floors to zero, and the function moves one unit instead of returning
+ *   the stalled value, so worship still converges on its target."* The handling
+ *   is unchanged; the arm stopped reaching the floor. It dropped out when the
+ *   v1 rectangle widened from 3x4 to 4x5, over the same 240-tick reference arm
+ *   and the same seed. Nothing about `laggedWorship` was edited.
+ */
+const NO_LONGER_REACHED: readonly string[] = Object.freeze(['worship:laggedWorship']);
+
 describe('the set of functions that floor a live quantity to zero', () => {
-  it('is exactly the registered set, over an assembled reference universe', () => {
+  // 120 s rather than the global 30 s. The arm is 240 world ticks with a
+  // sentinel wrapped around every `floorDiv` in the rules path, and it got
+  // slower when the v1 rectangle widened from 3x4 to 4x5: `researchFrontier`
+  // walks the nodes of every permitted cell once per mage per tick, so 84 nodes
+  // instead of 51 is a per-tick cost. Measured at ~71 s on an idle eight-core
+  // box. The timeout is raised rather than the horizon cut, because 240 ticks is
+  // what makes this an invariant and not a measurement — see `TICKS` above.
+  it('is exactly the registered set, over an assembled reference universe', { timeout: 120_000 }, () => {
     const content = referenceContent();
     const simulation = defineWorldSimulation(content.deps);
     const recorder = new AnnihilationRecorder();
@@ -163,6 +215,10 @@ describe('the set of functions that floor a live quantity to zero', () => {
     // it. That is the same failure as an arm asserting cleanliness over a
     // mechanic it never reached; see INV-39.
     const registeredButUnseen = [...REGISTERED.keys()].filter((site) => !seen.includes(site));
+
+    // The retired list is asserted in the same breath, so that a site coming
+    // back is as loud as one going away.
+    expect(NO_LONGER_REACHED.filter((site) => seen.includes(site))).toEqual([]);
     const detail = recorder
       .sites()
       .filter((row) => unregistered.includes(row.site))

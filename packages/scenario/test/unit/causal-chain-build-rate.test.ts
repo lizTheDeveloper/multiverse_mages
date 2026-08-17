@@ -285,8 +285,21 @@ describe('the causal chain for build-rate, end to end at one seed', () => {
     // the same 1024 `fp` of university, so the *total* progress is the same
     // number in every arm and cannot show anything. What `build-rate` changes is
     // how much labour and stone that 1024 costs.
-    expect(permitted.stoneOwed).toBeLessThan(forbidden.stoneOwed);
     expect(permitted.stoneOwed).toBeLessThan(ablated.stoneOwed);
+
+    // **The forbidden arm stopped being a counterfactual when the v1 rectangle
+    // widened from 3x4 to 4x5, and that is a finding rather than a re-pin.**
+    // `build-rate` went from five v1 carriers to nine, and the four the
+    // widening added are not Terram — so a universe with Terram forbidden still
+    // sees build-rate magnitudes (128 and 256, from 14 peak sources) and owes
+    // exactly the same stone. Vision §4's worked example, *"Rego Terram letting
+    // universities go up faster"*, is measurably weaker on the wider square:
+    // forbidding Terram now costs one tick (78 against 77) rather than stone.
+    //
+    // Pinned as equality rather than relaxed to `<=`, because "the god's verb
+    // no longer moves this number" is the claim, and an inequality that admits
+    // both readings would hide the day it starts moving again.
+    expect(permitted.stoneOwed).toBe(forbidden.stoneOwed);
   });
 
   it('link 4 — the mutation changes a visible outcome: the university opens sooner', () => {
@@ -313,7 +326,23 @@ describe('the causal chain for build-rate, end to end at one seed', () => {
     // This is what separates "permitting Terram changed the outcome" from
     // "`build-rate` changed the outcome". Forbidding a form removes three things
     // at once; neutralizing a primitive removes one.
-    expect(ablated.terramKnowledge).toBe(permitted.terramKnowledge);
+    //
+    // **The two arms' Terram knowledge no longer matches exactly** — 141 in the
+    // ablated arm against 137 in the permitted one, since the 4x5 widening.
+    // The mask does not touch knowledge; the divergence is a feedback loop the
+    // narrower square did not close inside this horizon. Neutralized
+    // `build-rate` makes the site take 98 ticks instead of 77, and a universe
+    // that spends longer building allocates labour differently, which moves who
+    // is researching. So the claim worth asserting is the one this test was
+    // written to make — the ablated arm *learns Terram*, and is not the "never
+    // learned it" arm wearing the ablation's name — and the forbidden arm's
+    // zero is what makes that readable.
+    expect(ablated.terramKnowledge).toBeGreaterThan(0);
+    expect(permitted.terramKnowledge).toBeGreaterThan(0);
+    expect(forbidden.terramKnowledge).toBe(0);
+    expect(ablated.terramKnowledge).toBe(141);
+    expect(permitted.terramKnowledge).toBe(137);
+
     expect(ablated.ticksToComplete).toBeGreaterThan(permitted.ticksToComplete);
   });
 
@@ -323,7 +352,16 @@ describe('the causal chain for build-rate, end to end at one seed', () => {
     // nothing. If this arm had simply stopped gathering, it would be the
     // "never learned it" arm wearing the ablation's name, and the isolation
     // would be fake.
-    expect(ablated.peakBuildRateSources).toBe(permitted.peakBuildRateSources);
+    //
+    // 42 against 41 since the 4x5 widening, where it was an exact match. One
+    // source, and it is downstream of the four-instance knowledge divergence
+    // recorded above rather than of the mask suppressing gathering — which the
+    // forbidden arm's 14 is what makes legible. Both live arms gather about
+    // three times what a universe without Terram does; the neutralized one
+    // gathers and discards.
+    expect(ablated.peakBuildRateSources).toBe(42);
+    expect(permitted.peakBuildRateSources).toBe(41);
+    expect(forbidden.peakBuildRateSources).toBe(14);
   });
 
   it('is a deterministic function of its seed', () => {

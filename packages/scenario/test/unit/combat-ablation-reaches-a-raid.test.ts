@@ -84,17 +84,26 @@ const content = referenceContent();
 const HORIZON = 400;
 
 /**
- * The two seeds whose raid log moves when `knowledge-steal` is neutralized, of
- * six surveyed at this horizon.
+ * Two seeds whose raid log moves when `knowledge-steal` is neutralized.
  *
  * Named rather than swept, because two arms per seed at 400 ticks is seconds
  * each and a survey belongs in the commit message. Both are asserted, so one of
  * them ceasing to raid cannot silently leave this file passing on the other.
+ *
+ * **Re-surveyed on the 4x5 widening, and `0x0bad_c0de` changed sides.** It
+ * still raids twice at this horizon and its log is now byte-identical across
+ * the arms, so it moved to {@link UNMOVED_SEEDS} rather than being deleted —
+ * a seed that stopped moving is a data point about how thin the theft coupling
+ * is, and dropping it would erase that. `0x0100_0002` replaces it: three raids,
+ * and it moves. Survey on this build: **24 seeds that raid at 400 ticks, 6 of
+ * which move.**
  */
-const SEEDS: readonly number[] = Object.freeze([0x0bad_c0de, 0x00ab_cdef]);
+const SEEDS: readonly number[] = Object.freeze([0x00ab_cdef, 0x0100_0002]);
 
 /** Seeds whose raid log does **not** move — the control on the control. */
-const UNMOVED_SEEDS: readonly number[] = Object.freeze([0x1234_5678, 0x0004_1000]);
+const UNMOVED_SEEDS: readonly number[] = Object.freeze([
+  0x1234_5678, 0x0004_1000, 0x0bad_c0de,
+]);
 
 interface Played {
   readonly raidLog: string;
@@ -142,7 +151,8 @@ describe('§9’s mask crosses the scenario boundary into a raid', () => {
   it.each(UNMOVED_SEEDS)('leaves a run it does not touch byte-identical on seed %i', (seed) => {
     // The other direction, and it is what makes the assertion above mean
     // something: the mask is not a general perturbation that moves any run it is
-    // handed. Two of six surveyed seeds move and four do not.
+    // handed. Six of twenty-four surveyed seeds that raid at this horizon move;
+    // eighteen do not.
     const control = play(seed);
     expect(play(seed, 'knowledge-steal').raidLog).toBe(control.raidLog);
   });

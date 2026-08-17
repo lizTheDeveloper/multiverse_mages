@@ -35,14 +35,22 @@ const registry: ContentRegistry = loadContent(shippedContentSource());
 
 /** The v1 subset `knowledge-model` chose, spelled out so a silent swap fails. */
 const V1_CELLS = [
+  'creo-animal',
+  'creo-limen',
+  'creo-mentem',
+  'creo-nomen',
+  'creo-terram',
+  'intellego-animal',
   'intellego-limen',
   'intellego-mentem',
   'intellego-nomen',
   'intellego-terram',
+  'perdo-animal',
   'perdo-limen',
   'perdo-mentem',
   'perdo-nomen',
   'perdo-terram',
+  'rego-animal',
   'rego-limen',
   'rego-mentem',
   'rego-nomen',
@@ -55,7 +63,7 @@ describe('shipped content', () => {
       techniques: 5,
       forms: 14,
       cells: 70,
-      v1Cells: 12,
+      v1Cells: 20,
       nodes: 300,
       species: 6,
       traditions: 3,
@@ -134,7 +142,7 @@ describe('shipped content', () => {
     expect(cell?.v1).toBeUndefined();
   });
 
-  it('flags exactly the twelve v1 cells, including rego-limen', () => {
+  it('flags exactly the twenty v1 cells, including rego-limen', () => {
     const flagged = registry.cells
       .filter((entry) => entry.record.v1 === true)
       .map((entry) => entry.record.id)
@@ -144,7 +152,7 @@ describe('shipped content', () => {
     expect(flagged).toContain(REQUIRED_V1_CELL);
   });
 
-  // All seventy cells carry spells; only twelve are enabled. Authoring ahead of the
+  // All seventy cells carry spells; only twenty are enabled. Authoring ahead of the
   // release is the point -- what would be a defect is a *playable* node gated behind
   // a cell the release does not enable, which no amount of play could ever reach.
   it('never gates a v1 node behind content outside the v1 subset', () => {

@@ -68,15 +68,33 @@ const RAID_METRIC_IDS = ['raidLengthDistribution', 'inboundRaidTempoLoss', 'raid
 const COMBAT_METRIC_IDS = ['combatActionEconomy', 'combatThresholdEfficiency'];
 
 /**
- * World ticks a portal-rushing god needs before it can afford to open one.
+ * World ticks a portal-rushing god needs before a raid lands.
  *
  * The same horizon `raid-engagement.test.ts` runs at, and it is not a round
- * number chosen for comfort: below it the god has not accumulated the favor
- * action 14 costs, the run initiates no raid, and every metric here reports
- * `no-observations` — correctly, which is why the short-horizon case is asserted
- * beside this one rather than replaced by it.
+ * number chosen for comfort: below it the run initiates no raid and every
+ * metric here reports `no-observations` — correctly, which is why the
+ * short-horizon case is asserted beside this one rather than replaced by it.
+ *
+ * **400 until the v1 rectangle widened from 3x4 to 4x5, and the reason it had
+ * to move is not the one this comment used to give.** It said the god "has not
+ * accumulated the favor action 14 costs". Measured with `auditStrategy` on
+ * `portal-rush` at 400 ticks, that is false on both squares: the legality mask
+ * — which prices affordability — permitted action 14 on 355 of 400 ticks at 3x4
+ * and on **384** at 4x5, and peak favor *rose*, fp 40,960 to fp 51,200. What
+ * changed is `portalPlan`'s other precondition: a living mage holding a
+ * permitted node that carries the `portal` primitive. That node is in
+ * `rego-limen`, and a research effort spread over 84 v1 nodes instead of 51
+ * reaches it later. Applied action-14 counts, same seed and strategy:
+ *
+ * | build | 400 | 600 | 800 |
+ * | --- | --: | --: | --: |
+ * | 3x4 | 5 | — | — |
+ * | 4x5 | **0** | 5 | 36 |
+ *
+ * So a wider opening square *delays the first raid* rather than pricing it out,
+ * and 600 is where the 4x5 build reaches the raid count 3x4 reached at 400.
  */
-const RAIDING_HORIZON = 400;
+const RAIDING_HORIZON = 600;
 
 /** A horizon short enough that no raid is affordable. The reference sweep's own. */
 const SHORT_HORIZON = 24;

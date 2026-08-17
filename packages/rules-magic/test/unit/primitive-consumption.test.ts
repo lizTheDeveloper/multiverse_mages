@@ -386,10 +386,13 @@ describe('the two checks no longer share one exclusion list', () => {
   });
 
   it('leaves the coverage list standing, because its question is the other one', () => {
-    // `lifespan` and `fertility` have a node-driven consumer *and* no v1 node
-    // authoring them. One list cannot hold both answers, and this is the pair
-    // of assertions that says so out loud.
-    expect([...PRIMITIVE_COVERAGE_EXCLUSIONS]).toEqual(['fertility', 'lifespan']);
+    // `lifespan` has a node-driven consumer *and* no v1 node authoring it. One
+    // list cannot hold both answers, and this is the pair of assertions that
+    // says so out loud. `fertility` was the second such primitive until the v1
+    // rectangle widened to 4x5 and gave it three v1 carriers in `creo-animal`;
+    // the split earned itself there, because that moved the coverage answer and
+    // left this file's untouched.
+    expect([...PRIMITIVE_COVERAGE_EXCLUSIONS]).toEqual(['lifespan']);
     const { recorder, registry } = fullyConsumed();
     expect(checkPrimitiveConsumption(registry, recorder).consumed.map((e) => e.primitiveId)).toContain(
       'lifespan',

@@ -45,7 +45,7 @@ describe('the v1 subset exercises every primitive but the declared exclusions', 
     expect(report.misplacedPortalNodes).toEqual([]);
   });
 
-  it('exercises every registry primitive except lifespan and fertility', () => {
+  it('exercises every registry primitive except lifespan', () => {
     const registry = shippedRegistry();
     const report = checkPrimitiveCoverage(registry);
     const exercised = new Set(report.exercised.map((entry) => entry.primitiveId));
@@ -56,8 +56,13 @@ describe('the v1 subset exercises every primitive but the declared exclusions', 
     expect([...exercised].sort()).toEqual([...expected].sort());
   });
 
-  it('declares exactly the two exclusions the design accepted', () => {
-    expect([...PRIMITIVE_COVERAGE_EXCLUSIONS]).toEqual(['fertility', 'lifespan']);
+  it('declares exactly the one exclusion still standing', () => {
+    // Two, until the v1 rectangle widened from 3x4 to 4x5. `creo-animal` came
+    // inside it carrying three `fertility` magnitudes, so that exclusion had to
+    // be deleted — which is the check failing in the *closing* direction, the
+    // half a one-directional gate would have missed silently. `lifespan` is
+    // Corpus-bound and Corpus is still outside the rectangle.
+    expect([...PRIMITIVE_COVERAGE_EXCLUSIONS]).toEqual(['lifespan']);
   });
 
   it('states the exclusions in the formatted report, so a reader sees the gap', () => {

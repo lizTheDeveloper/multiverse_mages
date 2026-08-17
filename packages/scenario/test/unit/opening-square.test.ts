@@ -88,8 +88,8 @@ function drawSquare(seed: number, techniqueCount: number, formCount: number) {
 }
 
 describe('the default opening is the v1 rectangle and nothing has moved', () => {
-  it('opens exactly the twelve cells content flags v1', () => {
-    expect(openCells(build({}))).toHaveLength(12);
+  it('opens exactly the twenty cells content flags v1', () => {
+    expect(openCells(build({}))).toHaveLength(20);
   });
 
   it('is byte-identical to naming the counts as zero', () => {
