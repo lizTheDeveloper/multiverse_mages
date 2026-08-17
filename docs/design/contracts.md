@@ -509,7 +509,9 @@ It was 12 cells (3 × 4) until `material-economy` (2026-08-16). The reason for o
 recorded in that change's `design.md`: `material-economy` gives every form a material yield, and
 ten of the fourteen forms sat outside the square — including the only producers of `essence` (Vim)
 and `labor` (Corpus), both of which are *priced into god actions*. Measured over 600 reference
-ticks, production of both was exactly zero and `fund-university` was legal on 13 ticks of 600.
+ticks — 2026-08-16, on `w247/material-economy-build` @ `1da48cab`, via
+`tools/w247/material-faucets.mjs` and `tools/w247/action11-legality.mjs` — production of both was
+exactly zero and `fund-university` was legal on 13 ticks of 600.
 
 ### 2.3 `node.json`
 
