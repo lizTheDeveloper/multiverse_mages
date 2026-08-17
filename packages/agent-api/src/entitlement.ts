@@ -219,6 +219,17 @@ export const TRAIT_CLASSIFICATION: Readonly<
   // questions wearing one field, and `docs/design/scribing-fidelity.md` decides
   // neither. See {@link CORRUPTION} in `@mm/rules-magic` for the three states.
   'knowledge-fidelity': { copyGeneration: undecided(), corruption: undecided() },
+  // `w24/university-siting`'s two sections, classified on the
+  // `integration/group-e` merge because that branch predates this classifier and
+  // therefore never had a row here — `assertAllTraitsClassified` caught the gap,
+  // which is the mechanism working.
+  //
+  // Both `undecided()`. A holding is how much of what kind of country the
+  // universe works, and a site is which kind its academy stands in; §4.1's
+  // observation has no channel for either, and a PvP opponent learning where a
+  // rival's academy stands is a disclosure question nobody has ruled on yet.
+  'territory-holding': { kindId: undecided(), landUnits: undecided() },
+  'university-site': { kindId: undecided() },
   // The entire rediscovery signal. An agent cannot distinguish a node never
   // discovered from one discovered and lost, which are the two states with the
   // most different expected value in the knowledge model.
