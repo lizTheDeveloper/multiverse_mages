@@ -93,6 +93,20 @@ export {
   withAxisPriceScale,
 } from './axis-price.js';
 
+export type {
+  LegacyRecord,
+  LegacyRecordInput,
+  LegacySeedInput,
+  LegacySeedOutcome,
+} from './legacy.js';
+export {
+  LEGACY_RECORD_SCHEMA,
+  legacyArchiveCandidates,
+  legacyRecordOf,
+  seedLegacy,
+  splitLegacyMaterials,
+} from './legacy.js';
+
 export type { ReferenceContent, ReferenceOptions, ReferenceRun } from './reference-universe.js';
 export {
   AXIS_PRICE_FACTOR_ID,

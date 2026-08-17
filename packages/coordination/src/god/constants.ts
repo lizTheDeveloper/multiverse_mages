@@ -173,24 +173,24 @@ export interface GodConstants {
    * that the numbers beside it are falsifiable — a baseline without the tick it
    * was measured at is a magnitude nobody can reproduce or disprove.
    *
-   * It is also **staged ahead of a consumer that is named in content**. All
-   * three baselines carry glosses disowning themselves — *"Placeholder for the
-   * median unaided universe's ... A measurement that has not been taken: the
-   * first prestigeAdvantage sweep replaces it"* — and this is the tick that
-   * sweep has to read them at. Today two of the three are not measurements at
-   * all: `legacy-baseline-materials` is `1024000`, which is `scenario`'s
+   * **Its consumer is the record, not a formula.** `scenario/src/legacy.ts`
+   * copies it into every `LegacyRecord` as `baselineReferenceTick`, which is
+   * exactly the job the sentence above describes: a legacy record outlives the
+   * process that wrote it, and a saved head start whose baselines cannot be
+   * located in time is the same magnitude with its provenance thrown away.
+   * This field previously had no reader at all and was the one entry in
+   * `check:reachability`'s *"resolved and never consumed"* bucket.
+   *
+   * All three baselines still carry glosses disowning themselves — *"Placeholder
+   * for the median unaided universe's ... A measurement that has not been taken:
+   * the first prestigeAdvantage sweep replaces it"* — and this is the tick that
+   * sweep has to read them at. Two of the three are not measurements at all:
+   * `legacy-baseline-materials` is `1024000`, which is `scenario`'s
    * `STARTING_MATERIALS` exactly, and `legacy-baseline-populace` is `72`, which
    * is its founding population exactly (4 per cohort × 6 species × 3
    * occupations). They are the starting position wearing the name of a tick-120
-   * median.
-   *
-   * So the owed work is a measurement, and this constant is the half of it that
-   * can be authored in advance. It is not deleted, for two reasons: dropping it
-   * from `god-constant.json` would move `contentRevision`, which sits inside
-   * every snapshot; and dropping only the field here — leaving the constant
-   * required and consumed by nothing — would take the finding off
-   * `check:reachability`'s report without changing anything true about the
-   * repository, which is the silence that check is written to refuse.
+   * median, and wiring the mechanic did not change that — it only made the
+   * provenance travel with the number.
    */
   readonly legacyReferenceTick: number;
   readonly legacyBaselineFavor: Fp;
