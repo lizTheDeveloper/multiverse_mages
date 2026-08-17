@@ -176,8 +176,46 @@ describe('defect 1: intake is people, not seats', () => {
     // old rule — `[OCCUPATION.student]: universityCapacity` — the two arms would
     // ask for the same number of students and the enrolment counts would track
     // the seats rather than the people.
-    const small = runWorld({ cohortSize: 20 });
-    const large = runWorld({ cohortSize: 120 });
+    //
+    // ## The arms were 20 and 120, and W197 put both of them above the ceiling
+    //
+    // `seededWorld` seeds three occupation cohorts per species across six
+    // species, so `cohortSize` **n** is a student cohort of `6n`, and the
+    // enrolment phase seats `min(matured student cohort, free seats)`. At the
+    // original arms that is `min(120, 64)` and `min(720, 64)` — 64 and 64. Both
+    // arms saturated, the assertion compared a ceiling with itself, and it had
+    // no power left to lose.
+    //
+    // The cause is named and it is ours: **W197 (`9b4a89f1`) made enrolment seat
+    // every matured member of the cohort** — `ENROLS_EVERY_LATENT_MEMBER`,
+    // because `prevalence` was being applied here *and* in the demand
+    // controller, so seats never bound. Under the doubled gate a cohort of 20
+    // put roughly `120 × prevalence` people at the door, comfortably under 64,
+    // and the arms separated. Removing the second application raised the small
+    // arm through the ceiling. Nothing about the property changed; the fixture
+    // stopped straddling the bound. (Not the `min(admissions.granted, sited)`
+    // composition either: the fixture pre-seeds the student cohorts, so the
+    // demand controller does not gate the first tick at all.)
+    //
+    // *Measured on this tree, 2026-08-17, `integration/all-branches`, seed
+    // `0x00040000`, 60 ticks — `studentsEnrolled` against `cohortSize`:*
+    //
+    // | cohortSize | 1 | 2 | 3 | 5 | 6 | 10 | 20 | 60 | 120 |
+    // | enrolled   | 6 | 12 | 18 | 30 | 36 | 56 | **64** | **64** | **64** |
+    // | unseated   | 0 | 0 | 0 | 0 | 0 | 4 | 56 | 296 | 656 |
+    //
+    // Intake tracks people exactly until the seats bind, and then it tracks
+    // seats — which is the shape the claim is about. The arms below are chosen
+    // where `unseated` is zero, so no bound of any kind is binding and the
+    // separation can only be the population. The saturated case is not lost: the
+    // test after this one runs `cohortSize 120` and asserts `unseated > 0`.
+    const small = runWorld({ cohortSize: 2 });
+    const large = runWorld({ cohortSize: 6 });
+
+    // The seats never bind in either arm — asserted rather than assumed, because
+    // it is the assumption the original arms lost without anybody noticing.
+    expect(small.unseated).toBe(0);
+    expect(large.unseated).toBe(0);
 
     expect(small.studentsEnrolled).toBeGreaterThan(0);
     expect(large.studentsEnrolled).toBeGreaterThan(small.studentsEnrolled);
