@@ -37,10 +37,15 @@ import { snapshotHash, step } from '@mm/sim-core';
 import {
   BLESSING,
   ERA_EVALUATION,
+  GRIMOIRE,
+  HOLDER_KIND,
   KNOWLEDGE_INSTANCE,
+  LIBRARY,
+  LOCATION_KIND,
   MAGE,
   TERMINAL_REASON,
   UNIVERSE,
+  attachRecord,
   collectRecords,
   componentOf,
   findUniverse,
@@ -48,10 +53,19 @@ import {
   readUniverse,
 } from '@mm/state';
 
+import { KnowledgeSubsystem } from '@mm/rules-magic';
+
 import type { WorldSimulation } from '../../src/index.js';
 import { ACTION, defineWorldSimulation, ledgerBalances } from '../../src/index.js';
 
-import { catalogAndCells, registry, seededWorld, sourceFor } from './world-fixtures.js';
+import {
+  catalogAndCells,
+  registry,
+  seededWorld,
+  shippedTraditionResolver,
+  sourceFor,
+  traditionNamed,
+} from './world-fixtures.js';
 import { constants, costs, godlyWorldDeps, worshipMax } from './god-fixtures.js';
 
 const C = constants();
@@ -349,5 +363,68 @@ describe('the god-state row appears on the first god tick and never disappears',
     const god = godStateOrEmpty(after, findUniverse(after));
     expect(god.lastEraRecorded).toBeGreaterThanOrEqual(0);
     expect(god.favorWasted).toBeGreaterThanOrEqual(0);
+  });
+});
+
+describe('a tradition change is a knowledge-loss channel the report can see', () => {
+  it('folds the nodes it emptied into this tick’s nodesLost', () => {
+    // The joint between the two halves that were already tested apart:
+    // `god-interventions.test.ts` proves the callback fires, and the 480-tick
+    // reference probe proves a zero there is a *true* zero. Neither has ever
+    // watched a non-zero value travel the closure in `defineWorldSimulation`
+    // into `lastReport().nodesLost`, and an unobserved joint is where this
+    // campaign has repeatedly found the wire cut.
+    const simulation = defineWorldSimulation({
+      ...godlyWorldDeps(traditionNamed('vancian-memorization')),
+      traditions: shippedTraditionResolver(),
+    });
+    const { state } = seededWorld(simulation.schema, { rootSeed: ROOT_SEED });
+    const universes = componentOf(state, UNIVERSE);
+    const universe = findUniverse(state);
+    universes.set(universe, 'traditionId', traditionNamed('vancian-memorization'));
+
+    // A node whose only copy in the universe is a shelved one. Nobody researches
+    // the deepest node in the catalogue by tick one, and `changeTradition` walks
+    // every instance regardless of cell, so a node this obscure is exactly the
+    // case: the switch destroys the only copy and the node leaves the universe.
+    const { catalog } = catalogAndCells();
+    const shelf = state.entities.create();
+    attachRecord(state, LIBRARY, shelf, { foundedTick: 0 });
+    const knowledge = KnowledgeSubsystem.fromState(state, catalog.nodeCount);
+    const orphan = catalog.nodeCount;
+    expect(knowledge.instanceCount(orphan)).toBe(0);
+    // §1.5 keeps exactly one instance per written copy and requires the pairing
+    // at creation, so the book comes first and the instance names it.
+    const book = state.entities.create();
+    attachRecord(state, GRIMOIRE, book, {
+      nodeId: orphan,
+      durability: 1024,
+      holderKind: HOLDER_KIND.library,
+      holderId: shelf,
+    });
+    knowledge.createInstance({
+      nodeId: orphan,
+      locationKind: LOCATION_KIND.library,
+      locationId: shelf,
+      acquiredTick: 0,
+      mastery: 1024,
+      grimoire: book,
+    });
+
+    universes.set(universe, 'favor', costs().byAction[ACTION.changeTradition] ?? 0);
+    const action: Action = {
+      kind: ACTION.changeTradition,
+      params: [traditionNamed('art-of-memory')],
+    };
+    const after = step(state, [action], sourceFor(ROOT_SEED));
+
+    expect(readUniverse(after, findUniverse(after)).traditionId).toBe(
+      traditionNamed('art-of-memory'),
+    );
+    // The one that matters. A `standard` -> `palace` switch has nowhere to put a
+    // shelved copy, so the node is gone — and `change.ts` requires that loss to
+    // be indistinguishable from a mage's death or a burned library, which means
+    // arriving in this counter and not in one of its own.
+    expect(simulation.lastReport()?.nodesLost).toBe(1);
   });
 });
