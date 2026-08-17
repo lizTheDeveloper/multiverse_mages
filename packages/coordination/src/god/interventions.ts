@@ -59,10 +59,11 @@
  */
 
 import type { Action, EntityHandle, SimState } from '@mm/sim-core';
-import type { AxisChangeCounterRecord } from '@mm/state';
+import type { AxisChangeCounterRecord, LocationKindValue } from '@mm/state';
 import { FP_ONE, NULL_ENTITY, TIME_MODE, floorDiv } from '@mm/sim-core';
 import type { Fixed } from '@mm/sim-core';
-import type { CellResolver, KnowledgeSubsystem, NodeCatalog } from '@mm/rules-magic';
+import type { CellResolver, InstanceView, KnowledgeSubsystem, NodeCatalog } from '@mm/rules-magic';
+import { changeTradition } from '@mm/rules-magic';
 import type { SpeciesRecord } from '@mm/content';
 import type { StepRng } from '@mm/rules-world';
 import { createMage } from '@mm/rules-world';
@@ -99,6 +100,7 @@ import {
   readUniverse,
 } from '@mm/state';
 
+import type { TraditionResolver } from '../traditions.js';
 import type { GodContent } from './constants.js';
 import { hysteresisMultiplier, inertFraction, interventionCost, upheavalShock } from './favor.js';
 import { edictBudgetFor, favorCapFor } from './worship.js';
@@ -167,6 +169,32 @@ export interface InterventionDeps {
   readonly rng: StepRng;
   /** Asks the clock to enter engagement. Supplied by the step context. */
   readonly requestEngagement: () => void;
+  /**
+   * The hooks a tradition puts in force, by interned id.
+   *
+   * Action 13's other half. Rewriting `UNIVERSE.traditionId` is the cheap part;
+   * what `magic-traditions` actually requires is that the operation be *total* —
+   * no knowledge instance left sitting at a location the incoming `store` kind
+   * does not define. `changeTradition` computes that, and until this dep existed
+   * it had no caller anywhere in the repository, on `main` or on any of 153
+   * branches, while the action id it belongs to was reachable from three.
+   *
+   * Optional, and absent means the action does what it always did: move the id
+   * and touch no instance. That keeps every hand-built test world and every
+   * older save behaving exactly as written, which is the same shape
+   * `grantBudget` uses — an absent dep is a decision, not a shortage.
+   */
+  readonly traditions?: TraditionResolver | undefined;
+  /**
+   * Nodes this dispatch destroyed the last instance of, reported to the loop.
+   *
+   * Only a tradition change can produce one today. Absent means nobody is
+   * counting, which is honest for a caller driving the god systems alone — but
+   * `defineWorldSimulation` supplies one, because a knowledge-loss channel the
+   * `nodesLost` series cannot see is a channel `knowledgeHalfLife` will report
+   * as if it never fired.
+   */
+  readonly onKnowledgeLost?: ((nodes: number) => void) | undefined;
 }
 
 /** What one tick's interventions did. Reporting only; never an input to a rule. */
@@ -931,11 +959,43 @@ export function emphasisAt(
  * pool is zeroed on top of the price, and the tradition shock runs five times
  * longer than a forbidding's.
  *
- * Existing instances are not touched here. Migration between a memory-palace
- * `store` hook and a standard one is `knowledge-model`'s, through the tradition
- * hooks; an intervention that destroyed or duplicated instances on its own
- * would be a second entry point into the loss machinery with different
- * semantics.
+ * ## What used to happen here, and why it was the worst kind of dead
+ *
+ * This wrote `traditionId`, zeroed favor, ran the shock, and stopped. It said so
+ * in its own header: *"Existing instances are not touched here. Migration
+ * between a memory-palace `store` hook and a standard one is `knowledge-model`'s,
+ * through the tradition hooks."* `knowledge-model` had duly built the migration —
+ * `changeTradition`, in `rules-magic/src/traditions/change.ts` — and **nothing
+ * anywhere called it**, on `main` or on any of 153 branches. Meanwhile the id
+ * this function wrote reached nothing either: `store` and `acquire` were
+ * resolved once at the composition root and carried on the world-step deps for
+ * the length of the run.
+ *
+ * So a published action, admitted by the mask and priced at 64 favor, cost a
+ * god everything he had and changed nothing but a number and a five-tick
+ * unrest. Not a missing feature — a lie in the action space.
+ *
+ * ## The migration is still not this function's rule
+ *
+ * The header's argument was right and is kept: an intervention that decided for
+ * itself which instances survive would be a second entry point into the loss
+ * machinery with different semantics. So the decision is `changeTradition`'s —
+ * pure, total, and computed **before** anything is written — and this function
+ * applies the result whole, through the one operation `change.ts` names as the
+ * way to apply it (`destroyAll(plan.destroyed)`, which takes each instance's
+ * grimoire with it).
+ *
+ * **A refusal is a no plan, not a half-applied one.** `changeTradition` refuses
+ * when the universe already holds an instance the *outgoing* store kind cannot
+ * describe — evidence of an earlier partial change or of a writer that invented
+ * a location. Returning `undefined` here means the action is refused and counted
+ * before a single favor is deducted, which is the same treatment every other
+ * failed precondition gets.
+ *
+ * With no {@link InterventionDeps.traditions} resolver the action does exactly
+ * what it did before: moves the id and touches no instance. That is what every
+ * hand-built test world describes, and it is the arm a two-arm measurement
+ * compares against.
  */
 function traditionPlan(
   state: SimState,
@@ -946,11 +1006,38 @@ function traditionPlan(
 ): Plan | undefined {
   if (traditionId === undefined || traditionId <= 0) return undefined;
   const store = componentOf(state, UNIVERSE);
-  if (store.get(universe, 'traditionId') === traditionId) return undefined;
+  const outgoingId = store.get(universe, 'traditionId');
+  if (outgoingId === traditionId) return undefined;
+
+  const resolve = deps.traditions;
+  const migration =
+    resolve === undefined
+      ? undefined
+      : changeTradition({
+          outgoingStore: resolve(outgoingId).storeHook,
+          incomingStore: resolve(traditionId).storeHook,
+          instances: everyInstance(state),
+          worldTick,
+        });
+  if (migration !== undefined && !migration.applied) return undefined;
 
   return {
     cost: interventionCost(ACTION.changeTradition, deps.god.costs),
     apply: () => {
+      if (migration !== undefined && migration.destroyed.length > 0) {
+        // `destroyAll`, because that is the single operation `change.ts` says
+        // the plan is meant to be applied through: it destroys the instance and
+        // the grimoire behind it as a pair, so a switch into the Art of Memory
+        // leaves no book whose contents are gone.
+        deps.knowledge.destroyAll(migration.destroyed, worldTick);
+        // The nodes that left the universe entirely. Reported to the loop so
+        // they land in the same `nodesLost` a death and a rotted shelf land in
+        // — `change.ts` requires a tradition change's losses to be
+        // *indistinguishable* from any other, and a channel the metric cannot
+        // see is exactly the accounting that hides what the god's own switch
+        // cost.
+        if (migration.losses.length > 0) deps.onKnowledgeLost?.(migration.losses.length);
+      }
       store.set(universe, 'traditionId', traditionId);
       // Zeroed *after* the price is paid, which is why the two are not one
       // number: the cost is what the mask judges affordability against, and the
@@ -963,6 +1050,29 @@ function traditionPlan(
       );
     },
   };
+}
+
+/**
+ * Every knowledge instance in the universe, in ascending handle order.
+ *
+ * Read straight off the component rather than through the subsystem, because
+ * `KnowledgeSubsystem` publishes "held by", "at", and "of node" and no "all" —
+ * and a union of the four location kinds would be three scans and a rule about
+ * which of them is exhaustive. Ascending handle is a total order that depends on
+ * nothing but the state, which is what `changeTradition`'s "in a stable order"
+ * requires: two peers must destroy the same instances in the same sequence.
+ */
+function everyInstance(state: SimState): readonly InstanceView[] {
+  const views: InstanceView[] = [];
+  for (const { handle, row } of collectRecords(state, KNOWLEDGE_INSTANCE)) {
+    views.push({
+      instanceId: handle,
+      nodeId: row.nodeId,
+      locationKind: row.locationKind as LocationKindValue,
+      locationId: row.locationId,
+    });
+  }
+  return views;
 }
 
 // ---------------------------------------------------------------------------
