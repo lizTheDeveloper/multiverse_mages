@@ -339,3 +339,200 @@ said precisely:
 So: the defect is confirmed present and confirmed not-ours; the ceiling breach is **not**
 reproduced on this instrument, and nobody should quote 0.0178 or 0.0070 without the strategy pool
 beside it.
+
+
+## The faucet for a kind must have the shape of its sink
+
+Measured **2026-08-16** on branch `w247/material-economy-build`, at `1da48cab` and the three
+commits above it. Every figure below is from a named output file under
+`tools/w247/*.mjs --out <path>`; none is from a directory glob.
+
+### The defect, restated as a property rather than as two missing numbers
+
+Seven kinds, seven sinks, and **two kinds with no reachable source**. `labor` comes only from
+Corpus and `essence` only from Vim, and both forms sat outside the twelve enabled cells
+(`intellego · perdo · rego` × `mentem · terram · limen · nomen`, yielding `insight`, `stone`,
+`passage`, `vellum`). Over 600 reference ticks, production of both was **exactly zero**.
+
+The position could not be escaped from inside, and that is the part worth keeping. Two verbs open a
+cell outside the square: `permit-form`, which costs favor and which no shipped strategy spends on
+Vim, and `issue-dispensation`, which is **the verb the missing stock pays for**. A verb priced in a
+material only that verb can unlock is circular by construction.
+
+### The two faucets, and why they are not the same shape
+
+The brief asked whether widening the square was the right answer for both, and it is not, because
+**the sinks differ in kind**:
+
+| kind | sink | fires |
+|---|---|---|
+| `essence` | `issue-dispensation` | when the god chooses |
+| `passage` | `open-portal` | when the god chooses |
+| `insight` | `bless-mage`; university teaching | teaching is continuous |
+| **`labor`** | **the construction hire, *and* `fund-university`** | **every tick, automatically** |
+
+A faucet that fires when *a mage chooses to spend a month* can feed a drain that fires when *the god
+chooses to spend a verb*. It cannot feed one that fires **every tick whatever anybody chooses**.
+That is not an argument; it is the measurement this change inherited. `fund-university` priced in
+`labor` came back legal on **8 ticks of 585** with no reserve, **13 of 600** with a reserve floor,
+and a bounding experiment — a reserve so high the automatic hire never drew at all — reached only
+**46 of 600**. No reserve policy can fix a faucet that is dry, because a floor redistributes a
+finite endowment between two claimants and cannot manufacture income.
+
+So:
+
+- **`essence` gets a magical faucet.** Vim is what raw magic is, its sink is discretionary, and a
+  mage choosing to apply a Vim node is the right shape for a god choosing to spend one.
+- **`labor` gets a non-magical faucet**: `labor-share-of-month` in `autonomy-weight.json`, a share
+  of every laborer's month that is hands for hire rather than work on the land. Automatic, per
+  tick, proportional to the populace — the same shape as the drain it feeds. It is also the truer
+  fiction: **labour is people.** Corpus magic did not stop mattering; it *amplifies* rather than
+  supplies, through the same `resource-yield` multiplier every other kind takes.
+
+**It is an allocation, not new supply.** The share comes off `MATERIALS_PER_LABORER` *before* the
+territory split, by subtraction, so a laborer's month divides between the land and the hiring hall
+and the total she produces is unchanged. Adding `labor` on top would have every laborer working a
+full month in the fields *and* a further fraction on a building site — the "labour is exclusive"
+defect `assignedToSites` exists to prevent, re-introduced one layer down. Subtraction rather than a
+second multiply is also what keeps the split exact in fixed point.
+
+The magnitude is an anchor and not a tuning: `fp(64)` against `MATERIALS_PER_LABORER` of sixteen is
+exactly **one `fp` of `labor` per neutral laborer per tick**, the same unit as
+`SUBSISTENCE_PER_PERSON`. `carrying-capacity.ts` records the food margin as structural above a
+laborer share of one eighth, so one sixteenth is half the headroom the economy already had.
+**Untuned**, like everything around it.
+
+### What was built first, and why it was superseded rather than deleted
+
+The first answer was **surgical**: a 3-technique × 5-form rectangle adding the Vim column alone —
+`intellego-vim`, `perdo-vim`, `rego-vim`, fifteen cells — with `labor` supplied by the populace.
+Prerequisites were checked and clean (no node in those three cells requires a node outside them),
+`intellego-vim`'s `iv-feel-the-air-go-tight` carries a `target: universe` `resource-yield` effect,
+so the applied channel had something to route.
+
+The author then directed otherwise, mid-task, in these words: *"the V1 set doesn't... Let's get rid
+of it. Like, open the cells. Open the faucets. We're wiring things together."* So the square is now
+**all seventy cells**. The narrow rectangle is recorded here rather than hidden because its `labor`
+half survived the widening on its own merits: even with Corpus open, `labor`'s faucet is a mage
+choosing a month and its sink still fires every tick, and the ablation below measures what the
+populace share is worth on top of an open grid.
+
+The shape of the widening — keep the `v1` flag and the rectangle check, move the constants to
+5 × 14 — is taken from `origin/w115/enable-all-cells`, which did the same thing and was reverted in
+this campaign's Group D. Taken from it: the `V1_*` constants and their reasoning, the
+`PRIMITIVE_COVERAGE_EXCLUSIONS` emptying, and the four source comments that describe the twelve-cell
+narrowing in the present tense. Not taken: its test edits, which are re-derived below against this
+tree rather than inherited.
+
+**The rectangle check is kept, and that is deliberate.** An axis mask can only express a full
+technique × form product; `v1RulesetAxes` re-derives the permitted set by OR-ing the flagged cells'
+axes, which is only correct while the set is rectangular. Seventy of seventy is trivially
+rectangular, so the property still holds and a later narrowing is still checked for raggedness.
+
+### Acceptance 1 — every kind has a faucet, with the tick it first flows
+
+`tools/w247/material-faucets.mjs --out <named file>`, seed 20260813. `producedByKind` is phase 1
+(the land) and `appliedByKind` is phase 5a (a mage's month); a kind absent from both has no source.
+
+| kind | before: land | before: applied | **after: land** | **after: applied** | **first flow** |
+|---|---|---|---|---|---|
+| food | 127,434 | 0 | 1,052,728 | 61,832 | t0 |
+| stone | 139,270 | 42,380 | 571,110 | 135,346 | t0 |
+| vellum | 78,887 | 0 | 461,348 | 38,396 | t0 |
+| **labor** | **0** | **0** | **60,565** | **18,216** | **t0** |
+| **essence** | **0** | **0** | **0** | **18,504** | **t114** |
+| insight | 0 | 1,800 | 0 | 35,856 | t619 |
+| passage | 0 | 16,704 | 0 | 11,592 | t71 |
+
+"Before" is 600 ticks; "after" is 1,200. The horizons differ **because the measurement required
+it**, and that is a finding rather than a convenience: at 600 ticks on the widened grid `insight`
+reads **exactly zero**, and at 1,200 it reads 35,856 with a first flow at **t619**. A total is a
+statement about a horizon and hides *when*, so the probe now records the first tick each kind gained
+anything — a run reported only as a sum would say "dry" and "flowing" about the same faucet
+depending where it was cut off. Both readings are in named files and both are reported.
+
+`insight` becoming *slower* is a real consequence of the widening: two nodes in the catalog yield it
+and there are now 300 nodes to research instead of 51, so a mage reaches one later. Balance is
+suspended; it is recorded, not tuned.
+
+**Positive controls.** (1) On the pre-change tree the same probe read `insight` 1,800 and `passage`
+16,704 on the applied channel — so the channel it was pointed at was live and the instrument could
+read it, which is what makes the two zeros evidence rather than silence. (2) The `firstFlowTickByKind`
+field reads `never` for `insight` at 600 ticks and `t619` at 1,200 on the same seed, so it is
+capable of both answers, and the two runs agree with each other (619 > 600). (3) The probe exits 3
+— not 0 — if a run produces no world reports at all, rather than folding a broken probe into "the
+faucet is dry".
+
+### Acceptance 2 — `fund-university`, all arms re-run on this tree
+
+`tools/w247/action11-legality.mjs`, seed 20260813, 600 ticks. The previous agent's three arms were
+quoted for one strategy, `founding-probe`; the whole pool is reported here because a pooled figure
+was the more informative half and a single-strategy figure was what made the defect look total.
+
+| arm | founding-probe legal | pool legal | pool foundings |
+|---|---|---|---|
+| **A** — no `labor` price | 398/600 (66.33%) | 8,335 | 402 |
+| **B** — `labor` 4096, no reserve floor | 13/600 (2.17%) | 6,448 | 25 |
+| **C** — shipped: price + floor + faucet + open grid | 20/600 (3.33%) | 6,562 | 43 |
+
+**Arm A is the positive control and it reproduces**: 398 against the previously recorded 400, and
+124 foundings against 123. The instrument still measures what it measured.
+
+Read only at 600 ticks the restoration looks small, and reporting it any other way would be
+dishonest. **Read as a rate, it is total**, and that is the property that actually changed:
+
+| | 600 ticks | 1,200 ticks |
+|---|---|---|
+| **C** — faucet on | 43 pool foundings | **404** |
+| **D** — faucet ablated (`labor-share-of-month` = 0) | 26 | 201 |
+
+`founding-probe` alone goes from **9 foundings at 600 ticks to 280 at 1,200**. The previous state
+produced **one or two foundings ever** and then never again, because the endowment was a runway.
+This is income: it compounds with the populace that makes it. The ablation is the control that says
+the populace share is doing work rather than riding on the open grid — it roughly **doubles**
+foundings at both horizons — and neither arm is degenerate, so the ablation is not a null by
+construction.
+
+Where the verb is still masked at 600 ticks, it is masked **only for strategies that spend `labor`**:
+`passive-control`, `permissive-breadth`, `narrow-depth`, `denial-warden`, `portal-rush`,
+`idle-then-declare`, `permit-then-idle` and both alliance strategies sit at 563–597 of 600 in every
+arm, because the reserve floor keeps the price payable for anyone not racing the hire for it. A verb
+that is unaffordable *while you are spending it faster than you make it* is an economy working.
+
+### Acceptance 3 — `issue-dispensation` without an endowment
+
+`tools/w247/dispensation-reach.mjs`, seed 20260813, 1,200 ticks, two arms.
+
+| arm | `uniform-random-legal` | `permissive-breadth` | pool legal ticks |
+|---|---|---|---|
+| endowed (shipped, `FOUNDING_ESSENCE` 32,768) | 972/986 | 1,192/1,200 | 2,164 |
+| **un-endowed (`FOUNDING_ESSENCE` 0)** | **333/1,200** | 0/1,200 | **333** |
+
+Action 5 is legal on **333 ticks of 1,200 starting from zero `essence`**. Before this change that
+number was zero *by construction* — production was exactly zero, so a universe with no endowment
+could never hold enough to pay for it on any tick of any horizon.
+
+The endowed arm is the positive control. The un-endowed arm carries its own second control inside
+one run: `permissive-breadth` reads 0 and `uniform-random-legal` reads 333, so the probe
+distinguishes a verb that never became legal from one that did, and it keeps *"the verb never
+appeared in the audit"* (`null`) distinct from *"it appeared and was never legal"* (`0`) — folding
+those two together is how a RED test passes on `undefined === 0`.
+
+**A separate finding, not this change's**: `timesApplied` is **0** in both arms while
+`permissive-breadth` submits the verb 1,192 times. The mask permits it and the resolver refuses it,
+which is a mask/resolver disagreement of the same family already recorded above for action 12. It is
+reported rather than fixed.
+
+### Acceptance 4 — all seven kinds are producible from the opening position
+
+Yes, all seven, with no exceptions to state. The first-flow column in Acceptance 1 is the evidence:
+`food`, `stone`, `vellum` and `labor` from tick 0, `passage` at t71, `essence` at t114, `insight` at
+t619. `labor` is the only one produced by the populace rather than by magic, and that asymmetry is
+on purpose, for the reason at the top of this section.
+
+### Conservation is untouched, and that was checked rather than assumed
+
+The populace faucet is inside `materialsProduced`, which phase 1 already feeds into the ledger's
+faucet side, so `delta == faucet − sink` learns about it for free. Neither faucet adds an RNG draw —
+one is a share of a quantity the tick already had, the other is the existing applied-magic channel
+routed through a form that was already in `form.json` — so no stream id moves and nothing re-rolls.

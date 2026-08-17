@@ -554,7 +554,30 @@ describe('contentRevision', () => {
     // returns together with a **reserve floor** under the hire that drains the
     // same stock (`HiredLabourWeights.reserve`), which is a fix to the sink
     // rather than a retreat from the price. One row and its gloss moved.
-    expect(registry.contentRevision).toBe('373e08bf48ca987d1081cb100f31295f');
+    //
+    // 373e08bf48ca987d1081cb100f31295f -> 09358b8aea5445bd93e564264608de53, and
+    // this one is the largest single move the digest has taken, because it is
+    // two edits and one of them touches fifty-five records.
+    //
+    // 5. **`cell.json`: all seventy cells are flagged `"v1": true`.** Twelve
+    //    were, and `material-economy` gave every *form* a material yield — so
+    //    ten of the fourteen forms were priced into the god's verbs and had no
+    //    producer anywhere a run could reach. Vim yields `essence` and Corpus
+    //    yields `labor`; both sat outside the twelve. Measured over 600
+    //    reference ticks on `w247/material-economy-build`, production of both
+    //    was **exactly zero**, and the surgical verb that opens a cell —
+    //    `issue-dispensation` — is itself priced in `essence`, so the position
+    //    could not be escaped from inside.
+    // 6. **One `autonomy-weight.json` scalar**, `labor-share-of-month`, the
+    //    populace faucet for `labor`. It is a share of a laborer's month rather
+    //    than a magical yield because `labor`'s sink is the *automatic per-tick*
+    //    construction hire, and a faucet that fires when a mage chooses to spend
+    //    a month cannot feed a drain that fires every tick — see
+    //    `materials.ts`'s `REQUIRED_PRODUCTION_WEIGHTS`.
+    //
+    // Recomputed with `node packages/content/bin/validate-content.mjs` on the
+    // merged content rather than pasted out of a failure message.
+    expect(registry.contentRevision).toBe('09358b8aea5445bd93e564264608de53');
   });
 
   it('is stable across loads of identical content', () => {
