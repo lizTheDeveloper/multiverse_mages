@@ -442,7 +442,7 @@ rectangular, so the property still holds and a later narrowing is still checked 
 | **labor** | **0** | **0** | **60,565** | **18,216** | **t0** |
 | **essence** | **0** | **0** | **0** | **18,504** | **t114** |
 | insight | 0 | 1,800 | 0 | 35,856 | t619 |
-| passage | 0 | 16,704 | 0 | 11,592 | t71 |
+| passage | 0 | 16,704 | 0 | 35,784 | t71 |
 
 "Before" is 600 ticks; "after" is 1,200. The horizons differ **because the measurement required
 it**, and that is a finding rather than a convenience: at 600 ticks on the widened grid `insight`
