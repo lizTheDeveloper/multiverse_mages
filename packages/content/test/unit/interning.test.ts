@@ -464,14 +464,20 @@ describe('contentRevision', () => {
     // revision is a digest over the values, so this is the ordinary case rather
     // than a union of branches. It changes every run in which any mage learns
     // The Nameless — which is the point of the change, not a side effect of it.
-    // 8681bf84... -> fd64f29d..., when `target` scope became a priced axis and
+    // 8681bf84... -> 5c771725..., when `target` scope became a priced axis and
     // `autonomy-weight.json` took five `scope-multiplier-*` records. Five
     // authored values and no code in the preimage, so this is the ordinary case
     // rather than a union of branches. It changes every run in which anybody
     // researches anything, which is the point of the change: `researchCost` was
     // a pure function of tier, and a node reaching the whole universe was
     // priced exactly as one reaching a single mage.
-    expect(registry.contentRevision).toBe('fd64f29dc1c361ef7ffb2e113e1dfd2a');
+    //
+    // fd64f29d... was this branch's own first value, before its `self` gloss
+    // took the measured tier-by-tier ratio. Recorded here because a gloss is in
+    // the preimage — the digest is over every interned field, not over the ones
+    // the rules read — and the next person to edit a gloss will want to know
+    // that before they assume a revision move means a behaviour move.
+    expect(registry.contentRevision).toBe('5c7717257b67dd78b59a48240fedbdec');
   });
 
   it('is stable across loads of identical content', () => {
