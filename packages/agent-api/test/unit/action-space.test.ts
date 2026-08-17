@@ -121,6 +121,12 @@ describe('candidate lists are deterministic and never longer than k', () => {
       state: firstUniverse().state,
       catalogue: FIXTURE_CATALOGUE,
       portalTargets: Array.from({ length: 50 }, (_, index) => index + 1),
+      // The portal gate, opened so that this measures truncation rather than
+      // the gate. Action 14 is masked on `holdsPortalMagic` as of 2026-08-17 —
+      // the same predicate action 16 has always been masked on, and for the
+      // reason the action-16 block below states at length. Mage 0 holds node 1
+      // in mind and the fixture permits its cell.
+      portalNodes: [1],
     });
     for (const action of PARAMETERIZED_ACTIONS) {
       expect(lists.get(action)?.length ?? 0).toBeLessThanOrEqual(candidateSlotCount(action));
@@ -216,8 +222,43 @@ describe('candidate lists are deterministic and never longer than k', () => {
     // §1.1: one simulation instance holds one universe. The multiverse is not
     // in state, so an empty list is the correct answer for a solo run — not an
     // error, and not an invented target.
-    const lists = buildCandidates({ state: secondUniverse().state, catalogue: FIXTURE_CATALOGUE });
+    //
+    // The gate is open here, so that this still tests the *roster* half after
+    // action 14 gained the portal-magic half below.
+    const lists = buildCandidates({
+      state: secondUniverse().state,
+      catalogue: FIXTURE_CATALOGUE,
+      portalNodes: [1],
+    });
     expect(lists.get(GOD_ACTION.openPortal)).toHaveLength(0);
+  });
+
+  it('offers no target while no living mage holds portal magic', () => {
+    // The other half, and the newer one. `coordination`'s `portalMagicHolder`
+    // gates actions 14 and 16 with one predicate — *"the same design claim
+    // pointing two ways"* — and this file's action-16 block below records what
+    // an optimistic mask bit cost when only 16 was gated here. Action 14
+    // carried the identical defect until 2026-08-17: measured over the 600-tick
+    // strategy audit, `portal-rush` submitted it on 584 of 600 ticks and the
+    // rules applied it on 0.
+    const lists = buildCandidates({
+      state: firstUniverse().state,
+      catalogue: FIXTURE_CATALOGUE,
+      portalTargets: [1, 2, 3],
+      // The gate: no node here carries the primitive.
+      portalNodes: [],
+    });
+    expect(lists.get(GOD_ACTION.openPortal)).toEqual([]);
+  });
+
+  it('offers the caller\'s targets once the gate opens', () => {
+    const lists = buildCandidates({
+      state: firstUniverse().state,
+      catalogue: FIXTURE_CATALOGUE,
+      portalTargets: [3, 1, 2],
+      portalNodes: [1],
+    });
+    expect(lists.get(GOD_ACTION.openPortal)?.map((one) => one.params[0])).toEqual([1, 2, 3]);
   });
 
   it('resolves a slot index, and refuses one past the end of the list', () => {
