@@ -622,7 +622,8 @@ to zero — names `lifespan:effectiveLifespan` (15/240 ticks) and `target-appeal
 Both are sites the widened grid woke up; neither is `materialsProduced`, whose new `mul` is the
 faucet's only added arithmetic.
 
-**Group A — the assertion restates the content decision (20). Fixed, in `dbfa1b3d`.** These are the
+**Group A — the assertion restates the content decision (20). Nineteen fixed in `dbfa1b3d`; one
+(`academic-effects`) left red and marked as such in the table below.** These are the
 twelve-cell rectangle written down a second time, and the line drawn is: *an assertion that restates
 the content decision is part of this change's diff; an assertion that pins a measured outcome of
 running the simulation is left red.* A test asserting the old value of a constant this branch edited
