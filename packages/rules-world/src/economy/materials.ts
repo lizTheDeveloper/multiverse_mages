@@ -18,7 +18,9 @@ import type { PrimitiveRecord } from '@mm/content';
 import type { AblationMask, ClampCounters } from '@mm/primitives';
 import { stackMagnitudes } from '@mm/primitives';
 
-import type { MaterialAmounts, MaterialKind } from './kinds.js';
+import type { LandAptitude } from './aptitude.js';
+import { NEUTRAL_LAND_APTITUDE } from './aptitude.js';
+import type { LandMaterialKind, MaterialAmounts, MaterialKind } from './kinds.js';
 import { LAND_MATERIAL_KINDS, MATERIAL_KINDS, zeroAmounts } from './kinds.js';
 
 /**
@@ -225,6 +227,24 @@ export interface ProductionInput {
    * {@link REQUIRED_PRODUCTION_WEIGHTS}.
    */
   readonly production: ProductionWeights;
+  /**
+   * How this cohort's species tilts the land mix, `fp` per land kind.
+   *
+   * **A mix, never a magnitude.** {@link materialsProduced} renormalizes the
+   * tilted shares back to `fp(1024)`, so a species good at stone makes more
+   * stone and less grain out of the same month rather than more of everything;
+   * the magnitude stays entirely in {@link ProductionInput.laborAffinity}. See
+   * `aptitude.ts` for where the numbers come from — they are derived from the
+   * species' authored form affinities through `form.json`'s own weights, not
+   * authored a second time.
+   *
+   * Optional, and absent is `NEUTRAL_LAND_APTITUDE`, whose renormalization is
+   * **exactly** the identity: every caller written before this existed produces
+   * the byte-identical basket it always did. That is the migration path and the
+   * positive control in one, and `production-aptitude.test.ts` asserts equality
+   * rather than closeness.
+   */
+  readonly aptitude?: LandAptitude | undefined;
   readonly counters?: ClampCounters | undefined;
   /**
    * §9's ablation mask, for the arm that neutralizes `resource-yield`.
@@ -300,13 +320,47 @@ export function materialsProduced(input: ProductionInput): MaterialAmounts {
   // the rounding does, which a second `mul` for the land half would not.
   const hireable = mul(base, Math.min(FP_ONE, Math.max(0, input.production.hireableShare)));
   const worked = base - hireable;
+  const shares = tiltedShares(input.shares, input.aptitude ?? NEUTRAL_LAND_APTITUDE);
   const produced = zeroAmounts();
   for (const kind of LAND_MATERIAL_KINDS) {
-    const ofKind = floorDiv(worked * Math.max(0, input.shares[kind]), FP_ONE);
+    const ofKind = floorDiv(worked * Math.max(0, shares[kind]), FP_ONE);
     produced[kind] = mul(ofKind, resourceYieldMultiplier(input, kind));
   }
   produced.labor = mul(hireable, resourceYieldMultiplier(input, 'labor'));
   return produced;
+}
+
+/**
+ * The land shares this cohort actually works, after its species' tilt.
+ *
+ * Renormalized back to exactly `fp(1024)` — the same two-floors-and-a-remainder
+ * shape `landYieldShares` uses, and for the same reason: the three must sum to
+ * `FP_ONE` however the division lands, because `materialsProduced` splits a
+ * fixed number of person-months by them and a sum of 1025 would be free food.
+ *
+ * **Neutral aptitude is the exact identity, by arithmetic rather than by a
+ * branch.** With every slot at `fp(1)` the weighted values are the shares times
+ * `FP_ONE`, the total is `FP_ONE × FP_ONE`, and each floored quotient is the
+ * share back. There is deliberately no `if (aptitude is neutral) return shares`
+ * fast path: a branch would be a second implementation of the identity that
+ * could stop agreeing with the arithmetic one.
+ *
+ * A tilt that zeroes everything — reachable only from a hand-built input, since
+ * `speciesLandAptitude` floors at the authored affinity — leaves the shares
+ * untouched rather than starving the universe on a division by zero.
+ */
+function tiltedShares(shares: MaterialAmounts, aptitude: LandAptitude): MaterialAmounts {
+  const weighted: Record<LandMaterialKind, Fixed> = { food: 0, stone: 0, vellum: 0 };
+  let total = 0;
+  for (const kind of LAND_MATERIAL_KINDS) {
+    weighted[kind] = Math.max(0, shares[kind]) * Math.max(0, aptitude[kind]);
+    total += weighted[kind];
+  }
+  if (total <= 0) return shares;
+
+  const stone = floorDiv(weighted.stone * FP_ONE, total);
+  const vellum = floorDiv(weighted.vellum * FP_ONE, total);
+  return { ...zeroAmounts(), food: FP_ONE - stone - vellum, stone, vellum };
 }
 
 /** What a whole populace eats this tick, `fp` of `food`. */

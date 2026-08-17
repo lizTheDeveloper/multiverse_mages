@@ -51,6 +51,7 @@ import {
   defaultSiteKind,
   hasTerritoryHoldings,
   heldTerritoryExtent,
+  heldTerritoryYieldShares,
   libraryUpkeep,
   materializeTerritoryHoldings,
   maxCarryingCapacity,
@@ -59,6 +60,7 @@ import {
   siteUniversity,
   sitedCapacity,
   territoryExtent,
+  territoryYieldShares,
   territoryHoldings,
   territoryKindIndex,
 } from '../../src/index.js';
@@ -73,6 +75,7 @@ const SHIPPED_KINDS: readonly TerritoryKind[] = registry.territories.map((entry)
   kindId: entry.contentId,
   landUnits: entry.record.landUnits,
   capacityPerLandUnit: entry.record.capacityPerLandUnit,
+  yieldPerLandUnit: entry.record.yieldPerLandUnit,
   libraryUpkeepMultiplier: entry.record.libraryUpkeepMultiplier,
 }));
 
@@ -170,6 +173,135 @@ describe('the universe-level extent survives the move into state', () => {
       landUnits: 500,
       baseCapacity: 0,
     });
+  });
+});
+
+describe('the yield mix follows the ground a universe holds', () => {
+  /**
+   * The wire's positive control, and it has to come first.
+   *
+   * On a freshly materialized world the state-side answer must equal the
+   * content-side one **field for field**, because `materializeTerritoryHoldings`
+   * seeds exactly the endowment `territoryYieldShares` sums. That is what makes
+   * moving production onto the holdings a *wire* rather than a balance change:
+   * a reference universe that never gains or loses ground produces the identical
+   * mix it always did.
+   *
+   * Without this assertion the divergence test below could pass on an
+   * implementation that returned any two different numbers.
+   */
+  it('agrees with the content sum on a freshly materialized world', () => {
+    const state = emptyWorld();
+    materializeTerritoryHoldings(state, SHIPPED_KINDS);
+
+    const fromContent = territoryYieldShares(SHIPPED_RECORDS);
+    expect(heldTerritoryYieldShares(state, SHIPPED_KINDS)).toEqual(fromContent);
+
+    // And the shares are shares: exactly `fp(1024)` across the three land kinds,
+    // however the flooring lands. `materialsProduced` splits a cohort's month by
+    // these, so a sum of 1025 would be free food.
+    const held = heldTerritoryYieldShares(state, SHIPPED_KINDS);
+    expect(held.food + held.stone + held.vellum).toBe(FP_ONE);
+    expect(held.labor + held.essence + held.insight + held.passage).toBe(0);
+  });
+
+  /**
+   * The finding this exists for: **two universes holding different ground get
+   * different baskets**, where before they could not.
+   *
+   * `yieldShares` was a `WorldStepDeps` field built once from every territory in
+   * the content set and handed to every universe in the run, documented there as
+   * *"fixed for the length of a run"*. `territory.json` draws the distinctions
+   * in prose — `upland-pasture` *"carries herds rather than fields"*,
+   * `deep-forest` *"timber and game"* — and the production path could not see
+   * any of them.
+   *
+   * Two worlds here, seeded with holdings rather than materialized, differing in
+   * nothing but which kind of country they hold.
+   */
+  it('gives a pasture universe and a delta universe different mixes', () => {
+    const holding = (kindId: number, landUnits: number) => {
+      const state = emptyWorld();
+      const handle = state.entities.create();
+      attachRecord(state, TERRITORY_HOLDING, handle, { kindId, landUnits });
+      return state;
+    };
+
+    const pasture = holding(registry.intern('territory', 'upland-pasture'), 1200);
+    const delta = holding(registry.intern('territory', 'river-delta'), 1200);
+
+    const pastureShares = heldTerritoryYieldShares(pasture, SHIPPED_KINDS);
+    const deltaShares = heldTerritoryYieldShares(delta, SHIPPED_KINDS);
+
+    expect(pastureShares).not.toEqual(deltaShares);
+    // Named directions, not merely "different". Upland pasture authors
+    // 640/384/768 and the river delta 2048/128/384, so the delta must be the
+    // food universe and the pasture the vellum one — which is the gloss made
+    // arithmetic. A test asserting only inequality would pass on a sign flip.
+    expect(deltaShares.food).toBeGreaterThan(pastureShares.food);
+    expect(pastureShares.vellum).toBeGreaterThan(deltaShares.vellum);
+    expect(pastureShares.stone).toBeGreaterThan(deltaShares.stone);
+    for (const shares of [pastureShares, deltaShares]) {
+      expect(shares.food + shares.stone + shares.vellum).toBe(FP_ONE);
+    }
+  });
+
+  it('moves the mix when a universe loses one kind of ground and keeps the rest', () => {
+    // The same question from the other end, and the one colonization and raiding
+    // will ask: the holdings start as the endowment and one row is emptied. The
+    // mix must move, and it must move *away* from what that country was for.
+    const state = emptyWorld();
+    materializeTerritoryHoldings(state, SHIPPED_KINDS);
+    const before = heldTerritoryYieldShares(state, SHIPPED_KINDS);
+
+    const wasteId = registry.intern('territory', 'highland-waste');
+    const store = componentOf(state, TERRITORY_HOLDING);
+    for (const { handle, row } of collectRecords(state, TERRITORY_HOLDING)) {
+      if (row.kindId === wasteId) store.set(handle, 'landUnits', 0);
+    }
+
+    const after = heldTerritoryYieldShares(state, SHIPPED_KINDS);
+    expect(after).not.toEqual(before);
+    // highland-waste authors 64/512/64 over 2000 units — the shipped set's
+    // largest stone contribution — so losing it must cost stone share.
+    expect(after.stone).toBeLessThan(before.stone);
+    expect(after.food + after.stone + after.vellum).toBe(FP_ONE);
+  });
+
+  it('credits land of an unknown kind with yielding nothing, rather than guessing', () => {
+    // The same conservative reading `heldTerritoryExtent` takes, and it must be
+    // the same one: a holding whose kind the content set does not declare is
+    // unreachable within one `contentRevision`, and if it ever becomes reachable
+    // the two functions must not disagree about what it is worth.
+    const state = emptyWorld();
+    const unknown = state.entities.create();
+    attachRecord(state, TERRITORY_HOLDING, unknown, { kindId: 999, landUnits: 5000 });
+
+    // Nothing known is held, so the whole share falls to food — the documented
+    // answer for a universe whose land yields nothing at all.
+    expect(heldTerritoryYieldShares(state, SHIPPED_KINDS)).toEqual({
+      food: FP_ONE,
+      stone: 0,
+      vellum: 0,
+      labor: 0,
+      essence: 0,
+      insight: 0,
+      passage: 0,
+    });
+
+    // Positive control on the line above: the same world with one *known*
+    // holding beside the unknown one must not read all-food, or the assertion
+    // would be passing on a function that ignores its input.
+    const known = state.entities.create();
+    attachRecord(state, TERRITORY_HOLDING, known, {
+      kindId: registry.intern('territory', 'highland-waste'),
+      landUnits: 2000,
+    });
+    expect(heldTerritoryYieldShares(state, SHIPPED_KINDS).stone).toBeGreaterThan(0);
+  });
+
+  it('reads a universe with no rows at all as starving rather than dividing by zero', () => {
+    expect(heldTerritoryYieldShares(emptyWorld(), SHIPPED_KINDS).food).toBe(FP_ONE);
   });
 });
 

@@ -922,7 +922,36 @@ describe('contentRevision', () => {
     // MEASURED with `node packages/content/bin/validate-content.mjs` on the
     // merged tree, then confirmed by this test, which is the two independent
     // paths the paragraphs above insist on.
-    expect(registry.contentRevision).toBe('db63c9365903af34057e4a852401aab9');
+    //
+    // db63c9365903af34057e4a852401aab9 -> 6cae4c8f82d6cad4a47ecb10d7efb15c, on
+    // `w/exp-yields`, 2026-08-16. **`form.json`: every one of the fourteen
+    // yield rows re-authored so that no two forms carry the same basket.**
+    // Fourteen forms carried nine distinct baskets — `animal == herbam`,
+    // `ignem == terram`, `imaginem == mentem`, `umbra == fatum == limen` — so a
+    // god permitting only *Creo Animal* and one permitting only *Creo Herbam*
+    // got numerically identical routing out of `routeYieldByForm`, and the
+    // herder and the farmhand were the same worker. Fourteen distinct baskets
+    // now, every row still summing to exactly 1024, so the edit moves the mix
+    // and no magnitude: `shipped-content.test.ts` pins both halves.
+    //
+    // Not a union. This is a single edit to a single file on a preimage that is
+    // `4621db1a` unchanged, which is why one arrow suffices where every entry
+    // above needed two.
+    //
+    // 6cae4c8f82d6cad4a47ecb10d7efb15c -> 3343812bdf9bab44f768b440e2009a6f, on
+    // the same branch. **`species.json`: human gains `animal: 1152` and
+    // `herbam: 1280`.** Human was the only species declaring no affinity entry
+    // at all, which was a defensible reading while `affinities` reached only
+    // research targeting — §6 calls human *"broad average aptitude"* and neutral
+    // is what broad average means. It stopped being defensible when the same
+    // entries began deriving a species' **land aptitude**: with none authored,
+    // the author's *"humans are a little bit better at agrarian stuff"* had no
+    // expression anywhere in the simulation. Two entries, both modest, and
+    // `species-versatility.test.ts` re-pins the live count from eleven to
+    // thirteen as the content decision it is.
+    //
+    // Also not a union, and also one file.
+    expect(registry.contentRevision).toBe('3343812bdf9bab44f768b440e2009a6f');
   });
 
   it('is stable across loads of identical content', () => {

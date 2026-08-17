@@ -141,6 +141,7 @@ import type {
   ConsumptionKind,
   ConsumptionOutcome,
   GoalAppealWeights,
+  LandAptitude,
   MageGoalCommitment,
   MaterialAmounts,
   MaterialKind,
@@ -189,6 +190,7 @@ import {
   fundedTeachingShare,
   hazardAt,
   heldTerritoryExtent,
+  heldTerritoryYieldShares,
   hireableMonths,
   insertNewborns,
   insightTeachingBonus,
@@ -314,6 +316,29 @@ export interface WorldStepDeps {
   readonly facets: NodeFacetResolver;
   readonly affinitiesOf: (species: SpeciesRecord) => SpeciesAffinities;
   /**
+   * How a species tilts the land mix it works, `fp` per land kind.
+   *
+   * The economy half of §6's *"technique/form affinities"*, and until this
+   * existed there was no such half: **every consumer of `species.affinities`
+   * was in the research-targeting path**, so a dwarf's `terram: 1536` decided
+   * what she chose to study and moved not one unit of what she dug up. The
+   * author's *"dwarves are more likely to be good at digging stuff up out of
+   * the ground"* was a statement about the library.
+   *
+   * Resolved at the composition root like {@link WorldStepDeps.affinitiesOf}
+   * beside it, because it is a pure projection of `species.json` and
+   * `form.json` — `rules-world`'s `landAptitudeTable` builds it, and
+   * `aptitude.ts` says why the mapping between the two files is `yieldWeights`
+   * rather than a second authored table.
+   *
+   * Optional, and absent means `NEUTRAL_LAND_APTITUDE`, whose renormalization
+   * in `materialsProduced` is exactly the identity. A world built for a
+   * knowledge test therefore produces the byte-identical basket it always did,
+   * which is a thing a test can assert against rather than a silent
+   * degradation.
+   */
+  readonly landAptitudeOf?: ((species: SpeciesRecord) => LandAptitude) | undefined;
+  /**
    * Every magnitude target selection is made of, read once from
    * `autonomy-weight.json`.
    *
@@ -381,19 +406,6 @@ export interface WorldStepDeps {
    * does to its seats and to its library's upkeep.
    */
   readonly territoryKinds: readonly TerritoryKind[];
-  /**
-   * What this universe's land yields, as shares over the three material kinds
-   * summing to `fp(1024)` — `territoryYieldShares` of the same content records
-   * {@link WorldStepDeps.territory} was summed from.
-   *
-   * Beside the extent and for the same reason: it is a function of content that
-   * is fixed for the length of a run, so recomputing it per tick would invite
-   * somebody to make it depend on something that is not. It is what makes a
-   * supply chain **sited** — a universe of river delta and one of highland waste
-   * put the same person-months in and get differently-shaped baskets out —
-   * without any entity acquiring a coordinate (vision §7a).
-   */
-  readonly yieldShares: MaterialAmounts;
   /**
    * Every node's universe-scoped economic effect, precomputed from content.
    *
@@ -1406,6 +1418,23 @@ export function worldSystem(
       // migration — and leaves this line holding exactly the land it always did.
       materializeTerritoryHoldings(state, deps.territoryKinds);
       const kindIndex = territoryKindIndex(deps.territoryKinds);
+      // **What this universe's land yields, read off the ground it holds.**
+      //
+      // This was a `WorldStepDeps` field computed once at the composition root
+      // from every territory in the content set, documented there as *"fixed
+      // for the length of a run"* — so every universe in a run produced the
+      // identical basket mix however much or little of each country it actually
+      // held, and `territory.json`'s prose distinctions (`upland-pasture`
+      // *"carries herds rather than fields"*, `deep-forest` *"timber and
+      // game"*) reached nothing. `kinds.ts` had already written the design
+      // down: *"territory decides the mix and labour decides the magnitude."*
+      //
+      // Computed here, one line after the holdings are materialized, because
+      // that is the earliest point at which the answer exists and the latest at
+      // which it is still the same for every phase that reads it. It is
+      // `O(holdings)` — five rows in the shipped content — against an
+      // `O(cohorts)` production loop, so per-tick is free.
+      const yieldShares = heldTerritoryYieldShares(state, deps.territoryKinds);
       // Two reads of one relationship, resolved once for the tick. Both take a
       // university handle, because §1.4 pins the site on the university and a
       // library carries no back-link to its owner.
@@ -1476,7 +1505,7 @@ export function worldSystem(
         readMaterialStock(state, universe).stone,
         deps,
       );
-      const produced = produceMaterials(cohorts, deps, economy, labour.onSites);
+      const produced = produceMaterials(cohorts, deps, economy, labour.onSites, yieldShares);
       const opening = readMaterialStock(state, universe);
       const stock = zeroAmounts();
       for (const kind of MATERIAL_KINDS) stock[kind] = opening[kind] + produced[kind];
@@ -2232,12 +2261,19 @@ function claimantFlows(input: {
  * Per cohort and summed, never averaged: `laborAffinity` is a species trait and
  * a universe holds several species, so an average would let one able cohort
  * raise the output of every other.
+ *
+ * `shares` is passed in rather than read off `deps` because it is no longer a
+ * property of the content set: it is `heldTerritoryYieldShares` of this
+ * universe's own `territory-holding` rows, resolved once in phase 0. A
+ * parameter rather than a field is the point — a field is what let the run-wide
+ * answer sit here unnoticed for a release.
  */
 function produceMaterials(
   cohorts: CohortStore,
   deps: WorldStepDeps,
   economy: UniverseEconomyBonuses,
   onSites: ReadonlyMap<EntityHandle, number>,
+  shares: MaterialAmounts,
 ): MaterialAmounts {
   const produced = zeroAmounts();
   cohorts.forEach((handle, key, count) => {
@@ -2252,7 +2288,11 @@ function produceMaterials(
     const share = materialsProduced({
       laborerCount: inFields,
       laborAffinity: species.laborAffinity,
-      shares: deps.yieldShares,
+      shares,
+      // Absent resolver is neutral, and neutral is the exact identity — see
+      // `aptitude.ts`. Spread rather than passed as `undefined` for the reason
+      // every other optional on this call is: `exactOptionalPropertyTypes`.
+      ...(deps.landAptitudeOf === undefined ? {} : { aptitude: deps.landAptitudeOf(species) }),
       resourceYield: deps.primitives.resourceYield,
       resourceYieldBonuses: economy.resourceYield,
       production: deps.production,

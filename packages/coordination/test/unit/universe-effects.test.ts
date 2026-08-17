@@ -303,11 +303,23 @@ describe('resource-yield is routed by the node\'s form, and the routing discrimi
     expect(bonuses.resourceYield.vellum).toEqual([]);
   });
 
-  it('a Herbam node routes to food and vellum, and not to stone', () => {
+  it('a Herbam node routes to food, vellum and a little stone — a field, a page, and a beam', () => {
     // `kinds.ts`'s module note names Herbam by hand as one of the forms that
     // is deliberately not partitioned across kinds: "the same herd is dinner
     // and parchment." A test that expected exactly one kind would be
     // asserting a constraint the design explicitly declines to hold.
+    //
+    // **This assertion read `stone: []` until 2026-08-16, and the change is
+    // deliberate.** `form.json`'s fourteen rows carried only nine distinct
+    // baskets — `animal == herbam`, `ignem == terram`, `imaginem == mentem`,
+    // `umbra == fatum == limen` — so five forms were invisible to the economy
+    // and the herder and the farmhand were the same worker. Herbam's re-author
+    // is 640 food / 128 stone / 256 vellum: grain first, then fibre, then the
+    // beam, and the construction stock is what a building is made of.
+    //
+    // Its **dominance** is what carries the meaning, and that is what is
+    // asserted now: a Herbam working is a food working with two side-products,
+    // never a quarry. `shipped-content.test.ts` pins the row itself.
     const nodeId = nodeContentId(HERBAM_NODE);
     const { state } = stateHolding(
       nodeId,
@@ -318,16 +330,35 @@ describe('resource-yield is routed by the node\'s form, and the routing discrimi
 
     const bonuses = bonusesFor(state, permissiveRuleset());
 
+    const sum = (magnitudes: readonly number[]): number =>
+      magnitudes.reduce((total, magnitude) => total + magnitude, 0);
+
     expect(bonuses.resourceYield.food.length).toBeGreaterThan(0);
     expect(bonuses.resourceYield.vellum.length).toBeGreaterThan(0);
-    expect(bonuses.resourceYield.stone).toEqual([]);
+    expect(sum(bonuses.resourceYield.food)).toBeGreaterThan(sum(bonuses.resourceYield.vellum));
+    expect(sum(bonuses.resourceYield.vellum)).toBeGreaterThan(sum(bonuses.resourceYield.stone));
+    // Nothing at all in the four kinds only a mage's month can make. That half
+    // of the old assertion is untouched and is the one that would catch a
+    // routing table wired to the wrong column.
+    for (const kind of ['labor', 'essence', 'insight', 'passage'] as const) {
+      expect(bonuses.resourceYield[kind]).toEqual([]);
+    }
   });
 
   it('permitting Creo Herbam and permitting Rego Terram are no longer the same move', () => {
     // The whole point of the change, restated as one assertion: two nodes in
-    // differently-formed cells contribute to disjoint sets of kinds, so which
-    // cells a ruleset permits now changes *what* a universe's economy can
+    // differently-formed cells contribute to *differently shaped* baskets, so
+    // which cells a ruleset permits now changes *what* a universe's economy can
     // produce and not merely *how much*.
+    //
+    // Phrased as a shape comparison rather than as disjointness, and that is the
+    // 2026-08-16 re-author again. Disjointness was never the claim the design
+    // makes — `kinds.ts` says outright that "forms are deliberately not
+    // partitioned" — and it was only ever true here because Herbam happened to
+    // route nothing to stone. It now routes a little, for the beam, while
+    // Terram routes *everything* to stone. Asserting the shape keeps the claim
+    // true under any future retune that keeps the forms distinct, which
+    // disjointness would not.
     const terram = bonusesFor(
       stateHolding(nodeContentId(TERRAM_NODE), LOCATION_KIND.mind, MASTERY_ACTIVATION_THRESHOLD, 0x0eff_b003)
         .state,
@@ -339,10 +370,24 @@ describe('resource-yield is routed by the node\'s form, and the routing discrimi
       permissiveRuleset(),
     );
 
+    const sum = (magnitudes: readonly number[]): number =>
+      magnitudes.reduce((total, magnitude) => total + magnitude, 0);
+    const share = (bonuses: typeof terram, kind: 'food' | 'stone' | 'vellum'): number => {
+      const total = sum(bonuses.resourceYield.food) + sum(bonuses.resourceYield.stone) +
+        sum(bonuses.resourceYield.vellum);
+      return total === 0 ? 0 : Math.round((sum(bonuses.resourceYield[kind]) * 1024) / total);
+    };
+
+    // Terram is still the pure quarry: everything it routes is stone.
     expect(terram.resourceYield.stone.length).toBeGreaterThan(0);
     expect(terram.resourceYield.food).toEqual([]);
-    expect(herbam.resourceYield.food.length).toBeGreaterThan(0);
-    expect(herbam.resourceYield.stone).toEqual([]);
+    expect(share(terram, 'stone')).toBe(1024);
+
+    // Herbam feeds and writes and barely quarries, which is the opposite
+    // universe on the same two axes.
+    expect(share(herbam, 'food')).toBeGreaterThan(share(terram, 'food'));
+    expect(share(herbam, 'stone')).toBeLessThan(share(terram, 'stone'));
+    expect(share(herbam, 'vellum')).toBeGreaterThan(share(terram, 'vellum'));
   });
 });
 

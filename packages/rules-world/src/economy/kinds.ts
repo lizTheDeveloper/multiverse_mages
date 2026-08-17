@@ -216,12 +216,57 @@ export function landTotal(amounts: MaterialAmounts): Fixed {
  * property of *what land a universe holds*, which vision §7a permits, and never
  * of where anything is.
  *
+ * ## And *what a universe holds* is now read off state, which it was not
+ *
+ * This function takes a **content set**: every territory the author wrote down,
+ * summed. For as long as the world loop called it once per run and handed the
+ * answer to every universe, the sentence above was aspiration — two universes
+ * in one run got the identical basket mix however much or little ground each
+ * actually held, because the mix was a property of `territory.json` rather than
+ * of anybody's land. `TERRITORY_HOLDING` had shipped in world revision 10 and
+ * the production path never consulted it.
+ *
+ * {@link landYieldShares} is the arithmetic, and `territory-holdings.ts`'
+ * `heldTerritoryYieldShares` is the state-side caller — the exact counterpart
+ * of `heldTerritoryExtent` beside it, and split for the same §2.7 reason. This
+ * function stays as the **content** question, which is what a founding
+ * endowment and a documented bound are stated in terms of.
+ *
  * @returns Shares in `fp`, summing to exactly `fp(1024)`. A universe with no
  * land — or land that yields nothing at all — gets the whole share in `food`,
  * because a populace with no economy should starve visibly at the subsistence
  * line rather than through a division by zero.
  */
 export function territoryYieldShares(regions: readonly TerritoryRecord[]): MaterialAmounts {
+  return landYieldShares(regions);
+}
+
+/**
+ * A stretch of country, reduced to the two fields the share arithmetic reads.
+ *
+ * The narrow shape both sides of `contracts.md` §2.7's split can satisfy: a
+ * `TerritoryRecord` straight out of content, and a `territory-holding` row
+ * paired with its kind's authored yield. Declared here rather than in
+ * `territory-holdings.ts` so that {@link landYieldShares} is the **one**
+ * implementation of the arithmetic — the alternative was a second copy that
+ * agreed with this one on the day it was written.
+ */
+export interface LandYield {
+  /** Land units held, a count rather than `fp`. */
+  readonly landUnits: number;
+  /** What one unit of this kind of country produces, per land kind, `fp`. */
+  readonly yieldPerLandUnit: Readonly<Record<LandMaterialKind, Fixed>>;
+}
+
+/**
+ * The shares themselves, over anything that can name its acreage and its mix.
+ *
+ * @returns Shares in `fp`, summing to exactly `fp(1024)`. An empty list — or
+ * land that yields nothing at all — gets the whole share in `food`, for the
+ * reason {@link territoryYieldShares} gives: a populace with no economy should
+ * starve visibly at the subsistence line rather than through a division by zero.
+ */
+export function landYieldShares(regions: readonly LandYield[]): MaterialAmounts {
   const weighted = zeroAmounts();
   for (const region of regions) {
     const land = Math.max(0, region.landUnits);

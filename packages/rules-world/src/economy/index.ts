@@ -80,20 +80,29 @@ export {
   defaultSiteKind,
   hasTerritoryHoldings,
   heldTerritoryExtent,
+  heldTerritoryYieldShares,
   materializeTerritoryHoldings,
   territoryHoldings,
 } from './territory-holdings.js';
 
+export type { LandAptitude } from './aptitude.js';
+export {
+  NEUTRAL_LAND_APTITUDE,
+  landAptitudeTable,
+  speciesLandAptitude,
+} from './aptitude.js';
+
 export type { EconomicInput, WorshipInputs } from './counts.js';
 export { ECONOMIC_INPUTS, worshipInputs } from './counts.js';
 
-export type { LandMaterialKind, MaterialAmounts, MaterialKind } from './kinds.js';
+export type { LandMaterialKind, LandYield, MaterialAmounts, MaterialKind } from './kinds.js';
 export {
   LAND_MATERIAL_KINDS,
   MATERIAL_KINDS,
   NO_MATERIALS,
   addAmounts,
   landTotal,
+  landYieldShares,
   routeYieldByForm,
   territoryYieldShares,
   totalAmount,

@@ -150,11 +150,41 @@ const HORIZON = 400;
  * The list that reading produced, recorded and not adopted:
  * `Object.freeze([0x00ab_cdef, 0x0a97_0001])`.
  */
+/*
+ * **`0x0004_1000` replaced by `0x0000_022b` on `w/exp-yields`, 2026-08-16.**
+ *
+ * The file's own instruction, followed in order: *"Run `ablation-mask-is-
+ * consulted.test.ts` first the day this one reports a seed stopping moving."*
+ * It was run first. All seven combat primitives are still reached in the raid
+ * arm — `knowledge-steal` 61 times in that run — so the seam is live and this
+ * is reading (2), a mechanic that runs at the margin, and not the seam coming
+ * apart. Two of four seeds moving would have been the other reading; three of
+ * four still move.
+ *
+ * Re-surveyed rather than re-picked by hand, twelve seeds, control and
+ * `knowledge-steal`-ablated arms at this horizon:
+ *
+ *   0x0bad_c0de  3 raids  moves      0x0000_022b  2 raids  moves
+ *   0x00ab_cdef  2 raids  moves      0x0a97_0001  3 raids  moves
+ *   0x1234_5678  1 raid   moves      0x2222_2222  1 raid   moves
+ *   0x0badf00d   1 raid   moves      0x0004_1000  1 raid   DOES NOT
+ *   0x1111_1111  1 raid   DOES NOT   0x0000_0001  0 raids
+ *   0x0000_1000  0 raids             0x0eff_0001  0 raids
+ *
+ * `0x0004_1000` still raids once and its ablated log is now byte-identical, so
+ * `knowledge-steal` no longer reaches that raid. `0x0000_022b` is taken because
+ * it is the spare this file already recorded from `material-economy`'s survey,
+ * so the replacement is a seed somebody else measured independently rather than
+ * the first one that happened to pass.
+ *
+ * A seed **replaced rather than the assertion weakened**, which is this file's
+ * own stated rule. Five further movers are above if the next tree needs one.
+ */
 const SEEDS: readonly number[] = Object.freeze([
   0x0bad_c0de,
   0x00ab_cdef,
   0x1234_5678,
-  0x0004_1000,
+  0x0000_022b,
 ]);
 
 /**
