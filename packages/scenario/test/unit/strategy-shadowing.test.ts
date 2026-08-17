@@ -148,6 +148,50 @@ const KNOWN_SHADOWED: Readonly<Record<string, string>> = Object.freeze({
   // would invalidate every number already taken against it. Neither strategy is
   // in a gate pool, so nothing baselined moves either way. The fix belongs with
   // the re-measurement, not with this merge.
+  // ---- Three findings recorded on `integration/all-branches`, 2026-08-17. ----
+  //
+  // These were left unlisted on `integration/group-e` with the argument that
+  // *"adding the entries to KNOWN_SHADOWED would convert exactly that report
+  // into silence."* **That argument is withdrawn here, and the reason is this
+  // file's own header.** An entry is not silence: the list is checked in *both*
+  // directions, so a listed verb that stops being shadowed fails
+  // `holds the known-shadowed list to its own findings`, and an unlisted one
+  // fails the check above. What an unlisted finding buys over a listed one is a
+  // red build; what it costs is the ability of the next shadow — the fourth,
+  // the one nobody has seen — to be distinguished from these three. The header
+  // decided this before any of us: *"Fixing them here is forbidden ... So each
+  // is named, with the finding, and the check fails on anything that is not
+  // named."*
+  //
+  // None is fixed here, for the header's reason: a preference-order change
+  // measures the edit rather than the rule, and moves every balance baseline.
+  // Every number below is from `auditPool` on this tree, printed by the first
+  // test in this file.
+  'narrow-depth/8':
+    'grantFoundingKnowledge is fourth in a four-entry list, behind forbidTechnique (legal on ' +
+    '515/600 ticks, submitted on all 515), forbidForm (541/600, submitted 26) and ' +
+    'encourageResearch (599/600, submitted 58) — 599 submissions over 600 rounds, so the tail of ' +
+    'the list is reached on one round in six hundred and the mask offers action 8 on 11. This is ' +
+    "the `narrow-depth` half of the incident that made this file: it is the strategy whose " +
+    'preference list was read by hand, months apart, and found never to ask for this verb. It ' +
+    'asks now and still never gets it.',
+  'denial-warden/2':
+    'forbidTechnique is second, behind issueInterdiction, which is legal on 490 of 592 ticks and ' +
+    'submitted on every one of them — a superset of the 483 on which forbidTechnique is legal. ' +
+    'The warden is a signature-action strategy and this is one of its four: its hypothesis is ' +
+    'that it "forbids and interdicts as hard as the edict budget allows", and on this tree it ' +
+    'only interdicts. forbidForm still reaches the wire (39/592 legal, 24 submitted), so the ' +
+    'strategy is not degenerate — it is narrower than its hypothesis by one axis.',
+  'portal-rush/12':
+    'encourageResearch is third, behind openPortal (unreachable, 0 legal ticks) and assignRole, ' +
+    'which is legal on 599 of 600 ticks and submitted on all 599. Listed here for the second ' +
+    'time: it was deleted on `w190/scribing-fidelity` when the shadow lifted, with a note saying ' +
+    'it *"can come back the same way"*, and it came back. Both of this strategy\'s tempo moves ' +
+    'are now dead — action 1 is `unreachable` because the campaign opened all seventy cells and ' +
+    'there is nothing left to permit, and action 12 is shadowed by assignRole. The durable ' +
+    'reading is the one the deleted `portal-rush/1` note carried: this preference order puts the ' +
+    'tempo moves behind a verb that is legal almost every tick, and whether that shadows anything ' +
+    'depends on numbers no one is holding still.',
   'alliance-seeker/11':
     'fundUniversity is listed on every tick and submitted on none. Its front-of-list entry is ' +
     'gated on `universities === 0`, which the reference universe never satisfies, and its rotated ' +
@@ -228,26 +272,21 @@ describe('every verb a strategy asks for is a verb it can reach', () => {
           'legal every time it is.',
       }));
 
-    // **LEFT RED, `integration/group-e`, 2026-08-16 — and still red, wider, on
-    // `integration/all-branches`, 2026-08-17.** Three surprises now, measured by
-    // `auditPool` on this tree:
+    // **Three surprises were found here on `integration/group-e`, 2026-08-16,
+    // widened on `integration/all-branches`, and they are now in
+    // `KNOWN_SHADOWED` with their findings and their measured tick counts.**
     //
-    // - `narrow-depth` lists `grantFoundingKnowledge` (action 8); the mask
-    //   allows it on **11** ticks (it was 6 when this note was written) and it
-    //   is never submitted.
-    // - `denial-warden` lists `forbidTechnique` (action 2); allowed on 483
-    //   ticks, never submitted.
-    // - `portal-rush` lists `encourageResearch` (action 12); allowed on 599
-    //   ticks, never submitted. This entry was deleted from `KNOWN_SHADOWED` on
-    //   `w190/scribing-fidelity` when it stopped being shadowed, with a note
-    //   saying it *"can come back the same way"*. It came back.
+    // The note that stood here argued that listing them *"would convert exactly
+    // that report into silence"*, and it was left red on that argument. The
+    // argument is recorded and withdrawn — see the block above the three
+    // entries. In one line: the list is checked in both directions, so an entry
+    // is a *recorded* finding rather than a silenced one, and leaving a known
+    // shadow unlisted costs the ability to see the next one arrive.
     //
-    // This instrument's whole purpose is to report a verb a strategy asks for
-    // and cannot reach, and adding the entries to `KNOWN_SHADOWED` would convert
-    // exactly that report into silence. They are not pinned: a strategy that
-    // silently never plays a verb is measuring a different agent than the one
-    // its name describes, and every balance number taken from `narrow-depth`
-    // since this merge is a number about eight verbs, not nine.
+    // Nothing about the findings changed. `narrow-depth` still never plays
+    // `grantFoundingKnowledge`, `denial-warden` still never forbids a technique,
+    // and every balance number taken from `narrow-depth` is still a number about
+    // eight verbs and not nine.
     const surprises = found.filter((verb) => KNOWN_SHADOWED[verb.key] === undefined);
     expect(surprises.map((verb) => verb.detail)).toEqual([]);
   });

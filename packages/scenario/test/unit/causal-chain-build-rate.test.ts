@@ -41,7 +41,12 @@
  * 5. **Removing the cause removes the outcome.** Twice, because once is not a
  *    counterfactual:
  *
- *    - **Forbid the cell.** The god's actual verb. The speed-up disappears.
+ *    - **Forbid the cell.** The god's actual verb. **This half stopped reaching
+ *      the outcome on 2026-08-17** and link 5a carries the measurement: opening
+ *      all seventy cells gave thirteen other forms `build-rate` effects, any
+ *      twenty of which saturate the primitive's `fp(4096)` cap, so forbidding
+ *      Terram removes 41% of the sources and none of the speed-up. What the
+ *      verb still removes is asserted; what it no longer removes is recorded.
  *    - **Neutralize the primitive.** `neutralizing('build-rate')` from
  *      `@mm/primitives`, with the ruleset left exactly as it is. This is the
  *      sharper of the two and the reason the ablation machinery exists:
@@ -290,8 +295,37 @@ describe('the causal chain for build-rate, end to end at one seed', () => {
     // the same 1024 `fp` of university, so the *total* progress is the same
     // number in every arm and cannot show anything. What `build-rate` changes is
     // how much labour and stone that 1024 costs.
-    expect(permitted.stoneOwed).toBeLessThan(forbidden.stoneOwed);
+    //
+    // ## The forbid arm was dropped from this assertion on 2026-08-17, and the
+    // ## reason is a cap rather than a wire
+    //
+    // *Measured on `integration/all-branches` at `LONG_RUN_SEED` over 180
+    // ticks.* `permitted.stoneOwed` is **3032**, `forbidden.stoneOwed` is
+    // **3028** and `ablated.stoneOwed` is **3056**. The comparison against the
+    // ablated arm is unchanged and still holds; the comparison against the
+    // forbid arm is 4 fp — 0.13% — in the wrong direction.
+    //
+    // **`build-rate` is saturated in both of those arms.** `primitive.json` caps
+    // `build-rate` at `fp(4096)`, the shipped Terram magnitudes are 128 and 192
+    // fp, and `stackMagnitudes` folds them additively into `(1 + Σ)` — so about
+    // twenty sources reach the ceiling. The permitted arm peaks at **88**
+    // sources and is clamped on 113 of the 123 ticks it has any; the forbid arm
+    // peaks at **52** and is clamped on 90 of 125. Removing 36 of 88 sources
+    // removes nothing that was being paid for.
+    //
+    // This is a consequence of opening all seventy cells, and it is the same
+    // finding link 5a now carries: the god's verb still bites on the *input* —
+    // 88 sources to 52 — and no longer reaches the *output*, because thirteen
+    // other forms carry `build-rate` and any twenty of them saturate the cap.
+    // The primitive ablation is unaffected, which is exactly the isolation the
+    // module note says the ablation machinery exists to provide.
     expect(permitted.stoneOwed).toBeLessThan(ablated.stoneOwed);
+    // The forbid arm's number, pinned rather than dropped: the day some change
+    // makes the god's verb reach construction cost again, this fails and says
+    // so, instead of quietly restoring a comparison nobody would re-examine.
+    expect(Math.abs(permitted.stoneOwed - forbidden.stoneOwed) * 100).toBeLessThan(
+      permitted.stoneOwed,
+    );
   });
 
   it('link 4 — the mutation changes a visible outcome: the university opens sooner', () => {
@@ -301,12 +335,59 @@ describe('the causal chain for build-rate, end to end at one seed', () => {
     expect(forbidden.ticksToComplete).toBeGreaterThan(0);
     expect(ablated.ticksToComplete).toBeGreaterThan(0);
 
-    expect(permitted.ticksToComplete).toBeLessThan(forbidden.ticksToComplete);
+    // **The counterfactual moved from the god's verb to the ablation on
+    // 2026-08-17**, for the reason link 3 measures: `build-rate` saturates its
+    // `fp(4096)` cap in both the permitted and the forbid arm, so forbidding
+    // Terram cannot change when the building opens. Measured over 180 ticks at
+    // `LONG_RUN_SEED`: permitted **60**, forbidden **60**, ablated **63**.
+    //
+    // The ablation is the comparison the visible outcome now rests on, and it is
+    // the sharper of the two anyway — the module note above says so, and says
+    // why: forbidding a form removes three things at once and neutralizing a
+    // primitive removes one.
+    expect(permitted.ticksToComplete).toBeLessThan(ablated.ticksToComplete);
+    // Pinned, so that a change which restores the god's verb to this channel
+    // fails here rather than passing silently.
+    expect(forbidden.ticksToComplete).toBe(permitted.ticksToComplete);
   });
 
-  it('link 5a — forbidding the cell removes the speed-up', () => {
-    // The god's actual verb, and the counterfactual the claim is about.
-    expect(forbidden.ticksToComplete).toBeGreaterThan(permitted.ticksToComplete);
+  it('link 5a — forbidding the cell removes 41% of the cause and none of the effect', () => {
+    // ## Renamed and re-authored on `integration/all-branches`, 2026-08-17
+    //
+    // It was called *"forbidding the cell removes the speed-up"* and asserted
+    // `forbidden.ticksToComplete > permitted.ticksToComplete`. On this tree both
+    // are **60**, and that is not a magnitude that drifted — it is the god's
+    // verb ceasing to reach this outcome, which is a finding this file is the
+    // right place to state.
+    //
+    // The decision that did it is this campaign's own: every cell is now flagged
+    // `"v1": true`, so a reference universe permits all fourteen forms, and
+    // thirteen of them besides Terram carry `build-rate` effects. Vision §4's
+    // worked example — *"Rego Terram letting universities go up faster"* — is
+    // still true of the magnitudes and is no longer **isolable by the god's
+    // verb**.
+    //
+    // ## What the verb still removes, measured
+    //
+    // Forbidding Terram takes the peak `build-rate` source count from **88 to
+    // 52**, which is 41% of the causal input and is asserted below. What it does
+    // not remove is the *effect*, because `build-rate` is capped at `fp(4096)`
+    // and about twenty sources at the shipped magnitudes (128 and 192 fp)
+    // saturate it: the forbid arm is still clamped on 90 of the 125 ticks it has
+    // any source at all.
+    //
+    // The positive control for that reading, measured on the same fixture:
+    // forbidding **every** form takes the source count to 0 and the completion
+    // tick to **86**. So the chain from sources to opening date is intact and
+    // the cap is what hides it, rather than the wire being out.
+    expect(permitted.peakBuildRateSources).toBe(88);
+    expect(forbidden.peakBuildRateSources).toBe(52);
+    expect(forbidden.peakBuildRateSources * 100).toBeLessThan(
+      permitted.peakBuildRateSources * 60,
+    );
+    // Link 1 already says the god's verb reaches what mages *learn*; this says
+    // it reaches what construction is *offered*, which is the link between them.
+    expect(forbidden.terramKnowledge).toBe(0);
   });
 
   it('link 5b — neutralizing build-rate alone removes it, with the ruleset untouched', () => {
@@ -341,12 +422,39 @@ describe('the causal chain for build-rate, end to end at one seed', () => {
     const drift = Math.abs(ablated.terramKnowledge - permitted.terramKnowledge);
     expect(drift * 100).toBeLessThanOrEqual(permitted.terramKnowledge * 5);
     expect(ablated.ticksToComplete).toBeGreaterThan(permitted.ticksToComplete);
-    // The mechanism, asserted rather than described: the arm whose building
-    // opens later affiliates fewer mages. A future change that severs
-    // construction from affiliation fails here instead of silently restoring an
-    // equality nobody would re-examine.
-    expect(permitted.magesAffiliated).toBeGreaterThan(0);
-    expect(ablated.magesAffiliated).toBeLessThanOrEqual(permitted.magesAffiliated);
+    //
+    // ## The affiliation mechanism, and why the assertion inverted on 2026-08-17
+    //
+    // This read `expect(permitted.magesAffiliated).toBeGreaterThan(0)`, and on
+    // `integration/all-branches` it is **0 in all three arms**. That is not the
+    // wire coming out — `WorldStepReport.magesAffiliated`'s own docstring warns
+    // that a zero here usually is — and it was probed rather than assumed.
+    //
+    // **No mage in this fixture ever commits to the `affiliate` goal.** Measured
+    // over the 180 ticks of the permitted arm: `monthsByGoal` records 0 months
+    // on `GOAL.affiliate` (6), and `affiliationsRefused` is 0 as well, so the
+    // list `settleAffiliations` walks is empty on every tick. Meanwhile 75 of the
+    // 80 mages alive at the end *are* affiliated. Both facts are true because
+    // W193/W197 rewrote how a mage enters the world: enrolment calls
+    // `createMage(rng, mage, species, speciesId, worldTick, university)`, so a
+    // student is created **already holding** the university that seated her.
+    // `affiliate` is a goal to *change* affiliation, and in a fixture with one
+    // completed university there is nothing to change to.
+    //
+    // So W116's coupling — a site that opens later admits scholars later, and an
+    // unaffiliated scholar cannot scribe — no longer runs through this counter.
+    // The drift it was written to explain is gone with it: both arms end holding
+    // **98** Terram instances exactly, so the 5% band above is satisfied by an
+    // equality again.
+    //
+    // Asserted as the null rather than dropped, on the same argument
+    // `raid-engagement` makes for its zero-loss pin: a null nobody asserts is a
+    // null nobody notices coming back. If some change gives this fixture a mage
+    // who wants to move, this fails and the mechanism comment above it is the
+    // thing to re-read.
+    expect(permitted.magesAffiliated).toBe(0);
+    expect(forbidden.magesAffiliated).toBe(0);
+    expect(ablated.magesAffiliated).toBe(0);
   });
 
   it('link 5b, continued — and the contributions were still gathered, just not applied', () => {

@@ -137,18 +137,32 @@ describe('the founding position', () => {
     // the block's own instruction — *"the next agent to see it move should not
     // read the movement as a defect"* — is the durable part.
     const cellName = new Map(content.registry.cells.map((e) => [e.contentId, e.record.id]));
+    //
+    // **Re-recorded on `integration/all-branches`, 2026-08-17, and this one is a
+    // decision rather than a re-roll.** The six cells moved from the Intellego
+    // and Perdo rows to the Creo row, and nothing about founding changed to do
+    // it: `foundingCandidates` deals prerequisite-free nodes out of the cells
+    // `permits()` allows, ascending by interned id, and this campaign flagged
+    // every cell `"v1": true`. A universe that permits all seventy takes its
+    // roots from cell 1 onward — `creo-animal` is cell 1 — where a universe
+    // permitting only the twelve-cell rectangle had to start at `intellego-*`.
+    //
+    // Recomputable from `cell.json` and `node.json` without running anything,
+    // which is what makes it a re-record and not a measurement. The claim the
+    // test is named for is untouched and still holds: six species, six distinct
+    // cells, every one of them a sole occupant.
     expect(
       sample.species.map((entry) => [
         entry.speciesId,
         entry.occupiedCellIds.map((id) => cellName.get(id)),
       ]),
     ).toEqual([
-      ['draconic', ['intellego-limen']],
-      ['dwarf', ['intellego-mentem']],
-      ['elf', ['intellego-nomen']],
-      ['gnome', ['intellego-terram']],
-      ['human', ['perdo-limen']],
-      ['orc', ['perdo-mentem']],
+      ['draconic', ['creo-animal']],
+      ['dwarf', ['creo-aquam']],
+      ['elf', ['creo-auram']],
+      ['gnome', ['creo-corpus']],
+      ['human', ['creo-fatum']],
+      ['orc', ['creo-herbam']],
     ]);
     expect(collectSpeciesCellOccupancy(telemetryFor(sample))).toMatchObject({
       detail: { cellsOccupiedByAnySpecies: 6, cellsWithASoleOccupant: 6 },
@@ -286,12 +300,48 @@ describe('twenty world years in', () => {
     // species censored in 9 of 12 seed sets over the same change, which is two
     // independent instruments agreeing on the mechanism rather than one pin
     // moving.
-    expect(bySpecies('elf').occupiedCells).toBe(12);
-    expect(bySpecies('orc').occupiedCells).toBe(11);
-    expect(bySpecies('draconic').occupiedCells).toBe(12);
-    expect(bySpecies('human').occupiedCells).toBe(12);
-    expect(bySpecies('gnome').occupiedCells).toBe(9);
-    expect(bySpecies('dwarf').occupiedCells).toBe(2);
+    //
+    // **Re-measured on `integration/all-branches`, 2026-08-17, and this move is
+    // a decision rather than a re-roll — the first one in this block's history
+    // that is.** Every reading above was taken against a twelve-cell ceiling.
+    // This campaign flagged all seventy cells `"v1": true`, so `v1RulesetAxes`
+    // permits seventy and the ceiling this test is named for went 12 -> 70. The
+    // old numbers are not stale magnitudes of the same quantity; they are
+    // measurements of a different grid, and 12 was five of the six species'
+    // *maximum* rather than their achievement.
+    //
+    // What the numbers say now, at the same seed and the same horizon:
+    //
+    //     gnome     66 / 70      draconic  54 / 70      human  53 / 70
+    //     elf       55 / 70      dwarf     48 / 70      orc    52 / 70
+    //
+    // **Gnome is the finding and it is the reversal of the last four readings.**
+    // Gnome was the species this file recorded as short in every measurement
+    // since W200 — 9 of 12, three cells behind, "disproportionately short in
+    // Perdo". Given seventy cells it is the only species that reaches every cell
+    // any species reaches, on seven living mages against orc's twenty. Gnome
+    // carries the highest `curiosity` in the content (1792 against human's 1152
+    // and elf's 896), and `curiosity` is what decides *which* node a mage
+    // reaches for; a twelve-cell ceiling gave that trait nothing to express,
+    // because every species ran out of grid before it ran out of appetite. This
+    // is the same mechanism `reference-time-to-tier` reads gnome-first on, which
+    // is two independent instruments agreeing rather than one pin moving.
+    //
+    // Dwarf is the new floor at 48 and that is *not* the same event as the 2 it
+    // read at twelve cells: 48/70 is 69% of the grid where 2/12 was 17%. The
+    // scribeAffinity reading the block above builds up over four measurements is
+    // neither confirmed nor refuted here — it was a claim about a species that
+    // could not afford breadth, and on this grid every species affords a lot of
+    // it.
+    //
+    // Pinned, not softened, and the pin is membership rather than finding — the
+    // instruction this block has carried since 2026-08-14.
+    expect(bySpecies('elf').occupiedCells).toBe(55);
+    expect(bySpecies('orc').occupiedCells).toBe(52);
+    expect(bySpecies('draconic').occupiedCells).toBe(54);
+    expect(bySpecies('human').occupiedCells).toBe(53);
+    expect(bySpecies('gnome').occupiedCells).toBe(66);
+    expect(bySpecies('dwarf').occupiedCells).toBe(48);
     //
     // **`material-economy` measured this row too, and its numbers are recorded
     // rather than adopted.** Neither side's pin is a measurement of *this* tree:
@@ -375,7 +425,28 @@ describe('twenty world years in', () => {
     // for the same reason. It rises because dwarf falls: the metric is a spread
     // over occupancy, and one species at 2 against five between 9 and 12 is a
     // wider spread than the arrangement either branch measured.
-    expect((entry as { value: number }).value).toBeCloseTo(0.1724, 4);
+    //
+    // **0.0508 on `integration/all-branches`, 2026-08-17.** It fell by a factor
+    // of three and the cause is the one the block above names: the ceiling went
+    // from twelve cells to seventy. This metric is a Gini coefficient over the
+    // per-species occupied-cell counts, and a Gini is a *ratio*, so what moved is
+    // not that the species got closer together in absolute terms — the spread
+    // between the widest and the narrowest went from 10 cells (12 against 2) to
+    // 18 (66 against 48) — but that 18 cells out of a mean of 55 is a smaller
+    // relative dispersion than 10 out of a mean of 9.
+    //
+    // Said plainly, because the arithmetic is easy to misread as convergence: on
+    // twelve cells one species was at 17% of the grid and five were near the
+    // ceiling; on seventy the range is 69% to 94% and nobody is at either end of
+    // the grid. **A ceiling that everybody hits compresses the top of this
+    // statistic and leaves the bottom free**, which is why the twelve-cell
+    // readings were as large as they were.
+    //
+    // The claim this test is named for survives and is what it is here to say:
+    // 0.0508 is neither flat (a Gini of 0, which the founding position reads and
+    // `everySpeciesEqual` still denies) nor a hegemony (which would need this
+    // toward 1).
+    expect((entry as { value: number }).value).toBeCloseTo(0.0508, 4);
     //
     // The branch's reading of the same row, recorded and not adopted, for the
     // reason the occupancy block above gives:
@@ -480,14 +551,65 @@ describe('twenty world years in', () => {
     // disproportionately Perdo, and this time *all three* are Perdo. Read that
     // as the prose above instructs: the count and the technique skew are the
     // finding, the exact membership is a pin.
-    expect([...reached].filter((cell) => !held.has(cell)).sort()).toEqual([
-      'perdo-limen',
-      'perdo-mentem',
-      'perdo-terram',
-    ]);
+    //
+    // ## Re-authored on `integration/all-branches`, 2026-08-17 — gnome is missing nothing
+    //
+    // Every reading above was taken against a twelve-cell ceiling. This campaign
+    // flagged all seventy cells `"v1": true`, and the species this file recorded
+    // as short in five consecutive measurements is now the only one that reaches
+    // **every cell any species reaches**: gnome holds 66 of 70 on seven living
+    // mages. The assertion is kept and its expectation is now the empty list,
+    // which is a real claim and not a vacuous one — it fails the day gnome falls
+    // behind again.
+    //
+    // **The durable reading survived where the membership did not, and it is now
+    // measurable on five species instead of one.** Measured at this seed and
+    // horizon, missing against the union of every cell reached:
+    //
+    //     dwarf     18   muto 4  rego 5  perdo 8  creo 1
+    //     orc       14   muto 1  rego 4  perdo 8  creo 1
+    //     human     13   muto 1  rego 3  perdo 8  creo 1
+    //     draconic  12           rego 3  perdo 8  creo 1
+    //     elf       11   muto 1  rego 2  perdo 7  creo 1
+    //     gnome      0
+    //
+    // Perdo is 14 of the 70 cells — 20% of the grid — and it is **7 or 8 of every
+    // short species' shortfall**, which is 44% to 64% of it. The claim this block
+    // has been making since W200 about gnome alone — *"short, and
+    // disproportionately short in Perdo"* — turns out to be a property of the
+    // grid rather than of a species, and it is asserted below in the form that
+    // does not re-roll: the composition of the shortfall, rather than its
+    // membership. That trade is deliberate. This block's own five-times-repeated
+    // instruction is that *"the exact membership is a pin, not a finding"*, and a
+    // pin of eighteen cell names would be eighteen chances to fail for a reason
+    // nobody wants to read.
+    expect([...reached].filter((cell) => !held.has(cell)).sort()).toEqual([]);
+
+    const techniqueOf = new Map(
+      content.registry.cells.map((e) => [e.record.id, e.record.technique]),
+    );
+    const perdoCells = [...content.registry.cells].filter(
+      (e) => e.record.technique === 'perdo',
+    ).length;
+    expect(perdoCells).toBe(14);
+    for (const entry of sample.species) {
+      const has = new Set(entry.occupiedCellIds.map((id) => cellName.get(id)));
+      const missing = [...reached].filter((cell) => !has.has(cell));
+      if (missing.length === 0) continue;
+      const perdo = missing.filter((cell) => techniqueOf.get(cell as string) === 'perdo').length;
+      // Strictly over-represented against Perdo's share of the grid, in every
+      // species that is short of anything. A species that fell behind evenly
+      // across the five techniques would fail here, which is the reading a bare
+      // count cannot give.
+      expect(
+        perdo * 70,
+        `${entry.speciesId} is short of ${String(missing.length)} cells, ${String(perdo)} of ` +
+          'them Perdo, which is no more than the 14/70 share Perdo has of the grid',
+      ).toBeGreaterThan(missing.length * perdoCells);
+    }
   });
 
-  it('has every occupied cell shared, so the concentration is not specialisation', () => {
+  it('has nine cells with a sole occupant, all of them gnome\'s — the claim above it reversed', () => {
     const entry = collectSpeciesCellOccupancy(telemetryFor(sample));
     expect(entry).toMatchObject({
       // Re-recorded on `w185/cohort-source`, 2026-08-14: two of the twelve now
@@ -502,8 +624,39 @@ describe('twenty world years in', () => {
       // produces `0`. With five species at the ceiling there is no sole
       // occupant left, and the row's original claim holds again at full
       // strength.
-      detail: { cellsOccupiedByAnySpecies: 12, cellsWithASoleOccupant: 0 },
+      //
+      // ## The title changed because the claim became false, 2026-08-17
+      //
+      // This test was called *"has every occupied cell shared, so the
+      // concentration is not specialisation"* and asserted `cellsWithASoleOccupant:
+      // 0`. On `integration/all-branches` it reads **9 of 66**, and that is not a
+      // number that moved — it is the claim being **refuted**. Renaming rather
+      // than re-pinning, because a test whose name states a measurement it does
+      // not make is the doc-rot this file has already paid for once.
+      //
+      // The cause is this campaign's, not a re-roll. Opening all seventy cells
+      // gave the species room to diverge for the first time: at twelve cells five
+      // of six sat at the ceiling and there was physically nowhere to be alone.
+      // All nine sole-occupant cells are gnome's — the species with the highest
+      // `curiosity` in the content — and they are exactly the margin by which it
+      // leads: 66 cells against elf's 55.
+      //
+      // **So specialisation is now what this row reports, and the concentration
+      // above is partly it.** That is a finding for the owner rather than a
+      // defect: a Gini of 0.0508 across six species, 14% of the occupied grid held
+      // by one species alone. The instrument is unchanged and both halves are
+      // pinned, so a return to a fully shared grid fails here and says so.
+      detail: { cellsOccupiedByAnySpecies: 66, cellsWithASoleOccupant: 9 },
     });
+    // Which species owns the sole occupancy, since the count alone cannot say —
+    // and this is the half that makes "specialisation" the right word for it.
+    const detail = (entry as { detail: { species: { speciesId: string; soleOccupantCells: number }[] } })
+      .detail;
+    expect(
+      detail.species
+        .filter((row) => row.soleOccupantCells > 0)
+        .map((row) => [row.speciesId, row.soleOccupantCells]),
+    ).toEqual([['gnome', 9]]);
   });
 
   it('reports living mages beside every count, so a zero is readable', () => {

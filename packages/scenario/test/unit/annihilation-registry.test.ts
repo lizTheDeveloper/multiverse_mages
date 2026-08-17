@@ -159,17 +159,35 @@ const REGISTERED: ReadonlyMap<string, string> = new Map([
       'being the intent, this is the line that says so.',
   ],
 
-  [
-    'capital:applyLibraryUpkeep',
-    'A genuine floor with no banking, declared at the site: "a shortfall ' +
-      'smaller than one instance\'s worth costs nothing this tick", because ' +
-      'banking it would need a pending-degradation field §1.5 does not have. ' +
-      'DEGRADATION_PER_SHORTFALL is 32, so that is the threshold. **Newly ' +
-      'reached rather than newly written** — W116 gave `completeAffiliation` a ' +
-      'caller, and a universe whose mages actually join universities is the ' +
-      'first one to keep libraries deep enough to owe upkeep it cannot pay.',
-  ],
-
+  // `capital:applyLibraryUpkeep` was registered here twice — once in W193 and
+  // once in W197, independently, for the same site — and **both rows are gone on
+  // `integration/all-branches`, 2026-08-17.** Not because the arm stopped
+  // reaching the function: because **the function no longer floors anything**.
+  //
+  // What the W193 row said: *"A genuine floor with no banking, declared at the
+  // site: 'a shortfall smaller than one instance's worth costs nothing this
+  // tick' ... DEGRADATION_PER_SHORTFALL is 32, so that is the threshold. Newly
+  // reached rather than newly written — W116 gave `completeAffiliation` a
+  // caller."* W197's row said the same thing about the same line, adding that
+  // the run *"goes marginally short on vellum on 17 of 240 ticks and the last
+  // unit floors."*
+  //
+  // `knowledge-fidelity` took the conversion out. `UpkeepOutcome` used to carry
+  // `degradedInstances: Math.min(depth.instanceCount, floorDiv(shortfall,
+  // DEGRADATION_PER_SHORTFALL))`; it now reports the shortfall whole and
+  // `coordination` spends it against particular books at their own `durability`,
+  // because a flat price charged every book the same *"regardless of how well it
+  // was made"*. The `floorDiv` left the function with the field. What remains in
+  // `applyLibraryUpkeep` is `Math.min`, `Math.max` and a subtraction.
+  //
+  // The registry caught this from the direction it is unusual to catch anything
+  // — `registeredButUnseen`, the same direction that retired
+  // `promotion:promoteStudentCohort` in W197 — and it caught it while the arm
+  // was under *more* pressure than when the rows were written, not less:
+  // `libraryUpkeep` is short on **147 of 240 ticks** here, totalling 32,789 fp,
+  // and its smallest non-zero shortfall is 38 fp. Under the old code every one
+  // of those 147 ticks would have floored. Deleting the rows rather than leaving
+  // them is this file's own rule, stated below the assertion.
   [
     'terms:shareOfDeviation',
     'A scoring term, and the floor is a rounding step rather than a lost ' +
@@ -232,21 +250,10 @@ const REGISTERED: ReadonlyMap<string, string> = new Map([
       'roster rolls more personalities near the mean, and the arm reaches the ' +
       'floor on 16 of 240 ticks where it previously reached it on none.',
   ],
-  [
-    'capital:applyLibraryUpkeep',
-    'Floored and discarded, and the function says so at the line: "a shortfall ' +
-      'smaller than one instance\'s worth costs nothing this tick ... a library ' +
-      'that is one unit short every tick forever is a library whose universe ' +
-      'has a materials problem the economy layer will report." ' +
-      '**New to this registry in W193, and not because the function changed.** ' +
-      'It was already capable of flooring and the reference run never reached a ' +
-      'shortfall small enough; student mages eat subsistence, so the run now ' +
-      'goes marginally short on vellum on 17 of 240 ticks and the last unit ' +
-      'floors. That is the registry doing its job -- reporting a site the arm ' +
-      'newly reaches -- rather than a defect introduced. The consequence is ' +
-      'bounded by the same argument the function makes, and if it stops being ' +
-      'bounded the economy report is where it shows up.',
-
+  // (The W197 duplicate of `capital:applyLibraryUpkeep` stood here and is gone
+  // for the reason above. The W207 note below is kept: it is about
+  // `terms:shareOfDeviation`, not about upkeep, and only one entry may carry a
+  // key.)
   // W207 registered `terms:shareOfDeviation` too, independently, with a
   // different and stronger argument for the same site — and only one entry may
   // carry the key. Its reasoning is kept here rather than lost, because it is a
@@ -261,7 +268,7 @@ const REGISTERED: ReadonlyMap<string, string> = new Map([
   // `w196/mastery-rises` nor `w200/layer-one-fixes` reaches the site alone
   // (2026-08-15), which agrees with the entry above that it is a reachability
   // change and not a new floor.
-  ],
+
 
   // ---- Not a live quantity: a comparison weight. ----
   //
@@ -292,6 +299,68 @@ const REGISTERED: ReadonlyMap<string, string> = new Map([
       'finished target — floorDiv(58, 64) — where "no effort penalty" is the ' +
       'correct reading of the input rather than a loss. First reachable when all ' +
       'seventy cells were enabled and the frontier went from 51 nodes to 300.',
+  ],
+
+  // ---- W300: three sites the open grid and the materials economy newly reach. ----
+  //
+  // All three arrived together on `integration/all-branches`, 2026-08-17, and
+  // none of the three functions changed. Each is reviewed on the terms this
+  // file's header sets — *does it stall, or does it handle the zero* — and each
+  // answer is recorded with the tick counts the recorder reported over the
+  // 240-tick reference arm.
+  [
+    'envelope:envelopeSlotAt',
+    'Index arithmetic, exactly as `grid:techniqueBitOf` and `clock:eraOf` above. ' +
+      '`floorDiv(progress x ENVELOPE_SLOTS, required)` names which eighth of an ' +
+      'acquisition a project sits in, and zero names the first eighth — the ' +
+      'sample is floorDiv(1936, 5039), a project 38% of the way through its ' +
+      'first slot. There is no quantity here to lose and nothing to stall: the ' +
+      'index selects a multiplier, `envelopeMultiplier` clamps it into range, ' +
+      'and a caller that omits an envelope gets FP_ONE. It floors on 174 of 240 ' +
+      'ticks (persistence 0.725) because most research is in its opening slot ' +
+      'most of the time, which is what an eight-slot curve over a multi-month ' +
+      'project means. **Newly reached rather than newly written** — the effort ' +
+      'envelope is threaded through research, teaching and scribing, and the ' +
+      'reference arm reaches it on every tick a project is under way.',
+  ],
+  [
+    'lifespan:effectiveLifespan',
+    'A genuine floor with no banking, and the unit is the reason: a lifespan is ' +
+      'in whole months, so `toInt(stacked.value)` discards a bonus worth less ' +
+      'than one month. The sample is floorDiv(18, 1024) — 18/1024 of a month, ' +
+      'about thirteen hours. It cannot stall: the function is recomputed from ' +
+      'scratch at every hazard evaluation (its own docstring says why), nothing ' +
+      'accumulates between ticks, and the floored term is one of three addends ' +
+      'beside a species base of hundreds of months. What it costs is real and ' +
+      'bounded — an extension effect too small to be worth a month is worth ' +
+      'nothing — and if that stops being the intent, the fix is banking the ' +
+      'remainder in `stackMagnitudes`, not here. ' +
+      '**Newly reached rather than newly written, and the cause is named in ' +
+      'advance**: `knowledge-vitality.ts` records that its lifespan magnitudes ' +
+      'were "zero in any v1 universe ... all twenty-two authored nodes sat ' +
+      'outside the twelve enabled cells, so `permits()` refused every one of ' +
+      'them". This campaign enabled all seventy, so the stack has contributors ' +
+      'for the first time and the rounding step at the end of it is finally ' +
+      'visible. Fires on 32 of 240 ticks (0.133).',
+  ],
+  [
+    'materials:materialsProduced',
+    'A genuine floor with no banking, at the land-share split: ' +
+      '`floorDiv(worked x shares[kind], FP_ONE)` is zero when a cohort works ' +
+      'less than one fp unit into a kind. The sample is floorDiv(512, 1024) — ' +
+      'half a unit of a material, from a cohort too small or too tilted away ' +
+      'from that kind to make a whole one. Nothing stalls: production is ' +
+      'recomputed per cohort per tick from headcount and affinity, no remainder ' +
+      'is carried and none is owed, and the same cohort produces the moment it ' +
+      'is larger or its share is higher. It is the same reading ' +
+      '`world-step:latentInCohort` above carries — a population too small to ' +
+      'produce a whole unit should produce none, and rounding it up would have ' +
+      'every hamlet quarrying stone. Fires on 4 of 240 ticks (0.017), which is ' +
+      'the honest rate for a floor that needs both a small cohort and a low ' +
+      'share to bite. **Newly reached rather than newly written** — `material-' +
+      'economy` widened the stock from three kinds to seven and tilted the land ' +
+      'shares by species aptitude, so a cohort now splits one month of work ' +
+      'across four land kinds instead of concentrating it.',
   ],
 
   // ---- Handled at the site. ----
