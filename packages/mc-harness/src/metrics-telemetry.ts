@@ -463,6 +463,22 @@ export interface RoleDemographySample {
 }
 
 /** Everything a per-run collector may read. */
+/**
+ * What one universe held above grade 0 at one sampled tick.
+ *
+ * The harness declared eighteen metrics and **not one of them read a material
+ * stock**, so the whole material economy — seven kinds and now a ladder on one
+ * of them — was unmeasurable. This is the smallest sample that fixes it for the
+ * ladder, and `materialGradeProfile` is what reads it.
+ */
+export interface MaterialGradeSample {
+  readonly worldTick: number;
+  /** Grade 1 `stone` held, `fp`. */
+  readonly stoneWorked: number;
+  /** Grade 2 `stone` held, `fp`. */
+  readonly stoneFine: number;
+}
+
 export interface RunTelemetry {
   readonly coordinates: RunCoordinates;
   readonly status: TerminalStatus;
@@ -481,6 +497,18 @@ export interface RunTelemetry {
   /** First reach per `(species, tier)`. Pairs never reached are simply absent. */
   readonly tierFirstReached: readonly TierReach[];
   readonly checkpoints: readonly CheckpointSample[];
+  /**
+   * Refined material through the run, or `undefined` when the build has no
+   * grade mechanic at all.
+   *
+   * **`undefined` and `[]` are two different answers and a collector may not
+   * collapse them**, exactly as `raids` below insists. A build with no ladder
+   * reports `undefined`; a build with a ladder whose universe never refined
+   * anything reports samples that are all zero. The first is "not measured",
+   * the second is a measurement — and reporting `0` for the first is precisely
+   * the metric-that-could-only-read-zero this project has already shipped once.
+   */
+  readonly materialGrades?: readonly MaterialGradeSample[];
   /**
    * Raids observed, or `undefined` when the build has no raid mechanic.
    *

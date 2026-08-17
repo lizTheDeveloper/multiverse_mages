@@ -1650,6 +1650,7 @@ unavailable status is an honest answer.
 | `timeToTierBySpecies` | world ticks for a species to first reach each node tier |
 | `knowledgeHalfLife` | world ticks for 50% of nodes known at tick *t* to be lost by tick *t+n* |
 | `libraryDependence` | fraction of known nodes with exactly one surviving instance |
+| `materialGradeProfile` | fraction of sampled world ticks on which the universe held any **grade-2** material, with the grade-1 fraction, the peak of each and the final level of each beside it. The first metric here to read a **material stock** at all — seven kinds and a grade ladder had shipped with nothing that could say what any of them did, which made the ladder's own falsifier (*do universes ever reach the far edges, or only 0 → 1?*) unaskable. A build with no ladder is `mechanic-absent`, which is **not** the same answer as a run that had one and never left grade 0 |
 | `worshipSnowball` | Gini coefficient of favor regen across MC runs at fixed tick counts. **Threshold: ≤ 0.35**, plus p95:p50 regen ≤ 3:1 |
 | `capitalSnowball` | same, over library depth — the §6a loop |
 | `raidLengthDistribution` | engagement ticks to resolution; must be bounded by portal stability |

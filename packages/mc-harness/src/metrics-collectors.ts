@@ -282,6 +282,64 @@ export function collectLibraryDependence(telemetry: RunTelemetry): MetricEntry {
 }
 
 /* ------------------------------------------------------------------------- *
+ * materialGradeProfile
+ * ------------------------------------------------------------------------- */
+
+/**
+ * How far up the material ladder a universe actually got.
+ *
+ * **The gap this closes was a measurement gap, not a balance one.** Before it,
+ * the registry declared eighteen metrics and *not one read a material stock* —
+ * seven kinds, a claimant order, a ceiling that spills, and nothing that could
+ * say what any of it did. A ladder added on top of that would have been
+ * unmeasurable by construction, so this is a prerequisite of the ladder rather
+ * than a follow-up to it.
+ *
+ * The scalar is the **fraction of sampled ticks on which the universe held any
+ * grade-2 material**, which is the question `machines-spec.md`'s F4 asks: *"if
+ * universes convert only along grade 0 -> 1 and never reach the far edges, the
+ * ladder is decorative."* A run that never leaves grade 0 scores `0` — a real
+ * measurement — and a build with **no ladder at all** is `unavailable` with
+ * `mechanicAbsent`, which is a different answer and must stay one.
+ */
+export function collectMaterialGradeProfile(telemetry: RunTelemetry): MetricEntry {
+  const samples = telemetry.materialGrades;
+  if (samples === undefined) {
+    // Not zero. `undefined` is "this build has no ladder", and folding it into
+    // `0` would make an unmeasured run indistinguishable from a measured one
+    // that never refined anything — the exact defect this project shipped once
+    // as a metric that could only ever read zero.
+    return unavailable(UNAVAILABLE_REASON.mechanicAbsent, { materialGradeSamples: 0 });
+  }
+  if (samples.length === 0) {
+    return unavailable(UNAVAILABLE_REASON.noObservations, { materialGradeSamples: 0 });
+  }
+
+  let ticksHoldingWorked = 0;
+  let ticksHoldingFine = 0;
+  let peakWorked = 0;
+  let peakFine = 0;
+  for (const sample of samples) {
+    if (sample.stoneWorked > 0) ticksHoldingWorked += 1;
+    if (sample.stoneFine > 0) ticksHoldingFine += 1;
+    if (sample.stoneWorked > peakWorked) peakWorked = sample.stoneWorked;
+    if (sample.stoneFine > peakFine) peakFine = sample.stoneFine;
+  }
+
+  return measured(ticksHoldingFine / samples.length, {
+    samples: samples.length,
+    // Reported beside the scalar because "never refined anything" and "refined
+    // and never got past the first rung" are different findings about the
+    // content, and the scalar alone reads the same for both.
+    fractionHoldingWorked: ticksHoldingWorked / samples.length,
+    peakWorked,
+    peakFine,
+    finalWorked: (samples[samples.length - 1] as { stoneWorked: number }).stoneWorked,
+    finalFine: (samples[samples.length - 1] as { stoneFine: number }).stoneFine,
+  });
+}
+
+/* ------------------------------------------------------------------------- *
  * 6.7 — timeToTierBySpecies
  * ------------------------------------------------------------------------- */
 
