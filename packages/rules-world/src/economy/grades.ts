@@ -13,7 +13,7 @@
  */
 
 import type { Fixed } from '@mm/sim-core';
-import { FP_ONE, floorDiv, mul } from '@mm/sim-core';
+import { floorDiv, mul } from '@mm/sim-core';
 import type { GradeEdgeRecord, GradeRequirement } from '@mm/content';
 
 /**
@@ -75,11 +75,6 @@ export interface GradedStock {
 
 /** Nothing refined. The reading for an absent component, and the identity here. */
 export const NO_GRADED_STOCK: GradedStock = Object.freeze({ stoneWorked: 0, stoneFine: 0 });
-
-/** A fresh mutable holding at zero. */
-export function zeroGradedStock(): { stoneWorked: Fixed; stoneFine: Fixed } {
-  return { stoneWorked: 0, stoneFine: 0 };
-}
 
 /** The `(kind, grade)` pairs this schema carries a column for. */
 type GradedColumn = keyof GradedStock;
@@ -232,7 +227,17 @@ export function settleGrades(
   // Phase 2: the upper rungs, highest first. Descending `fromGrade` is what
   // stops a unit climbing two grades in one tick.
   const climbing = [...edges].filter((edge) => edge.fromGrade > 0);
-  climbing.sort((left, right) => right.fromGrade - left.fromGrade || left.id.localeCompare(right.id));
+  // **Codepoint order, never `localeCompare`.** This is the rules path, and
+  // `localeCompare` without an explicit locale is a function of the host's ICU
+  // build — two peers in a live PvP match could order two rungs differently and
+  // diverge, and no golden fixture would catch it because the tiebreak does not
+  // fire on shipped content at all (the two rungs differ in `fromGrade`). It is
+  // exactly the class of defect `contracts.md` §0 forbids: a wall-clock or
+  // locale read hiding inside something that looks like arithmetic.
+  climbing.sort(
+    (left, right) =>
+      right.fromGrade - left.fromGrade || (left.id < right.id ? -1 : left.id > right.id ? 1 : 0),
+  );
   for (const edge of climbing) {
     const from = gradedColumn(edge.kind, edge.fromGrade);
     const to = gradedColumn(edge.kind, edge.toGrade);
@@ -270,13 +275,3 @@ export function settleGrades(
     met: demand.met,
   };
 }
-
-/**
- * The unit a ratio of `fp(1024)` preserves exactly, for tests and for readers.
- *
- * Named rather than inlined because `mul(x, FP_ONE) === x` is the property
- * `ge-turn-the-poor-ore` relies on — its gloss states no loss, so its rung must
- * be lossless, and a ratio that quietly rounded would make *"the whole cost of
- * the rung is the raw stone it draws"* false by one part in 1024 per tick.
- */
-export const LOSSLESS_RATIO: Fixed = FP_ONE;

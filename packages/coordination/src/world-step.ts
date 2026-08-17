@@ -634,6 +634,39 @@ export interface WorldStepReport {
    * makes a spell worth casting.
    */
   readonly producedByKind: MaterialAmounts;
+  /**
+   * Refined material held at the close of the tick, per `(kind, grade)`.
+   *
+   * The harness declares eighteen metrics and **none of them reads a material
+   * stock**, so the ladder would have been unmeasurable without this. A level,
+   * not a flow — the two below are the flows.
+   */
+  readonly gradesClosing: GradedStock;
+  /**
+   * Grade-0 material the ladder actually drew this tick, `fp`.
+   *
+   * `spent.refining` rather than what it asked for: a rung that went short
+   * refined less, and the difference is a shortfall the consumption order
+   * already recorded.
+   */
+  readonly refiningPaid: Fixed;
+  /**
+   * What the rungs' own ratios destroyed this tick, `fp`.
+   *
+   * *"Nothing is created; a field of straw becomes a smaller field of grain."*
+   * Reported rather than dropped for the reason a ceiling spill is: a
+   * conversion that loses silently reads as a leak two hundred ticks later.
+   */
+  readonly gradeConvertedAway: Fixed;
+  /**
+   * Gated contributions refused this tick for want of refined material.
+   *
+   * The one series that separates *"the furnace is standing idle"* from
+   * *"there is no furnace"*. Both are zero in `producedByKind`; only this tells
+   * them apart, and the whole claim of the grade ladder is that they are
+   * different universes.
+   */
+  readonly gradeGateShut: number;
   /** The closing stocks by kind, `fp`. */
   readonly remainingByKind: MaterialAmounts;
   /** Which kinds could not pay a claimant this tick. */
@@ -1913,6 +1946,10 @@ export function worldSystem(
         materialsProduced: totalAmount(produced),
         materialsRemaining: totalAmount(closing),
         producedByKind: produced,
+        gradesClosing: grades.closing,
+        refiningPaid: consumption.spent.refining,
+        gradeConvertedAway: grades.convertedAway,
+        gradeGateShut: economy.gradeGateShut,
         remainingByKind: closing,
         shortKinds: consumption.shortKinds,
         economicNodes: economy.contributingNodes,

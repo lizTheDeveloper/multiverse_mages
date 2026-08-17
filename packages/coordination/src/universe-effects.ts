@@ -442,9 +442,22 @@ export function universeEconomyBonuses(
   // on practice would make ore appear only in the ticks somebody happened to be
   // committed to rock.
   const activeNodes = new Set<ContentId>();
-  const gradeDemands: ActiveDemand[] = [];
   for (const contribution of gatherEffects(instances, gatherDeps)) {
     activeNodes.add(contribution.nodeId);
+  }
+  // **Demands come from the practised set, not from `instances`, and the two
+  // must not drift.** A demand exists only to gate a `resource-yield`
+  // contribution, and those are gathered from `practised` — so collecting
+  // demands from the wider set would charge a furnace for ore on a tick when
+  // nobody was working it and its yield was refused anyway by the practice
+  // gate. A gate that eats what it refuses is the drain this design is
+  // explicitly not. Gathered once into an array rather than twice, because the
+  // gate has to be computed before the loop that reads it.
+  const economicContributions = gatherEffects(practised, gatherDeps);
+  const gradeDemands: ActiveDemand[] = [];
+  for (const contribution of economicContributions) {
+    if (contribution.target !== 'universe') continue;
+    if (contribution.primitiveId !== 'resource-yield') continue;
     if (contribution.requires === undefined) continue;
     gradeDemands.push({
       nodeId: contribution.nodeId,
@@ -482,7 +495,7 @@ export function universeEconomyBonuses(
     if (contribution.magnitude !== 0) buildRate.push(contribution.magnitude);
   }
 
-  for (const contribution of gatherEffects(practised, gatherDeps)) {
+  for (const contribution of economicContributions) {
     if (contribution.target !== 'universe') continue;
     if (contribution.primitiveId !== 'resource-yield') continue;
     contributingNodes += 1;

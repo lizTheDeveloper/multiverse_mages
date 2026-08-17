@@ -107,14 +107,12 @@ export type {
   GradedStock,
 } from './grades.js';
 export {
-  LOSSLESS_RATIO,
   NO_GRADED_STOCK,
   demandKey,
   gradedColumn,
   metDemands,
   rawRefiningDemand,
   settleGrades,
-  zeroGradedStock,
 } from './grades.js';
 
 export type { TeachingWeightSource, TeachingWeights } from './teaching.js';

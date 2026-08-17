@@ -20,7 +20,6 @@ import { FP_ONE, mul } from '@mm/sim-core';
 
 import type { ActiveDemand, GradedStock } from '../../src/index.js';
 import {
-  LOSSLESS_RATIO,
   NO_GRADED_STOCK,
   demandKey,
   gradedColumn,
@@ -75,7 +74,8 @@ describe('the shipped content really is a two-rung ladder, so the rest of this f
   it('gives the rung whose gloss states no loss a lossless ratio, and the other one a rate', () => {
     // "the working improves a thing by one step" — no loss is mentioned, so the
     // whole cost of the rung is the raw stone it draws.
-    expect(GROUND.ratio).toBe(LOSSLESS_RATIO);
+    expect(GROUND.ratio).toBe(FP_ONE);
+    expect(mul(GROUND.inputPerTick, GROUND.ratio)).toBe(GROUND.inputPerTick);
     // "it becomes iron at roughly the rate the claim goes unchallenged" — a
     // rate, so below one.
     expect(UPPER.ratio).toBeLessThan(FP_ONE);
