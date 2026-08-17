@@ -48,6 +48,7 @@ import {
   LOCATION_KIND,
   MAGE,
   MAGE_ROLE,
+  MATERIAL_GRADE,
   MATERIAL_STOCK,
   MID_RAID_CHANGE,
   OBJECTIVE,
@@ -135,6 +136,14 @@ export function populatedWorld(): PopulatedWorld {
     essence: 0,
     insight: 0,
     passage: 0,
+  });
+
+  // Refined stone, on the same handle for the same reason: grades are a second
+  // axis on the stock, not a second economy. Both columns nonzero and unequal,
+  // so a round-trip that transposed them would fail rather than agree.
+  attachRecord(state, MATERIAL_GRADE, universe, {
+    stoneWorked: 40 * FP_ONE,
+    stoneFine: 7 * FP_ONE,
   });
 
   const edict = state.entities.create();

@@ -254,6 +254,66 @@ export const MATERIAL_STOCK_FIELDS_MATCH: KeysMatch<MaterialStockRecord, typeof 
   true;
 
 /**
+ * ## Refined material — a second axis on the stocks, not more of them
+ *
+ * `mt-turn-the-poor-ore` specifies a graded material and an ordinal on it —
+ * *"Change worthless rock into ore that is merely bad. Never into good ore: the
+ * working improves a thing by one step and has never once been made to take
+ * two."* Three grades, and a working moves exactly one step along them.
+ *
+ * ## Why this is a dimension and not four more kinds
+ *
+ * The obvious shape is to append `ore` and `iron` to {@link MATERIAL_KINDS} and
+ * be done. It is wrong, and the cost is concrete rather than aesthetic:
+ * `LAND_MATERIAL_KINDS` is the denominator of `territoryYieldShares`, so a
+ * fourth land kind divides every existing share by a larger number and **every
+ * territory in the game produces a different mix than it did** — a content
+ * retune disguised as a schema addition, landing on the one function whose
+ * whole design note is that territory decides the mix. Grades as a second axis
+ * move no share at all: `LAND_MATERIAL_KINDS` is untouched, `landTotal` is
+ * untouched, and a universe that never refines anything produces exactly what
+ * it produced before.
+ *
+ * ## Grade 0 is not here, and that is the absent-value reading
+ *
+ * The raw stock stays in {@link MATERIAL_STOCK}, unmoved and unrenamed. This
+ * component holds only what has been *improved*, so **an absent row reads as
+ * grade zero and never as a shortage** — the same guarantee `grant-budget` gave
+ * by reading an absent row as unbounded, and the reason every save written
+ * before grades existed behaves identically after them. Refining is additive
+ * supply drawn from the raw stock through a claimant, never a re-partition of a
+ * stock something else was already counting.
+ *
+ * ## Two columns, because two is what the writing pays for
+ *
+ * Only `stone` carries a ladder: it is the one kind with a producer
+ * (`mt-turn-the-poor-ore`, `mn-call-it-iron-until-it-is`) *and* a consumer
+ * (`cig-the-standing-furnace` runs the great foundries on ore;
+ * `iig-the-colour-of-ready-iron` reads the colour of ready iron) authored in
+ * `node.json`. A column no rung can fill and nothing can spend is the shape of
+ * a metric that could only ever read zero, and `contracts.md` §2.12 records
+ * what widening it would cost.
+ */
+export const MATERIAL_GRADE = {
+  name: 'material-grade',
+  fields: {
+    stoneWorked: 'i32',
+    stoneFine: 'i32',
+  },
+} as const satisfies ComponentSpec<ComponentFields>;
+
+/** One row per universe holding refined material. Absent means nothing refined. */
+export interface MaterialGradeRecord {
+  /** Grade 1 — `mt-turn-the-poor-ore`'s *"ore that is merely bad"*. `fp`. */
+  stoneWorked: Fp;
+  /** Grade 2 — `mn-call-it-iron-until-it-is`'s iron, the grade above it. `fp`. */
+  stoneFine: Fp;
+}
+
+export const MATERIAL_GRADE_FIELDS_MATCH: KeysMatch<MaterialGradeRecord, typeof MATERIAL_GRADE> =
+  true;
+
+/**
  * One entry of §1.1's `edicts` array.
  *
  * A new edict may be issued only while `count < edictBudget`. Existing edicts
@@ -1377,6 +1437,12 @@ export const WORLD_COMPONENTS = [
   // `KNOWLEDGE_INSTANCE`. It goes last, because section order is this list's
   // order and every revision-6 save on disk was written with twenty sections.
   KNOWLEDGE_FIDELITY,
+  // Revision 12, and the argument has not changed once in eleven additions:
+  // `material-grade` reads as if it belonged beside `MATERIAL_STOCK`, whose
+  // second axis it is, and it goes **last** because section order in a snapshot
+  // is this list's order and every revision-11 save on disk was written with
+  // twenty-one sections.
+  MATERIAL_GRADE,
 ] as const satisfies readonly ComponentSpec<ComponentFields>[];
 
 /** Engagement-scale components, in snapshot order. */

@@ -47,6 +47,7 @@ import {
   GRANT_BUDGET,
   KNOWLEDGE_FIDELITY,
   MAGE,
+  MATERIAL_GRADE,
   MATERIAL_STOCK,
   TERRITORY_HOLDING,
   UNIVERSE,
@@ -61,6 +62,7 @@ import {
   addMidRaidChange,
   addTerritorySiting,
   addKnowledgeFidelity,
+  addMaterialGrade,
   attachRecord,
   collectRecords,
   componentOf,
@@ -146,25 +148,25 @@ function withLegacyMaterialsField(
 /** The world as a build that had never heard of goal commitments saw it. */
 function revisionOneEnvelope(): SnapshotEnvelope {
   return withLegacyMaterialsField(
-    envelopeWithout(GOAL_COMMITMENT.name, EFFORT_PROGRESS.name, MATERIAL_STOCK.name, ...GOD_SECTIONS, GRANT_BUDGET.name, BAR_PHASE.name, MID_RAID_CHANGE.name, ...SITING_SECTIONS, KNOWLEDGE_FIDELITY.name),
+    envelopeWithout(GOAL_COMMITMENT.name, EFFORT_PROGRESS.name, MATERIAL_STOCK.name, ...GOD_SECTIONS, GRANT_BUDGET.name, BAR_PHASE.name, MID_RAID_CHANGE.name, ...SITING_SECTIONS, KNOWLEDGE_FIDELITY.name, MATERIAL_GRADE.name),
   );
 }
 
 /** The world as the build that added the goal commitment, and nothing after it, saw it. */
 function revisionTwoEnvelope(): SnapshotEnvelope {
   return withLegacyMaterialsField(
-    envelopeWithout(EFFORT_PROGRESS.name, MATERIAL_STOCK.name, ...GOD_SECTIONS, GRANT_BUDGET.name, BAR_PHASE.name, MID_RAID_CHANGE.name, ...SITING_SECTIONS, KNOWLEDGE_FIDELITY.name),
+    envelopeWithout(EFFORT_PROGRESS.name, MATERIAL_STOCK.name, ...GOD_SECTIONS, GRANT_BUDGET.name, BAR_PHASE.name, MID_RAID_CHANGE.name, ...SITING_SECTIONS, KNOWLEDGE_FIDELITY.name, MATERIAL_GRADE.name),
   );
 }
 
 /** The world as the last build before the god had verbs saw it. */
 function revisionThreeEnvelope(): SnapshotEnvelope {
-  return withLegacyMaterialsField(envelopeWithout(MATERIAL_STOCK.name, ...GOD_SECTIONS, GRANT_BUDGET.name, BAR_PHASE.name, MID_RAID_CHANGE.name, ...SITING_SECTIONS, KNOWLEDGE_FIDELITY.name));
+  return withLegacyMaterialsField(envelopeWithout(MATERIAL_STOCK.name, ...GOD_SECTIONS, GRANT_BUDGET.name, BAR_PHASE.name, MID_RAID_CHANGE.name, ...SITING_SECTIONS, KNOWLEDGE_FIDELITY.name, MATERIAL_GRADE.name));
 }
 
 /** The world as the last build before the economy differentiated into kinds saw it. */
 function revisionFourEnvelope(materialsValue: number = LEGACY_MATERIALS_VALUE): SnapshotEnvelope {
-  return withLegacyMaterialsField(envelopeWithout(MATERIAL_STOCK.name, GRANT_BUDGET.name, BAR_PHASE.name, MID_RAID_CHANGE.name, ...SITING_SECTIONS, KNOWLEDGE_FIDELITY.name), materialsValue);
+  return withLegacyMaterialsField(envelopeWithout(MATERIAL_STOCK.name, GRANT_BUDGET.name, BAR_PHASE.name, MID_RAID_CHANGE.name, ...SITING_SECTIONS, KNOWLEDGE_FIDELITY.name, MATERIAL_GRADE.name), materialsValue);
 }
 
 /**
@@ -210,7 +212,7 @@ function withThreeKindStock(envelope: SnapshotEnvelope): SnapshotEnvelope {
 /** The world as the last build whose founding grants were unlimited saw it. */
 function revisionFiveEnvelope(): SnapshotEnvelope {
   return withThreeKindStock(
-    envelopeWithout(GRANT_BUDGET.name, BAR_PHASE.name, MID_RAID_CHANGE.name, ...SITING_SECTIONS, KNOWLEDGE_FIDELITY.name),
+    envelopeWithout(GRANT_BUDGET.name, BAR_PHASE.name, MID_RAID_CHANGE.name, ...SITING_SECTIONS, KNOWLEDGE_FIDELITY.name, MATERIAL_GRADE.name),
   );
 }
 
@@ -226,28 +228,33 @@ function revisionFiveEnvelope(): SnapshotEnvelope {
  */
 function revisionSixEnvelope(): SnapshotEnvelope {
   return withThreeKindStock(
-    envelopeWithout(BAR_PHASE.name, MID_RAID_CHANGE.name, ...SITING_SECTIONS, KNOWLEDGE_FIDELITY.name),
+    envelopeWithout(BAR_PHASE.name, MID_RAID_CHANGE.name, ...SITING_SECTIONS, KNOWLEDGE_FIDELITY.name, MATERIAL_GRADE.name),
   );
 }
 
 /** The world as the last build before the god's law had a clock saw it. */
 function revisionSevenEnvelope(): SnapshotEnvelope {
-  return envelopeWithout(BAR_PHASE.name, MID_RAID_CHANGE.name, ...SITING_SECTIONS, KNOWLEDGE_FIDELITY.name);
+  return envelopeWithout(BAR_PHASE.name, MID_RAID_CHANGE.name, ...SITING_SECTIONS, KNOWLEDGE_FIDELITY.name, MATERIAL_GRADE.name);
 }
 
 /** The world as the last build that believed a raid was frozen policy saw it. */
 function revisionEightEnvelope(): SnapshotEnvelope {
-  return envelopeWithout(MID_RAID_CHANGE.name, ...SITING_SECTIONS, KNOWLEDGE_FIDELITY.name);
+  return envelopeWithout(MID_RAID_CHANGE.name, ...SITING_SECTIONS, KNOWLEDGE_FIDELITY.name, MATERIAL_GRADE.name);
 }
 
 /** The world as the last build in which a university stood nowhere saw it. */
 function revisionNineEnvelope(): SnapshotEnvelope {
-  return envelopeWithout(...SITING_SECTIONS, KNOWLEDGE_FIDELITY.name);
+  return envelopeWithout(...SITING_SECTIONS, KNOWLEDGE_FIDELITY.name, MATERIAL_GRADE.name);
+}
+
+/** The world as the last build in which no rock had ever been improved saw it. */
+function revisionElevenEnvelope(): SnapshotEnvelope {
+  return envelopeWithout(MATERIAL_GRADE.name);
 }
 
 /** The world as the last build before scribing fidelity saw it. */
 function revisionTenEnvelope(): SnapshotEnvelope {
-  return envelopeWithout(KNOWLEDGE_FIDELITY.name);
+  return envelopeWithout(KNOWLEDGE_FIDELITY.name, MATERIAL_GRADE.name);
 }
 
 describe('the world-schema revision is read off the snapshot itself', () => {
@@ -267,6 +274,7 @@ describe('the world-schema revision is read off the snapshot itself', () => {
     expect(worldSchemaVersionOf(revisionEightEnvelope())).toBe(8);
     expect(worldSchemaVersionOf(revisionNineEnvelope())).toBe(9);
     expect(worldSchemaVersionOf(revisionTenEnvelope())).toBe(10);
+    expect(worldSchemaVersionOf(revisionElevenEnvelope())).toBe(11);
     expect(worldSchemaVersionOf(stateToEnvelope(populatedWorld().state))).toBe(
       WORLD_SCHEMA_VERSION,
     );
@@ -279,7 +287,7 @@ describe('the world-schema revision is read off the snapshot itself', () => {
     // hash in the project and fails the fixtures with a version error rather
     // than a behaviour diff.
     expect(SNAPSHOT_VERSION).toBe(1);
-    expect(WORLD_SCHEMA_VERSION).toBe(11);
+    expect(WORLD_SCHEMA_VERSION).toBe(12);
   });
 });
 
@@ -896,6 +904,12 @@ describe('an older save loads into a current world', () => {
       MID_RAID_CHANGE,
       TERRITORY_HOLDING,
       UNIVERSITY_SITE,
+      // And `material-grade`. `addMaterialGrade` appends an **empty** section,
+      // so a revision-1 save comes forward holding no refined material at all —
+      // which is the absent-value reading working, not a loss. The fixture
+      // seeds a row for its own reasons and it has to come off for the two
+      // sides to be the same world.
+      MATERIAL_GRADE,
     ];
     for (const spec of godSpecs) {
       const store = componentOf(state, spec);
@@ -1002,8 +1016,14 @@ describe('migrating a revision-6 world snapshot forward', () => {
     // property of this component; the identity of its predecessor is not, so
     // that half is dropped rather than re-pinned to a name the next append would
     // move again.
+    //
+    // And the same append has now happened again: revision 12's `material-grade`
+    // sits last, so this assertion names *it*. That is the assertion doing its
+    // job rather than rotting — what it pins is "the newest component is last",
+    // which is the property section order depends on, and the name it carries is
+    // whichever component most recently arrived.
     const declared = WORLD_COMPONENTS.map((spec) => spec.name);
-    expect(declared[declared.length - 1]).toBe(KNOWLEDGE_FIDELITY.name);
+    expect(declared[declared.length - 1]).toBe(MATERIAL_GRADE.name);
   });
 
   it('leaves the container format version exactly where it found it', () => {
@@ -1033,5 +1053,53 @@ describe('migrating a revision-6 world snapshot forward', () => {
       defineWorldStateSchema(),
     );
     expect(componentOf(migrated, KNOWLEDGE_FIDELITY).size).toBe(0);
+  });
+});
+
+describe('migrating a revision-11 world snapshot forward (addMaterialGrade)', () => {
+  it('appends material-grade as an empty section, in last position', () => {
+    const before = revisionElevenEnvelope();
+    const after = addMaterialGrade.migrate(before);
+
+    const appended = after.components[after.components.length - 1];
+    expect(appended?.name).toBe(MATERIAL_GRADE.name);
+    // Zero rows, not zeroed rows. A universe that never refined anything holds
+    // no refined material, and a synthesised zero row would be a claim that
+    // somebody looked.
+    expect(appended?.slots.length).toBe(0);
+    expect(appended?.values.length).toBe(0);
+    expect(appended?.fields.map((field) => field.name)).toEqual(Object.keys(MATERIAL_GRADE.fields));
+  });
+
+  it('leaves the container format version and the raw stock exactly where it found them', () => {
+    const before = revisionElevenEnvelope();
+    const after = addMaterialGrade.migrate(before);
+    expect(after.version).toBe(before.version);
+    expect(after.version).toBe(SNAPSHOT_VERSION);
+    // Grades are a second axis on the stock, not a re-partition of it: an
+    // eleven-revision save must come forward holding every unit of raw stone it
+    // went in with, or the migration has quietly spent a resource.
+    const stockBefore = before.components.find((component) => component.name === MATERIAL_STOCK.name);
+    const stockAfter = after.components.find((component) => component.name === MATERIAL_STOCK.name);
+    expect(stockAfter).toEqual(stockBefore);
+  });
+
+  it('does not mutate the envelope it was given', () => {
+    const before = revisionElevenEnvelope();
+    const componentCount = before.components.length;
+    addMaterialGrade.migrate(before);
+    expect(before.components).toHaveLength(componentCount);
+    expect(before.components.some((component) => component.name === MATERIAL_GRADE.name)).toBe(
+      false,
+    );
+  });
+
+  it('reads the migrated envelope as revision 12, so the walk terminates', () => {
+    // The positive control on the step's own marker. `migrateWorldEnvelope`
+    // throws if a step leaves behind no marker its target revision is
+    // recognised by — this asserts the marker landed rather than trusting the
+    // loop's error not to fire.
+    expect(worldSchemaVersionOf(revisionElevenEnvelope())).toBe(11);
+    expect(worldSchemaVersionOf(addMaterialGrade.migrate(revisionElevenEnvelope()))).toBe(12);
   });
 });
