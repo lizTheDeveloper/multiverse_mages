@@ -150,7 +150,12 @@ export {
   vitalityIndex,
 } from './knowledge-vitality.js';
 
-export type { WorldSimulation, WorldStepDeps, WorldStepReport } from './world-step.js';
+export type {
+  ClaimantFlow,
+  WorldSimulation,
+  WorldStepDeps,
+  WorldStepReport,
+} from './world-step.js';
 export { defineWorldSimulation, worldSystem } from './world-step.js';
 /**
  * The scribing queue the world loop asks the populace for — §5's written record,

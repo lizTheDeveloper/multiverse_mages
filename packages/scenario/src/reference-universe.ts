@@ -1430,6 +1430,12 @@ export function referenceScenario(
       scenario: {
         scenarioId,
         catalogue: content.catalogue,
+        // The per-tick flow ledger, handed to `agent-api` here because this is
+        // the only package that has both in scope. `Scenario.flowReport` says
+        // why the edge cannot run the other way; the assignment is what holds
+        // `FlowReportSource` structurally equal to `WorldStepReport`, so a field
+        // renamed in `coordination` fails to build on this line.
+        flowReport: simulation.lastReport,
         create: (runSeed: number, config: ScenarioConfig): SimState => {
           const state = cheat(
             buildReferenceState({
@@ -1509,6 +1515,11 @@ export function referenceScenario(
       // first would burn every round on a refusal — measured, and documented on
       // `inviteScholarCandidates`.
       portalNodes: [...(content.deps.god?.portalNodes ?? [])],
+      // The raiding half of the same wire. Both literals carry it or a run that
+      // raids draws no ledger while a run that does not draws one — which reads
+      // as "the economy stopped" rather than as two scenario objects that were
+      // edited one at a time.
+      flowReport: simulation.lastReport,
       create: (runSeed: number, config: ScenarioConfig): SimState => {
         // A new episode is a new run: the raid log belongs to one, and a
         // scenario reused across two would report the first one's raids in the

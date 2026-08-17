@@ -269,6 +269,23 @@ export type {
 } from './academy.js';
 export { describeAcademy } from './academy.js';
 
+/**
+ * §4.4's fifth projection: where a tick's material came from and where it went.
+ *
+ * The first one that is not a reading of state. `./flow.ts` argues it, and
+ * `economy-flow-models.md` §5.2 is the finding behind it — *"every metric in the
+ * registry measures a level, a rate, or a distribution at a checkpoint. None
+ * reconciles flows."*
+ */
+export type {
+  FlowAmounts,
+  FlowBreach,
+  FlowClaimant,
+  FlowLedger,
+  FlowReportSource,
+} from './flow.js';
+export { FLOW_KINDS, describeFlow } from './flow.js';
+
 export type { AgentRng, AgentRngInput } from './agent-rng.js';
 export { agentRng } from './agent-rng.js';
 
