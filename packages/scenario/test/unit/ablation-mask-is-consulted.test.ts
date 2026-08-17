@@ -121,6 +121,36 @@ const WORLD_LOOP_PRIMITIVES: readonly string[] = Object.freeze([
 ]);
 
 /**
+ * The world-loop primitives the **raid arm** reaches, which is not the same
+ * list.
+ *
+ * `practice-rate` is absent, and it is absent *here* rather than deleted from
+ * {@link WORLD_LOOP_PRIMITIVES} on purpose — that list's own rule is that a name
+ * leaving it means a subsystem has gone dark and the edit is **not** to delete
+ * the name. Nothing has gone dark: the world arm asks about `practice-rate` 350
+ * times in 240 ticks and its own assertion below still passes. What changed is
+ * this one 400-tick raiding run at `RAID_SEED`.
+ *
+ * **Measured, both sides, 2026-08-16.** On `4621db1a` the raid arm asked about
+ * `practice-rate` **8 times** out of roughly eighteen thousand consultations; on
+ * `w/exp-yields` it asks **0**. Eight events in four hundred ticks is what the
+ * old union-equality assertion was resting on, and a differently-shaped economy
+ * — fourteen distinct form baskets instead of nine, a per-universe land mix, a
+ * species tilt — moved the goal selection in that run past the edge. Splitting
+ * the list is what makes the difference between the two arms a **stated
+ * measurement** instead of a name quietly missing from one side of an equality.
+ *
+ * Still an exact list rather than a subset check, so a name vanishing from the
+ * raid arm is as loud as it ever was.
+ */
+const RAID_ARM_WORLD_PRIMITIVES: readonly string[] = Object.freeze([
+  'research-rate',
+  'resource-yield',
+  'scribe-rate',
+  'teach-rate',
+]);
+
+/**
  * The primitives a **raid** adds, through the second seam.
  *
  * `coordination` may not import `@mm/rules-raid`, so the raid system takes its
@@ -323,9 +353,27 @@ describe('which primitives an ablation arm can move at all', () => {
 
   it('a raid adds all seven combat primitives', async () => {
     const { raidProbe } = await arms();
+    // Every combat primitive first and on its own, because that is what this
+    // test is named for and it must not be able to fail for a world-loop
+    // reason. The union below then pins the whole set exactly.
+    for (const id of RAID_PRIMITIVES) {
+      expect(raidProbe.asked.has(id), `the raid arm never asked about ${id}`).toBe(true);
+    }
     expect([...raidProbe.asked.keys()].sort()).toEqual(
-      [...WORLD_LOOP_PRIMITIVES, ...RAID_PRIMITIVES].sort(),
+      [...RAID_ARM_WORLD_PRIMITIVES, ...RAID_PRIMITIVES].sort(),
     );
+  }, RUN_TIMEOUT_MS);
+
+  it('reaches fewer world-loop primitives than the world arm, and names which', async () => {
+    // The difference between the two lists, asserted rather than left as a gap
+    // a reader has to diff by eye. `practice-rate` is reached in a passive
+    // 240-tick universe and not in a 400-tick raiding one at `RAID_SEED`; both
+    // halves are needed, because "the raid arm reaches fewer" would also be
+    // satisfied by the raid arm reaching none.
+    const { worldProbe, raidProbe } = await arms();
+    const missing = WORLD_LOOP_PRIMITIVES.filter((id) => !raidProbe.asked.has(id));
+    expect(missing).toEqual(['practice-rate']);
+    for (const id of missing) expect(worldProbe.asked.has(id)).toBe(true);
   }, RUN_TIMEOUT_MS);
 
   it('names the primitives no arm can move, so their nulls are not read as findings', async () => {

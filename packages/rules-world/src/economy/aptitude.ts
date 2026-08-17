@@ -45,6 +45,18 @@
  * good at the material its magic is about"* is derived rather than authored
  * twice.
  *
+ * **Only the form key is read, and that is a decision rather than an
+ * oversight.** `coordination.ts` says an `affinities` key may name *either* a
+ * cell or a form, and `target-appeal.ts` resolves both. This looks up the form
+ * alone, because the material claim lives on the form: a cell is technique ×
+ * form, and `creo-terram` and `perdo-terram` are two things you can do to the
+ * same stuff. A species affinity for one *technique's* worth of earth is a
+ * statement about how it prefers to work, not about what earth is made of, and
+ * `routeYieldByForm` — which is the table this derivation borrows — is keyed on
+ * the form for exactly the same reason. All thirteen shipped entries are
+ * form-keyed today; a cell-keyed one would bias research and derive no tilt,
+ * which `production-aptitude.test.ts` pins so the reading cannot become silent.
+ *
  * **The coupling is deliberate and worth stating.** Re-authoring `form.json`
  * therefore moves species aptitude as well as routing. That is the intended
  * reading — a form's weights *are* the statement of what that form is made of,

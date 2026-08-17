@@ -83,17 +83,43 @@ const rows = forms.map((form) => {
   };
 });
 
-// The positive control for the collapse detector itself: a form is compared
-// against its own key and must be found equal to it. A grouper that reported no
-// collapses because it never matched anything would fail this.
-const selfMatch = rows.every((row) => rows.filter((other) => other.key === row.key).length >= 1);
-if (!selfMatch) {
-  console.error('PROBE BROKEN: a form did not match its own routed basket. The grouper is wrong.');
+/** Groups rows by their routed basket. The one place a collapse is detected. */
+const groupByBasket = (input) => {
+  const byKey = new Map();
+  for (const row of input) byKey.set(row.key, [...(byKey.get(row.key) ?? []), row.id]);
+  return byKey;
+};
+
+// **The positive control for the collapse detector, fed an input it must
+// reject.**
+//
+// The check that stood here was `rows.filter((other) => other.key === row.key)
+// .length >= 1`, which can never fail — every row matches itself. That is the
+// exact "checker that answers about the wrong input" shape this file's comments
+// cite, sitting inside the check meant to guard against it. Replaced with a
+// synthetic pair carrying the same basket: the grouper must report exactly that
+// one collapse, and it must report exactly zero on a synthetic pair carrying
+// different baskets. Neither can pass by accident.
+const CONTROL_DUPLICATE = [
+  { id: 'control-a', key: '1/2/3' },
+  { id: 'control-b', key: '1/2/3' },
+];
+const CONTROL_DISTINCT = [
+  { id: 'control-a', key: '1/2/3' },
+  { id: 'control-b', key: '3/2/1' },
+];
+const positive = [...groupByBasket(CONTROL_DUPLICATE).values()].filter((ids) => ids.length > 1);
+const negative = [...groupByBasket(CONTROL_DISTINCT).values()].filter((ids) => ids.length > 1);
+if (positive.length !== 1 || positive[0].join(',') !== 'control-a,control-b' || negative.length !== 0) {
+  console.error(
+    'PROBE BROKEN: the collapse detector failed its own controls — it reported ' +
+      `${String(positive.length)} collapse(s) on a known duplicate pair and ${String(negative.length)} ` +
+      'on a known distinct pair. Nothing below is a statement about any form.',
+  );
   process.exit(3);
 }
 
-const byKey = new Map();
-for (const row of rows) byKey.set(row.key, [...(byKey.get(row.key) ?? []), row.id]);
+const byKey = groupByBasket(rows);
 const collapses = [...byKey.values()].filter((ids) => ids.length > 1);
 
 const payload = {

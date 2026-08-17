@@ -110,6 +110,35 @@ describe('neutral aptitude is the identity, exactly', () => {
     expect(basket(speciesLandAptitude(blank, FORMS))).toEqual(basket(undefined));
   });
 
+  it('is what a cell-keyed affinity derives, because the material lives on the form', () => {
+    // `coordination.ts` records that an `affinities` key may name a **cell or a
+    // form**, and `target-appeal.ts` resolves both. This derivation reads the
+    // form alone, and the reading is pinned here rather than left implicit: a
+    // future `creo-terram: 1536` entry would bias what a species studies and
+    // derive no tilt at all, and a reader finding that surprising should find
+    // this assertion rather than an absence.
+    //
+    // The reason is that a cell is technique × form — `creo-terram` and
+    // `perdo-terram` are two things you can do to the same stuff — so an
+    // affinity for one of them is a statement about how a species prefers to
+    // work rather than about what earth is made of. `routeYieldByForm`, whose
+    // table this borrows, is keyed on the form for the same reason.
+    const cellKeyed: SpeciesRecord = {
+      ...speciesNamed('human'),
+      affinities: { 'creo-terram': 1536, 'rego-terram': 1536 },
+    };
+    expect(speciesLandAptitude(cellKeyed, FORMS)).toEqual(NEUTRAL_LAND_APTITUDE);
+
+    // Positive control on the line above: the *form* key of the same magnitude
+    // must tilt, or the assertion would be passing on a function that ignores
+    // `affinities` altogether.
+    const formKeyed: SpeciesRecord = {
+      ...speciesNamed('human'),
+      affinities: { terram: 1536 },
+    };
+    expect(speciesLandAptitude(formKeyed, FORMS).stone).toBeGreaterThan(FP_ONE);
+  });
+
   it('is the negative control for every claim below: an untilted basket is not all-food', () => {
     // The check that the instrument can read anything at all. If the shipped
     // land mix were degenerate — the whole share in `food` — a "dwarves make
