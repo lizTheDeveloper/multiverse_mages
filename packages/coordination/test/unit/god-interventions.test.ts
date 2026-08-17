@@ -35,6 +35,7 @@ import {
   EDICT_KIND,
   ENCOURAGED_CELL,
   KNOWLEDGE_INSTANCE,
+  LOCATION_KIND,
   MAGE,
   MAGE_ROLE,
   TERMINAL_REASON,
@@ -55,7 +56,12 @@ import { KnowledgeSubsystem } from '@mm/rules-magic';
 import type { InterventionDeps } from '../../src/index.js';
 import { ACTION, emphasisAt, interventionCost, resolveInterventions } from '../../src/index.js';
 
-import { catalogAndCells, registry } from './world-fixtures.js';
+import {
+  catalogAndCells,
+  registry,
+  shippedTraditionResolver,
+  traditionNamed,
+} from './world-fixtures.js';
 import { constants, costs, godWorld, nodesCarrying } from './god-fixtures.js';
 
 const C = constants();
@@ -706,6 +712,90 @@ describe('changing tradition is a single ruinous act', () => {
     const b = bench();
     const held = readUniverse(b.state, b.universe).traditionId;
     expect(resolve(b, [{ kind: ACTION.changeTradition, params: [held] }]).refused).toBe(1);
+  });
+
+  it('with the hooks resolved, burns what the incoming store kind cannot hold', () => {
+    // The wired arm. The sibling above — "destroys and duplicates no knowledge
+    // instance of its own accord" — is the *control*, and it stays true: a bench
+    // with no `traditions` resolver is a world where action 13 moves an id and
+    // nothing else, which is what every caller written before this saw.
+    const b = bench({ mages: 1 });
+    // The bench's universe holds whichever tradition interned first, and that is
+    // the Art of Memory — so say which one is being *left*, or the change is a
+    // no-op against the tradition already held.
+    componentOf(b.state, UNIVERSE).set(
+      b.universe,
+      'traditionId',
+      traditionNamed('vancian-memorization'),
+    );
+    const { nodeId } = grantableNode(b.state, b.universe);
+    resolve(b, [{ kind: ACTION.grantFoundingKnowledge, params: [mage(b, 0), nodeId] }]);
+
+    // Put the granted instance somewhere `store: palace` cannot hold it. A
+    // grant lands in `mind`, which every store kind holds — so a change that
+    // touched only minds would be indistinguishable from one that touched
+    // nothing, and this test would pass on the control arm too.
+    const instances = componentOf(b.state, KNOWLEDGE_INSTANCE);
+    const written = collectRecords(b.state, KNOWLEDGE_INSTANCE)[0]?.handle;
+    if (written === undefined) throw new Error('the grant created no instance');
+    instances.set(written, 'locationKind', LOCATION_KIND.library);
+    instances.set(written, 'locationId', 1);
+    b.deps.knowledge.rebuild();
+
+    const palace = traditionNamed('art-of-memory');
+    const wired: InterventionDeps = { ...b.deps, traditions: shippedTraditionResolver() };
+    const report = resolveInterventions(
+      b.state,
+      [{ kind: ACTION.changeTradition, params: [palace] }],
+      0,
+      TIME_MODE.world,
+      wired,
+    );
+
+    expect(report.applied).toBe(1);
+    expect(readUniverse(b.state, b.universe).traditionId).toBe(palace);
+    // Gone. `store: palace` holds `mind` and `palace` and nothing else, so a
+    // shelved copy has nowhere legal to live and vision §5's "knowledge is
+    // physical" says what happens to it.
+    expect(collectRecords(b.state, KNOWLEDGE_INSTANCE)).toHaveLength(0);
+  });
+
+  it('reports the nodes it emptied, so a tradition change reaches nodesLost', () => {
+    // The positive control for the loss channel. The 480-tick reference probe
+    // destroys 292 shelved instances and loses *zero* nodes, because its mages
+    // collectively know everything on the shelves — a true zero that looks
+    // exactly like a dead wire. Here the only copy in the universe is the
+    // shelved one, so the count must be 1.
+    const b = bench({ mages: 1 });
+    componentOf(b.state, UNIVERSE).set(
+      b.universe,
+      'traditionId',
+      traditionNamed('vancian-memorization'),
+    );
+    const { nodeId } = grantableNode(b.state, b.universe);
+    resolve(b, [{ kind: ACTION.grantFoundingKnowledge, params: [mage(b, 0), nodeId] }]);
+    const instances = componentOf(b.state, KNOWLEDGE_INSTANCE);
+    const only = collectRecords(b.state, KNOWLEDGE_INSTANCE)[0]?.handle;
+    if (only === undefined) throw new Error('the grant created no instance');
+    instances.set(only, 'locationKind', LOCATION_KIND.library);
+    instances.set(only, 'locationId', 1);
+    b.deps.knowledge.rebuild();
+
+    let lost = 0;
+    resolveInterventions(
+      b.state,
+      [{ kind: ACTION.changeTradition, params: [traditionNamed('art-of-memory')] }],
+      0,
+      TIME_MODE.world,
+      {
+        ...b.deps,
+        traditions: shippedTraditionResolver(),
+        onKnowledgeLost: (nodes) => {
+          lost += nodes;
+        },
+      },
+    );
+    expect(lost).toBe(1);
   });
 
   it('is unaffordable to a universe at a young tier, structurally rather than by a gate', () => {
