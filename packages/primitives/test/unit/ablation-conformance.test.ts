@@ -79,7 +79,14 @@ describe('the ablation conformance check over shipped content', () => {
     const fromDocument = contractPrimitiveIds();
     // Guard against the parser silently matching nothing and the check below
     // then passing over an empty set.
-    expect(fromDocument.length).toBe(17);
+    //
+    // **Eighteen since the wiring merges, and this literal is a parser guard
+    // rather than a claim about behaviour** — the assertion that matters is the
+    // set equality below it. Two branches each added a row to §3's table:
+    // `practice-rate` and `knowledge-corrupt`. Neither side's count was a count
+    // of the union, which is the same shape as `godConstants` and the shipped
+    // primitive count, and it was COUNTED off `contracts.md` on the merged tree.
+    expect(fromDocument.length).toBe(18);
     expect([...report.checked].map((row) => row.primitiveId).sort()).toEqual(
       [...fromDocument].sort(),
     );
