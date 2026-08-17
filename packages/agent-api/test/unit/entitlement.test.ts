@@ -146,7 +146,7 @@ describe('unclassifiedTraits (step 2)', () => {
    * undecided count below moves by the same five and no existing row was
    * reclassified to absorb them.
    */
-  it('covers the 126 traits: 108 at be446a6, plus seven merged changes', () => {
+  it('covers the 131 traits: 108 at be446a6, plus nine merged changes', () => {
     let traits = 0;
     for (const spec of [...WORLD_COMPONENTS, ...ENGAGEMENT_COMPONENTS]) {
       traits += Object.keys(spec.fields).length;
@@ -156,8 +156,11 @@ describe('unclassifiedTraits (step 2)', () => {
     // two and `university-site`'s one (W24), and `knowledge-fidelity`'s two
     // (W190) — plus `material-economy`'s four new `material-stock` *fields*,
     // which add traits without adding a component. 108 + 2 + 5 + 3 + 2 + 4 =
-    // **124** — and then `material-grade`'s two, for the grade ladder, making
-    // **126**. The count is the point of the test, so it moves with the field
+    // **124** — then `material-grade`'s two, for the grade ladder at world
+    // revision 12, making **126**; then `standing-working`'s five, for
+    // `working-duration` at revision 13, making **131**. Two branches took
+    // revision 12 off one base and both are in this tree, so both addends
+    // count. The count is the point of the test, so it moves with the field
     // set rather than being loosened to `>=`;
     // `docs/design/observable-trait-inventory.md` is the document this is
     // keeping honest.
@@ -166,7 +169,7 @@ describe('unclassifiedTraits (step 2)', () => {
     // W182 reached 113 on its own tree, Group E reached 120, and
     // `material-economy` reached 112; the merged tree is none of those, because
     // each branch counted its own additions over a base missing the others'.
-    expect(traits).toBe(126);
+    expect(traits).toBe(131);
 
     let classified = 0;
     for (const rows of Object.values(TRAIT_CLASSIFICATION)) {
@@ -211,7 +214,17 @@ describe('unclassifiedTraits (step 2)', () => {
     // behind it — and a slot moves `OBSERVATION_LAYOUT_DIGEST`, which is the
     // friction that should keep it a decision rather than a projection line
     // added quietly.
-    expect(byReason.get('not-yet-decided')).toBe(84);
+    //
+    // And 84 + `standing-working`'s five = **89** since `working-duration`.
+    // Those five are undecided for a sharper reason than the two above:
+    // `expiresTick` is the first piece of world state a rival's **timing**
+    // depends on, and publishing it turns upkeep from a rota into a countdown a
+    // besieger reads off the observation.
+    //
+    // Both additions move this bucket by exactly the amount they moved the
+    // trait count by — 2 and 5, against 126 and 131 — so no existing row was
+    // reclassified to absorb them, which is what the paired assertion is for.
+    expect(byReason.get('not-yet-decided')).toBe(89);
     expect(byReason.get('internal-bookkeeping')).toBe(6);
     // Unused until there is an opponent-facing projection to hide anything
     // from. Asserted at zero so that the day it stops being zero is a diff.

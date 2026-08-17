@@ -145,6 +145,54 @@ export interface MageOutlook {
    * and can be done again next month.
    */
   readonly practiceTargets: readonly KnowledgeTarget[];
+  /**
+   * Nodes she could spend the month **keeping standing**, already gated.
+   *
+   * The coordinating layer's gates, as with every other list here: an instance
+   * held at a mind or a memory palace at or above the activation threshold, in
+   * a cell the ruleset permits *now*, on a node whose authored effects declare
+   * a non-zero `durationTicks`. That last filter is the one particular to this
+   * goal, and it is what keeps the eleventh goal from being offered over the
+   * 381 of 419 effect entries that have no duration to keep.
+   *
+   * Both halves of upkeep are in this one list. A node with no working over it
+   * yet is a working to **light**; one with a working already standing is a
+   * working to **renew**. They are the same month and the same commitment, so
+   * splitting them into two goals would have made a mage who lit one on Monday
+   * unable to keep it on Tuesday without a second goal switch.
+   *
+   * `remainingCost` is the **ticks left before it lapses** — the authored
+   * duration for a working not yet lit. That is not a project cost and is not
+   * pretending to be one; it is put there because `compareTargets` breaks ties
+   * cheapest-first, so the working nearest to going out is the one a mage
+   * reaches for when the appeal scores tie.
+   */
+  readonly sustainableTargets: readonly KnowledgeTarget[];
+  /**
+   * How badly her upkeep is needed, `fp`, `0` to `fp(1024)`.
+   *
+   * **`fp(1024)` when a working she could light is not standing at all.** An
+   * unlit durable node is an effect the universe is simply not getting: nothing
+   * else in the game produces it, and no other goal will. That is the strongest
+   * statement this axis can make and it is the right one.
+   *
+   * Otherwise it is the fraction of a standing working's authored duration
+   * already elapsed, taken over her most pressing one — `0` on the tick it was
+   * lit, rising to just under `fp(1024)` on the last tick it stands.
+   *
+   * **One concept, deliberately, rather than "lighting pressure" and "renewal
+   * pressure".** Two terms would have needed a rule for combining them and the
+   * rule would have been arbitrary; more to the point, a mage does not
+   * experience the two differently. The wall is not up, or the wall is about to
+   * come down.
+   *
+   * The first draft made this `0` for an unlit working, on the theory that
+   * `GOAL_BASE_APPEAL` and this term together would produce a rota. Measured,
+   * it produced a mechanism that could not start: nothing was ever lit, so
+   * urgency never rose, so nothing was ever lit. Every symbol had a caller and
+   * the game never ran the goal once in sixty ticks.
+   */
+  readonly workingUrgency: Fixed;
 
   /** Universe materials stock, `fp`. Scribing is masked without enough. */
   readonly materials: Fixed;

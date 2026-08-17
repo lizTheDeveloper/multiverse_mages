@@ -37,6 +37,7 @@
 
 import type { ContentId, EffectTarget, GradeRequirement } from '@mm/content';
 import type { Fixed } from '@mm/sim-core';
+import type { Handle } from '@mm/state';
 import { LOCATION_KIND } from '@mm/state';
 
 /**
@@ -87,6 +88,22 @@ export interface EffectContribution {
  */
 export interface EffectSourceInstance {
   readonly nodeId: ContentId;
+  /**
+   * The mage — or library, or grimoire — the instance is filed against.
+   *
+   * `KNOWLEDGE_INSTANCE.locationId`, carried rather than looked up, because
+   * `gatherEffects` now has a question it cannot answer without it: *does a
+   * working over this node, held up by this holder, still stand?* A working is
+   * one row per **(holder, node)** — `standing.ts` says why — and a gather that
+   * knew only the node would fold every mage's working into one, so one mage
+   * renewing would hold the effect up for a hundred who had not.
+   *
+   * Required rather than optional. An optional holder would have to default,
+   * and both defaults are wrong in a way nothing would notice: default-refuse
+   * silently drops a real contribution, default-admit silently makes the whole
+   * duration mechanism decorative for whoever forgot to fill it in.
+   */
+  readonly holder: Handle;
   /** {@link LOCATION_KIND}. */
   readonly locationKind: number;
   /** `0` just learned, `fp(1024)` teachable without loss (`contracts.md` §1.5). */

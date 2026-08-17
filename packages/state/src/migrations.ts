@@ -91,6 +91,7 @@ import {
   MATERIAL_GRADE,
   MATERIAL_STOCK,
   MID_RAID_CHANGE,
+  STANDING_WORKING,
   TERRITORY_HOLDING,
   UNIVERSE,
   UNIVERSITY_SITE,
@@ -113,6 +114,8 @@ import {
  * | 9        | `raid-engagement`   | adds `mid-raid-change` (`raid-engagement.md` §1) |
  * | 10       | `university-siting` | adds `territory-holding` (§1.1) and `university-site` (§1.4) |
  * | 11       | `scribing-fidelity` | adds `knowledge-fidelity` (`docs/design/scribing-fidelity.md`) |
+ * | 12       | `material-grade`    | adds `material-grade` — **not in this tree**; see the note below |
+ * | 13       | `working-duration`  | adds `standing-working` — an effect that expires unless renewed |
  *
  * The table above is the walk, in order, and it is the only place the order is
  * stated. It was rewritten on the `material-economy` combine because four
@@ -160,10 +163,42 @@ import {
  * without a holding to stand in, and no build has ever shipped one without the
  * other.
  *
+ * **Revision 12 is a reserved hole, and revision 13 spans it.** `w/exp-grades`
+ * took 12 with a `material-grade` component off this same base; both branches
+ * checked every ref in the repository and both found 12 free, six hours apart.
+ * `docs/design/sim-rigor-2026-08-15.md` §4.4 settles it by **arrival**, and this
+ * one arrived second, so `standing-working` is 13. It is the fifth step in this
+ * walk to be renumbered and the reason is the one CLAUDE.md gives: *a migration's
+ * number is its position in a walk, not a name.*
+ *
+ * The hole cannot simply be left open. `migrateWorldEnvelope` walks by `from`,
+ * so a `{ from: 12 }` step with nothing beneath it throws for **every save on
+ * disk** — the failure `w/exp-grades` hit from the other side. So
+ * {@link addStandingWorking} is authored `{ from: 11, to: 13 }`, exactly the
+ * bridge `addBarPhase` carried as `{ from: 6, to: 8 }` while `material-economy`
+ * was unmerged. **On the merge with `material-grade` it becomes
+ * `{ from: 12, to: 13 }`** and that branch's `{ from: 11, to: 12 }` step takes
+ * its place beneath — the same reconciliation, in the same four steps, that
+ * §4.4 spells out.
+ *
+ * Revision 13 appends `standing-working`, and it is the first step whose
+ * *absent* section had to be argued about rather than assumed. Every step
+ * above appends a component whose missing row means a benign zero — no goal
+ * adopted, no project in flight, generation zero and sound. A missing
+ * `standing-working` row could be read two ways, and one of them is a
+ * catastrophe: *never lit* (nothing reverts) or *expired* (every working in
+ * the universe lapses on the first tick of a restored save). It means the
+ * first. `components.ts` states the rule at the component and
+ * `standing-working-migrates-empty.test.ts` pins it from the other end, by
+ * migrating a revision-11 save and asserting the tick reports **zero** lapses
+ * rather than by asserting the section is empty — an empty section that some
+ * later reader treated as a shortage would satisfy the second test and fail
+ * the first.
+ *
  * **Append; never renumber.** A revision number is what a migration step is
  * keyed on, so reusing one silently applies the wrong repair to a save.
  */
-export const WORLD_SCHEMA_VERSION = 12;
+export const WORLD_SCHEMA_VERSION = 13;
 
 /**
  * The world-schema revision an envelope was written by.
@@ -181,13 +216,30 @@ export const WORLD_SCHEMA_VERSION = 12;
  */
 export function worldSchemaVersionOf(envelope: SnapshotEnvelope): number {
   const carried = new Set(envelope.components.map((component) => component.name));
-  // **Revision 12's marker is `material-grade`, and it leads the chain** —
-  // §4.4 step 3, newest marker first. A revision-12 envelope also carries
+  // **Revision 13's marker is `standing-working`, and it leads the chain** —
+  // `docs/design/sim-rigor-2026-08-15.md` §4.4 step 3, newest marker first. A
+  // revision-13 envelope also carries `knowledge-fidelity` and every marker
+  // below, so asking about any of them first would walk every current save
+  // through migrations it has already had.
+  //
+  // **`material-grade`'s arm is directly below, and that placement is the whole
+  // of what this merge had to get right.** That marker is a component like this
+  // one, not a field like revision 7's, so the two are ordered by revision
+  // alone: `material-grade` is checked **after** this line and **before**
+  // `knowledge-fidelity`'s. Getting that order wrong throws nothing — a
+  // revision-13 envelope carries both components, so testing 12 first would
+  // read every current save as a 12 and walk it through a migration it has
+  // already had, silently.
+  if (carried.has(STANDING_WORKING.name)) return 13;
+  // **Revision 12's marker is `material-grade`.** It led the chain until
+  // revision 13 arrived one merge later, and it now sits directly beneath
+  // `standing-working`'s arm and above `knowledge-fidelity`'s — §4.4 step 3,
+  // newest marker first. A revision-12 envelope also carries
   // `knowledge-fidelity` and every marker below it, so asking about any of them
   // first would walk every current save through migrations it has already had.
   //
-  // **A collision was open when this was authored, and it is recorded rather
-  // than resolved.** `w/exp-duration` took revision 12 for `standing-working`
+  // **A collision was open when this was authored. It is now closed, and the
+  // account is kept because the closing is the interesting part.** `w/exp-duration` took revision 12 for `standing-working`
   // off the same base commit (`4621db1a`, which declares 11), at the same time.
   // Both branches are correct against their base and **neither could take 13
   // instead**: `migrateWorldEnvelope` walks by `from`, so a step `{ from: 12 }`
@@ -196,15 +248,19 @@ export function worldSchemaVersionOf(envelope: SnapshotEnvelope): number {
   // collision would have produced a hole in the walk to avoid a merge conflict
   // the project already has a written procedure for.
   //
-  // So whoever merges these two **second** does §4.4's four steps, and they are
-  // not optional — getting (2) or (3) wrong does not throw, it migrates an older
-  // save through the wrong steps and lands it holding the wrong sections:
+  // §4.4's four steps were done on `integration/all-branches`, 2026-08-17, in
+  // the commit that merged `w/exp-duration`. They are not optional — getting (2)
+  // or (3) wrong does not throw, it migrates an older save through the wrong
+  // steps and lands it holding the wrong sections:
   //
-  //   1. `WORLD_SCHEMA_VERSION = 13`.
-  //   2. That branch's step becomes `{ from: 12, to: 13 }`.
-  //   3. Its marker check moves to the **front** of this chain, ahead of
-  //      whichever component kept 12.
-  //   4. Its component stays **last** in `WORLD_COMPONENTS`.
+  //   1. `WORLD_SCHEMA_VERSION = 13`. Done.
+  //   2. `addStandingWorking` became `{ from: 12, to: 13 }`, narrowed from the
+  //      `{ from: 11, to: 13 }` bridge it carried while 12 was a hole. Done, in
+  //      the same commit that added `addMaterialGrade` beneath it.
+  //   3. `standing-working`'s marker check moved to the **front** of this
+  //      chain, ahead of this line. Done.
+  //   4. `standing-working` is **last** in `WORLD_COMPONENTS`, this component
+  //      second-last. Done.
   //
   // This is the fifth such renumber in this file — `bar-phase` three times, the
   // siting pair three times, `knowledge-fidelity` once — and CLAUDE.md's rule
@@ -833,6 +889,63 @@ export const addKnowledgeFidelity: WorldSchemaMigration = {
   },
 };
 
+/**
+ * Revision 11 → 12: append an empty `standing-working` section.
+ *
+ * Empty, and this is the one append in the walk where empty is a *decision*
+ * rather than the obvious repair.
+ *
+ * A save written before this component was written by a build in which a node's
+ * effects applied for as long as anybody knew the node. Every one of those
+ * standing effects is, under this build, an unlit working. There are exactly
+ * three things this step could do about that and only one of them is honest:
+ *
+ * - **Synthesise a live row per contributing instance**, so nothing changes on
+ *   the load. That invents a `litTick` nobody ever cast on and a renewal history
+ *   nobody ever paid for, and it is the repair `addTerritorySiting` refuses for
+ *   the same reason. It would also make the load itself the last free month in
+ *   the universe's history.
+ * - **Synthesise a row per instance at `expiresTick: 0`**, which reads as
+ *   *expired* and fires the whole universe's lapse on the first tick of a
+ *   restored save. That is the failure this component's own note is about: it
+ *   throws nothing, it looks exactly like the rule functioning, and the player
+ *   watches every wall fall down at once.
+ * - **Append nothing**, which says *no working has ever been established in this
+ *   universe* — which is true, because none ever was. Nothing reverts, nothing
+ *   is reported as lapsed, and a mage who wants the effect back spends the month
+ *   the design says it costs.
+ *
+ * The third. The consequence is real and is not hidden: a duration-bearing
+ * effect that a revision-11 save was getting for free stops arriving until
+ * somebody lights it. That is the change, applied to old saves and new ones
+ * alike, rather than a grandfather clause that would make one save's physics
+ * differ from another's.
+ */
+export const addStandingWorking: WorldSchemaMigration = {
+  // **A step again, and no longer a bridge.** Authored `{ from: 11, to: 12 }`
+  // on `w/exp-duration`, then widened there to `{ from: 11, to: 13 }` because
+  // revision 12 belonged to `material-grade` on `w/exp-grades` and that branch
+  // was not in that tree: with no `{ from: 11, to: 12 }` beneath it, a
+  // `{ from: 12, to: 13 }` could not be reached and the walk threw for every
+  // save on disk. The precedent was `addBarPhase`, which carried
+  // `{ from: 6, to: 8 }` for exactly as long as `material-economy` was unmerged.
+  //
+  // `integration/all-branches`, 2026-08-17: `material-grade` merged one commit
+  // earlier, {@link addMaterialGrade} supplies the `{ from: 11, to: 12 }` this
+  // now stands on, and the bridge is **narrowed in the same commit** — leaving
+  // it at `{ from: 11, to: 13 }` would have skipped `material-grade`'s step on
+  // every revision-11 save, silently and without an error. The walk is dense
+  // 1 → 13 and no step in it spans more than one revision.
+  from: 12,
+  to: 13,
+  migrate(envelope) {
+    return {
+      ...envelope,
+      components: [...envelope.components, emptySection(STANDING_WORKING)],
+    };
+  },
+};
+
 /** Every step this build knows, ascending by source revision. */
 export const WORLD_SCHEMA_MIGRATIONS: readonly WorldSchemaMigration[] = [
   addGoalCommitment,
@@ -846,6 +959,7 @@ export const WORLD_SCHEMA_MIGRATIONS: readonly WorldSchemaMigration[] = [
   addTerritorySiting,
   addKnowledgeFidelity,
   addMaterialGrade,
+  addStandingWorking,
 ];
 
 /**

@@ -48,7 +48,13 @@ import {
   readRulesetForObservation,
 } from '@mm/state';
 
-import { academicEffectIndex, academicRateBonuses, defineWorldSimulation } from '../../src/index.js';
+import {
+  academicEffectIndex,
+  academicRateBonuses,
+  buildWorkingDurations,
+  defineWorldSimulation,
+  establishOrRenewWorking,
+} from '../../src/index.js';
 
 import { catalogAndCells, registry, scribingTraditionId, seededWorld, worldDeps } from './world-fixtures.js';
 
@@ -62,8 +68,21 @@ function contentIdOf(nodeId: string): number {
   return found.contentId;
 }
 
-/** One mage holding one node at full mastery, and the magnitudes she earns. */
-function bonusesFor(nodeId: string): {
+/**
+ * One mage holding one node at full mastery, and the magnitudes she earns.
+ *
+ * `standing: true` lights a working over the node first. Since
+ * `working-duration`, an effect authored with a non-zero `durationTicks`
+ * contributes only while its holder is keeping it up — *The Nameless* is
+ * authored at thirty-six months, from its own gloss's *"cheap to maintain"* —
+ * so a fixture that only granted the instance would measure the standing gate
+ * rather than the sign of the magnitude, which is what this file is about.
+ *
+ * Left `false` for the two zero-duration nodes below, which is what makes the
+ * pair a control: same fixture, same gate, and only the durable one needs a
+ * month spent on it.
+ */
+function bonusesFor(nodeId: string, standing = false): {
   research: readonly number[];
   teach: readonly number[];
   scribe: readonly number[];
@@ -89,6 +108,16 @@ function bonusesFor(nodeId: string): {
     mastery: FULL_MASTERY,
   });
 
+  if (standing) {
+    establishOrRenewWorking(
+      state,
+      holder,
+      contentIdOf(nodeId),
+      state.clock.worldTick,
+      buildWorkingDurations(registry()).durationOf(contentIdOf(nodeId)),
+    );
+  }
+
   const bonuses = academicRateBonuses(state, {
     index: academicEffectIndex(registry()),
     cells: catalogAndCells().cells,
@@ -105,9 +134,19 @@ function bonusesFor(nodeId: string): {
 
 describe('a cost reaches the mage who holds it', () => {
   it('hands The Nameless its authored teaching cost, sign intact', () => {
-    const bonuses = bonusesFor('pn-the-nameless');
+    const bonuses = bonusesFor('pn-the-nameless', true);
     expect(bonuses.teach).toEqual([-192]);
     expect(bonuses.contributingNodes).toBe(1);
+  });
+
+  it('hands her nothing at all when the unnaming is not being held up', () => {
+    // The same node, the same mastery, the same ruleset — and no working. *"Hold
+    // your own unnaming indefinitely. Cheap to maintain"* is the gloss, and this
+    // is what "maintain" costs when nobody pays it. It is also the arm that
+    // makes the assertion above about the *sign* rather than about the gate.
+    const bonuses = bonusesFor('pn-the-nameless');
+    expect(bonuses.teach).toEqual([]);
+    expect(bonuses.contributingNodes).toBe(0);
   });
 
   it('still hands an ordinary bonus through unchanged', () => {

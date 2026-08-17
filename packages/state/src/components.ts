@@ -1195,6 +1195,89 @@ export const KNOWLEDGE_FIDELITY_FIELDS_MATCH: KeysMatch<
 > = true;
 
 /**
+ * A working that stands after the cast, expires, and must be renewed
+ * (`docs/design/vision.md` §4; the Muto glosses in `node.json`).
+ *
+ * ## The absent object the content has been describing all along
+ *
+ * Three hundred and one spell glosses were audited and the single most-implied
+ * mechanism absent from the tree was this one. Muto states it as its own
+ * premise — *"the change is **worn, not granted**"*, *"every animal so held is
+ * **counting down to its own shape**"*, *"renewed about as often as **a sentry
+ * is changed**"*, *"a wall you have **agreed to build twice**"* — and Rego
+ * answers it from the other side: `rv-the-working-kept-in-iron` binds a working
+ * into a thing *"so that it goes on being cast without being cast again"*, which
+ * is only a sentence if the default is that it does not.
+ *
+ * Before this component the game had no way to say any of it. Every effect
+ * entry in `node.json` carries a `durationTicks`, **381 of 419 of them zero**,
+ * and the field was authored and read by nothing outside the raid's
+ * `area-denial` fields. A node's effect applied for as long as somebody knew the
+ * node, forever, for free.
+ *
+ * ## What the row is, and what it is keyed on
+ *
+ * One row per **(holder, node)** — the pair `gatherEffects` asks about. A
+ * working belongs to the mage who is holding it up, because that is what the
+ * upkeep costs a month of: `rules-world`'s `sustainWorking` goal. Two mages
+ * holding the same node hold two workings, and one lapsing does not take the
+ * other down. That mirrors {@link EFFORT_PROGRESS}, which is one entity per
+ * project rather than a slot on the mage row, and for the same reason: a mage
+ * may hold any number and a fixed set of slots expresses only whatever number
+ * somebody guessed.
+ *
+ * ## `litTick` is stored, and it is not decoration
+ *
+ * `expiresTick` alone would answer every liveness question. `litTick` is here
+ * because *"a wall you have agreed to build twice"* is a statement about how
+ * long the agreement has been kept, and because a renewal count without a start
+ * cannot say whether a working has been carried for a career or lit last month.
+ * Both are read by the world step's report, which is how a lapse is observed.
+ *
+ * ## An absent row means **never lit**, and that is not the same as expired
+ *
+ * This is the whole hazard of the component and it is stated here rather than
+ * left to a reader. A row whose `expiresTick` has passed is a working that
+ * **lapsed** — something reverted, and the tick's report says so. **No row at
+ * all** is a working that was never established: nothing reverts, nothing is
+ * reported, and the mage may light one. Collapsing the two — synthesising rows
+ * at `expiresTick: 0` for a migrated save, or treating a missing row as an
+ * expired one — would make every save written before this component lapse every
+ * working in the universe on its first tick, and it would look exactly like the
+ * rule working. `migrations.ts`' revision 11 → 12 step appends an **empty**
+ * section for precisely that reason, and a test in `state` pins that a migrated
+ * save reports zero lapses.
+ */
+export const STANDING_WORKING = {
+  name: 'standing-working',
+  fields: {
+    holder: 'u32',
+    nodeId: 'u16',
+    litTick: 'i32',
+    expiresTick: 'i32',
+    renewals: 'u16',
+  },
+} as const satisfies ComponentSpec<ComponentFields>;
+
+export interface StandingWorkingRecord {
+  /** The mage holding it up. Her death ends the working, not pauses it. */
+  holder: Handle;
+  /** The node being held standing. */
+  nodeId: ContentId;
+  /** The world tick the working was first established. Never rewritten by a renewal. */
+  litTick: Tick;
+  /** The world tick it stops standing on. Live while `worldTick < expiresTick`. */
+  expiresTick: Tick;
+  /** How many months have been spent renewing it since it was lit. */
+  renewals: number;
+}
+
+export const STANDING_WORKING_FIELDS_MATCH: KeysMatch<
+  StandingWorkingRecord,
+  typeof STANDING_WORKING
+> = true;
+
+/**
  * The per-node **ever-known** record (`contracts.md` §1.5).
  *
  * §1.5 marks this *"persisted, and not derivable"*, and the distinction is
@@ -1443,6 +1526,27 @@ export const WORLD_COMPONENTS = [
   // is this list's order and every revision-11 save on disk was written with
   // twenty-one sections.
   MATERIAL_GRADE,
+  // Revision 13, and the rule has not bent once in twelve revisions:
+  // `standing-working` is appended, never inserted. It hangs off a mage handle
+  // and a node id and so reads as if it belonged beside `KNOWLEDGE_INSTANCE`;
+  // section order in a snapshot is this list's order, and every revision-11 save
+  // on disk was written with twenty-one sections.
+  //
+  // Authored as revision 12, and renumbered to 13. `w/exp-grades` took 12 with
+  // the `material-grade` above off this same base; both branches checked every
+  // ref in the repository and both found 12 free, six hours apart.
+  // `docs/design/sim-rigor-2026-08-15.md` §4.4 settles a collision by arrival,
+  // and this one arrived second. **Both are now in this list, in revision
+  // order**, and `migrations.ts`' bridge is narrowed to `{ from: 12, to: 13 }`
+  // in the same commit that put `material-grade`'s step beneath it — the hole
+  // it spanned is filled and there is no bridge left.
+  //
+  // A third unmerged branch (`16e5fa4c`, "sustain — a standing condition") adds
+  // a *different* component named `sustained-working` and claims a revision of
+  // its own; the names are deliberately distinct because the mechanisms are —
+  // that one gates an effect on **who** still holds it, this one on **how long
+  // ago** it was cast — and whoever merges it takes the next free number.
+  STANDING_WORKING,
 ] as const satisfies readonly ComponentSpec<ComponentFields>[];
 
 /** Engagement-scale components, in snapshot order. */

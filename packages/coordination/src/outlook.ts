@@ -32,6 +32,7 @@
 
 import type { SpeciesRecord } from '@mm/content';
 import type { Fixed, SimState } from '@mm/sim-core';
+import { FP_ONE as FP_UNIT, floorDiv } from '@mm/sim-core';
 import type { Handle, MageRecord, MageRoleValue } from '@mm/state';
 import {
   KNOWLEDGE_INSTANCE,
@@ -56,6 +57,9 @@ import {
 import type { CoordinatingKnowledgeGateway } from './gateway.js';
 import type { NodeFacetResolver } from './node-facets.js';
 import type { UniverseEffectIndex } from './universe-effects.js';
+import type { WorkingDurations } from './standing-workings.js';
+import { findWorking } from './standing-workings.js';
+import { needsRenewal } from '@mm/rules-magic';
 
 /** Everything an outlook needs beyond the mage's own row. */
 export interface OutlookDeps {
@@ -95,6 +99,15 @@ export interface OutlookDeps {
    * is.
    */
   readonly emphasis: CellEmphasis;
+  /**
+   * Every node's authored working duration, or absent.
+   *
+   * Optional for the reason `universeEffects` is: a world built for a knowledge
+   * test need not supply one, and without it `sustain-working` is masked for
+   * every mage — exactly the behaviour every build before this change had, which
+   * a test can assert against rather than discover.
+   */
+  readonly workingDurations?: WorkingDurations | undefined;
   /**
    * The university this mage would rather be at, given the one she is at.
    *
@@ -138,6 +151,11 @@ export function buildOutlook(
   const lifespanMonths = deps.effectiveLifespanOf(mage, row, species);
 
   const preferred = deps.preferredUniversityFor(row.universityId);
+  // One walk for both halves of upkeep. Two would be two implementations of
+  // *"which of her workings need a month"*, and they would eventually disagree
+  // about the boundary — a goal that is masked while its own pressure term
+  // reads maximal, or the reverse.
+  const upkeep = upkeepFor(mage, deps);
 
   return {
     mage,
@@ -156,6 +174,8 @@ export function buildOutlook(
     scribableTargets: boundCandidates(scribableBy(mage, deps), species),
     applicableTargets: boundCandidates(applicableBy(mage, deps), species),
     practiceTargets: boundCandidates(practicableBy(mage, deps), species),
+    sustainableTargets: boundCandidates(upkeep.targets, species),
+    workingUrgency: upkeep.pressure,
 
     materials: deps.materials,
     scribeThroughput: deps.scribeThroughputOf(row.universityId),
@@ -382,6 +402,84 @@ function practicableBy(mage: Handle, deps: OutlookDeps): KnowledgeTarget[] {
     });
   }
   return found;
+}
+
+/**
+ * Nodes this mage could spend the month **keeping standing** — lighting a
+ * working over one, or renewing the one she has.
+ *
+ * Three of the four gates are `castableNodes`', which is the same set
+ * `apply-magic` draws on and deliberately so: a working is cast, and what a mage
+ * can keep standing is a subset of what she can cast. The fourth is the authored
+ * duration — a node whose effects are all `durationTicks: 0` has no working to
+ * keep, which is 381 of the 419 effect entries in the shipped grid.
+ *
+ * **A working already standing stays in the list**, and that is the whole reason
+ * there is one goal here and not two. A node with no working over it is a
+ * working to *light*; one with a working standing is a working to *renew*. Same
+ * month, same commitment. Splitting them would have made a mage who lit one on
+ * Monday need a goal switch to keep it on Tuesday, and `MIN_COMMITMENT_TICKS`
+ * would then have decided how many workings a universe could hold.
+ *
+ * **An absent index means an empty list, and therefore a masked goal.** The same
+ * shape `applicableTargets` uses for an absent `universeEffects`: a build with no
+ * duration index behaves exactly as every build before this change did, which is
+ * a thing a test can assert against rather than a silent degradation.
+ *
+ * `remainingCost` is ticks-before-lapse rather than a project cost, and
+ * `rules-world`'s `outlook.ts` says why: `compareTargets` breaks ties
+ * cheapest-first, so the working nearest to going out is the one she reaches for
+ * when the appeal scores tie.
+ */
+function upkeepFor(
+  mage: Handle,
+  deps: OutlookDeps,
+): { targets: KnowledgeTarget[]; pressure: Fixed } {
+  const durations = deps.workingDurations;
+  if (durations === undefined) return { targets: [], pressure: 0 };
+  const targets: KnowledgeTarget[] = [];
+  let pressure = 0;
+  for (const nodeId of deps.gateway.castableNodes(mage)) {
+    const duration = durations.durationOf(nodeId);
+    if (duration === 0) continue;
+    const standing = findWorking(deps.state, mage, nodeId);
+    if (standing === undefined) {
+      // Not standing at all. Maximal pressure and always a candidate: the
+      // universe is getting nothing from this node, and no other goal in the
+      // registry will change that.
+      pressure = FP_UNIT;
+      targets.push(targetFor(nodeId, duration, deps));
+      continue;
+    }
+    const remaining = Math.max(0, standing.row.expiresTick - deps.worldTick);
+    // **A working with years left is not a candidate**, which is where the rota
+    // lives. See `RENEWAL_WINDOW_DENOMINATOR`.
+    if (!needsRenewal(remaining, duration)) continue;
+    targets.push(targetFor(nodeId, remaining, deps));
+    // The fraction of its authored duration already elapsed. Floor division,
+    // the one division in the rules path, and clamped below at zero so that a
+    // working already lapsed and not yet swept reads as maximal rather than
+    // negative — a negative pressure would *subtract* from the opportunity
+    // term, so a universe whose workings had all gone out would be the one
+    // least inclined to relight them.
+    const elapsed = FP_UNIT - floorDiv(remaining * FP_UNIT, duration);
+    if (elapsed > pressure) pressure = elapsed;
+  }
+  return { targets, pressure };
+}
+
+/** One upkeep candidate. `remainingCost` is ticks before it lapses, not a debt. */
+function targetFor(nodeId: number, remaining: number, deps: OutlookDeps): KnowledgeTarget {
+  const facets = deps.facetsOf(nodeId);
+  return {
+    nodeId,
+    tier: deps.tierOf(nodeId),
+    remainingCost: remaining,
+    cellId: facets.cellId,
+    formId: facets.formId,
+    primitives: facets.primitives,
+    libraryHolds: false,
+  };
 }
 
 /**

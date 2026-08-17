@@ -3294,7 +3294,7 @@
         "primitive": "build-rate",
         "magnitude": 192,
         "target": "universe",
-        "durationTicks": 0
+        "durationTicks": 3
       }
     ],
     "knowledgeKind": "episteme",
@@ -3348,7 +3348,7 @@
         "primitive": "resource-yield",
         "magnitude": 192,
         "target": "universe",
-        "durationTicks": 0
+        "durationTicks": 6
       }
     ],
     "knowledgeKind": "episteme",
@@ -3893,13 +3893,13 @@
         "primitive": "build-rate",
         "magnitude": 384,
         "target": "universe",
-        "durationTicks": 0
+        "durationTicks": 24
       },
       {
         "primitive": "resource-yield",
         "magnitude": 128,
         "target": "universe",
-        "durationTicks": 0
+        "durationTicks": 24
       }
     ],
     "knowledgeKind": "episteme",
@@ -4544,13 +4544,13 @@
         "primitive": "build-rate",
         "magnitude": 384,
         "target": "universe",
-        "durationTicks": 0
+        "durationTicks": 12
       },
       {
         "primitive": "resource-yield",
         "magnitude": 128,
         "target": "universe",
-        "durationTicks": 0
+        "durationTicks": 12
       }
     ],
     "knowledgeKind": "episteme",
@@ -5961,7 +5961,7 @@
         "primitive": "teach-rate",
         "magnitude": -192,
         "target": "single",
-        "durationTicks": 0
+        "durationTicks": 36
       }
     ],
     "knowledgeKind": "metis",
@@ -6501,7 +6501,7 @@
         "primitive": "resource-yield",
         "magnitude": 128,
         "target": "universe",
-        "durationTicks": 0
+        "durationTicks": 1
       }
     ],
     "knowledgeKind": "episteme",
@@ -6938,13 +6938,13 @@
         "primitive": "build-rate",
         "magnitude": 448,
         "target": "universe",
-        "durationTicks": 0
+        "durationTicks": 12
       },
       {
         "primitive": "resource-yield",
         "magnitude": 192,
         "target": "universe",
-        "durationTicks": 0
+        "durationTicks": 12
       }
     ],
     "knowledgeKind": "episteme",
@@ -6966,7 +6966,7 @@
         "primitive": "resource-yield",
         "magnitude": 128,
         "target": "universe",
-        "durationTicks": 0
+        "durationTicks": 1
       }
     ],
     "knowledgeKind": "episteme",
@@ -7796,13 +7796,13 @@
         "primitive": "research-rate",
         "magnitude": 384,
         "target": "self",
-        "durationTicks": 0
+        "durationTicks": 60
       },
       {
         "primitive": "scribe-rate",
         "magnitude": 192,
         "target": "self",
-        "durationTicks": 0
+        "durationTicks": 60
       }
     ],
     "knowledgeKind": "episteme",

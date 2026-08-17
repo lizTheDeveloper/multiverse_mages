@@ -52,6 +52,7 @@ import {
   permissiveRuleset,
   rulesetInterdicting,
   worldActiveNodesInDistinctCells,
+  NO_WORKINGS_STAND,
 } from '../unit/effect-fixtures.js';
 
 const HOLDER = 900;
@@ -82,12 +83,14 @@ describe('the four dormancy call sites agree on a real, interdicted v1 node', ()
       ruleset: permitted,
       mode: TIME_MODE.world,
       cellOf: (id) => cellIdOfNode(registry, id),
+      standing: NO_WORKINGS_STAND,
     });
     const contributionsInterdicted = gatherEffects([mindInstance(nodeId)], {
       registry,
       ruleset: interdicted,
       mode: TIME_MODE.world,
       cellOf: (id) => cellIdOfNode(registry, id),
+      standing: NO_WORKINGS_STAND,
     });
     expect(contributionsPermitted.length).toBeGreaterThan(0);
     expect(contributionsInterdicted).toEqual([]);

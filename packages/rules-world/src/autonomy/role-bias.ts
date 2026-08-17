@@ -81,6 +81,7 @@ function row(entries: Partial<Record<GoalId, Fixed>>): RoleBiasRow {
     [GOAL.raidReadiness]: 0,
     [GOAL.applyMagic]: 0,
     [GOAL.practice]: 0,
+    [GOAL.sustainWorking]: 0,
     ...entries,
   };
 }
@@ -220,8 +221,21 @@ export const ROLE_BIAS: Readonly<Record<MageRoleValue, RoleBiasRow>> = {
     [GOAL.wardDuty]: -128,
     [GOAL.applyMagic]: -64,
     [GOAL.practice]: -64,
+    // The researcher's whole instinct is to extend what the universe knows,
+    // and upkeep extends nothing. She leans away from it harder than from
+    // practice: drilling at least sharpens a node she might publish, while a
+    // month spent renewing produces a universe exactly as clever as it was.
+    [GOAL.sustainWorking]: -128,
   }),
   [MAGE_ROLE.warden]: row({
+    // **The warden is the role upkeep was already describing.** `node.json` says
+    // a working is "renewed about as often as a sentry is changed", and a rota
+    // of sentries is what a warden is. This is the largest positive bias any
+    // role carries for any goal other than its own headline one, and it is
+    // deliberate: without a role that leans this way, the eleventh goal would
+    // lose the argmax to research on every mage in the universe and the upkeep
+    // economy would be a mechanism nobody ever entered.
+    [GOAL.sustainWorking]: 256,
     [GOAL.wardDuty]: 384,
     [GOAL.affiliate]: 320,
     [GOAL.scribe]: 128,

@@ -133,6 +133,24 @@ export {
 } from './universe-effects.js';
 
 export type {
+  LapsedWorking,
+  WorkingDurations,
+  WorkingOutcome,
+  WorkingSweep,
+} from './standing-workings.js';
+export {
+  NO_WORKING_DURATIONS,
+  NO_WORKING_SWEEP,
+  WORKING_OUTCOME,
+  buildWorkingDurations,
+  endWorkingsOf,
+  establishOrRenewWorking,
+  findWorking,
+  standingWorkingsOf,
+  sweepLapsedWorkings,
+} from './standing-workings.js';
+
+export type {
   AcademicEffectIndex,
   AcademicRateBonuses,
   AcademicRateDeps,

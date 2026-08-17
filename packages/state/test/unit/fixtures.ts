@@ -51,6 +51,7 @@ import {
   MATERIAL_GRADE,
   MATERIAL_STOCK,
   MID_RAID_CHANGE,
+  STANDING_WORKING,
   OBJECTIVE,
   OBJECTIVE_STATUS,
   OCCUPATION,
@@ -93,6 +94,8 @@ export interface PopulatedWorld {
   readonly effort: EntityHandle;
   /** The one `territory-holding` row. The site hangs on `university` instead. */
   readonly holding: EntityHandle;
+  /** The one `standing-working` row: `mage`'s working over node 7. */
+  readonly working: EntityHandle;
 }
 
 /**
@@ -318,11 +321,35 @@ export function populatedWorld(): PopulatedWorld {
     markedTick: 41,
   });
 
+  // One working standing over the mage's node, so `standing-working` is in the
+  // round-trip with every field distinct and none of them zero — a transposed
+  // `litTick` and `expiresTick` would otherwise round-trip perfectly.
+  const working = state.entities.create();
+  attachRecord(state, STANDING_WORKING, working, {
+    holder: mage,
+    nodeId: 7,
+    litTick: 36,
+    expiresTick: 84,
+    renewals: 2,
+  });
+
   assertEveryWorldComponentPopulated(state);
   // Union of both branches' handles. The auto-merge left *two* return
   // statements here — the second unreachable — so whichever branch's handles
   // came second were silently unavailable to every consumer.
-  return { state, universe, mage, cohort, university, library, grimoire, instance, effort, holding };
+  return {
+    state,
+    universe,
+    mage,
+    cohort,
+    university,
+    library,
+    grimoire,
+    instance,
+    effort,
+    holding,
+    working,
+  };
 }
 
 /** Fails if any world component has no rows, so "every component" stays true. */

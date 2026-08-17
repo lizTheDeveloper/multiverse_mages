@@ -129,6 +129,8 @@ function targetsFor(goal: GoalId, outlook: MageOutlook): readonly KnowledgeTarge
       return outlook.applicableTargets;
     case GOAL.practice:
       return outlook.practiceTargets;
+    case GOAL.sustainWorking:
+      return outlook.sustainableTargets;
     default:
       return [];
   }

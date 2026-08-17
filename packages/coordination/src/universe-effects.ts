@@ -160,6 +160,7 @@ import {
 import type { Handle, Ruleset } from '@mm/state';
 import { KNOWLEDGE_INSTANCE, MATERIAL_GRADE, collectRecords } from '@mm/state';
 import { GOAL, readCommitment } from '@mm/rules-world';
+import { standingWorkingsOf } from './standing-workings.js';
 import { isHeldLocation } from '@mm/rules-magic';
 
 /**
@@ -405,6 +406,7 @@ export function universeEconomyBonuses(
   for (const { row } of collectRecords(state, KNOWLEDGE_INSTANCE)) {
     const source: EffectSourceInstance = {
       nodeId: row.nodeId,
+      holder: row.locationId,
       locationKind: row.locationKind,
       mastery: row.mastery,
     };
@@ -423,6 +425,12 @@ export function universeEconomyBonuses(
     ruleset: deps.ruleset,
     mode: TIME_MODE.world,
     cellOf: (nodeId: ContentId) => deps.cells.cellOf(nodeId),
+    // The fourth gate. Every world-scale effect in the shipped grid is authored
+    // `durationTicks: 0` and therefore never asks this view anything — which is
+    // what makes wiring it a provable no-op until a duration is authored. A
+    // node that *does* declare one contributes only while its holder is keeping
+    // it up.
+    standing: standingWorkingsOf(state),
   };
 
   const resourceYield = Object.fromEntries(

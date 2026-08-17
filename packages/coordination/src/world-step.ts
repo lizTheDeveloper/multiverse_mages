@@ -110,6 +110,7 @@ import {
   POPULACE_COHORT,
   MATERIAL_GRADE,
   MATERIAL_STOCK,
+  STANDING_WORKING,
   UNIVERSE,
   UNIVERSITY,
   attachRecord,
@@ -246,6 +247,14 @@ import { frozenWhenTerminal, godSystems } from './god/index.js';
 import { buildOutlook, universityPreference } from './outlook.js';
 import type { StudentRefusal } from './admissions.js';
 import { admitStudentBodies } from './admissions.js';
+import type { WorkingDurations, WorkingOutcome } from './standing-workings.js';
+import {
+  NO_WORKING_DURATIONS,
+  WORKING_OUTCOME,
+  endWorkingsOf,
+  establishOrRenewWorking,
+  sweepLapsedWorkings,
+} from './standing-workings.js';
 
 /** `fp(1.0)`. `buildProgress` at which a university is complete (`contracts.md` §1.4). */
 const FP_ONE = FP_UNIT;
@@ -422,6 +431,19 @@ export interface WorldStepDeps {
    * a thing a test can assert against rather than a silent degradation.
    */
   readonly universeEffects?: UniverseEffectIndex | undefined;
+  /**
+   * Every node's authored working duration, precomputed from content.
+   *
+   * The wire that makes `durationTicks` mean something. Without it no working is
+   * ever lit, `sustain-working` is masked for every mage, and every authored
+   * duration reads exactly as it did before this change — which is *no working
+   * at all*, and is what every build before world-schema revision 12 did.
+   *
+   * Optional for the same reason its three siblings are: a caller building a
+   * world for a knowledge test need not supply one, and its absence is a
+   * behaviour a test can assert against rather than a silent degradation.
+   */
+  readonly workingDurations?: WorkingDurations | undefined;
   /**
    * Every node's personally-targeted academic effect, precomputed from content.
    *
@@ -1147,6 +1169,30 @@ export interface WorldStepReport {
    * what it did.
    */
   readonly practiceCompleted: number;
+  /**
+   * Workings that stopped standing on this tick.
+   *
+   * **The observable half of the lapse, and the reason it is on the report at
+   * all.** *"A wall you have agreed to build twice"* is only a game rule if a
+   * player can see the wall come down. A silent revert — the effect quietly
+   * gone from the stack with nothing said — is the defect class this campaign
+   * has spent its whole run finding, and it would be indistinguishable here from
+   * a mage dying or a cell being interdicted.
+   *
+   * `0` on almost every tick, and `0` for every tick of a universe that has
+   * never lit one. That second zero is load-bearing: a migrated revision-11 save
+   * has an empty `standing-working` section, which means *never lit* rather than
+   * *expired*, so it reports no lapses rather than lapsing everything at once.
+   */
+  readonly workingsLapsed: number;
+  /** The nodes those workings were over, in store order. For the play surface. */
+  readonly workingsLapsedNodes: readonly number[];
+  /** Workings still standing at the end of the tick. */
+  readonly workingsStanding: number;
+  /** Workings lit for the first time this tick. */
+  readonly workingsLit: number;
+  /** Workings whose expiry was pushed out by a month of upkeep this tick. */
+  readonly workingsRenewed: number;
   /** Materials those books cost, deducted at the desk. `fp`. */
   readonly materialsScribed: Fixed;
   /**
@@ -1447,6 +1493,20 @@ export function worldSystem(
       const universe = findUniverse(state);
       if (universe === 0) return;
       const ruleset: Ruleset = readRulesetForObservation(state, universe);
+
+      // ---- 0a. Workings that have run out -----------------------------------
+      // **Before anything gathers an effect**, which is the whole of what makes
+      // a lapse happen on the tick the content says it does rather than on the
+      // tick after. `standing-workings.ts` gives the second reason too: the live
+      // view memoizes on the state object, so a view built before the sweep
+      // would answer for rows the sweep has since removed.
+      //
+      // On a universe that has never lit a working this returns
+      // `NO_WORKING_SWEEP` and nothing downstream can tell it ran — which is the
+      // property a migrated revision-11 save depends on. An absent
+      // `standing-working` section means *never lit*, not *expired*, so nothing
+      // reverts and nothing is reported.
+      const workings = sweepLapsedWorkings(state, worldTick);
 
       // ---- 0. Territory ----------------------------------------------------
       // `contracts.md` §2.7's own migration, executed once per universe: the
@@ -1855,6 +1915,12 @@ export function worldSystem(
             ...(deps.universeEffects === undefined
               ? {}
               : { universeEffects: deps.universeEffects }),
+            // The authored half of upkeep. Absent on a build with no duration
+            // index, which masks `sustain-working` for every mage — the same
+            // inert world every build before revision 12 had.
+            ...(deps.workingDurations === undefined
+              ? {}
+              : { workingDurations: deps.workingDurations }),
           });
         },
       });
@@ -2200,6 +2266,21 @@ export function worldSystem(
         lessonsTaught: work.lessonsTaught,
         grimoiresScribed: work.grimoiresScribed,
         practiceCompleted: work.practiceCompleted,
+        // The sweep ran at the top of the tick, before anything gathered an
+        // effect; the two upkeep counters come from the work phase, after it.
+        // So a working lit this tick cannot appear as lapsed on the same tick,
+        // which is what makes the three series add up.
+        workingsLapsed: workings.lapsed.length,
+        workingsLapsedNodes: workings.lapsed.map((entry) => entry.nodeId),
+        // Recounted from the rows rather than arithmetic on the sweep's number.
+        // `workings.standing` was true at the top of the tick and three phases
+        // have moved it since: the work phase lit some, and `killTheDead` ended
+        // every working its dead were holding up. `standing + lit` would have
+        // over-reported by exactly the workings of everyone who died this month,
+        // which is the tick you would most want the number to be right on.
+        workingsStanding: componentOf(state, STANDING_WORKING).size,
+        workingsLit: work.workingsLit,
+        workingsRenewed: work.workingsRenewed,
         materialsScribed,
         staffAssigned: staffing.assigned.length,
         staffPruned: staffing.pruned,
@@ -2784,6 +2865,20 @@ function killTheDead(
         // student paired with a corpse, which `mage-lifecycle` forbids in as
         // many words.
         phase.efforts.clearSubject(mage);
+        // And every working she was holding up. *"The change is worn, not
+        // granted"* — worn by somebody, and there is nobody left to wear it.
+        //
+        // Ended here rather than left to lapse on its own tick, because the two
+        // are different claims and only one of them is true: a working left
+        // standing would go on contributing for years after its holder's
+        // funeral, and `gatherEffects` would never notice, since her knowledge
+        // instances are gone and the working's row is keyed on her handle
+        // independently of them.
+        //
+        // Silent by design — this is not a lapse. Nothing ran out; the report's
+        // `mageDeaths` is where it shows, and counting it as a lapse as well
+        // would double-report one event under two mechanisms.
+        endWorkingsOf(state, mage);
       },
     });
     // The entity survives its owner — a grimoire naming her as its last holder
@@ -2855,6 +2950,10 @@ interface WorkPhaseOutcome {
   readonly monthsByGoal: readonly number[];
   /** Mages who finished a `practice` project this tick. */
   readonly practiceCompleted: number;
+  /** Workings lit for the first time this tick. */
+  readonly workingsLit: number;
+  /** Workings renewed this tick. */
+  readonly workingsRenewed: number;
 }
 
 /**
@@ -2916,6 +3015,12 @@ function spendTheMonth(
   // for a lesson nobody attended. The reserve above is taken against the
   // committed figure and is therefore never smaller than what is spent here.
   let taughtMonths = 0;
+  // The upkeep economy's two series, counted here and reported beside the
+  // sweep's. A month that refused — an interdicted cell, a node she has since
+  // lost, a node whose duration is zero — increments neither, so "nobody spent
+  // a month" and "the months produced nothing" stay distinguishable.
+  let workingsLit = 0;
+  let workingsRenewed = 0;
 
   // `monthsByGoal` above is filled *during* the walk; the pre-pass below has to
   // finish *before* it, so the two cannot be folded into one traversal however
@@ -3028,6 +3133,10 @@ function spendTheMonth(
       () => {
         taughtMonths += MAGE_MONTHS_PER_TICK;
       },
+      (outcome) => {
+        if (outcome === WORKING_OUTCOME.lit) workingsLit += 1;
+        else workingsRenewed += 1;
+      },
     );
     if (cast === undefined) return;
     applyingMages += 1;
@@ -3063,6 +3172,8 @@ function spendTheMonth(
     lessonsTaught,
     grimoiresScribed,
     practiceCompleted: gateway.practised(),
+    workingsLit,
+    workingsRenewed,
     applied,
     applyingMages,
     magesAffiliated: affiliation.moved,
@@ -3239,6 +3350,8 @@ function workOne(
   teachingSubsidy: Fixed,
   /** Called once for each half of a lesson that actually paired and pushed. */
   noteTaughtMonth: () => void,
+  /** Called once for each month of upkeep that actually lit or renewed a working. */
+  noteWorking: (outcome: WorkingOutcome) => void,
 ): MaterialAmounts | undefined {
   const nodeId = commitment.targetNodeId;
   if (nodeId === 0) return undefined;
@@ -3478,6 +3591,33 @@ function workOne(
         counters: rateClamps,
         ...(deps.ablation === undefined ? {} : { ablation: deps.ablation }),
       });
+    }
+    case GOAL.sustainWorking: {
+      // The eleventh goal, and the whole of the upkeep economy: a month spent
+      // keeping something standing is a month not spent researching.
+      //
+      // Every gate is re-asked at the moment the month is spent rather than
+      // trusted from the outlook a phase ago. `castableNodes` is three of
+      // `gatherEffects`' four — held at a mind or palace, mastery at or above
+      // the activation threshold, cell permitted **now** — so an interdiction
+      // landing between the decision and the work stops the renewal, and the
+      // working goes out on its own tick. That is what an interdiction is.
+      //
+      // A duration of zero refuses rather than lighting a working that would
+      // lapse on the tick it was lit. `expiryTickOf` throws on one and this
+      // branch never reaches it, which is the same rule stated twice on purpose:
+      // 381 of 419 authored effects are zero, and a working over one of them
+      // would be a lapse on the report for something that cannot lapse.
+      // `NO_WORKING_DURATIONS` rather than `?.` and a `?? 0`, so a build with
+      // no index takes a *named* path that says "nothing in this content set
+      // expires" instead of a silent optional-chain zero. The two behave
+      // identically and only one of them is legible in a stack trace.
+      const durations = deps.workingDurations ?? NO_WORKING_DURATIONS;
+      const duration = durations.durationOf(nodeId);
+      if (duration === 0) return undefined;
+      if (!gateway.castableNodes(mage).includes(nodeId)) return undefined;
+      noteWorking(establishOrRenewWorking(state, mage, nodeId, worldTick, duration));
+      return undefined;
     }
     case GOAL.practice:
       // The library does **not** multiply this, for the reason the branch above

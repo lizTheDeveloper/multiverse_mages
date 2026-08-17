@@ -61,6 +61,11 @@ const AS_SHIPPED: readonly (readonly [string, number])[] = [
   // this file exists to force: a new goal takes the next unused id, and the
   // literal below is what a reviewer checks that claim against.
   ['practice', 10],
+  // Appended by `working-duration`. Nothing above it moved. The eleventh goal
+  // and the first that is pure upkeep: a month spent keeping a working standing
+  // is a month not spent researching, which is the tradeoff `node.json`'s Muto
+  // glosses have described since the grid was authored.
+  ['sustain-working', 11],
 ];
 
 const BASELINE_CONSEQUENCE =
@@ -126,7 +131,7 @@ describe('idle is id zero and is the goal nothing can remove', () => {
 });
 
 describe('goals that need a node say so once', () => {
-  it('lists exactly the seven target-taking goals', () => {
+  it('lists exactly the eight target-taking goals', () => {
     expect([...GOALS_NEEDING_A_TARGET]).toEqual([
       GOAL.researchNode,
       GOAL.rediscoverNode,
@@ -140,6 +145,10 @@ describe('goals that need a node say so once', () => {
       // `practice` names the node she drills, and is the second goal with no
       // project behind it for the same reason.
       GOAL.practice,
+      // `sustain-working` names the node the working stands over. The third
+      // with no project behind it — `remainingCost` there is ticks before it
+      // lapses, which is a deadline rather than a debt.
+      GOAL.sustainWorking,
     ]);
   });
 

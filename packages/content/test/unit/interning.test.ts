@@ -976,16 +976,25 @@ describe('contentRevision', () => {
     // paths the paragraphs above insist on. Not pasted out of a failure
     // message.
     //
-    // 3343812bdf9bab44f768b440e2009a6f -> 13b1aad3b991a524be8266c20d8df173, on
-    // `integration/all-branches`, 2026-08-17. **The combine of the two entries
-    // above, and neither branch's literal survives it.** `w/exp-yields` pinned
-    // `3343812b...` measured on a tree with no `grade-edge.json`; `w/exp-grades`
-    // pinned `2cca0227...` measured on a tree whose `form.json` still carried
-    // nine distinct baskets. Both were right about their own tree and both are
-    // wrong about this one, which is why this literal is MEASURED with `node
-    // packages/content/bin/validate-content.mjs` after `npx tsc --build --force`
-    // on the merged tree rather than chosen between them.
-    expect(registry.contentRevision).toBe('13b1aad3b991a524be8266c20d8df173');
+    // db63c936... -> 8ac37030b1702ca9e34e0fce22a5833b, on `w/exp-duration`,
+    // 2026-08-16. **Durations authored on nine `node.json` effects**, replacing
+    // a `durationTicks: 0` that 381 of 419 effect entries carried and that
+    // nothing outside the raid's `area-denial` fields read. Nine records move,
+    // and no other file does.
+    //
+    // 3343812bdf9bab44f768b440e2009a6f -> 6f7b87f56e40c3cbeb4305ff2fdfb442, on
+    // `integration/all-branches`, 2026-08-17. **The combine of the three
+    // entries above, and not one of the three branch literals survives it.**
+    // `w/exp-yields` pinned `3343812b...` on a tree with no `grade-edge.json`
+    // and no authored durations; `w/exp-grades` pinned `2cca0227...` on a tree
+    // whose `form.json` still carried nine distinct baskets; `w/exp-duration`
+    // pinned `8ac37030...` on a tree with neither of the other two. Each was
+    // right about its own tree and each is wrong about this one — which is the
+    // general rule this entry exists to demonstrate, and the reason this
+    // literal is MEASURED with `node packages/content/bin/validate-content.mjs`
+    // after `npx tsc --build --force` on the merged tree rather than chosen
+    // between them.
+    expect(registry.contentRevision).toBe('6f7b87f56e40c3cbeb4305ff2fdfb442');
   });
 
   it('is stable across loads of identical content', () => {

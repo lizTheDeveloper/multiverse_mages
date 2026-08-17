@@ -125,6 +125,7 @@ import type { Fixed, SimState } from '@mm/sim-core';
 import { TIME_MODE } from '@mm/sim-core';
 import type { CellResolver, ConsumptionRecorder, EffectSourceInstance } from '@mm/rules-magic';
 import { gatherEffects } from '@mm/rules-magic';
+import { standingWorkingsOf } from './standing-workings.js';
 import type { Handle, Ruleset } from '@mm/state';
 import { KNOWLEDGE_INSTANCE, LOCATION_KIND, collectRecords } from '@mm/state';
 
@@ -307,6 +308,7 @@ export function academicRateBonuses(
     const held = byMage.get(row.locationId);
     const instance: EffectSourceInstance = {
       nodeId: row.nodeId,
+      holder: row.locationId,
       locationKind: row.locationKind,
       mastery: row.mastery,
     };
@@ -323,6 +325,9 @@ export function academicRateBonuses(
       ruleset: deps.ruleset,
       mode: TIME_MODE.world,
       cellOf: (nodeId: ContentId) => deps.cells.cellOf(nodeId),
+      // See `universe-effects.ts`: a duration-bearing effect reaches a mage's
+      // own rates only while she is keeping the working up.
+      standing: standingWorkingsOf(state),
     });
 
     let held: MageMagnitudes | undefined;
