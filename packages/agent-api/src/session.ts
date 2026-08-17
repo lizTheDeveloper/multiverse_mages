@@ -76,6 +76,12 @@ import { OBSERVATION_LAYOUT_DIGEST, OBSERVATION_SCHEMA_VERSION } from './digest.
 import type { RejectionReason } from './gate.js';
 import { admit } from './gate.js';
 import type { OutcomeRecord } from './outcome.js';
+import type { AcademyProjection } from './academy.js';
+import { describeAcademy } from './academy.js';
+import type { CandidateDetailProjection } from './candidate-detail.js';
+import { describeCandidates } from './candidate-detail.js';
+import type { PlayerState } from './player-state.js';
+import { project } from './player-state.js';
 import type { AgentView } from './view.js';
 import { observe } from './view.js';
 
@@ -262,6 +268,53 @@ export interface AgentSession {
   rng(): AgentRng;
   /** The current state's content hash, for a run record's provenance. */
   snapshotHash(): string;
+  /**
+   * The §4.4 player projection of the current state — what a *client* may see.
+   *
+   * Distinct from {@link observe}, which returns the §4.1 vector a *policy* is
+   * trained on, and it exists because those two are not the same entitlement.
+   * The vector is fixed at {@link OBSERVATION_SIZE} slots and widening it
+   * invalidates every trained agent, so a quantity the world holds but the
+   * vector aggregates — `material-stock`'s three kinds into one `materials`
+   * slot — was unreachable by a client for no reason except that the agent's
+   * budget is tight. `project()` was already the named home for the player's
+   * view; nothing exposed it from a running session, so every consumer that had
+   * one had only `observe()`.
+   *
+   * Reads no field the observation withholds: this is the same projection
+   * `unencodedObservables` checks, so a leak would fail that gate rather than
+   * ship quietly.
+   */
+  playerState(): PlayerState;
+  /**
+   * §4.4's candidate descriptors for the lists {@link candidates} returns.
+   *
+   * The same entitlement argument {@link playerState} makes, one level down. A
+   * slot index is everything a *policy* needs — §4.4 hands it a categorical
+   * choice and an outcome to learn from — and it is nothing at all to a
+   * *person*, who is offered nineteen numbers and no reason to prefer one.
+   * `docs/design/interface-findings.md` §1.11 is that finding.
+   *
+   * Aligned slot-for-slot with {@link candidates} **by construction**: it is
+   * handed the very lists that method returns rather than rebuilding them, so
+   * the two cannot describe different worlds. Nothing here reaches
+   * {@link observe}, and no rule reads it.
+   */
+  candidateDetails(): CandidateDetailProjection;
+  /**
+   * §4.4's academy projection: every college, its roster, its shelf, the
+   * lessons in progress, and the cells the ruleset permits.
+   *
+   * The same entitlement argument {@link candidateDetails} makes, for a
+   * different question. A funding chip needs a college in seven counts; a
+   * university *screen* needs the people, the books and the graph, and none of
+   * those is in §4.1 at all — the mage block is 6 species x 8 tiers of counts,
+   * so a policy cannot tell a college of five from five hermits.
+   *
+   * Built on request, read by no rule, unreachable from {@link observe}.
+   * `./academy.ts` argues the placement and the refusals.
+   */
+  academy(): AcademyProjection;
 }
 
 /** Builds a session. The episode does not exist until {@link AgentSession.reset}. */
@@ -489,6 +542,34 @@ export function createSession(options: SessionOptions): AgentSession {
 
     snapshotHash(): string {
       return snapshotHash(live());
+    },
+
+    playerState(): PlayerState {
+      // Built fresh rather than memoized beside `view`. The projection is not
+      // on the per-tick path any policy takes — only a client asks for it — and
+      // a second cache invalidated in `submit()` is a second thing that can be
+      // forgotten there and serve a tick-old universe as the current one.
+      return project({ state: live(), catalogue: scenario.catalogue });
+    },
+
+    candidateDetails(): CandidateDetailProjection {
+      // `currentView().candidates` and not a fresh `buildCandidates`: the
+      // alignment this projection promises is only real if both halves come
+      // from one list. Built fresh per call otherwise, for the same reason
+      // `playerState` is — a client asks, a policy does not.
+      return describeCandidates({
+        state: live(),
+        catalogue: scenario.catalogue,
+        lists: currentView().candidates,
+      });
+    },
+
+    academy(): AcademyProjection {
+      // Built fresh per call, like `playerState` and for the same reason: a
+      // client asks and a policy does not, and a second cache invalidated in
+      // `submit()` is a second thing that can be forgotten there and serve a
+      // tick-old universe as the current one.
+      return describeAcademy({ state: live(), catalogue: scenario.catalogue });
     },
   };
 }

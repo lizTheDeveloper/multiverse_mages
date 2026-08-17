@@ -4,7 +4,7 @@
   SPDX-License-Identifier: AGPL-3.0-or-later
 
   A front door for ui/. Static, no build, no dependencies: it is a list of the
-  eleven prototypes and the question each one exists to answer, because a
+  thirteen prototypes and the question each one exists to answer, because a
   prototype whose question nobody remembers is a demo. Plus one page that is
   not a prototype — the design dashboard, which asks nothing and reports the
   campaign's own state instead.
@@ -70,8 +70,8 @@
 <div class="wrap">
   <div class="eyebrow">Multiverse Mages</div>
   <h1>Interface prototypes</h1>
-  <p class="lede">Eleven static screens, each built to answer <em>one question</em> that could only be settled by operating something rather than arguing about it — and one instrument, which answers none and reports where the design actually stands.</p>
-  <p class="note">The eleven prototypes all read one recorded universe through <code>shared/session.js</code>, and each says at the top which run it is reading — or which capability the read path does not carry, and why. The dashboard below them reads no session at all — it reads a generated payload about the repository itself. Nothing here ships. None of it is imported by a package or covered by a test glob. Several of these contradicted the design that specified them, which is the whole reason they exist — the findings are collected in <code>docs/design/interface-findings.md</code>.</p>
+  <p class="lede">Thirteen screens, each built to answer <em>one question</em> that could only be settled by operating something rather than arguing about it — and one instrument, which answers none and reports where the design actually stands.</p>
+  <p class="note">The thirteen prototypes all read one universe through <code>shared/session.js</code> — the live one when <code>npm run play</code> is serving them, the recording otherwise; <code>play/</code> is the exception and needs the live one. Each says at the top which run it is reading — or which capability the read path does not carry, and why. The dashboard below them reads no session at all — it reads a generated payload about the repository itself. Nothing here ships. None of it is imported by a package or covered by a test glob. Several of these contradicted the design that specified them, which is the whole reason they exist — the findings are collected in <code>docs/design/interface-findings.md</code>.</p>
 
   <h2>The god's verbs</h2>
   <div class="grid">
@@ -89,6 +89,12 @@
 
   <h2>The world</h2>
   <div class="grid">
+    <a class="card" href="university/"><b>The university</b><span class="path">university/</span>
+      <p>One college: its roster, its shelf, the lessons running through it, and what it could learn next drawn from the real prerequisite graph. A dossier and not a map — nothing at world scale has coordinates.</p></a>
+    <a class="card" href="economy/"><b>The economy</b><span class="path">economy/</span>
+      <p>Every stock, every producer, every claimant on them — and what running short of each one
+      actually does. It ends at the four verbs, because the god has no allocation control and the
+      ruleset <em>is</em> the economic policy.</p></a>
     <a class="card" href="mage/"><b>The mage, up close</b><span class="path">mage/</span>
       <p>Can a player be told <em>why</em> an autonomous mage chose what she chose, from state the core already has?</p></a>
     <a class="card" href="knowledge/"><b>Where the knowledge is</b><span class="path">knowledge/</span>
@@ -126,6 +132,14 @@
     <code>ruleset/</code> reimplements <code>permits()</code> rather than importing it, which is the first thing to fix if any of this becomes the client.
   </footer>
 </div>
+
+<script type="module">
+  // The bar that says where else there is. Its own block, not folded into the
+  // script below: nav.js imports nothing, so a sibling module that fails to
+  // evaluate cannot take the navigation down with it.
+  import { mountNav } from './shared/nav.js';
+  mountNav({ base: './' });
+</script>
 
 <script type="module">
   // Uses `src`, never `href`: ui-index.test.ts reads every href on this page as

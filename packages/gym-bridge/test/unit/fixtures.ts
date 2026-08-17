@@ -32,11 +32,14 @@
  */
 
 import type {
+  AcademyProjection,
   AgentSession,
+  CandidateDetailProjection,
   CandidateLists,
   EpisodeAccounting,
   EpisodeStatus,
   OutcomeRecord,
+  PlayerState,
   Scenario,
   SessionOptions,
   SubmitResult,
@@ -196,6 +199,46 @@ export function fixedSession(options: FixedSessionOptions = {}): AgentSession {
     observe: () => observation,
     legalActions: () => mask,
     candidates: (): CandidateLists => new Map(),
+    /*
+     * Not modelled, on purpose. This double answers questions about a frame,
+     * never about a world, and a hand-built `PlayerState` would be a second
+     * world model free to disagree with the observation right above it. A test
+     * that needs one wants `createSession` over a real scenario.
+     *
+     * It is a throw rather than a `null` because the interface promises a
+     * `PlayerState`, and a double that quietly hands back an empty one turns a
+     * missing fixture into a passing assertion about nothing.
+     */
+    playerState: (): PlayerState => {
+      throw new Error(
+        'fixedSession does not model player state — build a session over a real scenario for that',
+      );
+    },
+    /*
+     * Empty rather than a throw, and the difference from `playerState` above is
+     * real: this double's `candidates()` returns an empty map, so an empty
+     * projection is the *correct* description of it rather than a stand-in for
+     * a world it does not have. The alignment invariant — one descriptor per
+     * candidate — holds at zero.
+     */
+    candidateDetails: (): CandidateDetailProjection =>
+      Object.freeze({ byAction: new Map(), mages: new Map(), universities: new Map() }),
+    /*
+     * Empty for the same reason `candidateDetails` is: this double holds no
+     * world, so it has no colleges, nobody in them and no ruleset — and an
+     * empty academy is the honest description of that rather than a stand-in.
+     * `permittedCells` empty is the one that could mislead if this double ever
+     * fed a frontier test: it reads as "the god has forbidden everything", and
+     * a test wanting the other answer must build a session over a real
+     * scenario.
+     */
+    academy: (): AcademyProjection =>
+      Object.freeze({
+        universities: new Map(),
+        mages: new Map(),
+        permittedCells: Object.freeze([]),
+        unaffiliated: 0,
+      }),
     submit: (): SubmitResult => {
       submitted += 1;
       return {

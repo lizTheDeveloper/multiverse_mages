@@ -257,19 +257,33 @@ proportional change in that metric the gate would report as `regressed`. Anythin
 
 | metric | 5-year gate | 20-year gate | 20-year agency gate | 200-year gate |
 |---|---|---|---|---|
-| `referenceGrimoires` | 5.5 % | 6.5 % | 12.4 % | 16.2 % |
-| `referenceKnowledgeInstances` | 2.4 % | 2.4 % | 5.6 % | 7.2 % |
-| `referenceLibraryDepth` | 16.0 % | 14.2 % | 22.4 % | 17.5 % |
-| `referenceLivingMages` | 0.8 % | 1.6 % | 3.3 % | 6.1 % |
-| `referenceNodesGained` | 3.0 % | 1.4 % | 8.5 % | 2.8 % |
-| `referenceNodesGainedFinalQuarter` | — | 3.8 % | 25.7 % | 26.4 % |
-| `referenceNodesKnown` | 2.5 % | 1.3 % | 7.9 % | 2.7 % |
-| `referencePeakPopulation` | 0.0 % | 16.6 % | 8.2 % | 1.4 % |
-| `referencePopulation` | 1.0 % | 1.9 % | 3.3 % | 8.1 % |
-| `referencePopulationChange` | 8.6 % | 5.8 % | 10.0 % | 8.2 % |
+| `referenceGrimoires` | 5.8 % | 6.5 % | 12.6 % | 16.2 % |
+| `referenceKnowledgeInstances` | 2.3 % | 2.3 % | 5.9 % | 7.2 % |
+| `referenceLibraryDepth` | 17.5 % | 14.4 % | 26.5 % | 17.5 % |
+| `referenceLivingMages` | 0.8 % | 1.6 % | 4.1 % | 6.1 % |
+| `referenceNodesGained` | 2.5 % | 1.0 % | 3.2 % | 2.8 % |
+| `referenceNodesGainedFinalQuarter` | — | 7.3 % | 47.5 % | 26.4 % |
+| `referenceNodesKnown` | 2.2 % | 0.9 % | 2.9 % | 2.7 % |
+| `referencePeakPopulation` | 0.0 % | 18.0 % | 1.7 % | 1.4 % |
+| `referencePopulation` | 1.0 % | 1.8 % | 3.3 % | 8.1 % |
+| `referencePopulationChange` | 8.5 % | 5.7 % | 10.3 % | 8.2 % |
 | runs | 200 | 200 | 64 | 64 |
 | plays a god verb | no | no | **yes** | **yes** |
 | wall clock, 4 workers | 4 s | 27 s | **10 s** | **830–1154 s** |
+
+
+**Re-measured 2026-08-16** against the three merge-gate baselines re-recorded after the wiring
+campaign (PR #201). The 200-year column is unchanged because that baseline was not re-recorded.
+
+Two rows repay reading. **`referenceNodesKnown` and `referenceNodesGained` got sharper** — 2.5 % →
+2.2 % and 3.0 % → 2.5 % at five years, and roughly a third better at twenty — because the metrics
+grew while their spread did not. **`referenceNodesGainedFinalQuarter` got markedly blunter**: 3.8 %
+→ 7.3 % at twenty years and 25.7 % → 47.5 % on the agency gate. That is arithmetic rather than a
+regression — the MDE is `tolerance ÷ |value|` and the value halved, 8.43 → 4.35 — but the
+consequence is worth stating plainly: **the metric that revealed the campaign's most important
+finding is now the one the gate sees least well.** A gate that needs a 47 % swing to notice is close
+to not watching. If front-loading is the thing to track next, that row needs more runs, not more
+tolerance.
 
 Both multi-strategy gates carry **80 further lines each**, one per `(metric, strategy)`. That is
 where their power actually lives; the column above is a summary of a mean taken over eight
