@@ -4,7 +4,7 @@
   SPDX-License-Identifier: AGPL-3.0-or-later
 
   A front door for ui/. Static, no build, no dependencies: it is a list of the
-  thirteen prototypes and the question each one exists to answer, because a
+  sixteen prototypes and the question each one exists to answer, because a
   prototype whose question nobody remembers is a demo. Plus one page that is
   not a prototype — the design dashboard, which asks nothing and reports the
   campaign's own state instead.
@@ -70,8 +70,8 @@
 <div class="wrap">
   <div class="eyebrow">Multiverse Mages</div>
   <h1>Interface prototypes</h1>
-  <p class="lede">Thirteen screens, each built to answer <em>one question</em> that could only be settled by operating something rather than arguing about it — and one instrument, which answers none and reports where the design actually stands.</p>
-  <p class="note">The thirteen prototypes all read one universe through <code>shared/session.js</code> — the live one when <code>npm run play</code> is serving them, the recording otherwise; <code>play/</code> is the exception and needs the live one. Each says at the top which run it is reading — or which capability the read path does not carry, and why. The dashboard below them reads no session at all — it reads a generated payload about the repository itself. Nothing here ships. None of it is imported by a package or covered by a test glob. Several of these contradicted the design that specified them, which is the whole reason they exist — the findings are collected in <code>docs/design/interface-findings.md</code>.</p>
+  <p class="lede">Sixteen screens, each built to answer <em>one question</em> that could only be settled by operating something rather than arguing about it — and one instrument, which answers none and reports where the design actually stands.</p>
+  <p class="note">The sixteen prototypes all read one universe through <code>shared/session.js</code> — the live one when <code>npm run play</code> is serving them, the recording otherwise; <code>play/</code> is the exception and needs the live one. Each says at the top which run it is reading — or which capability the read path does not carry, and why. The dashboard below them reads no session at all — it reads a generated payload about the repository itself. Nothing here ships. None of it is imported by a package or covered by a test glob. Several of these contradicted the design that specified them, which is the whole reason they exist — the findings are collected in <code>docs/design/interface-findings.md</code>.</p>
 
   <h2>The god's verbs</h2>
   <div class="grid">
@@ -95,6 +95,10 @@
       <p>Every stock, every producer, every claimant on them — and what running short of each one
       actually does. It ends at the four verbs, because the god has no allocation control and the
       ruleset <em>is</em> the economic policy.</p></a>
+    <a class="card" href="flows/"><b>The flow map</b><span class="path">flows/</span>
+      <p>Sources → stocks → sinks, for all seven kinds. What <em>can</em> flow is drawn from
+      content and holds for every run; what <em>did</em> flow per tick is computed every tick and
+      published nowhere, and the page says so rather than inventing it.</p></a>
     <a class="card" href="mage/"><b>The mage, up close</b><span class="path">mage/</span>
       <p>Can a player be told <em>why</em> an autonomous mage chose what she chose, from state the core already has?</p></a>
     <a class="card" href="knowledge/"><b>Where the knowledge is</b><span class="path">knowledge/</span>

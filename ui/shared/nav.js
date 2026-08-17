@@ -34,6 +34,7 @@ export const SURFACES = [
    */
   { href: 'university/', label: 'university', hint: 'one college: its roster, its shelf, its reachable graph', group: 'academy' },
   { href: 'economy/', label: 'economy', hint: 'who produces, who consumes, and what is short', group: 'academy' },
+  { href: 'flows/', label: 'flows', hint: 'sources, stocks and sinks for all seven kinds', group: 'academy' },
   { href: 'mage/', label: 'mage', hint: 'one mage, and why she chose it', group: 'academy' },
   { href: 'knowledge/', label: 'knowledge', hint: 'where the knowledge is', group: 'academy' },
   { href: 'targets/', label: 'targets', hint: 'choosing who', group: 'academy' },
