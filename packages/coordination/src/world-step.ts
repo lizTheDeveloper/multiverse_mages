@@ -138,6 +138,8 @@ import type {
   TeachingWeights,
   CohortDemography,
   ConservationBreach,
+  ConsumptionKind,
+  ConsumptionOutcome,
   GoalAppealWeights,
   MageGoalCommitment,
   MaterialAmounts,
@@ -156,6 +158,7 @@ import {
   LABORERS_PER_BUILD_UNIT,
   MATERIALS_PER_LABOR_MONTH,
   MATERIAL_KINDS,
+  NO_MATERIALS,
   NO_STANDING_ARMY,
   advanceConstruction,
   NO_EMPHASIS,
@@ -612,6 +615,49 @@ export interface WorldStepDeps {
     | undefined;
 }
 
+/**
+ * One claimant's whole flow this tick: what it asked for, what it got, and what
+ * it went without.
+ *
+ * `economy-flow-models.md` §5.2's *"none reconciles flows"* is answered on the
+ * kind side by {@link WorldStepReport.faucetByKind} and
+ * {@link WorldStepReport.sinkByKind}; this is the same answer on the **claimant**
+ * side, and it is the half a sources-to-sinks map cannot draw without. Five of
+ * the seven claimants reached a report field before this — construction stone,
+ * construction labour, teaching, library upkeep, scribing — as `owed`/`paid`
+ * pairs assembled one at a time, and `subsistence` and `casting` reached none at
+ * all. **Not one shortfall reached a report field**, so a universe that fed
+ * everybody and one that fed nobody differed only in a `shortKinds` boolean.
+ *
+ * `owed == paid + shortfall` on every row, which is what makes a row readable as
+ * a bar rather than as three unrelated numbers. Two rows are settled before
+ * phase 9 and say so in {@link ClaimantFlow.settledIn}, because *"paid zero"* and
+ * *"paid earlier"* are opposite facts and `consumeMaterials` reports the first
+ * for both.
+ */
+export interface ClaimantFlow {
+  /** Its name in `CONSUMPTION_ORDER`, and the array is in that order. */
+  readonly claimant: ConsumptionKind;
+  /** The stock it is paid out of — `CLAIMANT_KIND`, resolved here so a client need not. */
+  readonly kind: MaterialKind;
+  /** What it asked for this tick, `fp` of {@link ClaimantFlow.kind}. */
+  readonly owed: Fixed;
+  /** What it got. */
+  readonly paid: Fixed;
+  /** `owed - paid`. Zero on a claimant that was paid in full. */
+  readonly shortfall: Fixed;
+  /**
+   * Where the payment happened.
+   *
+   * `consumption` is phase 9, the priority walk. `reserved` is a claimant paid
+   * before the walk out of the same stock — scribing at the desk in phase 5,
+   * teaching at the lectern in phase 5a — which reaches `consumeMaterials` as a
+   * demand of zero or of the already-settled figure. Reporting the walk's number
+   * for those two would say a scribe wrote for free.
+   */
+  readonly settledIn: 'consumption' | 'reserved';
+}
+
 /** What one world tick did. Reporting only; never an input to any rule. */
 export interface WorldStepReport {
   readonly worldTick: number;
@@ -776,6 +822,90 @@ export interface WorldStepReport {
    * this is the series that says it was asked and answered.
    */
   readonly conservationBreaches: readonly ConservationBreach[];
+  /**
+   * The stocks this tick **opened** with, `fp` — the fourth arm of the ledger,
+   * and the one that was missing.
+   *
+   * {@link faucetByKind}, {@link sinkByKind} and the closing stock were all
+   * reported and `opening` was not, so the invariant they exist to express —
+   * `closing - opening == faucet - sink` — was checkable inside this function
+   * and by nobody else. A reader outside it had to difference two *frames*, and
+   * that arithmetic is wrong on any tick the god acted: `god.intervention` runs
+   * before this system in the same step and `deductMaterials` spends the stocks,
+   * so last tick's closing is **not** this tick's opening whenever an action
+   * carried a material price.
+   *
+   * With this field the identity is a within-tick statement a client can check
+   * on one frame, which is the only form of it that is true.
+   */
+  readonly openingByKind: MaterialAmounts;
+  /**
+   * Material the **god's** verbs took out of the stocks this tick, per kind,
+   * `fp` — the one flow the world tick cannot see.
+   *
+   * `god.intervention` runs before this system in the same step, so
+   * {@link openingByKind} is already net of it. A reader with only the world
+   * ledger finds a kind whose sole sink is a god verb reading *"no claimant"*,
+   * and could recover the spend only by differencing this tick's opening against
+   * last tick's closing — an inference, and one that also silently absorbs any
+   * other pre-step writer that ever appears.
+   *
+   * Deliberately **not** folded into {@link sinkByKind}. That number is the
+   * world tick's own conservation arithmetic and `closing - opening ==
+   * faucet - sink` must keep holding exactly; the god's spend happened before
+   * the opening was read, so adding it there would break the identity in order
+   * to describe a flow outside it. It rides beside the ledger instead, which is
+   * where it belongs: the ledger is *this tick's* accounting, and this is what
+   * happened just before it started.
+   *
+   * All zeroes for a world built without `deps.god`, which has no god to spend.
+   */
+  readonly godSpendByKind: MaterialAmounts;
+  /**
+   * The stocks actually **written** at the end of the tick, `fp`.
+   *
+   * Identical to {@link remainingByKind} on every run that asks for no leak, and
+   * deliberately a second field rather than a rename. `remainingByKind` is the
+   * stock the phases produced; this is the stock `writeMaterialStock` put in
+   * state, which under `WorldStepDeps.leak` is lower by exactly the injected
+   * amount. The ledger's `closing` is this one, so a client checking
+   * `closing - opening == faucet - sink` against `remainingByKind` would find a
+   * *leaking* universe balanced — the positive control silently disarmed.
+   */
+  readonly closingByKind: MaterialAmounts;
+  /**
+   * Every claimant's owed, paid and shortfall, in `CONSUMPTION_ORDER`.
+   *
+   * See {@link ClaimantFlow}. The order is the priority order, which is itself
+   * the answer to *"why did this one go short and that one not"* whenever two
+   * share a kind.
+   */
+  readonly claimantFlows: readonly ClaimantFlow[];
+  /**
+   * The vellum the tick's magical work asked for, `fp`, before the shelf bounded
+   * it.
+   *
+   * Distinct from `claimantFlows`' `casting` row's `paid`, which is what it got.
+   */
+  readonly castingOwed: Fixed;
+  /**
+   * The vellum the tick's magical work asked for and did not get, `fp`.
+   *
+   * **A comment in this file promised this figure and no field carried it.**
+   * Phase 9's `casting:` argument reads *"the unmet remainder is reported as
+   * `castingShortfall`, not hidden"* — and it was hidden: the work phase already
+   * computed both `castingOwed` and `castingGranted`, handed `consumeMaterials`
+   * the *granted* one, and threw the difference away. So the claim was true of
+   * the intent and false of the code, and the run this repository has measured
+   * has vellum short on 530 of 2,400 ticks — the ticks where the number is not
+   * zero are exactly the ticks the comment was written for.
+   *
+   * `castingOwed - castingGranted`. Note this is **not**
+   * `consumeMaterials`' shortfall for `casting`, which is zero by construction:
+   * casting is the first vellum claimant and is only ever asked for what the
+   * shelf can already cover.
+   */
+  readonly castingShortfall: Fixed;
   readonly carryingCapacity: number;
   readonly mageDeaths: number;
   /**
@@ -1141,6 +1271,11 @@ export interface WorldSimulation {
  */
 export function defineWorldSimulation(deps: WorldStepDeps): WorldSimulation {
   let last: WorldStepReport | undefined;
+  // Filled below, once the god's systems exist. Empty for a world built without
+  // `deps.god`, and a **cell** rather than a parameter because the two are
+  // mutually ordered: the world system needs its report callback at install
+  // time, and `godSystems` needs that callback's tradition-loss hook, so
+  // whichever is built first cannot be handed the other.
   // Nodes a tradition change emptied, waiting for the world system to fold them
   // into this tick's `nodesLost`. The god intervention system runs *before* the
   // world system in the same step — see the schema below — so a count written
@@ -1152,6 +1287,9 @@ export function defineWorldSimulation(deps: WorldStepDeps): WorldSimulation {
   // evaluations the `fp(3072)` floor ate over a run, and a counter rebuilt every
   // phase reads zero forever while looking like it is measuring something.
   const clampCounter = createRediscoveryClampCounter();
+  const godCell: {
+    interventionsFor?: (worldTick: number) => { materialsSpentByKind: MaterialAmounts };
+  } = {};
   const system = worldSystem(deps, (report) => {
     // A tradition change's losses join this tick's, rather than being reported
     // as their own kind. `change.ts` requires exactly that: *"a tradition
@@ -1161,11 +1299,26 @@ export function defineWorldSimulation(deps: WorldStepDeps): WorldSimulation {
     // how expensive the god's own switch is. Folded here, in the closure that
     // owns the report, rather than inside the loop — the loop has no business
     // knowing an intervention ran.
-    last =
+    const withLosses =
       traditionNodesLost === 0
         ? report
         : { ...report, nodesLost: report.nodesLost + traditionNodesLost };
     traditionNodesLost = 0;
+    // The god's material spend, folded in the same closure and for the same
+    // reason a tradition change's losses are: the loop has no business knowing
+    // an intervention ran, and this is the one scope that holds both the report
+    // and the god's per-tick cell. `interventionsFor` is guarded on the tick, so
+    // a world tick that ran without the intervention system — or one asking
+    // about a tick the god did not resolve — folds in `NO_INTERVENTIONS`'s
+    // zeroes rather than the previous tick's spend.
+    const interventionsFor = godCell.interventionsFor;
+    last =
+      interventionsFor === undefined
+        ? withLosses
+        : {
+            ...withLosses,
+            godSpendByKind: interventionsFor(withLosses.worldTick).materialsSpentByKind,
+          };
   }, clampCounter);
 
   // ---- god-agency: three systems where there was one --------------------
@@ -1200,6 +1353,7 @@ export function defineWorldSimulation(deps: WorldStepDeps): WorldSimulation {
       traditionNodesLost += nodes;
     },
   });
+  godCell.interventionsFor = god.interventionsFor;
   return {
     schema: defineWorldStateSchema([god.intervention, frozenWhenTerminal(system), god.outcome]),
     lastReport: () => last,
@@ -1846,7 +2000,6 @@ export function worldSystem(
       }
 
       const ledger = { opening, closing: leaked, faucet, sink };
-      assertMaterialsConserved(ledger, worldTick);
 
       // The **leaked** figure is written, not the clean one, so an injected leak
       // is a real loss of material rather than a cosmetic one the assertion
@@ -1891,6 +2044,28 @@ export function worldSystem(
         // assertion above so that the reported series and the thrown error can
         // never disagree about the same tick.
         conservationBreaches: conservationBreaches(ledger),
+        openingByKind: opening,
+        // Filled in by `defineWorldSimulation`, which is the only scope holding
+        // both this closure and the god's per-tick cell. Zero here rather than
+        // absent so a world assembled without `godSystems` — every hand-built
+        // test world — reports a god that spent nothing rather than a field a
+        // reader has to test for.
+        godSpendByKind: NO_MATERIALS,
+        // `leaked`, which is what went into state. See the field's note for why
+        // this is not the same object as `remainingByKind` on a leaking run.
+        closingByKind: leaked,
+        claimantFlows: claimantFlows({
+          consumption,
+          castingOwed: work.castingOwed,
+          castingPaid: work.castingGranted,
+          scribed: materialsScribed,
+          teachingPaid: work.insightSpent,
+        }),
+        castingOwed: work.castingOwed,
+        // The figure the phase-9 comment has promised since it was written. See
+        // the field's note: this is the work phase's gap, not the priority
+        // walk's, and the walk's is zero by construction.
+        castingShortfall: Math.max(0, work.castingOwed - work.castingGranted),
         carryingCapacity: capacity,
         mageDeaths: mortality.deaths,
         magesPromoted: promoted,
@@ -1943,8 +2118,108 @@ export function worldSystem(
         // average over a population the metric does not know about.
         capital: capital.emissions(CAPITAL_REPORT_CEILING, rateClamps.total()),
       });
+
+      // ---- 9c. The assertion, **after** the report and not before it -------
+      //
+      // It used to sit at the ledger's construction, twelve lines above, and
+      // that made `conservationBreaches` a series that could only ever be empty:
+      // a tick with a breach threw before `onReport` ran, so the one tick whose
+      // reading is worth having was the one tick nobody got. The field's own
+      // note says *"a checker that can only fail loudly gives no evidence while
+      // it is passing; this is the series that says it was asked and answered"*
+      // — and it could not answer anything but "no". That is the shape this
+      // campaign has now found six of: a metric whose only reachable value is
+      // zero.
+      //
+      // Moving it here changes nothing about **whether** a leaking tick throws,
+      // which kind it names or which tick: `conservationBreaches(ledger)` is
+      // recomputed from the same object either way. What changes is that the
+      // report reaches its consumer first, so a client can be shown the
+      // discrepancy rather than only the stack trace.
+      assertMaterialsConserved(ledger, worldTick);
     },
   };
+}
+
+/**
+ * Every claimant's row, in `CONSUMPTION_ORDER`.
+ *
+ * Built from `CONSUMPTION_ORDER` and `CLAIMANT_KIND` rather than from a
+ * transcribed list, so a claimant added to `rules-world` appears here without
+ * anybody remembering to add it — which is the same argument
+ * `player-state.ts` makes for reading `MATERIAL_STOCK.fields` instead of naming
+ * seven kinds.
+ *
+ * Three rows are overridden, and each override is a place where the priority
+ * walk's own numbers would say something false:
+ *
+ * - **`casting`.** `consumeMaterials` is handed `castingGranted`, so its
+ *   shortfall is zero by construction. The real gap is the work phase's, and it
+ *   is the figure phase 9's comment promises.
+ * - **`scribing`.** Paid at the desk in phase 5 and handed a demand of zero, so
+ *   the walk reports a scribe who wrote for nothing. `materialsScribed` is what
+ *   the vellum actually cost.
+ * - **`teaching`.** Reserved at the lectern before the walk, so what arrives is
+ *   what was already spent. Its unmet demand is `teachingFundedShare`, a share
+ *   rather than an amount, and it is reported under its own name.
+ *
+ * `owed == paid + shortfall` holds on all seven, which the caller's test checks
+ * rather than this function asserting.
+ */
+function claimantFlows(input: {
+  readonly consumption: ConsumptionOutcome;
+  readonly castingOwed: Fixed;
+  readonly castingPaid: Fixed;
+  readonly scribed: Fixed;
+  readonly teachingPaid: Fixed;
+}): readonly ClaimantFlow[] {
+  const rows: ClaimantFlow[] = [];
+  for (const claimant of CONSUMPTION_ORDER) {
+    const kind = CLAIMANT_KIND[claimant];
+    // `paid` is always the walk's own figure plus whatever was settled ahead of
+    // it, never a substitute for it. That is what keeps
+    // `sink[kind] == spilled[kind] + Σ paid over the claimants of that kind`
+    // exactly true — the reconciliation a client checks — even if a claimant
+    // this function overrides later grows a phase-9 demand as well.
+    const walked = input.consumption.spent[claimant];
+    if (claimant === 'casting') {
+      rows.push({
+        claimant,
+        kind,
+        owed: input.castingOwed,
+        paid: walked,
+        shortfall: Math.max(0, input.castingOwed - walked),
+        settledIn: 'consumption',
+      });
+      continue;
+    }
+    if (claimant === 'scribing') {
+      const paid = walked + input.scribed;
+      rows.push({ claimant, kind, owed: paid, paid, shortfall: 0, settledIn: 'reserved' });
+      continue;
+    }
+    if (claimant === 'teaching') {
+      rows.push({
+        claimant,
+        kind,
+        owed: input.teachingPaid,
+        paid: walked,
+        shortfall: Math.max(0, input.teachingPaid - walked),
+        settledIn: 'reserved',
+      });
+      continue;
+    }
+    const shortfall = input.consumption.shortfall[claimant];
+    rows.push({
+      claimant,
+      kind,
+      owed: walked + shortfall,
+      paid: walked,
+      shortfall,
+      settledIn: 'consumption',
+    });
+  }
+  return rows;
 }
 
 // ---------------------------------------------------------------------------

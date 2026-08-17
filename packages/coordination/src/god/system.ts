@@ -58,6 +58,7 @@ import type { PrimitiveRecord, SpeciesRecord } from '@mm/content';
 import type { CellResolver, KnowledgeSubsystem, NodeCatalog } from '@mm/rules-magic';
 import type { ClampCounters } from '@mm/primitives';
 import type { TerritoryKind } from '@mm/rules-world';
+import { zeroAmounts } from '@mm/rules-world';
 import {
   ASCENSION_PATH,
   BLESSING,
@@ -227,6 +228,19 @@ export interface GodSimulation {
   readonly outcome: System;
   /** The last tick's report, or `undefined` before the first god tick. */
   lastReport: () => GodTickReport | undefined;
+  /**
+   * This tick's intervention report, if the tick asking is the tick that wrote
+   * it, and `NO_INTERVENTIONS` otherwise.
+   *
+   * The **same** accessor the outcome system is handed, exposed rather than
+   * duplicated: `world-step.ts` needs `materialsSpentByKind` while its own
+   * report is being assembled, which is between the two systems, and a second
+   * cell for one number is a second place for the two to disagree about which
+   * tick a spend belongs to. `spentTick` is what makes a stale read impossible
+   * rather than unlikely, and it guards this reader exactly as it guards that
+   * one.
+   */
+  interventionsFor: (worldTick: number) => InterventionReport;
 }
 
 const NO_INTERVENTIONS: InterventionReport = Object.freeze({
@@ -234,6 +248,7 @@ const NO_INTERVENTIONS: InterventionReport = Object.freeze({
   refused: 0,
   rolledBack: 0,
   applied: 0,
+  materialsSpentByKind: Object.freeze(zeroAmounts()),
 });
 
 /**
@@ -269,6 +284,7 @@ export function godSystems(deps: GodDeps): GodSimulation {
       },
     ),
     lastReport: () => last,
+    interventionsFor: (tick) => (spentTick === tick ? spent : NO_INTERVENTIONS),
   };
 }
 

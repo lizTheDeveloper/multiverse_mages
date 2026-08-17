@@ -221,6 +221,28 @@ export interface InterventionReport {
   readonly rolledBack: number;
   /** Actions that resolved. */
   readonly applied: number;
+  /**
+   * Material the god's verbs took out of the stocks this tick, per kind, `fp`.
+   *
+   * **The one flow the world tick's ledger structurally cannot see.** This
+   * system runs *before* `worldSystem` in the same step, so what
+   * `deductMaterials` writes is what the world tick opens with — its `opening`
+   * is already net of the god. A reader with only the world ledger therefore
+   * finds a kind whose sole sink is a god verb reading *"no claimant"*, and can
+   * recover the spend only by differencing `opening[t]` against `closing[t-1]`,
+   * which is an inference rather than a measurement.
+   *
+   * Measured as the stock's own **movement across this system** — the row read
+   * before the action loop against the row read after — rather than by summing
+   * prices. That is immune to the two ways a price-sum goes wrong: a plan that
+   * is rolled back has `restoreMaterials` put the stocks back, and an action
+   * refused before `deductMaterials` never charged. What is reported is what
+   * left, whatever the reason.
+   *
+   * Positive is spent. Nothing here can make material, so a negative entry
+   * would be a defect rather than a gift.
+   */
+  readonly materialsSpentByKind: Readonly<Record<MaterialKind, Fixed>>;
 }
 
 /** A mutable tally the resolver folds into, turned into a report at the end. */
@@ -229,6 +251,7 @@ interface Tally {
   refused: number;
   rolledBack: number;
   applied: number;
+  materialsSpentByKind: Record<MaterialKind, Fixed>;
 }
 
 /**
@@ -247,7 +270,13 @@ export function resolveInterventions(
   mode: number,
   deps: InterventionDeps,
 ): InterventionReport {
-  const tally: Tally = { spentByAction: {}, refused: 0, rolledBack: 0, applied: 0 };
+  const tally: Tally = {
+    spentByAction: {},
+    refused: 0,
+    rolledBack: 0,
+    applied: 0,
+    materialsSpentByKind: zeroAmounts(),
+  };
 
   const universe = findTheUniverse(state);
   if (universe === 0) return report(tally);
@@ -273,10 +302,17 @@ export function resolveInterventions(
     return report(tally);
   }
 
+  // The stocks as this system found them, against the stocks it leaves behind.
+  // Read around the whole loop rather than summed per action, for the reason
+  // `InterventionReport.materialsSpentByKind` gives: a rollback restores the
+  // row, and a price-sum would bill for a purchase that did not happen.
+  const before = readStock(state, universe);
   for (const action of actions) {
     if (!isGodIntervention(action.kind)) continue;
     resolveOne(state, universe, action, worldTick, deps, tally);
   }
+  const after = readStock(state, universe);
+  for (const kind of MATERIAL_KINDS) tally.materialsSpentByKind[kind] = before[kind] - after[kind];
   return report(tally);
 }
 
@@ -286,6 +322,7 @@ function report(tally: Tally): InterventionReport {
     refused: tally.refused,
     rolledBack: tally.rolledBack,
     applied: tally.applied,
+    materialsSpentByKind: Object.freeze({ ...tally.materialsSpentByKind }),
   };
 }
 

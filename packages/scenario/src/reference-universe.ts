@@ -83,6 +83,7 @@ import { KnowledgeSubsystem, MASTERY_MAX, MagicGrid } from '@mm/rules-magic';
 import { readRaidTuning } from '@mm/rules-raid';
 
 import type { EngagementPolicy } from './raid-directives.js';
+import type { MaterialKind } from '@mm/rules-world';
 import { createMage, defaultSiteKind, siteUniversity } from '@mm/rules-world';
 import type {
   AblationMask,
@@ -1292,6 +1293,25 @@ export interface ReferenceScenarioOptions {
    */
   readonly ablation?: AblationMask;
   /**
+   * An unrecorded drain on one stock, or absent. **The positive control on the
+   * conservation ledger, and nothing else may set it.**
+   *
+   * `WorldStepDeps.leak` lives on the shipped path on purpose — a checker that
+   * has never failed is not known to work, and a control that re-implements the
+   * tick can agree with itself while both have drifted from the real loop. What
+   * was missing was a way to reach it *through the composition root*, so that
+   * the thing exercised is the loop a client is really fed by rather than a
+   * hand-built world beside it.
+   *
+   * **A run built with this is a run that dies.** The tick reports its breach
+   * and then `assertMaterialsConserved` throws, which is the whole point: a flow
+   * that changes a stock without recording itself is the defect it asserts
+   * against. Nothing in `src/` sets this, and `material-ledger.test.ts` holds
+   * the deps to `leak === undefined` so a composition root cannot acquire one by
+   * accident.
+   */
+  readonly leak?: { readonly kind: MaterialKind; readonly perTick: number };
+  /**
    * A policy asked on every engagement tick of every raid, or absent.
    *
    * Absent is the build before the raid seam existed, byte for byte: the raid
@@ -1361,9 +1381,15 @@ export function referenceScenario(
   content: ReferenceContent = referenceContent(),
   options: ReferenceScenarioOptions = {},
 ): ReferenceRun {
-  const simulation = defineWorldSimulation(
-    options.ablation === undefined ? content.deps : { ...content.deps, ablation: options.ablation },
-  );
+  const simulation = defineWorldSimulation({
+    ...content.deps,
+    ...(options.ablation === undefined ? {} : { ablation: options.ablation }),
+    // Spread conditionally rather than assigned, so an absent option leaves the
+    // key off entirely and every control run takes the byte-identical
+    // `deps.leak === undefined` branch — the same reasoning `ablation` carries
+    // one field up.
+    ...(options.leak === undefined ? {} : { leak: options.leak }),
+  });
   const raiding = options.raids ?? true;
 
   // The sandbox, resolved once. Four reads follow — the schema builder, the
@@ -1430,6 +1456,12 @@ export function referenceScenario(
       scenario: {
         scenarioId,
         catalogue: content.catalogue,
+        // The per-tick flow ledger, handed to `agent-api` here because this is
+        // the only package that has both in scope. `Scenario.flowReport` says
+        // why the edge cannot run the other way; the assignment is what holds
+        // `FlowReportSource` structurally equal to `WorldStepReport`, so a field
+        // renamed in `coordination` fails to build on this line.
+        flowReport: simulation.lastReport,
         create: (runSeed: number, config: ScenarioConfig): SimState => {
           const state = cheat(
             buildReferenceState({
@@ -1509,6 +1541,11 @@ export function referenceScenario(
       // first would burn every round on a refusal — measured, and documented on
       // `inviteScholarCandidates`.
       portalNodes: [...(content.deps.god?.portalNodes ?? [])],
+      // The raiding half of the same wire. Both literals carry it or a run that
+      // raids draws no ledger while a run that does not draws one — which reads
+      // as "the economy stopped" rather than as two scenario objects that were
+      // edited one at a time.
+      flowReport: simulation.lastReport,
       create: (runSeed: number, config: ScenarioConfig): SimState => {
         // A new episode is a new run: the raid log belongs to one, and a
         // scenario reused across two would report the first one's raids in the

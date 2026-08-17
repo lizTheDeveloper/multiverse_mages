@@ -147,6 +147,105 @@ const hasAcademy = (academy) =>
   Array.isArray(academy.permittedCells) &&
   typeof academy.unaffiliated === 'number';
 
+/**
+ * The seven baskets a flow ledger carries, each a per-kind record of fp
+ * integers.
+ *
+ * Named rather than discovered from the object's own keys, for the reason
+ * `LAND_KINDS` next door is a literal: which fields must be present is a
+ * decision a reviewer checks, not a property of whatever the encoder happened to
+ * write. The **kinds inside** a basket are read off the data, so a kind appended
+ * to `material-stock` reaches a page without a change here.
+ */
+const FLOW_BASKETS = ['opening', 'closing', 'faucet', 'sink', 'land', 'applied', 'spilled'];
+
+/**
+ * Baskets a frame may carry and need not, decoded one at a time.
+ *
+ * Deliberately **outside** {@link FLOW_BASKETS}, for the reason {@link
+ * otherStocks} is outside {@link hasStocks}: `godSpend` arrived after the first
+ * recordings did, and requiring it here would make every one of those frames
+ * fall back to no ledger at all and lose a breakdown they really have. Present
+ * is decoded, absent is absent, and neither is `0`.
+ *
+ * `godSpend` is also not part of `faucet - sink` — the god's verbs are charged
+ * before the world tick reads its opening stock — so a page missing it is
+ * missing an inflow arrow, not an unbalanced ledger.
+ */
+const FLOW_OPTIONAL_BASKETS = ['godSpend'];
+
+/** The scalar pressures, each fp. */
+const FLOW_PRESSURES = [
+  'castingOwed',
+  'castingShortfall',
+  'subsistenceShortfallShare',
+  'teachingFundedShare',
+  'libraryUpkeepOwed',
+  'libraryUpkeepPaid',
+  'constructionStoneOwed',
+  'constructionStonePaid',
+  'applicationRations',
+  'materialsScribed',
+];
+
+/** The counts beside them, which are counts and are not fp. */
+const FLOW_PRODUCERS = ['magesApplying', 'economicNodes', 'buildRateSources'];
+
+const finiteNumber = (value) => typeof value === 'number' && Number.isFinite(value);
+
+/** A per-kind record whose every value is a real number, and which has at least one. */
+const finiteBasket = (basket) => {
+  if (basket === null || typeof basket !== 'object') return false;
+  const values = Object.values(basket);
+  return values.length > 0 && values.every(finiteNumber);
+};
+
+const finiteFields = (record, fields) =>
+  record !== null && typeof record === 'object' && fields.every((f) => finiteNumber(record[f]));
+
+/**
+ * Whether a frame's `flow` sidecar carries a whole ledger.
+ *
+ * **All of it or none of it**, and finite rather than merely present, for the
+ * reason {@link hasStocks} gives one field over: `JSON.parse` turns a serialized
+ * `Infinity` or `NaN` into `null`, `units(null)` is `0`, and a `0` in a faucet
+ * is *"nothing was produced"* — a fact, not an absence. A half-present ledger
+ * would let a page draw a source with no sink and read it as a universe printing
+ * material from nowhere, which is precisely the diagnosis `breaches` exists to
+ * make and would be a false one.
+ *
+ * A recording made before this sidecar existed is a valid recording, and so is
+ * the opening frame of every recording made after it: nothing has been stepped
+ * at tick 0, so there is no tick to report on. Both are absent, and
+ * `capabilities()` reports the absence rather than a page guessing.
+ */
+const hasFlow = (flow) =>
+  flow !== null &&
+  typeof flow === 'object' &&
+  finiteNumber(flow.worldTick) &&
+  FLOW_BASKETS.every((name) => finiteBasket(flow[name])) &&
+  flow.short !== null &&
+  typeof flow.short === 'object' &&
+  Array.isArray(flow.claimants) &&
+  flow.claimants.every(
+    (row) =>
+      row !== null &&
+      typeof row === 'object' &&
+      typeof row.claimant === 'string' &&
+      typeof row.kind === 'string' &&
+      finiteFields(row, ['owed', 'paid', 'shortfall']),
+  ) &&
+  Array.isArray(flow.breaches) &&
+  flow.breaches.every(
+    (row) =>
+      row !== null &&
+      typeof row === 'object' &&
+      typeof row.kind === 'string' &&
+      finiteFields(row, ['delta', 'expected', 'discrepancy']),
+  ) &&
+  finiteFields(flow.pressure, FLOW_PRESSURES) &&
+  finiteFields(flow.producers, FLOW_PRODUCERS);
+
 const KNOWLEDGE_CHANNELS = 3;
 const SPECIES_COUNT = 6;
 const MAGE_TIER_SLOTS = 8;
@@ -214,6 +313,13 @@ export const WHY_ABSENT = {
     'university — §1.2 makes a teaching row belong to the *pair*, and there is no classroom in ' +
     'state. So "who teaches here" is a join through the two parties\' affiliation, and both ' +
     'halves of it are drawn rather than one being assumed.',
+  flowLedger:
+    'A frame with no `flow` sidecar carries seven closing levels and nothing about how they got ' +
+    'there, so a universe that spent its vellum and one that leaked it are the same two numbers. ' +
+    'The ledger is derived per tick and is deliberately not in state — `world-step.ts` keeps it ' +
+    'out so that two peers cannot desync over a number no rule reads — so a recording made before ' +
+    'the sidecar existed cannot have it reconstructed from the observation, and the opening frame ' +
+    'of every recording has none because nothing has been stepped yet.',
   admission:
     '`capacity` is written once when a college is founded and mutated nowhere in `src/`. ' +
     '`admitStudents` and its admission-refusal tally have no caller outside a lab test, so the ' +
@@ -467,6 +573,89 @@ class Frame {
       mage: (handle) => raw.mages[String(handle)],
       permittedCells: new Set(raw.permittedCells),
       unaffiliated: raw.unaffiliated,
+    };
+  }
+
+  /**
+   * §4.4's flow ledger for the tick this frame is of, in world units, or `null`.
+   *
+   * The one thing every other accessor on this class structurally cannot say:
+   * they all report a **level**, and a level cannot tell material that was spent
+   * from material that was lost. `economy-flow-models.md` §5.2 is the finding.
+   *
+   * ## The invariant is a statement about one frame, never about two
+   *
+   * `closing - opening == faucet - sink`, per kind, exactly. **Do not difference
+   * two frames to get it.** `god/interventions.ts` spends the stocks for a priced
+   * action in a system that runs *before* the world loop in the same step, so
+   * last tick's `closing` is not this tick's `opening` on any tick the god paid
+   * for something. `opening` is carried precisely so a page never has to.
+   *
+   * `breaches` is the ledger's own answer and not a re-derivation: it is what the
+   * simulation's own assertion throws on, so the two cannot disagree about a
+   * tick. Non-empty means material moved without recording itself.
+   *
+   * ## Two faucets, and `labor` is not new supply
+   *
+   * `land` is the populace's basket and `applied` is the mages'. They are not the
+   * same kind of thing: `produceMaterials` computes one budget off a laborer's
+   * month and splits it *by subtraction* into hands for hire and work on the
+   * ground, so `land.labor` is taken **out of** the food, stone and vellum that
+   * month would otherwise have yielded. `applied` is per mage and routed to a
+   * kind by the form of the node she cast, and is genuinely new. A page that
+   * draws them as two equal inflows will say raising the hireable share grows the
+   * economy; it moves it.
+   *
+   * `null` when the frame has no sidecar — a recording made before it existed, or
+   * the opening frame of any recording, where nothing has been stepped. Never
+   * zero-filled: see {@link hasFlow}.
+   */
+  flow() {
+    const raw = this.raw.flow;
+    if (!hasFlow(raw)) return null;
+    /* Kinds off the data rather than a list here, so a column appended to
+       `material-stock` reaches a page without an edit. */
+    const basket = (b) => Object.fromEntries(Object.entries(b).map(([k, v]) => [k, units(v)]));
+    return {
+      worldTick: raw.worldTick,
+      kinds: Object.keys(raw.opening),
+      opening: basket(raw.opening),
+      closing: basket(raw.closing),
+      faucet: basket(raw.faucet),
+      sink: basket(raw.sink),
+      land: basket(raw.land),
+      applied: basket(raw.applied),
+      spilled: basket(raw.spilled),
+      /* Present only if the frame carries it — never zero-filled, because a
+         `godSpend` of zero is the claim that the god bought nothing this tick
+         and an absent one is the claim that this recording cannot say. */
+      ...Object.fromEntries(
+        FLOW_OPTIONAL_BASKETS.filter((name) => finiteBasket(raw[name])).map((name) => [
+          name,
+          basket(raw[name]),
+        ]),
+      ),
+      /* Booleans, not quantities. Copied rather than aliased so a page cannot
+         write back into the parsed document. */
+      short: { ...raw.short },
+      claimants: raw.claimants.map((row) => ({
+        claimant: row.claimant,
+        kind: row.kind,
+        owed: units(row.owed),
+        paid: units(row.paid),
+        shortfall: units(row.shortfall),
+        settledIn: row.settledIn,
+      })),
+      breaches: raw.breaches.map((row) => ({
+        kind: row.kind,
+        delta: units(row.delta),
+        expected: units(row.expected),
+        discrepancy: units(row.discrepancy),
+      })),
+      pressure: Object.fromEntries(FLOW_PRESSURES.map((f) => [f, units(raw.pressure[f])])),
+      /* Counts of things, so they stay integers. `units` on a headcount would
+         report sixteen mages as 0.015625. */
+      producers: Object.fromEntries(FLOW_PRODUCERS.map((f) => [f, raw.producers[f]])),
     };
   }
 
@@ -919,6 +1108,16 @@ function buildSession(doc, extras = {}) {
          * reason the two above are.
          */
         academy: f.academy() !== null,
+        /**
+         * Whether a page can draw where this tick's material came from and where
+         * it went, rather than only what is left.
+         *
+         * Read off the **last** frame rather than the first, and that is not
+         * arbitrary: frame 0 of every recording is absent by construction —
+         * nothing has been stepped at tick 0, so there is no tick to report on —
+         * and asking it would report "no ledger" for every recording ever made.
+         */
+        flowLedger: f.flow() !== null,
         engagement: anyEngagement(),
         // Absent from the read path, not from this recording. See WHY_ABSENT.
         individualMages: false,
