@@ -485,39 +485,145 @@ describe('shipped content', () => {
   });
 
   /**
-   * Task 1.4's trap, made mechanical.
+   * ## The yield table, pinned row by row — and it moved on purpose
    *
-   * Adding four kinds to `yieldWeights` must not renormalize the seven forms
-   * that already yielded — a "tidy up so the weights sum to fp(1024)" pass over
-   * the whole file would be a silent balance change wearing the clothes of a
-   * schema migration. The expected values are transcribed from `form.json` as
-   * it stood at `57bcbc44`, before the four kinds existed, so this fails if any
-   * of them moves for any reason.
+   * This test used to be called *"leaves the seven pre-existing yield rows
+   * exactly where they were"*, and it existed to catch Task 1.4's trap: a
+   * "tidy up so the weights sum to fp(1024)" pass over the whole file would be
+   * a silent balance change wearing the clothes of a schema migration. That
+   * guard is still what this test is for. What changed is the table it guards.
    *
-   * `animal` and `herbam` are the rows that make the check worth having: they
-   * are the two that name more than one kind, so they are where a
-   * renormalization would show up first and be hardest to spot by eye.
+   * **Measured on `integration/all-branches` @ `4621db1a`, 2026-08-16:**
+   * fourteen forms carried **nine distinct baskets**. `animal == herbam`,
+   * `ignem == terram`, `imaginem == mentem`, and `umbra == fatum == limen`. A
+   * god permitting only *Creo Animal* and a god permitting only *Creo Herbam*
+   * got numerically identical economies out of the routing —
+   * `tools/w-yields/form-routing.mjs` hands one identical magnitude to all
+   * fourteen and printed exactly that. The herder and the farmhand were erased
+   * by the yield table, and §6a's *"different universes aren't really
+   * different"* had one of its causes here.
+   *
+   * The table below is the re-author. Each row means what the form's name
+   * means:
+   *
+   * - **`animal`** — the herd is meat *and hide*, and hide is the archive's own
+   *   material: vellum **is** calfskin. So it leans vellum, and carries no
+   *   timber.
+   * - **`herbam`** — the field is grain first, then fibre, then the beam. Food
+   *   dominant, a little vellum for paper, a little `stone` because the
+   *   construction stock is what a building is made of and a beam is a
+   *   building.
+   * - **`aquam`** — the river irrigates, carries gravel down, and soaks the
+   *   skins; parchment-making is a wet trade.
+   * - **`auram`** — the bellows for the kiln, and the drying wind that turns a
+   *   skin into a page.
+   * - **`ignem`** — the kiln and the forge, and the hearth: fire is what makes
+   *   food keep through a winter.
+   * - **`terram`**, **`mentem`**, **`vim`**, **`limen`**, **`corpus`**,
+   *   **`nomen`** — left as pure archetypes. Each is *the* form of its kind and
+   *   splitting it would blur the thing every other row is measured against.
+   * - **`imaginem`** — what is noticed becomes a drawn copy, so it yields a
+   *   little vellum beside its insight.
+   * - **`umbra`** — shadow is the room's response to a thing: information about
+   *   a place you cannot see, so a little insight beside its passage.
+   * - **`fatum`** — a fate reaches the carrier itself without a working, so a
+   *   little essence beside its passage.
+   *
+   * **Every row sums to exactly 1024, and that is asserted separately below**,
+   * because `routeYieldByForm` makes total routed output
+   * `magnitude x (sum / 1024)`: a row summing to 1100 is a hidden magnitude buff
+   * wearing the clothes of a mix. The re-author moves the **mix** and moves no
+   * magnitude at all.
+   *
+   * Every magnitude here is untuned, like everything else in the file.
    */
-  it('leaves the seven pre-existing yield rows exactly where they were', () => {
-    const before: Record<string, { food: number; stone: number; vellum: number }> = {
-      animal: { food: 512, stone: 0, vellum: 512 },
-      aquam: { food: 768, stone: 256, vellum: 0 },
-      auram: { food: 256, stone: 768, vellum: 0 },
-      herbam: { food: 512, stone: 0, vellum: 512 },
-      ignem: { food: 0, stone: 1024, vellum: 0 },
-      terram: { food: 0, stone: 1024, vellum: 0 },
-      nomen: { food: 0, stone: 0, vellum: 1024 },
+  it('pins every yield row, so a mix change can never arrive by accident', () => {
+    const expected: Record<string, Record<(typeof MATERIAL_KINDS)[number], number>> = {
+      animal: { food: 448, stone: 0, vellum: 576, labor: 0, essence: 0, insight: 0, passage: 0 },
+      aquam: { food: 704, stone: 192, vellum: 128, labor: 0, essence: 0, insight: 0, passage: 0 },
+      auram: { food: 256, stone: 512, vellum: 256, labor: 0, essence: 0, insight: 0, passage: 0 },
+      corpus: { food: 0, stone: 0, vellum: 0, labor: 1024, essence: 0, insight: 0, passage: 0 },
+      herbam: { food: 640, stone: 128, vellum: 256, labor: 0, essence: 0, insight: 0, passage: 0 },
+      ignem: { food: 256, stone: 768, vellum: 0, labor: 0, essence: 0, insight: 0, passage: 0 },
+      imaginem: { food: 0, stone: 0, vellum: 256, labor: 0, essence: 0, insight: 768, passage: 0 },
+      mentem: { food: 0, stone: 0, vellum: 0, labor: 0, essence: 0, insight: 1024, passage: 0 },
+      terram: { food: 0, stone: 1024, vellum: 0, labor: 0, essence: 0, insight: 0, passage: 0 },
+      vim: { food: 0, stone: 0, vellum: 0, labor: 0, essence: 1024, insight: 0, passage: 0 },
+      umbra: { food: 0, stone: 0, vellum: 0, labor: 0, essence: 0, insight: 256, passage: 768 },
+      fatum: { food: 0, stone: 0, vellum: 0, labor: 0, essence: 256, insight: 0, passage: 768 },
+      limen: { food: 0, stone: 0, vellum: 0, labor: 0, essence: 0, insight: 0, passage: 1024 },
+      nomen: { food: 0, stone: 0, vellum: 1024, labor: 0, essence: 0, insight: 0, passage: 0 },
     };
 
-    for (const [id, expected] of Object.entries(before)) {
+    // Every shipped form is named, so a form added later cannot slip past this
+    // by simply not appearing in the table above.
+    expect(registry.forms.map((entry) => entry.record.id).sort()).toEqual(
+      Object.keys(expected).sort(),
+    );
+
+    for (const [id, weights] of Object.entries(expected)) {
       const record = registry.forms.find((entry) => entry.record.id === id)?.record;
       expect(record, `form "${id}" is missing from the shipped set`).toBeDefined();
-      const weights = record?.yieldWeights;
       expect(
-        { food: weights?.food, stone: weights?.stone, vellum: weights?.vellum },
-        `form "${id}" had its pre-existing weights rewritten`,
-      ).toEqual(expected);
+        Object.fromEntries(MATERIAL_KINDS.map((kind) => [kind, record?.yieldWeights[kind]])),
+        `form "${id}" had its weights rewritten`,
+      ).toEqual(weights);
     }
+  });
+
+  /**
+   * The magnitude half of the same guard, stated as arithmetic rather than as a
+   * transcription.
+   *
+   * `routeYieldByForm` computes `magnitude x weight / 1024` per kind, so a
+   * form's routed **total** is `magnitude x (Σ weights / 1024)`. Every shipped
+   * row sums to exactly `1024`, which is what makes the table a statement about
+   * *mix* alone: two forms differ in what they make and never in how much. A
+   * row summing to 1200 would be a seventeen-per-cent yield buff that no
+   * reviewer reading a diff of seven integers would see.
+   *
+   * Separate from the transcription above because it survives a deliberate
+   * retune: somebody who moves a weight on purpose updates one test and is
+   * still caught by the other.
+   */
+  it('keeps every form a statement about mix, never about magnitude', () => {
+    for (const entry of registry.forms) {
+      const sum = MATERIAL_KINDS.reduce((total, kind) => total + entry.record.yieldWeights[kind], 0);
+      expect(sum, `form "${entry.record.id}" routes ${String(sum)}/1024 of a magnitude`).toBe(1024);
+    }
+  });
+
+  /**
+   * ## No two forms may be the same basket, and this is the assertion the
+   * campaign was missing
+   *
+   * Two forms carrying identical weights are two forms the **economy cannot
+   * tell apart**. A god permitting one and a god permitting the other get
+   * numerically identical baskets out of `routeYieldByForm`, whatever the two
+   * cells' nodes say, so the choice between them is not an economic choice at
+   * all. §6a's whole claim — *"Rego Terram and its neighbours move this number,
+   * which is how 'earth magic builds universities faster' becomes a number
+   * rather than a special case"* — needs the neighbours to differ.
+   *
+   * On `4621db1a` this found four collapses across five duplicate rows and
+   * would have gone green on nine of the fourteen. It is written as a count of
+   * distinct baskets rather than as a list of known-good pairs, so a fifteenth
+   * form authored as a copy of an existing one fails here rather than in a
+   * balance sweep six months later.
+   */
+  it('gives every form a basket no other form has', () => {
+    const byBasket = new Map<string, string[]>();
+    for (const entry of registry.forms) {
+      const key = MATERIAL_KINDS.map((kind) => entry.record.yieldWeights[kind]).join('/');
+      byBasket.set(key, [...(byBasket.get(key) ?? []), entry.record.id]);
+    }
+    const collapsed = [...byBasket.values()].filter((ids) => ids.length > 1);
+    expect(
+      collapsed,
+      `these forms carry identical yield weights, so the economy cannot tell them apart: ` +
+        `${collapsed.map((ids) => ids.join(' = ')).join('; ')}`,
+    ).toEqual([]);
+    expect(byBasket.size).toBe(registry.forms.length);
   });
 
   it('never authors a mētis node cheaper to rediscover than an episteme peer', () => {

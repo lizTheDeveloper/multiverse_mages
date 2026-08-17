@@ -922,7 +922,22 @@ describe('contentRevision', () => {
     // MEASURED with `node packages/content/bin/validate-content.mjs` on the
     // merged tree, then confirmed by this test, which is the two independent
     // paths the paragraphs above insist on.
-    expect(registry.contentRevision).toBe('db63c9365903af34057e4a852401aab9');
+    //
+    // db63c9365903af34057e4a852401aab9 -> 6cae4c8f82d6cad4a47ecb10d7efb15c, on
+    // `w/exp-yields`, 2026-08-16. **`form.json`: every one of the fourteen
+    // yield rows re-authored so that no two forms carry the same basket.**
+    // Fourteen forms carried nine distinct baskets — `animal == herbam`,
+    // `ignem == terram`, `imaginem == mentem`, `umbra == fatum == limen` — so a
+    // god permitting only *Creo Animal* and one permitting only *Creo Herbam*
+    // got numerically identical routing out of `routeYieldByForm`, and the
+    // herder and the farmhand were the same worker. Fourteen distinct baskets
+    // now, every row still summing to exactly 1024, so the edit moves the mix
+    // and no magnitude: `shipped-content.test.ts` pins both halves.
+    //
+    // Not a union. This is a single edit to a single file on a preimage that is
+    // `4621db1a` unchanged, which is why one arrow suffices where every entry
+    // above needed two.
+    expect(registry.contentRevision).toBe('6cae4c8f82d6cad4a47ecb10d7efb15c');
   });
 
   it('is stable across loads of identical content', () => {
