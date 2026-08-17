@@ -105,7 +105,7 @@ describe('the reachability triage document', () => {
     }
   });
 
-  it('has a totals row equal to the sum of the package rows, and to 112', () => {
+  it('has a totals row equal to the sum of the package rows, and to 108', () => {
     expect(totalsRow).toHaveLength(1);
     const totals = totalsRow[0]!.slice(1);
 
@@ -118,12 +118,18 @@ describe('the reachability triage document', () => {
     // 129 until `w204/affiliate-writer` gave `completeAffiliation` a production
     // caller and `changeAffiliation` a reached one; 127 until the ascension
     // legacy got a run boundary — `scenario/src/legacy.ts` — which closed twelve
-    // findings, and a re-pin banked three more that merges had already repaired.
+    // findings, and a re-pin banked three more that merges had already repaired;
+    // 112 until the five wiring merges landed together, of which `w/wire-magic`
+    // is most of the movement: spell preparation, the tradition store policy and
+    // `changeTradition` are three whole §2 rows that went to zero. **The document
+    // this checks changed shape at the same time** — §1's five-way judgement
+    // split is retired there, and this assertion is now over a two-column table
+    // whose debt column is §2 re-checked symbol by symbol against the pin.
     // The literal is deliberate — a total derived from the document could not
     // catch a document that had drifted from the tree — so it moves only with a
     // change that says why, and `describes the same tree the ratchet baseline
     // pins` below is the other half of the tie.
-    expect(totals.at(-1)).toBe(112);
+    expect(totals.at(-1)).toBe(108);
   });
 
   it('has a §2 table whose counts sum to the total its closing sentence claims', () => {

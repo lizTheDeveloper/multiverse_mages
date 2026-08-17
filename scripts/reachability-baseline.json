@@ -1,14 +1,14 @@
 {
   "note": "Pinned reachability findings. Generated — do not hand-edit. Regenerate with `npm run reachability:pin` and explain the diff in the commit message: an entry removed is a repair, an entry added is a debt someone accepted.",
   "scan": {
-    "examinedSymbolCount": 899,
-    "productionFileCount": 338
+    "examinedSymbolCount": 1045,
+    "productionFileCount": 365
   },
   "scanFloor": {
-    "examinedSymbolCount": 719,
-    "productionFileCount": 270
+    "examinedSymbolCount": 836,
+    "productionFileCount": 292
   },
-  "findingCount": 112,
+  "findingCount": 108,
   "findings": [
     {
       "key": "symbol:packages/content/src/audio-selection-merge.ts:assetIdOf",
@@ -245,22 +245,6 @@
       "kind": "function"
     },
     {
-      "key": "symbol:packages/rules-magic/src/instances/practice.ts:isPractisable",
-      "group": "symbol",
-      "category": "unreached",
-      "file": "packages/rules-magic/src/instances/practice.ts",
-      "name": "isPractisable",
-      "kind": "function"
-    },
-    {
-      "key": "symbol:packages/rules-magic/src/instances/scribing.ts:PALACE_STORE",
-      "group": "symbol",
-      "category": "unreached",
-      "file": "packages/rules-magic/src/instances/scribing.ts",
-      "name": "PALACE_STORE",
-      "kind": "const"
-    },
-    {
       "key": "symbol:packages/rules-magic/src/traditions/acquire.ts:UNCHANGED_MULTIPLIER",
       "group": "symbol",
       "category": "unreached",
@@ -269,65 +253,11 @@
       "kind": "const"
     },
     {
-      "key": "symbol:packages/rules-magic/src/traditions/cast.ts:isCastable",
-      "group": "symbol",
-      "category": "unreached",
-      "file": "packages/rules-magic/src/traditions/cast.ts",
-      "name": "isCastable",
-      "kind": "function"
-    },
-    {
-      "key": "symbol:packages/rules-magic/src/traditions/cast.ts:prepare",
-      "group": "symbol",
-      "category": "unreached",
-      "file": "packages/rules-magic/src/traditions/cast.ts",
-      "name": "prepare",
-      "kind": "function"
-    },
-    {
-      "key": "symbol:packages/rules-magic/src/traditions/change.ts:RESOLUTION",
-      "group": "symbol",
-      "category": "reachedOnlyByUnreached",
-      "file": "packages/rules-magic/src/traditions/change.ts",
-      "name": "RESOLUTION"
-    },
-    {
-      "key": "symbol:packages/rules-magic/src/traditions/change.ts:changeTradition",
-      "group": "symbol",
-      "category": "unreached",
-      "file": "packages/rules-magic/src/traditions/change.ts",
-      "name": "changeTradition",
-      "kind": "function"
-    },
-    {
       "key": "symbol:packages/rules-magic/src/traditions/cost.ts:assertCostHook",
       "group": "symbol",
       "category": "unreached",
       "file": "packages/rules-magic/src/traditions/cost.ts",
       "name": "assertCostHook",
-      "kind": "function"
-    },
-    {
-      "key": "symbol:packages/rules-magic/src/traditions/cost.ts:costSplit",
-      "group": "symbol",
-      "category": "unreached",
-      "file": "packages/rules-magic/src/traditions/cost.ts",
-      "name": "costSplit",
-      "kind": "function"
-    },
-    {
-      "key": "symbol:packages/rules-magic/src/traditions/cost.ts:preparationCost",
-      "group": "symbol",
-      "category": "reachedOnlyByUnreached",
-      "file": "packages/rules-magic/src/traditions/cost.ts",
-      "name": "preparationCost"
-    },
-    {
-      "key": "symbol:packages/rules-magic/src/traditions/hook-for.ts:hooksOfTradition",
-      "group": "symbol",
-      "category": "unreached",
-      "file": "packages/rules-magic/src/traditions/hook-for.ts",
-      "name": "hooksOfTradition",
       "kind": "function"
     },
     {
@@ -344,30 +274,6 @@
       "category": "unreached",
       "file": "packages/rules-magic/src/traditions/portal.ts",
       "name": "releaseAbroad",
-      "kind": "function"
-    },
-    {
-      "key": "symbol:packages/rules-magic/src/traditions/store.ts:palaceLibraryDepth",
-      "group": "symbol",
-      "category": "unreached",
-      "file": "packages/rules-magic/src/traditions/store.ts",
-      "name": "palaceLibraryDepth",
-      "kind": "function"
-    },
-    {
-      "key": "symbol:packages/rules-magic/src/traditions/store.ts:perishesWithHolder",
-      "group": "symbol",
-      "category": "unreached",
-      "file": "packages/rules-magic/src/traditions/store.ts",
-      "name": "perishesWithHolder",
-      "kind": "function"
-    },
-    {
-      "key": "symbol:packages/rules-magic/src/traditions/store.ts:scribeAvailability",
-      "group": "symbol",
-      "category": "unreached",
-      "file": "packages/rules-magic/src/traditions/store.ts",
-      "name": "scribeAvailability",
       "kind": "function"
     },
     {
@@ -456,14 +362,6 @@
       "category": "reachedOnlyByUnreached",
       "file": "packages/rules-raid/src/verbs.ts",
       "name": "verbSide"
-    },
-    {
-      "key": "symbol:packages/rules-world/src/autonomy/affiliation.ts:completeAffiliation",
-      "group": "symbol",
-      "category": "unreached",
-      "file": "packages/rules-world/src/autonomy/affiliation.ts",
-      "name": "completeAffiliation",
-      "kind": "function"
     },
     {
       "key": "symbol:packages/rules-world/src/autonomy/age-bands.ts:AGE_BANDS_IN_ORDER",
@@ -602,13 +500,6 @@
       "kind": "const"
     },
     {
-      "key": "symbol:packages/rules-world/src/mages/roles.ts:changeAffiliation",
-      "group": "symbol",
-      "category": "reachedOnlyByUnreached",
-      "file": "packages/rules-world/src/mages/roles.ts",
-      "name": "changeAffiliation"
-    },
-    {
       "key": "symbol:packages/rules-world/src/populace/buckets.ts:BIRTH_BUCKET_TAIL_ALLOWANCE",
       "group": "symbol",
       "category": "reachedOnlyByUnreached",
@@ -704,45 +595,6 @@
       "kind": "function"
     },
     {
-      "key": "symbol:packages/rules-world/src/universities/capacity.ts:AdmissionRefusals",
-      "group": "symbol",
-      "category": "unreached",
-      "file": "packages/rules-world/src/universities/capacity.ts",
-      "name": "AdmissionRefusals",
-      "kind": "class"
-    },
-    {
-      "key": "symbol:packages/rules-world/src/universities/capacity.ts:admitStudents",
-      "group": "symbol",
-      "category": "unreached",
-      "file": "packages/rules-world/src/universities/capacity.ts",
-      "name": "admitStudents",
-      "kind": "function"
-    },
-    {
-      "key": "symbol:packages/rules-world/src/universities/construction.ts:createUniversity",
-      "group": "symbol",
-      "category": "unreached",
-      "file": "packages/rules-world/src/universities/construction.ts",
-      "name": "createUniversity",
-      "kind": "function"
-    },
-    {
-      "key": "symbol:packages/rules-world/src/universities/construction.ts:effectiveCapacity",
-      "group": "symbol",
-      "category": "reachedOnlyByUnreached",
-      "file": "packages/rules-world/src/universities/construction.ts",
-      "name": "effectiveCapacity"
-    },
-    {
-      "key": "symbol:packages/rules-world/src/universities/construction.ts:readUniversity",
-      "group": "symbol",
-      "category": "unreached",
-      "file": "packages/rules-world/src/universities/construction.ts",
-      "name": "readUniversity",
-      "kind": "function"
-    },
-    {
       "key": "symbol:packages/rules-world/src/universities/staff.ts:staffCohortsOf",
       "group": "symbol",
       "category": "unreached",
@@ -796,6 +648,29 @@
       "category": "unreached",
       "file": "packages/scenario/src/reference-universe.ts",
       "name": "academySiteKindOf",
+      "kind": "function"
+    },
+    {
+      "key": "symbol:packages/scenario/src/sandbox.ts:isSandboxSchema",
+      "group": "symbol",
+      "category": "reachedOnlyByUnreached",
+      "file": "packages/scenario/src/sandbox.ts",
+      "name": "isSandboxSchema"
+    },
+    {
+      "key": "symbol:packages/scenario/src/sandbox.ts:sandboxBrandOf",
+      "group": "symbol",
+      "category": "unreached",
+      "file": "packages/scenario/src/sandbox.ts",
+      "name": "sandboxBrandOf",
+      "kind": "function"
+    },
+    {
+      "key": "symbol:packages/scenario/src/sandbox.ts:sandboxDigest",
+      "group": "symbol",
+      "category": "unreached",
+      "file": "packages/scenario/src/sandbox.ts",
+      "name": "sandboxDigest",
       "kind": "function"
     },
     {

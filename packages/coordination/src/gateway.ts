@@ -678,7 +678,11 @@ export class CoordinatingKnowledgeGateway implements KnowledgeGateway {
       learnRate: rates.learnRate,
       depthCeiling: rates.depthCeiling,
     });
-    if (outcome.refusal === undefined) this.#practised += 1;
+    // `gained > 0`, not merely "not refused": a mage already at her ceiling is
+    // not a refusal — `practice.ts` says so in as many words — and counting her
+    // month here would make the report's `practiceCompleted` a count of
+    // *attempts*, which is a different number wearing the same name.
+    if (outcome.refusal === undefined && outcome.gained > 0) this.#practised += 1;
     return outcome;
   }
 
