@@ -116,12 +116,14 @@ describe('the reachability triage document', () => {
       );
     }
     // 129 until `w204/affiliate-writer` gave `completeAffiliation` a production
-    // caller and `changeAffiliation` a reached one. The literal is deliberate —
-    // a total derived from the document could not catch a document that had
-    // drifted from the tree — so it moves only with a change that says why, and
-    // `describes the same tree the ratchet baseline pins` below is the other
-    // half of the tie.
-    expect(totals.at(-1)).toBe(127);
+    // caller and `changeAffiliation` a reached one; 127 until the admission pass
+    // gave `admitStudents`, `AdmissionRefusals` and `effectiveCapacity` one and
+    // the university constructor and row reader replaced their inline copies.
+    // The literal is deliberate — a total derived from the document could not
+    // catch a document that had drifted from the tree — so it moves only with a
+    // change that says why, and `describes the same tree the ratchet baseline
+    // pins` below is the other half of the tie.
+    expect(totals.at(-1)).toBe(120);
   });
 
   it('has a §2 table whose counts sum to the total its closing sentence claims', () => {
