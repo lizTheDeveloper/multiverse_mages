@@ -1,9 +1,34 @@
-# The 108 reachability findings, triaged
+# The 110 reachability findings, triaged
 
-**Measured at `4ffb2dd2` on 2026-08-16**, by `npm run check:reachability` plus the capability
+**Measured at `bf96bdfb` on 2026-08-16**, by `npm run check:reachability` plus the capability
 analysis described in §5. This is an **inventory, not a fix**: the point is to convert the single
-number "108 findings" into a count of things somebody would act on, because that number is what
+number "110 findings" into a count of things somebody would act on, because that number is what
 nobody currently knows.
+
+> **Sixth round — 2026-08-16, re-derived at `bf96bdfb` after `w247/material-economy-build` and
+> `ui/legible-and-linked` merged into `integration/all-branches`: 108 → 110.** This is the first
+> round in which the number went **up**, and saying so plainly is the point of keeping the
+> document. It moved by four findings, not two:
+>
+> - **Three arrived**, all the same shape and all `material-economy`'s: `REQUIRED_PRODUCTION_WEIGHTS`
+>   (`rules-world/src/economy/materials.ts`), `REQUIRED_TEACHING_WEIGHTS`
+>   (`rules-world/src/economy/teaching.ts`) and `REQUIRED_CONSTRUCTION_WEIGHTS`
+>   (`rules-world/src/universities/construction.ts`). Each names the `autonomy-weight.json` ids its
+>   reader requires, and each reader then passes the id as a **string literal** instead of reading
+>   the list — so the constant documents a requirement it does not enforce, and only a test uses it.
+>   **Accepted as debt rather than wired**, and the reason is consistency rather than laziness:
+>   `REQUIRED_APPLICATION_WEIGHTS` is the identical shape, has been pinned since before this merge,
+>   and wiring three of the four inside a merge commit would be feature work smuggled in beside a
+>   conflict resolution. The repair is one change: have each `read*Weights` iterate its own list.
+> - **One was repaired by composition.** `NO_YIELD_BONUSES` (`rules-world/src/economy/materials.ts`)
+>   had no production caller on either parent and has one on the merge —
+>   `coordination/src/universe-effects.ts` imports it now that the economy routes seven kinds. It
+>   left the pin without anybody working on it, which is the case the ratchet's "disappearance is
+>   also a failure" rule exists to make visible.
+>
+> `rules-world` is the only package whose total moved: 31 → 33. §2's debt column was re-checked
+> symbol by symbol against the new pin and is **unchanged at 19** — none of the four is a §2
+> mechanism.
 
 > **Fourth correction round — 2026-08-16, re-derived at `072cf70` against a re-pinned
 > `scripts/reachability-baseline.json` (127 → 112).** The pin was stale by two before any of this:
@@ -123,15 +148,17 @@ is what happens when you skip that step.
 | `primitives` | 6 | 3 | 9 |
 | `rules-magic` | 4 | 10 | 14 |
 | `rules-raid` | 5 | 6 | 11 |
-| `rules-world` | 2 | 29 | 31 |
+| `rules-world` | 2 | 31 | 33 |
 | `scenario` | 0 | 19 | 19 |
 | `sim-core` | 0 | 6 | 6 |
 | `state` | 2 | 5 | 7 |
-| **Total** | **19** | **89** | **108** |
+| **Total** | **19** | **91** | **110** |
 
 The headline is no longer a proportion, because a proportion needs a denominator somebody judged.
-It is a direction: **129 at `origin/main`, 125 on the combined base, 108 here**, and the twenty-one
-that closed are not spread thinly. Four whole §2 rows went to zero — spell preparation and its cost
+It is a direction, and for the first time the last step of it is upward: **129 at `origin/main`,
+125 on the combined base, 108 after the five wiring merges, 110 here.** The nineteen that closed
+between `origin/main` and the wiring round are not spread thinly, and the two that re-opened are
+three arrivals against one repair — see the sixth-round note above for all four by name. Four whole §2 rows went to zero — spell preparation and its cost
 half, the tradition store policy, `changeTradition` and its two companions, and three of the seven
 university-staffing symbols — and each of those was a mechanism the game shipped and never ran.
 
@@ -166,7 +193,7 @@ legacy was wired, 46 of 61 before `applyWard` and `replay` moved to §3, and 44 
 `characterFor` arrived with #201 — see §5. Those denominators were the five-way judgement §1
 retires; the numerators are comparable and the denominators are not.)
 
-The 89 findings §1 leaves unclassified certainly contain integration debt of the ordinary kind —
+The 91 findings §1 leaves unclassified certainly contain integration debt of the ordinary kind —
 an economy input list, a commitment predicate, a monoculture threshold,
 `speciesRediscoveryMultiplier`, `worshipShareOfRegeneration`, `characterFor` — and equally
 certainly contain the `scenario` tooling that has never been anything else. Re-judging them is the

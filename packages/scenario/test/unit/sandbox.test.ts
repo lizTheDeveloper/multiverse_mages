@@ -262,7 +262,14 @@ describe('the cheats act', () => {
   });
 
   it('refuses a kind this content does not have, naming the ones it does', () => {
-    expect(() => normalizeSandbox({ grantMaterials: { essence: 1024 } })).toThrow(/essence/);
+    // `essence` stood here and **is a real kind now** — `material-economy`
+    // widened `material-stock` from three kinds to seven, and this assertion
+    // went from refusing an invention to refusing something the component
+    // declares. Re-pinned as a content decision, with a name chosen so the same
+    // thing cannot happen again: `sunlight` is not a material in any flow model
+    // in `docs/design/economy-flow-models.md`, where every one of the seven was
+    // named before it was added.
+    expect(() => normalizeSandbox({ grantMaterials: { sunlight: 1024 } })).toThrow(/sunlight/);
     // The positive control for that refusal: every declared kind is accepted.
     for (const kind of SANDBOX_MATERIAL_KINDS) {
       expect(() => normalizeSandbox({ grantMaterials: { [kind]: 1024 } })).not.toThrow();

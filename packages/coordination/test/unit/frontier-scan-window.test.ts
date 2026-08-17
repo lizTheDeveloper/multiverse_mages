@@ -463,8 +463,18 @@ describe('what the window cost the shipped v1 subset', () => {
     // enabling all seventy cells, and they are the ones a reader should expect to
     // change when content moves.
     const enabled = v1NodeIds();
-    expect(enabled).toHaveLength(300);
-    expect(enabled.filter((nodeId) => nodeId > HISTORIC_SCAN_WINDOW)).toHaveLength(44);
+    // 301, not the 300 this was written against: `main` added
+    // `pn-the-wrong-true-name` to `perdo-nomen` while `material-economy` was
+    // out. A node count is a content decision and is recomputed here rather
+    // than reasoned about, exactly as the historic count above it is.
+    expect(enabled).toHaveLength(301);
+    // 45, not 44, and by the same one node: `pn-the-wrong-true-name` interns
+    // above the historic window, so it joins the block the window would have
+    // lost. That it moved *this* count and not the historic one above is the
+    // whole point of keeping the two separate — the historic figure is a
+    // diagnosis of a subset that no longer exists and must not drift, and this
+    // one is a live reading of the subset enabled now and is expected to.
+    expect(enabled.filter((nodeId) => nodeId > HISTORIC_SCAN_WINDOW)).toHaveLength(45);
 
     const enabledSet = new Set(enabled);
     const roots = prerequisiteFreeNodeIds().filter(

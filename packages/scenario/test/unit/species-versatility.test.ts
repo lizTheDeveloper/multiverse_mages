@@ -40,9 +40,14 @@ function bySpecies(id: string) {
 }
 
 describe('the grid the measurement is taken against', () => {
-  it('is the full seventy, of which the v1 ruleset permits twelve', () => {
+  it('is the full seventy, all of which the v1 ruleset now permits', () => {
+    // Was `enabledCells: 12`. `material-economy` flags every cell `"v1": true`
+    // in `cell.json`, and `v1RulesetAxes` derives the mask from the flag rather
+    // than from a literal — which is exactly why that function was written as a
+    // derivation. Re-pinned because this restates a **content decision**: the
+    // number is `cell.json`'s and is recomputable from it, not a run outcome.
     expect(sample.gridCells).toBe(70);
-    expect(sample.enabledCells).toBe(12);
+    expect(sample.enabledCells).toBe(70);
   });
 
   it('covers every species content declares', () => {
@@ -67,12 +72,17 @@ describe('breadth: every species can staff the whole grid', () => {
    * distinguishes the shipped species — it is universal, which is a different
    * and more serious problem than one species having it.
    */
-  it('gives all six species 70/70 and 12/12', () => {
+  it('gives all six species 70/70 twice over', () => {
+    // The second pair was `12` while twelve cells were enabled. Every cell is
+    // enabled now, so the enabled figure and the grid figure coincide — and the
+    // finding **strengthens**: it was "every species can staff every cell the
+    // god opened" over a twelfth of the grid, and it is now the same statement
+    // over all of it.
     for (const entry of sample.species) {
       expect([entry.speciesId, entry.staffableCells, entry.staffableEnabledCells]).toEqual([
         entry.speciesId,
         70,
-        12,
+        70,
       ]);
     }
   });
@@ -159,20 +169,37 @@ describe('the teachable window, which is where the separation actually lives', (
 
 describe('affinity liveness against the permitted cells', () => {
   /**
-   * Seven of the eleven authored affinity entries name a form no permitted cell
-   * uses, and two species have no live entry at all. That does not bias them —
-   * `affinityTerm` defaults a missing key to `FP_ONE` and subtracts it, so an
-   * undeclared species scores exactly zero rather than badly — but it does mean
-   * seven authored numbers cannot influence anything in this ruleset.
+   * **All eleven authored affinity entries are live, and none is inert.** This
+   * read `[4, 7]` while twelve cells were enabled: seven of the eleven named a
+   * form no permitted cell used, and human and gnome had no live entry at all.
+   * It did not bias them — `affinityTerm` defaults a missing key to `FP_ONE`
+   * and subtracts it, so an undeclared species scores exactly zero rather than
+   * badly — but seven authored numbers could not influence anything.
+   *
+   * `material-economy` flags every cell `"v1": true`, so every form is in a
+   * permitted cell and every authored entry now bites. Re-pinned as a
+   * **content decision**: the numbers are a function of `cell.json` and
+   * `species.json` and are recomputable from them without running anything.
+   *
+   * This is the shape the campaign is looking for — authored content that the
+   * ruleset made unreachable, becoming reachable. Seven numbers stopped being
+   * comments.
    */
-  it('finds four live entries and seven inert ones', () => {
+  it('finds all eleven entries live and none inert', () => {
     const live = sample.species.reduce((sum, entry) => sum + entry.liveAffinityEntries, 0);
     const inert = sample.species.reduce((sum, entry) => sum + entry.inertAffinityEntries, 0);
-    expect([live, inert]).toEqual([4, 7]);
+    expect([live, inert]).toEqual([11, 0]);
   });
 
-  it('leaves human and gnome with no live entry', () => {
+  it('leaves human with no entry at all, and gnome with two that now bite', () => {
+    // Two different zeroes, which is the whole reason this assertion is here.
+    // Gnome had **two authored entries and neither was live**; both are live
+    // now. Human's zero has not moved and cannot: it declares no affinity
+    // entries in `species.json` at all, which is why its inert count is zero
+    // too. A test that only checked `liveAffinityEntries === 0` could not have
+    // told those apart, so the inert count is asserted beside it.
     expect(bySpecies('human').liveAffinityEntries).toBe(0);
-    expect(bySpecies('gnome').liveAffinityEntries).toBe(0);
+    expect(bySpecies('human').inertAffinityEntries).toBe(0);
+    expect(bySpecies('gnome').liveAffinityEntries).toBe(2);
   });
 });

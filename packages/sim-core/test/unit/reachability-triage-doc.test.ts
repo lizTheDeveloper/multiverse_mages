@@ -105,7 +105,7 @@ describe('the reachability triage document', () => {
     }
   });
 
-  it('has a totals row equal to the sum of the package rows, and to 108', () => {
+  it('has a totals row equal to the sum of the package rows, and to 110', () => {
     expect(totalsRow).toHaveLength(1);
     const totals = totalsRow[0]!.slice(1);
 
@@ -125,11 +125,17 @@ describe('the reachability triage document', () => {
     // this checks changed shape at the same time** — §1's five-way judgement
     // split is retired there, and this assertion is now over a two-column table
     // whose debt column is §2 re-checked symbol by symbol against the pin.
+    // 108 until `w247/material-economy-build` and `ui/legible-and-linked` merged
+    // into `integration/all-branches`: **110**, and the first time this literal
+    // has moved upward. Three `REQUIRED_*_WEIGHTS` constants arrived with the
+    // material economy — each documenting a requirement its reader restates as a
+    // string literal, accepted as debt for the reason §1's sixth-round note
+    // gives — and `NO_YIELD_BONUSES` was repaired by the composition itself.
     // The literal is deliberate — a total derived from the document could not
     // catch a document that had drifted from the tree — so it moves only with a
     // change that says why, and `describes the same tree the ratchet baseline
     // pins` below is the other half of the tie.
-    expect(totals.at(-1)).toBe(108);
+    expect(totals.at(-1)).toBe(110);
   });
 
   it('has a §2 table whose counts sum to the total its closing sentence claims', () => {

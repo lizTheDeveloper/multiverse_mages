@@ -1,14 +1,14 @@
 {
   "note": "Pinned reachability findings. Generated — do not hand-edit. Regenerate with `npm run reachability:pin` and explain the diff in the commit message: an entry removed is a repair, an entry added is a debt someone accepted.",
   "scan": {
-    "examinedSymbolCount": 1045,
-    "productionFileCount": 365
+    "examinedSymbolCount": 1064,
+    "productionFileCount": 368
   },
   "scanFloor": {
-    "examinedSymbolCount": 836,
-    "productionFileCount": 292
+    "examinedSymbolCount": 851,
+    "productionFileCount": 294
   },
-  "findingCount": 108,
+  "findingCount": 110,
   "findings": [
     {
       "key": "symbol:packages/content/src/audio-selection-merge.ts:assetIdOf",
@@ -460,11 +460,19 @@
       "kind": "function"
     },
     {
-      "key": "symbol:packages/rules-world/src/economy/materials.ts:NO_YIELD_BONUSES",
+      "key": "symbol:packages/rules-world/src/economy/materials.ts:REQUIRED_PRODUCTION_WEIGHTS",
       "group": "symbol",
       "category": "unreached",
       "file": "packages/rules-world/src/economy/materials.ts",
-      "name": "NO_YIELD_BONUSES",
+      "name": "REQUIRED_PRODUCTION_WEIGHTS",
+      "kind": "const"
+    },
+    {
+      "key": "symbol:packages/rules-world/src/economy/teaching.ts:REQUIRED_TEACHING_WEIGHTS",
+      "group": "symbol",
+      "category": "unreached",
+      "file": "packages/rules-world/src/economy/teaching.ts",
+      "name": "REQUIRED_TEACHING_WEIGHTS",
       "kind": "const"
     },
     {
@@ -593,6 +601,14 @@
       "file": "packages/rules-world/src/traits.ts",
       "name": "traitValueOf",
       "kind": "function"
+    },
+    {
+      "key": "symbol:packages/rules-world/src/universities/construction.ts:REQUIRED_CONSTRUCTION_WEIGHTS",
+      "group": "symbol",
+      "category": "unreached",
+      "file": "packages/rules-world/src/universities/construction.ts",
+      "name": "REQUIRED_CONSTRUCTION_WEIGHTS",
+      "kind": "const"
     },
     {
       "key": "symbol:packages/rules-world/src/universities/staff.ts:staffCohortsOf",

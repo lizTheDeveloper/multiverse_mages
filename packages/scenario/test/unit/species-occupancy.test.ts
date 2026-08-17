@@ -83,10 +83,15 @@ function runTo(ticks: number) {
 }
 
 describe('the grid the reading is taken against', () => {
-  it('is the full seventy, of which the v1 ruleset permits twelve', () => {
+  it('is the full seventy, all of which the v1 ruleset now permits', () => {
+    // Was 12. `material-economy` flags every cell `"v1": true` and
+    // `v1RulesetAxes` derives the mask from the flag, so this is a **content
+    // decision** re-pinned, recomputable from `cell.json` without running
+    // anything. The occupancy figures further down this file are *not* — they
+    // are run outcomes and they are left where they were.
     const sample = runTo(0);
     expect(sample.gridCells).toBe(70);
-    expect(sample.enabledCells).toBe(12);
+    expect(sample.enabledCells).toBe(70);
   });
 
   it('covers every species content declares, in content order', () => {
