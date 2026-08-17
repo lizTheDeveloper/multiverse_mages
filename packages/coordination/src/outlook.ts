@@ -32,6 +32,7 @@
 
 import type { SpeciesRecord } from '@mm/content';
 import type { Fixed, SimState } from '@mm/sim-core';
+import { FP_ONE as FP_UNIT, floorDiv } from '@mm/sim-core';
 import type { Handle, MageRecord, MageRoleValue } from '@mm/state';
 import {
   KNOWLEDGE_INSTANCE,
@@ -57,7 +58,8 @@ import type { CoordinatingKnowledgeGateway } from './gateway.js';
 import type { NodeFacetResolver } from './node-facets.js';
 import type { UniverseEffectIndex } from './universe-effects.js';
 import type { WorkingDurations } from './standing-workings.js';
-import { ticksBeforeLapse, workingUrgencyOf } from './standing-workings.js';
+import { findWorking } from './standing-workings.js';
+import { needsRenewal } from '@mm/rules-magic';
 
 /** Everything an outlook needs beyond the mage's own row. */
 export interface OutlookDeps {
@@ -149,6 +151,11 @@ export function buildOutlook(
   const lifespanMonths = deps.effectiveLifespanOf(mage, row, species);
 
   const preferred = deps.preferredUniversityFor(row.universityId);
+  // One walk for both halves of upkeep. Two would be two implementations of
+  // *"which of her workings need a month"*, and they would eventually disagree
+  // about the boundary — a goal that is masked while its own pressure term
+  // reads maximal, or the reverse.
+  const upkeep = upkeepFor(mage, deps);
 
   return {
     mage,
@@ -167,11 +174,8 @@ export function buildOutlook(
     scribableTargets: boundCandidates(scribableBy(mage, deps), species),
     applicableTargets: boundCandidates(applicableBy(mage, deps), species),
     practiceTargets: boundCandidates(practicableBy(mage, deps), species),
-    sustainableTargets: boundCandidates(sustainableBy(mage, deps), species),
-    workingUrgency:
-      deps.workingDurations === undefined
-        ? 0
-        : workingUrgencyOf(deps.state, mage, deps.worldTick, deps.workingDurations),
+    sustainableTargets: boundCandidates(upkeep.targets, species),
+    workingUrgency: upkeep.pressure,
 
     materials: deps.materials,
     scribeThroughput: deps.scribeThroughputOf(row.universityId),
@@ -427,24 +431,55 @@ function practicableBy(mage: Handle, deps: OutlookDeps): KnowledgeTarget[] {
  * cheapest-first, so the working nearest to going out is the one she reaches for
  * when the appeal scores tie.
  */
-function sustainableBy(mage: Handle, deps: OutlookDeps): KnowledgeTarget[] {
+function upkeepFor(
+  mage: Handle,
+  deps: OutlookDeps,
+): { targets: KnowledgeTarget[]; pressure: Fixed } {
   const durations = deps.workingDurations;
-  if (durations === undefined) return [];
-  const found: KnowledgeTarget[] = [];
+  if (durations === undefined) return { targets: [], pressure: 0 };
+  const targets: KnowledgeTarget[] = [];
+  let pressure = 0;
   for (const nodeId of deps.gateway.castableNodes(mage)) {
-    if (durations.durationOf(nodeId) === 0) continue;
-    const facets = deps.facetsOf(nodeId);
-    found.push({
-      nodeId,
-      tier: deps.tierOf(nodeId),
-      remainingCost: ticksBeforeLapse(deps.state, mage, nodeId, deps.worldTick, durations),
-      cellId: facets.cellId,
-      formId: facets.formId,
-      primitives: facets.primitives,
-      libraryHolds: false,
-    });
+    const duration = durations.durationOf(nodeId);
+    if (duration === 0) continue;
+    const standing = findWorking(deps.state, mage, nodeId);
+    if (standing === undefined) {
+      // Not standing at all. Maximal pressure and always a candidate: the
+      // universe is getting nothing from this node, and no other goal in the
+      // registry will change that.
+      pressure = FP_UNIT;
+      targets.push(targetFor(nodeId, duration, deps));
+      continue;
+    }
+    const remaining = Math.max(0, standing.row.expiresTick - deps.worldTick);
+    // **A working with years left is not a candidate**, which is where the rota
+    // lives. See `RENEWAL_WINDOW_DENOMINATOR`.
+    if (!needsRenewal(remaining, duration)) continue;
+    targets.push(targetFor(nodeId, remaining, deps));
+    // The fraction of its authored duration already elapsed. Floor division,
+    // the one division in the rules path, and clamped below at zero so that a
+    // working already lapsed and not yet swept reads as maximal rather than
+    // negative — a negative pressure would *subtract* from the opportunity
+    // term, so a universe whose workings had all gone out would be the one
+    // least inclined to relight them.
+    const elapsed = FP_UNIT - floorDiv(remaining * FP_UNIT, duration);
+    if (elapsed > pressure) pressure = elapsed;
   }
-  return found;
+  return { targets, pressure };
+}
+
+/** One upkeep candidate. `remainingCost` is ticks before it lapses, not a debt. */
+function targetFor(nodeId: number, remaining: number, deps: OutlookDeps): KnowledgeTarget {
+  const facets = deps.facetsOf(nodeId);
+  return {
+    nodeId,
+    tier: deps.tierOf(nodeId),
+    remainingCost: remaining,
+    cellId: facets.cellId,
+    formId: facets.formId,
+    primitives: facets.primitives,
+    libraryHolds: false,
+  };
 }
 
 /**

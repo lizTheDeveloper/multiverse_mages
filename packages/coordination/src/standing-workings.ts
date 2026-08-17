@@ -51,8 +51,7 @@
  */
 
 import type { ContentId, ContentRegistry } from '@mm/content';
-import type { Fixed, SimState } from '@mm/sim-core';
-import { FP_ONE, floorDiv } from '@mm/sim-core';
+import type { SimState } from '@mm/sim-core';
 import type { StandingWorkings } from '@mm/rules-magic';
 import {
   NO_WORKINGS_STAND,
@@ -306,55 +305,4 @@ export function buildWorkingDurations(registry: ContentRegistry): WorkingDuratio
     durationOf: (nodeId) => byNode.get(nodeId) ?? 0,
     durableNodeCount: byNode.size,
   };
-}
-
-/**
- * How close this mage's most urgent working is to lapsing, `fp`.
- *
- * `0` for a mage holding nothing up, and — deliberately — also `0` on the tick a
- * working is lit, rising to just under `FP_ONE` on the last tick it stands. It
- * is the fraction of the authored duration already elapsed, taken over her most
- * urgent working.
- *
- * A working whose node has since lost its duration (content changed under a
- * save) contributes nothing rather than dividing by zero. It will be swept when
- * its tick comes, like any other.
- */
-export function workingUrgencyOf(
-  state: SimState,
-  holder: Handle,
-  worldTick: number,
-  durations: WorkingDurations,
-): Fixed {
-  let worst = 0;
-  for (const { row } of collectRecords(state, STANDING_WORKING)) {
-    if (row.holder !== holder) continue;
-    const duration = durations.durationOf(row.nodeId);
-    if (duration <= 0) continue;
-    const remaining = row.expiresTick - worldTick;
-    if (remaining <= 0) {
-      // Already lapsed and not yet swept. Maximally urgent, and clamped rather
-      // than allowed to go negative — a negative urgency would *subtract* from
-      // the opportunity term, so a universe whose workings had all gone out
-      // would be the one least inclined to relight them.
-      return FP_ONE;
-    }
-    if (remaining >= duration) continue;
-    const elapsed = FP_ONE - floorDiv(remaining * FP_ONE, duration);
-    if (elapsed > worst) worst = elapsed;
-  }
-  return worst;
-}
-
-/** Ticks before this mage's working over `nodeId` lapses, or the full duration if unlit. */
-export function ticksBeforeLapse(
-  state: SimState,
-  holder: Handle,
-  nodeId: ContentId,
-  worldTick: number,
-  durations: WorkingDurations,
-): number {
-  const existing = findWorking(state, holder, nodeId);
-  if (existing === undefined) return durations.durationOf(nodeId);
-  return Math.max(0, existing.row.expiresTick - worldTick);
 }

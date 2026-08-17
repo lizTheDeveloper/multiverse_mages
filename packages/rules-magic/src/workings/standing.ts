@@ -109,6 +109,53 @@ export function hasLapsed(working: StandingWorkingLike, worldTick: number): bool
 }
 
 /**
+ * The share of a working's duration that must have elapsed before a mage will
+ * consider spending a month on it, as a divisor.
+ *
+ * `3` means *the last third*: a twenty-four-month working becomes a candidate
+ * for renewal in its final eight months.
+ *
+ * ## Why candidacy and not appeal
+ *
+ * The first draft of this made upkeep unattractive instead — a low
+ * `GOAL_BASE_APPEAL` plus an urgency term that rose toward the expiry — and it
+ * produced a mechanism that could never start. Measured over a sixty-tick
+ * seeded universe with nine durable nodes granted at full mastery: **zero**
+ * months of upkeep, zero workings lit, ever. Urgency can only rise once
+ * something is standing, nothing was ever standing, and the goal lost every
+ * argmax it was ever scored in. The wiring was complete and the game never ran
+ * it, which is the exact defect class the reachability check exists to find and
+ * which no reachability check could have seen: every symbol had a caller.
+ *
+ * So the rota is structural. A mage whose working has years left has **no
+ * candidate** and the goal is masked for her, which frees the base appeal to
+ * sit level with the other two goals that spend a month on a node she already
+ * holds. *"Renewed about as often as a sentry is changed"* is a statement about
+ * when the watch ends, not about how much a sentry wants the job.
+ *
+ * **Untuned.** A third is the coarsest fraction that is not a half, chosen so
+ * that a mage has room to lose an argmax twice before the working goes out. The
+ * sweep should move it.
+ */
+export const RENEWAL_WINDOW_DENOMINATOR = 3;
+
+/**
+ * Whether a standing working is close enough to lapsing to be worth a month.
+ *
+ * Integer arithmetic, and multiplication rather than division, so there is no
+ * rounding decision to get wrong at the boundary: the window opens when
+ * `remaining × 3 <= duration`.
+ *
+ * A working already lapsed answers `true` — it is maximally worth relighting —
+ * and one that has never been lit is not this function's question at all, since
+ * there is no `remaining` for it. The caller answers that one by having no row.
+ */
+export function needsRenewal(remainingTicks: number, durationTicks: number): boolean {
+  if (durationTicks <= 0) return false;
+  return remainingTicks * RENEWAL_WINDOW_DENOMINATOR <= durationTicks;
+}
+
+/**
  * The one question `gatherEffects` asks about workings.
  *
  * An interface rather than a function so that a call site reads

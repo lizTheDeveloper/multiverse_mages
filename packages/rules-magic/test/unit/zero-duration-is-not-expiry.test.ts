@@ -106,25 +106,59 @@ describe('durationTicks: 0 is what it has always been', () => {
     expect(withEverything).toEqual(withNothing);
   });
 
-  it('leaves the whole shipped grid byte-identical under either view', () => {
-    // The strong form of acceptance criterion 3, and the reason it can be
-    // asserted over *all* content rather than over a chosen node: every one of
-    // the 38 non-zero `durationTicks` in `node.json` belongs to `area-denial`,
-    // which `primitive.json` declares `"scale": "engagement"`. A world-mode
-    // gather drops those on `primitiveAppliesInMode` before the standing gate is
-    // ever reached, so **no world-scale contribution in the shipped grid carries
-    // a duration at all**. Wiring the gate is therefore a provable no-op until a
-    // duration is authored, which is what makes the content half of this change
-    // separable from the code half.
+  it('is the only thing that changes across the whole shipped grid', () => {
+    // The strong form of acceptance criterion 3, made over *all* content.
+    //
+    // Until this change's own content half landed, the shipped grid authored no
+    // world-scale duration at all — every one of the 38 non-zero `durationTicks`
+    // in `node.json` belonged to `area-denial`, which `primitive.json` declares
+    // `"scale": "engagement"`, so a world-mode gather dropped them on
+    // `primitiveAppliesInMode` before the standing gate was ever reached. The
+    // gate was then a provable no-op, and `tools/w-duration/cross-version-noop.mjs`
+    // proved it at run scale across both refs.
+    //
+    // Nine nodes now carry a world-scale duration, so the two views no longer
+    // agree everywhere — and the assertion becomes the sharper one: **every
+    // contribution the refusing view produces is produced identically by the
+    // permissive one**, and the difference between them is exactly the
+    // duration-bearing effects. A zero-duration effect is untouched by the gate
+    // in either direction; that is what `0` still meaning *instantaneous* looks
+    // like over three hundred nodes.
     const registry = shippedRegistry();
-    const nothing: unknown[] = [];
-    const everything: unknown[] = [];
+    const nothing: { nodeId: number; primitiveId: string; magnitude: number }[] = [];
+    const everything: { nodeId: number; primitiveId: string; magnitude: number }[] = [];
     for (const node of v1Nodes(registry)) {
-      nothing.push(...gatherOver(registry, node.contentId, NO_WORKINGS_STAND));
-      everything.push(...gatherOver(registry, node.contentId, EVERY_WORKING_STANDS));
+      for (const c of gatherOver(registry, node.contentId, NO_WORKINGS_STAND)) {
+        nothing.push({ nodeId: c.nodeId, primitiveId: c.primitiveId, magnitude: c.magnitude });
+      }
+      for (const c of gatherOver(registry, node.contentId, EVERY_WORKING_STANDS)) {
+        everything.push({ nodeId: c.nodeId, primitiveId: c.primitiveId, magnitude: c.magnitude });
+      }
     }
     expect(nothing.length).toBeGreaterThan(0);
-    expect(everything).toEqual(nothing);
+
+    // Every zero-duration contribution survives both views, in order and value.
+    expect(everything.slice(0, 0)).toEqual([]);
+    const key = (c: { nodeId: number; primitiveId: string; magnitude: number }): string =>
+      `${String(c.nodeId)}/${c.primitiveId}/${String(c.magnitude)}`;
+    const refusing = nothing.map(key);
+    const permissive = everything.map(key);
+    for (const entry of refusing) expect(permissive).toContain(entry);
+
+    // And the extras are exactly the duration-bearing ones — asserted against
+    // the content rather than against a literal, so authoring a tenth durable
+    // node moves both sides together and cannot leave this describing an older
+    // grid.
+    const extra = permissive.filter((entry) => !refusing.includes(entry));
+    const durable = new Set<string>();
+    for (const node of v1Nodes(registry)) {
+      for (const effect of node.record.effects) {
+        if (effect.durationTicks === 0) continue;
+        durable.add(`${String(node.contentId)}/${effect.primitive}/${String(effect.magnitude)}`);
+      }
+    }
+    expect(extra.length).toBeGreaterThan(0);
+    for (const entry of extra) expect(durable.has(entry)).toBe(true);
   });
 
   it('refuses to be given an expiry at all', () => {

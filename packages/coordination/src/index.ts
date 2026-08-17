@@ -148,8 +148,6 @@ export {
   findWorking,
   standingWorkingsOf,
   sweepLapsedWorkings,
-  ticksBeforeLapse,
-  workingUrgencyOf,
 } from './standing-workings.js';
 
 export type {

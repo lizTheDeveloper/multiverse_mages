@@ -177,15 +177,24 @@ export const GOAL_BASE_APPEAL: Readonly<Record<GoalId, Fixed>> = {
    */
   [GOAL.practice]: 384,
   /**
-   * **Below every goal that produces something, and above only `idle`.**
+   * **Level with `apply-magic` and `practice`**, which are the other two goals
+   * that spend a month on a node she already holds.
    *
-   * Upkeep must not win the argmax on its own merits — a universe whose mages
-   * all renewed would stop discovering, which is the failure `practice` was
-   * tuned away from one goal earlier. What makes a working get renewed is not
-   * this number: it is the **urgency term** in `opportunityTerm` below, which
-   * rises as a working approaches its expiry, and the warden's `+256` role
-   * bias. So the shape is *"nobody renews a working that has years left, and
-   * somebody renews one that is about to go out"*, which is what a rota is.
+   * It was `128` first, on the argument that upkeep must not win the argmax on
+   * its own merits: a universe whose mages all renewed would stop discovering.
+   * That argument is right and the number was the wrong way to enforce it.
+   * Measured over a sixty-tick seeded universe with nine durable nodes granted
+   * at full mastery, `128` produced **zero** months of upkeep and zero workings
+   * lit, ever — because the urgency term that was supposed to lift it can only
+   * rise once something is standing, and nothing was ever lit. A complete
+   * wiring the game never ran.
+   *
+   * **The rota is enforced by candidacy instead.** `outlook.ts` drops a working
+   * with years left out of `sustainableTargets` entirely — see
+   * `rules-magic`'s `RENEWAL_WINDOW_DENOMINATOR` — so a mage holding nothing
+   * near its expiry has the goal *masked* rather than merely unattractive. That
+   * frees this number to say what it should say: keeping a working standing is
+   * worth about what casting one at the world is worth.
    *
    * A literal, like the ten rows above it, rather than a scalar in
    * `autonomy-weight.json`. That file is the right home for a magnitude the
@@ -193,7 +202,7 @@ export const GOAL_BASE_APPEAL: Readonly<Record<GoalId, Fixed>> = {
    * to bottom, and moving one row out of it into content would leave two places
    * to look for the same kind of number. **Untuned.**
    */
-  [GOAL.sustainWorking]: 128,
+  [GOAL.sustainWorking]: 384,
 };
 
 /**
@@ -454,6 +463,25 @@ export function personalityTerm(goal: GoalId, outlook: MageOutlook): Fixed {
         'personality',
         shareOfDeviation(caution, 2) - shareOfDeviation(ambition, 4),
       );
+    case GOAL.sustainWorking:
+      // **Caution at full weight — the strongest single-axis personality term in
+      // the table**, and it is doing work no other term here does.
+      //
+      // Caution already raises `scribe` and `ward-duty`, which are the two other
+      // goals whose whole content is *making sure the thing survives*. Upkeep is
+      // that instinct with nothing else in it, so the axis is right; the weight
+      // is a `/1` rather than the usual `/2` because without it the goal was
+      // uniformly dominated. Measured: `sustain-working` at base 384 with no
+      // personality term took **zero** months over sixty ticks — it lost every
+      // argmax to `apply-magic`, which shares its base, its month and most of
+      // its candidates but also carries a species term and a longer candidate
+      // list. A goal that differs from a stronger neighbour by nothing is a goal
+      // no mage ever picks, and it looks exactly like a wiring failure.
+      //
+      // So the term is what makes the rota belong to *particular mages* rather
+      // than to nobody: a cautious mage keeps the walls up and an incautious one
+      // lets them fall, which is a difference a player can see. **Untuned.**
+      return boundTerm('personality', shareOfDeviation(caution, 1));
     default:
       return 0;
   }
@@ -513,15 +541,18 @@ export function opportunityTerm(
       // **The one opportunity term with two summands, and it is the whole shape
       // of the upkeep economy.**
       //
-      // The candidate half says *"there is something here to light"* and is the
-      // same function every other goal uses. The urgency half says *"and one of
-      // them is about to go out"*, rising from zero on the tick a working is lit
-      // to just under `fp(1024)` on the last tick it stands.
+      // The candidate half says *"there is something here to keep"* and is the
+      // same function every other goal uses. The pressure half — see
+      // `MageOutlook.workingUrgency` — says *"and one of them is not standing,
+      // or is about to stop"*. It saturates at `fp(1024)` for an unlit working,
+      // because an unlit durable node is an effect the universe is not getting
+      // at all and nothing else in the game will produce it.
       //
-      // Summed rather than maxed, so a mage holding several workings — every
-      // one of them a candidate — is more likely to be on the rota than a mage
-      // holding one. `boundTerm` clamps the sum, so neither half can be the only
-      // thing that decides a career.
+      // Summed rather than maxed, so a mage with several workings to keep is
+      // more likely to be on the rota than a mage with one. `boundTerm` clamps
+      // the sum at `TERM_BOUND.opportunity`, so neither half can be the only
+      // thing that decides a career — which is what keeps a universe with one
+      // durable node from putting every cautious mage on upkeep forever.
       return boundTerm(
         'opportunity',
         candidateOpportunity(outlook.sustainableTargets.length) + outlook.workingUrgency,

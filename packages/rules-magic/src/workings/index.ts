@@ -14,9 +14,11 @@
 export type { StandingWorkingLike, StandingWorkings } from './standing.js';
 export {
   NO_WORKINGS_STAND,
+  RENEWAL_WINDOW_DENOMINATOR,
   authoredDurationOf,
   expiryTickOf,
   hasLapsed,
   isLive,
+  needsRenewal,
   requiresWorking,
 } from './standing.js';

@@ -922,7 +922,7 @@ describe('contentRevision', () => {
     // MEASURED with `node packages/content/bin/validate-content.mjs` on the
     // merged tree, then confirmed by this test, which is the two independent
     // paths the paragraphs above insist on.
-    expect(registry.contentRevision).toBe('db63c9365903af34057e4a852401aab9');
+    expect(registry.contentRevision).toBe('8ac37030b1702ca9e34e0fce22a5833b');
   });
 
   it('is stable across loads of identical content', () => {

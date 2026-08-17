@@ -169,23 +169,28 @@ export interface MageOutlook {
    */
   readonly sustainableTargets: readonly KnowledgeTarget[];
   /**
-   * How close her nearest working is to lapsing, `fp`, `0` to `fp(1024)`.
+   * How badly her upkeep is needed, `fp`, `0` to `fp(1024)`.
    *
-   * `0` when she is holding nothing up — and, deliberately, also `0` on the
-   * tick a working is lit, rising to just under `fp(1024)` on the last tick it
-   * stands. It is the *fraction of the working's authored duration already
-   * elapsed*, taken over her most urgent working.
+   * **`fp(1024)` when a working she could light is not standing at all.** An
+   * unlit durable node is an effect the universe is simply not getting: nothing
+   * else in the game produces it, and no other goal will. That is the strongest
+   * statement this axis can make and it is the right one.
    *
-   * **This is what makes upkeep a rota rather than a treadmill.**
-   * `GOAL_BASE_APPEAL` puts `sustain-working` below every goal that produces
-   * something, so a working with years left never wins the argmax. This term is
-   * what makes one that is about to go out win it — *"renewed about as often as
-   * a sentry is changed"*, which is a thing you do when the watch ends and not
-   * continuously.
+   * Otherwise it is the fraction of a standing working's authored duration
+   * already elapsed, taken over her most pressing one — `0` on the tick it was
+   * lit, rising to just under `fp(1024)` on the last tick it stands.
    *
-   * A mage with nothing standing therefore reaches `sustain-working` only
-   * through the candidate half of `opportunityTerm`, which is how a working
-   * gets lit in the first place.
+   * **One concept, deliberately, rather than "lighting pressure" and "renewal
+   * pressure".** Two terms would have needed a rule for combining them and the
+   * rule would have been arbitrary; more to the point, a mage does not
+   * experience the two differently. The wall is not up, or the wall is about to
+   * come down.
+   *
+   * The first draft made this `0` for an unlit working, on the theory that
+   * `GOAL_BASE_APPEAL` and this term together would produce a rota. Measured,
+   * it produced a mechanism that could not start: nothing was ever lit, so
+   * urgency never rose, so nothing was ever lit. Every symbol had a caller and
+   * the game never ran the goal once in sixty ticks.
    */
   readonly workingUrgency: Fixed;
 
