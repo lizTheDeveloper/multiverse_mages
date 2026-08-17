@@ -64,6 +64,7 @@ import type { EntityHandle, SimState, StepContext, WorldSchema } from '@mm/sim-c
 import { RNG_STREAM, createState, rngFromRootSeed } from '@mm/sim-core';
 import type { Scenario, ScenarioConfig } from '@mm/agent-api';
 import {
+  EVER_KNOWN,
   GRANT_BUDGET,
   LIBRARY,
   MATERIAL_STOCK,
@@ -73,6 +74,7 @@ import {
   POPULACE_COHORT,
   UNIVERSITY,
   attachRecord,
+  componentOf,
   createUniverse,
   defineWorldStateSchema,
   findUniverse,
@@ -102,6 +104,8 @@ import {
   worldDeps,
 } from './content-set.js';
 import { withAxisPriceScale } from './axis-price.js';
+import type { LegacyRecord } from './legacy.js';
+import { seedLegacy } from './legacy.js';
 import { BalanceTelemetryRecorder, balanceTelemetrySystem } from './balance-telemetry.js';
 import type { BalanceRunTelemetry } from './balance-telemetry.js';
 import type { RaidRecord } from './raids.js';
@@ -664,6 +668,17 @@ export function buildReferenceState(input: {
   readonly options: ReferenceOptions;
   readonly content: ReferenceContent;
   readonly schema: WorldSchema;
+  /**
+   * What a previous universe left this one, or absent for a first universe.
+   *
+   * **Absent builds the byte-identical state it always did** — the same promise
+   * `foundingSpeciesMask` and `foundingUniversities` make, and it is asserted
+   * with a snapshot hash in `test/unit/legacy-carry.test.ts` rather than
+   * described here. Every committed baseline was measured on an unaided
+   * universe, and a succession seam whose absent case moved one would be a
+   * behaviour change wearing an option's clothes.
+   */
+  readonly legacy?: LegacyRecord;
 }): SimState {
   const { content, options } = input;
   const state = createState({
@@ -689,10 +704,16 @@ export function buildReferenceState(input: {
     traditionId: content.traditionId,
     // Zero player input: favor, worship and prestige are `god-agency`'s to move,
     // and a scenario that pre-loaded them would be measuring a god's opening.
+    //
+    // `prestige` is the one exception, and it is not player input: it is what a
+    // *previous* universe earned and this one inherits. §1.1 makes it read-only
+    // for the length of a run, so tick zero is the only moment it may be set,
+    // and this is the only place that sets it. Absent legacy is `0`, which is
+    // the value this line has always written.
     favor: 0,
     worship: 0,
     worshipTier: 0,
-    prestige: 0,
+    prestige: input.legacy?.carriedPrestige ?? 0,
     prestigeEarned: 0,
     terminalReason: 0,
     favorCap: 0,
@@ -803,6 +824,35 @@ export function buildReferenceState(input: {
     nodeCount: content.deps.catalog.nodeCount,
   });
 
+  // Last, and after every founding entity exists. A legacy adds to a starting
+  // position rather than replacing one, and placing it here means the founding
+  // path creates the identical entities in the identical order it always has —
+  // which is what makes the absent case byte-identical rather than merely
+  // arithmetically equal.
+  const everKnownBefore = componentOf(state, EVER_KNOWN).size;
+  if (input.legacy !== undefined) {
+    seedLegacy(state, {
+      record: input.legacy,
+      registry: content.registry,
+      axes: opening.axes,
+      universe,
+      nodeCount: content.deps.catalog.nodeCount,
+      foundingNodeIds: new Set(seeded),
+    });
+  }
+  // Nodes the archive brought into the universe for the first time.
+  //
+  // Counted into `seededNodes` for the same reason the founding grants are, and
+  // the arithmetic is the point: the grant budget accrues on
+  // `everKnown − seededNodes`. An archived node raises `everKnown`, so leaving
+  // it out would credit a seeded universe with discoveries it did not make, and
+  // the legacy arm of any comparison would carry a larger grant budget than its
+  // control — a fifth difference between two arms that must differ by four.
+  //
+  // Measured as a delta rather than taken from the archive list, because the
+  // portal-magic seed above can name the same node and a count would double it.
+  const legacyEverKnown = componentOf(state, EVER_KNOWN).size - everKnownBefore;
+
   attachGrantBudget(state, {
     universe: findUniverse(state),
     // `worldDeps` always supplies the god block; the optionality on `WorldStepDeps`
@@ -811,8 +861,9 @@ export function buildReferenceState(input: {
     constants: content.deps.god?.content.constants,
     options,
     // Distinct node ids, every one of them newly ever-known: the universe was
-    // created three statements ago and has never held anything.
-    seededNodes: new Set(seeded).size,
+    // created three statements ago and has never held anything. Plus whatever a
+    // legacy archive newly brought in — see the delta above.
+    seededNodes: new Set(seeded).size + legacyEverKnown,
   });
 
   return state;
@@ -1058,6 +1109,22 @@ export interface ReferenceScenarioOptions {
    * path with baselines attached.
    */
   readonly ablation?: AblationMask;
+  /**
+   * What a previous universe left this one, or absent for a first universe.
+   *
+   * Per **scenario**, not per {@link ReferenceOptions}, and the placement is the
+   * same one `ablation` argues for one field up. `ReferenceOptions` is a bag of
+   * numeric sweep levels read out of a `ScenarioConfig` by name; a legacy is a
+   * structured artifact produced by a *different run*, and there is no level of
+   * a factor that means "the record run 41 left". A `ReferenceContent` would be
+   * worse still: it is memoized for the life of a worker process, so a legacy
+   * folded into one would be inherited by every subsequent run that worker
+   * executed — one universe's descendants seeded into unrelated experiments.
+   *
+   * Absent is the first universe, and it is byte-identical to the build before
+   * this field existed.
+   */
+  readonly legacy?: LegacyRecord;
 }
 
 /**
@@ -1105,6 +1172,7 @@ export function referenceScenario(
             options: referenceOptions(config),
             content,
             schema: raidlessSchema,
+            ...(options.legacy === undefined ? {} : { legacy: options.legacy }),
           });
           recorder.begin(state);
           return state;
@@ -1178,6 +1246,7 @@ export function referenceScenario(
           options: referenceOptions(config),
           content,
           schema,
+          ...(options.legacy === undefined ? {} : { legacy: options.legacy }),
         });
         // The census belongs to one episode too, and for the identical reason.
         recorder.begin(state);
