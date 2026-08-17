@@ -93,6 +93,8 @@ export interface PopulatedWorld {
   readonly effort: EntityHandle;
   /** The one `territory-holding` row. The site hangs on `university` instead. */
   readonly holding: EntityHandle;
+  /** The one `standing-working` row: `mage`'s working over node 7. */
+  readonly working: EntityHandle;
 }
 
 /**

@@ -45,6 +45,7 @@ import {
   shippedRegistry,
   twoNodesDeclaring,
   worldActiveNodesInDistinctCells,
+  NO_WORKINGS_STAND,
 } from './effect-fixtures.js';
 
 /** Calls that reached the shared implementation. */
@@ -169,6 +170,7 @@ describe('an illegal contribution never reaches stacking', () => {
       ruleset: rulesetInterdicting(cellIdOfNode(registry, third)),
       mode: TIME_MODE.world,
       cellOf: countingCellOf(registry),
+      standing: NO_WORKINGS_STAND,
     });
 
     calls.length = 0;
@@ -204,6 +206,7 @@ describe('the pipeline end to end delegates too', () => {
         ruleset: permissiveRuleset(),
         mode: TIME_MODE.world,
         cellOf: countingCellOf(registry),
+        standing: NO_WORKINGS_STAND,
       },
     );
     calls.length = 0;

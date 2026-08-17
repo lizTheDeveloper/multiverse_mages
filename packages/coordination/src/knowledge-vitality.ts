@@ -180,6 +180,7 @@ import type { Fixed, SimState } from '@mm/sim-core';
 import { TIME_MODE } from '@mm/sim-core';
 import type { CellResolver, ConsumptionRecorder, EffectSourceInstance } from '@mm/rules-magic';
 import { gatherEffects, nodeEffectRecords } from '@mm/rules-magic';
+import { standingWorkingsOf } from './standing-workings.js';
 import type { Ruleset } from '@mm/state';
 import { KNOWLEDGE_INSTANCE, collectRecords } from '@mm/state';
 
@@ -333,6 +334,7 @@ export function vitalityBonuses(state: SimState, deps: VitalityDeps): VitalityBo
     if (!lifespanNodes.has(row.nodeId) && !fertilityNodes.has(row.nodeId)) continue;
     const instance: EffectSourceInstance = {
       nodeId: row.nodeId,
+      holder: row.locationId,
       locationKind: row.locationKind,
       mastery: row.mastery,
     };
@@ -352,6 +354,10 @@ export function vitalityBonuses(state: SimState, deps: VitalityDeps): VitalityBo
       ruleset: deps.ruleset,
       mode: TIME_MODE.world,
       cellOf: (nodeId) => deps.cells.cellOf(nodeId),
+      // See `universe-effects.ts`. A lifespan or fertility working that lapses
+      // stops lengthening lives on the tick it lapses, not on the tick somebody
+      // notices.
+      standing: standingWorkingsOf(state),
     });
 
     for (const contribution of contributions) {
