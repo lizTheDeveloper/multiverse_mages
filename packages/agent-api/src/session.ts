@@ -76,6 +76,10 @@ import { OBSERVATION_LAYOUT_DIGEST, OBSERVATION_SCHEMA_VERSION } from './digest.
 import type { RejectionReason } from './gate.js';
 import { admit } from './gate.js';
 import type { OutcomeRecord } from './outcome.js';
+import type { AcademyProjection } from './academy.js';
+import { describeAcademy } from './academy.js';
+import type { CandidateDetailProjection } from './candidate-detail.js';
+import { describeCandidates } from './candidate-detail.js';
 import type { PlayerState } from './player-state.js';
 import { project } from './player-state.js';
 import type { AgentView } from './view.js';
@@ -282,6 +286,35 @@ export interface AgentSession {
    * ship quietly.
    */
   playerState(): PlayerState;
+  /**
+   * §4.4's candidate descriptors for the lists {@link candidates} returns.
+   *
+   * The same entitlement argument {@link playerState} makes, one level down. A
+   * slot index is everything a *policy* needs — §4.4 hands it a categorical
+   * choice and an outcome to learn from — and it is nothing at all to a
+   * *person*, who is offered nineteen numbers and no reason to prefer one.
+   * `docs/design/interface-findings.md` §1.11 is that finding.
+   *
+   * Aligned slot-for-slot with {@link candidates} **by construction**: it is
+   * handed the very lists that method returns rather than rebuilding them, so
+   * the two cannot describe different worlds. Nothing here reaches
+   * {@link observe}, and no rule reads it.
+   */
+  candidateDetails(): CandidateDetailProjection;
+  /**
+   * §4.4's academy projection: every college, its roster, its shelf, the
+   * lessons in progress, and the cells the ruleset permits.
+   *
+   * The same entitlement argument {@link candidateDetails} makes, for a
+   * different question. A funding chip needs a college in seven counts; a
+   * university *screen* needs the people, the books and the graph, and none of
+   * those is in §4.1 at all — the mage block is 6 species x 8 tiers of counts,
+   * so a policy cannot tell a college of five from five hermits.
+   *
+   * Built on request, read by no rule, unreachable from {@link observe}.
+   * `./academy.ts` argues the placement and the refusals.
+   */
+  academy(): AcademyProjection;
 }
 
 /** Builds a session. The episode does not exist until {@link AgentSession.reset}. */
@@ -512,11 +545,31 @@ export function createSession(options: SessionOptions): AgentSession {
     },
 
     playerState(): PlayerState {
-      // Built fresh rather than memoized beside `view`. The projection is not on
-      // the per-tick path any policy takes — only a client asks for it — and a
-      // second cache invalidated in `submit()` is a second thing that can be
+      // Built fresh rather than memoized beside `view`. The projection is not
+      // on the per-tick path any policy takes — only a client asks for it — and
+      // a second cache invalidated in `submit()` is a second thing that can be
       // forgotten there and serve a tick-old universe as the current one.
       return project({ state: live(), catalogue: scenario.catalogue });
+    },
+
+    candidateDetails(): CandidateDetailProjection {
+      // `currentView().candidates` and not a fresh `buildCandidates`: the
+      // alignment this projection promises is only real if both halves come
+      // from one list. Built fresh per call otherwise, for the same reason
+      // `playerState` is — a client asks, a policy does not.
+      return describeCandidates({
+        state: live(),
+        catalogue: scenario.catalogue,
+        lists: currentView().candidates,
+      });
+    },
+
+    academy(): AcademyProjection {
+      // Built fresh per call, like `playerState` and for the same reason: a
+      // client asks and a policy does not, and a second cache invalidated in
+      // `submit()` is a second thing that can be forgotten there and serve a
+      // tick-old universe as the current one.
+      return describeAcademy({ state: live(), catalogue: scenario.catalogue });
     },
   };
 }

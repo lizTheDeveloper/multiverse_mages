@@ -55,6 +55,98 @@ export const FP = 1024;
 /** An fp integer in world units — 40960 becomes 40.0 favor. */
 export const units = (fp) => fp / FP;
 
+/**
+ * The three kinds `resources[39]` sums, and the four `material-economy` added.
+ *
+ * Split into two lists on purpose, and the split is the whole of why this file
+ * did not need rewriting when the component went from three kinds to seven.
+ * `materials` is the sum of the **land** three and nothing else — that is what
+ * the observation slot documents and it may not quietly grow — so the guard on
+ * the breakdown is a question about those three. The other four reach no slot
+ * at all, are not part of any sum, and are therefore reported one by one:
+ * absent is absent, per kind.
+ */
+const LAND_KINDS = ['food', 'stone', 'vellum'];
+const OTHER_KINDS = ['labor', 'essence', 'insight', 'passage'];
+
+/**
+ * Whether a frame's `stocks` sidecar carries the three land kinds as real
+ * numbers.
+ *
+ * All three or none, and finite rather than merely present: `JSON.parse` turns
+ * a serialized `Infinity` or `NaN` into `null`, and `units(null)` is `0` — the
+ * exact zero {@link Frame#resources} refuses to invent. A partial sidecar is
+ * treated as no sidecar so a view falls back to the summed total it can trust
+ * instead of drawing two thirds of a breakdown.
+ *
+ * Deliberately **not** widened to all seven. A recording made between the
+ * three-kind sidecar and `material-economy` carries `food`, `stone` and
+ * `vellum` and nothing else; asking for seven here would make every one of
+ * those frames fall back to the summed total and lose a breakdown it really
+ * does have.
+ */
+const hasStocks = (stocks) =>
+  stocks !== null &&
+  typeof stocks === 'object' &&
+  LAND_KINDS.every((kind) => typeof stocks[kind] === 'number' && Number.isFinite(stocks[kind]));
+
+/**
+ * The four non-land kinds a frame actually carries, in world units.
+ *
+ * Per kind rather than all-or-none, because none of them is part of a sum: a
+ * frame carrying `insight` and not `passage` is a frame that can honestly draw
+ * `insight`. A kind that is absent stays absent — never `0`, for the reason
+ * {@link Frame#resources} gives at length.
+ */
+const otherStocks = (stocks) => {
+  if (stocks === null || typeof stocks !== 'object') return {};
+  const out = {};
+  for (const kind of OTHER_KINDS) {
+    const value = stocks[kind];
+    if (typeof value === 'number' && Number.isFinite(value)) out[kind] = units(value);
+  }
+  return out;
+};
+
+/**
+ * Whether a frame carries the §4.4 candidate-descriptor sidecar.
+ *
+ * The three tables or none, for the reason {@link hasStocks} gives one field
+ * over: a half-present projection would let a page draw some slots as people and
+ * the rest as numbers, which reads as *"these four are special"* rather than as
+ * *"this recording predates the field"*. A recording made before it existed is
+ * still a valid recording, so a view asks rather than assumes.
+ */
+const hasCandidateDetail = (detail) =>
+  detail !== null &&
+  typeof detail === 'object' &&
+  ['byAction', 'mages', 'universities'].every(
+    (table) => detail[table] !== null && typeof detail[table] === 'object',
+  );
+
+/**
+ * Whether a frame carries the §4.4 academy sidecar.
+ *
+ * The four fields or none, for the reason {@link hasCandidateDetail} gives one
+ * projection over: a half-present academy would let a page draw a roster with no
+ * ruleset behind it, and the frontier it computed would silently be a frontier
+ * in a universe where nothing is permitted. A recording made before this field
+ * existed is still a valid recording, so a view asks rather than assumes.
+ *
+ * `permittedCells` is checked for *being an array* and not for being non-empty.
+ * An empty list is a real answer — a god who has interdicted the whole grid —
+ * and folding it into "absent" would report a rule as a missing feature.
+ */
+const hasAcademy = (academy) =>
+  academy !== null &&
+  typeof academy === 'object' &&
+  academy.universities !== null &&
+  typeof academy.universities === 'object' &&
+  academy.mages !== null &&
+  typeof academy.mages === 'object' &&
+  Array.isArray(academy.permittedCells) &&
+  typeof academy.unaffiliated === 'number';
+
 const KNOWLEDGE_CHANNELS = 3;
 const SPECIES_COUNT = 6;
 const MAGE_TIER_SLOTS = 8;
@@ -78,7 +170,20 @@ export const WHY_ABSENT = {
   eventDeltas:
     'A frame is a state. Diffing two frames cannot tell a last-instance loss from an ordinary ' +
     'one, and that distinction is what sound-design §6.5 is built on.',
-  mageNames: 'Candidate slots carry entity handles. Nothing on the read path turns one into a name.',
+  mageNames:
+    'Candidate slots carry entity handles, and no component holds a name — `MAGE` is ' +
+    '`speciesId, birthTick, roleId, universityId, curiosity, ambition, caution, vigor, maxVigor, ' +
+    'alive` and that is the whole of what a mage is in state. A description is not a name, so a ' +
+    'slot can say what she is and never who she is; a personal name is content nobody has ' +
+    'authored (interface-findings §1.11).',
+  mageLifespan:
+    'How long a mage has left is not in state. Lifespan is a species figure in `@mm/content` and ' +
+    'the roll that fixes hers is `rules-world`\'s, so a candidate row can say how old she is and ' +
+    'not how near the end.',
+  portalTargetDetail:
+    'A portal target is an id and nothing else. `rival-universe.ts` builds the rival from the run ' +
+    'seed and that id *when the raid resolves*, so before the portal opens there is no entity, no ' +
+    'ruleset and no population to read.',
   maskReason:
     'The mask is one bit. `mask.ts` uses the same zero for an unaffordable action and an ' +
     'impossible one, so a dark control cannot say whether it means *wait* or *change something*.',
@@ -96,6 +201,23 @@ export const WHY_ABSENT = {
   otherUniverse:
     '§1.1 puts one universe in one simulation instance. The multiverse is not in state, so a ' +
     'second universe cannot be read — only named as a portal target id.',
+  universityIdentity:
+    '`UNIVERSITY` is `{libraryId, capacity, buildProgress}` and that is the whole of what a ' +
+    'college is in state — no name, no place, no endowment, no research focus. The place is a ' +
+    'refusal: `assertNoWorldPositions` throws if any world-scale component declares x/y, so only ' +
+    'combatants and objectives have coordinates and a college screen is a dossier rather than a ' +
+    'map. The focus is a refusal too: `rules-world`\'s `universities/profile.ts` records ' +
+    'specialization as emergent from library contents and staff knowledge (vision §13), and a ' +
+    'test there scans the component layout to fail if anyone adds a focus field.',
+  classrooms:
+    '`EFFORT_PROGRESS` is `{subject, kind, nodeId, counterparty, progress}` and carries no ' +
+    'university — §1.2 makes a teaching row belong to the *pair*, and there is no classroom in ' +
+    'state. So "who teaches here" is a join through the two parties\' affiliation, and both ' +
+    'halves of it are drawn rather than one being assumed.',
+  admission:
+    '`capacity` is written once when a college is founded and mutated nowhere in `src/`. ' +
+    '`admitStudents` and its admission-refusal tally have no caller outside a lab test, so the ' +
+    'seats are a designed figure that nothing currently fills or competes for.',
 };
 
 /** One tick, decoded. Nothing is allocated until a block is asked for. */
@@ -119,17 +241,46 @@ class Frame {
    * `worshipTier` is a small integer and stays one; the other four are fp. A
    * saturated channel is reported so a view can print *"128+"* rather than a
    * ceiling it would be wrong about.
+   *
+   * ## `food`, `stone` and `vellum` are `undefined` when absent, never `0`
+   *
+   * The observation has **one** slot for materials — §4.1 sums the three stocks
+   * into `resources[39]`, and widening that block moves `OBSERVATION_SIZE` and
+   * the layout digest, which invalidates every trained policy and every
+   * committed balance baseline. So the split does not come from `obs`. It comes
+   * from `stocks`, a per-frame sidecar off the §4.4 player projection, which a
+   * recorder written before that field existed will not carry.
+   *
+   * When it is missing these three are left `undefined` rather than defaulted.
+   * `0` would be a *lie a page prints as fact* — an empty granary is a crisis
+   * and an unknown granary is not, and the two must not render alike. A view
+   * therefore tests `typeof x === 'number' && Number.isFinite(x)` on all three
+   * and falls back to the summed `materials`, which is always present.
    */
   resources() {
     const [favor, worship, worshipTier, materials, prestige] = this.block('resources');
     const base = this.doc.blockByName.resources.offset;
     const sat = (i) => this.raw.sat.includes(base + i);
+    const stocks = this.raw.stocks;
     return {
       favor: units(favor),
       worship: units(worship),
       worshipTier,
       materials: units(materials),
       prestige: units(prestige),
+      // Spread conditionally rather than assigned from `stocks?.food`, because
+      // optional chaining yields `undefined` for a *present* sidecar that is
+      // missing one kind, and that case should be as absent as a missing
+      // sidecar rather than half-drawn. All three or none.
+      ...(hasStocks(stocks)
+        ? { food: units(stocks.food), stone: units(stocks.stone), vellum: units(stocks.vellum) }
+        : {}),
+      // The four `material-economy` added, each present only if the frame has
+      // it. `materials` does **not** include them: `insight` is what a faculty
+      // teaches out of and `passage` is what a threshold is held open with, and
+      // summing either into a number captioned "food · stone · vellum" would
+      // make one field mean two things.
+      ...otherStocks(stocks),
       saturated: { favor: sat(0), worship: sat(1), materials: sat(3), prestige: sat(4) },
     };
   }
@@ -267,10 +418,400 @@ class Frame {
     return out;
   }
 
+  /**
+   * §4.4's candidate **descriptors**, or `null` when the frame carries none.
+   *
+   * `null` and not an empty projection: absent means *this source cannot say*,
+   * and empty would mean *there is nothing to say about these slots*, which is a
+   * claim about the world. A page tests for it and falls back to the numbered
+   * chips it drew before, with `WHY_ABSENT` under them.
+   *
+   * `slots(action)` is aligned index-for-index with
+   * {@link Frame#candidateLists}, because the parameter submitted is still the
+   * slot index — `agent-api` builds both halves from one list so they cannot
+   * drift. `mage` and `university` are the per-handle lookups those rows point
+   * into: a mage named by bless, by assign-role and by a founding grant is
+   * shipped once and is the same object each time she is asked for.
+   */
+  candidateDetails() {
+    const raw = this.raw.candidateDetail;
+    if (!hasCandidateDetail(raw)) return null;
+    return {
+      slots: (action) => raw.byAction[String(action)] ?? [],
+      mage: (handle) => raw.mages[String(handle)],
+      university: (handle) => raw.universities[String(handle)],
+    };
+  }
+
+  /**
+   * §4.4's academy projection, or `null` when the frame carries none.
+   *
+   * `null` and not an empty projection, for {@link Frame#candidateDetails}'
+   * reason: absent means *this source cannot say*, and empty would mean *this
+   * universe has no colleges*, which is a claim about the world and is one a
+   * player would act on.
+   *
+   * `handles` is ascending so a chip strip is stable between ticks — a college
+   * that moved position every time one was founded would be a different college
+   * to the eye. `permittedCells` is a `Set` because every question asked of it
+   * is membership.
+   */
+  academy() {
+    const raw = this.raw.academy;
+    if (!hasAcademy(raw)) return null;
+    return {
+      handles: Object.keys(raw.universities)
+        .map(Number)
+        .sort((a, b) => a - b),
+      university: (handle) => raw.universities[String(handle)],
+      mage: (handle) => raw.mages[String(handle)],
+      permittedCells: new Set(raw.permittedCells),
+      unaffiliated: raw.unaffiliated,
+    };
+  }
+
   /** `running` | `ascended` | `stagnated` | `truncated`. */
   status() {
     return this.raw.status;
   }
+}
+
+/**
+ * Entity handles carry a generation in their top twelve bits
+ * (`sim-core/src/handle.ts`: `(generation << 20) | index`). A page prints the
+ * index alone, because a college the player has been funding for two hundred
+ * years should not be called `#1048578` — and the full handle rides in the
+ * title so nothing is lost. Two entities can share an index across generations;
+ * they are never both live, so a live list cannot show the ambiguity.
+ */
+const shortHandle = (handle) => handle & 0xfffff;
+
+/**
+ * The words this interface uses for a mage, a node and a cell — one set of them.
+ *
+ * **Here rather than in a page**, and that is the point: two pages formatting
+ * one fact differently is two vocabularies for it, and the console and the play
+ * page already disagreed about how to caption a slot they could not name.
+ * {@link candidateNamer} reads this, and so does the university screen — a mage
+ * on a bless chip and the same mage on her college's roster are one sentence
+ * because they are one function.
+ *
+ * **Nothing here invents a name.** No component holds one — see
+ * {@link WHY_ABSENT.mageNames} — so every word below is either a state field, a
+ * content name for an id, or arithmetic over the two. *"A gnome researcher of
+ * three hundred, at college #6, who knows one thing"* is a description; "Mira"
+ * would be fiction, and a page that invents is worse than one that admits.
+ *
+ * @param content - `session.content`, for the names ids stand for.
+ */
+export function mageVocabulary(content) {
+  const speciesName = new Map((content.species ?? []).map((x) => [x.speciesId, x.name ?? x.id]));
+  const speciesById = new Map((content.species ?? []).map((x) => [x.speciesId, x]));
+  const nodeById = new Map((content.nodes ?? []).map((n) => [n.nodeId, n]));
+  const cellName = new Map(
+    (content.cells ?? []).map((c) => {
+      const t = (content.techniques ?? []).find((x) => x.id === c.technique);
+      const f = (content.forms ?? []).find((x) => x.id === c.form);
+      return [c.cellId, `${t?.name ?? c.technique} ${f?.name ?? c.form}`];
+    }),
+  );
+  /* `??` throughout: a recording made before these tables shipped is still a
+     valid recording, and an id is a truthful fallback for a name it does not
+     carry. */
+  const roleName = (id) => content.mageRoles?.[String(id)] ?? `role ${id}`;
+  const goalName = (id) => content.goals?.[String(id)] ?? `goal ${id}`;
+  const nodeName = (id) => nodeById.get(id)?.name ?? `node ${id}`;
+
+  /** Months into years, because a mage's age is only ever discussed in years. */
+  const age = (ticks) => (ticks >= 12 ? `${Math.floor(ticks / 12)}y` : `${ticks}mo`);
+
+  /** The loudest of the three §1.2 personality figures. Ties go to the first. */
+  const temper = (m) => {
+    const top = Math.max(m.curiosity, m.ambition, m.caution);
+    if (top === m.curiosity) return 'curious';
+    return top === m.ambition ? 'ambitious' : 'cautious';
+  };
+
+  const knows = (m) =>
+    m.nodesKnown === 0 ? 'knows nothing' : `knows ${m.nodesKnown}, to tier ${m.deepestTier}`;
+
+  const vigour = (m) =>
+    m.maxVigor > 0 ? `vigor ${Math.round((m.vigor / m.maxVigor) * 100)}%` : 'vigor unknown';
+
+  const doing = (m) =>
+    m.goal === undefined
+      ? 'has not chosen'
+      : m.goal.targetNodeId === 0
+        ? `now ${goalName(m.goal.goalId)}`
+        : `now ${goalName(m.goal.goalId)} → ${nodeById.get(m.goal.targetNodeId)?.name ?? `node ${m.goal.targetNodeId}`}`;
+
+  const where = (m) => (m.universityId === 0 ? 'unaffiliated' : `at college #${shortHandle(m.universityId)}`);
+
+  const mageSub = (m) => [knows(m), vigour(m), where(m), doing(m), temper(m)].join(' · ');
+
+  const mageTitle = (m) =>
+    `handle ${m.handle} · ${m.ageTicks} months · vigor ${m.vigor}/${m.maxVigor} fp · ` +
+    `curiosity ${m.curiosity}, ambition ${m.ambition}, caution ${m.caution} fp · ${where(m)}` +
+    /* The long form of the gap the caption states in six words. It rides here
+       rather than under the list because it is the same sentence for all
+       thirty-two rows, and a catalogued absence that is printed nowhere is a
+       catalogue entry nobody can check. */
+    ` · ${WHY_ABSENT.mageLifespan}`;
+
+  /** The head a candidate chip carries: what she is, since nothing is who. */
+  const who = (m) =>
+    `${speciesName.get(m.speciesId) ?? `species ${m.speciesId}`} ${roleName(m.roleId)}, ${age(m.ageTicks)}`;
+
+  return {
+    speciesName,
+    speciesById,
+    nodeById,
+    nodeName,
+    cellName,
+    roleName,
+    goalName,
+    age,
+    temper,
+    knows,
+    vigour,
+    doing,
+    where,
+    who,
+    mageSub,
+    mageTitle,
+  };
+}
+
+/**
+ * What a college could learn next, and what stands between it and the rest.
+ *
+ * **This is set arithmetic over content, not a reimplementation of a rule.** The
+ * three inputs are all facts a frame or a header already carries: the
+ * prerequisite graph (content, in `session.content.nodes`), what each mage holds
+ * (`academy` roster), and which cells the ruleset permits — and that last one is
+ * the rule, computed by `permits()` inside `agent-api` and shipped as
+ * `academy.permittedCells` precisely so that a page does not reconstruct it out
+ * of nineteen bits and eight edict slots. Compare {@link reconstructedCharge},
+ * which *is* a §5 exception and says so; this is not one.
+ *
+ * The filter matches `CoordinatingKnowledgeGateway.researchFrontier` — a node in
+ * a permitted cell, not already held, every prerequisite held — plus
+ * `gatherFrontier`'s species depth ceiling, which is applied one level out
+ * there and is applied here for the same reason: a frontier drawn without it
+ * overstates what this mage can actually begin.
+ *
+ * **Per mage, not per college**, and that is the whole correctness of it: the
+ * gateway asks `this.knows(mage, prerequisite)`, so *her* holdings satisfy *her*
+ * prerequisites. A union of the college's knowledge would let one scholar's
+ * groundwork unlock another's next step, which no rule permits and which would
+ * be a plausible, confident lie.
+ *
+ * @param content - `session.content`, for the graph and the depth ceilings.
+ * @returns `{ reachable, blockedByAxis, blockedByPrerequisite, blockedByDepth }`,
+ * each an array of `{ nodeId, by }` where `by` is the handles of the roster
+ * mages the row is true of — plus, on the prerequisite rows, `missing` and
+ * whether the college holds the missing pieces somewhere.
+ */
+export function collegeFrontier(content, dossier, academy) {
+  const nodes = content.nodes ?? [];
+  const byId = new Map(nodes.map((n) => [n.nodeId, n]));
+  const depthOf = new Map((content.species ?? []).map((x) => [x.speciesId, x.depthCeiling]));
+
+  /* Everything the college holds anywhere — every roster mage's head, plus the
+     shelves. Not used to satisfy anybody's prerequisites; used only to answer
+     "is the missing piece already in this building?", which is the difference
+     between "fund research" and "arrange a lesson". */
+  const collegeHolds = new Set();
+  for (const entry of dossier.roster) for (const id of entry.nodeIds) collegeHolds.add(id);
+  for (const entry of dossier.shelf) collegeHolds.add(entry.nodeId);
+
+  const reachable = new Map();
+  const blockedByAxis = new Map();
+  const blockedByPrerequisite = new Map();
+  const blockedByDepth = new Map();
+  const push = (into, nodeId, handle, extra) => {
+    const row = into.get(nodeId);
+    if (row === undefined) into.set(nodeId, { nodeId, by: [handle], ...extra });
+    else row.by.push(handle);
+  };
+
+  for (const entry of dossier.roster) {
+    const mage = academy.mage(entry.handle);
+    const ceiling = mage === undefined ? 7 : (depthOf.get(mage.speciesId) ?? 7);
+    const held = new Set(entry.nodeIds);
+    for (const node of nodes) {
+      if (held.has(node.nodeId)) continue;
+      const missing = (node.prerequisites ?? []).filter((id) => !held.has(id));
+      const permitted = academy.permittedCells.has(node.cellId);
+      if (missing.length > 0) {
+        /* Only inside a permitted cell. A node that is both forbidden and
+           unprepared is reported as forbidden and once: listing it twice would
+           make the two lists sum to more than the grid and read as though the
+           god had two separate problems with one node. */
+        if (permitted) {
+          push(blockedByPrerequisite, node.nodeId, entry.handle, {
+            missing,
+            /* Which of the missing pieces are already in the building. A node
+               whose every gap is on the shelf beside her is a teaching problem,
+               not a research one — and that is a different verb. */
+            missingHeldHere: missing.filter((id) => collegeHolds.has(id)),
+          });
+        }
+        continue;
+      }
+      if (!permitted) {
+        push(blockedByAxis, node.nodeId, entry.handle, {});
+        continue;
+      }
+      if (node.tier > ceiling) {
+        push(blockedByDepth, node.nodeId, entry.handle, { ceiling });
+        continue;
+      }
+      push(reachable, node.nodeId, entry.handle, {});
+    }
+  }
+
+  const ordered = (map) =>
+    [...map.values()].sort((a, b) => {
+      const at = byId.get(a.nodeId)?.tier ?? 0;
+      const bt = byId.get(b.nodeId)?.tier ?? 0;
+      return at !== bt ? at - bt : a.nodeId - b.nodeId;
+    });
+
+  return {
+    reachable: ordered(reachable),
+    blockedByAxis: ordered(blockedByAxis),
+    blockedByPrerequisite: ordered(blockedByPrerequisite),
+    blockedByDepth: ordered(blockedByDepth),
+  };
+}
+
+/**
+ * Turns §4.4's candidate descriptors into the words a player chooses between.
+ *
+ * A thin layer over {@link mageVocabulary}: the words are shared, and what is
+ * local to this function is how a *slot* is captioned — which is per verb and
+ * belongs to the action space rather than to the mage.
+ *
+ * @param content - `session.content`, for the names ids stand for.
+ * @returns `(view, action, slot, params) => { head, sub, title } | null`, where
+ * `view` is {@link Frame#candidateDetails}. `null` means this source carries no
+ * descriptors and the caller should fall back to numbered slots and say why.
+ */
+export function candidateNamer(content) {
+  const vocab = mageVocabulary(content);
+  const { speciesName, nodeById, cellName, roleName, age, knows, doing, mageSub, mageTitle } = vocab;
+  const traditionName = new Map((content.traditions ?? []).map((t) => [t.traditionId, t.name ?? t.id]));
+
+  /**
+   * The line under a described list: what the descriptions still cannot say.
+   *
+   * Per kind, because the old single sentence was about mages and got printed
+   * under a list of colleges. What is absent from a candidate row is a property
+   * of what the row describes, not of the mechanism describing it.
+   */
+  const missing = (view, action) => {
+    const rows = view === null || view === undefined ? [] : view.slots(action);
+    /* One sentence. The long form of each is in {@link WHY_ABSENT} and rides in
+       the row's own title — three cards side by side, each carrying the same
+       five-line disclaimer, buries the descriptions it is a footnote to. */
+    if (rows.some((r) => r.kind === 'portal-target')) {
+      return 'Nothing else is knowable: the rival is built from the seed when the portal opens.';
+    }
+    if (rows.some((r) => r.kind === 'mage' || r.kind === 'mage-role' || r.kind === 'mage-node')) {
+      return 'Still absent: a name — no component holds one — and how long she has left.';
+    }
+    return '';
+  };
+
+  const namer = (view, action, slot, params = []) => {
+    if (view === null || view === undefined) return null;
+    const row = view.slots(action)[slot];
+    if (row === undefined) return null;
+    const tail = `slot ${slot} · params ${params.join(', ')}`;
+
+    if (row.kind === 'mage' || row.kind === 'mage-role' || row.kind === 'mage-node') {
+      const m = view.mage(row.handle);
+      if (m === undefined) return { head: `slot ${slot} — gone`, sub: WHY_ABSENT.mageNames, title: tail };
+      const who = `${speciesName.get(m.speciesId) ?? `species ${m.speciesId}`} ${roleName(m.roleId)}, ${age(m.ageTicks)}`;
+      if (row.kind === 'mage') return { head: who, sub: mageSub(m), title: `${mageTitle(m)} · ${tail}` };
+      if (row.kind === 'mage-role') {
+        return {
+          head: `${who} → ${roleName(row.toRoleId)}`,
+          sub: mageSub(m),
+          title: `${mageTitle(m)} · ${tail}`,
+        };
+      }
+      const node = nodeById.get(row.nodeId);
+      return {
+        head: `${node?.name ?? `node ${row.nodeId}`} → ${who}`,
+        /* The node leads, because action 8's list is one mage against many
+           nodes: sixteen rows differing only in their tail read as sixteen of
+           the same thing. */
+        sub:
+          `tier ${node?.tier ?? '?'} · ${cellName.get(node?.cellId) ?? 'cell unknown'} · ` +
+          `she ${knows(m)} · ${doing(m)}`,
+        title: `${mageTitle(m)} · node ${row.nodeId} · ${tail}`,
+      };
+    }
+
+    if (row.kind === 'university') {
+      const u = view.university(row.handle);
+      if (u === undefined) return { head: `slot ${slot} — gone`, sub: '', title: tail };
+      const built = `${Math.round((u.buildProgress / FP) * 100)}% built`;
+      return {
+        head: `college #${shortHandle(u.handle)}, ${built}`,
+        sub:
+          `${u.capacity} seats · ` +
+          `${u.hasLibrary ? `${u.libraryNodes} nodes shelved` : 'no library yet'} · ` +
+          `${u.affiliatedMages} mages affiliated · ${u.staffCohorts} staff cohorts`,
+        title: `handle ${u.handle} · buildProgress ${u.buildProgress} fp · ${tail}`,
+      };
+    }
+
+    if (row.kind === 'found-university') {
+      return {
+        head: 'found a new one',
+        /* Not an entity, which is exactly what the old anonymous label could not
+           say: §4.2 gives founding and funding one action id and slot 0 is the
+           founding half. */
+        sub: '§4.2 puts founding and funding under one verb, and this is the founding half — there is no college here yet to describe.',
+        title: `slot 0 · params 0 — §4.2's "universityId | 0 to found new"`,
+      };
+    }
+
+    if (row.kind === 'portal-target') {
+      return {
+        head: `target #${row.targetId}`,
+        /* Short here and long once under the list. The full reason is
+           {@link WHY_ABSENT.portalTargetDetail}, and repeating a paragraph on
+           every row of an eight-slot list would bury the one thing that differs
+           between them, which is the id. */
+        sub: 'no entity yet — the rival is built from the seed when the portal opens',
+        title: `${WHY_ABSENT.portalTargetDetail} · ${tail}`,
+      };
+    }
+
+    if (row.kind === 'cell') {
+      return { head: cellName.get(row.cellId) ?? `cell ${row.cellId}`, sub: '', title: tail };
+    }
+    if (row.kind === 'tradition') {
+      return { head: traditionName.get(row.traditionId) ?? `tradition ${row.traditionId}`, sub: '', title: tail };
+    }
+    if (row.kind === 'species') {
+      return { head: speciesName.get(row.speciesId) ?? `species ${row.speciesId}`, sub: '', title: tail };
+    }
+
+    return {
+      head: `slot ${slot} — gone`,
+      sub: 'The handle in this slot names nobody living in the world as it stands now. §4.4 calls submitting it an ordinary illegal action.',
+      title: tail,
+    };
+  };
+
+  /** `namer.missing(view, action)` — the honesty line for one verb's list. */
+  namer.missing = missing;
+  return namer;
 }
 
 /**
@@ -354,11 +895,30 @@ function buildSession(doc, extras = {}) {
       const f = frame(doc.frames.length - 1);
       return {
         resources: true,
+        /**
+         * Whether `resources()` can split `materials` into food, stone and
+         * vellum. Read off the frame rather than asserted, because a recording
+         * made before the `stocks` sidecar existed is still a valid recording
+         * and a view must be able to ask instead of guessing.
+         */
+        materialBreakdown: typeof f.resources().food === 'number',
         ruleset: true,
         actionMask: true,
         knowledgeAggregates: f.knowledge().some((c) => c.live),
         mageBuckets: f.mageBuckets().some((s) => s.living > 0),
         candidates: f.candidateLists().size > 0,
+        /**
+         * Whether a slot can say what it is rather than only what index it has.
+         * Read off the frame for the same reason `materialBreakdown` is — a
+         * recording made before the sidecar existed is still valid.
+         */
+        candidateDetail: f.candidateDetails() !== null,
+        /**
+         * Whether a page can name a college's roster, its shelf, the lessons in
+         * it and the cells the ruleset permits. Read off the frame for the same
+         * reason the two above are.
+         */
+        academy: f.academy() !== null,
         engagement: anyEngagement(),
         // Absent from the read path, not from this recording. See WHY_ABSENT.
         individualMages: false,
@@ -413,6 +973,27 @@ function liveControls(base, doc) {
 
   return {
     live: true,
+    /**
+     * The **read-only** half: fetch whatever frames the server has that this
+     * page does not, and change nothing.
+     *
+     * A passive surface needs this and had no way to ask for it. `advance(0)`
+     * is not it — the server clamps `ticks` to at least one, so a view polling
+     * that way would silently *drive* the universe it is watching, and two open
+     * tabs would race each other's clocks. `GET /live/frames?since=N` is the
+     * incremental read the server already publishes for exactly this.
+     *
+     * @returns the number of new frames absorbed, so a caller can redraw only
+     * when the clock has actually moved.
+     */
+    poll: async () => {
+      const res = await fetch(`${base}/live/frames?since=${doc.frames.length}`);
+      if (!res.ok) return 0;
+      const payload = await res.json();
+      const before = doc.frames.length;
+      absorb(payload);
+      return doc.frames.length - before;
+    },
     /** One god action, one tick. Resolves to what the admission gate said. */
     submit: async (kind, params = []) =>
       absorb(await post('submit', { kind, params: [...params] })),
@@ -540,10 +1121,29 @@ export function mountSourceNote(host, session, needs = []) {
   el.append(
     Object.assign(document.createElement('b'), { textContent: isLive ? 'Live' : 'Recording' }),
   );
-  put(
+  /*
+   * `p.ticks` is a number captured when the document was fetched. On a
+   * recording that is the whole run and never moves. On a **live** run the
+   * frame array grows under the page, so a strip built from `p.ticks` claimed
+   * `tick 40 of 4000` for the rest of the session — measured 2026-08-15 with
+   * the clock at 391 and the strip still reading 40. A live surface reporting a
+   * frozen clock is worse than one reporting no clock at all.
+   *
+   * `session.frameCount` is a getter for exactly this reason, so the live strip
+   * re-reads it. The interval stops itself once the strip leaves the document,
+   * which is what makes this safe to own here rather than in fourteen pages.
+   *
+   * What it tracks, precisely: **the frames this page holds**, not the server's
+   * clock. A surface that drives the run — `console/` casts and scrubs, so it
+   * pulls — now follows it. A passive surface that fetched once and never asks
+   * again still reads its load tick, and that is the truth about what it is
+   * drawing. Making those pages follow a universe they never poll is a
+   * different and larger change than this one.
+   */
+  const where = put(
     null,
     isLive
-      ? `seed ${p.seed} · tick ${p.ticks} of ${p.tickCap} · running now · layout ${p.observationLayoutDigest.slice(0, 8)}`
+      ? `seed ${p.seed} · tick ${session.frameCount - 1} of ${p.tickCap} · running now · layout ${p.observationLayoutDigest.slice(0, 8)}`
       : `seed ${p.seed} · ${p.ticks} ticks · layout ${p.observationLayoutDigest.slice(0, 8)}`,
   );
   /*
@@ -569,6 +1169,17 @@ export function mountSourceNote(host, session, needs = []) {
     );
   }
 
+  if (isLive) {
+    const tick = setInterval(() => {
+      if (!where.isConnected) {
+        clearInterval(tick);
+        return;
+      }
+      const at = session.frameCount - 1;
+      const next = `seed ${p.seed} · tick ${at} of ${p.tickCap} · running now · layout ${p.observationLayoutDigest.slice(0, 8)}`;
+      if (where.textContent !== next) where.textContent = next;
+    }, 400);
+  }
   if (missing.length > 0) {
     el.classList.add('is-absent');
     put(

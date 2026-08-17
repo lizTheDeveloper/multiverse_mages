@@ -100,8 +100,18 @@ const eslint = new ESLint({ cwd: repoRoot });
 
 /** The integer side, transcribed from `test/unit/float-boundary.test.ts`. */
 const INTEGER_SIDE = [
+  // Counts, sums and set membership over integer component fields; the one
+  // comparison is `mastery > best`. No division anywhere — a shelf's redundancy
+  // is a count and a mage's frontier is set arithmetic, and both stay integers
+  // all the way to the client, which is the only place a percentage is made.
+  'academy.ts',
   'actions.ts',
   'agent-rng.ts',
+  // Reads integer component fields and hands them on unchanged. The only
+  // arithmetic is a subtraction (`worldTick - birthTick`) and a comparison; a
+  // client turns months into years and vigor into a percentage, on its own side
+  // of the boundary.
+  'candidate-detail.ts',
   'candidates.ts',
   'catalogue.ts',
   'digest.ts',

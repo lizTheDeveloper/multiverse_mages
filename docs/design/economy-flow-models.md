@@ -231,6 +231,66 @@ cannot be paid should destroy capability, not create an obligation stock. Additi
 claimants should each declare **pull-any vs pull-all-or-none** explicitly (§1.3): scribing a grimoire is
 naturally all-or-none (a half-scribed book is nothing); subsistence is naturally pull-any.
 
+#### Addendum, 2026-08-15 — reproduced from the play surface, and the debt diagnosis does not survive
+
+**Two corrections before the numbers.** The recommendation above is already shipped and its premise
+was wrong: `audit-world.md` records that unmet upkeep is *not* banked — `capital.ts` computes
+`degradedInstances = floorDiv(shortfall, DEGRADATION_PER_SHORTFALL)` and stores no obligation stock,
+so there is no `shortage` pool and nothing to service. The header's *"owed"* is a per-tick owed, not a
+debt. What the shelves are actually short of is **vellum**: `world-step.ts:869` charges library upkeep
+and scribing against the same stock, and `audit-world.md` records that no v1 universe can produce
+vellum by magic — `nomen` is the only vellum-yielding form and its one `resource-yield` node is not in
+a v1 cell. **The sink is magical and the faucet is not.**
+
+**Measured on `origin/main` at `ad7f80c2`, 2026-08-15**, from the surface a player actually touches:
+the live play scenario, seed 20260813, `referenceScenario(content, { raids: true })` — *not* the
+recorded session, which is a different episode — with `noop` submitted every tick. Nothing but time
+passes: this is the do-nothing control, in a universe that never funds a second university
+(`universityCount` is 1 at every one of the 4,000 ticks). Reproduce the opening position with
+`npm run play -- --warm 2000`; the trace itself is a loop over `createSession(...)
+.submit({ kind: 0 })` reading `session.observe()` and `scenario.lastReport()`.
+
+| Tick | Library depth | Grimoires | Living mages | `materials` slot | food / stone / vellum (fp) |
+|---|---|---|---|---|---|
+| 40 | 2 | 38 | 19 | 3,051,751 | 1,031,485 / 1,032,171 / 988,095 |
+| 353 | 7 | 297 | 17 | 2,837,131 | 1,070,974 / 1,165,184 / 600,973 |
+| **606** | **40** | **528** | 18 | 2,311,532 | 1,074,673 / 1,236,495 / **364** |
+| 800 | 30 | 103 | 25 | 2,382,005 | 1,075,016 / 1,306,510 / 479 |
+| 1,325 | 22 | 23 | 26 | 1,671,452 | 259,146 / 1,412,306 / 0 |
+| 1,565 | 11 | 11 | 45 | 1,444,536 | 0 / 1,444,536 / 0 |
+| 2,000 | 6 | 6 | 54 | 1,565,979 | 0 / 1,565,651 / 328 |
+| **2,802** | **0** | **0** | 101 | 2,569,730 | 0 / 2,444,953 / 124,777 |
+| 4,000 | 0 | 0 | 140 | 5,564,454 | 0 / 4,883,314 / 681,140 |
+
+Four things it says that the original row does not.
+
+- **The peak and the vellum floor are the same tick.** Books top out at 528 across 40 shelved nodes
+  at tick **606** — the tick vellum reads **364 fp** of the 988,095 it held at tick 40, having never
+  been below 3,286 before it — and vellum is **0 at tick 607**. Nothing recovers afterwards: over the
+  remaining 3,394 ticks the grimoire count rises again on **19** of them, by one book each time, and
+  reaches **zero at tick 2,802 and stays there to the cap**. Vellum is short on 1,036 ticks, food on
+  2,615.
+- **The population goes the other way.** Living mages rise from 18 at the book peak to **143** at
+  tick 3,963. The universe ends with the most mages it has ever had and not one book, so whatever
+  the library is doing, it is not what bounds the population.
+- **Knowledge does not fall with its vessels.** `nodesKnown` summed over the twelve enabled cells is
+  46 at tick 353, 49 at tick 600, and **51 from tick 978 to the cap without once dipping**, while
+  every written copy burns down. This is a **vessel** collapse, not a knowledge collapse: the
+  universe keeps knowing things and stops being able to write them down — which is the loss
+  `sound-design.md` §6.5 and `interface-findings.md` §1.9 are built around, spread across a thousand
+  ticks with no channel that announces any of it.
+- **The aggregate hides it, then contradicts it.** The `materials` observation slot is the sum of the
+  three stocks, so it reads 2.3M at the book peak and **rises to 5.6M** by the cap on stone nothing
+  spends. A player watching that number sees materials more than double over exactly the span in
+  which the stock that makes books is empty. Recorded as an interface finding at
+  `interface-findings.md` §1.12.
+
+**One thing this run does not settle**, stated so it is not read as settled: food reaches 0 fp at
+tick 1,386 and is never positive again, and `shortKinds.food` is true for 2,615 of 4,000 ticks, while
+the mage population still triples over the same span. Either subsistence is not gated on the closing
+stock, or the stock is drawn flat every tick by design. Not measured here, and not what this row is
+about.
+
 ### 3.2 Occupation demand pinned at ~104 regardless of populace (17,188 idle vs 67 laborers)
 **Name: boundary adequacy failure (Sterman, *Business Dynamics* 2000, ch.21 — test #1 of the battery).**
 The test asks: *are the important variables endogenous to the model?* Demand here is computed from

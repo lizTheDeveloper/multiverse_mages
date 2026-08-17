@@ -28,8 +28,11 @@
  */
 
 import type {
+  AcademyProjection,
   AgentSession as ApiSession,
+  CandidateDetailProjection,
   CandidateLists,
+  PlayerState,
   EpisodeAccounting,
   EpisodeStatus,
   OutcomeRecord,
@@ -156,6 +159,41 @@ class ApiSessionDouble implements ApiSession {
 
   snapshotHash(): string {
     return `double-${String(this.tick)}`;
+  }
+
+  /*
+   * The three §4.4 client projections. **This double was silently out of date
+   * for three commits** — `playerState` landed with `04dbce79` and
+   * `candidateDetails` with `0aaf0cdb`, and neither surfaced here because
+   * `tsc --build` is incremental and nothing in this package had changed since.
+   * A clean checkout would have failed the very first typecheck. That is the
+   * reason `implements ApiSession` is on the class at all, so the three are
+   * added rather than the annotation loosened.
+   *
+   * `playerState` throws for `gym-bridge`'s stated reason: the interface
+   * promises a projection of a world, this double has no world, and a double
+   * that quietly returned an empty one would turn a missing fixture into a
+   * passing assertion about nothing. The other two return empty projections,
+   * which is the *correct* description of a double whose `candidates()` is an
+   * empty map and whose universe holds no colleges.
+   */
+  playerState(): PlayerState {
+    throw new Error(
+      'ApiSessionDouble models no world state; build a session over a real scenario for that',
+    );
+  }
+
+  candidateDetails(): CandidateDetailProjection {
+    return Object.freeze({ byAction: new Map(), mages: new Map(), universities: new Map() });
+  }
+
+  academy(): AcademyProjection {
+    return Object.freeze({
+      universities: new Map(),
+      mages: new Map(),
+      permittedCells: Object.freeze([]),
+      unaffiliated: 0,
+    });
   }
 }
 

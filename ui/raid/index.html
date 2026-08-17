@@ -648,6 +648,14 @@ h1{font:400 clamp(1.7rem,3.2vw,2.4rem)/1.06 var(--serif);margin:.3rem 0 .45rem;l
 </style>
 </head>
 <body>
+<script type="module">
+  // The bar that says where else there is. Its own block, not folded into the
+  // script below: nav.js imports nothing, so a sibling module that fails to
+  // evaluate cannot take the navigation down with it.
+  import { mountNav } from '../shared/nav.js';
+  mountNav();
+</script>
+
 <div class="wrap">
 
   <header class="head">
@@ -2958,6 +2966,12 @@ requestAnimationFrame(frame);
      does not carry — which capability is missing and why. Sourced from
      capabilities() rather than prose, so it cannot go stale quietly. */
   import { mountSourceNote, openSession } from '../shared/session.js';
-  const s = await openSession({ recording: '../session.json' }).catch(() => null);
+  /* Live first, recording second, and neither throws: `npm run play` serves this
+     page beside a universe that is still running, `npm run ui` beside one that
+     finished, and a plain static server beside neither. The two sources publish
+     the same document, so everything below reads one model either way. */
+  const s =
+    (await openSession({ live: '' }).catch(() => null)) ??
+    (await openSession({ recording: '../session.json' }).catch(() => null));
   mountSourceNote(document.getElementById('srchost'), s, ['engagement', 'eventDeltas']);
 </script>
