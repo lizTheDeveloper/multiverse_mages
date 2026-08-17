@@ -658,10 +658,12 @@ a re-pin around it.
 | `scenario/opening-square.test.ts` (1) | "opens exactly the twelve cells content flags v1" |
 | `scenario/reference-universe.test.ts` (1) | "permits exactly the twelve cells content flags v1, and no thirteenth" |
 | `coordination/frontier-scan-window.test.ts` (4) | the historical record of what the old `min(nodeCount,256)` window cost *the twelve-cell subset* — four hidden tier-1 roots, eighteen of fifty-one nodes out of reach. The numbers are true of a subset that no longer exists |
+| `rules-magic/effect-stacking.test.ts` (1) | **Fixed.** End-to-end stacking over the first two nodes declaring `research-rate`. Those two now also declare `lifespan`, whose cap is `fraction-of-species-base` and which throws unless the caller supplies one — a branch no v1 node could reach before and seventeen can now. The crib supplies `speciesBase` and **adds** an assertion that `lifespan` really arrived. Checked before filing: it pins no measured number; the `research-rate` expectation is still computed against `stackMagnitudes` rather than a literal |
 | `coordination/academic-effects.test.ts` (1) | **Left red.** The control arm is built from *inert non-v1 nodes tier-matched to the treatment*, and with every cell flagged there is no inert node at tier 6 left to match `cf-the-given-destiny`. Its ten sibling tests — every one that measures whether the rates actually move — still pass. Redesigning a control arm is a methodology decision, not a literal, and is not this change's to take |
 
-**Group B — the assertion pins a measured outcome of running the simulation (32, of which 31 remain
-after the Group A pass plus `academic-effects`).** Left red on
+**Group B — the assertion pins a measured outcome of running the simulation.** Thirty of these were
+red before the Group A pass and all thirty still are; with `academic-effects` and the surviving half
+of `annihilation-registry` they are the 32 the final gate reports. Left red on
 purpose. Every one of these is a number that moved because the game changed, which is the thing
 balance suspension exists to permit.
 
@@ -677,5 +679,4 @@ balance suspension exists to permit.
 | `scenario/combat-ablation-reaches-a-raid.test.ts` (2) | that neutralising `knowledge-steal` changes the raid log on two named seeds |
 | `scenario/annihilation-registry.test.ts` (1) | the exact set of floor-to-zero sites. `target-appeal:effortTerm` was registered from w115's diff; **`lifespan:effectiveLifespan` remains red** and stays that way, because registering it means writing down its *rate* — 15 of 240 ticks — and a rate is a measurement |
 | `scenario/reference-time-to-tier.test.ts` (1) | the time-to-tier separations that survive a seed re-roll |
-| `rules-magic/effect-stacking.test.ts` (1) | end-to-end stacking over two held nodes chosen from the subset |
 | **`scenario/raid-engagement.test.ts` (1)** | **"looting brings home nodes from cells this universe would never have permitted"** — this is the corroboration of finding 1 above. The test is red because the mechanism is genuinely inert, not because a number drifted, and it is the one Group B failure that is a **defect** rather than a movement |
