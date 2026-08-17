@@ -70,7 +70,7 @@
 
 import type { SimState } from '@mm/sim-core';
 import { TIME_MODE, eraOf } from '@mm/sim-core';
-import type { Edict, Ruleset } from '@mm/state';
+import type { Edict, MaterialStockRecord, Ruleset } from '@mm/state';
 import {
   COMBATANT,
   EDICT_BUDGET_MAX,
@@ -142,22 +142,62 @@ import {
  */
 
 /**
- * §1.1's five resource channels.
+ * §1.1's five resource channels, plus the seven stocks held under their names.
  *
- * `materials` is the **sum** of `material-stock`'s three kinds. The encoder
- * records the consequence and it is repeated here because it is an entitlement
- * fact and not an encoding one: a player cannot tell a food shortage from a
- * vellum one. `favorCap` is withheld, so `favor` is readable and its ceiling is
- * not.
+ * `materials` stays the **sum of `food`, `stone` and `vellum`** and means
+ * exactly what it always meant, because the §4.1 *observation* carries one slot
+ * for it and widening that slot is a contract change nobody has scheduled —
+ * vision §6: *"a resize invalidates every trained agent."* That constraint is
+ * the encoder's and it is real.
+ *
+ * It is **not** this projection's constraint, and conflating the two is what
+ * left a client unable to draw numbers the world plainly holds. This type is
+ * what a *player* may see; `encodePlayerState` is what an *agent* is handed, and
+ * only the latter is bound by the vector's width. So the stocks are carried here
+ * individually **and** the three land kinds are summed into `materials`, the
+ * encoder keeps writing that one sum into its one slot, and `OBSERVATION_SIZE`,
+ * `OBSERVATION_LAYOUT_DIGEST` and `OBSERVATION_SCHEMA_VERSION` do not move. That
+ * unchanged digest is the property that makes this cheap, and
+ * `entitlement.test.ts` pins it.
+ *
+ * The consequence for an agent is unchanged and still recorded in
+ * `entitlement.ts` as `aggregated('resources[39]')`: a *policy* cannot tell a
+ * food shortage from a vellum one. A *client* can.
+ *
+ * `materials` deliberately does **not** grow to seven kinds. It is a documented
+ * quantity with a fixed meaning that the observation slot must keep matching,
+ * and four of the seven are not land yield at all — `insight` is what a faculty
+ * teaches out of and `passage` is what a threshold is held open with. Summing
+ * them into a number labelled *"food + stone + vellum"* would make one field
+ * mean two things depending on which side of the encoder read it.
+ *
+ * `favorCap` is withheld, so `favor` is readable and its ceiling is not.
+ *
+ * ## Why {@link stocks} is a nested `MaterialStockRecord` and not seven fields
+ *
+ * An earlier draft inlined the kinds here as siblings of `materials`.
+ * `state`'s `schema-duplication` check refused it, and it was right to: a type
+ * whose fields are a superset of a `@mm/state` record is a second declaration of
+ * a §1 entity however it is named, and two declarations of one entity drift.
+ * Consuming `MaterialStockRecord` instead means an eighth kind — the schema is
+ * `MATERIAL_STOCK`'s to change — arrives here without anyone editing this file,
+ * rather than being silently dropped from every client by a projection that had
+ * transcribed the field list. That is exactly what happened when the record grew
+ * from three kinds to seven: this file needed no edit.
  */
 export interface PlayerResources {
   readonly favor: number;
   readonly worship: number;
   readonly worshipTier: number;
-  /** `food + stone + vellum`. */
+  /** `food + stone + vellum`. What the observation's one slot carries. */
   readonly materials: number;
   /** The carried-in stock. `prestigeEarned` is withheld. */
   readonly prestige: number;
+  /**
+   * Every material kind under its own name. `@mm/state`'s own record, consumed
+   * rather than copied — see the note above. Reaches no observation slot.
+   */
+  readonly stocks: MaterialStockRecord;
 }
 
 /** One cell's three knowledge channels. */
@@ -406,6 +446,16 @@ function projectEngagement(input: ObservationInput): PlayerEngagement | undefine
  * resources — the same early return `writeRuleset` takes — rather than throwing.
  * A half-built test world is a world, and it should observe as an empty one.
  */
+
+/** Every kind at zero — a world with no universe, or one never stepped. */
+function zeroStocks(): MaterialStockRecord {
+  const stocks = {} as Record<keyof MaterialStockRecord, number>;
+  for (const kind of Object.keys(MATERIAL_STOCK.fields) as (keyof MaterialStockRecord)[]) {
+    stocks[kind] = 0;
+  }
+  return stocks;
+}
+
 export function project(input: ObservationInput): PlayerState {
   const { state, catalogue } = input;
   const digest = projectKnowledge(state, catalogue);
@@ -421,6 +471,10 @@ export function project(input: ObservationInput): PlayerState {
     worshipTier: 0,
     materials: 0,
     prestige: 0,
+    // Built from the schema rather than written out, for the reason the read
+    // path below is: a kind added to `MATERIAL_STOCK` must not be able to reach
+    // a client through one branch and be absent on the other.
+    stocks: zeroStocks(),
   };
 
   // A world with no universe leaves an empty ruleset — both masks zero and no
@@ -438,16 +492,36 @@ export function project(input: ObservationInput): PlayerState {
 
     // Summed in a plain number and saturated once, matching the encoder. A
     // missing row is all-zero, which is what "never stepped" means.
-    const stocks = componentOf(state, MATERIAL_STOCK);
-    const materials = stocks.has(universe)
-      ? stocks.get(universe, 'food') + stocks.get(universe, 'stone') + stocks.get(universe, 'vellum')
-      : 0;
+    //
+    // Every kind is read once and carried, and `materials` is then derived from
+    // the same three reads that `food`, `stone` and `vellum` report — so the
+    // sum and its parts cannot disagree, which is the failure `layout.ts` names
+    // when it refuses to store one constant under two names.
+    //
+    // The field list comes from `MATERIAL_STOCK.fields` rather than being
+    // transcribed here. A transcribed list is how a kind added to the schema
+    // gets silently dropped from every client, and this record has already
+    // grown from three kinds to seven once.
+    const store = componentOf(state, MATERIAL_STOCK);
+    const held = store.has(universe);
+    const stocks = {} as Record<keyof MaterialStockRecord, number>;
+    for (const kind of Object.keys(MATERIAL_STOCK.fields) as (keyof MaterialStockRecord)[]) {
+      // Saturated individually as well as in the sum. A single stock cannot
+      // overflow an int32 while the sum does not, but saturating the parts keeps
+      // every field of this type under one guarantee rather than two, and
+      // `saturate` throws on a non-integer — the check that would catch a float
+      // reaching the projection.
+      stocks[kind] = saturate(held ? store.get(universe, kind) : 0);
+    }
     resources = {
       favor: saturate(record.favor),
       worship: saturate(record.worship),
       worshipTier: saturate(record.worshipTier),
-      materials: saturate(materials),
+      // The three land kinds only, and deliberately: this is the documented
+      // meaning the observation's one slot must keep matching.
+      materials: saturate(stocks.food + stocks.stone + stocks.vellum),
       prestige: saturate(record.prestige),
+      stocks,
     };
   }
 

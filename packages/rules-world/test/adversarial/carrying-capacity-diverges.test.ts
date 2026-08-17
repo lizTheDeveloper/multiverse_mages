@@ -161,15 +161,22 @@ function run(share: number): Trace {
         shares: SHARES,
         resourceYield,
         resourceYieldBonuses: NO_YIELD_BONUSES,
+        // Zero, because this test's whole subject is the *laborer share* of the
+        // population and what it does to `K`. A second share taken off the top
+        // would be a second lever on the same series and the divergence it
+        // reports would no longer be attributable to the one it varies.
+        production: { hireableShare: 0 },
       }),
     );
 
     const demand = subsistenceDemand(population);
     const outcome = consumeMaterials(stock, {
       casting: 0, subsistence: demand,
+      teaching: 0,
       libraryUpkeep: 0,
       scribing: 0,
       construction: 0,
+      constructionLabor: 0,
     });
     stock = outcome.remaining;
     const shortfallShare =

@@ -42,6 +42,7 @@
 
 import type { ContentDiagnostic } from './diagnostics.js';
 import type { GodConstantRecord, GodCostRecord } from './types.js';
+import { MATERIAL_KIND_IDS } from './types.js';
 
 /** `contracts.md` §0's fixed-point scale, spelled out where the identities read as arithmetic. */
 const FP_ONE = 1024;
@@ -192,6 +193,49 @@ export function checkGodCosts(records: readonly GodCostRecord[]): readonly Conte
           'through 15 and an action with no declared price is an action that is free.',
       ),
     );
+  }
+
+  // **`material-economy` task 4.1's invariant.** The schema already refuses an
+  // unknown key through `additionalProperties: false`, and its message is a
+  // JSON pointer — `/8/materialCost/gold` — against a table of seventeen rows.
+  // This says which *action* named it, which is the difference between a
+  // reader fixing a typo and a reader counting records. Same reason the
+  // covering check above exists beside `minItems`.
+  //
+  // An empty map is refused here too, and cannot be refused by the schema: the
+  // interpreter in `json-schema.ts` enforces no `minProperties` and refuses to
+  // compile a keyword it does not implement, *"so that no schema constraint can
+  // be silently unenforced."* An empty `materialCost` is a price somebody
+  // started writing and did not finish, and it reads at every consumer as
+  // exactly the same thing as no price at all.
+  for (const record of records) {
+    const materialCost = record.materialCost;
+    if (materialCost === undefined) continue;
+    const named = Object.keys(materialCost);
+    if (named.length === 0) {
+      out.push(
+        problem(
+          file,
+          '',
+          `"${record.id}" declares an empty materialCost. An empty price is indistinguishable ` +
+            'from no price at every consumer, so it is a table half-edited rather than a verb ' +
+            'that costs nothing; omit the field instead.',
+        ),
+      );
+      continue;
+    }
+    for (const kind of named) {
+      if ((MATERIAL_KIND_IDS as readonly string[]).includes(kind)) continue;
+      out.push(
+        problem(
+          file,
+          '',
+          `"${record.id}" costs "${kind}", which is not a material kind. The economy holds ` +
+            `${MATERIAL_KIND_IDS.join(', ')}, and a cost denominated in a stock that does not ` +
+            'exist would be a verb nothing could ever pay for.',
+        ),
+      );
+    }
   }
 
   const costOf = (actionId: number): number | undefined => byAction.get(actionId)?.favorCost;

@@ -72,7 +72,7 @@ import type { AblationMask, ClampCounters } from '@mm/primitives';
 import { stackMagnitudes } from '@mm/primitives';
 
 import type { MaterialAmounts } from './kinds.js';
-import { NO_MATERIALS, routeYieldByForm, totalAmount } from './kinds.js';
+import { MATERIAL_KINDS, NO_MATERIALS, routeYieldByForm, totalAmount, zeroAmounts } from './kinds.js';
 
 /** Mirrors `@mm/content`'s `TuningStatus` without importing a type for a constant. */
 export const APPLICATION_TUNING_STATUS = 'untuned';
@@ -190,11 +190,19 @@ export function applicationRations(applyingMages: number, weights: ApplicationWe
   return applyingMages * Math.max(0, weights.rationPerMonth);
 }
 
-/** Whether a form routes anywhere at all. The fourth gate on an applicable node. */
+/**
+ * Whether a form routes anywhere at all. The fourth gate on an applicable node.
+ *
+ * **Every kind, not the three land yields.** This predicate decides whether a
+ * mage may choose `GOAL.applyMagic` on a node at all, and while it asked only
+ * about `food`, `stone` and `vellum` it answered `false` for every Mentem and
+ * Limen node in the v1 opening square — the two forms that are *in* the shipped
+ * opening. The faucet for `insight` and `passage` would have existed in the
+ * arithmetic and been unreachable from any run, which is the failure this whole
+ * change is about, one layer down.
+ */
 export function formRoutesToMaterials(form: FormRecord): boolean {
-  return totalAmount({
-    food: Math.max(0, form.yieldWeights.food),
-    stone: Math.max(0, form.yieldWeights.stone),
-    vellum: Math.max(0, form.yieldWeights.vellum),
-  }) > 0;
+  const weights = zeroAmounts();
+  for (const kind of MATERIAL_KINDS) weights[kind] = Math.max(0, form.yieldWeights[kind]);
+  return totalAmount(weights) > 0;
 }

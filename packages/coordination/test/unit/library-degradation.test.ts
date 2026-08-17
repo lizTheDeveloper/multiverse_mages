@@ -124,10 +124,18 @@ function shelfOf(books: readonly Book[]): Shelf {
     ascended: 0,
   });
   // `materials` left the universe layout when `city-and-supply-chain` split the
-  // economy into three kinds. Zero in every kind, which is what this fixture's
-  // `materials: 0` meant: the degradation path under test is charged against a
-  // stock that cannot pay it.
-  attachRecord(state, MATERIAL_STOCK, universeHandle, { food: 0, stone: 0, vellum: 0 });
+  // economy into three kinds, and `material-economy` widened it to seven. Zero
+  // in every kind, which is what this fixture's `materials: 0` meant: the
+  // degradation path under test is charged against a stock that cannot pay it.
+  attachRecord(state, MATERIAL_STOCK, universeHandle, {
+    food: 0,
+    stone: 0,
+    vellum: 0,
+    labor: 0,
+    essence: 0,
+    insight: 0,
+    passage: 0,
+  });
 
   const library = state.entities.create();
   attachRecord(state, LIBRARY, library, { foundedTick: 0 });

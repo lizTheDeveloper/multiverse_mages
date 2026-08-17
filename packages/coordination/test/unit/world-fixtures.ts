@@ -191,6 +191,19 @@ export function worldDeps(traditionId: number): WorldStepDeps {
     // `universeEffects` and that is deliberately absent — see the note below.
     application: readApplicationWeights(registry()),
     casting: { vellumPerMonth: 0 },
+    // Zero, like `casting` above: the shared fixture prices nothing, so a test
+    // that wants a sink to bind supplies its own weights. `material-economy`'s
+    // two world-loop sinks follow that convention rather than inventing a
+    // default nobody authored.
+    teaching: { insightPerMonth: 0, insightTeachBonus: 0 },
+    hiredLabour: { laborPerMonth: 0 },
+    // Zero for the same reason, and it is worth naming that this one is a
+    // **faucet** rather than a sink: at zero, a laborer's whole month goes to
+    // the land and the `labor` stock stays exactly where a test put it. That
+    // keeps every fixture-driven number in this package unchanged by
+    // `material-economy`'s populace faucet, and a test that wants the faucet to
+    // run supplies its own share — `material-ledger.test.ts` does.
+    production: { hireableShare: 0 },
     store: shippedStorePolicy(traditionId),
     acquire: shippedAcquirePolicy(traditionId),
     territory: territoryExtent(registry().territories.map((entry) => entry.record)),
@@ -268,6 +281,19 @@ export interface SeedOptions {
    * phase reports work.
    */
   readonly withUniversity?: boolean;
+  /**
+   * The permitted-form bitmask, defaulting to all fourteen.
+   *
+   * Present because `material-economy` made seven more forms economically live:
+   * with every form permitted, a mage in this fixture researches whatever the
+   * frontier offers and may apply a node in a form the test is not about, so an
+   * assertion of the shape *"this run produced only `insight`"* is a statement
+   * about what the roster happened to study. Narrowing the ruleset is what
+   * makes such an assertion about the routing table instead.
+   */
+  readonly permittedForms?: number;
+  /** The permitted-technique bitmask, defaulting to all five. */
+  readonly permittedTechniques?: number;
 }
 
 /**
@@ -297,8 +323,8 @@ export function seededWorld(
   const universe = createUniverse(state, {
     // Three techniques × four forms is the v1 rectangle's shape; the exact bits
     // are the shipped content's business and the loop only asks `permits`.
-    permittedTechniques: 0b11111,
-    permittedForms: 0b11111111111111,
+    permittedTechniques: options.permittedTechniques ?? 0b11111,
+    permittedForms: options.permittedForms ?? 0b11111111111111,
     edictBudget: 4,
     traditionId,
     favor: 0,
@@ -319,10 +345,21 @@ export function seededWorld(
   // a test that wants one starves a specific kind itself, the way
   // `knowledge-capital.test.ts` zeroes `vellum` to force a library upkeep
   // shortfall.
+  // All seven at the working figure. The four `material-economy` added were
+  // seeded at zero while nothing produced or spent them; five god verbs are now
+  // priced in materials, and the resolver refuses one the stocks cannot pay —
+  // so a fixture holding zero of four kinds would mask a blessing and make a
+  // test about worship fail about a starting position instead. A test that
+  // wants an empty stock zeroes the kind it cares about, as
+  // `material-sinks.test.ts` does.
   attachRecord(state, MATERIAL_STOCK, universe, {
     food: 1000 * 1024,
     stone: 1000 * 1024,
     vellum: 1000 * 1024,
+    labor: 1000 * 1024,
+    essence: 1000 * 1024,
+    insight: 1000 * 1024,
+    passage: 1000 * 1024,
   });
 
   const mages: EntityHandle[] = [];
@@ -425,6 +462,17 @@ export function seededWorld(
   }
 
   return { state, mages };
+}
+
+/** The permitted-form bit for one shipped form, as a mask. */
+export function formMask(...formIds: readonly string[]): number {
+  let mask = 0;
+  for (const formId of formIds) {
+    const form = registry().forms.find((entry) => entry.record.id === formId);
+    if (form === undefined) throw new Error(`form.json declares no "${formId}"`);
+    mask |= 1 << form.record.bit;
+  }
+  return mask;
 }
 
 /** A seeded `RngSource` matching a state's root seed. */

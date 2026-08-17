@@ -54,7 +54,7 @@ import {
   findUniverse,
   readUniverse,
 } from '@mm/state';
-import type { ActionCostTable, ContentCatalogue } from '@mm/agent-api';
+import type { ActionCostTable, ActionMaterialCost, ContentCatalogue } from '@mm/agent-api';
 import type { EngagementStance } from '@mm/agent-api';
 import {
   ACTION_SPACE_SIZE,
@@ -66,6 +66,7 @@ import {
   buildCatalogue,
   isLegal,
   legalityMask,
+  unaffordableReason,
   observe,
 } from '@mm/agent-api';
 import { describe, expect, it } from 'vitest';
@@ -349,10 +350,150 @@ function pricedCatalogue(price: number, hysteresisStep = 1024): ContentCatalogue
   );
 }
 
+/**
+ * The same table, plus a material price on one action.
+ *
+ * `material-economy` task 4.2. Built here rather than loaded for the reason
+ * `pricedCatalogue` gives above — this package refuses `@mm/content` — and the
+ * cost defaults onto `issueDispensation` because it is structurally legal in
+ * this fixture without a candidate list — `proposal.md` B prices that verb in
+ * `essence`, and the fixture universe holds none of it, which is the arm under
+ * test. Its `food` stock is 500 `fp` units, which supplies the other arm.
+ */
+function materiallyPricedCatalogue(
+  price: number,
+  material: ActionMaterialCost,
+  action: number = GOD_ACTION.issueDispensation,
+): ContentCatalogue {
+  return buildCatalogue(FIXTURE_CATALOGUE.nodes, [...FIXTURE_CATALOGUE.traditionIds], {
+    byAction: Array.from({ length: ACTION_SPACE_SIZE }, (_, id) =>
+      id === GOD_ACTION.noop || id === GOD_ACTION.declareAscension ? 0 : price,
+    ),
+    foundUniversity: price * 2,
+    hysteresisStep: 1024,
+    materialByAction: Array.from({ length: ACTION_SPACE_SIZE }, (_, id) =>
+      id === action ? material : undefined,
+    ),
+  });
+}
+
 function pricedMask(world: { state: SimState }, catalogue: ContentCatalogue): Uint8Array {
   const candidates = buildCandidates({ state: world.state, catalogue });
   return legalityMask({ state: world.state, candidates, catalogue });
 }
+
+describe('a material price is a mask condition too, and it says which currency', () => {
+  const affordableFavor = 0;
+
+  it('clears the action when the stock cannot pay, though the favor can', () => {
+    // `material-economy`'s spec: *"An action whose material cost cannot be paid
+    // SHALL be cleared from the legality mask, for the same reason an
+    // unaffordable favor cost is cleared."* The fixture universe holds no
+    // `essence` at all.
+    const world = firstUniverse();
+    const catalogue = materiallyPricedCatalogue(affordableFavor, { essence: 16 });
+    expect(isLegal(pricedMask(world, catalogue), GOD_ACTION.issueDispensation)).toBe(false);
+  });
+
+  it('leaves it open when the stock can pay, which is the positive control', () => {
+    // Same price, same universe, a kind it actually holds. Without this arm the
+    // assertion above would pass on a mask that cleared the action for any
+    // reason at all — including a material check that refused everything.
+    const world = firstUniverse();
+    const catalogue = materiallyPricedCatalogue(affordableFavor, { food: 16 });
+    expect(isLegal(pricedMask(world, catalogue), GOD_ACTION.issueDispensation)).toBe(true);
+  });
+
+  it('opens at exactly the price, as the favor check does', () => {
+    const world = firstUniverse();
+    const held = 500 * 1024;
+    expect(
+      isLegal(
+        pricedMask(world, materiallyPricedCatalogue(affordableFavor, { food: held })),
+        GOD_ACTION.issueDispensation,
+      ),
+    ).toBe(true);
+    expect(
+      isLegal(
+        pricedMask(world, materiallyPricedCatalogue(affordableFavor, { food: held + 1 })),
+        GOD_ACTION.issueDispensation,
+      ),
+    ).toBe(false);
+  });
+
+  it('pays no price out of a total, because there is no market', () => {
+    // A `passage` cost is not payable out of a heap of `food`, however deep.
+    // Cross-kind substitution is a market, and `kinds.ts` refuses one by name:
+    // it would dissolve the differentiation the seven kinds exist to create.
+    const world = firstUniverse();
+    const catalogue = materiallyPricedCatalogue(affordableFavor, { passage: 1 });
+    expect(isLegal(pricedMask(world, catalogue), GOD_ACTION.issueDispensation)).toBe(false);
+  });
+
+  it('names the currency, so a player is not told to wait for the wrong thing', () => {
+    // **Task 4.2's second half.** The mask is one byte per action and cannot
+    // carry a reason; `unaffordableReason` is the §4.4 explain channel beside
+    // it. The distinction is not cosmetic — favor refills from worship on its
+    // own clock whatever the god does, and a material stock refills only if
+    // somebody is casting the right magic in a permitted cell.
+    const world = firstUniverse();
+    const candidates = buildCandidates({ state: world.state, catalogue: FIXTURE_CATALOGUE });
+
+    const poor = materiallyPricedCatalogue(1_000_000, { food: 16 });
+    expect(
+      unaffordableReason(GOD_ACTION.issueDispensation, {
+        state: world.state,
+        candidates,
+        catalogue: poor,
+      }),
+    ).toBe('favor');
+
+    const dry = materiallyPricedCatalogue(affordableFavor, { essence: 16 });
+    expect(
+      unaffordableReason(GOD_ACTION.issueDispensation, {
+        state: world.state,
+        candidates,
+        catalogue: dry,
+      }),
+    ).toBe('materials');
+
+    const payable = materiallyPricedCatalogue(affordableFavor, { food: 16 });
+    expect(
+      unaffordableReason(GOD_ACTION.issueDispensation, {
+        state: world.state,
+        candidates,
+        catalogue: payable,
+      }),
+    ).toBeUndefined();
+  });
+
+  it('reports favor first when neither currency can pay', () => {
+    // A deliberate order rather than an accident: favor is the one that comes
+    // back on its own, so it is the shorter thing to wait for and the more
+    // useful thing to be told.
+    const world = firstUniverse();
+    const candidates = buildCandidates({ state: world.state, catalogue: FIXTURE_CATALOGUE });
+    expect(
+      unaffordableReason(GOD_ACTION.issueDispensation, {
+        state: world.state,
+        candidates,
+        catalogue: materiallyPricedCatalogue(1_000_000, { essence: 16 }),
+      }),
+    ).toBe('favor');
+  });
+
+  it('stays silent about a price it was not told', () => {
+    const world = firstUniverse();
+    const candidates = buildCandidates({ state: world.state, catalogue: FIXTURE_CATALOGUE });
+    expect(
+      unaffordableReason(GOD_ACTION.issueDispensation, {
+        state: world.state,
+        candidates,
+        catalogue: FIXTURE_CATALOGUE,
+      }),
+    ).toBeUndefined();
+  });
+});
 
 describe('affordability is a mask condition, not a failure', () => {
   it('reports structural legality only when the catalogue carries no prices', () => {

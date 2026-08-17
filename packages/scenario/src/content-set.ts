@@ -43,7 +43,7 @@ import { nextBounded } from '@mm/sim-core';
 import type { Ruleset } from '@mm/state';
 import { permits } from '@mm/state';
 import type { CatalogueNode, ContentCatalogue } from '@mm/agent-api';
-import { buildCatalogue } from '@mm/agent-api';
+import { GOD_ACTION, buildCatalogue } from '@mm/agent-api';
 import type {
   AcquirePolicy,
   ExclusionResolver,
@@ -70,6 +70,9 @@ import {
   readGoalAppeal,
   readApplicationWeights,
   readCastingWeights,
+  readHiredLabourWeights,
+  readTeachingWeights,
+  readProductionWeights,
   readTargetAppeal,
   resolveSpeciesAffinities,
   territoryExtent,
@@ -145,12 +148,17 @@ export function primitiveNamed(registry: ContentRegistry, id: string): Primitive
  * The ruleset the **v1 rectangle** implies: every technique and every form that
  * a `v1` cell occupies.
  *
- * `contracts.md` §2.2 makes the v1 subset exactly twelve cells forming a
- * 3-technique × 4-form rectangle, and the loader refuses content where it is
- * anything else. So OR-ing the axes of the flagged cells re-derives precisely
- * those twelve and permits no thirteenth — the rectangle property is what makes
- * an axis mask able to express the subset at all, and it is content's to keep,
- * not this file's to assume.
+ * `contracts.md` §2.2 makes the v1 subset a rectangle and the loader refuses
+ * content where it is anything else, so OR-ing the axes of the flagged cells
+ * re-derives precisely the flagged set and permits nothing outside it. The
+ * rectangle property is what makes an axis mask able to express the subset at
+ * all, and it is content's to keep, not this file's to assume.
+ *
+ * Since `material-economy` the rectangle is the whole grid — 5 techniques × 14
+ * forms — so this returns both masks full. It is still written as a derivation
+ * rather than as two literals, because the narrowing is a *rule* and not a
+ * fact: a god who forbids an axis shrinks the permitted set at once, and the
+ * day content flags a proper subset again the reference universe moves with it.
  *
  * Written this way rather than as two literals so that the day content moves the
  * rectangle, the reference universe moves with it instead of quietly permitting
@@ -181,7 +189,7 @@ export function v1RulesetAxes(registry: ContentRegistry): RulesetAxes {
   if (cells === 0) {
     throw new Error(
       'No shipped cell is flagged "v1": true, so the reference universe would permit nothing and ' +
-        'every mage in it would be idle forever. The loader enforces exactly twelve.',
+        'every mage in it would be idle forever. The loader enforces the full rectangle.',
     );
   }
   return { permittedTechniques, permittedForms };
@@ -640,6 +648,7 @@ export function contentCatalogue(registry: ContentRegistry): ContentCatalogue {
   const god = resolveGodContent(registry);
   return buildCatalogue(nodes, registry.traditions.map((entry) => entry.contentId), {
     byAction: god.costs.byAction,
+    materialByAction: god.costs.materialByAction,
     foundUniversity: god.costs.foundUniversity,
     hysteresisStep: god.constants.hysteresisStep,
     // `sound-design.md` §5.2's eight bars. The mask reprices every action
@@ -814,6 +823,30 @@ export function worldDeps(
     goalAppeal: readGoalAppeal(registry),
     application: readApplicationWeights(registry),
     casting: readCastingWeights(registry),
+    teaching: readTeachingWeights(registry),
+    // The **faucet** for `labor`, beside the three drains. Read from the same
+    // table for the same reason, and required here rather than defaulted so
+    // that a composition root which forgot it would fail to compile instead of
+    // running a universe whose only source of hireable hands is its founding
+    // endowment. That state has been measured — `fund-university` legal on 13
+    // ticks of 600 — and it is what this row ends.
+    production: readProductionWeights(registry),
+    // The hire's rate from `autonomy-weight.json`, and its **reserve** from
+    // `god-cost.json` — `fund-university`'s own declared `labor` price, read
+    // rather than restated. The automatic per-tick hire may not draw the stock
+    // below what the discretionary verb costs, so the two claims on `labor`
+    // stop being a race the sink always wins. See
+    // `HiredLabourWeights.reserve` for the measurement (action 11 legal on 8
+    // ticks of 585 without it) and for why the floor sits on the drain rather
+    // than as a gate on the verb.
+    //
+    // Reading the price here rather than authoring a second constant is what
+    // keeps the two in step: a retune of the verb moves the floor with it, and
+    // there is no second number that can quietly disagree with the first.
+    hiredLabour: readHiredLabourWeights(
+      registry,
+      god.costs.materialByAction[GOD_ACTION.fundUniversity]?.labor ?? 0,
+    ),
     store: storeHookOf(registry, traditionId),
     acquire: acquireHookOf(registry, traditionId),
     // …and the same two, for whichever tradition the universe holds *now*.

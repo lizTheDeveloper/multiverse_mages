@@ -27,6 +27,7 @@ import {
   affordableMageMonths,
   castingDemand,
   consumeMaterials,
+  zeroAmounts,
 } from '../../src/index.js';
 
 const weights = { vellumPerMonth: 16 } as const;
@@ -89,10 +90,12 @@ describe('casting takes its vellum before the library does', () => {
     // `CONSUMPTION_ORDER` only ranks claimants that share a stock. Casting on
     // vellum competes with the archive; casting on stone would have competed
     // with construction and left §7.1's sentence false with nothing to catch it.
-    const stock = { food: 10_000, stone: 10_000, vellum: 100 };
+    const stock = { ...zeroAmounts(), food: 10_000, stone: 10_000, vellum: 100 };
     const out = consumeMaterials(stock, {
       subsistence: 500,
       casting: 80,
+      teaching: 0,
+      constructionLabor: 0,
       libraryUpkeep: 80,
       scribing: 0,
       construction: 40,

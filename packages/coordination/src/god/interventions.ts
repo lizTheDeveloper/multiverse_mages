@@ -65,8 +65,8 @@ import type { Fixed } from '@mm/sim-core';
 import type { CellResolver, InstanceView, KnowledgeSubsystem, NodeCatalog } from '@mm/rules-magic';
 import { changeTradition } from '@mm/rules-magic';
 import type { SpeciesRecord } from '@mm/content';
-import type { StepRng } from '@mm/rules-world';
-import { createMage, createUniversity } from '@mm/rules-world';
+import type { MaterialKind, StepRng } from '@mm/rules-world';
+import { MATERIAL_KINDS, createMage, createUniversity, zeroAmounts } from '@mm/rules-world';
 import {
   AXIS_CHANGE_COUNTER,
   AXIS_KIND,
@@ -81,6 +81,7 @@ import {
   LIBRARY,
   LOCATION_KIND,
   MAGE,
+  MATERIAL_STOCK,
   RULE_CHANGE_KIND,
   RULE_SCOPE,
   TERMINAL_REASON,
@@ -108,7 +109,7 @@ import { defaultSiteKind, siteUniversity, territoryHoldings } from '@mm/rules-wo
 
 import { ACTION } from './actions.js';
 import type { TraditionResolver } from '../traditions.js';
-import type { GodContent } from './constants.js';
+import type { ActionMaterialCost, GodContent } from './constants.js';
 import { hysteresisMultiplier, inertFraction, interventionCost, upheavalShock } from './favor.js';
 import { edictBudgetFor, favorCapFor } from './worship.js';
 import { interventionPhase, isConstitutional, markConstitutionalAct, timedCost } from './timing.js';
@@ -348,7 +349,26 @@ function resolveOne(
     return;
   }
 
+  // The second currency, refused the same way and for the same reason.
+  // `material-economy`'s spec puts an unpayable material cost on the **mask**;
+  // this is the authoritative half, exactly as the favor check above is the
+  // authoritative half of a price the mask also knows. Belt and braces, and the
+  // module note says why the two cannot be one function: `agent-api` may not
+  // import `@mm/content`, and the rules packages may not import `agent-api`.
+  //
+  // The material price is **not** surcharged by `timedCost`. §5.2's eight-bar
+  // unease is a favor surcharge — it is what the god's own upheaval costs the
+  // god — and applying it to stone and vellum would charge a *universe* for a
+  // constitutional act its people did not commit.
+  const materialCost = materialPriceOf(action.kind, deps);
+  const openingStock = readStock(state, universe);
+  if (!canPay(openingStock, materialCost)) {
+    refuse(state, tally);
+    return;
+  }
+
   universeStore.set(universe, 'favor', opening - cost);
+  deductMaterials(state, universe, openingStock, materialCost);
   try {
     plan.apply();
     // §5.2's eight bars start ringing only once the law has actually changed.
@@ -365,6 +385,10 @@ function resolveOne(
     // that a resolver that started throwing would be visible rather than
     // merely correct.
     universeStore.set(universe, 'favor', opening);
+    // Both currencies restored, or the rollback would be a partial refund — the
+    // shape that leaves a god poorer for an effect that never happened, and the
+    // one a reader of "effects never outrun payment" would not think to check.
+    restoreMaterials(state, universe, openingStock);
     tally.rolledBack += 1;
     refuse(state, tally);
     return;
@@ -372,6 +396,85 @@ function resolveOne(
 
   tally.spentByAction[action.kind] = (tally.spentByAction[action.kind] ?? 0) + cost;
   tally.applied += 1;
+}
+
+/**
+ * What an action costs in materials, or `undefined` where the table names none.
+ *
+ * Read off the cost table by action id rather than carried on the {@link Plan},
+ * and that is deliberate: a material price is **flat**. Unlike favor, nothing
+ * scales it by hysteresis or by node tier, so there is no per-parameter
+ * arithmetic for a plan to do and therefore no way for a plan and the mask to
+ * arrive at different prices for the same verb.
+ */
+function materialPriceOf(actionId: number, deps: InterventionDeps): ActionMaterialCost | undefined {
+  return deps.god.costs.materialByAction[actionId];
+}
+
+/** The universe's seven stocks, or zeros where no row has been written. */
+function readStock(state: SimState, universe: EntityHandle): Record<MaterialKind, Fixed> {
+  const store = componentOf(state, MATERIAL_STOCK);
+  const stock = zeroAmounts();
+  if (!store.has(universe)) return stock;
+  for (const kind of MATERIAL_KINDS) stock[kind] = store.get(universe, kind);
+  return stock;
+}
+
+/**
+ * Whether the stocks cover a price.
+ *
+ * Per kind, never against a total: a `passage` price is not payable out of a
+ * heap of stone. `kinds.ts` refuses cross-kind substitution by name — it would
+ * be a market, and a market dissolves the differentiation the seven kinds exist
+ * to create.
+ */
+function canPay(
+  stock: Readonly<Record<MaterialKind, Fixed>>,
+  price: ActionMaterialCost | undefined,
+): boolean {
+  if (price === undefined) return true;
+  for (const kind of MATERIAL_KINDS) {
+    const owed = price[kind] ?? 0;
+    if (owed > 0 && stock[kind] < owed) return false;
+  }
+  return true;
+}
+
+/**
+ * Spends the price, creating the row if the universe has never held one.
+ *
+ * The god's intervention system runs **before** the world system in the same
+ * step, so what this writes is what `readMaterialStock` opens the world tick
+ * with. Sequential, not concurrent: there is still exactly one writer per
+ * phase, which is the property `world-step.ts`'s `writeMaterialStock` note
+ * depends on.
+ */
+function deductMaterials(
+  state: SimState,
+  universe: EntityHandle,
+  opening: Readonly<Record<MaterialKind, Fixed>>,
+  price: ActionMaterialCost | undefined,
+): void {
+  if (price === undefined) return;
+  const store = componentOf(state, MATERIAL_STOCK);
+  const closing = zeroAmounts();
+  for (const kind of MATERIAL_KINDS) closing[kind] = opening[kind] - (price[kind] ?? 0);
+  if (!store.has(universe)) {
+    attachRecord(state, MATERIAL_STOCK, universe, closing);
+    return;
+  }
+  for (const kind of MATERIAL_KINDS) store.set(universe, kind, closing[kind]);
+}
+
+/** Puts every kind back as it was. The materials half of the rollback. */
+function restoreMaterials(
+  state: SimState,
+  universe: EntityHandle,
+  opening: Readonly<Record<MaterialKind, Fixed>>,
+): void {
+  const store = componentOf(state, MATERIAL_STOCK);
+  if (!store.has(universe)) return;
+  for (const kind of MATERIAL_KINDS) store.set(universe, kind, opening[kind]);
 }
 
 /** A validated action: what it costs, and the writes it will make. */

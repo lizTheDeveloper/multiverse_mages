@@ -89,12 +89,39 @@ describe('the founding instrument has a positive control', () => {
 
   it('separates legality from affordability, because action 11 conflates them', () => {
     // §4.2 gives founding and funding one id, and `cheapestPrice` admits the
-    // mask entry while *either* is affordable. So the probe sees action 11 legal
-    // on far more ticks than it can afford to found on, and a table that read
-    // legality as intent would have reported it trying constantly and failing.
+    // mask entry while *either* is affordable. The two columns are different
+    // questions and a table that read one as the other would misreport intent.
+    //
+    // **The inequality reversed, and the reversal is the measurement.** It used
+    // to read `legal > affordable`: the mask was the loose constraint and the
+    // favor pool the tight one, so the probe saw action 11 legal far more often
+    // than it could pay to found. Since `fund-university` took a `labor` price
+    // the order is the other way round — measured 2026-08-16 on this branch,
+    // legal on **13** ticks against **579** on which the favor pool alone could
+    // have paid.
+    //
+    // That is not the price being too high. `labor` has **no faucet in the v1
+    // opening square**: Corpus is the only form that yields it and Corpus is
+    // outside `intellego · perdo · rego` × `mentem · terram · limen · nomen`, so
+    // production over 600 reference ticks is exactly zero and the founding
+    // endowment is a runway rather than an income. The reserve floor under the
+    // construction hire keeps the last of that runway spendable by the verb; it
+    // cannot manufacture more. Opening the body-magic column is what would.
+    //
+    // Asserted as *"the two series are not the same series"* plus the direction
+    // now observed, rather than as a bare inequality either way: the point of
+    // the original was that legality and affordability come apart, and that is
+    // still exactly what this checks.
     const legal = probe?.founding.ticksLegal ?? 0;
     const affordable = probe?.founding.ticksAffordable ?? 0;
-    expect(legal).toBeGreaterThan(affordable);
+    expect(legal).not.toBe(affordable);
+    // Materials bind first, and favor is no longer what gates founding.
+    expect(affordable).toBeGreaterThan(legal);
+    // The probe still founds, so the run this reads is one in which the verb
+    // resolved rather than one in which it was masked from end to end — without
+    // this the assertion above would pass on a build where action 11 was never
+    // legal at all.
+    expect(probe?.founding.founded).toBeGreaterThan(0);
     expect(probe?.founding.submittedFound).toBeGreaterThan(probe?.founding.founded ?? 0);
   });
 

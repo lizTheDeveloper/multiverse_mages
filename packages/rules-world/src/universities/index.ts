@@ -52,12 +52,21 @@ export {
 export type { AdmissionOutcome } from './capacity.js';
 export { AdmissionRefusals, admitStudents } from './capacity.js';
 
-export type { ConstructionInput, ConstructionOutcome } from './construction.js';
+export type {
+  ConstructionInput,
+  ConstructionOutcome,
+  HiredLabourWeightSource,
+  HiredLabourWeights,
+} from './construction.js';
 export {
   BUILD_COMPLETE,
   BUILD_PROGRESS_PER_LABOR_MONTH,
   MATERIALS_PER_LABOR_MONTH,
+  REQUIRED_CONSTRUCTION_WEIGHTS,
   advanceConstruction,
+  hireableMonths,
+  readHiredLabourWeights,
+  spendableLabor,
   buildRateMultiplier,
   createUniversity,
   effectiveCapacity,

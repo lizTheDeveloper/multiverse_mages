@@ -48,8 +48,16 @@ import {
 } from '@mm/scenario';
 import { describe, expect, it } from 'vitest';
 
-/** The v1 rectangle: three techniques × four forms (`contracts.md` §2.2). */
-const V1_CELL_COUNT = 12;
+/**
+ * The v1 rectangle (`contracts.md` §2.2).
+ *
+ * Was twelve — three techniques × four forms. `material-economy` opened the
+ * grid, so it is five × fourteen. A local literal rather than the loader's
+ * constant, deliberately: this asserts that the *reference universe* permits
+ * what *content* flags, and importing the number both sides derive from would
+ * make the two agree by construction.
+ */
+const V1_CELL_COUNT = 70;
 
 const CONFIG = { worldTickCap: 24, options: { cohortSize: 4, foundingNodes: 4 } } as const;
 
@@ -57,7 +65,7 @@ const CONFIG = { worldTickCap: 24, options: { cohortSize: 4, foundingNodes: 4 } 
 const content = referenceContent();
 
 describe('the reference universe starts from shipped content', () => {
-  it('permits exactly the twelve cells content flags v1, and no thirteenth', () => {
+  it('permits exactly the cells content flags v1, and nothing beyond them', () => {
     const state = referenceScenario(content).scenario.create(0x0005_0001, CONFIG);
     const ruleset = readRulesetForObservation(state, findUniverse(state));
 
@@ -67,8 +75,10 @@ describe('the reference universe starts from shipped content', () => {
     }
     expect(permitted).toHaveLength(V1_CELL_COUNT);
 
-    // And they are the twelve content named, not twelve of the same shape. A
-    // rectangle of the right size in the wrong place would hold no v1 nodes.
+    // And they are the cells content named, not a rectangle of the same size. A
+    // rectangle of the right size in the wrong place would hold no v1 nodes —
+    // which is still the property worth checking at seventy of seventy, because
+    // it is what fails first the day a content set flags a proper subset again.
     const registry = shippedContent();
     const v1CellIds = registry.cells
       .filter((entry) => entry.record.v1 === true)

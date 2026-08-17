@@ -215,6 +215,12 @@ export function rivalSeed(runSeed: number, targetId: number): number {
  * outside them would still be masked by arbitration in any universe built from
  * this content, so granting one is a grant of nothing, and the warband would be
  * quietly smaller than `rival-raider-node-count` claims.
+ *
+ * Since `material-economy` enabled all seventy cells this filter admits every
+ * node, which widens the warband's candidate pool rather than emptying it — the
+ * opposite direction from {@link shelveForeignBooks} next door, and safe for the
+ * same reason the restriction was written: the set is *"what arbitration would
+ * not mask"*, and nothing is masked when nothing is forbidden.
  */
 export function raiderNodeCandidates(content: ReferenceContent): readonly ContentId[] {
   const v1Cells = new Set(
@@ -357,11 +363,24 @@ export function buildRival(input: {
 /**
  * Shelves books the raiding universe's own god could never have permitted.
  *
- * **This is the answer to content exhaustion, and it is the reason looting
- * matters more than burning.** Seventy cells are authored and twelve are
- * enabled, and those twelve hold 51 of the 300 nodes — so an undisturbed
- * universe learns all 51 and stops, and the plateau every strategy hits is the
- * end of the content rather than a balance result. Vision §3 makes a god's
+ * **This was the answer to content exhaustion, and it is currently inert.**
+ * It was written when seventy cells were authored and twelve enabled, holding 51
+ * of the 300 nodes — so an undisturbed universe learned all 51 and stopped, and
+ * the plateau every strategy hit was the end of the content rather than a
+ * balance result.
+ *
+ * `material-economy` enabled all seventy, so `foreign` below is **empty**, the
+ * early return fires, and no rival shelves anything. That is a silent loss of
+ * the whole mechanism and it is **not repaired here**, because the repair is a
+ * design decision this change is not entitled to take: this function picks the
+ * shelf from cells not flagged `"v1"` — the *content* gate — while
+ * `raid-constant.json`'s gloss for `rival-foreign-book-count` describes it as
+ * *"cells this universe's own ruleset forbids"* — the *god's* gate. The two
+ * coincided until now and this code took the wrong one. Re-keying it to
+ * `permits()` would not help today either, because the reference universe's
+ * opening ruleset permits all seventy; it needs a narrow opening square to have
+ * anything to forbid, and `seededOpeningAxes` is where such a square would come
+ * from. Vision §3 makes a god's
  * ruleset the thing that decides what *can exist* at home; §8 makes a raid the
  * thing that reaches what cannot. A book taken from a universe that permitted
  * other cells is knowledge no amount of domestic research could reach, and

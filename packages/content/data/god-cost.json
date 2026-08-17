@@ -38,8 +38,11 @@
     "id": "issue-dispensation",
     "actionId": 5,
     "favorCost": 6144,
-    "gloss": "One cell prised open against the ruleset, and one of a very small number of edict slots spent holding it there.",
-    "tuningStatus": "untuned"
+    "gloss": "One cell prised open against the ruleset, and one of a very small number of edict slots spent holding it there. It also costs essence: prising a cell open against your own ruleset is an enchantment on the world, and Vim is what an enchantment is made of. Untuned.",
+    "tuningStatus": "untuned",
+    "materialCost": {
+      "essence": 4096
+    }
   },
   {
     "id": "issue-interdiction",
@@ -59,15 +62,21 @@
     "id": "grant-founding-knowledge",
     "actionId": 8,
     "favorCost": 12288,
-    "gloss": "Per node tier — the resolved cost is this times the node's tier. Grants are restricted to prerequisite-free roots, so in v1 content the multiplier is almost always one; the scaling exists so that content with deeper roots does not make the summit cheap.",
-    "tuningStatus": "untuned"
+    "gloss": "Per node tier — the resolved cost is this times the node's tier. Grants are restricted to prerequisite-free roots, so in v1 content the multiplier is almost always one; the scaling exists so that content with deeper roots does not make the summit cheap. It also costs vellum, because a founding grant is a text: the knowledge arrives in a mind by arriving first on a page somebody could have written.",
+    "tuningStatus": "untuned",
+    "materialCost": {
+      "vellum": 4096
+    }
   },
   {
     "id": "bless-mage",
     "actionId": 9,
     "favorCost": 2048,
-    "gloss": "A hundred and twenty months of raised research, teaching, and life. Priced to be a repeated decision rather than a once-a-run one.",
-    "tuningStatus": "untuned"
+    "gloss": "A hundred and twenty months of raised research, teaching, and life. Priced to be a repeated decision rather than a once-a-run one. It also costs insight, which is what a blessing on a scholar is spent out of — the same stock her faculty teaches from, so a god who blesses constantly is a god whose university teaches slower.",
+    "tuningStatus": "untuned",
+    "materialCost": {
+      "insight": 2048
+    }
   },
   {
     "id": "assign-role",
@@ -80,8 +89,12 @@
     "id": "fund-university",
     "actionId": 11,
     "favorCost": 3072,
-    "gloss": "Advancing an existing build. Founding a new one costs the separate `found-university-cost` constant, because §4.2 gives the two one action id and they are not the same purchase.",
-    "tuningStatus": "untuned"
+    "gloss": "Advancing an existing build; founding costs the separate `found-university-cost`. It costs stone and labor, because raising a building takes wood and hands and not only favour. Pricing it in labor failed once — an automatic sink and a discretionary verb on one stock is a race the sink wins, and this verb came back legal on 8 of 585 ticks. The construction hire now reserves this price. Untuned.",
+    "tuningStatus": "untuned",
+    "materialCost": {
+      "stone": 8192,
+      "labor": 4096
+    }
   },
   {
     "id": "encourage-research",
@@ -101,8 +114,11 @@
     "id": "open-portal",
     "actionId": 14,
     "favorCost": 16384,
-    "gloss": "A raid is a tempo decision before it is a favor decision; the price is here so that it is also the second thing.",
-    "tuningStatus": "untuned"
+    "gloss": "A raid is a tempo decision before it is a favor decision; the price is here so that it is also the second thing. It also costs passage, which is what holding a threshold open is made of — Limen, Fatum, Umbra. The dearest material price in the table, and the only one whose stock the v1 opening square produces on its own.",
+    "tuningStatus": "untuned",
+    "materialCost": {
+      "passage": 16384
+    }
   },
   {
     "id": "declare-ascension",

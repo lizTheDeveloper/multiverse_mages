@@ -41,12 +41,27 @@
  */
 
 import type { ContentRegistry, Fp } from '@mm/content';
+import type { MaterialKind } from '@mm/rules-world';
 import { GOD_ACTION_ID_MAX } from '@mm/content';
 
 /** Costs by `contracts.md` §4.2 action id, plus the two prices that have no id. */
+/** One action's material price, per kind, `fp`. Absent kinds cost nothing. */
+export type ActionMaterialCost = Readonly<Partial<Record<MaterialKind, Fp>>>;
+
 export interface GodCosts {
   /** Base favor price of each action id `0..15`, before hysteresis and tier scaling. */
   readonly byAction: readonly Fp[];
+  /**
+   * What each action id costs in **materials**, or `undefined` where the table
+   * names none.
+   *
+   * `material-economy`: favor stays the pacing currency, and a verb that makes
+   * a thing in the world now also spends the material that thing is made of.
+   * Unscaled by hysteresis or node tier — those two scale a *favor* price
+   * because they price a decision's disruption and its depth, and neither is a
+   * statement about how much stone a building takes.
+   */
+  readonly materialByAction: readonly (ActionMaterialCost | undefined)[];
   /** Action 11 with a target of 0 — §4.2 gives founding and funding one id. */
   readonly foundUniversity: Fp;
 }
@@ -349,6 +364,7 @@ export function resolveGodConstants(registry: ContentRegistry): GodConstants {
  */
 export function resolveGodCosts(registry: ContentRegistry): GodCosts {
   const byAction: Fp[] = [];
+  const materialByAction: (ActionMaterialCost | undefined)[] = [];
   for (let actionId = 0; actionId <= ACTION_ID_MAX; actionId += 1) {
     const record = registry.godCost(actionId);
     if (record === undefined) {
@@ -359,9 +375,16 @@ export function resolveGodCosts(registry: ContentRegistry): GodCosts {
       );
     }
     byAction.push(record.favorCost);
+    // Frozen on the way through, because a cost table handed to the resolver is
+    // read once per action per tick and must not be something a caller can edit
+    // between two reads of the same price.
+    materialByAction.push(
+      record.materialCost === undefined ? undefined : Object.freeze({ ...record.materialCost }),
+    );
   }
   return Object.freeze({
     byAction: Object.freeze(byAction),
+    materialByAction: Object.freeze(materialByAction),
     foundUniversity: registry.godConstant('found-university-cost'),
   });
 }

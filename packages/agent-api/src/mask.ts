@@ -83,14 +83,13 @@
  * stays silent on a price it was not told.
  */
 
-import type { SimState } from '@mm/sim-core';
+import type { EntityHandle, SimState } from '@mm/sim-core';
 import { FP_ONE, mul } from '@mm/sim-core';
 import {
   ASCENSION_PATH,
   AXIS_KIND,
   BAR_PHASE,
   axisChangeCount,
-  componentOf,
   EDICT,
   EDICT_KIND,
   GRID_FORM_COUNT,
@@ -98,8 +97,10 @@ import {
   RULE_CHANGE_KIND,
   RULE_SCOPE,
   TERMINAL_REASON,
+  MATERIAL_STOCK,
   canIssueEdict,
   collectRecords,
+  componentOf,
   findUniverse,
   godStateOrEmpty,
   inEngagement,
@@ -110,7 +111,9 @@ import {
 } from '@mm/state';
 
 import { ACTION_SPACE_SIZE, GOD_ACTION, PARAMETERIZED_ACTIONS } from './actions.js';
-import type { ActionCostTable, ContentCatalogue } from './catalogue.js';
+import type { MaterialStockRecord } from '@mm/state';
+
+import type { ActionCostTable, ActionMaterialCost, ContentCatalogue } from './catalogue.js';
 import type { CandidateLists } from './candidates.js';
 
 /**
@@ -270,6 +273,79 @@ export function legalityMask(input: MaskInput): Uint8Array {
 }
 
 /**
+ * Why an action is unaffordable, or `undefined` if it is not.
+ *
+ * ## The mask has no room for a reason, and the reason matters
+ *
+ * `legalityMask` returns one byte per action and that is a contract: it crosses
+ * to a Python RL bridge as bytes, and widening it would resize the observation
+ * every trained agent depends on. So *"cleared because the pool is empty"* and
+ * *"cleared because the quarry is"* are the same byte.
+ *
+ * They are not the same fact. `material-economy` made the action space
+ * denominated in two currencies, and the two refill by completely different
+ * mechanisms — favor comes back from worship, on its own clock, whatever the
+ * god does; a material stock comes back only if somebody is casting the right
+ * magic in a permitted cell. A player told only *"you cannot afford this"*
+ * would wait for a pool that was never going to be the problem.
+ *
+ * This is `contracts.md` §4.4's explain channel rather than the mask: queried,
+ * never encoded, and **never read back by any rule** — the mask above is what
+ * the rules use, and it calls the same predicate this does.
+ */
+export function unaffordableReason(
+  action: number,
+  input: MaskInput,
+): 'favor' | 'materials' | undefined {
+  const costs = input.catalogue?.costs;
+  if (costs === undefined) return undefined;
+  const universe = findUniverse(input.state);
+  if (universe === 0) return undefined;
+  if (cheapestPrice(action, input.state, input.candidates, costs) > readUniverse(input.state, universe).favor) {
+    return 'favor';
+  }
+  // Favor first, and the order is the answer to a question rather than an
+  // accident: a verb the god can pay for in neither currency is reported
+  // against **favor**, because favor is the one that refills on its own and is
+  // therefore the shorter thing to wait for.
+  return canPayMaterials(input.state, universe, materialPriceOf(action, costs)) ? undefined : 'materials';
+}
+
+/** An action's material price, or `undefined` where the table names none. */
+function materialPriceOf(action: number, costs: ActionCostTable): ActionMaterialCost | undefined {
+  return costs.materialByAction?.[action];
+}
+
+/**
+ * Whether the universe's stocks cover a price.
+ *
+ * Reads `MATERIAL_STOCK` directly, as `observation.ts` does for the `materials`
+ * channel — no second accessor, and no total anywhere: a price in `passage`
+ * cannot be paid out of a heap of stone, because cross-kind substitution is a
+ * market and `kinds.ts` refuses one by name.
+ *
+ * An absent row reads as **zero of everything**, which is the same reading the
+ * world loop's `readMaterialStock` takes and the same one the schema-7
+ * migration takes for an absent kind: a universe that has never been stepped
+ * has no economy yet, not an infinite one.
+ */
+function canPayMaterials(
+  state: SimState,
+  universe: number,
+  price: ActionMaterialCost | undefined,
+): boolean {
+  if (price === undefined) return true;
+  const stocks = componentOf(state, MATERIAL_STOCK);
+  const has = stocks.has(universe as EntityHandle);
+  for (const [kind, owed] of Object.entries(price) as [keyof MaterialStockRecord, number][]) {
+    if (owed <= 0) continue;
+    const held = has ? stocks.get(universe as EntityHandle, kind) : 0;
+    if (held < owed) return false;
+  }
+  return true;
+}
+
+/**
  * Clears the entry of every action this god cannot pay for.
  *
  * Runs after structural legality rather than instead of it, so an action that
@@ -291,9 +367,22 @@ function applyAffordability(
 ): void {
   if (costs === undefined) return;
 
+  const universe = findUniverse(state);
   for (let action = 1; action < ACTION_SPACE_SIZE; action += 1) {
     if (mask[action] !== 1) continue;
-    if (cheapestPrice(action, state, candidates, costs) > favor) mask[action] = 0;
+    if (cheapestPrice(action, state, candidates, costs) > favor) {
+      mask[action] = 0;
+      continue;
+    }
+    // The second currency, checked beside the first rather than instead of it.
+    // `material-economy`'s spec: *"An action whose material cost cannot be paid
+    // SHALL be cleared from the legality mask, for the same reason an
+    // unaffordable favor cost is cleared."* The price is flat — no hysteresis,
+    // no tier multiplier — so there is no cheapest-parameter question to ask
+    // here, and the mask entry means what it says for every parameter.
+    if (universe !== 0 && !canPayMaterials(state, universe, materialPriceOf(action, costs))) {
+      mask[action] = 0;
+    }
   }
 }
 

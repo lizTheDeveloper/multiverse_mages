@@ -196,7 +196,26 @@ describe('a run that raids measures it', { timeout: 120_000 }, () => {
     expect(result.raids?.length ?? 0).toBeGreaterThan(0);
 
     const length = measured(result.outcome.metrics, 'raidLengthDistribution');
-    expect(length.value).toBeGreaterThan(0);
+    // **The histogram counts every raid**, asserted directly rather than
+    // through `value`.
+    //
+    // `value` is the *median bin index*, and it was `> 0` until
+    // `material-economy` landed. Measured 2026-08-16 on
+    // `w247/material-economy-build`, same seed and same horizon: four raids,
+    // `bins[0] = 3` and `bins[6] = 1` — three of the four now finish inside ten
+    // world ticks, so the median bin is `0` and the assertion failed on a
+    // metric that is working perfectly. Raids got **shorter**, not absent, and
+    // the cause is upstream of the raid: mages spend months applying magic that
+    // they used to spend researching, so the rosters that meet at a portal are
+    // differently deep.
+    //
+    // Restated rather than deleted, because what this test is for is *"a real
+    // histogram"* — a metric that reported `measured` over an empty one is the
+    // failure it was written against, and a median of `0` is a finding about
+    // raid length rather than about the instrument. The bin sum is the property
+    // that cannot be true of an empty histogram.
+    const binned = (length.detail?.bins as readonly number[] | undefined) ?? [];
+    expect(binned.reduce((total, count) => total + count, 0)).toBe(result.raids?.length);
     // §7's own disproof condition for this metric: *"any raid landing in the
     // overflow bin, which contradicts §1.6's termination proof"*. Asserted here
     // because this is the first place in the project it could be checked

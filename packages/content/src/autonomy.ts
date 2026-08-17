@@ -115,6 +115,22 @@ export const REQUIRED_AUTONOMY_WEIGHTS = [
   // the rules read it by name, so the id is a contract checked in both
   // directions while the value stays an untuned placeholder the harness owns.
   'casting-vellum-per-month',
+  // `material-economy`'s two sinks that live in the world loop. `insight` funds
+  // university teaching throughput and `labor` hires extra person-months onto a
+  // building site; both are read by name for the same reason as everything
+  // above, and both are here rather than in a fourth table because a second
+  // place to forget is the only thing a fourth table would add.
+  'teaching-insight-per-month',
+  'teaching-insight-bonus',
+  'construction-labor-per-month',
+  // `material-economy`'s **faucet** for `labor`, and the only production
+  // magnitude in this table. It is here rather than beside the territory yields
+  // because it is not a fact about land: it is the share of a laborer's month
+  // that is hands for hire rather than work on the land, and territory decides
+  // the mix of what the *other* half produces. `materials.ts`'s
+  // `REQUIRED_PRODUCTION_WEIGHTS` reads it by name, which is why the id is a
+  // contract checked in both directions while the value stays untuned.
+  'labor-share-of-month',
 ] as const;
 
 /** The scalar ids that must be at least 1, because they are divisors. */

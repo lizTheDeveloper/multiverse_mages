@@ -77,7 +77,7 @@ state would have no mechanism preventing mid-raid rule changes at all.
 | `favor` | `fp` | god's currency |
 | `worship` | `fp` | drives favor regen |
 | `worshipTier` | `uint8` | derived, cached; recomputed on worship change |
-| `materials` | `fp` | |
+| `materials` | `fp` | **No longer a universe field.** World-schema revision 5 moved it off `universe` and split it into the `material-stock` component; revision 7 widened that component to seven kinds. Left in the table as the row the migration reads, and annotated rather than deleted because `splitMaterialsByKind` still has to find it in a pre-revision-5 save. See the revision-7 note below. |
 | `era` | `uint16` | **derived, cached**: `floor(worldTick / ERA_TICKS)` with `ERA_TICKS = 240` (20 world years). Nothing advances it imperatively — it was previously a field nothing wrote, while an ascension path was defined over it |
 | `prestige` | `fp` | carried in from prior runs; **read-only during a run** |
 | `prestigeEarned` | `fp` | written once at run end; the input to the next run's `prestige` |
@@ -165,7 +165,8 @@ The reasoning, in the order it forced the decision:
   rather than as a resource that ran out.
 - **The cost is a third schema revision**, repaired exactly as the two before it: world-schema
   revision 6 appends an empty `grant-budget` section, and `sim-core`'s `SNAPSHOT_VERSION` again
-  does not move. `WORLD_SCHEMA_VERSION` is now **6** — revision 5 is `material-stock`, and
+  does not move. `WORLD_SCHEMA_VERSION` was **6** at the time this was written and is **7** as of
+  2026-08-16 — see the `material-stock` note below. Revision 5 is `material-stock`, and
   `grant-budget` is appended after it because section order in a snapshot is declaration order.
   It is also the one place in `migrations.ts` where appending beats rewriting:
   `splitMaterialsByKind` rewrites the universe layout and is right to, because a save that recorded
@@ -175,6 +176,38 @@ The reasoning, in the order it forced the decision:
   exactly as it always did and the mechanic is exercised only through the swept arms. The value
   that eventually ships falls out of a measured curve rather than out of a guess, which is what the
   harness is for.
+
+**`material-stock` holds seven kinds, not three — a fourth schema revision, recorded 2026-08-16
+on `w247/material-economy-build`.** `material-economy` found that seven of the fourteen forms
+declared all-zero `yieldWeights`, two of them (`mentem`, `limen`) inside the v1 opening square, so
+half the grid was something magic could act on and the economy could not see. The repair is four
+more kinds — `labor` from Corpus, `essence` from Vim, `insight` from Mentem and Imaginem, `passage`
+from Limen, Fatum and Umbra — and `MATERIAL_STOCK` gains one `i32` field each.
+
+- **It is the first revision whose marker is a field rather than a section.** `worldSchemaVersionOf`
+  identifies a revision by which components a snapshot carries, and an added *field* is invisible to
+  that test — the note in `components.ts` says so. Revision 7's marker is therefore the `labor`
+  column on the `material-stock` section, checked before revision 6's `grant-budget` section so that
+  the newest marker wins.
+- **An absent kind reads zero, and zero is not a shortage.** `widenMaterialStock` appends four zeroed
+  columns and touches nothing else. Unlike `splitMaterialsByKind`, it does not rewrite: a save that
+  recorded a materials total had recorded something, while a save predating these four kinds recorded
+  nothing about them — no form yielded one and no sink spent one — so zero is the only value the save
+  supports rather than a guess. A revision-6 world restores to a byte-identical snapshot hash.
+- **Both material-stock steps now freeze their field lists as literals**, and that is a defect
+  repaired rather than a style. `splitMaterialsByKind` built its output field table from
+  `Object.keys(MATERIAL_STOCK.fields)` — the *live* spec — so widening the spec would have made the
+  4 → 5 step emit a seven-column section. A revision-4 save would then have read as revision **7**
+  the instant it reached 5, `migrateWorldEnvelope`'s loop would have exited, and `grant-budget` would
+  never have been appended: a save silently missing a component, out of a migration that throws
+  nothing. A migration step must name the shape it produces, and revision 8 will need its own list.
+- **`SNAPSHOT_VERSION` again does not move**, for the reason it did not move for revisions 2 through
+  6: it is inside the hashed header, so bumping it would fail every golden fixture with a version
+  error instead of a behaviour diff.
+- **The observation vector does not move either.** §4.1's `resources` block is fixed at five slots
+  and its `materials` channel still carries `food + stone + vellum`; `OBSERVATION_LAYOUT_DIGEST` is
+  unchanged, and the four new kinds are withheld until a named per-kind block is added to
+  `PlayerState`, which is not the vector.
 
 **A terminated universe is frozen in its component rows, and not in its clock.** `god-agency`'s
 ascension spec asks that *"no world tick may further alter the universe's state"* and that a
@@ -542,8 +575,21 @@ zero attack would not be a technique that starts slowly but one that never finis
 }
 ```
 
-70 cells exist in schema. The **v1 subset** is flagged per-cell with `"v1": true`; exactly 12 cells
-(3 techniques × 4 forms) carry it, and the set must include `rego-limen`.
+70 cells exist in schema. The **v1 subset** is flagged per-cell with `"v1": true`; exactly 70 cells
+(5 techniques × 14 forms) carry it — the whole grid — and the set must include `rego-limen`.
+
+The constraint the loader checks is the **rectangle**, not the count: an axis mask can only express
+a full technique × form product, and `v1RulesetAxes` re-derives the subset by OR-ing the flagged
+cells' axes. Seventy of seventy is trivially rectangular, so a later narrowing is still checked for
+raggedness.
+
+It was 12 cells (3 × 4) until `material-economy` (2026-08-16). The reason for opening it is
+recorded in that change's `design.md`: `material-economy` gives every form a material yield, and
+ten of the fourteen forms sat outside the square — including the only producers of `essence` (Vim)
+and `labor` (Corpus), both of which are *priced into god actions*. Measured over 600 reference
+ticks — 2026-08-16, on `w247/material-economy-build` @ `1da48cab`, via
+`tools/w247/material-faucets.mjs` and `tools/w247/action11-legality.mjs` — production of both was
+exactly zero and `fund-university` was legal on 13 ticks of 600.
 
 ### 2.3 `node.json`
 
@@ -753,13 +799,22 @@ it bounds.
   "id": "forbid-technique",
   "actionId": 2,                 // the §4.2 action id. Permanent, like the action
   "favorCost": 8192,             // fp. Base price, before hysteresis and node-tier scaling
+  "materialCost": { "stone": 8192 },  // optional. fp per material kind; unscaled by hysteresis or tier
   "gloss": "Exactly what permitting costs.",
   "tuningStatus": "untuned"
 }
 ```
 
-What each action in §4.2 costs the god in favor, as data rather than as literals in the rules
-path — so that retuning a price is a content change a sweep can turn rather than a code change,
+What each action in §4.2 costs the god in favor — and, since `material-economy`, optionally in
+**materials** as well. `materialCost` is absent on most rows: an unpriced verb is one that makes
+nothing out of anything. Where it is present the rule is systemic — *a verb that makes a thing in
+the world spends the material that thing is made of* — and it is denominated per kind, never
+against a total, because paying a `passage` price out of a heap of stone would be a market and the
+seven kinds exist precisely to make two universes' economies differ. A kind outside the seven fails
+the load, named. Favor remains the pacing currency.
+
+The rest of this section is about the favor price, and holds for both: each is data rather than a
+literal in the rules path — so that retuning a price is a content change a sweep can turn rather than a code change,
 and so that the price is inside `contentRevision`. Two universes that disagreed about the cost of
 forbidding a technique while agreeing they were compatible would be playing different games.
 
@@ -1050,7 +1105,8 @@ Three consequences a reader planning against this table needs:
   personality is drawn on stream 1 against her own entity handle — §6's
   insertion invariance makes a draw keyed on a handle that did not previously
   exist disturb nobody — so **no committed balance baseline is invalidated**.
-  `WORLD_SCHEMA_VERSION` stays at 6.
+  `WORLD_SCHEMA_VERSION` stays at 6. (A statement about *this* change, not about the tree: the
+  number is 7 as of 2026-08-16, and `invite-scholar` still costs no revision.)
 - **The roster is the caller's, exactly as `portalTargets` is**, and for the
   same §1.1 reason. An empty roster masks the action, which is what a universe
   with no allies means and what the control arm of the measurement supplies.

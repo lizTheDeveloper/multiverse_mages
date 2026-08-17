@@ -19,7 +19,7 @@ import type { AblationMask, ClampCounters } from '@mm/primitives';
 import { stackMagnitudes } from '@mm/primitives';
 
 import type { MaterialAmounts, MaterialKind } from './kinds.js';
-import { MATERIAL_KINDS, zeroAmounts } from './kinds.js';
+import { LAND_MATERIAL_KINDS, MATERIAL_KINDS, zeroAmounts } from './kinds.js';
 
 /**
  * ## Three stocks, four claimants, and an order that is still a decision
@@ -88,6 +88,98 @@ export const MATERIALS_PER_LABORER: Fixed = 16;
 /** Food one person consumes per world tick to stay alive, `fp`. **Untuned.** */
 export const SUBSISTENCE_PER_PERSON: Fixed = 1;
 
+/**
+ * ## `labor` is people, not magic, and that is why its faucet is here
+ *
+ * Every other kind is made by a mage spending a month — `application.ts`'s
+ * channel — and `labor` was authored the same way: Corpus is the only form whose
+ * `yieldWeights` name it. Measured over 600 reference ticks on
+ * `w247/material-economy-build`, **`labor` production was exactly zero**, and
+ * the reason is not that the wire was missing. It is that `labor`'s **sink has a
+ * different shape from every other kind's**.
+ *
+ * | kind | sink | fires |
+ * | --- | --- | --- |
+ * | `essence` | `issue-dispensation` | when the god chooses |
+ * | `passage` | `open-portal` | when the god chooses |
+ * | `insight` | `bless-mage`, and teaching | teaching is continuous |
+ * | **`labor`** | **the construction hire, and `fund-university`** | **every tick, automatically** |
+ *
+ * A faucet that fires when *a mage chooses to spend a month* cannot feed a drain
+ * that fires *every tick whatever anybody chooses*. That race has already been
+ * measured twice: pricing `fund-university` in `labor` left it legal on **8
+ * ticks of 585**, and a reserve floor under the hire — the correct fix for the
+ * race, and kept — could only reach **13 of 600**, with a bounding experiment at
+ * **46 of 600** for a reserve so high the hire never drew at all. A finite
+ * endowment redistributed between two claimants is a runway, not an income.
+ *
+ * So the faucet takes the shape of the sink: **automatic, per tick, proportional
+ * to the populace**. Hands for hire are the one material a universe makes
+ * without magic, which is also the truer fiction — Corpus magic is what
+ * *amplifies* a workforce, and it still does, through
+ * {@link ProductionInput.resourceYieldBonuses}.
+ *
+ * ## It is an allocation, not new supply
+ *
+ * The share comes off {@link MATERIALS_PER_LABORER} **before** the territory
+ * split, by subtraction, so a laborer's month is divided between working the
+ * land and standing available for hire — the total she produces is unchanged.
+ * The alternative, adding `labor` on top, would have every laborer working a
+ * full month in the fields *and* a further fraction of a month on a building
+ * site, which is the "labour is exclusive" defect `assignedToSites` exists to
+ * prevent, re-introduced one layer down.
+ *
+ * Subtraction rather than a second multiply is also what keeps the split exact
+ * in fixed point: `worked = base − hireable` cannot lose a unit to two
+ * independent roundings.
+ *
+ * ## The magnitude is content, and it is untuned
+ *
+ * `labor-share-of-month` in `autonomy-weight.json`. At `fp(64)` — one part in
+ * sixteen — and `MATERIALS_PER_LABORER` of sixteen, a neutral laborer offers
+ * exactly **one `fp` of `labor` per tick**, the same unit as
+ * {@link SUBSISTENCE_PER_PERSON}. That is an anchor rather than a tuning:
+ * `carrying-capacity.ts` records that the food margin is structural for any
+ * laborer share above one eighth, so one sixteenth is half of the headroom the
+ * economy already had and cannot be what starves a run. **Untuned**, and no
+ * release before 0.5.0 may claim otherwise.
+ */
+export const REQUIRED_PRODUCTION_WEIGHTS = ['labor-share-of-month'] as const;
+
+/** The one `autonomy-weight.json` scalar land production is priced in. */
+export interface ProductionWeights {
+  /**
+   * The fraction of a laborer's month that is hands for hire rather than work
+   * on the land, `fp` in `0..fp(1024)`.
+   */
+  readonly hireableShare: Fixed;
+}
+
+/** Anything that can answer an `autonomy-weight.json` id by name. */
+export interface ProductionWeightSource {
+  autonomyWeight(id: string): number;
+}
+
+/**
+ * Reads the hireable share, once.
+ *
+ * Eager, and range-checked here rather than per tick: a share above `fp(1024)`
+ * would make `worked` negative and turn the land into a *sink*, which is a
+ * content mistake that should fail before a single field has been worked rather
+ * than surface as an unexplained shortfall two hundred ticks in.
+ */
+export function readProductionWeights(source: ProductionWeightSource): ProductionWeights {
+  const hireableShare = source.autonomyWeight('labor-share-of-month');
+  if (!Number.isInteger(hireableShare) || hireableShare < 0 || hireableShare > FP_ONE) {
+    throw new RangeError(
+      `labor-share-of-month is ${String(hireableShare)}; it is the fraction of a laborer's month ` +
+        `that is hands for hire and must be an integer in 0..${String(FP_ONE)}. Above fp(1024) the ` +
+        'land would consume rather than produce',
+    );
+  }
+  return Object.freeze({ hireableShare });
+}
+
 /** What materials production is made of. */
 export interface ProductionInput {
   /** Laborer cohort members. */
@@ -111,6 +203,15 @@ export interface ProductionInput {
    * another. `routeYieldByForm` is what fills these.
    */
   readonly resourceYieldBonuses: Readonly<Record<MaterialKind, readonly Fixed[]>>;
+  /**
+   * How much of the month is hands for hire rather than work on the land.
+   *
+   * Required rather than defaulted to zero, and the friction is the point: a
+   * caller that forgot it would get a silently dry `labor` faucet, which is
+   * precisely the defect this field exists to end. See
+   * {@link REQUIRED_PRODUCTION_WEIGHTS}.
+   */
+  readonly production: ProductionWeights;
   readonly counters?: ClampCounters | undefined;
   /**
    * §9's ablation mask, for the arm that neutralizes `resource-yield`.
@@ -125,11 +226,13 @@ export interface ProductionInput {
 }
 
 /** No bonuses of any kind — the neutral input, and the shape a caller starts from. */
-export const NO_YIELD_BONUSES: Readonly<Record<MaterialKind, readonly Fixed[]>> = {
-  food: [],
-  stone: [],
-  vellum: [],
-};
+export const NO_YIELD_BONUSES: Readonly<Record<MaterialKind, readonly Fixed[]>> =
+  Object.freeze(
+    Object.fromEntries(MATERIAL_KINDS.map((kind) => [kind, [] as readonly Fixed[]])) as Record<
+      MaterialKind,
+      readonly Fixed[]
+    >,
+  );
 
 /**
  * The `(1 + Σ)` `resource-yield` multiplier for one kind, capped once by the
@@ -160,6 +263,18 @@ export function resourceYieldMultiplier(input: ProductionInput, kind: MaterialKi
  * whose land yields little stone gets a proportionally small absolute return
  * from stone magic rather than a large one on a small base. That is the reading
  * that makes siting matter: magic amplifies what the land already does.
+ *
+ * `labor` comes off the top rather than out of the territory split, because a
+ * share of land is a fact about acreage and hands for hire are not — see
+ * {@link REQUIRED_PRODUCTION_WEIGHTS} for why the faucet is here at all. It
+ * takes the same `resource-yield` multiplier as every other kind, so a universe
+ * that permitted Corpus amplifies its workforce exactly as one that permitted
+ * Terram amplifies its quarries.
+ *
+ * The three kinds that are neither land nor labour — `essence`, `insight`,
+ * `passage` — are untouched here and stay at zero. They are made by a mage
+ * spending a month, in `application.ts`, and a laborer in a field produces none
+ * of them.
  */
 export function materialsProduced(input: ProductionInput): MaterialAmounts {
   if (!Number.isInteger(input.laborerCount) || input.laborerCount < 0) {
@@ -168,11 +283,16 @@ export function materialsProduced(input: ProductionInput): MaterialAmounts {
     );
   }
   const base = mul(input.laborerCount * MATERIALS_PER_LABORER, input.laborAffinity);
+  // Allocation, by subtraction. The two halves sum to `base` exactly whatever
+  // the rounding does, which a second `mul` for the land half would not.
+  const hireable = mul(base, Math.min(FP_ONE, Math.max(0, input.production.hireableShare)));
+  const worked = base - hireable;
   const produced = zeroAmounts();
-  for (const kind of MATERIAL_KINDS) {
-    const ofKind = floorDiv(base * Math.max(0, input.shares[kind]), FP_ONE);
+  for (const kind of LAND_MATERIAL_KINDS) {
+    const ofKind = floorDiv(worked * Math.max(0, input.shares[kind]), FP_ONE);
     produced[kind] = mul(ofKind, resourceYieldMultiplier(input, kind));
   }
+  produced.labor = mul(hireable, resourceYieldMultiplier(input, 'labor'));
   return produced;
 }
 
@@ -194,9 +314,11 @@ export function subsistenceDemand(population: number): Fixed {
 export const CONSUMPTION_ORDER = [
   'subsistence',
   'casting',
+  'teaching',
   'libraryUpkeep',
   'scribing',
   'construction',
+  'constructionLabor',
 ] as const;
 
 /** One of the five claims. */
@@ -239,9 +361,25 @@ export const CLAIMANT_KIND: Readonly<Record<ConsumptionKind, MaterialKind>> = {
   // The reading is not a stretch: a working consumes its notes, its diagrams,
   // its prepared surfaces. Magic and the archive want the same skins.
   casting: 'vellum',
+  // **`material-economy`'s two world-loop sinks, and each is alone in its
+  // kind.** `CONSUMPTION_ORDER` only ranks claimants that share a stock, so
+  // both positions are inert today and are declared anyway: the order is what a
+  // reviewer checks, and a second insight claimant added later has to be placed
+  // against this one rather than appended wherever it happened to be written.
+  //
+  // Teaching is paid at the lectern rather than here — `world-step.ts` reserves
+  // the share before a single lesson is given, exactly as scribing is paid at
+  // the desk — so the figure that arrives here is what was actually spent.
+  teaching: 'insight',
   libraryUpkeep: 'vellum',
   scribing: 'vellum',
   construction: 'stone',
+  // Hired person-months, over and above the crew the populace supplied. Never
+  // charged for a month a site could not use: `advanceUniversities` attributes
+  // the months a site actually bought to the crew first, and only the excess to
+  // this claimant, so a universe with no building work demands zero and a
+  // universe with no `labor` builds exactly as it did before this change.
+  constructionLabor: 'labor',
 };
 
 /** What each claimant is asking for this tick, `fp` of its own kind. */
@@ -292,7 +430,9 @@ export function consumeMaterials(
   const shortfall = zeroPerClaimant();
   const remaining = zeroAmounts();
   for (const kind of MATERIAL_KINDS) remaining[kind] = Math.max(0, stock[kind]);
-  const shortKinds: Record<MaterialKind, boolean> = { food: false, stone: false, vellum: false };
+  const shortKinds = Object.fromEntries(
+    MATERIAL_KINDS.map((kind) => [kind, false]),
+  ) as Record<MaterialKind, boolean>;
   let anyShortfall = false;
 
   for (const claimant of CONSUMPTION_ORDER) {
@@ -315,6 +455,188 @@ export function consumeMaterials(
   }
 
   return { spent, shortfall, remaining, anyShortfall, shortKinds };
+}
+
+/**
+ * The most any one stock may hold, `fp`.
+ *
+ * ## Why there is a ceiling at all, and why it is here rather than nowhere
+ *
+ * `MATERIAL_STOCK`'s columns are `i32`. A stock that grew past `2^31 - 1` would
+ * not throw; it would wrap, land negative, and be caught — if at all — by
+ * {@link assertMaterialsNonNegative} several phases later, reported as a
+ * negative stock rather than as an overflow. That is the shape of defect that
+ * produces plausible output for a long time.
+ *
+ * `2^30 - 1` is the same bound `node.schema.json` puts on every authored `fp`
+ * magnitude, which makes it the largest quantity anything in this project is
+ * allowed to *mean*, and it leaves a whole bit of headroom under the column's
+ * own limit so that a sum taken across kinds cannot wrap either.
+ *
+ * ## It spills; it does not truncate
+ *
+ * `docs/design/economy-flow-models.md` §3.3's corollary, quoted in
+ * `material-economy`'s proposal: a silent truncation *"both breaks conservation
+ * and destroys the signal that would feed back to whatever is overproducing"*.
+ * So the excess is **returned** by {@link applyStockCeiling} rather than
+ * dropped, the tick reports it, and the ledger group 6 builds can put it on the
+ * sink side of `delta == faucet - sink` instead of finding a kind that does not
+ * balance.
+ *
+ * **It does not bind on any run this repository has measured.** The reference
+ * universe's largest stock over 2,400 ticks is stone at roughly 4.4M, four
+ * hundred times under this. That is the intent: a ceiling that bound in ordinary
+ * play would be a balance decision wearing an overflow guard's clothes.
+ */
+export const MATERIAL_STOCK_CEILING: Fixed = 1_073_741_823;
+
+/** A stock bounded at the ceiling, and whatever would not fit. */
+export interface CeilingOutcome {
+  /** Every kind at or below {@link MATERIAL_STOCK_CEILING}. */
+  readonly stock: MaterialAmounts;
+  /** What each kind lost to the ceiling. Recorded, never silent. */
+  readonly spilled: MaterialAmounts;
+  /** Whether anything spilled at all, for the once-per-tick reporting path. */
+  readonly anySpill: boolean;
+}
+
+/**
+ * Bounds every kind at {@link MATERIAL_STOCK_CEILING}, returning what spilled.
+ *
+ * Called at the tick boundary, on the closing figure, so that exactly one place
+ * in the loop can lose a material to a ceiling and exactly one number says how
+ * much. A per-faucet clamp would be four places, three of which would forget to
+ * report.
+ */
+export function applyStockCeiling(stock: MaterialAmounts): CeilingOutcome {
+  const bounded = zeroAmounts();
+  const spilled = zeroAmounts();
+  let anySpill = false;
+  for (const kind of MATERIAL_KINDS) {
+    const held = stock[kind];
+    if (held > MATERIAL_STOCK_CEILING) {
+      bounded[kind] = MATERIAL_STOCK_CEILING;
+      spilled[kind] = held - MATERIAL_STOCK_CEILING;
+      anySpill = true;
+    } else {
+      bounded[kind] = held;
+    }
+  }
+  return { stock: bounded, spilled, anySpill };
+}
+
+/**
+ * One tick's material flow, per kind: what arrived and what left.
+ *
+ * ## Why a ledger and not another level metric
+ *
+ * `economy-flow-models.md` §5.2 is blunt about the gap: *"Every metric in the
+ * registry measures a level, a rate, or a distribution at a checkpoint. None
+ * reconciles flows. The favor ledger is the exception and proves the point — it
+ * is the only place a closing balance is asserted against opening + in − out."*
+ * This extends that shape to materials, which is what §3.4 asks for.
+ *
+ * A level tells you the granary is empty. It cannot tell you whether the food
+ * was eaten, spilled over a ceiling, or quietly lost by a phase that decremented
+ * a stock without telling anybody — and the third is a defect that produces
+ * plausible output indefinitely, because an economy that leaks slowly looks
+ * exactly like an economy that is merely poor.
+ *
+ * ## What counts as a faucet and what counts as a sink
+ *
+ * A **faucet** creates material that did not exist: laborers working the land,
+ * and mages casting into a form that routes to a kind. A **sink** destroys it:
+ * every claimant paid through {@link consumeMaterials}, the scribes paid at the
+ * desk, and the ceiling spill.
+ *
+ * **The spill is on the sink side and this is the reason it must be.**
+ * `MATERIAL_STOCK_CEILING` returns what did not fit rather than dropping it
+ * precisely so that this arithmetic has somewhere to put it. A silent
+ * truncation would show up here as a kind that does not balance, reported as a
+ * leak, which is the diagnosis a reader would then have to un-make.
+ *
+ * **A stock held back by a floor is neither.** `spendableLabor`'s reserve is a
+ * bound on how much a drain may take, not a transfer: the reserved `labor` is
+ * still in the stock at the end of the tick, so it appears on neither side and
+ * conservation is untouched by it. That is the property that made a floor the
+ * right shape for the two-claimant race on `labor` — a gate or a holding pool
+ * would both have needed the ledger to learn about them.
+ *
+ * **The god's spend is outside this ledger, and deliberately.** The intervention
+ * system runs *before* the world system in the same step, so a material cost it
+ * deducted is already in the opening balance the world tick reads. This
+ * reconciles the world loop's own flows against its own opening figure; folding
+ * in a deduction that happened before that figure was taken would make every
+ * tick a god acted on read as a leak.
+ */
+export interface MaterialLedger {
+  /** The stocks the tick opened with, per kind. */
+  readonly opening: MaterialAmounts;
+  /** The stocks the tick closed with, per kind. */
+  readonly closing: MaterialAmounts;
+  /** Everything created this tick, per kind. */
+  readonly faucet: MaterialAmounts;
+  /** Everything destroyed this tick, per kind — spill included. */
+  readonly sink: MaterialAmounts;
+}
+
+/** One kind that failed `delta == faucet - sink`, with the arithmetic. */
+export interface ConservationBreach {
+  readonly kind: MaterialKind;
+  /** `closing - opening`. */
+  readonly delta: Fixed;
+  /** `faucet - sink`, which `delta` must equal. */
+  readonly expected: Fixed;
+  /** `delta - expected`. Positive is material from nowhere; negative is a leak. */
+  readonly discrepancy: Fixed;
+}
+
+/**
+ * Every kind whose stock did not move by exactly what the tick recorded.
+ *
+ * Returns a list rather than throwing, so a caller can report it as a metric —
+ * `economy-flow-models.md` §3.4 asks for the conservation check to be
+ * **reported**, not only tested, and a function that can only throw cannot be a
+ * series. {@link assertMaterialsConserved} is the throwing wrapper.
+ *
+ * Exact, with no tolerance. Every quantity here is a fixed-point integer and an
+ * epsilon would hide precisely the slow one-unit-per-tick leak this exists to
+ * find.
+ */
+export function conservationBreaches(ledger: MaterialLedger): ConservationBreach[] {
+  const breaches: ConservationBreach[] = [];
+  for (const kind of MATERIAL_KINDS) {
+    const delta = ledger.closing[kind] - ledger.opening[kind];
+    const expected = ledger.faucet[kind] - ledger.sink[kind];
+    if (delta === expected) continue;
+    breaches.push({ kind, delta, expected, discrepancy: delta - expected });
+  }
+  return breaches;
+}
+
+/**
+ * Throws unless every kind satisfies `delta == faucet - sink`.
+ *
+ * Names the kind and the tick, which the spec requires of it: *"the conservation
+ * assertion fails and names the kind and the tick."* A message reading only
+ * "conservation failed" would send a reader to re-derive by hand the thing the
+ * check already knew.
+ */
+export function assertMaterialsConserved(ledger: MaterialLedger, worldTick: number): void {
+  const breaches = conservationBreaches(ledger);
+  if (breaches.length === 0) return;
+  const detail = breaches
+    .map(
+      (breach) =>
+        `${breach.kind} moved by ${String(breach.delta)} while the tick recorded a faucet less a ` +
+        `sink of ${String(breach.expected)}, a discrepancy of ${String(breach.discrepancy)}`,
+    )
+    .join('; ');
+  throw new Error(
+    `material conservation failed at world tick ${String(worldTick)}: ${detail}. Every kind's ` +
+      'stock must move by exactly what the tick produced less what it consumed, spill included — ' +
+      'a flow that changes a stock without recording itself is the defect this asserts against.',
+  );
 }
 
 /**

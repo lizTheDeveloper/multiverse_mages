@@ -120,16 +120,21 @@
  *
  * ## What this is worth today, stated plainly
  *
- * **Zero, in any v1 universe**, and the check this wire satisfies has never
- * claimed otherwise. All twenty-two authored nodes sit outside the twelve
- * enabled cells, so `permits()` refuses every one of them and `gatherEffects`
- * returns nothing. The green this produces is exactly as strong as `portal`'s:
+ * It was **zero in any v1 universe**, and the check this wire satisfies never
+ * claimed otherwise: all twenty-two authored nodes sat outside the twelve
+ * enabled cells, so `permits()` refused every one of them and `gatherEffects`
+ * returned nothing. The green that produced was exactly as strong as `portal`'s:
  * *the assembled simulation fetched these node magnitudes and holds them*.
- * Making it worth something in play is a content decision — an authored
- * `lifespan` or `fertility` effect on a v1 node, or a v1 rectangle that
- * includes *Corpus* — and `checkPrimitiveCoverage` is the check that will say
- * so, because both primitives stay on its list until a **v1** node declares
- * one.
+ *
+ * **That condition is now met.** This paragraph named its own remedy — *"a
+ * content decision: an authored `lifespan` or `fertility` effect on a v1 node,
+ * or a v1 rectangle that includes Corpus"* — and `material-economy` opened all
+ * seventy cells, so the second of the two is what happened. `permits()` accepts
+ * the Corpus and Animal cells the twenty-two are authored in, and this wire
+ * carries real magnitudes for the first time. `checkPrimitiveCoverage` is the
+ * check that says so, and it agrees: `PRIMITIVE_COVERAGE_EXCLUSIONS` held
+ * `['fertility', 'lifespan']` for exactly this reason and is now **empty**,
+ * because an exclusion that becomes covered is a failure in that file too.
  *
  * ## The scope of that paragraph is load-bearing, and it moved twice in one day
  *

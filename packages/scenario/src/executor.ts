@@ -29,7 +29,7 @@ import { OBSERVATION_LAYOUT_DIGEST, OBSERVATION_SCHEMA_VERSION, createSession } 
 import type { ScenarioConfig } from '@mm/agent-api';
 import { RNG_STREAM } from '@mm/sim-core';
 import { ablationMaskFor } from '@mm/coordination';
-import type { AblationMask, GodTickReport } from '@mm/coordination';
+import type { AblationMask, GodTickReport, WorldStepReport } from '@mm/coordination';
 import type {
   AgentSession,
   ArmContribution,
@@ -161,6 +161,14 @@ interface CensusRecorder<TConfig> {
   readonly godSpendByAction: Readonly<Record<string, number>>;
   /** Takes a reading now, whatever the interval says. */
   takeNow(): CensusSample;
+  /**
+   * World ticks whose material ledger did not balance. **Always zero.**
+   *
+   * A function rather than a field because it is a running count and a frozen
+   * number read at the wrong moment would report the wrong run — the same reason
+   * `samples` is drained after the episode rather than during it.
+   */
+  conservationBreachTicks(): number;
 }
 
 /**
@@ -189,6 +197,7 @@ function recordingSession<TConfig>(
   inner: AgentSession<TConfig>,
   intervalTicks: number,
   godReport: () => GodTickReport | undefined,
+  worldReport: () => WorldStepReport | undefined,
 ): CensusRecorder<TConfig> {
   const samples: CensusSample[] = [];
   const checkpoints: CheckpointSample[] = [];
@@ -200,6 +209,27 @@ function recordingSession<TConfig>(
   const godSpendByAction: Record<string, number> = {};
   let lastLedgerTick = -1;
   let lastRecordedTick = -1;
+  let lastConservationTick = -1;
+  let breachTicks = 0;
+
+  /**
+   * Counts a tick whose material ledger did not balance.
+   *
+   * Deduplicated on the world report's own tick, for the reason
+   * {@link accumulateSpend} is: the report lags the observation by one tick and
+   * `observe()` may be called more than once per tick when a run has several
+   * agent slots. Keying on the quantity's own timestamp makes both correct.
+   *
+   * This can only ever count on a build whose in-`step` assertion has been
+   * disabled — the loop throws on a breach — and that is the point: the series
+   * is evidence the check ran, where a silent assertion is evidence of nothing.
+   */
+  const accumulateConservation = (): void => {
+    const report = worldReport();
+    if (report === undefined || report.worldTick <= lastConservationTick) return;
+    lastConservationTick = report.worldTick;
+    if (report.conservationBreaches.length > 0) breachTicks += 1;
+  };
 
   /**
    * Folds one completed tick's applied spend into the run total.
@@ -283,6 +313,7 @@ function recordingSession<TConfig>(
     checkpoint(sample);
     traceOf(sample);
     accumulateSpend();
+    accumulateConservation();
     return sample;
   };
 
@@ -292,6 +323,7 @@ function recordingSession<TConfig>(
     trace,
     godSpendByAction,
     takeNow,
+    conservationBreachTicks: () => breachTicks,
     session: {
       reset(runSeed: number, scenarioConfig: TConfig): void {
         inner.reset(runSeed, scenarioConfig);
@@ -303,6 +335,8 @@ function recordingSession<TConfig>(
         for (const key of Object.keys(godSpendByAction)) delete godSpendByAction[key];
         lastLedgerTick = -1;
         lastRecordedTick = -1;
+        lastConservationTick = -1;
+        breachTicks = 0;
         takeNow();
       },
       observe(): Float64Array {
@@ -312,6 +346,7 @@ function recordingSession<TConfig>(
         checkpoint(sample);
         traceOf(sample);
         accumulateSpend();
+        accumulateConservation();
         return observation;
       },
       legalActions: () => inner.legalActions(),
@@ -638,7 +673,8 @@ export function executeReferenceRun(
 
   const raiding = options.raids ?? true;
   const ablation = ablationFor(task);
-  const { scenario, lastGodReport, raids, balanceTelemetry, sandbox } = referenceScenario(content, {
+  const { scenario, lastGodReport, lastReport, raids, balanceTelemetry, sandbox } =
+    referenceScenario(content, {
     raids: raiding,
     ...(ablation === undefined ? {} : { ablation }),
     ...(options.sandbox === undefined ? {} : { sandbox: options.sandbox }),
@@ -655,6 +691,7 @@ export function executeReferenceRun(
     adaptAgentSession(createSession({ scenario, agentSlotIndex: 0, strategyId })),
     interval,
     lastGodReport,
+    lastReport,
   );
 
   const episode = runEpisode({
@@ -676,6 +713,12 @@ export function executeReferenceRun(
     last,
     samples: recorder.samples,
     ticksRun: episode.ticksRun,
+    // Counted from the world loop's own per-tick report rather than recomputed
+    // here. The loop already asserts conservation inside `step`, so a non-zero
+    // figure means the assertion was disabled rather than that it was missed —
+    // and the metric exists so that a passing sweep is *evidence* the check ran,
+    // which a silent assertion cannot be.
+    conservationBreachTicks: recorder.conservationBreachTicks(),
   };
 
   const mechanics = raiding ? REFERENCE_MECHANICS : RAIDLESS_MECHANICS;

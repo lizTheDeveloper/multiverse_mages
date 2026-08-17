@@ -35,8 +35,11 @@
  * Because the content does not say `universe`. Across the shipped grid these
  * three primitives are authored at **personal** targets and almost nowhere else:
  * `research-rate` 45× at `self`, `scribe-rate` 19× at `self`, `teach-rate` 19×
- * at `single`. Inside the twelve v1 cells the split is total — every one of the
- * sixteen is `self` or `single`.
+ * at `single`. Inside the twelve cells that were enabled when this was written
+ * the split was total — every one of the sixteen `self` or `single`. All seventy
+ * are enabled since `material-economy`, so the count above is now the whole of
+ * what a mage can reach; the routing argument below is unchanged, because it is
+ * about what a *target* means and not about how many cells are open.
  *
  * A personal target is a per-mage question, and the economy's is a per-universe
  * one. Routing these through `universeEconomyBonuses` would have made one

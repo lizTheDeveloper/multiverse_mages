@@ -37,6 +37,7 @@ import type {
   EpisodeAccounting,
   EpisodeStatus,
   OutcomeRecord,
+  PlayerState,
   Scenario,
   SessionOptions,
   SubmitResult,
@@ -47,6 +48,7 @@ import {
   OBSERVATION_LAYOUT_DIGEST,
   OBSERVATION_SCHEMA_VERSION,
   OBSERVATION_SIZE,
+  project,
 } from '@mm/agent-api';
 import type { SimState, System } from '@mm/sim-core';
 import { RNG_STREAM, TIME_MODE, createState, nextUint32 } from '@mm/sim-core';
@@ -126,7 +128,15 @@ export function probeScenario(scenarioId = PROBE_SCENARIO_ID): Scenario {
         favorCap: 100 * FP,
         ascended: 0,
       });
-      attachRecord(state, MATERIAL_STOCK, universe, { food: 100 * FP, stone: 0, vellum: 0 });
+      attachRecord(state, MATERIAL_STOCK, universe, {
+        food: 100 * FP,
+        stone: 0,
+        vellum: 0,
+        labor: 0,
+        essence: 0,
+        insight: 0,
+        passage: 0,
+      });
       const cohort = state.entities.create();
       attachRecord(state, POPULACE_COHORT, cohort, {
         speciesId: 1,
@@ -137,6 +147,29 @@ export function probeScenario(scenarioId = PROBE_SCENARIO_ID): Scenario {
       return state;
     },
   };
+}
+
+/**
+ * One projection of the probe world, built once and shared.
+ *
+ * `fixedSession` satisfies `AgentSession` structurally, so it owes a
+ * `playerState()` — the client-facing projection `material-economy` added
+ * beside `observe()`. Nothing in this package asserts on its contents; what the
+ * fixture owes is a *real* `PlayerState` rather than a cast, because a cast
+ * would go on satisfying the type after the interface grew a field that a real
+ * projection would have refused to build.
+ *
+ * Built from `probeScenario`'s own world at seed zero, which is the only world
+ * this package is allowed to construct — `@mm/scenario` is a leaf nothing here
+ * may import.
+ */
+let probeProjection: PlayerState | undefined;
+function fixedPlayerState(): PlayerState {
+  probeProjection ??= project({
+    state: probeScenario().create(0, { worldTickCap: 1 }),
+    catalogue: EMPTY_CATALOGUE,
+  });
+  return probeProjection;
 }
 
 /** What a {@link fixedSession} should report. */
@@ -214,6 +247,7 @@ export function fixedSession(options: FixedSessionOptions = {}): AgentSession {
       throw new Error('The fixture session has no agent-side generator.');
     },
     snapshotHash: () => 'fixed-hash',
+    playerState: (): PlayerState => fixedPlayerState(),
   };
 }
 

@@ -341,5 +341,33 @@
     "unit": "fp",
     "gloss": "Vellum one mage-month of magical work consumes. A quarter of MATERIALS_PER_LABORER (16), which is the unit it is expressed in so the two compare. Chosen by sweep: at 16 and 8 the library sheds nodes and reference-long-run 9.8's tripwire fires; 4 is the highest rate that costs without shedding. Vellum because vellum is the contended stock \u2014 stone is never short across 2400 ticks, so a claim there would cost nothing. Paid before libraryUpkeep.",
     "tuningStatus": "untuned"
+  },
+  {
+    "id": "teaching-insight-per-month",
+    "value": 4,
+    "unit": "fp",
+    "gloss": "Insight one mage-month of teaching consumes. Denominated like casting-vellum-per-month (4) so the two are comparable: a month at the lectern and a month at the bench cost the same in their own stock. Insight is what a faculty teaches out of \u2014 Mentem and Imaginem \u2014 and spending it is what makes the kind a resource rather than a label on one.",
+    "tuningStatus": "untuned"
+  },
+  {
+    "id": "teaching-insight-bonus",
+    "value": 256,
+    "unit": "fp",
+    "gloss": "The teach-rate magnitude a fully funded teaching month adds, +25%. A magnitude rather than a multiplier: teach-rate is additive-into-multiplier, so this joins the same (1 + \u03a3) sum as a god's blessing and a mage's own knowledge and is capped once with them at fp(4096). In the shipped tier-1 range for an authored teach-rate effect (128\u2013448).",
+    "tuningStatus": "untuned"
+  },
+  {
+    "id": "construction-labor-per-month",
+    "value": 256,
+    "unit": "fp",
+    "gloss": "Labor spent to hire one extra person-month onto a building site. Sixty-four times the stone a laborer month costs, and measured rather than chosen: the hire drains per tick with the crew while labor arrives only from a mage casting Corpus, so at parity an endowment vanishes in three ticks and the build-rate causal chain stops being measurable. A crew may at most be doubled.",
+    "tuningStatus": "untuned"
+  },
+  {
+    "id": "labor-share-of-month",
+    "value": 64,
+    "unit": "fp",
+    "gloss": "The fraction of a laborer's month that is hands for hire rather than work on the land. One part in sixteen, which at MATERIALS_PER_LABORER of 16 is exactly one fp of labor per neutral laborer per tick \u2014 the same unit as SUBSISTENCE_PER_PERSON. It is an allocation, not new supply: the land half is base minus this. Untuned.",
+    "tuningStatus": "untuned"
   }
 ]

@@ -65,9 +65,37 @@ export interface CatalogueNode {
  * recently it was flipped, and that counter is in state where the mask can read
  * it.
  */
+import type { MaterialStockRecord } from '@mm/state';
+
+/**
+ * What one action costs in materials, per kind, `fp`.
+ *
+ * Keyed on `@mm/state`'s `MaterialStockRecord` rather than on a list of names
+ * from `@mm/content`, which this package refuses to import — see the note on
+ * {@link ContentCatalogue.costs}. The component and the cost table therefore
+ * cannot disagree about which kinds exist: a kind added to `MATERIAL_STOCK`
+ * widens this type, and a kind removed from it makes every cost naming it a
+ * compile error at the composition root that projects the table.
+ */
+export type ActionMaterialCost = Readonly<Partial<Record<keyof MaterialStockRecord, number>>>;
+
 export interface ActionCostTable {
   /** Base favor price per §4.2 action id, ascending, all sixteen. */
   readonly byAction: readonly number[];
+  /**
+   * What each action costs in **materials**, or `undefined` for the verbs that
+   * cost none. Optional as a whole, for the reason the cost table itself is:
+   * a catalogue told no material prices stays silent about them.
+   *
+   * `material-economy`: until it, favor was the only currency the action space
+   * could be denominated in, and the god's decisions never touched the
+   * materials magic produced. An unaffordable material cost clears the mask
+   * entry for exactly the reason an unaffordable favor cost does — a verb the
+   * god cannot pay for is not a legal choice, and submitting it would inflate
+   * `illegalActionRate` with a fact about the treasury rather than about the
+   * policy.
+   */
+  readonly materialByAction?: readonly (ActionMaterialCost | undefined)[] | undefined;
   /** Action 11 with a target of 0 — §4.2 gives founding and funding one id. */
   readonly foundUniversity: number;
   /** What one recent flip of an axis adds to its multiplier, `fp`. */

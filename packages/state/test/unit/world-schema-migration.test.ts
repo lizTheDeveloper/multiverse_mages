@@ -72,6 +72,7 @@ import {
   migrateWorldEnvelope,
   readRecord,
   splitMaterialsByKind,
+  widenMaterialStock,
   worldSchemaVersionOf,
 } from '@mm/state';
 
@@ -166,13 +167,71 @@ function revisionFourEnvelope(materialsValue: number = LEGACY_MATERIALS_VALUE): 
   return withLegacyMaterialsField(envelopeWithout(MATERIAL_STOCK.name, GRANT_BUDGET.name, BAR_PHASE.name, MID_RAID_CHANGE.name, ...SITING_SECTIONS, KNOWLEDGE_FIDELITY.name), materialsValue);
 }
 
+/**
+ * The three kinds `material-stock` carried at revisions 5 and 6, frozen.
+ *
+ * A literal rather than `Object.keys(MATERIAL_STOCK.fields)`, and the same
+ * reason the migration itself freezes it: the live spec now names seven, so a
+ * fixture reading the spec would build a **revision-7** section and call it a
+ * revision-5 one.
+ */
+const REVISION_FIVE_KINDS = ['food', 'stone', 'vellum'] as const;
+
+/** Rebuilds `material-stock` with only the columns revision 6 knew about. */
+function withThreeKindStock(envelope: SnapshotEnvelope): SnapshotEnvelope {
+  const stock = envelope.components.find((component) => component.name === MATERIAL_STOCK.name);
+  if (stock === undefined) return envelope;
+
+  const width = stock.fields.length;
+  const rows = stock.slots.length;
+  const keep = REVISION_FIVE_KINDS.map((kind) =>
+    stock.fields.findIndex((field) => field.name === kind),
+  );
+  const values = new Uint32Array(rows * keep.length);
+  for (let row = 0; row < rows; row += 1) {
+    for (let index = 0; index < keep.length; index += 1) {
+      values[row * keep.length + index] = stock.values[row * width + (keep[index] as number)] as number;
+    }
+  }
+  const rewritten: SnapshotComponent = {
+    name: stock.name,
+    fields: REVISION_FIVE_KINDS.map((kind) => ({ name: kind, kind: 'i32' as const })),
+    slots: stock.slots,
+    values,
+  };
+  return {
+    ...envelope,
+    components: envelope.components.map((component) =>
+      component.name === MATERIAL_STOCK.name ? rewritten : component,
+    ),
+  };
+}
+
 /** The world as the last build whose founding grants were unlimited saw it. */
 function revisionFiveEnvelope(): SnapshotEnvelope {
-  return envelopeWithout(GRANT_BUDGET.name, BAR_PHASE.name, MID_RAID_CHANGE.name, ...SITING_SECTIONS, KNOWLEDGE_FIDELITY.name);
+  return withThreeKindStock(
+    envelopeWithout(GRANT_BUDGET.name, BAR_PHASE.name, MID_RAID_CHANGE.name, ...SITING_SECTIONS, KNOWLEDGE_FIDELITY.name),
+  );
+}
+
+/**
+ * The world as the last build with only three material kinds saw it.
+ *
+ * `withThreeKindStock` is what makes this a revision **6** and not a revision 7:
+ * every `revisionNEnvelope` above it drops the *sections* later revisions added,
+ * and revision 7's marker is a `material-stock` **field**, so dropping sections
+ * alone would leave a seven-column stock in an envelope claiming to be older
+ * than the widening. That is the one revision in this walk a component test
+ * cannot detect, and this is the only line that expresses it.
+ */
+function revisionSixEnvelope(): SnapshotEnvelope {
+  return withThreeKindStock(
+    envelopeWithout(BAR_PHASE.name, MID_RAID_CHANGE.name, ...SITING_SECTIONS, KNOWLEDGE_FIDELITY.name),
+  );
 }
 
 /** The world as the last build before the god's law had a clock saw it. */
-function revisionSixEnvelope(): SnapshotEnvelope {
+function revisionSevenEnvelope(): SnapshotEnvelope {
   return envelopeWithout(BAR_PHASE.name, MID_RAID_CHANGE.name, ...SITING_SECTIONS, KNOWLEDGE_FIDELITY.name);
 }
 
@@ -199,8 +258,12 @@ describe('the world-schema revision is read off the snapshot itself', () => {
     expect(worldSchemaVersionOf(revisionFourEnvelope())).toBe(4);
     expect(worldSchemaVersionOf(revisionFiveEnvelope())).toBe(5);
     expect(worldSchemaVersionOf(revisionSixEnvelope())).toBe(6);
-    // No revision-7 arm: 7 is reserved for `w247/material-economy-build`, whose
-    // marker is a field rather than a component. See `migrations.ts`.
+    // Revision 7 is the one arm that is not a component test: its marker is a
+    // `material-stock` field. `revisionSevenEnvelope` differs from
+    // `revisionSixEnvelope` by exactly that — same sections, seven columns
+    // instead of three — which is what makes this pair a positive control for
+    // the field arm rather than a restatement of the section arms.
+    expect(worldSchemaVersionOf(revisionSevenEnvelope())).toBe(7);
     expect(worldSchemaVersionOf(revisionEightEnvelope())).toBe(8);
     expect(worldSchemaVersionOf(revisionNineEnvelope())).toBe(9);
     expect(worldSchemaVersionOf(revisionTenEnvelope())).toBe(10);
@@ -382,7 +445,12 @@ describe('migrating a revision-4 world snapshot forward (splitMaterialsByKind)',
     expect(universe?.fields.map((field) => field.name)).not.toContain('materials');
 
     const stock = after.components.find((component) => component.name === MATERIAL_STOCK.name);
-    expect(stock?.fields.map((field) => field.name)).toEqual(Object.keys(MATERIAL_STOCK.fields));
+    // The frozen three, **not** `Object.keys(MATERIAL_STOCK.fields)`. Revision 5
+    // produced three columns; the live spec now names seven, and a step that read
+    // the spec would emit a revision-7 section from a revision-4 save — which
+    // reads as revision 7 immediately, so the walk exits and `addGrantBudget`
+    // never runs. See the walk test below.
+    expect(stock?.fields.map((field) => field.name)).toEqual([...REVISION_FIVE_KINDS]);
     expect(stock?.slots).toEqual(universe?.slots);
     // LEGACY_MATERIALS_VALUE is 1000, not a multiple of three: trunc(1000/3)
     // is 333, so stone and vellum get 333 each and food takes the remainder
@@ -494,7 +562,15 @@ describe('migrating a revision-4 world snapshot forward (splitMaterialsByKind)',
     const bytes = encodeSnapshot(revisionFourEnvelope());
     const migrated = loadWorldSnapshot(bytes, defineWorldStateSchema());
     const [row] = collectRecords(migrated, MATERIAL_STOCK);
-    expect(row?.row).toEqual({ food: 334, stone: 333, vellum: 333 });
+    expect(row?.row).toEqual({
+      food: 334,
+      stone: 333,
+      vellum: 333,
+      labor: 0,
+      essence: 0,
+      insight: 0,
+      passage: 0,
+    });
   });
 });
 
@@ -556,6 +632,141 @@ describe('migrating a revision-5 world snapshot forward', () => {
     );
     expect(componentOf(migrated, MATERIAL_STOCK).size).toBeGreaterThan(0);
     expect(componentOf(migrated, GRANT_BUDGET).size).toBe(0);
+  });
+});
+
+describe('migrating a revision-6 world snapshot forward (widenMaterialStock)', () => {
+  it('appends the four new kinds at zero and leaves the three it found alone', () => {
+    const before = revisionSixEnvelope();
+    const beforeStock = before.components.find((c) => c.name === MATERIAL_STOCK.name);
+    if (beforeStock === undefined) throw new Error('fixture must carry a material-stock section');
+
+    const after = widenMaterialStock.migrate(before);
+    expect(worldSchemaVersionOf(after)).toBe(7);
+
+    const stock = after.components.find((c) => c.name === MATERIAL_STOCK.name);
+    expect(stock?.fields.map((field) => field.name)).toEqual(Object.keys(MATERIAL_STOCK.fields));
+    expect(stock?.slots).toEqual(beforeStock.slots);
+
+    const width = stock?.fields.length ?? 0;
+    for (let row = 0; row < beforeStock.slots.length; row += 1) {
+      for (let index = 0; index < REVISION_FIVE_KINDS.length; index += 1) {
+        expect(
+          stock?.values[row * width + index],
+          `${String(REVISION_FIVE_KINDS[index])} at row ${String(row)} moved across a migration ` +
+            'documented to append columns and touch nothing',
+        ).toBe(beforeStock.values[row * REVISION_FIVE_KINDS.length + index]);
+      }
+      // **An absent kind reads zero, never as a shortage.** This is the whole
+      // requirement: a migrated save must not starve on a stock it was never
+      // given the chance to accumulate.
+      for (let index = REVISION_FIVE_KINDS.length; index < width; index += 1) {
+        expect(
+          stock?.values[row * width + index],
+          `${String(stock?.fields[index]?.name)} at row ${String(row)} did not read zero`,
+        ).toBe(0);
+      }
+    }
+  });
+
+  it('widens a section with no rows at all', () => {
+    // A schema declared and never stepped. The columns still have to arrive, or
+    // the component check refuses the restored state on the field list alone.
+    const before = revisionSixEnvelope();
+    const emptied: SnapshotEnvelope = {
+      ...before,
+      components: before.components.map((component) =>
+        component.name === MATERIAL_STOCK.name
+          ? { ...component, slots: new Uint32Array(0), values: new Uint32Array(0) }
+          : component,
+      ),
+    };
+    const stock = widenMaterialStock
+      .migrate(emptied)
+      .components.find((c) => c.name === MATERIAL_STOCK.name);
+    expect(stock?.fields.map((field) => field.name)).toEqual(Object.keys(MATERIAL_STOCK.fields));
+    expect(stock?.values.length).toBe(0);
+  });
+
+  it('leaves the container format version exactly where it found it', () => {
+    const before = revisionSixEnvelope();
+    expect(widenMaterialStock.migrate(before).version).toBe(before.version);
+    expect(widenMaterialStock.migrate(before).version).toBe(SNAPSHOT_VERSION);
+  });
+
+  it('does not mutate the envelope it was given', () => {
+    const before = revisionSixEnvelope();
+    const stock = before.components.find((c) => c.name === MATERIAL_STOCK.name);
+    const width = stock?.fields.length;
+    widenMaterialStock.migrate(before);
+    expect(
+      before.components.find((c) => c.name === MATERIAL_STOCK.name)?.fields.length,
+    ).toBe(width);
+  });
+
+  it('walks a revision-4 save to 7 without skipping the grant budget', () => {
+    // The regression test for the trap this revision very nearly shipped.
+    //
+    // `splitMaterialsByKind` used to build its field table from
+    // `Object.keys(MATERIAL_STOCK.fields)` — the *live* spec. The moment the
+    // spec named seven kinds, the 4 -> 5 step emitted a seven-column section, a
+    // revision-4 save read as **revision 7** the instant it reached 5, and
+    // `migrateWorldEnvelope`'s loop exited with `grant-budget` never appended:
+    // a save silently missing a component, produced by a migration that threw
+    // nothing.
+    for (const envelope of [revisionOneEnvelope(), revisionFourEnvelope()]) {
+      const walked = migrateWorldEnvelope(envelope);
+      expect(worldSchemaVersionOf(walked)).toBe(WORLD_SCHEMA_VERSION);
+      expect(walked.components.map((component) => component.name)).toContain(GRANT_BUDGET.name);
+      const stock = walked.components.find((c) => c.name === MATERIAL_STOCK.name);
+      expect(stock?.fields.map((field) => field.name)).toEqual(Object.keys(MATERIAL_STOCK.fields));
+    }
+  });
+
+  it('restores a revision-6 save with the four new kinds at zero and nothing else moved', () => {
+    // End to end, through the real loader, and the control is **the revision-7
+    // save of the same world** rather than the current world.
+    //
+    // The branch this came from compared against `populatedWorld().state`
+    // directly, and on that tree the two were the same thing: revision 7 was the
+    // newest revision, so a save one step behind it differed only in the stock.
+    // Four more revisions arrived between 6 and 11 on the combine — `bar-phase`,
+    // `mid-raid-change`, the siting pair, `knowledge-fidelity` — and every one
+    // of them appends a section a revision-6 save does not carry. So a revision-6
+    // save walked to 11 is legitimately *not* byte-identical to the current
+    // world, and asserting that it is would be asserting that four unrelated
+    // migrations are no-ops.
+    //
+    // The claim being made is about `widenMaterialStock` and nothing else, so
+    // the control is the envelope that differs from it in exactly one thing: the
+    // same sections, seven stock columns instead of three. Both walk through the
+    // same four appends, so those cancel, and what is left is the spec's *"an
+    // absent kind is not a shortage"* stated as a hash.
+    const { universe } = populatedWorld();
+    const migrated = loadWorldSnapshot(
+      encodeSnapshot(revisionSixEnvelope()),
+      defineWorldStateSchema(),
+    );
+    const control = loadWorldSnapshot(
+      encodeSnapshot(revisionSevenEnvelope()),
+      defineWorldStateSchema(),
+    );
+
+    const row = readRecord(migrated, MATERIAL_STOCK, universe);
+    expect(row).toEqual(readRecord(control, MATERIAL_STOCK, universe));
+    expect(row.labor).toBe(0);
+    expect(row.essence).toBe(0);
+    expect(row.insight).toBe(0);
+    expect(row.passage).toBe(0);
+
+    expect(snapshotHash(migrated)).toBe(snapshotHash(control));
+    expect(Array.from(serializeState(migrated))).toEqual(Array.from(serializeState(control)));
+
+    // The positive control on the control: the two envelopes really are a
+    // revision apart, or the equality above would be a tautology over one
+    // object.
+    expect(worldSchemaVersionOf(revisionSixEnvelope())).toBe(6);
+    expect(worldSchemaVersionOf(revisionSevenEnvelope())).toBe(7);
   });
 });
 
@@ -696,7 +907,15 @@ describe('an older save loads into a current world', () => {
     // splitMaterialsByKind divides that into thirds with the remainder on
     // food, not into the 500/250/150 split `populatedWorld()` seeds for its
     // own, unrelated reasons.
-    attachRecord(state, MATERIAL_STOCK, universe, { food: 334, stone: 333, vellum: 333 });
+    attachRecord(state, MATERIAL_STOCK, universe, {
+      food: 334,
+      stone: 333,
+      vellum: 333,
+      labor: 0,
+      essence: 0,
+      insight: 0,
+      passage: 0,
+    });
 
     const migrated = loadWorldSnapshot(
       encodeSnapshot(revisionOneEnvelope()),
@@ -732,7 +951,16 @@ describe('an older save loads into a current world', () => {
       [encodeSnapshot(revisionThreeEnvelope()), /god-state/],
       [encodeSnapshot(revisionFourEnvelope()), /material-stock/],
       [encodeSnapshot(revisionFiveEnvelope()), /grant-budget/],
+      // Revisions 6 and 7 both name `bar-phase`, and that is measured rather
+      // than assumed: the component check reports a **missing section** before
+      // it reports a field-list mismatch, so a revision-6 envelope — which is
+      // short both `bar-phase` and four stock columns — is refused on the
+      // section. The two rows are not redundant even so; each asserts that its
+      // own envelope loads through the migration and refuses without it, which
+      // is the property, and the field arm is covered by
+      // `worldSchemaVersionOf` above.
       [encodeSnapshot(revisionSixEnvelope()), /bar-phase/],
+      [encodeSnapshot(revisionSevenEnvelope()), /bar-phase/],
       [encodeSnapshot(revisionEightEnvelope()), /mid-raid-change/],
       [encodeSnapshot(revisionNineEnvelope()), /territory-holding/],
       [encodeSnapshot(revisionTenEnvelope()), /knowledge-fidelity/],

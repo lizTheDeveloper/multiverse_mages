@@ -796,7 +796,133 @@ describe('contentRevision', () => {
     // and neither is a digest over a set holding the other's. Read from
     // `node packages/content/bin/validate-content.mjs` on the merged tree and
     // then confirmed by this test.
-    expect(registry.contentRevision).toBe('8e55225f332353298cb465c9bfceb4ba');
+    //
+    // 8681bf846bd94be80fdabc447e6e01df -> 4674cd42d5a3d153abca041d004d7592,
+    // when `material-economy` made every form yield something. `form.json`'s
+    // `yieldWeights` went from three kinds to seven — `labor`, `essence`,
+    // `insight`, `passage` beside `food`, `stone`, `vellum` — and the seven
+    // forms that were `{0, 0, 0}` took `1024` in the kind their magic actually
+    // is: corpus→labor, vim→essence, mentem and imaginem→insight, limen, fatum
+    // and umbra→passage. The seven forms that already yielded took the four new
+    // keys at zero and kept their existing three byte-identical, which is
+    // asserted in `shipped-content.test.ts` rather than left to review.
+    //
+    // In the preimage for the sharpest version of the reason the material split
+    // is: two universes that disagreed about what a form's magic yields would be
+    // running different economies while their revisions called them compatible.
+    // And unlike the founding-grant constants, this is **not** inert at ship —
+    // `mentem` and `limen` are two of the v1 opening square's four forms, so the
+    // reference universe reaches the new kinds from its first tick. What keeps
+    // the shipped baselines still *for now* is that `rules-world`'s
+    // `routeYieldByForm` still routes only three kinds; the faucet arrives in
+    // this change's group 3, and the balance move belongs to that commit rather
+    // than to this one.
+    //
+    // The glosses of those seven forms moved with the weights, which is a value
+    // edit inside the preimage in its own right. That is deliberate: the gloss
+    // is the only place a JSON file can say *why* Umbra yields passage, and a
+    // revision that recorded the number without the reason would be recording
+    // half of the decision.
+    //
+    // 4674cd42d5a3d153abca041d004d7592 -> a7cec8683d300801ccfb45d60eeff70e,
+    // when `material-economy`'s group 3 gave the four new kinds a **producer**.
+    // The paragraph above ends *"the faucet arrives in this change's group 3"*,
+    // and this is that commit: seven Intellego tier-1 nodes took a second
+    // effect, `resource-yield` at `magnitude: 128, target: "universe"` — the
+    // shipped tier-1 magnitude — one in each of the seven forms that route to a
+    // new kind. `im-weigh-the-attention` and `il-sense-the-seam` are inside the
+    // **v1 opening square**, which is what makes `insight` and `passage`
+    // reachable from a run rather than only from a fixture.
+    //
+    // Measured before the edit, and it is the reason the edit was necessary:
+    // `resource-yield` at `target: "universe"` appeared on 59 nodes across
+    // exactly the seven forms that yielded a *land* kind — animal, aquam,
+    // auram, herbam, ignem, terram, nomen. So the four new kinds had a column
+    // in `MATERIAL_STOCK`, a weight in `form.json`, and no producer anywhere in
+    // the grid: widening `routeYieldByForm` alone changed nothing a run could
+    // see.
+    //
+    // Intellego for every one of the seven, and that is the sign rule rather
+    // than a preference: `load.ts` refuses a Perdo working that adds to a
+    // world-scale flow, and `technique-sign.test.ts` records that Intellego is
+    // deliberately unconstrained — *"perception is Maxwell's demon"*, nineteen
+    // shipped Intellego nodes already carry positive `resource-yield`.
+    //
+    // **This one does move the balance baselines**, and it is the commit that
+    // should: a mage in a Mentem cell can now choose `GOAL.applyMagic`, which
+    // she could not before, and the stock she fills is one the god spends.
+    //
+    // a7cec8683d300801ccfb45d60eeff70e -> 1a70954598f2a5acdd7d06bfa1c1eafc, in
+    // one union covering the rest of `material-economy`'s groups 3 and 4. Four
+    // value edits, and the digest is over values, so this is the ordinary case
+    // rather than a branch reconciliation:
+    //
+    // 1. **Three `autonomy-weight.json` scalars**, for the two sinks that live
+    //    in the world loop: `teaching-insight-per-month` and
+    //    `teaching-insight-bonus` (insight funds university teaching
+    //    throughput), and `construction-labor-per-month` (labor hires extra
+    //    person-months onto a building site). A weight nothing reads fails the
+    //    load, so each arrived with its consumer.
+    // 2. **Five `god-cost.json` rows take a `materialCost`** —
+    //    `issue-dispensation` essence, `grant-founding-knowledge` vellum,
+    //    `bless-mage` insight, `fund-university` stone, `open-portal` passage.
+    //    This is the half of the change that makes the god's verbs reach the
+    //    economy magic produces; until it, the two never met.
+    // 3. **`construction-labor-per-month` was retuned 4 -> 256** after the
+    //    causal-chain instrument stopped separating its arms under it, and
+    //    **`fund-university` lost its `labor` price** after the same stock's
+    //    automatic per-tick sink left the verb legal on 8 ticks of 585. Both
+    //    are recorded on the glosses they moved.
+    // 4. The glosses of every row above moved with the values, which is a value
+    //    edit inside the preimage in its own right and deliberate: the gloss is
+    //    the only place a JSON file can say *why*.
+    //
+    // 1a70954598f2a5acdd7d06bfa1c1eafc -> 373e08bf48ca987d1081cb100f31295f, and
+    // this one reverses half of (3) on the author's instruction: **`labor` is
+    // back on `fund-university`**, at 4096 beside its stone, because raising a
+    // university takes wood and hands and not only favour. What removed it was
+    // real and is not being ignored — an automatic per-tick sink and a
+    // discretionary verb on one stock is a race the sink wins — so the price
+    // returns together with a **reserve floor** under the hire that drains the
+    // same stock (`HiredLabourWeights.reserve`), which is a fix to the sink
+    // rather than a retreat from the price. One row and its gloss moved.
+    //
+    // 373e08bf48ca987d1081cb100f31295f -> 09358b8aea5445bd93e564264608de53, and
+    // this one is the largest single move the digest has taken, because it is
+    // two edits and one of them touches fifty-five records.
+    //
+    // 5. **`cell.json`: all seventy cells are flagged `"v1": true`.** Twelve
+    //    were, and `material-economy` gave every *form* a material yield — so
+    //    ten of the fourteen forms were priced into the god's verbs and had no
+    //    producer anywhere a run could reach. Vim yields `essence` and Corpus
+    //    yields `labor`; both sat outside the twelve. Measured over 600
+    //    reference ticks on `w247/material-economy-build`, production of both
+    //    was **exactly zero**, and the surgical verb that opens a cell —
+    //    `issue-dispensation` — is itself priced in `essence`, so the position
+    //    could not be escaped from inside.
+    // 6. **One `autonomy-weight.json` scalar**, `labor-share-of-month`, the
+    //    populace faucet for `labor`. It is a share of a laborer's month rather
+    //    than a magical yield because `labor`'s sink is the *automatic per-tick*
+    //    construction hire, and a faucet that fires when a mage chooses to spend
+    //    a month cannot feed a drain that fires every tick — see
+    //    `materials.ts`'s `REQUIRED_PRODUCTION_WEIGHTS`.
+    //
+    // Recomputed with `node packages/content/bin/validate-content.mjs` on the
+    // merged content rather than pasted out of a failure message.
+    // 8e55225f332353298cb465c9bfceb4ba / 09358b8aea5445bd93e564264608de53 ->
+    // RECOMPUTED BELOW, on the merge of `w247/material-economy-build` into
+    // `integration/all-branches`, 2026-08-16. The thirteenth union in this list
+    // and the plainest: `8e55225f` is a digest over a grid of 301 nodes with
+    // twelve cells flagged `v1` and three-kind `yieldWeights`; `09358b8a` is a
+    // digest over one with 300 nodes, seventy cells flagged and seven-kind
+    // weights, five `materialCost` rows and four new `autonomy-weight` scalars.
+    // Neither preimage contains the other's edits, so neither literal can be a
+    // digest over the union — as has now been true of every single entry above.
+    //
+    // MEASURED with `node packages/content/bin/validate-content.mjs` on the
+    // merged tree, then confirmed by this test, which is the two independent
+    // paths the paragraphs above insist on.
+    expect(registry.contentRevision).toBe('db63c9365903af34057e4a852401aab9');
   });
 
   it('is stable across loads of identical content', () => {

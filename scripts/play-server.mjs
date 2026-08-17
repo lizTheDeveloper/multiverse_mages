@@ -244,6 +244,12 @@ function encodeFrame(session) {
   return {
     obs,
     sat,
+    // `material-stock`'s seven kinds, which §4.1 sums three of into
+    // `resources[39]` and has no slot at all for the other four. Same field,
+    // same source and same reasoning as `record-session.mjs`: the §4.4 player
+    // projection, the stocks only, nothing that is already in `obs`. Held
+    // equivalent to the recorder **by hand** — see the longer note there.
+    stocks: { ...session.playerState().resources.stocks },
     mask: [...mask],
     candidates: Object.fromEntries(
       [...candidates].map(([action, list]) => [action, [...(list ?? [])]]),

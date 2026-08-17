@@ -114,13 +114,15 @@ export interface ApotheosisFacts {
  * How many permitted cells stand at their floor: deepest node held by a living
  * mage, and surviving in at least `copies` instances.
  *
- * A count, not a boolean, and that is the whole of Path A's fix. The shipped v1
- * rectangle is twelve cells holding fifty-one nodes, and a universe the god
- * never touches learns **all fifty-one** — so "some cell is at its floor" is not
- * an achievement, it is where a starting position converges on its own. Counting
- * turns the same predicate into a question about how much grid the god *opened*:
- * a thirteenth mastered cell exists only if a technique or form was permitted
- * that the universe did not begin with.
+ * A count rather than a boolean, and that is the whole of Path A's fix. The
+ * shipped v1 rectangle was twelve cells holding fifty-one nodes when this was
+ * written, and is all seventy holding 300 since `material-economy`; a universe
+ * the god never touches learns **every node the rectangle contains** — so "some
+ * cell is at its floor" is not an achievement, it is what a starting position
+ * converges to on its own. Counting instead of testing turns the same predicate into a
+ * question about how much of the grid the god *opened*, because the thirteenth
+ * mastered cell can only exist if a technique or a form was permitted that the
+ * universe did not begin with.
  *
  * Iterating the deepest-by-cell map rather than the held set is deliberate. The
  * quantity is "cells at their floor"; over the held set a mage holding two
@@ -233,12 +235,14 @@ export interface EraBoundaryFacts {
  * whichever is larger.
  *
  * **A flat cap over a quantity that scales measures scale, not custodianship.**
- * Measured on this build: a universe the god never touches holds 51 nodes and
- * loses zero per era; one that permitted most of the grid holds 220 and loses
- * seven. An absolute allowance of two disqualified the civilization doing
- * something and waved through the one in stasis — the inverted sign this change
- * corrects, and no setting of the authored constant corrects it, because the
- * number that should scale with the canon was not a function of it.
+ * Measured when the enabled subset was twelve cells: a universe the god never
+ * touches held 51 nodes and lost zero per era, while one that permitted most of
+ * the grid held 220 and lost seven — so an absolute allowance of two
+ * disqualified the civilization
+ * that was actually doing something and waved through the one in stasis. That
+ * is the inverted sign this change exists to correct, and no setting of the
+ * authored constant corrects it, because the number that should move with the
+ * canon's size was not a function of it.
  *
  * `ascension-loss-max` stays as the floor, so a small canon is not handed a free
  * loss by the fraction rounding to zero and the authored constant keeps meaning
@@ -262,11 +266,12 @@ export function lossAllowance(nodesKnown: number, constants: GodConstants): numb
  * second summit is *"a civilization that has held its knowledge intact across
  * enough eras"*, and holding fifty-one nodes nobody reads is not that.
  *
- * So a passing boundary now also needs a canon of a stated size across a stated
- * number of cells. Both anchor to the *passive baseline* rather than any
- * strategy's score: the starting rectangle is twelve cells holding fifty-one
- * nodes and an unattended universe learns every one, so those two numbers are
- * the game's autonomous ceiling and the constants are multiples of them.
+ * So a passing boundary now also requires a canon of a stated size, spread over
+ * a stated number of cells. Both are anchored to the *passive baseline* rather
+ * than to any strategy's score — the starting rectangle was twelve cells holding
+ * fifty-one nodes and an unattended universe learns every one of them, so those
+ * two numbers are the game's own autonomous ceiling and the constants are
+ * multiples of them.
  *
  * The two breadth conjuncts are not redundant with each other and the tension
  * between them is the point: node count alone is satisfied by driving a few

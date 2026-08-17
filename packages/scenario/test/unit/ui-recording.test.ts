@@ -70,6 +70,15 @@ afterAll(() => {
 interface Frame {
   readonly obs: readonly number[];
   readonly sat: readonly number[];
+  /**
+   * `material-stock`'s seven kinds, which `obs` structurally cannot carry — it
+   * sums three of them into one slot and has no slot at all for the other four.
+   *
+   * Optional here on purpose: the assertion that it is *present* is one of the
+   * things this file checks, and a required field would make that check a
+   * compile-time tautology instead of a test.
+   */
+  readonly stocks?: Readonly<Record<string, number>>;
   readonly mask: readonly number[];
   readonly candidates: Readonly<Record<string, readonly number[]>>;
   readonly status: string;
@@ -165,6 +174,42 @@ describe('the recording `npm run ui:record` produces', () => {
       // "128+", which is worse than not labelling it.
       for (const slot of frame.sat) expect(slot).toBeLessThan(slots);
     }
+  });
+
+  it('carries every material stock on every frame, exactly agreeing with the summed slot', () => {
+    // `material-economy` task 5.4. The observation sums three of the seven kinds
+    // into `resources[39]` and has no slot at all for the other four, so a page
+    // that wants to tell a famine from a parchment shortage — or to draw
+    // `insight` and `passage` at all — reads this sidecar. A frame that lost it
+    // draws an empty box that reads as "nothing to report".
+    const resources = recording.layout.find((block) => block.name === 'resources');
+    expect(resources).toBeDefined();
+    const kinds = ['food', 'stone', 'vellum', 'labor', 'essence', 'insight', 'passage'];
+
+    let anyStocked = false;
+    for (const [i, frame] of recording.frames.entries()) {
+      const stocks = frame.stocks;
+      expect(stocks, `frame ${String(i)} has no stocks sidecar`).toBeDefined();
+      for (const kind of kinds) {
+        expect(typeof stocks?.[kind], `frame ${String(i)} is missing ${kind}`).toBe('number');
+      }
+      // Exact, not within an epsilon. Both sides are fp integers over a
+      // power-of-two divisor, so a tolerance would hide a real one-kind drift.
+      // `materials` is `food + stone + vellum` and stays so — the four kinds
+      // `material-economy` added are deliberately outside the sum, because the
+      // observation's one slot must keep carrying the quantity it documents.
+      const summed = (stocks?.food ?? 0) + (stocks?.stone ?? 0) + (stocks?.vellum ?? 0);
+      expect(frame.obs[(resources?.offset ?? 0) + 3], `frame ${String(i)} disagrees`).toBe(summed);
+      if (summed > 0) anyStocked = true;
+    }
+
+    // The positive control. Every assertion above is satisfied by a recording in
+    // which all seven kinds are zero on every frame — `0 === 0 + 0 + 0` — which
+    // is exactly the "confident zero from a broken instrument" this campaign has
+    // shipped five times. The reference universe holds materials, so at least
+    // one frame must be non-zero for the agreement above to have compared
+    // anything.
+    expect(anyStocked).toBe(true);
   });
 
   it('ran the whole episode it asked for, so the prototypes are not drawn against a collapse', () => {

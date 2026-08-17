@@ -386,10 +386,19 @@ describe('the two checks no longer share one exclusion list', () => {
   });
 
   it('leaves the coverage list standing, because its question is the other one', () => {
-    // `lifespan` and `fertility` have a node-driven consumer *and* no v1 node
-    // authoring them. One list cannot hold both answers, and this is the pair
-    // of assertions that says so out loud.
-    expect([...PRIMITIVE_COVERAGE_EXCLUSIONS]).toEqual(['fertility', 'lifespan']);
+    // `lifespan` and `fertility` had a node-driven consumer *and* no v1 node
+    // authoring them, and one list cannot hold both answers — which is what this
+    // pair of assertions says out loud.
+    //
+    // **Both lists are empty now, and they emptied for different reasons, which
+    // is the point rather than a coincidence that erases it.** The consumption
+    // list emptied when the last parked primitive got a consumer; the coverage
+    // list emptied when `material-economy` enabled all seventy cells, so the
+    // seventeen `lifespan` nodes and five `fertility` nodes became v1 content.
+    // The assertion is kept exact rather than deleted: the day either list gains
+    // an entry, it must gain it for its own reason, and a test that stopped
+    // looking would let one borrow the other's.
+    expect([...PRIMITIVE_COVERAGE_EXCLUSIONS]).toEqual([]);
     const { recorder, registry } = fullyConsumed();
     expect(checkPrimitiveConsumption(registry, recorder).consumed.map((e) => e.primitiveId)).toContain(
       'lifespan',

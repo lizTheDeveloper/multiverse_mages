@@ -144,6 +144,45 @@ const FP_ONE = 1024;
 const STARTING_MATERIALS = 1000 * FP_ONE;
 
 /**
+ * The founding endowment of the four kinds `material-economy` added, `fp`.
+ *
+ * Three of them are **a multiple of what the verb they unblock costs in
+ * `god-cost.json`**, not a round number: `issue-dispensation` costs `essence`
+ * 4,096, so eight dispensations is 32,768. Written as the multiplication so
+ * that a retune of the price makes the arithmetic here visibly stale rather
+ * than quietly wrong. Eight uses for the two kinds the v1 opening square cannot
+ * produce at all, and two portals for `passage`, which it can.
+ *
+ * **`FOUNDING_LABOR` is sized against two claimants, not one.** `labor` is
+ * spent both by the construction hire, every tick and automatically, and by
+ * `fund-university`, which the god chooses. Pricing the verb naively made those
+ * two race and the sink won: action 11 came back legal on 8 ticks of 585. The
+ * fix is a reserve floor under the hire — `HiredLabourWeights.reserve`, equal to
+ * the verb's own declared price — so the automatic drain stops at what the
+ * discretionary verb costs instead of at zero.
+ *
+ * 32,768 at 256 per hired month is about 128 person-months, a few ticks of a
+ * doubled crew, of which the last 4,096 is reserved for one funding. Large
+ * enough to be visible, small enough that the `build-rate` causal chain stays
+ * measurable under it.
+ *
+ * **And it is a runway with no faucet, which the floor cannot change.** Measured
+ * 2026-08-16 on this branch: `labor` production over 600 reference ticks is
+ * exactly **zero**, because Corpus is the only form that yields it and Corpus is
+ * outside the v1 opening square (`intellego · perdo · rego` × `mentem · terram ·
+ * limen · nomen`). A floor redistributes a finite endowment between two
+ * claimants; it cannot manufacture income. Opening the body-magic column is what
+ * makes `labor` a renewable resource, and until a run does that, action 11's
+ * availability is bounded by this constant and not by the floor.
+ *
+ * **Untuned**, and a starting position rather than a rule.
+ */
+const FOUNDING_LABOR = 8 * 4096;
+const FOUNDING_ESSENCE = 8 * 4096;
+const FOUNDING_INSIGHT = 8 * 2048;
+const FOUNDING_PASSAGE = 2 * 16384;
+
+/**
  * Student seats in the founding academy.
  *
  * Invented: `contracts.md` §1.4 gives a university a `capacity` and no content
@@ -787,14 +826,58 @@ export function buildReferenceState(input: {
     ascended: 0,
   });
 
-  // The three stocks, on their own component since revision 5. Written here
-  // rather than left for the loop to materialize, because a founding endowment
-  // is a starting position and a starting position should be visible in the
-  // scenario that declares it, not inferred from the absence of a row.
+  // The stocks, on their own component since revision 5. Written here rather
+  // than left for the loop to materialize, because a founding endowment is a
+  // starting position and a starting position should be visible in the scenario
+  // that declares it, not inferred from the absence of a row.
+  //
+  // ## The four new kinds start endowed, and this reverses the previous answer
+  //
+  // They started at **zero**, on an argument that was correct at the time and
+  // is now false in its second half: *"this universe has never cast, so nothing
+  // has yielded it `labor`, `essence`, `insight` or `passage`… zero is also the
+  // behaviour-preserving choice while the sinks are unbuilt."* That comment
+  // ends by asking whoever builds the sinks to revisit it. This is that.
+  //
+  // **Measured, 2026-08-16, on `w247/material-economy-build`, 240 ticks of this
+  // universe at `LONG_RUN_SEED`.** With the four kinds at zero and
+  // `god-cost.json` pricing five verbs in materials:
+  //
+  // | kind | reached in the reference run | verb it gates |
+  // | --- | --- | --- |
+  // | `passage` | yes — positive at tick 2, 61,344 by tick 240 | `open-portal` |
+  // | `insight` | **no** — 0 for all 240 ticks | `bless-mage` |
+  // | `labor` | **no**, and structurally | the construction hire |
+  // | `essence` | **no**, and structurally | `issue-dispensation` |
+  //
+  // `insight` is producible inside the opening square — Mentem is one of its
+  // four forms — and simply was not produced: no mage in this roster chose the
+  // Mentem node over the Limen one in twenty world years. `labor` and `essence`
+  // are worse than unlucky. Corpus and Vim are **outside** the twelve v1 cells,
+  // so producing either takes a `permit-form` first, and until then
+  // `issue-dispensation` is correctly masked and permanently unavailable and
+  // no site can hire a single extra month. That is *"a mask that is correct and
+  // a game that is stuck"* — the game cannot start, rather than the god cannot
+  // afford.
+  //
+  // So the founding endowment. Sized in multiples of what the verbs it unblocks
+  // actually cost, at **eight uses** for the three that v1 cannot replenish and
+  // **two portals** for the one it can — a runway, not an income. It runs out,
+  // and when it does the god must open the body-magic or spirit-magic column to
+  // keep funding universities and issuing dispensations. That is a real
+  // decision arriving on a schedule rather than a resource nobody can reach.
+  //
+  // Every figure is **untuned** and the whole endowment is a starting-position
+  // decision, not a rule: `docs/design/release-plan.md` forbids any balance
+  // claim about it before 0.5.0.
   attachRecord(state, MATERIAL_STOCK, universe, {
     food: STARTING_MATERIALS,
     stone: STARTING_MATERIALS,
     vellum: STARTING_MATERIALS,
+    labor: FOUNDING_LABOR,
+    essence: FOUNDING_ESSENCE,
+    insight: FOUNDING_INSIGHT,
+    passage: FOUNDING_PASSAGE,
   });
 
   // At least one, always. A universe with no academy can neither teach nor

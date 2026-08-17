@@ -79,7 +79,7 @@ const KNOWN_SHADOWED: Readonly<Record<string, string>> = Object.freeze({
   //
   // What it said: *"encourageResearch sits third, behind assignRole, which is
   // legal on 599 of 600 ticks… the portal is reachable on 384 of 600 ticks now,
-  // and on the other 216 assignRole takes the slot instead."* Nothing on this
+  // and on the other 216 assignRole takes the slot instead."* Nothing on that
   // branch touched `portal-rush`, the mask or the preference order. What moved
   // is the tick arithmetic underneath it — a renumbered node graph and a
   // `seek-teaching` that the shelf can now satisfy — so `encourageResearch`
@@ -90,13 +90,31 @@ const KNOWN_SHADOWED: Readonly<Record<string, string>> = Object.freeze({
   // carries: portal-rush's preference order puts its tempo move behind a verb
   // that is legal almost every tick, and whether that shadows anything depends
   // on numbers no one is holding still.
-  'worship-maximizer/11':
-    'fundUniversity is a signature action and is never submitted. Both of its entries sit behind ' +
-    'blessMage: the first inside the `worship < favor` branch and the second after it, and ' +
-    'blessMage is legal on 598 of 600 ticks. So the strategy whose thesis is that worship is ' +
-    'bought with "blessings and buildings" buys only blessings, and the buildings half of its ' +
-    'hypothesis has never been measured. This is exactly permissive-breadth\'s incident ' +
-    '(w73/pool-build-order, PR #70) in a second strategy.',
+  //
+  // `worship-maximizer/11` was here too, and is **gone on
+  // `w247/material-economy-build`** — the second entry this list has lost, on
+  // the merge that brought the two removals together. Its finding read:
+  // *"fundUniversity is a signature action and is never submitted. Both of its
+  // entries sit behind blessMage… and blessMage is legal on 598 of 600 ticks.
+  // So the strategy whose thesis is that worship is bought with 'blessings and
+  // buildings' buys only blessings, and the buildings half of its hypothesis
+  // has never been measured."*
+  //
+  // `material-economy` prices `blessMage` in `insight`, and the reference
+  // universe's founding endowment is eight blessings' worth. So `blessMage`
+  // stops being legal on 598 of 600 ticks, the entry behind it is finally
+  // reached, and the buildings half of the hypothesis gets measured for the
+  // first time.
+  //
+  // Worth naming because it is a general property rather than luck. A verb that
+  // shadows another is one that is *always* legal, and a second currency is the
+  // cheapest thing there is for making a verb sometimes illegal.
+  //
+  // **Both removals are unmeasured on this tree**, and that is stated rather
+  // than hidden: each was measured on its own branch, against a build the other
+  // branch's change was not in. This file's own check is the instrument — it
+  // fails on a shadowed verb that is not listed *and* on a listed verb that is
+  // no longer shadowed — so a wrong guess here is loud rather than silent.
   // The alliance pair, and the four entries below are one finding written four
   // times because `allianceGroundwork` is one list shared by both arms.
   //

@@ -4,7 +4,15 @@
     "name": "Animal",
     "gloss": "beasts and their parts",
     "bit": 0,
-    "yieldWeights": { "food": 512, "stone": 0, "vellum": 512 },
+    "yieldWeights": {
+      "food": 512,
+      "stone": 0,
+      "vellum": 512,
+      "labor": 0,
+      "essence": 0,
+      "insight": 0,
+      "passage": 0
+    },
     "tuningStatus": "untuned"
   },
   {
@@ -12,7 +20,15 @@
     "name": "Aquam",
     "gloss": "water and liquids",
     "bit": 1,
-    "yieldWeights": { "food": 768, "stone": 256, "vellum": 0 },
+    "yieldWeights": {
+      "food": 768,
+      "stone": 256,
+      "vellum": 0,
+      "labor": 0,
+      "essence": 0,
+      "insight": 0,
+      "passage": 0
+    },
     "tuningStatus": "untuned"
   },
   {
@@ -20,15 +36,31 @@
     "name": "Auram",
     "gloss": "air and weather",
     "bit": 2,
-    "yieldWeights": { "food": 256, "stone": 768, "vellum": 0 },
+    "yieldWeights": {
+      "food": 256,
+      "stone": 768,
+      "vellum": 0,
+      "labor": 0,
+      "essence": 0,
+      "insight": 0,
+      "passage": 0
+    },
     "tuningStatus": "untuned"
   },
   {
     "id": "corpus",
     "name": "Corpus",
-    "gloss": "body",
+    "gloss": "body — and the labor a body is, once it is put to work",
     "bit": 3,
-    "yieldWeights": { "food": 0, "stone": 0, "vellum": 0 },
+    "yieldWeights": {
+      "food": 0,
+      "stone": 0,
+      "vellum": 0,
+      "labor": 1024,
+      "essence": 0,
+      "insight": 0,
+      "passage": 0
+    },
     "tuningStatus": "untuned"
   },
   {
@@ -36,7 +68,15 @@
     "name": "Herbam",
     "gloss": "plant and wood",
     "bit": 4,
-    "yieldWeights": { "food": 512, "stone": 0, "vellum": 512 },
+    "yieldWeights": {
+      "food": 512,
+      "stone": 0,
+      "vellum": 512,
+      "labor": 0,
+      "essence": 0,
+      "insight": 0,
+      "passage": 0
+    },
     "tuningStatus": "untuned"
   },
   {
@@ -44,23 +84,47 @@
     "name": "Ignem",
     "gloss": "fire and heat",
     "bit": 5,
-    "yieldWeights": { "food": 0, "stone": 1024, "vellum": 0 },
+    "yieldWeights": {
+      "food": 0,
+      "stone": 1024,
+      "vellum": 0,
+      "labor": 0,
+      "essence": 0,
+      "insight": 0,
+      "passage": 0
+    },
     "tuningStatus": "untuned"
   },
   {
     "id": "imaginem",
     "name": "Imaginem",
-    "gloss": "image and the senses",
+    "gloss": "image and the senses; what is noticed, kept as insight",
     "bit": 6,
-    "yieldWeights": { "food": 0, "stone": 0, "vellum": 0 },
+    "yieldWeights": {
+      "food": 0,
+      "stone": 0,
+      "vellum": 0,
+      "labor": 0,
+      "essence": 0,
+      "insight": 1024,
+      "passage": 0
+    },
     "tuningStatus": "untuned"
   },
   {
     "id": "mentem",
     "name": "Mentem",
-    "gloss": "mind",
+    "gloss": "mind, and the insight a mind holds and can be taught out of",
     "bit": 7,
-    "yieldWeights": { "food": 0, "stone": 0, "vellum": 0 },
+    "yieldWeights": {
+      "food": 0,
+      "stone": 0,
+      "vellum": 0,
+      "labor": 0,
+      "essence": 0,
+      "insight": 1024,
+      "passage": 0
+    },
     "tuningStatus": "untuned"
   },
   {
@@ -68,39 +132,79 @@
     "name": "Terram",
     "gloss": "earth and stone",
     "bit": 8,
-    "yieldWeights": { "food": 0, "stone": 1024, "vellum": 0 },
+    "yieldWeights": {
+      "food": 0,
+      "stone": 1024,
+      "vellum": 0,
+      "labor": 0,
+      "essence": 0,
+      "insight": 0,
+      "passage": 0
+    },
     "tuningStatus": "untuned"
   },
   {
     "id": "vim",
     "name": "Vim",
-    "gloss": "raw magic",
+    "gloss": "raw magic; the essence itself, before it is made into anything",
     "bit": 9,
-    "yieldWeights": { "food": 0, "stone": 0, "vellum": 0 },
+    "yieldWeights": {
+      "food": 0,
+      "stone": 0,
+      "vellum": 0,
+      "labor": 0,
+      "essence": 1024,
+      "insight": 0,
+      "passage": 0
+    },
     "tuningStatus": "untuned"
   },
   {
     "id": "umbra",
     "name": "Umbra",
-    "gloss": "shadow",
+    "gloss": "shadow: not the thing but the room's response to it, and a way past",
     "bit": 10,
-    "yieldWeights": { "food": 0, "stone": 0, "vellum": 0 },
+    "yieldWeights": {
+      "food": 0,
+      "stone": 0,
+      "vellum": 0,
+      "labor": 0,
+      "essence": 0,
+      "insight": 0,
+      "passage": 1024
+    },
     "tuningStatus": "untuned"
   },
   {
     "id": "fatum",
     "name": "Fatum",
-    "gloss": "fate",
+    "gloss": "fate; the passage a life is already taking",
     "bit": 11,
-    "yieldWeights": { "food": 0, "stone": 0, "vellum": 0 },
+    "yieldWeights": {
+      "food": 0,
+      "stone": 0,
+      "vellum": 0,
+      "labor": 0,
+      "essence": 0,
+      "insight": 0,
+      "passage": 1024
+    },
     "tuningStatus": "untuned"
   },
   {
     "id": "limen",
     "name": "Limen",
-    "gloss": "threshold and boundary",
+    "gloss": "threshold and boundary — passage made into a place",
     "bit": 12,
-    "yieldWeights": { "food": 0, "stone": 0, "vellum": 0 },
+    "yieldWeights": {
+      "food": 0,
+      "stone": 0,
+      "vellum": 0,
+      "labor": 0,
+      "essence": 0,
+      "insight": 0,
+      "passage": 1024
+    },
     "tuningStatus": "untuned"
   },
   {
@@ -108,7 +212,15 @@
     "name": "Nomen",
     "gloss": "true name",
     "bit": 13,
-    "yieldWeights": { "food": 0, "stone": 0, "vellum": 1024 },
+    "yieldWeights": {
+      "food": 0,
+      "stone": 0,
+      "vellum": 1024,
+      "labor": 0,
+      "essence": 0,
+      "insight": 0,
+      "passage": 0
+    },
     "tuningStatus": "untuned"
   }
 ]

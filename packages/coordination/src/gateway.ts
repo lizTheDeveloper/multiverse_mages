@@ -1689,8 +1689,11 @@ export class CoordinatingKnowledgeGateway implements KnowledgeGateway {
    * One `permits()` call per populated cell for the whole phase, rather than one
    * per node per mage: the ruleset is fixed for a gateway's life — that is what
    * makes a gateway a view of one phase — so the answer cannot change underneath
-   * this. A universe running the v1 rectangle turns 300 nodes into 51 here, once,
-   * and every mage's frontier walks the 51.
+   * this. A universe running the historic twelve-cell v1 rectangle turned 300
+   * nodes into 51 here, once, and every mage's frontier walked the 51. All
+   * seventy cells are enabled now, so a universe that has forbidden nothing walks
+   * all 300 — which is the cost this method was always designed to bound and is
+   * now actually paying. A god who forbids cells still shrinks it.
    *
    * Ascending id rather than cell-major, which is the order the cell index hands
    * them over in. Both are total orders over the content set and neither is

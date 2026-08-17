@@ -17,6 +17,39 @@ wrong and the merged tree is the first holding both. **Five traits added, all `n
 below is otherwise as measured at `be446a6`; where a row cites a line number, treat a mismatch as
 the cheapest available signal that it has rotted.
 
+**Amended 2026-08-16** on `w247/material-economy-build`, for `material-economy`'s world-schema
+revision 7: `material-stock` went from three fields to seven, so the totals below move by four and
+the `material-stock` section gains four rows. Nothing else was re-measured — every other row still
+carries its 2026-08-14 reading, and `observation.ts` is untouched, so
+`OBSERVATION_LAYOUT_DIGEST` is unchanged.
+
+**Amended again 2026-08-16**, same branch, for `material-economy` task 5.1 — which the amendment
+above said this table should be re-read after, and this is that re-reading. `PlayerResources` now
+carries a named per-kind block (`resources.stocks`, a `MaterialStockRecord`), so **all seven
+material kinds are OBSERVABLE**, and `not-yet-decided` falls 74 → 70.
+
+Two things about that flip are worth stating so they are not mis-read later:
+
+- **`food`, `stone` and `vellum` moved as well, from AGGREGATED**, which is more than task 5.3
+  asked for and is required by consistency rather than chosen. AGGREGATED is defined below as
+  *"reaches the player **only** inside an aggregate"*; once all seven are in the projection under
+  their own names, that word is false for the three exactly as it is for the four.
+- **Nothing an agent sees changed.** `resources[39]` still carries `food + stone + vellum` and
+  nothing else, `OBSERVATION_SIZE` is still 400, and the digest is still `46182c35d829b205`. A
+  *policy* still cannot tell a food shortage from a vellum one and cannot see the other four at
+  all; a *client* can. OBSERVABLE here is the **first** stage of
+  `observation-entitlement.md`'s reducer — *projected into `PlayerState`* — and reaching a slot is
+  the second.
+
+**Recounted 2026-08-16 on the merge of `w247/material-economy-build` into
+`integration/all-branches`.** Neither amendment above is a count of this tree: the 2026-08-14
+reading did not have `material-stock`'s four new columns in it, and `material-economy`'s did not
+have `bar-phase`, `mid-raid-change`, `territory-holding`, `university-site` or `knowledge-fidelity`.
+The totals in the table below are read from `TRAIT_CLASSIFICATION` and `WORLD_COMPONENTS` on the
+merged tree, and `entitlement.test.ts` asserts them, so a stale number here is a red test rather
+than a quiet lie. `OBSERVATION_LAYOUT_DIGEST` is still `46182c35d829b205` and `OBSERVATION_SIZE`
+still 400 — nothing in the merge touched `observation.ts`.
+
 This is step 0 of `docs/design/observation-entitlement.md`: every `(component, field)` trait in
 the world, classified against what the encoder in `packages/agent-api/src/observation.ts`
 actually writes. **Every row was read off the encoder, not inferred from the field name.**
@@ -29,12 +62,12 @@ above, re-run the tally before believing a row.
 
 | | |
 |---|---|
-| Components | 21 world + 3 engagement = 24 |
-| **Total `(component, field)` traits** | **113** |
-| OBSERVABLE | 12 |
-| AGGREGATED | 19 |
-| WITHHELD | 81 |
+| Components | 25 world + 3 engagement = 28 |
+| **Total `(component, field)` traits** | **124** |
+| OBSERVABLE | 19 |
+| AGGREGATED | 16 |
 | AMBIGUOUS | 1 |
+| WITHHELD | 88 |
 | Observation slots | 400 |
 | `OBSERVATION_LAYOUT_DIGEST` | `46182c35d829b205` |
 
@@ -42,7 +75,7 @@ WITHHELD, broken down by the reason given:
 
 | Reason | Rows |
 |---|---|
-| not-yet-decided | 75 |
+| not-yet-decided | 82 |
 | internal bookkeeping | 6 |
 | derived from something already observable | 0 |
 | hidden-from-opponent | 0 |
@@ -53,7 +86,7 @@ anything to be hidden from. The category becomes live when `pvp-server` ships, a
 marked `not-yet-decided` is a row that will have to be re-read then.
 
 `not-yet-decided` is used honestly and it dominates. It is not a placeholder for "we thought about
-it": 75 of 113 traits have no artifact anywhere in the repository that says whether a
+it": 82 of 124 traits have no artifact anywhere in the repository that says whether a
 player should see them. That number is the point of the exercise.
 
 ## Slots per block
@@ -250,13 +283,17 @@ player should see them. That number is the point of the exercise.
 | `nodesLost` | `u16` | WITHHELD | not-yet-decided |  |
 | `passed` | `u8` | WITHHELD | not-yet-decided |  |
 
-### `material-stock` (3 traits)
+### `material-stock` (7 traits)
 
 | Field | Type | Class | Slot / aggregate / reason | Note |
 |---|---|---|---|---|
-| `food` | `i32` | AGGREGATED | `resources[39]` | A **sum across the three fields of one row**, not a histogram over entities. The encoder records the consequence: an agent cannot tell a food shortage from a vellum one. |
-| `stone` | `i32` | AGGREGATED | `resources[39]` | Same sum. |
-| `vellum` | `i32` | AGGREGATED | `resources[39]` | Same sum. |
+| `food` | `i32` | OBSERVABLE | `resources.stocks.food` | Projected under its own name since task 5.1. Also **summed** into `resources[39]` with `stone` and `vellum`, which is what an *agent* gets: a policy still cannot tell a food shortage from a vellum one. |
+| `stone` | `i32` | OBSERVABLE | `resources.stocks.stone` | Same; also in the `resources[39]` sum. |
+| `vellum` | `i32` | OBSERVABLE | `resources.stocks.vellum` | Same; also in the `resources[39]` sum. |
+| `labor` | `i32` | OBSERVABLE | `resources.stocks.labor` | Added at revision 7, projected at task 5.1. **Reaches no observation slot** — `resources[39]` carries the original three only, because §4.1's block is fixed at five and a resize invalidates every trained agent. A client sees it; a policy does not. |
+| `essence` | `i32` | OBSERVABLE | `resources.stocks.essence` | Same. |
+| `insight` | `i32` | OBSERVABLE | `resources.stocks.insight` | Same. |
+| `passage` | `i32` | OBSERVABLE | `resources.stocks.passage` | Same. |
 
 ### `grant-budget` (5 traits)
 
@@ -384,21 +421,21 @@ forces — a correction of the doc, not a change of design.
 ## Is the granularity right?
 
 The design set the test in advance: *"thirty traits and this design is comfortable, a hundred and
-fifty and it needs coarsening before a line is written."* The answer is **108** — nearer the
+fifty and it needs coarsening before a line is written."* The answer is **112** — nearer the
 coarsening end than the comfortable one, and the design had already coarsened for it.
 
 Steps 1–3 are unaffected. `unclassifiedTraits()` is a one-time registry walk producing a table a human
-reads once; 108 rows is a long document, not an unworkable one, and this file is the proof that it can
+reads once; 112 rows is a long document, not an unworkable one, and this file is the proof that it can
 be produced and read.
 
 **Step 4 is where the number bites**, and the design already says so: at field granularity it is
-108 × twelve strategies ≈ 1296 `because` strings, nearly all of them *"static preference list,
+112 × twelve strategies ≈ 1344 `because` strings, nearly all of them *"static preference list,
 reads nothing"* — the hand-maintained checklist reimplemented in TypeScript, failing the same way.
 At block granularity it is nine blocks × twelve strategies = 108 decisions a human reviews. **Take step 4
 at block granularity.** That was the design's call before the count came in; the count confirms it.
 
 One further coarsening the count argues for, which the design did not anticipate: `god-state` (15
 traits, all withheld), `goal-commitment` (4), `effort-progress` (5) and `grant-budget` (5) are 29
-traits — **27% of the registry** — that are derived bookkeeping over things already in the world.
+traits — **26% of the registry** — that are derived bookkeeping over things already in the world.
 Should the gates ever need to be shorter, the honest coarsening is per *component* for those four,
 not per field. It is not needed for steps 1–3 and is not being done now.

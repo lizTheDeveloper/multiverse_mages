@@ -147,7 +147,13 @@ import { TIME_MODE } from '@mm/sim-core';
 import type { CellResolver, ConsumptionRecorder, EffectSourceInstance } from '@mm/rules-magic';
 import { gatherEffects } from '@mm/rules-magic';
 import type { MaterialAmounts, MaterialKind } from '@mm/rules-world';
-import { MATERIAL_KINDS, formRoutesToMaterials, routeYieldByForm, zeroAmounts } from '@mm/rules-world';
+import {
+  MATERIAL_KINDS,
+  NO_YIELD_BONUSES,
+  formRoutesToMaterials,
+  routeYieldByForm,
+  zeroAmounts,
+} from '@mm/rules-world';
 import type { Handle, Ruleset } from '@mm/state';
 import { KNOWLEDGE_INSTANCE, collectRecords } from '@mm/state';
 import { GOAL, readCommitment } from '@mm/rules-world';
@@ -312,7 +318,7 @@ export interface UniverseEconomyBonuses {
 
 /** Nothing castable, or nothing permitted. */
 export const NO_ECONOMY_BONUSES: UniverseEconomyBonuses = {
-  resourceYield: { food: [], stone: [], vellum: [] },
+  resourceYield: NO_YIELD_BONUSES,
   buildRate: [],
   contributingNodes: 0,
   practisedInstances: 0,
@@ -384,7 +390,9 @@ export function universeEconomyBonuses(
     cellOf: (nodeId: ContentId) => deps.cells.cellOf(nodeId),
   };
 
-  const resourceYield: Record<MaterialKind, Fixed[]> = { food: [], stone: [], vellum: [] };
+  const resourceYield = Object.fromEntries(
+    MATERIAL_KINDS.map((kind) => [kind, [] as Fixed[]]),
+  ) as Record<MaterialKind, Fixed[]>;
   const buildRate: Fixed[] = [];
   let contributingNodes = 0;
 

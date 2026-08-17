@@ -380,6 +380,41 @@ describe('time to tier, by species', () => {
     //
     // `gnome < elf` takes its place: 12/12 sets at 13.3 SE, true before this
     // branch and unmoved by it.
+    //
+    // **And it left again, for a second reason, on
+    // `w247/material-economy-build`.** Both branches removed `dwarf`
+    // independently and the reasons compose rather than compete, so both are
+    // kept above and below.
+    // `dwarf` left this list on 2026-08-16, on `w247/material-economy-build`.
+    // `dwarf.high < elf.low` was `established` in the spread file and is now
+    // `inconclusive` — strict in 1 of 4 sets, gap 1.1 SE. Measured over the six
+    // seeds here, tier 3, in ticks, against the reading immediately before
+    // `material-economy`:
+    //
+    // | species | before | now |
+    // |---|---|---|
+    // | gnome    | [24, 25] | [20, 21] |
+    // | dwarf    | [25, 30] | **[22, 66]** |   (no longer bound, see below)
+    // | human    | [28, 37] | [24, 26] |
+    // | elf      | [35, 58] | [37, 42] |
+    // | orc      | [32, 51] | **[57, 177]** |
+    // | draconic | [26, 380] | [22, 119] |
+    //
+    // Two species moved and both moved for the same reason: the shipped opening
+    // square's Mentem and Limen forms carry a `resource-yield` node for the
+    // first time, so `GOAL.applyMagic` is a live choice inside the v1
+    // rectangle and a month spent casting is a month not spent reaching tier 3.
+    // Orc pays most — it is now strictly *after* elf, which retires that claim
+    // in the other direction — and dwarf's upper endpoint widens on one seed of
+    // six, which is precisely the shape this file cannot state a rate about.
+    //
+    // Nothing was tuned to make this pass. Every species magnitude still
+    // carries `tuningStatus: "untuned"`.
+    //
+    // `dwarf` is no longer bound at all, for the reason the header already gives
+    // about `orc`: leaving the binding in place invites the next author to reach
+    // for it, and the interval it would name is one this file cannot state a
+    // rate about.
     const beforeElf = [gnome];
 
     // What separates strictly in **every one of twelve** independent seed sets,
@@ -390,9 +425,10 @@ describe('time to tier, by species', () => {
     // now that curiosity is an input to *which* node a mage reaches for and not
     // only to how fast she works on whichever one was cheapest.
     //
-    // Orc is no longer in this group. It is faster than elf on average by 26.7
-    // standard errors and its interval still overlaps elf's in one set of
-    // twelve, which is a fact this file has no way to write down.
+    // Orc is no longer in this group, and as of 2026-08-16 it is not even on
+    // the same side: elf now arrives before orc by 11.3 standard errors, so the
+    // old claim is refuted rather than merely unreproducible. Recorded in the
+    // spread file, which is the file that may state a rate.
     for (const entry of beforeElf) expect(entry.high).toBeLessThan(elf.low);
     expect(gnome.high).toBeLessThan(human.low);
 

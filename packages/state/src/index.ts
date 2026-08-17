@@ -192,6 +192,7 @@ export {
   addTerritorySiting,
   addKnowledgeFidelity,
   splitMaterialsByKind,
+  widenMaterialStock,
   loadWorldSnapshot,
   migrateWorldEnvelope,
   worldSchemaVersionOf,
