@@ -58,11 +58,13 @@ import {
   catalogFromRegistry,
   createConsumptionRecorder,
   hookFor,
+  hooksOfTradition,
   nodeEffectMagnitudes,
   registerNonNodeConsumer,
   storePolicy,
   traditionTableFrom,
 } from '@mm/rules-magic';
+import type { TraditionResolver } from '@mm/coordination';
 import type { SpeciesAffinities } from '@mm/rules-world';
 import {
   readGoalAppeal,
@@ -551,6 +553,57 @@ export function storeHookOf(registry: ContentRegistry, traditionId: ContentId): 
 }
 
 /**
+ * Every tradition the content set ships, resolved once, keyed by interned id.
+ *
+ * This is what makes god action 13 a *rule* rather than a label. Before it, the
+ * `store` and `acquire` policies were resolved once from the id the universe
+ * started with and carried on the world-step deps for the length of a run, so
+ * an action that rewrote `UNIVERSE.traditionId` changed a number nothing read:
+ * the mask offered the move, the god paid 64 favor and the upheaval landed, and
+ * the hooks in force were the ones the scenario was constructed with. The
+ * reachability instrument saw it exactly — `changeTradition` and
+ * `hooksOfTradition` had no production caller on any of 153 branches while the
+ * action *id* was reachable from three.
+ *
+ * Resolved eagerly, for every loaded tradition, because that keeps the answer a
+ * pure function of content: the map is built at the composition root, is never
+ * written to, and cannot acquire a dependency on which traditions a run happened
+ * to visit. A lazy cache would be a per-run memo whose contents differed between
+ * two runs of the same seed — the one thing `Scenario.create`'s purity rule
+ * names.
+ *
+ * {@link hooksOfTradition} rather than four {@link hookFor} calls: at home the
+ * home and host ids are the same, and asking for all four at once is the shape
+ * `rules-magic` publishes for exactly this case. `storeHook` is carried beside
+ * the two policies because a tradition change resolves **both sides** from the
+ * raw hook — `changeTradition` takes `ResolvedHook`s and derives the policies
+ * itself, so handing it a policy would mean re-deriving one from the other.
+ */
+export function traditionResolver(registry: ContentRegistry): TraditionResolver {
+  const table = traditionTableFrom(registry);
+  const resolved = new Map<number, ReturnType<TraditionResolver>>();
+  for (const entry of registry.traditions) {
+    const hooks = hooksOfTradition(entry.contentId, table);
+    resolved.set(entry.contentId, {
+      store: storePolicy(hooks.store),
+      acquire: acquirePolicy(hooks.acquire),
+      storeHook: hooks.store,
+    });
+  }
+  return (traditionId: number) => {
+    const hooks = resolved.get(traditionId);
+    if (hooks === undefined) {
+      throw new RangeError(
+        `No shipped tradition has interned id ${String(traditionId)}. A universe holding one is ` +
+          'reading a different content set than the one this scenario was built from, and ' +
+          'contracts.md §0 forbids two universes interacting across a contentRevision.',
+      );
+    }
+    return hooks;
+  };
+}
+
+/**
  * A tradition's resolved `acquire` hook — what learning costs, and what a fresh
  * instance is worth.
  *
@@ -763,6 +816,11 @@ export function worldDeps(
     casting: readCastingWeights(registry),
     store: storeHookOf(registry, traditionId),
     acquire: acquireHookOf(registry, traditionId),
+    // …and the same two, for whichever tradition the universe holds *now*.
+    // `store`/`acquire` above stay as the tick-zero answer and as the fallback
+    // for a world built without a registry; `traditions` is what makes god
+    // action 13 move the hooks. See `traditionResolver`.
+    traditions: traditionResolver(registry),
     territory: territoryExtent(registry.territories.map((entry) => entry.record)),
     // The content half of `contracts.md` §2.7's split, in interned order — a
     // code-unit sort of the ids (`intern.ts`), so the handles the world step

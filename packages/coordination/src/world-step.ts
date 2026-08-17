@@ -109,6 +109,7 @@ import {
   OCCUPATION,
   POPULACE_COHORT,
   MATERIAL_STOCK,
+  UNIVERSE,
   UNIVERSITY,
   attachRecord,
   collectRecords,
@@ -210,6 +211,7 @@ import { NO_VITALITY_BONUSES, lifespanBonusesFor, vitalityBonuses } from './know
 import type { EnvelopeResolver } from './envelopes.js';
 import type { LibraryCapital } from './capital.js';
 import { libraryCapital } from './capital.js';
+import type { ActiveHooks, TraditionResolver } from './traditions.js';
 import { EffortLedger } from './effort-store.js';
 import { cellNodeIndex } from './frontier-index.js';
 import { CoordinatingKnowledgeGateway } from './gateway.js';
@@ -223,6 +225,24 @@ import { admitStudentBodies } from './admissions.js';
 
 /** `fp(1.0)`. `buildProgress` at which a university is complete (`contracts.md` §1.4). */
 const FP_ONE = FP_UNIT;
+
+/**
+ * The hooks in force for the tradition this universe holds now.
+ *
+ * Falls back to the fixed pair on the deps when no resolver was supplied — a
+ * world built for a knowledge test, or any caller written before god action 13
+ * meant anything. That fallback is the *old* behaviour exactly, which is what a
+ * test can assert the difference against.
+ */
+function traditionHooks(
+  state: SimState,
+  universe: EntityHandle,
+  deps: WorldStepDeps,
+): ActiveHooks {
+  const resolve = deps.traditions;
+  if (resolve === undefined) return { store: deps.store, acquire: deps.acquire };
+  return resolve(componentOf(state, UNIVERSE).get(universe, 'traditionId'));
+}
 
 /**
  * What one mage contributes to her committed project in one world tick.
@@ -290,7 +310,7 @@ export interface WorldStepDeps {
    * table in `terms.ts`, read from the same file and carried the same way.
    */
   readonly goalAppeal: GoalAppealWeights;
-  /** The universe's resolved `store` hook, from its tradition. */
+  /** The universe's resolved `store` hook, from the tradition it started with. */
   readonly store: StorePolicy;
   /**
    * The universe's resolved `acquire` hook, from its tradition.
@@ -301,6 +321,24 @@ export interface WorldStepDeps {
    * is `GatewayDeps.acquire`'s to say.
    */
   readonly acquire: AcquirePolicy;
+  /**
+   * The hooks in force for whichever tradition the universe holds **now**.
+   *
+   * {@link WorldStepDeps.store} and {@link WorldStepDeps.acquire} are the
+   * tick-zero answer. They stop being the answer the moment god action 13
+   * resolves, and until this existed nothing noticed: `interventions.ts` wrote
+   * `UNIVERSE.traditionId`, charged 64 favor and ran a five-times-longer
+   * upheaval, and every hook the loop consulted was still the one the scenario
+   * was constructed with. The action space advertised a move the rules never
+   * made.
+   *
+   * So the loop reads the id out of state once per tick and asks this. It still
+   * branches on nothing — see `traditions.ts` for why the arbitration has to
+   * live at the composition root — and a caller that supplies no resolver keeps
+   * the fixed pair above, which is exactly the behaviour every world built
+   * before this had.
+   */
+  readonly traditions?: TraditionResolver | undefined;
   /**
    * The universe's **founding endowment**, summed from content by
    * `territoryExtent`.
@@ -985,13 +1023,31 @@ export interface WorldSimulation {
  */
 export function defineWorldSimulation(deps: WorldStepDeps): WorldSimulation {
   let last: WorldStepReport | undefined;
+  // Nodes a tradition change emptied, waiting for the world system to fold them
+  // into this tick's `nodesLost`. The god intervention system runs *before* the
+  // world system in the same step — see the schema below — so a count written
+  // here is always read within the same tick and taken out again, and a tick in
+  // which nothing changed tradition reads a plain zero.
+  let traditionNodesLost = 0;
   // One counter for the whole simulation, not one per tick. `primitives` is
   // explicit that the figure worth having is the *share* of rediscovery
   // evaluations the `fp(3072)` floor ate over a run, and a counter rebuilt every
   // phase reads zero forever while looking like it is measuring something.
   const clampCounter = createRediscoveryClampCounter();
   const system = worldSystem(deps, (report) => {
-    last = report;
+    // A tradition change's losses join this tick's, rather than being reported
+    // as their own kind. `change.ts` requires exactly that: *"a tradition
+    // change's losses [must be] indistinguishable from a mage's death or a
+    // burned library"*, because a distinguishable one would let
+    // `knowledgeHalfLife` treat god-caused loss as a separate category and hide
+    // how expensive the god's own switch is. Folded here, in the closure that
+    // owns the report, rather than inside the loop — the loop has no business
+    // knowing an intervention ran.
+    last =
+      traditionNodesLost === 0
+        ? report
+        : { ...report, nodesLost: report.nodesLost + traditionNodesLost };
+    traditionNodesLost = 0;
   }, clampCounter);
 
   // ---- god-agency: three systems where there was one --------------------
@@ -1018,6 +1074,13 @@ export function defineWorldSimulation(deps: WorldStepDeps): WorldSimulation {
     // two places to configure it is two places for it to disagree.
     territoryKinds: deps.territoryKinds,
     nodesLostThisTick: (worldTick) => (last?.worldTick === worldTick ? last.nodesLost : 0),
+    // The resolver reaches the god from the same place the loop gets it, so the
+    // hooks a tradition change installs and the hooks the next tick consults
+    // cannot be two different answers.
+    traditions: deps.god.traditions ?? deps.traditions,
+    onKnowledgeLost: (nodes) => {
+      traditionNodesLost += nodes;
+    },
   });
   return {
     schema: defineWorldStateSchema([god.intervention, frozenWhenTerminal(system), god.outcome]),
@@ -1079,6 +1142,12 @@ export function worldSystem(
       const siteUpkeepMultiplier = (university: Handle): Fixed =>
         kindIndex.get(siteKindOf(state, university as EntityHandle))?.libraryUpkeepMultiplier ??
         FP_ONE;
+      // The hooks in force *this tick*, from the tradition the universe holds
+      // right now rather than the one it was built with. Read once, at the top,
+      // before any phase consults a policy — a phase that re-resolved would let
+      // an action resolving mid-tick move the rules under a loop already
+      // running, which is the mutability the ruleset snapshot exists to remove.
+      const tradition: ActiveHooks = traditionHooks(state, universe, deps);
 
       const knowledge = deps.knowledgeFor(state);
       const cohorts = new CohortStore(state.entities, componentOf(state, POPULACE_COHORT));
@@ -1150,6 +1219,10 @@ export function worldSystem(
         cells: deps.cells,
         ruleset,
         siteUpkeepMultiplier,
+        // The tradition in force this tick, so an Art of Memory universe's
+        // §6a loop runs off its scholars' palaces instead of off a shelf it
+        // cannot build. See `capital.ts`.
+        store: tradition.store,
       });
       // One counter per tick, for the §7 emission. `contracts.md` §3's cap is
       // the only bound on the capital loop, so how often it binds is the
@@ -1206,8 +1279,8 @@ export function worldSystem(
           nodesByCell,
           ruleset,
           ratesOf: (mage) => ratesOf(state, mage, deps),
-          store: deps.store,
-          acquire: deps.acquire,
+          store: tradition.store,
+          acquire: tradition.acquire,
           effort: efforts,
           rng,
           materials: materialsAccess,

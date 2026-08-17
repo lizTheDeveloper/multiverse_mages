@@ -80,16 +80,17 @@ export interface StoreHook {
   readonly keepsWrittenCopies: boolean;
 }
 
-/** The `store: standard` hook: grimoires and libraries as usual. */
-export const STANDARD_STORE: StoreHook = { kind: 'standard', keepsWrittenCopies: true };
-
-/**
- * The `store: palace` hook: the Art of Memory, which writes nothing down.
- *
- * Exported from this module rather than invented by each caller so that the two
- * v1 traditions that differ on this point differ through one value.
+/*
+ * `STANDARD_STORE` and `PALACE_STORE` used to sit here, one named constant per
+ * v1 store kind, and both were unreachable from production for the whole of
+ * their lives. They could not have been otherwise: a running universe derives
+ * this two-field view from its *resolved* `store` policy — see
+ * `coordination/gateway.ts`'s `storeHookOf`, which reads
+ * `scribeAvailability(policy)` — and a caller that reached for a constant named
+ * after a kind would be branching on the kind, which is the fifth hook
+ * `vision.md` §4a caps out. They are fixtures, and they now live with the
+ * fixtures, at `test/support/store-hooks.ts`.
  */
-export const PALACE_STORE: StoreHook = { kind: 'palace', keepsWrittenCopies: false };
 
 export interface ScribingInputs {
   readonly knowledge: KnowledgeSubsystem;

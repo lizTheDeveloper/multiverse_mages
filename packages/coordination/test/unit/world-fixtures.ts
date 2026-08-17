@@ -46,6 +46,7 @@ import {
   acquirePolicy,
   catalogFromRegistry,
   hookFor,
+  hooksOfTradition,
   storePolicy,
   traditionTableFrom,
 } from '@mm/rules-magic';
@@ -58,7 +59,7 @@ import {
   territoryExtent,
   territoryYieldShares,
 } from '@mm/rules-world';
-import type { NodeFacetResolver, WorldStepDeps } from '../../src/index.js';
+import type { NodeFacetResolver, TraditionResolver, WorldStepDeps } from '../../src/index.js';
 import { nodeFacetsFrom } from '../../src/index.js';
 
 /** The shipped content, loaded once for a whole test file. */
@@ -98,6 +99,41 @@ export function shippedStorePolicy(traditionId: number): StorePolicy {
 export function shippedAcquirePolicy(traditionId: number): AcquirePolicy {
   const table = traditionTableFrom(registry());
   return acquirePolicy(hookFor('acquire', traditionId, traditionId, table));
+}
+
+/**
+ * The interned id of a shipped tradition, by its authored id.
+ *
+ * Named rather than positional, for `traditionIdNamed`'s reason: content ids are
+ * interned and first is not file order, so a test that wants the Art of Memory
+ * specifically has to ask for it.
+ */
+export function traditionNamed(name: string): number {
+  for (const entry of registry().traditions) {
+    if (entry.record.id === name) return entry.contentId;
+  }
+  const shipped = registry().traditions.map((entry) => entry.record.id).join(', ');
+  throw new Error(`no shipped tradition has the id "${name}"; the set ships: ${shipped}`);
+}
+
+/**
+ * What `scenario`'s composition root supplies, built here from the same content.
+ *
+ * `coordination` may not import `@mm/scenario` — the edge runs the other way —
+ * so the resolver a test uses is assembled from `rules-magic` directly. It is
+ * the same three calls `traditionResolver` makes, which is what keeps a test's
+ * wired arm the arm a run actually takes.
+ */
+export function shippedTraditionResolver(): TraditionResolver {
+  const table = traditionTableFrom(registry());
+  return (traditionId: number) => {
+    const hooks = hooksOfTradition(traditionId, table);
+    return {
+      store: storePolicy(hooks.store),
+      acquire: acquirePolicy(hooks.acquire),
+      storeHook: hooks.store,
+    };
+  };
 }
 
 /**

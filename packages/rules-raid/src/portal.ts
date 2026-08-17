@@ -51,6 +51,7 @@ import { NULL_ENTITY, RNG_STREAM, nextBounded } from '@mm/sim-core';
 import type { Handle, RaidSideValue, Ruleset } from '@mm/state';
 import { COMBATANT_SOURCE_KIND, MAGE, RAID_SIDE, collectRecords, permits } from '@mm/state';
 import type { MagicGrid } from '@mm/rules-magic';
+import { costSplit, prepare } from '@mm/rules-magic';
 
 import { COMBAT_PRIMITIVES } from './arbitration.js';
 import type { EligibleMage, SideRoster } from './combatants.js';
@@ -335,10 +336,28 @@ function spawnMage(
     .filter((nodeId) => legalNodes.has(nodeId))
     .sort((a, b) => a - b);
 
-  const slots = participant.hooks.hostCast.preparationRequired
-    ? participant.hooks.hostCast.slotsPerMage
-    : 0;
-  const preparedSpells = slots > 0 ? reachable.slice(0, slots) : reachable;
+  // `prepare`, one node at a time, rather than a slice. It is the same list
+  // under both v1 cast kinds — the loop stops at the first refusal, and a slot
+  // bound refuses in exactly the position `slice` would have cut — and it is the
+  // hook's own rule rather than this module's reading of it. `prepare` had no
+  // production caller anywhere; a third cast kind with a rule about *what* may
+  // be readied, not only how many, would have been authored and ignored here.
+  //
+  // `usable` and `dormant` are settled rather than re-asked: `reachable` is
+  // already filtered to instances her home `store` hook holds, above
+  // `CASTABLE_MASTERY`, in cells the host permits — `legalNodes` is that mask,
+  // and the module note says it is applied *before* preparation on purpose.
+  const hostCast = participant.hooks.hostCast;
+  let preparedSpells: readonly number[] = reachable;
+  if (hostCast.preparationRequired) {
+    let readied: readonly number[] = [];
+    for (const nodeId of reachable) {
+      const outcome = prepare(hostCast, readied, { nodeId, usable: true, dormant: false });
+      if (!outcome.prepared) break;
+      readied = outcome.preparedSpells;
+    }
+    preparedSpells = readied;
+  }
 
   const wardSources: Fixed[] = defences.ward > 0 ? [defences.ward] : [];
 
@@ -348,11 +367,50 @@ function spawnMage(
     sourceId: mage.handle,
     position: deploymentPosition(raid, side, roster.nextSpawnOrdinal),
     hp: mageMaxHp(raid.tuning, participant.speciesOf(mage.record.speciesId), mage.deepestTier),
-    vigor: mage.record.maxVigor,
+    vigor: Math.max(0, mage.record.maxVigor - readyingCost(raid, preparedSpells)),
     concealment: defences.concealment,
     legalNodes,
     knownNodes: new Set(held.map((instance) => instance.nodeId)),
     preparedSpells,
     wardSources,
   });
+}
+
+/**
+ * What readying this list cost, before a single spell is released.
+ *
+ * The half of the `cost` hook the game never charged. `castCost` was live in
+ * `arbitration.resolveCast` and `costSplit` — the function whose entire purpose
+ * is that the two halves sum to the base price under every kind — had no caller,
+ * so a `prepaid` tradition was not a tradition that charges early. It was a
+ * tradition that **charges nothing**: `resolveCast` returned `castCost(prepaid,
+ * price) === 0`, and `firstCastableNode` skips the affordability test outright
+ * when `paidAtPreparation`. Vancian memorisation, the reference universe's own
+ * tradition, cast for free and without limit.
+ *
+ * `costSplit` rather than `preparationCost` alone, deliberately: the invariant
+ * worth honouring is that the two halves sum to the base cost, and reading the
+ * pair from the function that states it is what keeps the release side from
+ * being charged twice when a kind changes.
+ *
+ * **The host's `cost` hook, not the raider's.** Her preparations are readied at
+ * portal entry, which is the moment this runs, and the host is who prices
+ * everything from that moment on — `firstCastableNode` already reads
+ * `hostCost.paidAtPreparation` for the same decision, so one hook answers the
+ * whole question. §1.6's split gives `preparedSpells` a *home* origin and no
+ * home price; that a `prepaid` raider entering a `standard` sky therefore pays
+ * at release and not at readying is the split working, not a gap in it.
+ *
+ * Untuned, like every magnitude it reads.
+ */
+function readyingCost(raid: Raid, preparedSpells: readonly number[]): Fixed {
+  const hostCost = raid.host.hooks.hostCost;
+  let total = 0;
+  for (const nodeId of preparedSpells) {
+    const node = raid.registry.node(nodeId);
+    if (node === undefined) continue;
+    const price = raid.tuning.castVigorBase + raid.tuning.castVigorPerTier * node.tier;
+    total += costSplit(hostCost, price).atPreparation;
+  }
+  return total;
 }

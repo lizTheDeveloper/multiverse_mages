@@ -79,7 +79,7 @@ import {
   endEngagement,
 } from '@mm/state';
 import type { KnowledgeSubsystem, MagicGrid, PortalHooks } from '@mm/rules-magic';
-import { CORRUPTION, MASTERY_ACTIVATION_THRESHOLD, fidelityOf } from '@mm/rules-magic';
+import { CORRUPTION, MASTERY_ACTIVATION_THRESHOLD, fidelityOf, isCastable } from '@mm/rules-magic';
 
 import type { TargetSettlement } from './action-economy.js';
 import { ActionEconomyLedger, COMBAT_SOURCE } from './action-economy.js';
@@ -843,11 +843,28 @@ function firstCastableNode(raid: Raid, brief: CombatantBrief): ContentId | undef
   const hostCast = raid.host.hooks.hostCast;
   const vigor = field(raid, brief.handle, 'vigor');
 
-  const pool = raid.arbiter.selectionMaskDisabled
+  // Two filters, one each from the two authorities, and they are not the same
+  // question. `legalNodes` is the *mask*: what she holds, above
+  // `CASTABLE_MASTERY`, in a cell this sky permits. `isCastable` is the
+  // *tradition*: under `standard` that is exactly "does she usably hold it", and
+  // under `prepared` it is "is it in the readied list" — she may hold it and
+  // still not be able to cast it, which is the whole point of the kind.
+  //
+  // The two were folded into one hand-rolled conditional here and `isCastable`
+  // had no caller at all. Same answer today, from the function that owns half of
+  // it, so a third cast kind lands in one place rather than in this expression.
+  const candidates = raid.arbiter.selectionMaskDisabled
     ? [...brief.preparedSpells]
     : hostCast.preparationRequired
-      ? brief.preparedSpells.filter((nodeId) => brief.legalNodes.has(nodeId))
+      ? [...brief.preparedSpells]
       : [...brief.legalNodes];
+  const pool = raid.arbiter.selectionMaskDisabled
+    ? candidates
+    : candidates.filter(
+        (nodeId) =>
+          brief.legalNodes.has(nodeId) &&
+          isCastable(hostCast, brief.preparedSpells, { nodeId, usable: true, dormant: false }),
+      );
 
   const roster = raid.rosters[brief.side] as SideRoster;
 

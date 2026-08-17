@@ -60,6 +60,8 @@
 export type { LibraryCapital, LibraryCapitalDeps } from './capital.js';
 export { libraryCapital } from './capital.js';
 
+export type { ActiveHooks, TraditionHooks, TraditionResolver } from './traditions.js';
+
 export type { EffortKey, EffortRow } from './effort-store.js';
 export { EffortLedger, MAX_EFFORTS_PER_MAGE } from './effort-store.js';
 

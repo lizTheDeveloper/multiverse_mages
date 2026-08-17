@@ -44,7 +44,11 @@ import {
   setFidelity,
 } from '../../src/instances/fidelity.js';
 import { KnowledgeSubsystem } from '../../src/instances/subsystem.js';
-import { STANDARD_STORE, scribe } from '../../src/instances/scribing.js';
+import { scribe } from '../../src/instances/scribing.js';
+// `w/wire-magic` moved the two named store hooks out of `scribing.ts` and into
+// the shared test support, where every other file in this suite already read
+// them from. This import was the one left pointing at the old home.
+import { STANDARD_STORE } from '../support/store-hooks.js';
 import { study } from '../../src/instances/study.js';
 import { research } from '../../src/instances/research.js';
 import {

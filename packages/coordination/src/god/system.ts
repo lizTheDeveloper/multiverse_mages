@@ -101,6 +101,7 @@ import type { FavorLedgerEntry } from './favor.js';
 import { applyRegeneration, favorRegeneration, ledgerBalances } from './favor.js';
 import { godState, writeGodState } from './god-state.js';
 import type { InterventionReport } from './interventions.js';
+import type { TraditionResolver } from '../traditions.js';
 import { resolveInterventions } from './interventions.js';
 import { edictBudgetFor, favorCapFor, laggedWorship, shockedTarget, worshipTarget } from './worship.js';
 
@@ -170,6 +171,16 @@ export interface GodDeps {
    * node was lost", which for a world with no mortality phase is the truth.
    */
   readonly nodesLostThisTick?: ((worldTick: number) => number) | undefined;
+  /**
+   * The hooks a tradition puts in force, by interned id — action 13's rule.
+   *
+   * See `traditions.ts`. Absent means the action moves `UNIVERSE.traditionId`
+   * and nothing else, which is what it did before this existed and what every
+   * world built without a content registry still describes.
+   */
+  readonly traditions?: TraditionResolver | undefined;
+  /** Nodes a tradition change emptied, reported to the world loop's `nodesLost`. */
+  readonly onKnowledgeLost?: ((nodes: number) => void) | undefined;
 }
 
 /** What one tick of god rules did. Reporting only; never an input to a rule. */
@@ -305,6 +316,8 @@ function interventionSystem(
         requestEngagement: () => {
           ctx.requestEngagement();
         },
+        traditions: deps.traditions,
+        onKnowledgeLost: deps.onKnowledgeLost,
       });
       onResolved(report, ctx.tick);
     },

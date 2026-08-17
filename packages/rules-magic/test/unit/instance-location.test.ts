@@ -24,7 +24,8 @@ import {
   shelveGrimoire,
   withdrawGrimoire,
 } from '../../src/instances/location.js';
-import { STANDARD_STORE, scribe } from '../../src/instances/scribing.js';
+import { scribe } from '../../src/instances/scribing.js';
+import { STANDARD_STORE } from '../support/store-hooks.js';
 import { KnowledgeSubsystem } from '../../src/instances/subsystem.js';
 import {
   CHILD_NODE,
