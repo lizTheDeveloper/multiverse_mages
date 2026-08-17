@@ -650,8 +650,9 @@ describe('twenty world years in', () => {
     });
     // Which species owns the sole occupancy, since the count alone cannot say —
     // and this is the half that makes "specialisation" the right word for it.
-    const detail = (entry as { detail: { species: { speciesId: string; soleOccupantCells: number }[] } })
-      .detail;
+    const detail = (entry as unknown as {
+      detail: { species: { speciesId: string; soleOccupantCells: number }[] };
+    }).detail;
     expect(
       detail.species
         .filter((row) => row.soleOccupantCells > 0)

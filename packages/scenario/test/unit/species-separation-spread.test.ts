@@ -198,10 +198,71 @@ const CLAIMED_SEPARATIONS: readonly {
   // comparable sets, paired gap 232.6 ± 60.9 ticks = 3.8 SE. The sign never
   // reverses and the gap is large; what is missing is sets in which elf arrives
   // at all.
+  // **Retired on `integration/all-branches`, 2026-08-17.** Twelve sets:
+  // `inconclusive`, strict in 4 of 5 comparable sets, paired gap 232.4 ± 63.4
+  // ticks = 3.7 SE. It still holds on the sibling file's own six seeds — 386
+  // against 648 — and that is the case this file exists to catch: elf is
+  // censored in **64 of 72 runs**, so the five sets where it arrives at all are
+  // the sets where it arrived early, and an endpoint comparison over a selected
+  // tail is not a measurement. The sign has never reversed. What it lacks is
+  // sets.
   {
     faster: 'gnome',
     slower: 'elf',
-    assertedAs: 'beforeElf.high < elf.low',
+    assertedAs: 'beforeElf.high < elf.low — retired 2026-08-17, no longer asserted',
+    status: 'retired',
+    verdict: 'inconclusive',
+  },
+  // ---- The four claims the sibling file asserts now, all of them about dwarf. ----
+  //
+  // Measured on `integration/all-branches`, 2026-08-17. This is the first
+  // arrangement in this file's history in which **everything that survives a
+  // re-roll names one species**, and it is worth reading as that rather than as
+  // four independent findings: dwarf is the slowest column the instrument has
+  // (mean 638.3 against gnome's 377.8) and is censored in 66 of 72 runs, so what
+  // reproduces is *"four species arrive before the one that mostly does not
+  // arrive"*. That is one band and a laggard. It is **not** the four separated
+  // species task 9.9 asks for, and the sibling file says so.
+  //
+  // **At twelve sets all four are `established`**, and by margins this file has
+  // rarely seen: `gnome < dwarf` strict in 4/4 comparable sets at 277.0 ± 7.6
+  // ticks = **36.3 SE**, `draconic < dwarf` 3/3 at 259.8 ± 8.1 = **32.1 SE**,
+  // `human < dwarf` 4/4 at 202.4 ± 24.5 = **8.3 SE**, `orc < dwarf` 2/2 at
+  // 253.0 ± 36.0 = **7.0 SE**.
+  //
+  // **The `verdict` column below is the four-set reading, because that is what
+  // this file runs**, and at four sets every one of them is `inconclusive` for
+  // want of comparable sets — dwarf arrives in one of the four and orc in none
+  // of the sets dwarf does, so three pairs have a single comparable set and a
+  // `NaN` standard error and the fourth has none at all. **That is a statement
+  // about power, not about ordering**: where the two species could be compared,
+  // the claimed order held in every set. The `#140` block below asserts that
+  // distinction rather than leaving it in prose.
+  {
+    faster: 'gnome',
+    slower: 'dwarf',
+    assertedAs: 'beforeDwarf.high < dwarf.low — established at twelve sets, 36.3 SE',
+    status: 'asserted',
+    verdict: 'inconclusive',
+  },
+  {
+    faster: 'draconic',
+    slower: 'dwarf',
+    assertedAs: 'beforeDwarf.high < dwarf.low — established at twelve sets, 32.1 SE',
+    status: 'asserted',
+    verdict: 'inconclusive',
+  },
+  {
+    faster: 'human',
+    slower: 'dwarf',
+    assertedAs: 'beforeDwarf.high < dwarf.low — established at twelve sets, 8.3 SE',
+    status: 'asserted',
+    verdict: 'inconclusive',
+  },
+  {
+    faster: 'orc',
+    slower: 'dwarf',
+    assertedAs: 'beforeDwarf.high < dwarf.low — established at twelve sets, 7.0 SE',
     status: 'asserted',
     verdict: 'inconclusive',
   },
@@ -288,11 +349,22 @@ const CLAIMED_SEPARATIONS: readonly {
   // It is **not** re-retired. The claim is asserted next door and the honest
   // verdict here is that this tree cannot currently establish it, which is what
   // `inconclusive` says.
+  // **Retired on `integration/all-branches`, 2026-08-17, and this time it is
+  // refuted on the sibling file's own seed set as well.** There it reads gnome
+  // `[317, 386]` against human `[370, 370]`: gnome's slowest seed is slower than
+  // human's single observed one, so `gnome.high < human.low` is false where it
+  // was asserted. Twelve sets: `inconclusive`, strict in 5 of 11 comparable
+  // sets, paired gap 66.6 ± 15.8 ticks = 4.2 SE, human censored in 49 of 72.
+  //
+  // The row has gone 12/12 -> 3/11 -> 5/11 across three measurements without the
+  // sign ever reversing, which is the signature of a real effect that this
+  // instrument has stopped being able to see. Kept in the list rather than
+  // deleted, per this file's own rule.
   {
     faster: 'gnome',
     slower: 'human',
-    assertedAs: 'gnome.high < human.low',
-    status: 'asserted',
+    assertedAs: 'gnome.high < human.low — retired 2026-08-17, no longer asserted',
+    status: 'retired',
     verdict: 'inconclusive',
   },
   // Strict in 11 of 12 sets at the bin's default design — a real effect, and not
@@ -422,6 +494,21 @@ const RETIRED_ASSERTIONS: readonly { readonly source: string; readonly heldIn: s
   },
   { source: 'expect(draconic.low).toBeLessThan(human.low)', heldIn: '5/12 sets' },
   { source: 'expect(overlaps(gnome, dwarf)).toBe(true)', heldIn: '7/12 sets' },
+  // ---- Retired on `integration/all-branches`, 2026-08-17. ----
+  //
+  // The whole `beforeElf` binding went, and with it the last two claims this
+  // file had that did not name dwarf. See the rows above for the rates.
+  { source: 'const beforeElf = [gnome]', heldIn: '4/5 comparable sets, 3.7 SE at twelve' },
+  {
+    source: 'expect(gnome.high).toBeLessThan(human.low)',
+    heldIn: '5/11 comparable sets at twelve, and false on the six seeds it was asserted over',
+  },
+  {
+    source: 'expect(draconic.high).toBeGreaterThan(elf.high)',
+    heldIn:
+      'refuted — draconic means 441.1 against elf 603.9, so draconic now ends before elf ' +
+      'rather than long after it',
+  },
 ];
 
 /** #140's claim, judged here because it is the reason this file exists. */
@@ -582,7 +669,7 @@ describe('every strict separation this repository asserts, re-rolled', () => {
       'reference-time-to-tier.test.ts changed how many strict separations it asserts. Add or ' +
         'remove the matching row in CLAIMED_SEPARATIONS so that every separation this ' +
         'repository publishes carries the number of seed sets it survives.',
-    ).toBe(2);
+    ).toBe(1);
     // **Two sites, two asserted separations, and it was two sites and three
     // before `w185/cohort-source`.** The loop over `beforeElf` is one site; it
     // held two species until `dwarf < elf` fell to 6/12 under W185 and is down
@@ -594,16 +681,23 @@ describe('every strict separation this repository asserts, re-rolled', () => {
   // `material-economy`'s reading of the same row, 2026-08-16, kept beside
   // `main`'s rather than replacing it:
   //
-    // **Two sites, two asserted separations, and it was four sites and five
-    // before 2026-08-14 and three until 2026-08-16.** The loop over `beforeElf`
-    // is one site and, since `material-economy` retired `dwarf < elf`, one
-    // separation: `orc` was dropped from it in August's retirement and `dwarf`
-    // in this one, so the loop now runs over `[gnome]` alone. The count is the
-    // tripwire and the two lines below say which two sites it is, so that
-    // swapping one claim for another cannot keep the count.
-    expect(sibling).toContain('for (const entry of beforeElf) expect(entry.high)');
-    expect(sibling).toContain('expect(gnome.high).toBeLessThan(human.low)');
-    expect(CLAIMED_SEPARATIONS.filter((claim) => claim.status === 'asserted')).toHaveLength(2);
+    // **One site and four asserted separations on `integration/all-branches`,
+    // 2026-08-17.** It was four sites and five before 2026-08-14, three until
+    // 2026-08-16, and two until now. The sibling's loop is the single site and
+    // it runs over `[gnome, draconic, human, orc]`, all four against `dwarf` —
+    // `beforeElf` is gone entirely, with both of its claims retired above. The
+    // count over *sites* and the count over *claims* have stopped being equal,
+    // which is why both are asserted and why the two `toContain` lines below
+    // name the loop **and** its membership: swapping one species for another
+    // inside the list would otherwise keep every number here intact.
+    // **One site and four separations on `integration/all-branches`, 2026-08-17.**
+    // It was two sites and two. The count above is over *sites* and the count
+    // below is over *claims*, and they stopped being equal when `beforeDwarf`
+    // took four species where `beforeElf` had one — which is exactly why both
+    // are asserted rather than one standing in for the other.
+    expect(sibling).toContain('for (const entry of beforeDwarf) expect(entry.high)');
+    expect(sibling).toContain('const beforeDwarf = [gnome, draconic, human, orc]');
+    expect(CLAIMED_SEPARATIONS.filter((claim) => claim.status === 'asserted')).toHaveLength(4);
   });
 
   it.each(RETIRED_ASSERTIONS)(
@@ -647,7 +741,7 @@ describe("#140's four-species chain", () => {
     expect(verdict.verdict).not.toBe('established');
   });
 
-  it('has one link that does reproduce, and it is not new', () => {
+  it('has no link that reproduces at four sets, and censoring rather than ordering is why', () => {
     // `human < elf` was the link: established on `main` too, at 12/12 sets and
     // 64.7 SE, and worth naming so nobody reads "the chain does not reproduce"
     // as "nothing separates".
@@ -679,7 +773,84 @@ describe("#140's four-species chain", () => {
     //
     // Both are asserted, so the sentence this test is named for stays checkable:
     // one link reproduces and the one that used to no longer does.
+    //
+    // ## Re-authored on `integration/all-branches`, 2026-08-17 — nothing reproduces here now
+    //
+    // This asserted `gnome < dwarf` **established**, and it reads
+    // `inconclusive`. So does every other *forward* pair this report can form:
+    // measured at four sets on this tree, **not one ordered pair in either
+    // direction is `established`.** The only verdicts the thirty pairs produce
+    // are `inconclusive` and — on reversals against gnome, the one column this
+    // horizon does not censor — `refuted`, which is evidence *for* the forward
+    // ordering rather than against it.
+    //
+    // **That is a statement about power and not about ordering**, and the
+    // difference is the whole subject of this file. Censoring at the 720-tick
+    // horizon, 24 runs:
+    //
+    //     gnome     0/24 censored      draconic  17/24
+    //     human    15/24               elf       21/24
+    //     dwarf    22/24               orc       23/24
+    //
+    // Four of six species arrive in at most two of the four sets, so most pairs
+    // have one comparable set, a `NaN` standard error, and no verdict available
+    // to them at any effect size. `gnome < dwarf` is strict in **1 of 1**
+    // comparable sets with a paired gap of **+289.8 ticks** — the ordering is
+    // exactly what it was and there is nothing to divide by.
+    //
+    // At twelve sets the same pair is **ESTABLISHED**: strict in 4 of 4
+    // comparable sets, 277.0 ± 7.6 ticks = **36.3 SE**, which is the largest
+    // separation this instrument has ever recorded. So the claim is alive; four
+    // sets can no longer see it. The module note above says four is a tripwire
+    // and twelve is the measurement, and this is the first tree on which that
+    // distinction has cost anything.
+    //
+    // Asserted as the three facts that make "power, not ordering" checkable
+    // rather than merely stated: the verdict, the comparable-set count that
+    // caused it, and the sign and strictness of what could be compared. If a
+    // later change gives the slow species time to arrive, `comparableSets` rises
+    // and this fails — which is the signal to come back and re-assert the
+    // established form.
     expect(verdictOf(separationOf(report, 'gnome', 'human')).verdict).toBe('inconclusive');
-    expect(verdictOf(separationOf(report, 'gnome', 'dwarf')).verdict).toBe('established');
+
+    const gnomeDwarf = separationOf(report, 'gnome', 'dwarf');
+    expect(verdictOf(gnomeDwarf).verdict).toBe('inconclusive');
+    expect(gnomeDwarf.comparableSets).toBeLessThan(SETS);
+    // Where it could be compared at all, the ordering held and held strictly.
+    expect(gnomeDwarf.strictSets).toBe(gnomeDwarf.comparableSets);
+    expect(gnomeDwarf.meanGap).toBeGreaterThan(0);
+
+    // And the general fact, so that "nothing reproduces" is measured rather than
+    // inferred from one pair: every ordered pair the report can form, judged.
+    //
+    // **`established` and not "only inconclusive"**, and the difference is a
+    // measurement rather than a nicety. Both directions of a pair are formed
+    // here, so a `refuted` verdict on `human < gnome` is the *same finding* as a
+    // holding `gnome < human` — gnome is the one column this horizon does not
+    // censor, so the reversed pairs against it are the only ones with four
+    // comparable sets, which is exactly `MIN_SETS_FOR_REFUTATION` and exactly
+    // enough to refute. Asserting no verdict is `inconclusive` would therefore
+    // have failed on evidence *for* the ordering this file publishes.
+    const verdicts = new Set<string>();
+    for (const faster of report.speciesIds) {
+      for (const slower of report.speciesIds) {
+        if (faster === slower) continue;
+        verdicts.add(verdictOf(separationOf(report, faster, slower)).verdict);
+      }
+    }
+    expect([...verdicts].sort()).not.toContain('established');
+
+    // The cause, read off the report rather than asserted in prose: gnome is the
+    // only species this horizon does not censor, and four of the other five are
+    // censored in at least four fifths of the runs.
+    const censoredOf = (id: string): number => {
+      const found = report.spreads.find((entry) => entry.speciesId === id);
+      if (found === undefined) throw new Error(`no spread for ${id}`);
+      return found.censored;
+    };
+    expect(censoredOf('gnome')).toBe(0);
+    for (const id of ['dwarf', 'elf', 'orc']) {
+      expect(censoredOf(id) * 5, `${id} censoring`).toBeGreaterThan(report.runCount * 4);
+    }
   });
 });
