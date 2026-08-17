@@ -1045,6 +1045,70 @@ export const KNOWLEDGE_INSTANCE_FIELDS_MATCH: KeysMatch<
 > = true;
 
 /**
+ * How far a written or remembered instance is from the mind it came from, and
+ * whether it is silently wrong (`docs/design/scribing-fidelity.md`).
+ *
+ * ## Why this is a second component and not two fields on `knowledge-instance`
+ *
+ * Two reasons, and the first one is mechanical. `worldSchemaVersionOf` infers a
+ * save's revision from the **component names** an envelope carries; a field
+ * appended to an existing component adds no name, so there would be nothing for
+ * revision 7 to key on, and every revision-6 save would fail
+ * `validateAgainstSchema`'s field-count check with no migration able to say
+ * which revision it was. `goal-commitment`, `effort-progress` and `grant-budget`
+ * all arrived this way for the same reason, and the empty-section migration they
+ * share is the proven repair.
+ *
+ * The second is that **an absent row is the correct default and is the common
+ * case.** A node researched into a living mind is at generation zero and sound;
+ * so is every instance in every save written before this component existed. A
+ * sparse side table says that in the storage, rather than paying two columns on
+ * every instance in a Monte Carlo run to carry zeros.
+ *
+ * ## `copyGeneration` is `fp`, and additive
+ *
+ * `fp(1024)` is one whole generation of copying. It is a *distance*, accumulated
+ * by addition at each scribing, and the mētis fraction is a **curve read off
+ * it** — never a multiplier applied per copy. That is the shape the design
+ * requires: *"one copy out: fine"*, a plateau and then a fall, which a constant
+ * per-generation multiplier cannot produce. Storing the distance and deriving
+ * the fraction makes the plateau structural rather than a property of some
+ * chosen coefficient.
+ *
+ * It is fixed-point rather than an integer count because a better scribe
+ * advances the distance by *less than* one generation per copy — that is what
+ * `scribeAffinity` buys.
+ *
+ * ## `corruption` is one field, not two flags
+ *
+ * A book is sound, or silently wrong, or known to be wrong. Two booleans would
+ * make a fourth state representable — "not corrupted but marked corrupted" —
+ * which nothing may produce and everything reading them would have to handle.
+ */
+export const KNOWLEDGE_FIDELITY = {
+  name: 'knowledge-fidelity',
+  fields: {
+    copyGeneration: 'i32',
+    corruption: 'u8',
+  },
+} as const satisfies ComponentSpec<ComponentFields>;
+
+export interface KnowledgeFidelityRecord {
+  /**
+   * Copies away from a living holder, in `fp`. `fp(1024)` is one generation.
+   * An absent row means `0` — straight out of a mind that researched it.
+   */
+  copyGeneration: Fp;
+  /** `@mm/rules-magic`'s `CORRUPTION`: `0` sound, `1` hidden, `2` marked. */
+  corruption: Enum8;
+}
+
+export const KNOWLEDGE_FIDELITY_FIELDS_MATCH: KeysMatch<
+  KnowledgeFidelityRecord,
+  typeof KNOWLEDGE_FIDELITY
+> = true;
+
+/**
  * The per-node **ever-known** record (`contracts.md` §1.5).
  *
  * §1.5 marks this *"persisted, and not derivable"*, and the distinction is
@@ -1282,6 +1346,11 @@ export const WORLD_COMPONENTS = [
   // against the wrong layouts — the exact failure the note above describes.
   TERRITORY_HOLDING,
   UNIVERSITY_SITE,
+  // Revision 7, and the argument has not changed: `knowledge-fidelity` hangs off
+  // a knowledge-instance handle and reads as if it belonged next to
+  // `KNOWLEDGE_INSTANCE`. It goes last, because section order is this list's
+  // order and every revision-6 save on disk was written with twenty sections.
+  KNOWLEDGE_FIDELITY,
 ] as const satisfies readonly ComponentSpec<ComponentFields>[];
 
 /** Engagement-scale components, in snapshot order. */

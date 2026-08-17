@@ -30,15 +30,21 @@ is what happens when you skip that step.
 | `content` | 1 | 0 | 5 | 1 | 0 | 7 |
 | `coordination` | 13 | 2 | 0 | 1 | 0 | 16 |
 | `primitives` | 7 | 1 | 1 | 0 | 0 | 9 |
-| `rules-magic` | 16 | 6 | 1 | 4 | 0 | 27 |
+| `rules-magic` | 15 | 6 | 1 | 4 | 0 | 26 |
 | `rules-raid` | 9 | 0 | 0 | 2 | 0 | 11 |
-| `rules-world` | 20 | 6 | 3 | 12 | 0 | 41 |
-| `scenario` | 0 | 0 | 15 | 0 | 0 | 15 |
+| `rules-world` | 18 | 6 | 3 | 12 | 0 | 39 |
+| `scenario` | 1 | 0 | 15 | 0 | 0 | 16 |
 | `sim-core` | 0 | 1 | 5 | 0 | 0 | 6 |
 | `state` | 5 | 0 | 0 | 3 | 0 | 8 |
-| **Total** | **71** | **16** | **30** | **23** | **0** | **140** |
+| **Total** | **69** | **16** | **30** | **23** | **0** | **138** |
 
-**Re-measured on `integration/group-e`, 2026-08-16: 129 -> 140.** The seven added are all
+**Re-measured on `integration/group-e` at the end of the group, 2026-08-16: 129 -> 140 -> 138 —
+and the last step is downward.** `w190/scribing-fidelity` wires three previously-unreached symbols
+to real callers (`STANDARD_STORE`, `NO_TERRITORY`, `effectiveCapacity`) and adds one
+(`academySiteKindOf`), for a net **-2**. Down is the objective, and this is the first group in the
+campaign to move the number in that direction rather than only accepting debt.
+
+The intermediate 140, and how it got there: The seven added are all
 integration debt of the staged-ahead-of-consumer kind, and the ratchet named every one rather than
 reporting a count: six are `w21/timing-and-envelopes`' envelope surface in `primitives`
 (`RIGID_ENVELOPE`, `envelopeProblems`, `envelopeHarmonicSum`, and three constants) and one is
@@ -47,7 +53,7 @@ its own tree** — this is debt that exists only in the union, which is the clas
 per-branch check structurally cannot see. `w182/raid-seam` measured 133 on its tree and `main` 129
 on this one; 140 is measured on the merge and is neither.
 
-The headline: **71 of the 140 are integration debt** — mechanics that are built, mostly tested,
+The headline: **69 of the 138 are integration debt** — mechanics that are built, mostly tested,
 exported, and that nothing in a running universe calls. That is the number the raw count was hiding.
 The other 66 are noise of three different kinds.
 
@@ -80,7 +86,7 @@ were moved to §3 and are not here.
 | **Ascension legacy** — `legacyGrant`, `legacyBudget`, `carriedPrestige`, `LEGACY_CHANNELS`, and eight god constants (`legacy-*`, `prestige-retention`, `legacy-reference-tick`) | 12 | The largest single dead mechanism, and the clearest case for the check's one-hop transitivity: eight authored constants look like knobs to a content author and turn nothing, because their only reader is `legacyGrant` and `legacyGrant` has no caller. |
 | **Spell preparation and its cost half** — `prepare`, `isCastable`, `preparationCost`, `costSplit` | 4 | `castPolicy`, `expendOnCast`, `costPolicy` and `castCost` *are* reached, so casting works. The **preparation** half does not: nothing splits a cost across preparation and cast, and nothing asks whether a spell is castable before it is cast. |
 | **Portal spell transfer** — `populatePreparedSpells`, `releaseAbroad` | 2 | `resolvePortalHooks` is reached and the two functions that would use the resolved hooks are not. Prepared spells do not cross a portal. |
-| **Tradition store policy** — `palaceLibraryDepth`, `perishesWithHolder`, `scribeAvailability`, `PALACE_STORE`, `STANDARD_STORE` | 5 | `storePolicy`, `canHoldAt` and `admitToStore` are reached, so storage admits. The *consequences* of a store kind — palace depth, perishing with the holder, scribe availability — are computed by nothing. |
+| **Tradition store policy** — `palaceLibraryDepth`, `perishesWithHolder`, `scribeAvailability`, `PALACE_STORE` | 4 | `storePolicy`, `canHoldAt` and `admitToStore` are reached, so storage admits. The *consequences* of a store kind — palace depth, perishing with the holder, scribe availability — are computed by nothing. **`STANDARD_STORE` was the fifth member and is repaired** (see the amendment at the head of this file): `study.ts` passes the store hook, so the constant has a production consumer. The other four are unchanged. |
 | **`changeTradition`** and `RESOLUTION`, `hooksOfTradition` | 3 | `agent-api` publishes a change-tradition action and `mc-harness`'s strategies name it, while the rules function that would execute it has no caller. The action space advertises a move the rules never make. |
 | **Library-level destruction** — `destroyLibrary`, `grimoiresIn` | 2 | Narrower than it looks, and corrected once. `destroyGrimoire` **is** live: `rules-raid/src/consequences.ts:241` and `:265` loot and burn books one at a time, and that file's own comment claiming it was the fix for both is out of date about the library half. What has no caller is destruction of a library *as a unit* — and `instances/subsystem.ts:116` already records the consequence, that an unshelved book is one `grimoiresIn` cannot see and `destroyLibrary` leaves standing. |
 | **`rules-raid` consequences and objectives** — `returnedWithKnowledge`, `strandedAttackers`, `objectiveHoldsKnowledge`, `OBJECTIVE_LOCATION_KIND`, `BURNABLE_LOCATION_KINDS` | 5 | ~~Consistent with CLAUDE.md: `raid-engagement` is 67/92 and nothing in `scenario` opens a portal.~~ **Reason corrected 2026-08-15 at `08ca5368`: `scenario` does open a portal** — `packages/scenario/src/raids.ts:423` calls `openPortal` and `reference-universe.ts:1007` supplies `portalTargets`. All five names are nevertheless still `unreached` in `scripts/reachability-baseline.json` at this ref, so the row keeps its count and its category: portals open and raids terminate, and the *consequences* of a raid — knowledge carried home, attackers stranded, an objective that holds knowledge, a burnable location — are what nothing reaches. |
@@ -94,9 +100,9 @@ One more was dropped from this table on inspection: **`withdrawGrimoire`** is de
 finding and is ordinary debt rather than a mechanism: the god's action 10 validates a role by other
 means, and the constant is the list a role-assignment UI would read.
 
-That is 50 of the 71. (It was 44 of 60 before the merge above; 46 of 61 until `applyWard` and
+That is 49 of the 69. (It was 44 of 60 before the merge above; 46 of 61 until `applyWard` and
 `replay` moved to §3 in the third correction round, and 44 of 59 until `characterFor` arrived with
-#201 — see §5.) The remaining 21
+#201 — see §5.) The remaining 20
 are integration debt of the ordinary kind — an economy input list, a commitment predicate, a
 monoculture threshold, `speciesRediscoveryMultiplier`, `worshipShareOfRegeneration`,
 `characterFor` — worth wiring, not worth a row.

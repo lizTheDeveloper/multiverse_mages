@@ -87,6 +87,7 @@ import {
   GOAL_COMMITMENT,
   GOD_STATE,
   GRANT_BUDGET,
+  KNOWLEDGE_FIDELITY,
   MATERIAL_STOCK,
   MID_RAID_CHANGE,
   TERRITORY_HOLDING,
@@ -107,6 +108,7 @@ import {
  * | 5        | `city-and-supply-chain` | adds `material-stock`; **removes** `universe.materials` |
  * | 6        | `god-agency`        | adds `grant-budget` (`contracts.md` §1.1)     |
  * | 7        | `raid-engagement`   | adds `mid-raid-change` (`raid-engagement.md` §1) |
+ * | 11        | `scribing-fidelity` | adds `knowledge-fidelity` (`docs/design/scribing-fidelity.md`) |
  *
  * Revision 5 is the first step that does not only append. It splits the one
  * `materials` scalar into three kinds and takes the old field out of the
@@ -146,7 +148,7 @@ import {
  * **Append; never renumber.** A revision number is what a migration step is
  * keyed on, so reusing one silently applies the wrong repair to a save.
  */
-export const WORLD_SCHEMA_VERSION = 10;
+export const WORLD_SCHEMA_VERSION = 11;
 
 /**
  * The world-schema revision an envelope was written by.
@@ -164,6 +166,13 @@ export const WORLD_SCHEMA_VERSION = 10;
  */
 export function worldSchemaVersionOf(envelope: SnapshotEnvelope): number {
   const carried = new Set(envelope.components.map((component) => component.name));
+  // Revision 7's marker is `knowledge-fidelity`, newest first for the reason the
+  // next comment gives: a revision-7 envelope also carries `grant-budget`, so
+  // asking about the budget first would walk every save written since fidelity
+  // landed through a migration it has already had.
+    // **Revision 11's marker is `knowledge-fidelity`, and it leads the chain.**
+  // Authored as 7 — the fourth branch in this group to find that number taken.
+  if (carried.has(KNOWLEDGE_FIDELITY.name)) return 11;
   // Revision 10's marker is `territory-holding`, and it leads the chain because newest
   // marker wins — a revision-10 envelope also carries `grant-budget` and
   // `material-stock`, and reading it as either would walk it through migrations
@@ -591,6 +600,37 @@ export const addTerritorySiting: WorldSchemaMigration = {
   },
 };
 
+/**
+ * Revision 10 → 11: append an empty `knowledge-fidelity` section.
+ *
+ * Empty, and for the strongest version of the argument the steps above make:
+ * every reader of this component treats an **absent row as generation zero and
+ * sound**, which is exactly what a save written before scribing fidelity existed
+ * recorded. A revision-6 save restored into this build therefore holds a library
+ * of books that are all fresh from a living holder and none of them corrupted —
+ * the only reading of the old state that is not an invention.
+ *
+ * The alternative would be to synthesise a generation for every written
+ * instance from its `acquiredTick`, and there is no honest rule for it: the old
+ * state does not record what a book was copied from, so any number chosen would
+ * be a fidelity loss the save never suffered, applied retroactively to a library
+ * the player already has.
+ */
+export const addKnowledgeFidelity: WorldSchemaMigration = {
+  // Authored as `{ from: 6, to: 7 }`. Renumbered to `{ from: 10, to: 11 }` on
+  // the `integration/group-e` merge — the fourth and last renumber in this
+  // group. 7 is reserved for `material-economy`; 8, 9 and 10 went to
+  // `bar-phase`, `mid-raid-change` and `university-siting` ahead of it.
+  from: 10,
+  to: 11,
+  migrate(envelope) {
+    return {
+      ...envelope,
+      components: [...envelope.components, emptySection(KNOWLEDGE_FIDELITY)],
+    };
+  },
+};
+
 /** Every step this build knows, ascending by source revision. */
 export const WORLD_SCHEMA_MIGRATIONS: readonly WorldSchemaMigration[] = [
   addGoalCommitment,
@@ -601,6 +641,7 @@ export const WORLD_SCHEMA_MIGRATIONS: readonly WorldSchemaMigration[] = [
   addBarPhase,
   addMidRaidChange,
   addTerritorySiting,
+  addKnowledgeFidelity,
 ];
 
 /**

@@ -106,6 +106,13 @@ const PERMANENT_IDS: Readonly<Record<string, number>> = {
   // next free id here was 14 and the table is dense rather than gapped. Same
   // rule, different queue — see the paragraph above.
   career: 14,
+  // Appended by `w190/scribing-fidelity`: scribal error, the corruption draw.
+  //
+  // **15, renumbered from 13 on `integration/group-e` (2026-08-16).** Third and
+  // last of the three simultaneous appends, and the third in a row whose
+  // authored id was already taken by the time it merged. Density is what made
+  // each collision loud instead of silent.
+  corruption: 15,
 };
 
 /**
@@ -140,6 +147,7 @@ const DOC_TEXT_BY_SUBSYSTEM: Readonly<Record<string, string>> = {
   openingSquare: 'the opening square',
   detachment: 'the partial-detachment draw at portal open',
   career: 'the career sort at graduation',
+  corruption: 'corruption',
 };
 
 /** The consequence sentence every failure from this file has to carry. */

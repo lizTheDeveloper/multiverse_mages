@@ -31,10 +31,10 @@
  * silently:
  *
  * 1. §1's package rows each sum across the categories to their own total.
- * 2. §1's totals row is the sum of the package rows, and equals 140.
+ * 2. §1's totals row is the sum of the package rows, and equals 138.
  * 3. §2's per-mechanism counts sum to the number its closing sentence claims.
  * 4. That claim is not larger than §1's integration-debt total.
- * 5. The 140 matches `scripts/reachability-baseline.json` — the document and the
+ * 5. The 138 matches `scripts/reachability-baseline.json` — the document and the
  *    gate describe the same tree.
  *
  * What it deliberately does **not** check is the *classification*: whether
@@ -105,7 +105,7 @@ describe('the reachability triage document', () => {
     }
   });
 
-  it('has a totals row equal to the sum of the package rows, and to 140', () => {
+  it('has a totals row equal to the sum of the package rows, and to 138', () => {
     expect(totalsRow).toHaveLength(1);
     const totals = totalsRow[0]!.slice(1);
 
@@ -134,7 +134,10 @@ describe('the reachability triage document', () => {
     // Neither side's literal is the count of the union — 129 on this tree
     // before the merge, 133 on W182's — so it was re-measured rather than
     // picked.
-    expect(totals.at(-1)).toBe(140);
+    // 140 -> **138** at the end of the group: `w190/scribing-fidelity` wires
+    // `STANDARD_STORE`, `NO_TERRITORY` and `effectiveCapacity` to real callers
+    // and adds `academySiteKindOf`. Net -2, and down is the objective.
+    expect(totals.at(-1)).toBe(138);
   });
 
   it('has a §2 table whose counts sum to the total its closing sentence claims', () => {

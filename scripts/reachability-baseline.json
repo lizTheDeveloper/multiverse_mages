@@ -1,14 +1,14 @@
 {
   "note": "Pinned reachability findings. Generated — do not hand-edit. Regenerate with `npm run reachability:pin` and explain the diff in the commit message: an entry removed is a repair, an entry added is a debt someone accepted.",
   "scan": {
-    "examinedSymbolCount": 970,
-    "productionFileCount": 348
+    "examinedSymbolCount": 1017,
+    "productionFileCount": 354
   },
   "scanFloor": {
-    "examinedSymbolCount": 776,
-    "productionFileCount": 278
+    "examinedSymbolCount": 813,
+    "productionFileCount": 283
   },
-  "findingCount": 140,
+  "findingCount": 138,
   "findings": [
     {
       "key": "constant:packages/coordination/src/god/constants.ts:legacyArchiveMaxTier",
@@ -356,14 +356,6 @@
       "kind": "const"
     },
     {
-      "key": "symbol:packages/rules-magic/src/instances/scribing.ts:STANDARD_STORE",
-      "group": "symbol",
-      "category": "unreached",
-      "file": "packages/rules-magic/src/instances/scribing.ts",
-      "name": "STANDARD_STORE",
-      "kind": "const"
-    },
-    {
       "key": "symbol:packages/rules-magic/src/traditions/acquire.ts:UNCHANGED_MULTIPLIER",
       "group": "symbol",
       "category": "unreached",
@@ -641,14 +633,6 @@
       "kind": "const"
     },
     {
-      "key": "symbol:packages/rules-world/src/economy/carrying-capacity.ts:NO_TERRITORY",
-      "group": "symbol",
-      "category": "unreached",
-      "file": "packages/rules-world/src/economy/carrying-capacity.ts",
-      "name": "NO_TERRITORY",
-      "kind": "const"
-    },
-    {
       "key": "symbol:packages/rules-world/src/economy/counts.ts:ECONOMIC_INPUTS",
       "group": "symbol",
       "category": "unreached",
@@ -839,13 +823,6 @@
       "kind": "function"
     },
     {
-      "key": "symbol:packages/rules-world/src/universities/construction.ts:effectiveCapacity",
-      "group": "symbol",
-      "category": "reachedOnlyByUnreached",
-      "file": "packages/rules-world/src/universities/construction.ts",
-      "name": "effectiveCapacity"
-    },
-    {
       "key": "symbol:packages/rules-world/src/universities/construction.ts:readUniversity",
       "group": "symbol",
       "category": "unreached",
@@ -915,6 +892,14 @@
       "category": "unreached",
       "file": "packages/scenario/src/long-run.ts",
       "name": "longestOccupationAlternation",
+      "kind": "function"
+    },
+    {
+      "key": "symbol:packages/scenario/src/reference-universe.ts:academySiteKindOf",
+      "group": "symbol",
+      "category": "unreached",
+      "file": "packages/scenario/src/reference-universe.ts",
+      "name": "academySiteKindOf",
       "kind": "function"
     },
     {

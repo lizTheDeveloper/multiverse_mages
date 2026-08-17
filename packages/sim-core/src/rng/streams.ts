@@ -134,6 +134,31 @@ export const RNG_STREAM = {
    * paragraph above asks of an append.
    */
   career: 14,
+  /**
+   * Corruption: whether a book is *silently wrong*, by scribal error or by
+   * attack (`docs/design/scribing-fidelity.md`).
+   *
+   * Its own id rather than borrowing `scribing` (5), which is the other draw
+   * taken at the moment a book is finished, and by the same actor. A shared
+   * cursor would make *whether this book is corrupt* shift every subsequent
+   * durability roll that scribe takes — so adding the error rate would move
+   * "dwarven books resist burning" for reasons that have nothing to do with
+   * burning, and every committed balance number downstream of durability would
+   * change without any of them being about the change.
+   *
+   * That is the whole content of §6's insertion-invariance rule, applied to the
+   * one case where it was cheapest to get wrong.
+   */
+  /**
+   * **15, renumbered from 13 on `integration/group-e` (2026-08-16).** The last
+   * of the three simultaneous appends to land, and the third branch in a row to
+   * find its authored id already taken: `w200/layer-one-fixes` took 13 and
+   * `w197/aptitude-sorts-careers` took 14 earlier in this group. Every one of
+   * the three was authored believing it was 13 or that the ruling 13/14/15 held;
+   * none of the three merged in that order. Read the general rule above and not
+   * any of the assignments.
+   */
+  corruption: 15,
 } as const;
 
 /** Any ID in the permanent registry. */

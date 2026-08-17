@@ -87,6 +87,10 @@ describe('§4.4: a tradition recolours cost, and the curve is not a fifth hook',
     teachCost: 1024,
     scribeCost: 2048,
     rediscoveryMultiplier: 5376,
+    // Required on `KnowledgeNode` since `w190/scribing-fidelity` widened it;
+    // this fixture predates the field. `episteme` is the ordinary kind and is
+    // what `fixtures.ts` uses — the curve under test reads none of it.
+    knowledgeKind: 'episteme',
   };
   const swell = registry.techniques.find((entry) => entry.record.id === 'creo')?.record.envelope;
 

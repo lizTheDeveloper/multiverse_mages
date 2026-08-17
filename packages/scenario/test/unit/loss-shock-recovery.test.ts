@@ -184,6 +184,22 @@ describe('recovery, per species', () => {
     // species in the game into an invariant, and every branch that perturbed
     // the simulation at all tripped it — which is a test reporting its own
     // fragility, not a regression.
+    // **And the replacement assertion was wrong too, one layer deeper.** It read
+    // "every species that *had* a roster lost mages", and the cull does not
+    // promise that: it takes every `EVERY_KTH`th mage from one **global**
+    // ordering, so what a species loses depends on where its handles fall in
+    // that ordering and not on how many it has. On `w190/scribing-fidelity`
+    // orc reaches the shock tick with `preShock: 2` and `killed: 0` — two mages,
+    // both on the wrong parity. That is not a smaller roster than before; it is
+    // the same accident of ordering the previous author diagnosed, expressed at
+    // `preShock: 2` instead of at `preShock: 0`.
+    //
+    // So this asserts what an every-kth global cull actually guarantees — that
+    // it took about the fraction it claims to take, across the universe — and
+    // *names* any species that had a roster and lost nobody, which is the
+    // finding the length check was accidentally carrying. A per-species
+    // guarantee would need a per-species cull, and that is a different
+    // instrument.
     const withRoster = detail.species.filter((row) => (row['preShock'] as number) > 0);
     // Every species the cull *reached* is one that had a roster — the direction
     // that says the cull is not inventing losses. The converse does not hold and

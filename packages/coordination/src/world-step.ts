@@ -2132,7 +2132,20 @@ function workOne(
             ),
           ),
         );
+        return undefined;
       }
+      // No living holder. The archive is the fallback and never the first
+      // choice, which is the whole of *"a real reason to keep the person alive
+      // rather than merely the book"* expressed as an order of preference
+      // rather than as a penalty. See `outlook.ts` for why this shares a goal
+      // with the lesson above instead of taking a tenth id.
+      //
+      // The `teach-rate` primitive does **not** multiply this. A book does not
+      // teach faster because a god blessed the art of instruction; nothing is
+      // instructing. The library's own capital term does apply, through
+      // `libraryRateMultiplier` on the mage's rates, and that is the multiplier
+      // a deep shelf is supposed to earn.
+      gateway.contributeStudy(mage, nodeId, MAGE_MONTHS_PER_TICK);
       return undefined;
     }
     case GOAL.scribe:
@@ -2693,6 +2706,7 @@ function ratesOf(state: SimState, mage: Handle, deps: WorldStepDeps): MageRates 
     rediscoveryAffinity: species.rediscoveryAffinity,
     depthCeiling: species.depthCeiling,
     scribeAffinity: species.scribeAffinity,
+    curiosity: species.curiosity,
   };
 }
 

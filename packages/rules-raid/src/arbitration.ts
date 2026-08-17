@@ -94,6 +94,15 @@ export const COMBAT_PRIMITIVES = Object.freeze({
   concealment: 'concealment',
   knowledgeSteal: 'knowledge-steal',
   /**
+   * Corrupting a text rather than taking it — *"enter, corrupt, leave
+   * undetected"* (`docs/design/scribing-fidelity.md`).
+   *
+   * The one attack that is neither theft nor damage. It leaves the book on the
+   * shelf, leaves the shelf in the library, and leaves nothing the victim can
+   * observe until a reader fails against the page.
+   */
+  knowledgeCorrupt: 'knowledge-corrupt',
+  /**
    * The presence gate on raiding itself (`contracts.md` §3, *"boolean gate;
    * enables raid initiation"*). It has no magnitude that means anything and is
    * never stacked — a node either carries it or does not, which is what the
@@ -216,6 +225,7 @@ const COMBAT_CONSUMERS: readonly (readonly [string, string])[] = Object.freeze([
   [COMBAT_PRIMITIVES.ward, 'rules-raid/arbitration.CastArbiter.passiveDefences'],
   [COMBAT_PRIMITIVES.concealment, 'rules-raid/arbitration.CastArbiter.passiveDefences'],
   [COMBAT_PRIMITIVES.knowledgeSteal, 'rules-raid/arbitration.CastArbiter.theftMagnitudes'],
+  [COMBAT_PRIMITIVES.knowledgeCorrupt, 'rules-raid/arbitration.CastArbiter.corruptionMagnitudes'],
 ]);
 
 /** No authored effects, for a node the index has never heard of. */
@@ -572,6 +582,26 @@ export class CastArbiter {
   }
 
   /**
+   * A corruption attempt, on stream 13, gated by the **host's** ruleset.
+   *
+   * The host's for the same reason theft is: it is magic worked inside the
+   * host's sky, and a raider whose home forbids `perdo-nomen` may still unmake a
+   * name in a universe that permits it.
+   */
+  attemptCorruption(nodeId: ContentId, magnitudes: readonly Fixed[], stream: RngStream): boolean {
+    if (!this.#permitsNode(nodeId)) {
+      this.#forbiddenCastsBlocked += 1;
+      return false;
+    }
+    return rollStackedProbability(
+      this.#primitive(COMBAT_PRIMITIVES.knowledgeCorrupt),
+      magnitudes,
+      stream,
+      this.#stackOptions(),
+    ).succeeded;
+  }
+
+  /**
    * The `knowledge-steal` magnitudes a node carries.
    *
    * Here rather than at the theft call site so that `effect.magnitude` is read
@@ -582,6 +612,13 @@ export class CastArbiter {
    */
   theftMagnitudes(nodeId: ContentId): readonly Fixed[] {
     return this.#authored(COMBAT_PRIMITIVES.knowledgeSteal, nodeId).map((effect) => effect.magnitude);
+  }
+
+  /** The `knowledge-corrupt` magnitudes a node authors. The one read site. */
+  corruptionMagnitudes(nodeId: ContentId): readonly Fixed[] {
+    return this.#authored(COMBAT_PRIMITIVES.knowledgeCorrupt, nodeId).map(
+      (effect) => effect.magnitude,
+    );
   }
 
   /** The summed damage a target takes, after exactly one ward application. */

@@ -147,11 +147,24 @@ export function buildOutlook(
 }
 
 /**
- * Nodes a living, willing holder could teach this mage.
+ * Nodes a living holder could teach this mage, **or a book on her shelf could**.
  *
  * The counterparty scan is the gateway's, and bounded there. Each answer is one
  * node — the lowest the pair admits — so the list is at most one entry per
  * counterparty, ascending by node id after the caller's sort.
+ *
+ * ## Why the archive is folded into this list rather than given a tenth goal
+ *
+ * `seek-teaching` is *"seek instruction"*, and a text is instruction. Reading it
+ * that way costs nothing: the goal registry is untouched, so every balance
+ * baseline stays comparable goal-for-goal, the appeal terms and the feasibility
+ * mask keep working unchanged, and the agent action space does not grow.
+ *
+ * A tenth goal would have bought one thing this does not — a mage able to
+ * *prefer* a book to a person — and the design wants the opposite preference.
+ * `world-step.ts` tries the living teacher first and falls back to the shelf,
+ * because *"scribing from a living holder beats scribing from a grimoire"* is
+ * the same sentence read from the learner's end.
  */
 function teachableToMe(mage: Handle, deps: OutlookDeps): KnowledgeTarget[] {
   const found = new Map<number, KnowledgeTarget>();
@@ -166,6 +179,23 @@ function teachableToMe(mage: Handle, deps: OutlookDeps): KnowledgeTarget[] {
       // Teaching is cheaper than research by construction (`contracts.md` §2.3
       // authors `teachCost` below `researchCost`), and what the utility-AI needs
       // here is the pair's cost rather than the learner's solo cost.
+      remainingCost: deps.gateway.teachCostOf(nodeId),
+      cellId: facets.cellId,
+      formId: facets.formId,
+      primitives: facets.primitives,
+    });
+  }
+  for (const nodeId of deps.gateway.readableToMe(mage)) {
+    if (found.has(nodeId)) continue;
+    const facets = deps.facetsOf(nodeId);
+    found.set(nodeId, {
+      nodeId,
+      tier: deps.tierOf(nodeId),
+      // The same `teachCost`, deliberately. §2.3 prices "acquiring this node
+      // with help" and a book is help; inventing a `readCost` would be a content
+      // field with no authored value on three hundred nodes, chosen by whoever
+      // wrote the default. What differs between a book and a teacher is what
+      // *arrives*, not what it costs to sit down with it.
       remainingCost: deps.gateway.teachCostOf(nodeId),
       cellId: facets.cellId,
       formId: facets.formId,

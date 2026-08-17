@@ -140,13 +140,21 @@ describe('interning', () => {
     expect(registry.intern('cell', 'creo-animal')).toBe(1);
     expect(registry.intern('cell', 'rego-nomen')).toBe(70);
     expect(registry.intern('node', 'can-call-the-pack')).toBe(1);
-    // 300, not 299: pre-authoring the other 58 cells brought 249 nodes, and
-    // `knowledge-model` task 2.5's `rn-keep-the-name-close` is the one neither
-    // side of that merge shared. Node ids intern in sort order, so it lands at
-    // 285 and every node after it shifts by one — the renumbering these
-    // assertions exist to surface.
-    expect(registry.intern('node', 'rn-keep-the-name-close')).toBe(285);
-    expect(registry.intern('node', 'rv-turn-the-casting')).toBe(300);
+    // 301, not 300: `w190/scribing-fidelity` authored `pn-the-wrong-true-name`,
+    // the one v1 node carrying `knowledge-corrupt`. Node ids intern in **sort
+    // order**, not file order, so it lands at 227 and every node after it shifts
+    // by one — `rn-keep-the-name-close` from 285 to 286, `rv-turn-the-casting`
+    // from 300 to 301. That renumbering is exactly what these assertions exist
+    // to surface, and the considered decision is that a new primitive needs a
+    // node to carry it: an effect primitive with no authored node is a rule that
+    // behaves as a comment.
+    //
+    // The count before that was 300, from pre-authoring the other 58 cells (249
+    // nodes) plus `knowledge-model` task 2.5's `rn-keep-the-name-close`, the one
+    // neither side of that merge shared.
+    expect(registry.intern('node', 'pn-the-wrong-true-name')).toBe(227);
+    expect(registry.intern('node', 'rn-keep-the-name-close')).toBe(286);
+    expect(registry.intern('node', 'rv-turn-the-casting')).toBe(301);
     expect(registry.intern('species', 'draconic')).toBe(1);
     expect(registry.intern('tradition', 'art-of-memory')).toBe(1);
     expect(registry.intern('primitive', 'area-denial')).toBe(1);
@@ -410,6 +418,16 @@ describe('contentRevision', () => {
     // reason the check is a digest over the preimage rather than a
     // hand-maintained list of files.
     //
+    // e8442af2c5f91ae6f80ad9a178e0e451 -> 8a20c0a64242b6322283d439724f6993,
+    // when scribing fidelity added the `knowledge-corrupt` primitive and
+    // `pn-the-wrong-true-name`, the one v1 node carrying it. In the preimage for
+    // the plainest reason on the list: two universes disagreeing about whether
+    // corruption is a thing magic can do would disagree about what a raid into
+    // either of them is *able to do*, which is the arbitration question the host
+    // ruleset exists to answer. And because node ids intern in sort order, the
+    // new node renumbers 74 nodes after it — a save's `nodeId` columns mean
+    // different nodes across the boundary, which is precisely what a revision
+    // mismatch has to refuse.
     // 162f80bf169296d0e5fd516cc3c5257a -> 87fdff6cbf4414b584fef95bf9d4916a,
     // when `w109` appended the seventeenth god cost — action 16, the alliance
     // invitation. A price is in the preimage for the same reason every god
@@ -625,7 +643,32 @@ describe('contentRevision', () => {
     // the W24 merge — `libraryUpkeepMultiplier` on all five territory records,
     // over a preimage that also holds the unease pair, the revert multiplier and
     // the two renamed withdrawal constants. Eleventh union; MEASURED.
-    expect(registry.contentRevision).toBe('869b4e45c7852df1f2c7e705e032a8f6');
+    //
+    // 8a20c0a64242b6322283d439724f6993 / 0dfdd5efc2c6dad07bd486a7d80c851d ->
+    // 5a8761689881767dafd7aa7507c69a7b, when this branch merged the `main` that
+    // had meanwhile landed the seventeenth god cost and anti-requisites. Union,
+    // and for the same reason the list has already given four times: neither
+    // side's literal is a digest over a preimage holding both. `8a20c0a6` is a
+    // digest over a preimage carrying `knowledge-corrupt` and
+    // `pn-the-wrong-true-name` and knowing nothing of action 16 or the exclusion
+    // pair; `0dfdd5ef` is a digest over one carrying both of those and knowing
+    // nothing of corruption. This tree is the first one holding all three, so a
+    // new value is what a digest over the union is supposed to produce — not a
+    // disagreement being settled.
+    //
+    // MEASURED on the merged tree rather than reasoned about: `npm run
+    // check:content` on this commit prints `data: contentRevision
+    // 5a8761689881767dafd7aa7507c69a7b`. That is the whole method, and it is the
+    // only method — a revision literal that was written rather than read is the
+    // one thing on this list nothing downstream can catch, because every
+    // consumer compares against it rather than deriving it.
+    //
+    // 869b4e45c7852df1f2c7e705e032a8f6 -> 24399a8680be722f65dd24a57898717a on
+    // the `w190/scribing-fidelity` merge, and the twelfth and last union in this
+    // group. MEASURED with `npm run check:content`, which is the method the
+    // paragraph above insists on and the only one that catches a literal that
+    // was written rather than read.
+    expect(registry.contentRevision).toBe('24399a8680be722f65dd24a57898717a');
   });
 
   it('is stable across loads of identical content', () => {

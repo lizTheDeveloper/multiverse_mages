@@ -191,6 +191,12 @@ describe('the world schema is stable in the way the snapshot format needs', () =
       // the branch was brought current.
       'territory-holding',
       'university-site',
+      // Appended by scribing fidelity, as world-schema revision 11. It hangs off
+      // a knowledge-instance handle and so reads as if it belonged beside
+      // `knowledge-instance`; it goes last, because every revision-6 save on
+      // disk was written with twenty sections and expects the twenty-first to be
+      // the one it does not know.
+      'knowledge-fidelity',
     ]);
   });
 

@@ -109,6 +109,24 @@ export type KnowledgeRefusal =
       readonly nodeId: ContentId;
       readonly supplied: Fp;
       readonly required: Fp;
+    }
+  /**
+   * The text is silently wrong and this reader could not read through it.
+   *
+   * `discovered` is the half that matters and is the reason this is a refusal
+   * shape of its own rather than a `node-not-held`. It says whether the reader
+   * was competent enough to tell *"this book is wrong"* from *"I am not good
+   * enough yet"* — see `fidelity.ts`'s `canDiscoverCorruption`. A refusal with
+   * `discovered: false` is a month a novice spent and learned nothing from,
+   * including about the book.
+   */
+  | {
+      readonly reason: 'source-corrupted';
+      readonly nodeId: ContentId;
+      readonly subject: Handle;
+      readonly source: Handle;
+      /** Whether the reader could name the failure. Marks the book when true. */
+      readonly discovered: boolean;
     };
 
 /** A refusal rendered for a human. Never parsed; assert on the fields instead. */
@@ -157,6 +175,13 @@ export function describeRefusal(refusal: KnowledgeRefusal): string {
       return (
         `scribing node ${String(refusal.nodeId)} needs ${String(refusal.required)} scribe ` +
         `capacity and ${String(refusal.supplied)} was supplied`
+      );
+    case 'source-corrupted':
+      return (
+        `instance ${String(refusal.source)} of node ${String(refusal.nodeId)} is corrupted and ` +
+        `${String(refusal.subject)} could not read through it; the failure was ` +
+        `${refusal.discovered ? 'diagnosed and the text marked' : 'silent — the reader cannot ' +
+        'tell a wrong book from her own limits'}`
       );
   }
 }

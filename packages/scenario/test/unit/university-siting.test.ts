@@ -90,6 +90,14 @@ const SHARED: Omit<ReferenceOptions, 'academySiteKind'> = {
   // to one written before the factor existed — which is exactly what a fixture
   // whose only intended variable is the site needs.
   foundingPortalMagic: 0,
+  // **FLAG FOR COMBINE TIME (2026-08-16):** this fixture, and the
+  // `RULESET_NODE_CEILING` assertions below, reason about the **v1 opening
+  // square** — 51 nodes inside twelve enabled cells. A sibling branch in this
+  // campaign has opened all seventy cells and removed the `v1` gate entirely,
+  // which makes every count in this file a statement about a ruleset that will
+  // no longer exist. Not resolved here, per the coordinator's instruction to
+  // flag rather than fix: it needs a second look when the two are combined.
+  //
   // The v1 rectangle, which is what every recorded run of this measurement was
   // taken on. Pinned rather than defaulted so a later flip of the opening-square
   // default cannot move a comparison whose whole point is that only the site
