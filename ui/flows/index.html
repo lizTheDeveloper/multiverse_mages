@@ -476,7 +476,7 @@
   table.flow {
     border-collapse: collapse;
     width: 100%;
-    min-width: 54rem;
+    min-width: 46rem;
     font: 11px var(--mono);
     margin: 0 0 0.7rem;
   }
@@ -486,6 +486,12 @@
     padding: 0.35rem 0.5rem;
     text-align: right;
     white-space: nowrap;
+  }
+  /* The one column that may wrap: it holds a sentence, and forcing a sentence
+     onto one line is what pushed the table into a scroll it did not need. */
+  table.flow td.wrap {
+    white-space: normal;
+    min-width: 16rem;
   }
   table.flow th {
     letter-spacing: 0.06em;
@@ -502,8 +508,17 @@
     color: var(--ink);
     font-weight: 600;
   }
+  /* A zero is recessive, not alarming. The first cut painted every zero in
+     `--loss`, which made "lost to the ceiling · 0" — the outcome you want —
+     the loudest mark on the page. The kinds that genuinely never moved are
+     called out once, per row, by `is-inert`. */
   table.flow td.zero {
-    color: var(--loss);
+    color: var(--faint);
+  }
+  table.flow tr.is-inert td.k::after {
+    content: ' · inert';
+    color: var(--warn);
+    font-weight: 400;
   }
   table.flow td.n {
     color: var(--soft);
@@ -1588,8 +1603,22 @@
       host.innerHTML = '';
       return;
     }
+    /*
+     * **World claimants only**, and the exclusion is the point rather than a
+     * filter: the ledger is built from the *world step's* stock mutations, and
+     * `interventions.ts` spends a god price in a system that runs before it. So
+     * a god verb's spending is structurally not in `claimants` and never will
+     * be. A kind whose only sink is a god verb therefore reads "nothing" here
+     * while the structural map above shows it an arrow, and those two are both
+     * correct — which is exactly the confusion the cell spells out rather than
+     * leaving to be noticed.
+     */
     const claimantsOf = (kind) =>
       SINKS.filter((sk) => sk.group === 'world' && sk.price[kind] !== undefined).map((sk) => sk.id);
+    const godOnly = (kind) =>
+      claimantsOf(kind).length === 0
+        ? SINKS.filter((sk) => sk.group === 'god' && sk.price[kind] !== undefined).map((sk) => sk.name)
+        : [];
     const cell = (v, cls = '') => {
       const zero = Math.abs(v) < 0.05;
       return `<td class="${cls}${zero ? ' zero' : ' big'}">${zero ? '0' : fmt(v)}</td>`;
@@ -1610,8 +1639,19 @@
             : `${label} ${fmt(row.paid)}${row.shortTicks > 0 ? ` (short on ${fmt(row.shortTicks)})` : ''}`;
         })
         .join(' · ');
+      const only = godOnly(kind);
+      const where =
+        paid !== ''
+          ? paid
+          : only.length > 0
+            ? `<span class="zero">no world claimant</span> — only ${only.join(' and ')}, which ` +
+              'the world step never sees'
+            : '<span class="zero">nothing</span>';
+      const inert =
+        Math.abs(totals.faucet[kind] ?? 0) < 0.05 && Math.abs(totals.sink[kind] ?? 0) < 0.05;
+      const rowCls = [focus === kind ? 'is-focus' : '', inert ? 'is-inert' : ''].filter(Boolean).join(' ');
       rows.push(
-        `<tr${focus === kind ? ' class="is-focus"' : ''}><td class="l k">${kind}</td>` +
+        `<tr${rowCls === '' ? '' : ` class="${rowCls}"`}><td class="l k">${kind}</td>` +
         cell(totals.land[kind]) +
         cell(totals.applied[kind]) +
         cell(totals.faucet[kind], 'grp') +
@@ -1619,7 +1659,7 @@
         cell(totals.spilled[kind]) +
         cell(-totals.godGap[kind], 'grp') +
         `<td class="n">${fmt(totals.shortTicks[kind])}</td>` +
-        `<td class="l n grp">${paid || '<span class="zero">nothing</span>'}</td></tr>`,
+        `<td class="l n grp wrap">${where}</td></tr>`,
       );
     }
 
@@ -1647,18 +1687,27 @@
       'attribution that is read in.</p>';
   }
 
-  /** The frame keys this page knows how to read. Anything else is new. */
+  /**
+   * The frame keys this page knows how to read. Anything else is new.
+   *
+   * `flow` is on this list because the page now *consumes* it. It was not, for
+   * one commit, and the probe correctly reported it as unrecognised on a tree
+   * that had it — which is the probe working, and also the reason it is worth
+   * keeping: the list is a claim about what this page understands, and it goes
+   * stale the moment the read path grows something.
+   */
   const KNOWN_FRAME_KEYS = [
-    'obs', 'sat', 'stocks', 'candidateDetail', 'academy', 'mask', 'candidates', 'status',
+    'obs', 'sat', 'stocks', 'candidateDetail', 'academy', 'mask', 'candidates', 'status', 'flow',
   ];
 
   function drawAbsent(session, totals) {
-    const probe =
-      session === null
-        ? null
-        : Object.keys(session.frame(session.frameCount - 1).raw ?? {}).filter(
-            (k) => !KNOWN_FRAME_KEYS.includes(k),
-          );
+    /* The frame's own keys, not this page's list of them. Printing
+       `KNOWN_FRAME_KEYS.length` here reported "carries 9 keys" about a frame
+       that carries 8 — a checker describing its own expectation rather than its
+       input, which is the shape this repository has been bitten by five times. */
+    const frameKeys =
+      session === null ? [] : Object.keys(session.frame(session.frameCount - 1).raw ?? {});
+    const probe = session === null ? null : frameKeys.filter((k) => !KNOWN_FRAME_KEYS.includes(k));
 
     /*
      * The panel has two states and they are different claims, so they are
@@ -1719,7 +1768,7 @@
       (probe === null
         ? 'Frame probe: no session.'
         : probe.length === 0
-          ? `Frame probe: the last frame carries ${KNOWN_FRAME_KEYS.length} keys and this page ` +
+          ? `Frame probe: the last frame carries ${fmt(frameKeys.length)} keys and this page ` +
             'knows all of them. No flow sidecar has landed.'
           : `Frame probe: the last frame carries key(s) this page has never seen — ` +
             `<b>${probe.join(', ')}</b>. Something grew on the read path. This page does not ` +
