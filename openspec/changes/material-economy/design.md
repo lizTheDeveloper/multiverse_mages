@@ -590,3 +590,61 @@ matched, the wording is taken verbatim from `origin/w115/enable-all-cells`; wher
 moved past it, the correction is re-derived. `git grep`'s pathspec form returned **nothing at all**
 for a string known to be present, which is why the search was re-run with a positive control first —
 the same "checker answering about the wrong input" shape `CLAUDE.md` catalogues.
+
+### `npm run verify` after opening the grid — 52 failures, triaged and left red
+
+Run **2026-08-16** on `w247/material-economy-build` @ `9dd68d52`, clean tree, no other suite running
+(the previous run was stopped and its workers confirmed drained first — a suite reading a tree that
+changes underneath it produces failures nobody can attribute).
+
+    Test Files  22 failed | 330 passed (352)
+         Tests  52 failed | 4875 passed (4927)
+    REAL_VERIFY_EXIT=1
+
+`typecheck`, `lint`, `check:purity`, `check:content`, `check:audio`, `check:coverage` and
+`check:generated` all passed; every failure is in the suite. **None is re-pinned.** Balance is
+suspended for this campaign and the instruction is that failures from opening the square are
+findings; re-pinning an assertion is how a measurement becomes a story.
+
+**No failure is a defect in the two faucets.** The one that could have been —
+`annihilation-registry.test.ts`, which asserts the exact set of functions that floor a live quantity
+to zero — names `lifespan:effectiveLifespan` (15/240 ticks) and `target-appeal:effortTerm` (1/240).
+Both are sites the widened grid woke up; neither is `materialsProduced`, whose new `mul` is the
+faucet's only added arithmetic.
+
+**Group A — the assertion restates the content decision (20).** These are the twelve-cell rectangle
+written down a second time. Updating them is part of this change's diff and is deliberately *not*
+done here, so that one reviewer can see the whole of what the widening moved in one place;
+`origin/w115/enable-all-cells` carries the corresponding edits for most of these files.
+
+| file | what it pinned |
+|---|---|
+| `content/loader-hard-fail.test.ts` (3) | a thirteenth v1 cell is rejected; a ragged v1 set names its uneven axes; a v1 node with a non-v1 prerequisite is refused. All three seed synthetic content against `V1_CELL_COUNT`, and with the subset at seventy there is no thirteenth cell and no non-v1 cell to hang a prerequisite on |
+| `content/shipped-content.test.ts` (3) | "flags exactly the twelve v1 cells"; the count report; "resolves a non-v1 cell as addressable but unflagged" — there is no unflagged cell now |
+| `content/validation-cli.test.ts` (3) | the CLI's count line, and two seeded-violation lists that included `v1-unreachable-prerequisite` |
+| `rules-magic/primitive-coverage.test.ts` (2) | "declares exactly the two exclusions the design accepted", and the direction-two check that fires when an exclusion becomes covered — **it fired correctly**, which is the check working |
+| `rules-magic/primitive-consumption.test.ts` (1) | that the coverage list still stands while the consumption list is empty |
+| `primitives/breaker-qwen.test.ts` (1) | that `PRIMITIVE_COVERAGE_EXCLUSIONS` has not moved off `['fertility','lifespan']` |
+| `scenario/opening-square.test.ts` (1) | "opens exactly the twelve cells content flags v1" |
+| `scenario/reference-universe.test.ts` (1) | "permits exactly the twelve cells content flags v1, and no thirteenth" |
+| `coordination/frontier-scan-window.test.ts` (4) | the historical record of what the old `min(nodeCount,256)` window cost *the twelve-cell subset* — four hidden tier-1 roots, eighteen of fifty-one nodes out of reach. The numbers are true of a subset that no longer exists |
+| `coordination/academic-effects.test.ts` (1) | the control arm is built from **inert non-v1 nodes tier-matched to the treatment**; with every cell flagged there is no inert node at tier 6 left to match `cf-the-given-destiny`. A fixture consequence, not a rate result |
+
+**Group B — the assertion pins a measured outcome of running the simulation (32).** Left red on
+purpose. Every one of these is a number that moved because the game changed, which is the thing
+balance suspension exists to permit.
+
+| file | what it pinned |
+|---|---|
+| `scenario/species-occupancy.test.ts` (6) | founding cell spread, the ruleset ceiling of twelve, which cells each species is missing at twenty world years |
+| `scenario/species-versatility.test.ts` (4) | "four live affinity entries and seven inert"; "human and gnome have no live entry"; 12/12 breadth. Every authored affinity is live now, which is the point w115 measured |
+| `scenario/species-separation-spread.test.ts` (4) | three species-order separations, now `inconclusive` or `refuted` across seed sets |
+| `scenario/raid-metrics.test.ts` (4) | the raid histogram, cost and action-economy denominator |
+| `scenario/causal-chain-build-rate.test.ts` (4) | the five links of the `build-rate` chain, including the forbid-the-cell ablation — its arm forbids one cell out of seventy instead of one out of twelve |
+| `scenario/strategy-shadowing.test.ts` (2) | the known-shadowed list; `portal-rush/1` is newly shadowed |
+| `scenario/reference-long-run.test.ts` (2) | two-century birth/death convergence, and the teaching/scribing wave |
+| `scenario/combat-ablation-reaches-a-raid.test.ts` (2) | that neutralising `knowledge-steal` changes the raid log on two named seeds |
+| `scenario/annihilation-registry.test.ts` (1) | the exact set of floor-to-zero sites; two woke up |
+| `scenario/reference-time-to-tier.test.ts` (1) | the time-to-tier separations that survive a seed re-roll |
+| `rules-magic/effect-stacking.test.ts` (1) | end-to-end stacking over two held nodes chosen from the subset |
+| **`scenario/raid-engagement.test.ts` (1)** | **"looting brings home nodes from cells this universe would never have permitted"** — this is the corroboration of finding 1 above. The test is red because the mechanism is genuinely inert, not because a number drifted, and it is the one Group B failure that is a **defect** rather than a movement |
