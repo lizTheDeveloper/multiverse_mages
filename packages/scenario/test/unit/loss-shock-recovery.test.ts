@@ -53,7 +53,11 @@ beforeAll(async () => {
     shock: { atTick: SHOCK_TICK, everyKth: EVERY_KTH },
   });
   control = await runLongReference({ content, ticks: TICKS });
-}, 300_000);
+  // Two two-hundred-year runs. 300 s was cut on GitHub Actions job 95387839967
+  // on 2026-08-17 *and* on this box at load 48, both times as a file-level
+  // failure with no named test — the shape that reads as a broken suite rather
+  // than a slow one. See `vitest.config.ts` for the x7 factor.
+}, 1_800_000);
 
 function samplesOf(run: LongRunResult): RosterSample[] {
   const out: RosterSample[] = [];
@@ -123,7 +127,8 @@ describe('the cull itself', () => {
       shock: { atTick: SHOCK_TICK, everyKth: EVERY_KTH },
     });
     expect(again.shock?.culled).toEqual(shocked.shock?.culled);
-  }, 300_000);
+    // One run to the shock tick, on the same x7 factor as the hook above.
+  }, 1_200_000);
 
   it('leaves the control untouched, so the pairing means something', () => {
     expect(control.shock).toBeUndefined();

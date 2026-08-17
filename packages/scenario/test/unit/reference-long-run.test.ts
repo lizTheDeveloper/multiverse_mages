@@ -83,8 +83,15 @@ import {
 import type { LongRunResult } from '@mm/scenario';
 import { beforeAll, describe, expect, it } from 'vitest';
 
-/** Long enough for two hundred world years on a busy machine. */
-const LONG_RUN_TIMEOUT_MS = 300_000;
+/**
+ * Long enough for two hundred world years on a busy machine.
+ *
+ * One such run costs 86 s here (the 9.6 case runs two, at 171.5 s, under load
+ * 20-50); the same hook was cut at 300 s on GitHub Actions job 95387839967 on
+ * 2026-08-17, which is the >3.5x ratio `vitest.config.ts` derives its factor
+ * from. Seven times the two-run case, rounded up.
+ */
+const LONG_RUN_TIMEOUT_MS = 1_200_000;
 
 /**
  * The bound `maxCarryingCapacity` gives the shipped `territory.json`.

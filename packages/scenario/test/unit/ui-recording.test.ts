@@ -410,6 +410,32 @@ const uiSession = (await import(
   ) => Frontier;
 };
 
+/**
+ * Hands the event loop back so the vitest worker can answer its runner.
+ *
+ * The convention `packages/scenario/src/annihilation.ts` states — *"every long
+ * arm in this repository yields to the vitest runner once a world year"*. The
+ * frontier cross-check below is a single unbroken synchronous sweep over every
+ * frame, every college and every node: 23 s on this box under load 20-50 and
+ * 48 s on GitHub Actions, and birpc's timeout is a hardcoded 60 s. A worker that
+ * has not touched its event loop inside that window fails the whole run with
+ * `[vitest-worker]: Timeout calling "onTaskUpdate"` and under-reports what else
+ * happened. It changes no assertion.
+ */
+async function yieldToRunner(): Promise<void> {
+  await new Promise<void>((resolve) => {
+    setImmediate(resolve);
+  });
+}
+
+/**
+ * 23 s on this box under load 20-50; cut at the 30 s suite default on GitHub
+ * Actions job 95387839967 on 2026-08-17, having actually taken 48 s. Seven
+ * times the local cost, rounded up — `vitest.config.ts` carries the factor. The
+ * global default stays at 30 s so a *new* slow test still has to say so.
+ */
+const FRONTIER_TIMEOUT_MS = 240_000;
+
 describe("the recording's research graph, against the grid that owns it", () => {
   /**
    * The runtime grid, built from the same content the recorder published from.
@@ -473,10 +499,14 @@ describe("the recording's research graph, against the grid that owns it", () => 
    * that mage's own holdings, and the converse is checked too: a node the rules
    * would admit and the page dropped is the failure nobody would ever notice.
    */
-  it('calls reachable exactly what `prerequisiteStatus` calls satisfied', () => {
+  it('calls reachable exactly what `prerequisiteStatus` calls satisfied', async () => {
     const depthOf = new Map(recording.content.species.map((x) => [x.speciesId, x.depthCeiling]));
     let checkedRows = 0;
     for (const [i, frame] of recording.frames.entries()) {
+      // Once a frame. Every other long arm in this repository hands the event
+      // loop back once a world year; a frame is this file's world year. See
+      // `yieldToRunner`.
+      if (i > 0) await yieldToRunner();
       const academy = {
         mage: (handle: number) => frame.academy.mages[String(handle)],
         permittedCells: new Set(frame.academy.permittedCells),
@@ -533,7 +563,7 @@ describe("the recording's research graph, against the grid that owns it", () => 
     // A positive control on the loop itself: a run whose colleges were empty
     // would satisfy every assertion above without checking anything.
     expect(checkedRows, 'no reachable row was ever checked').toBeGreaterThan(0);
-  });
+  }, FRONTIER_TIMEOUT_MS);
 });
 
 describe("the recording's academy projection", () => {

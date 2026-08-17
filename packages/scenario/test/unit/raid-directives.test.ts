@@ -84,7 +84,7 @@ interface Arm {
  * technique bit at world scale by tick 100, and every directive the raid then
  * saw was refused. A mid-raid decision needs its own moment to be made in.
  */
-function play(seed: number, policy?: EngagementPolicy): Arm {
+async function play(seed: number, policy?: EngagementPolicy): Promise<Arm> {
   const run = referenceScenario(content, {
     raids: true,
     ...(policy === undefined ? {} : { engagementPolicy: policy }),
@@ -92,9 +92,39 @@ function play(seed: number, policy?: EngagementPolicy): Arm {
   let state = run.scenario.create(seed, { worldTickCap: HORIZON });
   for (let tick = 0; tick < HORIZON; tick += 1) {
     state = step(state, [], rngFromRootSeed(state.rootSeed));
+    // Once a world year, as every other long arm does. See `yieldToRunner`.
+    if (tick % 12 === 11) await yieldToRunner();
   }
   return { state, raids: run.raids() };
 }
+
+/**
+ * Hands the event loop back so the vitest worker can answer its runner.
+ *
+ * The convention `packages/scenario/src/annihilation.ts` states — *"every long
+ * arm in this repository yields to the vitest runner once a world year"* — and
+ * the reason `play` is async for work that is otherwise entirely synchronous.
+ * birpc's timeout is a hardcoded 60 s and a worker running an unbroken
+ * synchronous tick loop cannot answer inside it; the symptom is
+ * `[vitest-worker]: Timeout calling "onTaskUpdate"` in the unhandled-error list,
+ * which fails the run on its own and under-reports what else happened. Five of
+ * them on GitHub Actions job 95387839967, 2026-08-17. It changes no number.
+ */
+async function yieldToRunner(): Promise<void> {
+  await new Promise<void>((resolve) => {
+    setImmediate(resolve);
+  });
+}
+
+/**
+ * The budget every case here declares.
+ *
+ * 6-21 s each on this box under load 20-50; the 21 s case was cut at the 30 s
+ * suite default on GitHub Actions job 95387839967 on 2026-08-17. Seven times the
+ * slowest local case, rounded up — see `vitest.config.ts` for the factor. The
+ * global default stays at 30 s so a *new* slow test still has to say so.
+ */
+const ARM_TIMEOUT_MS = 180_000;
 
 /**
  * Forbids every technique on the opening engagement tick.
@@ -136,9 +166,9 @@ function shapeOf(raids: readonly RaidRecord[]): string {
 const SEED = 0x1234_5678;
 
 describe('a god action submitted mid-raid reaches rules-raid', () => {
-  it('applies the change, charges the raid purse, and moves the raid', () => {
-    const control = play(SEED);
-    const treatment = play(SEED, FORBID_EVERY_TECHNIQUE);
+  it('applies the change, charges the raid purse, and moves the raid', async () => {
+    const control = await play(SEED);
+    const treatment = await play(SEED, FORBID_EVERY_TECHNIQUE);
 
     // The positive control. Without this the assertion below could be satisfied
     // by a seed that simply differs, and the whole file would be measuring
@@ -158,9 +188,9 @@ describe('a god action submitted mid-raid reaches rules-raid', () => {
     // duration, `applyDirective` had no caller, and these two runs were
     // byte-identical.
     expect(shapeOf(treatment.raids)).not.toBe(shapeOf(control.raids));
-  });
+  }, ARM_TIMEOUT_MS);
 
-  it('gives the attacker nothing, because forbidding is defender-only (§6.2)', () => {
+  it('gives the attacker nothing, because forbidding is defender-only (§6.2)', async () => {
     // Asserted against the engine rather than through a run, because whether
     // this seed happens to raid *outbound* is a property of the strategy and
     // the arrival process, and a test that needed one would be vacuous on the
@@ -168,65 +198,67 @@ describe('a god action submitted mid-raid reaches rules-raid', () => {
     // outright: her ruleset does not govern the universe she is standing in, so
     // a change she made would be a change to nothing — and a seam that applied
     // it anyway would be charging her for it.
-    const asAttacker = play(SEED, ({ tick, stance }) => {
+    const asAttacker = await play(SEED, ({ tick, stance }) => {
       expect(stance.side, 'this run defends, so the stance must say so').toBe(RAID_SIDE.defender);
       return tick === 0 ? [{ kind: 2, params: [1] }] : [];
     });
     // The defender's own stance is what this seed produces, so the attacker
     // case is asserted directly on the translation layer.
     expect(asAttacker.raids.length).toBeGreaterThan(0);
-  });
+  }, ARM_TIMEOUT_MS);
 
-  it('costs the world no ticks: a raid is still zero world ticks long', () => {
+  it('costs the world no ticks: a raid is still zero world ticks long', async () => {
     // The negative control. A mid-raid change is settled inside the engagement
     // and written back at resolution like every other raid consequence, so the
     // world clock must be untouched by the seam — a raid consumes zero world
     // ticks, and a directive loop that had leaked into world time would show up
     // here first.
-    const treatment = play(SEED, FORBID_EVERY_TECHNIQUE);
+    const treatment = await play(SEED, FORBID_EVERY_TECHNIQUE);
     expect(treatment.state.clock.worldTick).toBe(HORIZON);
     expect(treatment.state.clock.mode).toBe(0);
     expect(treatment.state.clock.engagementTick).toBe(0);
-  });
+  }, ARM_TIMEOUT_MS);
 
-  it('is byte-identical to the previous build when no policy is installed', () => {
+  it('is byte-identical to the previous build when no policy is installed', async () => {
     // The identity that lets every committed baseline stand. `runRaidWithPolicy`
     // with no policy steps, resolves and throws exactly as `runRaid` did, and
     // this is the assertion that keeps that true rather than assumed.
-    const before = play(SEED);
-    const again = play(SEED);
+    const before = await play(SEED);
+    const again = await play(SEED);
     expect(shapeOf(before.raids)).toBe(shapeOf(again.raids));
     expect(before.raids.reduce((sum, raid) => sum + raid.directivesApplied, 0)).toBe(0);
-  });
+  }, ARM_TIMEOUT_MS);
 
-  it('is reproducible, so the difference is the directive and not the run', () => {
-    expect(shapeOf(play(SEED, FORBID_EVERY_TECHNIQUE).raids)).toBe(
-      shapeOf(play(SEED, FORBID_EVERY_TECHNIQUE).raids),
+  it('is reproducible, so the difference is the directive and not the run', async () => {
+    expect(shapeOf((await play(SEED, FORBID_EVERY_TECHNIQUE)).raids)).toBe(
+      shapeOf((await play(SEED, FORBID_EVERY_TECHNIQUE)).raids),
     );
-  });
+  }, ARM_TIMEOUT_MS);
 });
 
 describe('the translation layer decides nothing the engine owns', () => {
-  it('routes an out-of-range axis id to no directive at all', () => {
+  it('routes an out-of-range axis id to no directive at all', async () => {
     // Dropped rather than clamped. Clamping "forbid technique 99" into
     // technique 5 would charge an agent for an action it did not take, and the
     // agent has no way to tell the two apart.
-    const treatment = play(SEED, ({ tick }) => (tick === 0 ? [{ kind: 2, params: [99] }] : []));
+    const treatment = await play(SEED, ({ tick }) =>
+      tick === 0 ? [{ kind: 2, params: [99] }] : [],
+    );
     expect(treatment.raids.length).toBeGreaterThan(0);
     expect(treatment.raids.reduce((sum, raid) => sum + raid.directivesApplied, 0)).toBe(0);
-  });
+  }, ARM_TIMEOUT_MS);
 
-  it('offers the four actions on the mask it hands the policy', () => {
+  it('offers the four actions on the mask it hands the policy', async () => {
     // The other half of the seam, asserted where it is observable: the mask the
     // policy is handed must actually report actions 1-4 legal during muster.
     // Before this change it reported [1, 0, 0, ...] for every engagement tick.
     let sawLegal = 0;
-    play(SEED, ({ mask }) => {
+    await play(SEED, ({ mask }) => {
       if (ENGAGEMENT_ACTIONS.some((action) => isLegal(mask, action))) sawLegal += 1;
       return [];
     });
     expect(sawLegal, 'the mask never reported a ruleset action legal mid-raid').toBeGreaterThan(0);
-  });
+  }, ARM_TIMEOUT_MS);
 
   it('keeps applyDirective as the only authority on phase, side and purse', () => {
     // A structural claim about the seam, asserted directly against the engine

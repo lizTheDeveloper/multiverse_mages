@@ -224,17 +224,49 @@ interface Played {
  * four control arms once per primitive; without this it would compute
  * twenty-four runs to look at four, and time out doing it.
  */
+/**
+ * The budget every case here declares, because the suite default of 30 s was
+ * measured against tests that only compute and these run four four-hundred-tick
+ * universes each.
+ *
+ * 20-27 s per case on this box under load 20-50; every one of them was cut at
+ * 30 s on GitHub Actions job 95387839967 on 2026-08-17, having actually taken
+ * 40-56 s. Seven times the slowest local case, rounded up — see
+ * `vitest.config.ts` for where the seven comes from, and note the global default
+ * is deliberately left at 30 s so a *new* slow test still has to say so.
+ */
+const ARM_TIMEOUT_MS = 240_000;
+
 const played = new Map<string, Played>();
-function play(seed: number, ablated?: string): Played {
+async function play(seed: number, ablated?: string): Promise<Played> {
   const key = `${String(seed)}:${ablated ?? ''}`;
   const cached = played.get(key);
   if (cached !== undefined) return cached;
-  const result = playOnce(seed, ablated);
+  const result = await playOnce(seed, ablated);
   played.set(key, result);
   return result;
 }
 
-function playOnce(seed: number, ablated?: string): Played {
+/**
+ * Hands the event loop back so the vitest worker can answer its runner.
+ *
+ * The convention `packages/scenario/src/annihilation.ts` states — *"every long
+ * arm in this repository yields to the vitest runner once a world year"* — and
+ * the reason `playOnce` is async for work that is otherwise entirely
+ * synchronous. An arm here is 400 ticks and the cases below take four of them;
+ * that is 20-27 s on this box and 40-56 s on GitHub Actions, either side of
+ * birpc's hardcoded 60 s, and a worker that has not touched its event loop
+ * inside that window fails the whole run with
+ * `[vitest-worker]: Timeout calling "onTaskUpdate"` — five of them on job
+ * 95387839967, 2026-08-17. It changes no number.
+ */
+async function yieldToRunner(): Promise<void> {
+  await new Promise<void>((resolve) => {
+    setImmediate(resolve);
+  });
+}
+
+async function playOnce(seed: number, ablated?: string): Promise<Played> {
   const run = referenceScenario(content, {
     raids: true,
     // Off: this file reads the raid log, and the census is seconds of work it
@@ -245,6 +277,8 @@ function playOnce(seed: number, ablated?: string): Played {
   let state = run.scenario.create(seed, { worldTickCap: HORIZON });
   for (let tick = 0; tick < HORIZON; tick += 1) {
     state = step(state, [], rngFromRootSeed(state.rootSeed));
+    // Once a world year, as every other long arm does.
+    if (tick % 12 === 11) await yieldToRunner();
   }
   const living = collectRecords(state, MAGE).filter(({ row }) => row.alive === 1);
   return {
@@ -256,50 +290,59 @@ function playOnce(seed: number, ablated?: string): Played {
 }
 
 describe('§9’s mask crosses the scenario boundary into a raid', () => {
-  it.each(SEEDS)('neutralizing knowledge-steal changes the raid log on seed %i', (seed) => {
-    const control = play(seed);
-    const ablated = play(seed, 'knowledge-steal');
+  it.each(SEEDS)(
+    'neutralizing knowledge-steal changes the raid log on seed %i',
+    async (seed) => {
+      const control = await play(seed);
+      const ablated = await play(seed, 'knowledge-steal');
 
-    // The arm has to have reached the mechanic. A run that resolves no raid
-    // reports two identical empty logs and would pass a naive comparison while
-    // covering nothing — the same hollowing-out `raid-engagement.test.ts` guards
-    // its sentinel arm against.
-    expect(control.raidCount).toBeGreaterThan(0);
-    expect(ablated.raidCount).toBe(control.raidCount);
+      // The arm has to have reached the mechanic. A run that resolves no raid
+      // reports two identical empty logs and would pass a naive comparison while
+      // covering nothing — the same hollowing-out `raid-engagement.test.ts`
+      // guards its sentinel arm against.
+      expect(control.raidCount).toBeGreaterThan(0);
+      expect(ablated.raidCount).toBe(control.raidCount);
 
-    expect(ablated.raidLog).not.toBe(control.raidLog);
-  });
+      expect(ablated.raidLog).not.toBe(control.raidLog);
+    },
+    ARM_TIMEOUT_MS,
+  );
 
-  it.each(UNMOVED_PRIMITIVES)('leaves a run byte-identical when %s is neutralized', (primitive) => {
-    // The other direction, and it is what makes the assertion above mean
-    // something: the mask is not a general perturbation that moves any run it
-    // is handed. Six of the seven primitives move nothing on any seed, because
-    // nothing in a reference raid ever casts.
-    for (const seed of SEEDS) {
-      const control = play(seed);
-      expect(control.raidCount, `seed ${String(seed)} resolved no raid`).toBeGreaterThan(0);
-      expect(
-        play(seed, primitive).raidLog,
-        `${primitive} moved seed ${String(seed)} — a reference raid now contains combat`,
-      ).toBe(control.raidLog);
-    }
-  });
+  it.each(UNMOVED_PRIMITIVES)(
+    'leaves a run byte-identical when %s is neutralized',
+    async (primitive) => {
+      // The other direction, and it is what makes the assertion above mean
+      // something: the mask is not a general perturbation that moves any run it
+      // is handed. Six of the seven primitives move nothing on any seed, because
+      // nothing in a reference raid ever casts.
+      for (const seed of SEEDS) {
+        const control = await play(seed);
+        expect(control.raidCount, `seed ${String(seed)} resolved no raid`).toBeGreaterThan(0);
+        expect(
+          (await play(seed, primitive)).raidLog,
+          `${primitive} moved seed ${String(seed)} — a reference raid now contains combat`,
+        ).toBe(control.raidLog);
+      }
+    },
+    ARM_TIMEOUT_MS,
+  );
 });
 
 describe('why six of the seven combat primitives cannot be measured here', () => {
   it.each(['direct-damage', 'concealment', 'blink'])(
     'neutralizing %s changes nothing, because nobody ever swings',
-    (primitive) => {
+    async (primitive) => {
       const seed = 0x0bad_c0de;
       // The raid log now carries `actionEconomy`, so this comparison is a real
       // one: before the record carried `actionEconomy` it could not have distinguished a live mask from a dead
       // one, because the fields a combat primitive moves were not in it.
-      expect(play(seed, primitive).raidLog).toBe(play(seed).raidLog);
+      expect((await play(seed, primitive)).raidLog).toBe((await play(seed)).raidLog);
     },
+    ARM_TIMEOUT_MS,
   );
 
-  it('fields no warden — which is a symptom, and not the cause', () => {
-    const played = play(0x0bad_c0de);
+  it('fields no warden — which is a symptom, and not the cause', async () => {
+    const played = await play(0x0bad_c0de);
     // `assign role` is god action 10 and the passive strategy never submits it,
     // so every mage stays a `researcher`. That is worth asserting and it is
     // **not** why the six are invisible: `DEFENDING_ROLES` includes
@@ -309,5 +352,5 @@ describe('why six of the seven combat primitives cannot be measured here', () =>
     // where the record can now show it.
     expect(played.livingMages).toBeGreaterThan(0);
     expect(played.wardens).toBe(0);
-  });
+  }, ARM_TIMEOUT_MS);
 });

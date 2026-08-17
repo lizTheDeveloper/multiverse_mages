@@ -119,8 +119,15 @@ const ARM_TICKS = 60;
  *
  * If this needs raising again, check the size of `BOT_POOL` first: this number
  * is linear in it, and a pool that has grown is the expected cause.
+ *
+ * It did need raising again, and `BOT_POOL` was not the cause. The sweep costs
+ * 167 s inside a full `npm run verify` on this box, and GitHub Actions is
+ * 1.4x-2.1x slower than it on every long file that completes on both — so 300 s
+ * was one loaded runner away from a timeout that would have read as a defect in
+ * the sentinel. Seven times 167 s, rounded up; see `vitest.config.ts` for the
+ * factor and the 2026-08-17 pair it was measured from.
  */
-const SENTINEL_SWEEP_MS = 300_000;
+const SENTINEL_SWEEP_MS = 1_200_000;
 
 /** Renders a violation the way a reader needs it: which value, where, which door. */
 function describeViolation(violation: ComponentValueViolation): string {
@@ -209,7 +216,9 @@ describe('an assembled universe writes no non-finite value into state', () => {
 
       expect(violations.map(describeViolation)).toEqual([]);
     },
-    120_000,
+    // 92 s here under load 20-50, x7. 120 s was cut on GitHub Actions job
+    // 95387839967, 2026-08-17. See `vitest.config.ts` for the factor.
+    900_000,
   );
 
   it(

@@ -372,13 +372,37 @@ const REGISTERED: ReadonlyMap<string, string> = new Map([
   ],
 ]);
 
+/**
+ * Hands the event loop back so the vitest worker can answer its runner.
+ *
+ * The convention `packages/scenario/src/annihilation.ts` names — *"every long
+ * arm in this repository yields to the vitest runner once a world year"* — and
+ * the reason `AnnihilationRecorder.record` was hardened to hold the sentinel
+ * across an await. This arm was the one that had the budget and not the yield:
+ * it runs 240 ticks of instrumented reference universe in one unbroken
+ * synchronous block, 320 s on this box, and a worker that has not touched its
+ * event loop for that long cannot answer birpc inside its hardcoded 60 s. That
+ * surfaces as `[vitest-worker]: Timeout calling "onTaskUpdate"` in the
+ * unhandled-error list — four of them locally and five on GitHub Actions job
+ * 95387839967 on 2026-08-17, each of which fails the run on its own and
+ * *under-reports* what else happened.
+ *
+ * It changes no number: the simulation between yields is unchanged and entirely
+ * synchronous.
+ */
+async function yieldToRunner(): Promise<void> {
+  await new Promise<void>((resolve) => {
+    setImmediate(resolve);
+  });
+}
+
 describe('the set of functions that floor a live quantity to zero', () => {
-  it('is exactly the registered set, over an assembled reference universe', () => {
+  it('is exactly the registered set, over an assembled reference universe', async () => {
     const content = referenceContent();
     const simulation = defineWorldSimulation(content.deps);
     const recorder = new AnnihilationRecorder();
 
-    recorder.record(() => {
+    await recorder.record(async () => {
       let state = buildReferenceState({
         runSeed: LONG_RUN_SEED,
         options: LONG_RUN_OPTIONS,
@@ -388,6 +412,8 @@ describe('the set of functions that floor a live quantity to zero', () => {
       for (let tick = 0; tick < TICKS; tick += 1) {
         recorder.atTick(tick);
         state = step(state, [], rngFromRootSeed(state.rootSeed));
+        // Once a world year, as every other long arm does.
+        if (tick % 12 === 11) await yieldToRunner();
       }
     });
 
@@ -429,9 +455,15 @@ describe('the set of functions that floor a live quantity to zero', () => {
     //
     // 180 s was the first budget and it was not enough: the same arm takes 234 s
     // inside a full `npm run verify`, where every other worker is competing for
-    // the same cores. 600 s is four times the standalone cost and two and a half
-    // times the contended one.
-  }, 600_000);
+    // the same cores. 600 s was four times the standalone cost and two and a
+    // half times the contended one.
+    //
+    // 600 s was not enough either — on GitHub Actions, 2026-08-17, job
+    // 95387839967, where it was cut at exactly its budget. The arm costs 320 s
+    // inside a full `npm run verify` on this box; seven times that, rounded up,
+    // is the number below. See `vitest.config.ts` for where the seven comes
+    // from.
+  }, 2_400_000);
 
   it('and the instrument that says so can be made to fail', () => {
     // The half that usually gets skipped. A recorder that never fires would

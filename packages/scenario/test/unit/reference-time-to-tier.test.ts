@@ -104,7 +104,12 @@
 import { referenceContent, runLongReference, timeToTierBySpecies } from '@mm/scenario';
 import { beforeAll, describe, expect, it } from 'vitest';
 
-const TIMEOUT_MS = 300_000;
+/**
+ * 233 s measured here (16 cores, load 20-50) x7. `vitest.config.ts` carries the
+ * factor; 300 s was cut on GitHub Actions job 95387839967, 2026-08-17, and the
+ * file failed with no named test.
+ */
+const TIMEOUT_MS = 1_800_000;
 
 /** Sixty world years. See the module note. */
 const HORIZON_TICKS = 720;

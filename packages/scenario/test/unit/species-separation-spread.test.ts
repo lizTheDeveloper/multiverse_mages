@@ -132,15 +132,27 @@ import { fileURLToPath } from 'node:url';
 import { beforeAll, describe, expect, it } from 'vitest';
 
 /**
- * Generous, and deliberately more generous per run than the sibling file's 300
- * seconds for six runs.
+ * Generous, and deliberately more generous per run than the sibling file's
+ * budget for six runs.
  *
  * This is twenty-five runs on a shared box that has been seen at load 300, and
  * a timeout here would read as a real defect in an instrument whose whole
  * subject is not mistaking noise for a finding. Observed cost is about 150
  * seconds at load 11.
+ *
+ * **900 s was not enough on GitHub Actions**, 2026-08-17: the hook was cut at
+ * exactly its budget on job 95387839967 and the whole file failed with no named
+ * test, which reads as a broken suite rather than as a slow one. The hook costs
+ * about 610 s here (669 s for the file, less 59 s for the tests that do not
+ * wait on it) under load 20-50.
+ *
+ * Seven times that is 4,270 s, and this is the one budget in the repository
+ * that takes the one-hour cap instead: an arm that needs longer than an hour is
+ * an arm whose place in a merge gate is the question, not its budget, and the
+ * next completed run is what decides that. See `vitest.config.ts` for the
+ * factor and the local/CI pair behind it.
  */
-const TIMEOUT_MS = 900_000;
+const TIMEOUT_MS = 3_600_000;
 
 /** See the module note. */
 const SETS = MIN_SETS_FOR_REFUTATION;

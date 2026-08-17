@@ -100,5 +100,65 @@ export default defineConfig({
     // toolchain should not have to rediscover this. Nothing here is expected to
     // take seconds, so a genuine hang still fails the run — just later.
     testTimeout: 30_000,
+    // Vitest's hook default is **10 s** — tighter than the test default above,
+    // and for no reason that survives contact with this suite.
+    // `bench-runner.test.ts` compiles the benchmark project with `tsc` inside a
+    // `beforeAll` that declares no budget of its own, which is exactly the
+    // "boots a toolchain" case the paragraph above raised `testTimeout` for. It
+    // has not gone red yet; it is one loaded machine away from doing so, and it
+    // would go red with a hook timeout naming a file whose subject is the
+    // benchmark.
+    //
+    // Parity with `testTimeout` rather than a third number: a hook and a test
+    // doing the same work should not be held to different clocks. Every hook
+    // here that genuinely needs minutes states its own budget, so this is a
+    // floor and not a licence.
+    hookTimeout: 30_000,
+    //
+    // ## The factor every per-test budget in this repository is written against
+    //
+    // A handful of arms genuinely need minutes and state their own budget. Those
+    // budgets were all written from a duration measured on a developer machine,
+    // and on 2026-08-17 every one of them fired on GitHub Actions instead —
+    // eight timeouts and four file-level hook timeouts on a tree whose real
+    // result was four assertion failures. `Verify` was reporting its own
+    // impatience.
+    //
+    // The pair that fixes the number, both taken on `b30f0c8b`:
+    //
+    //   local  `npm run verify`, 16 cores, load 20-50
+    //   CI     Actions job 95387839967 (run 32030062970), ubuntu-latest, 4 vCPU
+    //
+    // Across every long file that *completed* on both, the runner is 1.4x to
+    // 2.1x slower — `balance-telemetry` 66 s / 95 s, `raid-metrics` 37 s / 61 s,
+    // `reference-sweep` 24 s / 50 s, `sandbox` 20 s / 39 s. The one pair where
+    // the runner's cost is bounded from below rather than measured is worse:
+    // `reference-long-run`'s two-hundred-year hook is 86 s locally and was cut
+    // at 300 s there, so **above 3.5x**.
+    //
+    // So: **a budget is seven times its measured local cost** — 3.5 for the
+    // runner and 2 for a box that is also doing something else — rounded up to a
+    // round number, and capped at one hour, because an arm that needs longer
+    // than that is an arm whose place in a merge gate is the question rather
+    // than its budget.
+    //
+    // These are deliberately loose. No run has yet produced a *completed* CI
+    // duration for any of the twelve, and the point of the next one is to get
+    // them; tighten from measured numbers rather than from this rule.
+    //
+    // NOT set: `maxWorkers`. The obvious reading of the 2026-08-17 Actions run
+    // — five `[vitest-worker]: Timeout calling "onTaskUpdate"` errors — is that
+    // the orchestrator is starved and the pool should be capped. The arithmetic
+    // says otherwise: 4,417 s of test time plus 912 s of collection finished in
+    // 1,868 s of wall clock, which is 2.85 concurrent streams on a four-vCPU
+    // runner. That box is busy, not thrashing, and capping the pool would have
+    // added about 40% to the wall clock while fixing nothing.
+    //
+    // The RPC error is a *worker* symptom, not an orchestrator one: birpc's 60 s
+    // timeout is hardcoded, and a worker running an unbroken synchronous tick
+    // loop cannot service the reply that would clear it. The fix is the one
+    // `packages/scenario/src/annihilation.ts` already names as this
+    // repository's convention — every long arm hands the event loop back once a
+    // world year — and it lives in the test files, not here.
   },
 });

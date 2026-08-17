@@ -114,6 +114,17 @@ const LOOTING_LEVELS: Readonly<Record<string, number>> = Object.freeze({
   foundingPortalMagic: 1,
 });
 
+/**
+ * **The one arm on this file that is still an unbroken synchronous block.**
+ *
+ * `executeReferenceRun` is `mc-harness`'s shipped entry point rather than a
+ * loop this file owns, so it cannot be given the once-a-world-year yield
+ * `playOnce` has. These two cases cost 29 s and 33 s here under load 20-50,
+ * which is 58-69 s on GitHub Actions — either side of birpc's hardcoded 60 s.
+ * The budget below stops a false *timeout*; it does not remove the residual
+ * chance of an `onTaskUpdate` RPC error, and the fix for that would be a yield
+ * inside `executeReferenceRun`, which is src and is not this change's to make.
+ */
 function runOf(
   strategy: string,
   levels: Readonly<Record<string, number>> = { cohortSize: 12, foundingMages: 2, foundingNodes: 4 },
@@ -154,20 +165,34 @@ interface Arm {
  * without this they would compute twelve.
  */
 const arms = new Map<string, Arm>();
-function play(seed: number, raids: boolean, ticks = HORIZON): Arm {
+async function play(seed: number, raids: boolean, ticks = HORIZON): Promise<Arm> {
   const key = `${String(seed)}:${String(raids)}:${String(ticks)}`;
   const cached = arms.get(key);
   if (cached !== undefined) return cached;
-  const arm = playOnce(seed, raids, ticks);
+  const arm = await playOnce(seed, raids, ticks);
   arms.set(key, arm);
   return arm;
 }
 
-function playOnce(seed: number, raids: boolean, ticks: number): Arm {
+/**
+ * The budget every case that plays an arm declares.
+ *
+ * 10-33 s each on this box under load 20-50 — the 33 s case was already over
+ * the 30 s suite default here, and the 30 s case was cut on both boxes on
+ * 2026-08-17 (GitHub Actions job 95387839967, and locally at load 48). Seven
+ * times the slowest local case, rounded up; see `vitest.config.ts` for the
+ * factor. The global default stays at 30 s so a *new* slow test still has to say
+ * so.
+ */
+const ARM_TIMEOUT_MS = 300_000;
+
+async function playOnce(seed: number, raids: boolean, ticks: number): Promise<Arm> {
   const run = referenceScenario(content, { raids });
   let state = run.scenario.create(seed, { worldTickCap: ticks });
   for (let tick = 0; tick < ticks; tick += 1) {
     state = step(state, [], rngFromRootSeed(state.rootSeed));
+    // Once a world year, as `yieldToRunner` below explains.
+    if (tick % 12 === 11) await yieldToRunner();
   }
   return {
     state,
@@ -242,17 +267,17 @@ describe('a raid writes no non-finite value into state', () => {
 });
 
 describe('a reference universe is raided', () => {
-  it('resolves raids over forty-three world years, where the build before this one resolved none', () => {
-    const played = play(0x1234_5678, true);
+  it('resolves raids over forty-three world years, where the build before this one resolved none', async () => {
+    const played = await play(0x1234_5678, true);
     expect(played.raids.length).toBeGreaterThan(0);
-  });
+  }, ARM_TIMEOUT_MS);
 
-  it('is the defender, and its raiders are derived from its own mages', () => {
-    const played = play(0x1234_5678, true);
+  it('is the defender, and its raiders are derived from its own mages', async () => {
+    const played = await play(0x1234_5678, true);
     // Nothing in this run submits action 14, so every raid is inbound. An
     // outbound raid here would mean the arrival process had picked a side.
     expect(played.raids.every((raid) => !raid.outbound)).toBe(true);
-  });
+  }, ARM_TIMEOUT_MS);
 
   /**
    * **This test passed on `main` for a reason that was not its title, and W116
@@ -288,53 +313,53 @@ describe('a reference universe is raided', () => {
    * both are `raid-engagement`'s. What is fixed here is a test that would have
    * gone on reporting success through either.
    */
-  it('is not a no-op on the host universe knowledge economy', () => {
+  it('is not a no-op on the host universe knowledge economy', async () => {
     const seed = 0x0bad_c0de;
-    const raided = play(seed, true);
+    const raided = await play(seed, true);
     expect(raided.raids.length).toBeGreaterThan(0);
-    expect(raided.instances).not.toBe(play(seed, false).instances);
-  });
+    expect(raided.instances).not.toBe((await play(seed, false)).instances);
+  }, ARM_TIMEOUT_MS);
 
-  it('destroys nothing and steals nothing, which is a finding and not a design', () => {
+  it('destroys nothing and steals nothing, which is a finding and not a design', async () => {
     // The zero above, pinned so it cannot quietly stop being zero — in either
     // direction. If `raid-engagement` gives raiders something to take, this is
     // the test that fails and says so, and the assertion above becomes
     // directional again.
     for (const seed of SEEDS) {
-      const raided = play(seed, true);
+      const raided = await play(seed, true);
       expect(raided.raids.length).toBeGreaterThan(0);
       expect(raided.raids.reduce((sum, raid) => sum + raid.nodesLostLocally, 0)).toBe(0);
       expect(raided.raids.reduce((sum, raid) => sum + raid.localCasualties, 0)).toBe(0);
     }
-  });
+  }, ARM_TIMEOUT_MS);
 });
 
 describe('the two properties raid-engagement is arranged around', () => {
-  it('resolves every raid inside its own portal-stability bound', () => {
+  it('resolves every raid inside its own portal-stability bound', async () => {
     for (const seed of SEEDS) {
-      for (const raid of play(seed, true).raids) {
+      for (const raid of (await play(seed, true)).raids) {
         expect(raid.engagementTicks).toBeLessThanOrEqual(raid.initialPortalStabilityTicks);
       }
     }
-  });
+  }, ARM_TIMEOUT_MS);
 
-  it('blocks no forbidden cast, because none is ever selected', () => {
+  it('blocks no forbidden cast, because none is ever selected', async () => {
     // The 0.7.0 zero-occurrence claim, measured rather than assumed. A non-zero
     // here is the selection mask having failed and the assertion having caught
     // it, which is a defect and not a balance result.
     for (const seed of SEEDS) {
-      const total = play(seed, true).raids.reduce(
+      const total = (await play(seed, true)).raids.reduce(
         (sum, raid) => sum + raid.forbiddenCastsBlocked,
         0,
       );
       expect(total).toBe(0);
     }
-  });
+  }, ARM_TIMEOUT_MS);
 });
 
 describe('a raid consumes zero world ticks', () => {
-  it('returns the clock to world time and advances the world exactly once a step', () => {
-    const played = play(0x1234_5678, true);
+  it('returns the clock to world time and advances the world exactly once a step', async () => {
+    const played = await play(0x1234_5678, true);
     expect(played.raids.length).toBeGreaterThan(0);
     expect(played.state.clock.mode).toBe(0);
     expect(played.state.clock.engagementTick).toBe(0);
@@ -342,7 +367,7 @@ describe('a raid consumes zero world ticks', () => {
     // would report a world tick well below the number of steps taken, with no
     // error anywhere.
     expect(played.state.clock.worldTick).toBe(HORIZON);
-  });
+  }, ARM_TIMEOUT_MS);
 });
 
 describe('raids off is the build before this one', () => {
@@ -350,25 +375,25 @@ describe('raids off is the build before this one', () => {
     expect(referenceScenario(content, { raids: false }).scenario.portalTargets).toBeUndefined();
   });
 
-  it('resolves no raid and leaves the clock untouched', () => {
-    const played = play(0x1234_5678, false);
+  it('resolves no raid and leaves the clock untouched', async () => {
+    const played = await play(0x1234_5678, false);
     expect(played.raids).toEqual([]);
     expect(played.state.clock.worldTick).toBe(HORIZON);
-  });
+  }, ARM_TIMEOUT_MS);
 
-  it('produces a different universe from the same seed once a raid has landed', () => {
+  it('produces a different universe from the same seed once a raid has landed', async () => {
     // Not an equality assertion in either direction: the point is that the two
     // arms are genuinely different runs, so a sweep comparing them is comparing
     // something. If these hashes ever match, raids resolved and changed nothing.
     const seed = 0x5eed_0001;
-    expect(snapshotHash(play(seed, true).state)).not.toEqual(
-      snapshotHash(play(seed, false).state),
+    expect(snapshotHash((await play(seed, true)).state)).not.toEqual(
+      snapshotHash((await play(seed, false)).state),
     );
-  });
+  }, ARM_TIMEOUT_MS);
 });
 
 describe('looting reaches what research cannot', () => {
-  it('brings home nodes from cells this universe would never have permitted', { timeout: 60_000 }, () => {
+  it('brings home nodes from cells this universe would never have permitted', { timeout: ARM_TIMEOUT_MS }, () => {
     // The measurement behind the content-exhaustion finding. Seventy cells are
     // authored and twelve are enabled, and those twelve hold 51 of the 300
     // nodes — so an undisturbed universe learns all 51 and stops, whatever it
@@ -436,7 +461,7 @@ describe('looting reaches what research cannot', () => {
     expect(forbiddenNodes.length).toBeGreaterThan(0);
   });
 
-  it('leaves a universe that never opened a portal with nothing it did not derive', { timeout: 60_000 }, () => {
+  it('leaves a universe that never opened a portal with nothing it did not derive', { timeout: ARM_TIMEOUT_MS }, () => {
     // The same god, the same forbidden Nomen cells, the same portal magic in a
     // founder's head — and a strategy that never submits action 14. It resolves
     // only inbound raids and gains nothing, which is what makes the arm above a
@@ -448,10 +473,10 @@ describe('looting reaches what research cannot', () => {
 });
 
 describe('a raid is reproducible from its seed', () => {
-  it('produces byte-identical raid logs across two plays of one run', () => {
-    const first = play(0x0bad_c0de, true);
-    const second = play(0x0bad_c0de, true);
+  it('produces byte-identical raid logs across two plays of one run', async () => {
+    const first = await play(0x0bad_c0de, true);
+    const second = await play(0x0bad_c0de, true);
     expect(second.raids).toEqual(first.raids);
     expect(snapshotHash(second.state)).toEqual(snapshotHash(first.state));
-  });
+  }, ARM_TIMEOUT_MS);
 });
