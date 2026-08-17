@@ -395,8 +395,39 @@ function changeTraditionCandidates(input: CandidateInput): Candidate[] {
     .map((traditionId) => ({ params: [traditionId] }));
 }
 
-/** Action 14: portal targets, ascending. Supplied by the caller — see {@link CandidateInput}. */
+/**
+ * Action 14: portal targets, ascending. Supplied by the caller — see
+ * {@link CandidateInput}.
+ *
+ * **The portal gate is applied here for the same reason it is applied to action
+ * 16, and its absence here was the same defect.** `coordination`'s
+ * `portalMagicHolder` gates 14 and 16 with one predicate — its own comment says
+ * so: *"actions 14 and 16 are the same design claim pointing two ways"* — and
+ * this file gated only 16. The essay above {@link inviteScholarCandidates}
+ * describes the consequence exactly, and it arrived on action 14 in the same
+ * shape: a policy submits one action per round and takes the first its mask
+ * calls legal, so an optimistic bit does not cost a countable refusal, it costs
+ * the whole round.
+ *
+ * Measured on this tree, 2026-08-17, `portal-rush` over the audit run:
+ * action 14 was **submitted on 584 of 600 ticks and applied on 0**, because no
+ * living mage held `rl-open-the-portal` — and `strategy-audit.ts` names that
+ * exact column pair as *"the other half of this campaign's defect class — the
+ * mask and the rules disagreeing"*.
+ *
+ * The second consequence is the one that made it worth chasing rather than
+ * merely noting. `scenario`'s `raidSystem` gives an outbound submission
+ * precedence over the inbound arrival roll — deliberately, so that *"an arrival
+ * roll that pre-empted the choice would make action 14 fail for a reason no
+ * agent could observe"*. A submission the rules then refuse takes that
+ * precedence and spends it: the outbound branch returns at `portalGate`, the
+ * arrival draw is never taken, and a universe whose god asks for a portal every
+ * tick resolves **no raids at all**, inbound or outbound. That is why opening
+ * the whole grid — which pushed `rl-open-the-portal` past a gate-sized horizon —
+ * read as "raids stopped working" rather than as "the portal is further away".
+ */
 function portalCandidates(input: CandidateInput): Candidate[] {
+  if (!holdsPortalMagic(input)) return [];
   return [...new Set(input.portalTargets ?? [])]
     .filter((target) => Number.isInteger(target) && target !== 0)
     .sort((a, b) => a - b)
