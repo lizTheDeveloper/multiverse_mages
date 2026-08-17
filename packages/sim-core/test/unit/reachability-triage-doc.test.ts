@@ -31,11 +31,11 @@
  * silently:
  *
  * 1. §1's package rows each sum across the categories to their own total.
- * 2. §1's totals row is the sum of the package rows, and equals 129.
+ * 2. §1's totals row is the sum of the package rows, and equals its pinned total.
  * 3. §2's per-mechanism counts sum to the number its closing sentence claims.
  * 4. That claim is not larger than §1's integration-debt total.
- * 5. The 129 matches `scripts/reachability-baseline.json` — the document and the
- *    gate describe the same tree.
+ * 5. That total matches `scripts/reachability-baseline.json` — the document and
+ *    the gate describe the same tree.
  *
  * What it deliberately does **not** check is the *classification*: whether
  * `applyWard` is integration debt rather than superseded is a judgement, and a
@@ -105,7 +105,7 @@ describe('the reachability triage document', () => {
     }
   });
 
-  it('has a totals row equal to the sum of the package rows, and to 127', () => {
+  it('has a totals row equal to the sum of the package rows, and to 112', () => {
     expect(totalsRow).toHaveLength(1);
     const totals = totalsRow[0]!.slice(1);
 
@@ -116,12 +116,14 @@ describe('the reachability triage document', () => {
       );
     }
     // 129 until `w204/affiliate-writer` gave `completeAffiliation` a production
-    // caller and `changeAffiliation` a reached one. The literal is deliberate —
-    // a total derived from the document could not catch a document that had
-    // drifted from the tree — so it moves only with a change that says why, and
-    // `describes the same tree the ratchet baseline pins` below is the other
-    // half of the tie.
-    expect(totals.at(-1)).toBe(127);
+    // caller and `changeAffiliation` a reached one; 127 until the ascension
+    // legacy got a run boundary — `scenario/src/legacy.ts` — which closed twelve
+    // findings, and a re-pin banked three more that merges had already repaired.
+    // The literal is deliberate — a total derived from the document could not
+    // catch a document that had drifted from the tree — so it moves only with a
+    // change that says why, and `describes the same tree the ratchet baseline
+    // pins` below is the other half of the tie.
+    expect(totals.at(-1)).toBe(112);
   });
 
   it('has a §2 table whose counts sum to the total its closing sentence claims', () => {

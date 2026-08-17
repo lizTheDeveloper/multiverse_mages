@@ -1,9 +1,32 @@
-# The 127 reachability findings, triaged
+# The 112 reachability findings, triaged
 
-**Measured at `e2b89d8` on 2026-08-14**, by `npm run check:reachability` plus the capability
+**Measured at `072cf70` on 2026-08-16**, by `npm run check:reachability` plus the capability
 analysis described in §5. This is an **inventory, not a fix**: the point is to convert the single
-number "127 findings" into a count of things somebody would act on, because that number is what
+number "112 findings" into a count of things somebody would act on, because that number is what
 nobody currently knows.
+
+> **Fourth correction round — 2026-08-16, re-derived at `072cf70` against a re-pinned
+> `scripts/reachability-baseline.json` (127 → 112).** The pin was stale by two before any of this:
+> it held 127 while the checker reported 125, because three findings had been repaired by merges on
+> `integration/all-branches` and one — `isPractisable` — had arrived, and nobody re-pinned. The
+> counts below are re-derived, not adjusted:
+>
+> - **Ascension legacy is wired** (§2, row 2). `scenario/src/legacy.ts` is the succession layer
+>   `god/ascension.ts` specified and declined to build: `legacyRecordOf` closes the recurrence at a
+>   run boundary and `seedLegacy` spends the four channels into the next universe's tick zero. All
+>   twelve findings in that row are gone — `legacyGrant`, `legacyBudget`, `carriedPrestige`,
+>   `LEGACY_CHANNELS` and the eight god constants that only they read. `coordination` drops from 16
+>   to 4. `currentEra` (`state`) went with them: `legacyRecordOf` needs the era a run survived, and
+>   that derivation existed precisely so nobody would add an `era` field back to `UNIVERSE`.
+> - **`dominantCell` and `universityProfile`** left the University-staffing row through merges that
+>   landed before this measurement, not through anything in it. That row's count falls 7 → 5, and
+>   its stated *reason* is separately known to be stale — the audit of 2026-08-16 found universities
+>   **are** staffed every tick by `world-step.ts`'s `assignStaff`. The row keeps its corrected count
+>   rather than being rewritten on a judgement this round did not make; the capability that is
+>   genuinely absent is student admission against capacity.
+> - **`heldNodes`** (dead/duplicates) is repaired; **`isPractisable`** arrives, classified
+>   *superseded* on its own doc comment — `coordination`'s `practisableBy` is the live, deliberately
+>   narrower gate, and this is the wider mirror kept beside `practice`.
 
 Re-derive before acting on it. A measurement is a statement about the tree it was taken on, and §6
 is what happens when you skip that step.
@@ -39,19 +62,20 @@ is what happens when you skip that step.
 | Package | Integration debt | Superseded | Tooling-only | Dead | False positive | Total |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: |
 | `content` | 1 | 0 | 5 | 1 | 0 | 7 |
-| `coordination` | 13 | 2 | 0 | 1 | 0 | 16 |
+| `coordination` | 1 | 2 | 0 | 1 | 0 | 4 |
 | `primitives` | 1 | 1 | 1 | 0 | 0 | 3 |
-| `rules-magic` | 16 | 6 | 1 | 4 | 0 | 27 |
+| `rules-magic` | 16 | 7 | 1 | 3 | 0 | 27 |
 | `rules-raid` | 5 | 0 | 0 | 2 | 0 | 7 |
-| `rules-world` | 17 | 6 | 3 | 12 | 0 | 38 |
+| `rules-world` | 15 | 6 | 3 | 12 | 0 | 36 |
 | `scenario` | 0 | 0 | 15 | 0 | 0 | 15 |
 | `sim-core` | 0 | 1 | 5 | 0 | 0 | 6 |
-| `state` | 5 | 0 | 0 | 3 | 0 | 8 |
-| **Total** | **58** | **16** | **30** | **23** | **0** | **127** |
+| `state` | 4 | 0 | 0 | 3 | 0 | 7 |
+| **Total** | **43** | **17** | **30** | **22** | **0** | **112** |
 
-The headline: **58 of the 127 are integration debt** — mechanics that are built, mostly tested,
+The headline: **43 of the 112 are integration debt** — mechanics that are built, mostly tested,
 exported, and that nothing in a running universe calls. That is the number the raw count was hiding.
-The other 66 are noise of three different kinds.
+The other 69 are noise of three different kinds. (It was 58 of 127 before the ascension legacy was
+wired; that one mechanism was twelve of the fifteen findings that closed.)
 
 ### The five categories
 
@@ -78,8 +102,8 @@ were moved to §3 and are not here.
 
 | Mechanism | Findings | Verified how |
 | --- | ---: | --- |
-| **University staffing** — `completeAffiliation`, `changeAffiliation`, `staffCohortsOf`, `unstaffUniversity`, `admitStudents`, `AdmissionRefusals`, `effectiveCapacity`, `universityProfile`, `dominantCell` | 7 | The only writer of the `UNIVERSITY_STAFF` component in the tree is `staffCohortsOf` itself, which is unreached; `world-step.ts:532` says in a comment that the component "shipped in `WORLD_COMPONENTS` with no writer". `scripts/w117-gate-check.sh` independently reports affiliation **shut** at `e2b89d8`. Universities are created (by `god/interventions.ts:781`) and never staffed. |
-| **Ascension legacy** — `legacyGrant`, `legacyBudget`, `carriedPrestige`, `LEGACY_CHANNELS`, and eight god constants (`legacy-*`, `prestige-retention`, `legacy-reference-tick`) | 12 | The largest single dead mechanism, and the clearest case for the check's one-hop transitivity: eight authored constants look like knobs to a content author and turn nothing, because their only reader is `legacyGrant` and `legacyGrant` has no caller. |
+| **University staffing** — `completeAffiliation`, `changeAffiliation`, `staffCohortsOf`, `unstaffUniversity`, `admitStudents`, `AdmissionRefusals`, `effectiveCapacity` (`universityProfile` and `dominantCell` reached by merge, 2026-08-16) | 5 | The only writer of the `UNIVERSITY_STAFF` component in the tree is `staffCohortsOf` itself, which is unreached; `world-step.ts:532` says in a comment that the component "shipped in `WORLD_COMPONENTS` with no writer". `scripts/w117-gate-check.sh` independently reports affiliation **shut** at `e2b89d8`. Universities are created (by `god/interventions.ts:781`) and never staffed. |
+| ~~**Ascension legacy**~~ — **wired 2026-08-16, row retired** | 0 | Was 12, and was the largest single dead mechanism: eight authored constants looked like knobs to a content author and turned nothing, because their only reader was `legacyGrant` and `legacyGrant` had no caller. `scenario/src/legacy.ts` is the run boundary they were staged ahead of — `legacyRecordOf` at the end of a run, `seedLegacy` at the tick zero of the next — so all twelve now have production callers, and `packages/scenario/test/unit/legacy-carry.test.ts` measures the head start on both arms. Kept as a row rather than deleted: a mechanism that was dead for a release and is now live is the most useful entry a reader of this table can find. |
 | **Spell preparation and its cost half** — `prepare`, `isCastable`, `preparationCost`, `costSplit` | 4 | `castPolicy`, `expendOnCast`, `costPolicy` and `castCost` *are* reached, so casting works. The **preparation** half does not: nothing splits a cost across preparation and cast, and nothing asks whether a spell is castable before it is cast. |
 | **Portal spell transfer** — `populatePreparedSpells`, `releaseAbroad` | 2 | `resolvePortalHooks` is reached and the two functions that would use the resolved hooks are not. Prepared spells do not cross a portal. |
 | **Tradition store policy** — `palaceLibraryDepth`, `perishesWithHolder`, `scribeAvailability`, `PALACE_STORE`, `STANDARD_STORE` | 5 | `storePolicy`, `canHoldAt` and `admitToStore` are reached, so storage admits. The *consequences* of a store kind — palace depth, perishing with the holder, scribe availability — are computed by nothing. |
@@ -91,17 +115,18 @@ were moved to §3 and are not here.
 
 One more was dropped from this table on inspection: **`withdrawGrimoire`** is declared deliberately unused by `gateway.ts:107` — *"`withdrawGrimoire` is unused and stays unused"* — which is an accepted design decision rather than debt.
 
-That is 42 of the 58. (It was 46 of 61 until `applyWard` and `replay` moved to §3 in the third
-correction round, and 44 of 59 until `characterFor` arrived with #201 — see §5.) The remaining 16
+That is 28 of the 43. (It was 42 of 58 until the ascension legacy was wired and two staffing symbols
+were reached by merge in the fourth correction round; 46 of 61 until `applyWard` and `replay` moved
+to §3 in the third; and 44 of 59 until `characterFor` arrived with #201 — see §5.) The remaining 15
 are integration debt of the ordinary kind — an economy input list, a commitment predicate, a
 monoculture threshold, `speciesRediscoveryMultiplier`, `worshipShareOfRegeneration`,
 `characterFor` — worth wiring, not worth a row.
 
 ---
 
-## 3. Superseded: 16 findings, and the trap they are
+## 3. Superseded: 17 findings, and the trap they are
 
-**This is the most useful thing in this document.** Sixteen findings look exactly like §2 — an
+**This is the most useful thing in this document.** Seventeen findings look exactly like §2 — an
 unreached mechanic in a rules package, well tested, obviously important — and are not, because the
 capability is live under a different name. A triage that read the symbol instead of the capability
 would have filed every one of them as a disabled subsystem, and each would have cost somebody an
@@ -117,6 +142,7 @@ investigation ending in "it already works".
 | `withdrawGrimoire` | Declared deliberately unused by `gateway.ts:107` — *"`withdrawGrimoire` is unused and stays unused"*. An accepted design decision. |
 | `POPULACE_STREAM` | A re-export of `RNG_STREAM.populace`, which is used directly at `economy/carrying-capacity.ts:488` and `populace/mortality.ts:229`. Constraint 3 is **not** at risk here. |
 | `applyWard` **(moved from §2, 2026-08-15)** | `CastArbiter#applyWardOnce` — `packages/rules-raid/src/arbitration.ts:570`, live at `raid.ts:514` and `:995`. It **reimplements** the multiply, `floorDiv(rawDamage * (FP_ONE - ward), FP_ONE)`, rather than delegating to `primitives`. §2's stated reason searched `primitives/` for a capability that lives in `rules-raid` — **the exact §5 trap this document is otherwise the best account of.** The pin is right and its old reason was wrong. Wards still never prevent anything, because no combat attempt occurs; that is §8's defect, not this one. |
+| `isPractisable` **(arrived by merge, 2026-08-16)** | `coordination`'s `CastGateway#practisableBy` — `gateway.ts:916` names the relationship in its own header: the live autonomy gate is *deliberately narrower*, stopping at `DEFAULT_TEACH_THRESHOLD` rather than `MASTERY_MAX`, because decay puts every held instance below full mastery within a month. This is the wider mirror kept beside `practice` so the rule and its predicate cannot drift. Wiring it would replace the narrow gate with the wide one — a behaviour change, not an integration. |
 | `replay` **(moved from §2, 2026-08-15)** | `replayAndLocate` — imported at `scripts/regen-goldens.mjs:107` and **called at `:142`**, over `recordingOf(fixture)`. §2's reason grepped for the literal string `replay(`, which the named export does not match. Constraint 4 is enforced by a replayer with a production caller; it is `replay` itself that has none. |
 
 Every one of these is safe to delete, and each deletion is also a decision about which of two
@@ -124,17 +150,17 @@ implementations is the real one — which makes them worth more attention than �
 
 ---
 
-## 4. Dead: 23, and tooling-only: 27
+## 4. Dead: 22, and tooling-only: 27
 
 **Dead** splits three ways. *Empty sentinels nothing defaults to* (9): `NO_AFFINITIES`,
 `NO_TERRITORY`, `NO_DEMAND`, `NO_YIELD_BONUSES`, `TRAIT_NEUTRAL`, `NULL_CONTENT_ID`, `NULL_CELL_ID`,
 `OBJECTIVE_KIND_UNSPECIFIED`, `BIRTH_BUCKET_TAIL_ALLOWANCE` — each names a zero the code writes as a
 literal. *One-line aliases* (8): `drawBelow` (a rename of `nextBounded`), `fractionOf`, `addAmounts`,
-`narrowToFixed`, `isWorkingMage`, `isProductive`, `summedYield`, `assertCostHook`. *Duplicates* (6):
+`narrowToFixed`, `isWorkingMage`, `isProductive`, `summedYield`, `assertCostHook`. *Duplicates* (5):
 `cellAxes` (`rules-magic`) and `cellAxesOf` (`state`) are the same function in two packages and
-**both** are unreached, which is worth a look before deleting either; `heldNodes` is shadowed by the
-live `gateway.heldNodes` method; plus `AGE_BANDS_IN_ORDER`, `UNCHANGED_MULTIPLIER`,
-`PRODUCTIVE_OCCUPATIONS`.
+**both** are unreached, which is worth a look before deleting either; plus `AGE_BANDS_IN_ORDER`,
+`UNCHANGED_MULTIPLIER`, `PRODUCTIVE_OCCUPATIONS`. (`heldNodes` was a sixth, shadowed by the live
+`gateway.heldNodes` method; a merge reached it before the 2026-08-16 re-pin.)
 
 **Tooling-only** (27) is dominated by `scenario`, whose entire contribution of twelve is report and metric
 builders: `censusLine`, `longRunLines`, `longestOccupationAlternation`, `claimRate`,
