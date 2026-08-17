@@ -102,6 +102,15 @@ const INTEGER_SIDE = [
   'digest.ts',
   'entitlement.ts',
   'explain.ts',
+  // The flow ledger, and it is integer-side for a reason worth stating rather
+  // than assuming from the absence of a decimal point: every quantity in a
+  // ledger is `fp` and the identity it exists to express —
+  // `closing - opening == faucet - sink` — is asserted **exactly**, with no
+  // tolerance, because a tolerance would hide the one-unit-per-tick leak the
+  // conservation check exists to find. A division here would introduce exactly
+  // the rounding that assertion refuses. The client divides by 1024; this side
+  // does not.
+  'flow.ts',
   'gate.ts',
   'index.ts',
   'knowledge-census.ts',

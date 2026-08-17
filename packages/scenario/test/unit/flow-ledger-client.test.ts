@@ -301,6 +301,85 @@ describe('control 1 — the sidecar reconciles, on a real run', () => {
   });
 });
 
+describe("the god's spend is carried, because the world tick cannot see it", () => {
+  /**
+   * `god.intervention` runs **before** the world loop in the same step, so the
+   * ledger's `opening` is already net of anything the god bought. A kind whose
+   * only sink is a god verb therefore reads *"no claimant"*, and the spend was
+   * recoverable only by differencing this tick's opening against last tick's
+   * closing — an inference, wrong on the first tick of an episode and quietly
+   * absorbing any other pre-step writer that ever appears.
+   */
+  it('reports what a god purchase actually took, at the price content declares', () => {
+    const content = referenceContent();
+    const { scenario, lastGodReport } = referenceScenario(content, { raids: true });
+    const session = createSession({ scenario, strategyId: 'flow-god-spend' });
+    session.reset(SEED, { worldTickCap: 400 });
+
+    let applied = 0;
+    const spent: Record<string, number> = {};
+    let ticksWithSpend = 0;
+    for (let i = 0; i < 300; i += 1) {
+      const mask = session.legalActions();
+      const lists = session.candidates();
+      // The three materially-priced verbs the reference content declares a price
+      // for and a strategy can reach: a dispensation (essence), a founding grant
+      // (vellum) and a blessing (insight).
+      let action = { kind: GOD_ACTION.noop } as { kind: number; params?: readonly number[] };
+      for (const id of [GOD_ACTION.issueDispensation, GOD_ACTION.grantFoundingKnowledge, GOD_ACTION.blessMage]) {
+        if (mask[id] !== 1) continue;
+        const slots = lists.get(id);
+        action = { kind: id, params: slots !== undefined && slots.length > 0 ? [0] : [] };
+        break;
+      }
+      session.submit(action);
+      applied += lastGodReport()?.interventions.applied ?? 0;
+      const flow = session.flowLedger();
+      if (flow === undefined) continue;
+      let tickTotal = 0;
+      for (const kind of Object.keys(flow.godSpend)) {
+        tickTotal += flow.godSpend[kind] ?? 0;
+        spent[kind] = (spent[kind] ?? 0) + (flow.godSpend[kind] ?? 0);
+      }
+      if (tickTotal !== 0) ticksWithSpend += 1;
+      // **And the world tick's own identity is untouched by it.** The god spent
+      // before the opening was read, so folding this into `sink` would break the
+      // arithmetic in order to describe a flow outside it.
+      for (const kind of Object.keys(flow.opening)) {
+        expect((flow.closing[kind] ?? 0) - (flow.opening[kind] ?? 0)).toBe(
+          (flow.faucet[kind] ?? 0) - (flow.sink[kind] ?? 0),
+        );
+      }
+    }
+
+    // The positive control: this only means anything if the god bought
+    // something. A strategy that could afford nothing would report all-zero
+    // spend and pass every assertion above.
+    expect(applied, 'the god applied no intervention at all').toBeGreaterThan(0);
+    expect(ticksWithSpend, 'no tick recorded a material spend').toBeGreaterThan(0);
+    // One tick with a spend per applied intervention, and the total is a
+    // multiple of the price content declares — 2048 `insight` for a blessing —
+    // rather than a number this test invented.
+    expect(ticksWithSpend).toBe(applied);
+    expect(spent.insight).toBeGreaterThan(0);
+    expect((spent.insight ?? 0) % 2048).toBe(0);
+    // Nothing may be created: a negative entry would be the god handing material
+    // back, which no verb does.
+    for (const kind of Object.keys(spent)) expect(spent[kind]).toBeGreaterThanOrEqual(0);
+  });
+
+  it('is zero on every tick of a run in which the god does nothing', () => {
+    // The control on the control. Without it, "the god spent something" would be
+    // satisfied by a field that echoed some other quantity.
+    for (const frame of ledgerFrames()) {
+      const flow = frame.flow as RawLedger & { readonly godSpend: Record<string, number> };
+      for (const kind of Object.keys(flow.opening)) {
+        expect(flow.godSpend[kind], `${kind} at tick ${String(flow.worldTick)}`).toBe(0);
+      }
+    }
+  });
+});
+
 describe('control 2 — a leak shows in what the client is handed', () => {
   const STOLEN = 4096;
 

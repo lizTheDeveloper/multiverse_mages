@@ -159,6 +159,21 @@ const hasAcademy = (academy) =>
  */
 const FLOW_BASKETS = ['opening', 'closing', 'faucet', 'sink', 'land', 'applied', 'spilled'];
 
+/**
+ * Baskets a frame may carry and need not, decoded one at a time.
+ *
+ * Deliberately **outside** {@link FLOW_BASKETS}, for the reason {@link
+ * otherStocks} is outside {@link hasStocks}: `godSpend` arrived after the first
+ * recordings did, and requiring it here would make every one of those frames
+ * fall back to no ledger at all and lose a breakdown they really have. Present
+ * is decoded, absent is absent, and neither is `0`.
+ *
+ * `godSpend` is also not part of `faucet - sink` — the god's verbs are charged
+ * before the world tick reads its opening stock — so a page missing it is
+ * missing an inflow arrow, not an unbalanced ledger.
+ */
+const FLOW_OPTIONAL_BASKETS = ['godSpend'];
+
 /** The scalar pressures, each fp. */
 const FLOW_PRESSURES = [
   'castingOwed',
@@ -611,6 +626,15 @@ class Frame {
       land: basket(raw.land),
       applied: basket(raw.applied),
       spilled: basket(raw.spilled),
+      /* Present only if the frame carries it — never zero-filled, because a
+         `godSpend` of zero is the claim that the god bought nothing this tick
+         and an absent one is the claim that this recording cannot say. */
+      ...Object.fromEntries(
+        FLOW_OPTIONAL_BASKETS.filter((name) => finiteBasket(raw[name])).map((name) => [
+          name,
+          basket(raw[name]),
+        ]),
+      ),
       /* Booleans, not quantities. Copied rather than aliased so a page cannot
          write back into the parsed document. */
       short: { ...raw.short },

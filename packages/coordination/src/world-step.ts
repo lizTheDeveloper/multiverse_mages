@@ -158,6 +158,7 @@ import {
   LABORERS_PER_BUILD_UNIT,
   MATERIALS_PER_LABOR_MONTH,
   MATERIAL_KINDS,
+  NO_MATERIALS,
   NO_STANDING_ARMY,
   advanceConstruction,
   NO_EMPHASIS,
@@ -839,6 +840,28 @@ export interface WorldStepReport {
    */
   readonly openingByKind: MaterialAmounts;
   /**
+   * Material the **god's** verbs took out of the stocks this tick, per kind,
+   * `fp` — the one flow the world tick cannot see.
+   *
+   * `god.intervention` runs before this system in the same step, so
+   * {@link openingByKind} is already net of it. A reader with only the world
+   * ledger finds a kind whose sole sink is a god verb reading *"no claimant"*,
+   * and could recover the spend only by differencing this tick's opening against
+   * last tick's closing — an inference, and one that also silently absorbs any
+   * other pre-step writer that ever appears.
+   *
+   * Deliberately **not** folded into {@link sinkByKind}. That number is the
+   * world tick's own conservation arithmetic and `closing - opening ==
+   * faucet - sink` must keep holding exactly; the god's spend happened before
+   * the opening was read, so adding it there would break the identity in order
+   * to describe a flow outside it. It rides beside the ledger instead, which is
+   * where it belongs: the ledger is *this tick's* accounting, and this is what
+   * happened just before it started.
+   *
+   * All zeroes for a world built without `deps.god`, which has no god to spend.
+   */
+  readonly godSpendByKind: MaterialAmounts;
+  /**
    * The stocks actually **written** at the end of the tick, `fp`.
    *
    * Identical to {@link remainingByKind} on every run that asks for no leak, and
@@ -1248,6 +1271,11 @@ export interface WorldSimulation {
  */
 export function defineWorldSimulation(deps: WorldStepDeps): WorldSimulation {
   let last: WorldStepReport | undefined;
+  // Filled below, once the god's systems exist. Empty for a world built without
+  // `deps.god`, and a **cell** rather than a parameter because the two are
+  // mutually ordered: the world system needs its report callback at install
+  // time, and `godSystems` needs that callback's tradition-loss hook, so
+  // whichever is built first cannot be handed the other.
   // Nodes a tradition change emptied, waiting for the world system to fold them
   // into this tick's `nodesLost`. The god intervention system runs *before* the
   // world system in the same step — see the schema below — so a count written
@@ -1259,6 +1287,9 @@ export function defineWorldSimulation(deps: WorldStepDeps): WorldSimulation {
   // evaluations the `fp(3072)` floor ate over a run, and a counter rebuilt every
   // phase reads zero forever while looking like it is measuring something.
   const clampCounter = createRediscoveryClampCounter();
+  const godCell: {
+    interventionsFor?: (worldTick: number) => { materialsSpentByKind: MaterialAmounts };
+  } = {};
   const system = worldSystem(deps, (report) => {
     // A tradition change's losses join this tick's, rather than being reported
     // as their own kind. `change.ts` requires exactly that: *"a tradition
@@ -1268,11 +1299,26 @@ export function defineWorldSimulation(deps: WorldStepDeps): WorldSimulation {
     // how expensive the god's own switch is. Folded here, in the closure that
     // owns the report, rather than inside the loop — the loop has no business
     // knowing an intervention ran.
-    last =
+    const withLosses =
       traditionNodesLost === 0
         ? report
         : { ...report, nodesLost: report.nodesLost + traditionNodesLost };
     traditionNodesLost = 0;
+    // The god's material spend, folded in the same closure and for the same
+    // reason a tradition change's losses are: the loop has no business knowing
+    // an intervention ran, and this is the one scope that holds both the report
+    // and the god's per-tick cell. `interventionsFor` is guarded on the tick, so
+    // a world tick that ran without the intervention system — or one asking
+    // about a tick the god did not resolve — folds in `NO_INTERVENTIONS`'s
+    // zeroes rather than the previous tick's spend.
+    const interventionsFor = godCell.interventionsFor;
+    last =
+      interventionsFor === undefined
+        ? withLosses
+        : {
+            ...withLosses,
+            godSpendByKind: interventionsFor(withLosses.worldTick).materialsSpentByKind,
+          };
   }, clampCounter);
 
   // ---- god-agency: three systems where there was one --------------------
@@ -1307,6 +1353,7 @@ export function defineWorldSimulation(deps: WorldStepDeps): WorldSimulation {
       traditionNodesLost += nodes;
     },
   });
+  godCell.interventionsFor = god.interventionsFor;
   return {
     schema: defineWorldStateSchema([god.intervention, frozenWhenTerminal(system), god.outcome]),
     lastReport: () => last,
@@ -1998,6 +2045,12 @@ export function worldSystem(
         // never disagree about the same tick.
         conservationBreaches: conservationBreaches(ledger),
         openingByKind: opening,
+        // Filled in by `defineWorldSimulation`, which is the only scope holding
+        // both this closure and the god's per-tick cell. Zero here rather than
+        // absent so a world assembled without `godSystems` — every hand-built
+        // test world — reports a god that spent nothing rather than a field a
+        // reader has to test for.
+        godSpendByKind: NO_MATERIALS,
         // `leaked`, which is what went into state. See the field's note for why
         // this is not the same object as `remainingByKind` on a leaking run.
         closingByKind: leaked,

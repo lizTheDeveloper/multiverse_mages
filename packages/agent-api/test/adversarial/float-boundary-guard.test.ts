@@ -117,6 +117,10 @@ const INTEGER_SIDE = [
   'digest.ts',
   'entitlement.ts',
   'explain.ts',
+  // Every quantity in the flow ledger is `fp`, and the identity it exists to
+  // express is asserted exactly, with no tolerance — a division here would
+  // introduce the rounding that assertion refuses.
+  'flow.ts',
   'gate.ts',
   'index.ts',
   'knowledge-census.ts',

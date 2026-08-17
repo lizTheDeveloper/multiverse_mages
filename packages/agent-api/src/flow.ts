@@ -106,6 +106,22 @@
  * {@link FlowLedger.breaches} is the ledger's own answer to the same question,
  * carried rather than recomputed: it is what `assertMaterialsConserved` throws
  * on, so the series and the error can never disagree about a tick.
+ *
+ * ## Per-claimant, never per-**instance**, and that is a boundary not a gap
+ *
+ * A claimant row says `libraryUpkeep` went short by so much. It does **not** say
+ * which library burned, which mage went unfed, or which building site stalled,
+ * and no amount of reading this projection will produce that: the world tick
+ * pays claimants out of a shared stock and only afterwards decides who bore the
+ * shortfall — `degradeUnkeptLibraries` settles that in ascending handle order,
+ * separately, and reports a *count*. Two series that move together here are two
+ * series that move together; the join between them is not in this data and a
+ * consumer that draws one is drawing an inference.
+ *
+ * Recorded so the next consumer does not re-derive the conclusion. Making it a
+ * measurement means carrying handles out of the settlement, which is a different
+ * change with a different argument about what a client is entitled to know about
+ * an individual institution.
  */
 
 import { MATERIAL_STOCK } from '@mm/state';
@@ -149,13 +165,13 @@ export interface FlowClaimant {
 export interface FlowReportSource {
   readonly worldTick: number;
   readonly openingByKind: FlowAmounts;
+  readonly godSpendByKind: FlowAmounts;
   readonly closingByKind: FlowAmounts;
   readonly faucetByKind: FlowAmounts;
   readonly sinkByKind: FlowAmounts;
   readonly producedByKind: FlowAmounts;
   readonly appliedByKind: FlowAmounts;
   readonly spilledByKind: FlowAmounts;
-  readonly remainingByKind: FlowAmounts;
   readonly shortKinds: Readonly<Record<string, boolean>>;
   readonly conservationBreaches: readonly FlowBreach[];
   readonly claimantFlows: readonly FlowClaimant[];
@@ -180,6 +196,24 @@ export interface FlowLedger {
   readonly worldTick: number;
   /** The stocks at the top of the world tick, after any god spend. */
   readonly opening: FlowAmounts;
+  /**
+   * What the **god's** verbs took out of the stocks just before this tick
+   * started, per kind.
+   *
+   * A measurement, not an inference. `god.intervention` runs before the world
+   * loop in the same step, so {@link FlowLedger.opening} is already net of it —
+   * which means a kind whose only sink is a god verb reads *"no claimant"* in
+   * {@link FlowLedger.claimants}, and the spend was recoverable only by
+   * differencing `opening[t]` against `closing[t-1]`. That inference is also
+   * wrong on the first tick of an episode, and silently absorbs any other
+   * pre-step writer that ever appears.
+   *
+   * **Not part of `faucet - sink`, on purpose.** The identity is the world
+   * tick's own arithmetic and it must keep holding exactly; this happened before
+   * the opening was read. A map draws it as an arrow into the stock's left edge,
+   * upstream of `opening`, and not as a claimant.
+   */
+  readonly godSpend: FlowAmounts;
   /** The stocks written at the end of it. */
   readonly closing: FlowAmounts;
   /** Everything created this tick, per kind: `land + applied`. */
@@ -292,6 +326,7 @@ export function describeFlow(
   return {
     worldTick: report.worldTick,
     opening: amounts(report.openingByKind),
+    godSpend: amounts(report.godSpendByKind),
     closing: amounts(report.closingByKind),
     faucet: amounts(report.faucetByKind),
     sink: amounts(report.sinkByKind),
