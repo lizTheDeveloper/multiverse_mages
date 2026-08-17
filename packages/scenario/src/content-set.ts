@@ -144,12 +144,17 @@ export function primitiveNamed(registry: ContentRegistry, id: string): Primitive
  * The ruleset the **v1 rectangle** implies: every technique and every form that
  * a `v1` cell occupies.
  *
- * `contracts.md` §2.2 makes the v1 subset exactly twelve cells forming a
- * 3-technique × 4-form rectangle, and the loader refuses content where it is
- * anything else. So OR-ing the axes of the flagged cells re-derives precisely
- * those twelve and permits no thirteenth — the rectangle property is what makes
- * an axis mask able to express the subset at all, and it is content's to keep,
- * not this file's to assume.
+ * `contracts.md` §2.2 makes the v1 subset a rectangle and the loader refuses
+ * content where it is anything else, so OR-ing the axes of the flagged cells
+ * re-derives precisely the flagged set and permits nothing outside it. The
+ * rectangle property is what makes an axis mask able to express the subset at
+ * all, and it is content's to keep, not this file's to assume.
+ *
+ * Since `material-economy` the rectangle is the whole grid — 5 techniques × 14
+ * forms — so this returns both masks full. It is still written as a derivation
+ * rather than as two literals, because the narrowing is a *rule* and not a
+ * fact: a god who forbids an axis shrinks the permitted set at once, and the
+ * day content flags a proper subset again the reference universe moves with it.
  *
  * Written this way rather than as two literals so that the day content moves the
  * rectangle, the reference universe moves with it instead of quietly permitting
@@ -180,7 +185,7 @@ export function v1RulesetAxes(registry: ContentRegistry): RulesetAxes {
   if (cells === 0) {
     throw new Error(
       'No shipped cell is flagged "v1": true, so the reference universe would permit nothing and ' +
-        'every mage in it would be idle forever. The loader enforces exactly twelve.',
+        'every mage in it would be idle forever. The loader enforces the full rectangle.',
     );
   }
   return { permittedTechniques, permittedForms };

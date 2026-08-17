@@ -497,8 +497,19 @@ serialized into snapshots.
 }
 ```
 
-70 cells exist in schema. The **v1 subset** is flagged per-cell with `"v1": true`; exactly 12 cells
-(3 techniques × 4 forms) carry it, and the set must include `rego-limen`.
+70 cells exist in schema. The **v1 subset** is flagged per-cell with `"v1": true`; exactly 70 cells
+(5 techniques × 14 forms) carry it — the whole grid — and the set must include `rego-limen`.
+
+The constraint the loader checks is the **rectangle**, not the count: an axis mask can only express
+a full technique × form product, and `v1RulesetAxes` re-derives the subset by OR-ing the flagged
+cells' axes. Seventy of seventy is trivially rectangular, so a later narrowing is still checked for
+raggedness.
+
+It was 12 cells (3 × 4) until `material-economy` (2026-08-16). The reason for opening it is
+recorded in that change's `design.md`: `material-economy` gives every form a material yield, and
+ten of the fourteen forms sat outside the square — including the only producers of `essence` (Vim)
+and `labor` (Corpus), both of which are *priced into god actions*. Measured over 600 reference
+ticks, production of both was exactly zero and `fund-university` was legal on 13 ticks of 600.
 
 ### 2.3 `node.json`
 

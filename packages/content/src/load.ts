@@ -76,14 +76,51 @@ import { MATERIAL_KIND_IDS } from './types.js';
  */
 export const REQUIRED_V1_CELL = 'rego-limen';
 
-/** The v1 subset is a rectangle of this many cells (`contracts.md` §2.2). */
-export const V1_CELL_COUNT = 12;
+/**
+ * The v1 subset is a rectangle of this many cells (`contracts.md` §2.2).
+ *
+ * **Seventy: the whole grid.** It was twelve — `{intellego, perdo, rego} ×
+ * {limen, mentem, nomen, terram}`, holding 51 of the 300 authored nodes.
+ *
+ * The invariant {@link checkV1Subset} defends is unchanged and it is the
+ * **rectangle**, not the number. An axis mask can only express a set of cells
+ * that is a full technique × form product, and `v1RulesetAxes` re-derives the
+ * subset by OR-ing the flagged cells' axes — which is only correct while the
+ * subset is rectangular. Seventy of seventy is trivially rectangular, so the
+ * property still holds, and the day somebody flags a proper subset again the
+ * shape check still catches a ragged one.
+ *
+ * **The reason is that ten of the fourteen forms were unreachable, and four
+ * material kinds went with them.** `material-economy` gives every form a
+ * `yieldWeights` row, and the enabled four covered `passage`, `insight`,
+ * `vellum` and `stone`. `essence` comes only from Vim and `labor` only from
+ * Corpus, both outside the square — so `issue-dispensation` and
+ * `fund-university` were priced in materials the opening position could not
+ * make. Measured over 600 reference ticks on `w247/material-economy-build`:
+ * `labor` production **exactly zero**, `essence` production **exactly zero**,
+ * and `fund-university` legal on **13 ticks of 600** against 400 with no
+ * material price.
+ *
+ * Reaching those forms in play does not close either. `permit-form` costs
+ * favor and no shipped strategy spends it on Vim; and the *surgical* opener,
+ * `issue-dispensation`, is **the verb the missing stock pays for**. A verb
+ * priced in a material that only that verb can unlock is circular by
+ * construction.
+ *
+ * A narrower answer was built first and is recorded rather than hidden: a
+ * three-technique × five-form rectangle adding the Vim column alone, with
+ * `labor` supplied by the populace instead of by Corpus. The populace faucet
+ * survives — see `materials.ts`'s `REQUIRED_PRODUCTION_WEIGHTS`, and note that
+ * it is still the only faucet whose shape matches `labor`'s automatic per-tick
+ * sink. The narrow square did not.
+ */
+export const V1_CELL_COUNT = 70;
 
-/** Techniques in the v1 rectangle. */
-export const V1_TECHNIQUE_COUNT = 3;
+/** Techniques in the v1 rectangle. Was 3; the whole technique axis now. */
+export const V1_TECHNIQUE_COUNT = 5;
 
-/** Forms in the v1 rectangle. */
-export const V1_FORM_COUNT = 4;
+/** Forms in the v1 rectangle. Was 4; the whole form axis now. */
+export const V1_FORM_COUNT = 14;
 
 /**
  * The most nodes a content set may declare, because every one of them is
@@ -813,10 +850,15 @@ function checkExclusions(cells: readonly CellRecord[], out: ContentDiagnostic[])
 }
 
 /**
- * The v1 subset must be exactly twelve cells forming a 3-technique × 4-form
+ * The v1 subset must be exactly seventy cells forming a 5-technique × 14-form
  * rectangle, and must include `rego-limen` (`contracts.md` §2.2 and §8;
- * `knowledge-model` owns which twelve, and chose
- * `{intellego, perdo, rego} × {limen, mentem, nomen, terram}`).
+ * `knowledge-model` chose twelve and `material-economy` opened the grid — see
+ * {@link V1_CELL_COUNT}).
+ *
+ * The shape is checked rather than the membership. A rectangle is what makes
+ * the subset expressible as a pair of axis masks at all, which is what
+ * `permits()` reads and what `v1RulesetAxes` re-derives; a subset that was not
+ * one could not be permitted without permitting cells outside it.
  */
 function checkV1Subset(v1Cells: readonly CellRecord[], out: ContentDiagnostic[]): void {
   const file = 'cell.json';
