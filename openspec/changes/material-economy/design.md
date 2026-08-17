@@ -597,12 +597,22 @@ Run **2026-08-16** on `w247/material-economy-build` @ `9dd68d52`, clean tree, no
 (the previous run was stopped and its workers confirmed drained first — a suite reading a tree that
 changes underneath it produces failures nobody can attribute).
 
+**Before the Group A fixes**, at `9dd68d52`:
+
     Test Files  22 failed | 330 passed (352)
          Tests  52 failed | 4875 passed (4927)
     REAL_VERIFY_EXIT=1
 
+**After them**, at `dbfa1b3d`:
+
+    Test Files  12 failed | 340 passed (352)
+         Tests  32 failed | 4896 passed (4928)
+    REAL_VERIFY_EXIT=1
+
 `typecheck`, `lint`, `check:purity`, `check:content`, `check:audio`, `check:coverage` and
-`check:generated` all passed; every failure is in the suite. **None is re-pinned.** Balance is
+`check:generated` all passed in both runs; every failure is in the suite. `check:coverage` now
+reports *"Primitive coverage over 300 v1 nodes (16 primitives exercised) — PASSED"*, against 14 of
+16 over 51 before, which is the exclusion emptying measured rather than asserted. **None is re-pinned.** Balance is
 suspended for this campaign and the instruction is that failures from opening the square are
 findings; re-pinning an assertion is how a measurement becomes a story.
 
@@ -612,10 +622,30 @@ to zero — names `lifespan:effectiveLifespan` (15/240 ticks) and `target-appeal
 Both are sites the widened grid woke up; neither is `materialsProduced`, whose new `mul` is the
 faucet's only added arithmetic.
 
-**Group A — the assertion restates the content decision (20).** These are the twelve-cell rectangle
-written down a second time. Updating them is part of this change's diff and is deliberately *not*
-done here, so that one reviewer can see the whole of what the widening moved in one place;
-`origin/w115/enable-all-cells` carries the corresponding edits for most of these files.
+**Group A — the assertion restates the content decision (20). Fixed, in `dbfa1b3d`.** These are the
+twelve-cell rectangle written down a second time, and the line drawn is: *an assertion that restates
+the content decision is part of this change's diff; an assertion that pins a measured outcome of
+running the simulation is left red.* A test asserting the old value of a constant this branch edited
+is not a finding — it is an incomplete edit, exactly as `interning.test.ts`'s `contentRevision`
+literal would have been.
+
+Taken from `origin/w115/enable-all-cells` where its patch applied to this tree without invention:
+`validation-cli`, `loader-hard-fail`, `frontier-scan-window`, `annihilation-registry`,
+`effect-stacking`, `primitive-coverage`, and `shipped-content` (three-way). Hand-edited where this
+tree had drifted: `primitive-consumption` (this tree had already emptied the *consumption* list for
+an unrelated reason, so both lists are now empty **for different reasons** and the test says so),
+`breaker-qwen`, `opening-square`, `reference-universe`, and `shipped-content`'s `autonomyWeights`
+count. **Not** taken from w115: its edits to `species-occupancy`, `species-versatility`,
+`causal-chain-build-rate`, `reference-long-run`, `reference-time-to-tier` and `raid-engagement`,
+every one of which re-pins a measured number to a value measured on a different tree.
+
+Two entries in the table below deserve their own note. `breaker-qwen` exists to catch the exclusion
+list being **expanded** to make a check green, and also asserted the captured list was non-empty —
+which now forbids the strongest state the list can be in. The exactness is kept in the form that
+still catches the attack (nothing outside the two the design ever accepted) and the non-empty
+assertion is dropped. `annihilation-registry`'s own failure message is that the registry must be
+updated *deliberately*, so registering the two woken sites is the act the test exists to force, not
+a re-pin around it.
 
 | file | what it pinned |
 |---|---|
@@ -628,9 +658,10 @@ done here, so that one reviewer can see the whole of what the widening moved in 
 | `scenario/opening-square.test.ts` (1) | "opens exactly the twelve cells content flags v1" |
 | `scenario/reference-universe.test.ts` (1) | "permits exactly the twelve cells content flags v1, and no thirteenth" |
 | `coordination/frontier-scan-window.test.ts` (4) | the historical record of what the old `min(nodeCount,256)` window cost *the twelve-cell subset* — four hidden tier-1 roots, eighteen of fifty-one nodes out of reach. The numbers are true of a subset that no longer exists |
-| `coordination/academic-effects.test.ts` (1) | the control arm is built from **inert non-v1 nodes tier-matched to the treatment**; with every cell flagged there is no inert node at tier 6 left to match `cf-the-given-destiny`. A fixture consequence, not a rate result |
+| `coordination/academic-effects.test.ts` (1) | **Left red.** The control arm is built from *inert non-v1 nodes tier-matched to the treatment*, and with every cell flagged there is no inert node at tier 6 left to match `cf-the-given-destiny`. Its ten sibling tests — every one that measures whether the rates actually move — still pass. Redesigning a control arm is a methodology decision, not a literal, and is not this change's to take |
 
-**Group B — the assertion pins a measured outcome of running the simulation (32).** Left red on
+**Group B — the assertion pins a measured outcome of running the simulation (32, of which 31 remain
+after the Group A pass plus `academic-effects`).** Left red on
 purpose. Every one of these is a number that moved because the game changed, which is the thing
 balance suspension exists to permit.
 
@@ -644,7 +675,7 @@ balance suspension exists to permit.
 | `scenario/strategy-shadowing.test.ts` (2) | the known-shadowed list; `portal-rush/1` is newly shadowed |
 | `scenario/reference-long-run.test.ts` (2) | two-century birth/death convergence, and the teaching/scribing wave |
 | `scenario/combat-ablation-reaches-a-raid.test.ts` (2) | that neutralising `knowledge-steal` changes the raid log on two named seeds |
-| `scenario/annihilation-registry.test.ts` (1) | the exact set of floor-to-zero sites; two woke up |
+| `scenario/annihilation-registry.test.ts` (1) | the exact set of floor-to-zero sites. `target-appeal:effortTerm` was registered from w115's diff; **`lifespan:effectiveLifespan` remains red** and stays that way, because registering it means writing down its *rate* — 15 of 240 ticks — and a rate is a measurement |
 | `scenario/reference-time-to-tier.test.ts` (1) | the time-to-tier separations that survive a seed re-roll |
 | `rules-magic/effect-stacking.test.ts` (1) | end-to-end stacking over two held nodes chosen from the subset |
 | **`scenario/raid-engagement.test.ts` (1)** | **"looting brings home nodes from cells this universe would never have permitted"** — this is the corroboration of finding 1 above. The test is red because the mechanism is genuinely inert, not because a number drifted, and it is the one Group B failure that is a **defect** rather than a movement |
