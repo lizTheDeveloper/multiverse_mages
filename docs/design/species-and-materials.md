@@ -358,12 +358,24 @@ currently free.** `packages/content/data/god-cost.json:124-129`:
 
 **Proposal.** Decline is not a species trait; it is what a *long unended run* does to a
 species that cannot replace its losses. Compose it with what exists rather than adding a
-subsystem: `packages/coordination/src/god/system.ts` already runs `stepStagnation`,
-`eraBoundaryPassed` and `qualifyingPath`, and eras are 20 world years. Let sustained
-stagnation past N eras apply a fertility or retention penalty **scaled by
-`1 / fertility`** — which is near-nothing for humans and orcs, and severe for elves and
-dragons — so that the fade arrives only for the species the fiction gives it to, and only
-in the branch where the ending was not reached.
+subsystem. The three pieces are built: `qualifyingPath`, `eraBoundaryPassed` and
+`stepStagnation` are defined in `packages/coordination/src/god/ascension.ts:203,299,339` and
+called each tick from `packages/coordination/src/god/system.ts:501,466,513`; eras are 20
+world years. Let sustained stagnation past N eras apply a fertility or retention penalty
+**scaled by `1 / fertility`** — which is near-nothing for humans and orcs, and severe for
+elves and dragons — so that the fade arrives only for the species the fiction gives it to,
+and only in the branch where the ending was not reached.
+
+**How it composes with the ascension legacy carry: it does not, and that is correct.**
+`packages/scenario/src/legacy.ts` is the succession layer — `legacyRecordOf` closes a run
+into a `LegacyRecord` and `seedLegacy` spends four channels into the next run's tick zero —
+and its header states the constraint that settles this: *"every channel below lands as a
+quantity that is spent, eaten, aged out or looted. **Nothing here touches a regeneration
+rate, a cap, a budget or a species trait.**"* A fade scaled by `1 / fertility` **is** a
+species-trait effect, so it must be a **within-run** penalty applied by the god system, never
+a legacy channel. Stated here because the natural implementation — "carry the decline into
+the successor" — would violate a rule `legacy.ts` already asserts and
+`god-conformance.test.ts` already checks one package down.
 
 The design consequence is the reason to do it: **a long run is neutral for a human god and
 losing for an elven one.** That is a much stronger reason to price the ending than any
@@ -389,6 +401,7 @@ much they bind:**
 | observation encoding | `saturate()` clamps at `INT32_MAX` (`packages/agent-api/src/layout.ts:835`) | **fine** |
 | `maxPromotableCount(1024)` | `min(FP_INT_MAX, FP_MAX/1024)` = **2,097,151** per single decade-bucket cohort (`promotion.ts:112`) | **fine in practice** — an elf lifespan of 8,400 months spreads a population over 70 decade buckets — but a *founding* cohort seeded into one bucket would throw |
 | `material-stock` fields | `i32`, values in `fp` | fine at a few million (≈`3.6e7` fp of production); strains around a few hundred million |
+| reallocation governor | `TRANSFER_RATE_PER_TICK = FP_ONE/16`, applied as `cohortShare(count, rate)` = `count × rate` rounded up (`reallocation.ts:145,333-354`) | **fine, and unchanged in character** — the rate is *proportional*, so 6.25 % of a million is 62,500 people a tick and the controller retunes in the same number of ticks it does at 25,000. The one size-dependent behaviour, the round-up that keeps a cohort below `1/rate` from freezing, binds only under 16 members and is numerically invisible at 10⁶ |
 | **carrying capacity** | `Σ landUnits × capacityPerLandUnit` = **56,217,600 fp = 54,900 people**, × `MAX_PROVISIONING = 2048` = **109,800 people absolute** | **fails by ~30×** |
 
 **The finding, and it is worth more than any tuning:** the integers are nowhere near their
@@ -438,12 +451,35 @@ read whole and machine-diffed on this ref: **14 forms yield only 9 distinct yiel
     imaginem= mentem            {insight:1024}
     umbra   = fatum = limen     {passage:1024}
 
-So there are **five** provable identities today, not one. A god permitting only Creo Animal
-and a god permitting only Creo Herbam get numerically identical economies; likewise
-Ignem/Terram, Imaginem/Mentem, and any two of Umbra/Fatum/Limen. **If species aptitude and
-the materials tree are real, at least the Animal/Herbam and Ignem/Terram pairs must
-separate** — a herder is not a farmhand and a forge is not a quarry — and the god who
-permits Terram in a dwarf universe must beat the one who permits Ignem there.
+So there are **five** provable identities in the yield table today, not one.
+
+**The identity is in the routing, not in whole runs — checked, because the stronger claim is
+the tempting one.** Counting nodes and summing `resource-yield` magnitudes per form over
+`packages/content/data/node.json` on this ref:
+
+| pair | nodes | `resource-yield` effects | Σ magnitude |
+|---|---|---|---|
+| animal / herbam | 21 / 20 | 10 / 11 | 2240 / **2304** |
+| ignem / terram | 21 / 20 | 7 / 9 | 1216 / **2368** |
+| imaginem / mentem | 21 / 21 | 1 / 1 | 128 / 128 |
+| umbra / fatum / limen | 21 / 25 / 21 | 1 / 1 / 1 | 128 / 128 / 128 |
+
+**The paired cells are not authored alike**, so an Animal-only and a Herbam-only universe do
+*not* run identically today — Terram carries nearly twice Ignem's yield magnitude. The exact
+claim is narrower and is the one that matters:
+
+> **The forms are economically indistinguishable *through the yield table*.** One unit of
+> `resource-yield` routed through `animal` and one routed through `herbam` produce the same
+> basket, to the integer. Every difference an Animal-only run shows against a Herbam-only run
+> today comes from **how many nodes somebody authored in those cells**, not from the two
+> forms meaning different things about the economy.
+
+**Pre-registered null, stated so it is controlled rather than confounded:** hold the node
+content equal — one probe node per cell at identical magnitude — and the two arms are
+bit-identical. **If species aptitude and the materials tree are real, that controlled pair
+must separate** — a herder is not a farmhand and a forge is not a quarry — and the god who
+permits Terram in a dwarf universe must beat the one who permits Ignem there for a reason
+other than Terram having been authored more generously.
 
 **The 100 %-magic arm.** Two runs at the same seed: `foundingSpeciesMask` = elf-only vs
 human-only. Today they differ in coefficients only. If §2.5 is real they must diverge in
@@ -631,10 +667,12 @@ is Tier 3 rather than Tier 4.
   `mt-soften-the-stone` / `maq-sweeten-the-cistern` they can reach are **bit-identical in
   every material number**, because neither node can move any stock. If grade is real they
   must differ in what the same stock buys — same `stone` count, different build progress.
-- **Tier 2.** The Animal/Herbam identity (§2.9) is the direct falsifier: it is provable today
-  and must not survive the hide stage. Measure `food` and `vellum` series for an
-  Animal-only and a Herbam-only universe at the same seed; they are currently equal
-  tick-for-tick and must separate.
+- **Tier 2.** The Animal/Herbam routing identity (§2.9) is the direct falsifier, and it must
+  be run **controlled**, because the shipped cells are not authored alike (21 vs 20 nodes,
+  Σ`resource-yield` 2240 vs 2304). Give each arm one probe node of identical magnitude in
+  `creo-animal` and `creo-herbam` respectively: the `food` and `vellum` series are equal
+  tick-for-tick today, and after the hide stage they must separate. Running it uncontrolled
+  measures the node authoring and reports it as a mechanism.
 - **Tier 3.** `iig-the-colour-of-ready-iron` claims *"roughly a third more."* If a trade
   dimension is real, an arm that permits Intellego Ignem must show a measurable rise in the
   smelting converter's throughput and **no rise anywhere else**. If it moves every kind, the
