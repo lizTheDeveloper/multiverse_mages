@@ -74,6 +74,24 @@
  * contain no combat at all"**, which is a finding for whoever tunes raid
  * participation next, and which this file will start reporting differently the
  * moment a strategy puts a combat node in a combatant's hands.
+ *
+ * ## That reading is now counted rather than argued — `main` at `57bcbc44`
+ *
+ * It was inferred from `chooseIntent`'s priority order, which is a claim about
+ * code, and a null result is the one place a claim about code most needs a
+ * measurement. `ablation-mask-is-consulted.test.ts` instruments the mask itself
+ * over this file's first seed and horizon, and **all seven combat primitives
+ * are stacked** on a run this file calls unmeasurable: `knowledge-steal` 334,
+ * `ward` 223, `concealment` 68, `direct-damage` 22, `area-denial` 7, `blink` 4,
+ * `summon` 4. The mask reaches `openPortal` hundreds of times a raid. The
+ * magnitude is computed, neutralized, and discarded unused.
+ *
+ * So the six nulls are reading (2)-becoming-(3) in that file's taxonomy — the
+ * wire is live and the consumer is idle — and **not** the reading that would
+ * matter, which is the seam having come apart. Run that file first the day this
+ * one reports a seed stopping moving: `SEEDS` and `UNMOVED_SEEDS` are a survey
+ * of a mechanic that runs at the margin, and a seed crossing between them is
+ * ordinary. Every one of them going quiet at once is not.
  */
 
 import { describe, expect, it } from 'vitest';

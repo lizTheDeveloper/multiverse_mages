@@ -62,6 +62,55 @@
  *
  * That last sentence is the whole argument for spending seconds here. A cheaper
  * horizon exists and would have been fine on the day it was written.
+ *
+ * ## Correction, re-measured on `main` at `57bcbc44`, 2026-08-15
+ *
+ * **Everything above this heading is a historical record. Four of its claims
+ * are false on this ref, and the two that matter are false in the direction
+ * that makes this file weaker than it reads.** They are left standing rather
+ * than edited in place because the argument they make is still the right
+ * argument; it is the numbers under it that moved.
+ *
+ * 1. **There are four forwarding sites, not three.** `academic-effects.ts`
+ *    added `workOne`'s `libraryRateMultiplier` call, which is how the three
+ *    library rates reach the mask. (`reference-universe.ts`'s "three
+ *    `deps.ablation === undefined` sites" is still literally true — that fourth
+ *    site passes the mask positionally rather than through the spread idiom.)
+ * 2. **`research-rate`, `teach-rate` and `scribe-rate` no longer neutralize
+ *    zero magnitudes.** Instrumented over this file's own arm at `cohortSize: 4`
+ *    they neutralize 3,241, 302 and 471 respectively. `fertility` and
+ *    `lifespan` still neutralize zero, and so do `build-rate`, `portal` and
+ *    `worship-yield`; see `ablation-mask-is-consulted.test.ts`, which pins the
+ *    whole reachability census rather than asserting it in prose.
+ * 3. **The margin at `HORIZON` is 5% of knowledge and 19% of grimoires, not 23%
+ *    and 71%.** Re-measured at this file's exact levels
+ *    (`cohortSize: 12, foundingMages: 2, foundingNodes: 4`, seed `0x12345678`,
+ *    strategy `permissive-breadth`): control 322 / 68 / **1,137** / 248 against
+ *    ablated 322 / 67 / **1,080** / 201 — knowledge −57, grimoires −47. The
+ *    coupling this file measures has weakened roughly thirteen-fold since the
+ *    2026-08-14 reading, and the same instrument on `integration/group-f`
+ *    reports **1,131 == 1,131**: the margin reaching zero.
+ * 4. **A longer horizon does not restore it, so the fix is not the constant.**
+ *    Same levels, control against `resource-yield`: 240 → −5% knowledge / −19%
+ *    grimoires; 360 → −3% / **+3%**; 480 → −5% / −20%; 600 → −0% / −30%. At 360
+ *    the grimoire assertion below would *invert*. 240 is a lucky horizon rather
+ *    than a safe one, and the sentence above claiming a content tweak cannot
+ *    quietly turn this into a passing test of nothing is no longer true.
+ *
+ * **What was deliberately not done about (3) and (4).** No assertion here was
+ * touched and no constant was re-pinned. A `toBeLessThan` weakened to fit a
+ * shrinking margin is the exact edit CLAUDE.md forbids, and moving `HORIZON` to
+ * whichever value happens to have margin today would be choosing the horizon
+ * from the answer. The thinning margin is a fact about the game — applied yield
+ * matters less to knowledge accumulation than it did — and it belongs to
+ * whoever owns the material economy, not to the instrument.
+ *
+ * **What was done instead.** `ablation-mask-is-consulted.test.ts` is the
+ * positive control this file never had. When this file reports "no difference",
+ * run that one: it separates *the mask never reached `stackMagnitudes`* — which
+ * would void every ablation number in the repository — from *the mask
+ * substituted 4,776 times and the universe absorbed it*, which is what a thin
+ * margin looks like and is a finding rather than a broken instrument.
  */
 
 import { describe, expect, it } from 'vitest';
