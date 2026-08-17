@@ -34,6 +34,29 @@
 #
 # This must stay equivalent to the `verify` gate in package.json. If they drift,
 # a commit can pass locally and fail on the runner, or worse, the reverse.
+#
+# 2026-08-17, measured on PR #218: **`verify` no longer fits that window.** An
+# honest run costs **2532 s** of vitest wall against the 2400 s ceiling named
+# above — so the reasoning in the paragraph above, which moved the two-hundred-
+# year gate out because it would not fit, now applies to this script itself.
+#
+# It is honest for the first time, which is why it grew. Twelve per-test budgets
+# landed on that PR after the Actions job was found reporting **ten timeouts as
+# failures**: a file-level FAIL with no named test is a hook expiring, not a
+# result. Before, this suite "fit" by giving up early — and a synchronous test
+# whose budget expires keeps running, so the truncated durations were measuring
+# the pile-up rather than the work.
+#
+# The single long pole is `species-separation-spread`, ~23 minutes of one worker.
+# Twenty-five two-hundred-year runs is what buys the separation claim, so
+# shortening it trades a real measurement for a fast one. Moving it out of the
+# gate would take the separation verdicts out of the merge path entirely, and
+# nothing would then stop a commit turning a `strict` separation into
+# `overlapping`.
+#
+# So the choice is the runner's window, not the suite's honesty. Raise the
+# ceiling on the box, or split the gate — and if `ci/hetzner-lint` starts
+# reporting nothing at all rather than failing, suspect this first.
 
 set -euo pipefail
 
