@@ -503,6 +503,9 @@ export function mountSourceNote(host, session, needs = []) {
         background:color-mix(in oklab, var(--loss) 12%, var(--sunk))}
       .mm-src.is-cheated .mm-cheat{color:var(--loss);font-weight:600;letter-spacing:.06em;
         text-transform:uppercase}
+      /* The digest is not shouted: it is a hex string somebody will compare by
+         eye or paste into a search, and upper-casing it makes both worse. */
+      .mm-src.is-cheated .mm-digest{color:var(--loss);font-family:var(--mono)}
     `;
     document.head.append(style);
   }
@@ -555,7 +558,8 @@ export function mountSourceNote(host, session, needs = []) {
   const cheated = p.sandbox;
   if (cheated !== undefined && cheated !== null) {
     el.classList.add('is-cheated');
-    put('mm-cheat', `Cheated · ${String(cheated.digest ?? '')}`);
+    put('mm-cheat', 'Cheated');
+    put('mm-digest', String(cheated.digest ?? ''));
     put(
       'mm-why',
       `This universe was built by the sandbox layer: ${
