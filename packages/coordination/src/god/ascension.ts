@@ -406,31 +406,29 @@ export function prestigeEarned(inputs: PrestigeInputs, constants: GodConstants):
  * perfect runs approaches it asymptotically and never exceeds it; the tenth
  * consecutive ascension adds a few percent over the fifth.
  *
- * ## Staged ahead of its consumer, and the consumer is a run boundary
+ * ## Its consumer is a run boundary, and the run boundary now exists
  *
- * **Nothing in this repository calls this function, and that is a statement
- * about what the simulation does not yet have rather than about this file.**
- * `check:reachability` reports it, and the report is correct.
+ * This function was staged ahead of its caller for months and the header here
+ * used to say so — *"nothing in this repository calls this function"*, plus the
+ * design of the layer that would. **That layer is built:**
+ * `scenario/src/legacy.ts`'s `legacyRecordOf` reads the ending off the universe
+ * row, calls this to close the recurrence, converts the result through
+ * {@link legacyGrant}, and emits a serialisable `LegacyRecord`; `seedLegacy`
+ * spends that record into the next universe's tick-zero state, and
+ * `buildReferenceState` writes the carried figure into `UNIVERSE.prestige`.
  *
- * The recurrence relates two runs. Half the seam exists: `system.ts` writes
- * `prestigeEarned` onto the universe row once, at termination, as the gloss
- * above describes. Nothing reads it back, because **nothing starts a successor
- * universe** — `scenario`'s `buildReferenceState` composes one universe with
- * `prestige: 0` and `step()`s it to a tick cap, and `agent-api`'s session has no
- * successor lifecycle. A grep for a write of a non-zero `prestige` anywhere in
- * `packages/` returns nothing.
+ * It lives **above `step()`**, exactly as the old header specified it should:
+ * §1.1 makes `prestige` read-only for a run's length, so a universe raising its
+ * own carried prestige mid-flight would be the meta-game feeding the loop it
+ * sits outside. It is a *run-to-run artifact* rather than a within-run loop,
+ * because §1.1 also puts one universe in one simulation instance — there is no
+ * second universe for a tick to write into.
  *
- * The missing piece is a **succession layer above the world step**: on
- * `terminalReason !== none`, read `prestigeEarned`, call this, build the next
- * universe's tick-zero state through {@link legacyGrant}. Above `step()` because
- * §1.1 makes `prestige` read-only for a run's length — a universe raising its own
- * carried prestige mid-flight would be the meta-game feeding the loop it sits
- * outside.
- *
- * **That layer is a change of its own, with its own spec**, deliberately not
- * invented here: a succession seam built to silence a reachability finding would
- * be a mechanic nobody designed, and unwinding one later costs more than the
- * finding does now.
+ * The half of the seam that was always here is unchanged: `system.ts` writes
+ * `prestigeEarned` onto the row once, at termination, and that write is what
+ * the succession layer reads. The one thing it cannot write is the **cutoff**
+ * ending, because no tick knows it is the last one; `legacyRecordOf` takes that
+ * from its caller.
  */
 export function carriedPrestige(
   prestige: Fixed,
@@ -503,41 +501,36 @@ export interface LegacyGrant {
  * `prestigeAdvantage` turns; if it reaches zero and the metric still fails, the
  * model is wrong and gets redesigned rather than retuned.
  *
- * ## Staged ahead of its consumer, for the same reason {@link carriedPrestige} is
+ * ## Its caller, and where the three open decisions were made
  *
- * Nothing calls this, and `check:reachability` reports it with the five
- * constants only it reads — `legacy-archive-nodes`, `legacy-headstart-fraction`,
- * and the three `legacy-baseline-*`. They inherit this function's answer rather
- * than holding one of their own.
- *
- * A grant is a **tick-zero starting position for a universe that does not exist
- * yet**, so its caller is {@link carriedPrestige}'s succession layer: the thing
+ * `scenario/src/legacy.ts`'s `legacyRecordOf` calls this, for the same reason
+ * it calls {@link carriedPrestige}: a grant is a **tick-zero starting position
+ * for a universe that does not exist yet**, so its caller has to be the thing
  * that ends one run and founds the next.
  *
- * What that caller still has to decide, none of it settled here, none of it
- * mechanical:
+ * This header used to list three seeding decisions as deliberately unmade, on
+ * the argument that inventing them to manufacture a call site would be
+ * inventing the mechanic. They are made now, in the layer a starting position
+ * belongs to, and each is argued where it is made rather than here:
  *
- * - **`materials` is one figure and `MATERIAL_STOCK` has three fields** — food,
- *   stone, vellum. Splitting three ways, weighting, or giving each field the
- *   whole figure are three different starting positions.
- * - **`populace` is a headcount; a cohort is keyed by `(speciesId, occupation,
- *   birthTickBucket)`** with `contracts.md` §1.3 requiring one entity per key.
- *   The heads either join existing cohorts — changing the species and occupation
- *   mix — or found new ones, needing a birth bucket nobody has chosen.
- * - **`archiveNodes` cannot be placed as bare instances.** A written copy at
- *   `LOCATION_KIND.library` needs a paired `GRIMOIRE` row whose `holderKind` and
- *   `holderId` agree — `KnowledgeSubsystem.createInstance` throws otherwise — so
- *   seeding an archive means authoring book durability, a magnitude no constant
- *   here supplies.
+ * - **`materials` is one figure and `MATERIAL_STOCK` has more than one field.**
+ *   Split evenly, driven off `Object.keys(MATERIAL_STOCK.fields)` so the split
+ *   is a property of the component rather than a list somebody typed —
+ *   `splitLegacyMaterials`.
+ * - **`populace` is a headcount and a cohort is keyed by `(speciesId,
+ *   occupation, birthTickBucket)`.** The heads join the cohorts the scenario
+ *   already founded, round-robin by ascending handle, so §1.3's one-entity-per-key
+ *   rule holds and no birth bucket is invented — `seedLegacy`.
+ * - **`archiveNodes` cannot be placed as bare instances.** They are shelved as
+ *   written copies with a paired `GRIMOIRE`, at `SCRIBE_DURABILITY_BASE` — what
+ *   the live scribing path produces at unit affinity before its roll, so no new
+ *   magnitude enters the game — `shelveArchive`.
  *
- * Seeding decisions with balance consequences. Inventing them to give this
- * function a call site would be inventing the mechanic.
- *
- * The three `legacy-baseline-*` values are also **placeholders their own glosses
+ * The three `legacy-baseline-*` values remain **placeholders their own glosses
  * disown** — *"a measurement that has not been taken"* — pinned to
- * `legacy-reference-tick`. Until a `prestigeAdvantage` sweep replaces them this
- * is correct arithmetic over numbers nobody has measured: a second, independent
- * reason not to wire it to anything reporting a balance figure.
+ * `legacy-reference-tick`. Wiring the mechanic does not make them measurements,
+ * and a `LegacyRecord` therefore carries `baselineReferenceTick` as provenance
+ * so that a head start taken from them can be located in time and disproved.
  */
 export function legacyGrant(prestige: Fixed, constants: GodConstants): LegacyGrant {
   const budget = legacyBudget(prestige, constants);
