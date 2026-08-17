@@ -35,7 +35,7 @@
  * see `stack.ts`.
  */
 
-import type { ContentId, EffectTarget } from '@mm/content';
+import type { ContentId, EffectTarget, GradeRequirement } from '@mm/content';
 import type { Fixed } from '@mm/sim-core';
 import { LOCATION_KIND } from '@mm/state';
 
@@ -54,6 +54,27 @@ export interface EffectContribution {
   readonly magnitude: Fixed;
   readonly target: EffectTarget;
   readonly durationTicks: number;
+  /**
+   * Which of the node's effects this is, `0`-based and in authored order.
+   *
+   * Carried so that two effects of one node stay distinguishable downstream —
+   * `cig-the-standing-furnace` declares both an `area-denial` and a
+   * `resource-yield`, and only the second is gated on ore. Without an index the
+   * pair collapses to one node id and a consumer cannot say which effect it is
+   * holding.
+   */
+  readonly effectIndex: number;
+  /**
+   * Refined material this effect must be holding to contribute, if any.
+   *
+   * Passed through untouched. `gatherEffects` deliberately does not decide
+   * whether the requirement is met: it has no view of a material stock and
+   * `contracts.md` §5 keeps `rules-magic` out of the economy. The consumer that
+   * *does* hold the stock — `coordination`'s `universe-effects.ts` — is the one
+   * that gates. Absent means unconditional, which is what every effect authored
+   * before grades existed means.
+   */
+  readonly requires?: GradeRequirement;
 }
 
 /**

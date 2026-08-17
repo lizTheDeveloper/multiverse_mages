@@ -110,7 +110,9 @@ export function gatherEffects(
     if (!permits(ruleset, cellOf(instance.nodeId))) continue;
 
     const node = requireNode(registry, instance.nodeId);
-    for (const effect of node.effects) {
+    for (let effectIndex = 0; effectIndex < node.effects.length; effectIndex += 1) {
+      const effect = node.effects[effectIndex];
+      if (effect === undefined) continue;
       const primitive = requirePrimitive(registry, effect.primitive);
       if (!primitiveAppliesInMode(primitive, mode)) continue;
 
@@ -120,6 +122,12 @@ export function gatherEffects(
         magnitude: effect.magnitude,
         target: effect.target,
         durationTicks: effect.durationTicks,
+        effectIndex,
+        // Passed through, never judged here. A material requirement is a
+        // question about a stock, and this module has no stock and must not
+        // acquire one — `contracts.md` §5 keeps `rules-magic` out of the
+        // economy, and the gate lives with whoever holds the material.
+        ...(effect.requires === undefined ? {} : { requires: effect.requires }),
       });
     }
   }

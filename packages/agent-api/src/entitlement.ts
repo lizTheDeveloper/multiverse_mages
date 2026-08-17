@@ -313,6 +313,22 @@ export const TRAIT_CLASSIFICATION: Readonly<
     insight: observable('resources.stocks.insight (projection; reaches no slot)'),
     passage: observable('resources.stocks.passage (projection; reaches no slot)'),
   },
+  // The grade ladder's two columns. **Withheld, and undecided rather than
+  // justified**, which is the honest classification for a mechanic whose
+  // observability nobody has argued about yet.
+  //
+  // The argument a future change has to make is not "should a policy see a
+  // stock" — `material-stock` already answers that — but a narrower one: a
+  // refined holding is what gates `cig-the-standing-furnace`, so a policy that
+  // cannot see it cannot tell *"my foundries are idle for want of ore"* from
+  // *"my foundries are not worth anything"*. That is a real entitlement
+  // question and it needs a slot decision, not a projection line added quietly
+  // here. Adding one would move `OBSERVATION_LAYOUT_DIGEST`, which is exactly
+  // the friction that should make it a decision.
+  'material-grade': {
+    stoneWorked: undecided(),
+    stoneFine: undecided(),
+  },
   // God action 8's budget: a second bound in exactly the shape of action cost,
   // one the agent is subject to and cannot see.
   'grant-budget': {

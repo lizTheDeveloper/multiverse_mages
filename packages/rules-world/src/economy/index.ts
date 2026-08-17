@@ -109,6 +109,21 @@ export {
   zeroAmounts,
 } from './kinds.js';
 
+export type {
+  ActiveDemand,
+  DemandOutcome,
+  GradeSettlement,
+  GradedStock,
+} from './grades.js';
+export {
+  NO_GRADED_STOCK,
+  demandKey,
+  gradedColumn,
+  metDemands,
+  rawRefiningDemand,
+  settleGrades,
+} from './grades.js';
+
 export type { TeachingWeightSource, TeachingWeights } from './teaching.js';
 export {
   REQUIRED_TEACHING_WEIGHTS,

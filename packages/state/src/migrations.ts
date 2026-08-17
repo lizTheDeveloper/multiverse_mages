@@ -88,6 +88,7 @@ import {
   GOD_STATE,
   GRANT_BUDGET,
   KNOWLEDGE_FIDELITY,
+  MATERIAL_GRADE,
   MATERIAL_STOCK,
   MID_RAID_CHANGE,
   TERRITORY_HOLDING,
@@ -162,7 +163,7 @@ import {
  * **Append; never renumber.** A revision number is what a migration step is
  * keyed on, so reusing one silently applies the wrong repair to a save.
  */
-export const WORLD_SCHEMA_VERSION = 11;
+export const WORLD_SCHEMA_VERSION = 12;
 
 /**
  * The world-schema revision an envelope was written by.
@@ -180,7 +181,38 @@ export const WORLD_SCHEMA_VERSION = 11;
  */
 export function worldSchemaVersionOf(envelope: SnapshotEnvelope): number {
   const carried = new Set(envelope.components.map((component) => component.name));
-  // **Revision 11's marker is `knowledge-fidelity`, and it leads the chain** —
+  // **Revision 12's marker is `material-grade`, and it leads the chain** —
+  // §4.4 step 3, newest marker first. A revision-12 envelope also carries
+  // `knowledge-fidelity` and every marker below it, so asking about any of them
+  // first would walk every current save through migrations it has already had.
+  //
+  // **A collision was open when this was authored, and it is recorded rather
+  // than resolved.** `w/exp-duration` took revision 12 for `standing-working`
+  // off the same base commit (`4621db1a`, which declares 11), at the same time.
+  // Both branches are correct against their base and **neither could take 13
+  // instead**: `migrateWorldEnvelope` walks by `from`, so a step `{ from: 12 }`
+  // with no `{ from: 11 }` beneath it throws *"No world-schema migration is
+  // registered from revision 11"* for every save on disk. Authoring around a
+  // collision would have produced a hole in the walk to avoid a merge conflict
+  // the project already has a written procedure for.
+  //
+  // So whoever merges these two **second** does §4.4's four steps, and they are
+  // not optional — getting (2) or (3) wrong does not throw, it migrates an older
+  // save through the wrong steps and lands it holding the wrong sections:
+  //
+  //   1. `WORLD_SCHEMA_VERSION = 13`.
+  //   2. That branch's step becomes `{ from: 12, to: 13 }`.
+  //   3. Its marker check moves to the **front** of this chain, ahead of
+  //      whichever component kept 12.
+  //   4. Its component stays **last** in `WORLD_COMPONENTS`.
+  //
+  // This is the fifth such renumber in this file — `bar-phase` three times, the
+  // siting pair three times, `knowledge-fidelity` once — and CLAUDE.md's rule
+  // is the whole reason it is cheap: a migration's number is its position in a
+  // walk, not a name.
+  if (carried.has(MATERIAL_GRADE.name)) return 12;
+  // Revision 11's marker is `knowledge-fidelity`, and it led the chain until
+  // revision 12 arrived —
   // §4.4 step 3, newest marker first. A revision-11 envelope also carries
   // `grant-budget` and the widened `material-stock`, so asking about either
   // first would walk every current save through migrations it has already had.
@@ -756,6 +788,36 @@ export const addTerritorySiting: WorldSchemaMigration = {
  * be a fidelity loss the save never suffered, applied retroactively to a library
  * the player already has.
  */
+/**
+ * Revision 11 → 12: append an empty `material-grade` section.
+ *
+ * **Zero rows, not zeroed rows**, and the distinction is the whole migration.
+ * A universe that has never refined anything holds no refined material, and
+ * that is expressed by the section being empty — not by a row of zeroes, which
+ * would be a claim that somebody looked and found nothing. Downstream, an
+ * absent row reads as **grade zero and never as a shortage**, so a pre-grades
+ * save keeps exactly the economy it was written against: nothing gates on a
+ * grade it has, and the raw stock in `material-stock` is untouched and
+ * unmoved.
+ *
+ * Synthesising rows would be the wrong repair for the reason `goal-commitment`
+ * gives next door — it invents a history nobody played — and here it would be
+ * worse than inert. `cig-the-standing-furnace`'s yield is gated on holding ore;
+ * a synthesised nonzero row would hand every restored universe a foundry it
+ * never built the industry for, and a synthesised *zero* row is only a louder
+ * way of writing the empty section.
+ */
+export const addMaterialGrade: WorldSchemaMigration = {
+  from: 11,
+  to: 12,
+  migrate(envelope) {
+    return {
+      ...envelope,
+      components: [...envelope.components, emptySection(MATERIAL_GRADE)],
+    };
+  },
+};
+
 export const addKnowledgeFidelity: WorldSchemaMigration = {
   // Authored as `{ from: 6, to: 7 }`. Renumbered to `{ from: 10, to: 11 }` on
   // the `integration/group-e` merge — the fourth and last renumber in this
@@ -783,6 +845,7 @@ export const WORLD_SCHEMA_MIGRATIONS: readonly WorldSchemaMigration[] = [
   addMidRaidChange,
   addTerritorySiting,
   addKnowledgeFidelity,
+  addMaterialGrade,
 ];
 
 /**

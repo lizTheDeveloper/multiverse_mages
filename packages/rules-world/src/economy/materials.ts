@@ -74,6 +74,12 @@ import { LAND_MATERIAL_KINDS, MATERIAL_KINDS, zeroAmounts } from './kinds.js';
  * adding it owes an argument for why. But the argument is open, and this comment
  * does not close it. Keep the justification and the permission apart.
  *
+ * **Grades are the first thing to arrive under that correction, and they are
+ * not substitution.** `refining` converts `stone` grade 0 into `stone` grade 1,
+ * within one kind. `economy-flow-models.md` §1.1 calls that a **converter**,
+ * not a trader: nothing changes owner and the total does not survive. See
+ * `grades.ts`.
+ *
  * ## Every magnitude here is untuned
  *
  * `docs/design/release-plan.md`: no release before 0.5.0 may claim any of them
@@ -385,6 +391,15 @@ export const CONSUMPTION_ORDER = [
   'libraryUpkeep',
   'scribing',
   'construction',
+  // **Placed, not appended**, and the note below this list says why that
+  // matters: a second claimant on a kind has to be positioned against the one
+  // already there rather than written wherever it was thought of. `refining`
+  // draws grade-0 `stone` for `mt-turn-the-poor-ore`, and it goes **after**
+  // `construction` — a half-built university outranks improving rock, which is
+  // the same call the economy already makes when it pays subsistence before
+  // anything. It is the first time `stone` has had two claimants, so this is
+  // also the first tick on which `construction`'s position is not inert.
+  'refining',
   'constructionLabor',
 ] as const;
 
@@ -441,6 +456,11 @@ export const CLAIMANT_KIND: Readonly<Record<ConsumptionKind, MaterialKind>> = {
   libraryUpkeep: 'vellum',
   scribing: 'vellum',
   construction: 'stone',
+  // Grade 0 `stone` — worthless rock, on its way to being ore that is merely
+  // bad. The draw is what makes `ge-turn-the-poor-ore` cost anything at all:
+  // its gloss states no loss in the conversion, so *"the whole cost of the rung
+  // is the raw stone it draws"* is the only price it has.
+  refining: 'stone',
   // Hired person-months, over and above the crew the populace supplied. Never
   // charged for a month a site could not use: `advanceUniversities` attributes
   // the months a site actually bought to the crew first, and only the excess to

@@ -97,6 +97,7 @@ interface Arm {
   readonly raids: number;
   readonly censusTicks: readonly number[];
   readonly reaches: number;
+  readonly gradeSamples: number;
 }
 
 /**
@@ -125,6 +126,7 @@ async function playOnce(seed: number, raids: boolean, telemetry: boolean, ticks:
     raids: run.raids().length,
     censusTicks: recorded.census.map((sample) => sample.worldTick),
     reaches: recorded.tierFirstReached.length,
+    gradeSamples: recorded.materialGrades.length,
   };
 }
 
@@ -322,3 +324,18 @@ describe('the §7 per-run metrics reach a run record', () => {
     },
   );
 });
+
+describe('the material-grade sampler is wired to a real universe, not to a type', () => {
+  it('takes a sample on every census tick a run reaches', async () => {
+    // The producer-side positive control for `materialGradeProfile`. Without
+    // it, the metric would be a collector over a field nothing fills — which is
+    // the shape this project has already shipped once as "a metric that could
+    // only ever read zero". This says the samples exist and are on the census
+    // lattice; the two-arm world-loop test in `coordination` is what says the
+    // numbers in them move.
+    const armed = await play(SEEDS[0] as number, false, true);
+    expect(armed.gradeSamples).toBeGreaterThan(0);
+    expect(armed.gradeSamples).toBe(armed.censusTicks.length);
+  });
+});
+

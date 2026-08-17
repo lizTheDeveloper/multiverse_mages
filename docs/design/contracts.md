@@ -957,6 +957,52 @@ own bounds quietly stops discriminating at the top.
 
 **Every value here is untuned** and carries `tuningStatus` saying so.
 
+### 2.12 `grade-edge.json`
+
+```jsonc
+{
+  "id": "ge-turn-the-poor-ore",
+  "node": "mt-turn-the-poor-ore",  // the working that performs this rung; an id from §2.3
+  "kind": "stone",                 // which of the seven material kinds carries a ladder
+  "fromGrade": 0,                  // 0 worthless / 1 worked / 2 fine
+  "toGrade": 1,                    // always fromGrade + 1 — the loader refuses a rung that skips
+  "ratio": 1024,                   // fp; below fp(1024) is a conversion that loses
+  "inputPerTick": 256,             // fp drawn from the grade below, per world tick
+  "gloss": "Change worthless rock into ore that is merely bad.",
+  "tuningStatus": "untuned"
+}
+```
+
+One rung of a material grade ladder. The table exists because **the ladder was already written in
+`node.json`, in mechanical detail**, and the anchor specifies four mechanics in two sentences:
+`mt-turn-the-poor-ore` — *"Change worthless rock into ore that is merely bad. Never into good ore:
+the working improves a thing by one step and has never once been made to take two."* That is a
+graded material, an ordinal on it, a converter that moves one step along it, and a cap on how far
+one working can move.
+
+In `docs/design/economy-flow-models.md` §1.1's vocabulary a rung is a **converter**, not a trader:
+nothing changes owner and the total does not survive the conversion. `ratio` is authored per rung
+rather than fixed in the rules path because the writing states it per working —
+`mh-the-second-harvest`'s *"Nothing is created; a field of straw becomes a smaller field of grain"*
+is a ratio below one, and `mt-turn-the-poor-ore`'s gloss states no loss at all.
+
+**`toGrade === fromGrade + 1` is a loader check, not a runtime convention.** JSON Schema cannot
+express a relation between two fields, so a rung authored `0 → 2` would satisfy every keyword in the
+file and would ship the working the writing says has never once been made. §2.3's optional
+`requires` on an *effect* is the demand side of the same ladder, and the loader refuses a demand for
+a grade no rung produces — a gate that can only ever be shut reports as a mechanic that changes
+nothing rather than as content that is unfinished.
+
+**Three grades, and only `stone` today.** Two independent glosses converge on three —
+`mt-turn-the-poor-ore`'s worthless/bad/good and `maq-sweeten-the-cistern`'s foul/water/clean — which
+caps the tuning surface rather than opening a tree. Only `stone` carries a ladder because only
+`stone` has both a producer and a consumer authored: `cig-the-standing-furnace` *"runs the great
+foundries"* on ore, and `iig-the-colour-of-ready-iron` reads the colour of ready **iron**. A graded
+stock with a producer and no consumer is a label on a resource, which `economy-flow-models.md` §4
+refuses, and widening the enum means authoring both ends.
+
+**Every value here is untuned** and carries `tuningStatus` saying so.
+
 ---
 
 ## 3. Effect Primitive Semantics
@@ -1604,6 +1650,7 @@ unavailable status is an honest answer.
 | `timeToTierBySpecies` | world ticks for a species to first reach each node tier |
 | `knowledgeHalfLife` | world ticks for 50% of nodes known at tick *t* to be lost by tick *t+n* |
 | `libraryDependence` | fraction of known nodes with exactly one surviving instance |
+| `materialGradeProfile` | fraction of sampled world ticks on which the universe held any **grade-2** material, with the grade-1 fraction, the peak of each and the final level of each beside it. The first metric here to read a **material stock** at all — seven kinds and a grade ladder had shipped with nothing that could say what any of them did, which made the ladder's own falsifier (*do universes ever reach the far edges, or only 0 → 1?*) unaskable. A build with no ladder is `mechanic-absent`, which is **not** the same answer as a run that had one and never left grade 0 |
 | `worshipSnowball` | Gini coefficient of favor regen across MC runs at fixed tick counts. **Threshold: ≤ 0.35**, plus p95:p50 regen ≤ 3:1 |
 | `capitalSnowball` | same, over library depth — the §6a loop |
 | `raidLengthDistribution` | engagement ticks to resolution; must be bounded by portal stability |

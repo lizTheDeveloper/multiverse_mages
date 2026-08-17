@@ -75,7 +75,7 @@ beforeEach(() => {
 });
 
 function contribution(primitiveId: string, magnitude: Fixed): EffectContribution {
-  return { nodeId: 1, primitiveId, magnitude, target: 'self', durationTicks: 0 };
+  return { nodeId: 1, primitiveId, magnitude, target: 'self', durationTicks: 0, effectIndex: 0 };
 }
 
 describe('every combination goes through the shared implementation', () => {

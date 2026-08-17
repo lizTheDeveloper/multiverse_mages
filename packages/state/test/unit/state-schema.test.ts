@@ -197,6 +197,7 @@ describe('the world schema is stable in the way the snapshot format needs', () =
       // disk was written with twenty sections and expects the twenty-first to be
       // the one it does not know.
       'knowledge-fidelity',
+      'material-grade',
     ]);
   });
 

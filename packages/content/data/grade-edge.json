@@ -1,0 +1,24 @@
+[
+  {
+    "id": "ge-turn-the-poor-ore",
+    "node": "mt-turn-the-poor-ore",
+    "kind": "stone",
+    "fromGrade": 0,
+    "toGrade": 1,
+    "ratio": 1024,
+    "inputPerTick": 256,
+    "gloss": "Change worthless rock into ore that is merely bad. The gloss states no loss, so the ratio is unity and the whole cost of the rung is the raw stone it draws; what it may never do is reach the grade above, which is the one-step rule this table exists to carry.",
+    "tuningStatus": "untuned"
+  },
+  {
+    "id": "ge-call-it-iron-until-it-is",
+    "node": "mn-call-it-iron-until-it-is",
+    "kind": "stone",
+    "fromGrade": 1,
+    "toGrade": 2,
+    "ratio": 512,
+    "inputPerTick": 128,
+    "gloss": "Poor ore becomes iron at roughly the rate the claim goes unchallenged. The gloss states a rate rather than a conversion, so the ratio is below unity; the input is the ore the rung below made, which is what makes improving rock worth doing at all.",
+    "tuningStatus": "untuned"
+  }
+]
