@@ -113,33 +113,21 @@ const BLIND_ARM_LINES: Readonly<Record<string, readonly string[]>> = {
   // either direction, and that is a fact about the strategy rather than about
   // the tolerance.
   //
-  // **W116 keeps that lesson and changes every member of the list.** Both
-  // `denial-warden` *level* lines left: that arm's mages can now affiliate, so
-  // its `referenceNodesKnown` goes 4.125 -> 6.875 and its `referenceGrimoires`
-  // 44 -> 217.5, and a level no longer within a rounding error of zero has a
-  // tolerance that no longer exceeds it. Three `…FinalQuarter` lines are what
-  // remain, `permissive-breadth`'s from `anti-requisites` and two more from this
-  // change.
+  // **Back to two, 2026-08-16, and the lesson above predicted it.** The wiring
+  // campaign (PR #201) took `referenceNodesKnown@denial-warden` off the list:
+  // the three academic rates now feed from authored node effects, so even the
+  // arm that permits least learns enough to step clear of a tolerance three
+  // standard errors wide. **This list shrinking is as much a change in the
+  // instrument as it growing** — the gate can now tell a proportional move on
+  // that line from noise, and it could not a day ago — which is why the test
+  // asserts set equality rather than containment, and why this note exists.
   //
-  // **The membership above is `main`'s, not W116's, and that is deliberate.**
-  // On the Group F merge, 2026-08-16, W116's three baselines were taken back to
-  // `main`'s side under the campaign's baseline rule, and this list is derived
-  // from those files — so it has to be `main`'s too or the test compares a list
-  // against baselines it was not computed from. W116's reasoning is kept above
-  // because it is the thing that will be true again after the end-of-campaign
-  // re-record, and the list belongs in that commit rather than this one.
-  //
-  // That the list becomes *entirely* final-quarter lines is the generalisation
-  // of the lesson rather than a coincidence.
-  // `referenceNodesGainedFinalQuarter` is a **derivative** — nodes gained in the
-  // last quarter — so its honest value for any arm at equilibrium is about zero,
-  // and about zero is exactly where a tolerance outruns a mean. It is not that
-  // `denial-warden` is special; it is that a series whose true answer is near
-  // zero is blind by construction, and which series that is moves whenever a
-  // mechanic changes what a strategy accumulates.
+  // `referenceNodesGained@denial-warden` stayed. The two are the same arm and
+  // moved together every previous time; that they parted is worth one line of
+  // suspicion for whoever next re-records, and nothing more than that on this
+  // evidence.
   'balance/baselines/balance-gate-agency-v1.baseline.json': [
     'referenceNodesGained@denial-warden',
-    'referenceNodesKnown@denial-warden',
     'referenceNodesGainedFinalQuarter@permissive-breadth',
   ],
   // Ten since w107, up from seven, and the three that joined are all the same
