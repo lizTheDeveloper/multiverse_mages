@@ -318,7 +318,7 @@
     "id": "scope-multiplier-self",
     "value": 512,
     "unit": "fp",
-    "gloss": "What a node whose widest effect target is `self` costs to research, as a multiplier on the authored researchCost. The five scope weights are the whole of this axis: before them a node reaching the whole universe cost what a personal one cost at the same tier (docs/design/ars-magica-and-what-we-owe-it.md). `area` is the unit and the others are steps either side, so the axis redistributes cost by reach rather than raising it: cost-weighted over the 300 shipped nodes the aggregate moves 1.05x.",
+    "gloss": "What a node whose widest effect target is `self` costs to research, as a multiplier on the authored researchCost. Before these five weights, a node reaching the whole universe cost what a personal one cost at the same tier (docs/design/ars-magica-and-what-we-owe-it.md). `area` is the unit, so the axis redistributes rather than taxes: cost-weighted the catalog moves 1.05x, unevenly — measured 2026-08-17 on w/scope-price, v1 tiers 1 and 2 fall to 0.85x and 0.81x while tier 6 rises to 1.75x.",
     "tuningStatus": "untuned"
   },
   {
