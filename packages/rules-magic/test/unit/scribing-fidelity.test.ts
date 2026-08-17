@@ -100,19 +100,26 @@ function originator(chain: Chain, catalog = testCatalog()) {
   return mage;
 }
 
+/**
+ * `rngSeed` defaults to `1`, which is the literal every call here carried
+ * before — so every chain in this file draws exactly what it drew. It is a
+ * parameter only because one caller below needs the draw to *vary*, and the
+ * reason is written where it is used.
+ */
 function writeBook(
   chain: Chain,
   writer: number,
   scribeAffinity: number,
   tick: number,
   catalog = testCatalog(),
+  rngSeed = 1,
 ) {
   return scribe({
     knowledge: chain.knowledge,
     catalog,
     cells: testCells,
     ruleset: permissiveRuleset(),
-    rng: stepRng(1, tick),
+    rng: stepRng(rngSeed, tick),
     scribe: writer,
     nodeId: ROOT_NODE,
     worldTick: tick,
@@ -359,10 +366,37 @@ describe('scribal error is the ambient source, and is small but not zero', () =>
     // A rate high enough to be felt would drown the signal a raid is supposed
     // to leave, which is the point of the mechanic. Measured over seeds rather
     // than asserted from the constant.
+    //
+    // ## The seed has to reach the *draw*, and for a long time it did not
+    //
+    // `seeded(seed)` sets the **world's** root seed, which decides nothing here:
+    // `scribe` takes its randomness from the `rng` handed in, and `writeBook`
+    // handed it `stepRng(1, 2)` — a literal — on every one of the 64 turns. The
+    // scribe handle is also identical each turn (`1048576`, a fresh state and
+    // the same allocation order), so `actorStream(corruption, scribe)` resolved
+    // to **one** cursor and `nextBounded` returned **one** ordinal. This loop
+    // was taking a single draw sixty-four times and reporting it as a rate: the
+    // only two answers it could ever give were 0 and 64.
+    //
+    // It gave 0 for as long as that one ordinal happened to sit above the
+    // chance, and it gave 64 the moment the ordinal moved. What moved it is in
+    // `sim-core/src/rng/streams.ts`: `corruption` was authored as stream **13**
+    // and merged as **15**, because `detachment` and `career` landed in front of
+    // it and the registry must stay dense from 1. A different stream id is a
+    // different cursor, so the single draw changed and the "rate" went from
+    // 0/64 to 64/64 without the corruption model changing at all.
+    //
+    // *Measured on this tree, 2026-08-17, `integration/all-branches`:*
+    // `ROOT_NODE` is tier 1 and `scribalErrorChance(1024, 1)` is **16/1024**
+    // (1.6%). With the seed reaching the draw the loop reports **2 of 64**
+    // corrupted — a shade over the nominal rate, which is what 64 samples of a
+    // 1.6% event look like. With the seed not reaching it, 64 of 64.
     let corrupted = 0;
     for (let seed = 1; seed <= 64; seed += 1) {
       const chain = seeded(seed);
-      const book = writeBook(chain, originator(chain), HUMAN.scribeAffinity, 2);
+      // Sixth argument: the seed reaches the roll. Without it every turn of this
+      // loop is the same draw — see the note above.
+      const book = writeBook(chain, originator(chain), HUMAN.scribeAffinity, 2, testCatalog(), seed);
       if (book.corrupted) corrupted += 1;
     }
     expect(corrupted).toBeLessThan(16);
