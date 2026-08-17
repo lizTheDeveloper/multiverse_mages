@@ -5921,6 +5921,22 @@ carrier — **a wiped-out warband still moves books home.**
 `resolveRaid` already names the intended softening — *"a survival roll scaled by distance to the
 portal — NOT automatic extraction"* — so the fix is a tuning decision the code was written expecting.
 
+> **Resolved 2026-08-14, on `w182/raid-seam`.** The finding above stands as a record of that tree
+> and is now history. The margin could not be repaired by retuning it, because
+> `portal-stability-jitter` is ±600 ticks — any absolute remaining-stability threshold fires at a
+> tick that varies by twelve hundred, which is longer than any raid runs. It was replaced by
+> `withdraw-after-ticks`, an **elapsed engagement-tick** threshold, swept and set to 56.
+>
+> Re-measured on the same fixture: **173 of 180 raiders come home, 0 of 33 mind-thefts forfeited**
+> (was 0 and 38-of-38). At scenario scale over 208 raids on four seeds, 87% of raiders withdraw and
+> 246 nodes are looted. `resolution-stability-margin` carried the identical units error — resolution
+> was a phase no raid ever entered — and became `resolution-onset-ticks` (96).
+>
+> Two further defects surfaced only once raiders *tried* to leave, both invisible while nobody did:
+> terrain could roll impassable **under the portal itself**, walling in the whole warband, and a
+> raid whose every surviving attacker could not path home ran to portal collapse — a 3,199-tick tail
+> against a p50 of 65. See `scripts/w182-withdrawal.mjs` and `scripts/w182-sweep.sh`.
+
 ### Wounds and capture
 
 | fate | representation | writes back to the world? |

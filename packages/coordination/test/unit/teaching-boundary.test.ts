@@ -124,6 +124,7 @@ function worldOf(affiliations: readonly number[]) {
         rediscoveryAffinity: species.rediscoveryAffinity,
         depthCeiling: species.depthCeiling,
         scribeAffinity: species.scribeAffinity,
+        curiosity: species.curiosity,
       }),
       store: shippedStorePolicy(traditionId),
       acquire: shippedAcquirePolicy(traditionId),

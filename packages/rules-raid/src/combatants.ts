@@ -122,8 +122,15 @@ export interface CombatantBrief {
   readonly knownNodes: ReadonlySet<ContentId>;
   /** `contracts.md` §1.6's `preparedSpells`, readied at home and spent abroad. */
   preparedSpells: readonly number[];
-  /** `ward` sources this combatant carries, already legality-filtered. */
-  readonly wardSources: readonly Fixed[];
+  /**
+   * `ward` sources this combatant carries, already legality-filtered.
+   *
+   * Mutable since `raid-engagement.md` §1 made the ruleset changeable mid-raid:
+   * a ward whose cell is forbidden stops warding, and `lock.ts` recomputes this
+   * from the same `passiveDefences` call the deployment used. Nothing else
+   * writes it.
+   */
+  wardSources: readonly Fixed[];
   /** The intrinsic per-tick damage of a detachment or a summon; `0` for a mage. */
   readonly intrinsicDamage: Fixed;
   /** The reach of that intrinsic attack; `0` for a mage. */
@@ -132,6 +139,17 @@ export interface CombatantBrief {
   readonly detachmentStrength: number;
   /** Nodes stolen this raid, kept only if this combatant withdraws alive. */
   readonly stolen: ContentId[];
+  /**
+   * Host knowledge instances corrupted this raid.
+   *
+   * **Unconditional on withdrawal, where `stolen` is not.** A thief has to carry
+   * knowledge home; a saboteur has already done the damage. Whether she reaches
+   * the portal decides what *she* gained, and it has never decided what the
+   * victim lost — a raider cut down on the library floor still burned the books
+   * she burned. The distinction is the whole shape of the move: corruption is
+   * a cost the victim pays, not a prize the raider carries.
+   */
+  readonly corrupted: Handle[];
   /** Whether this combatant has left through the portal. Attackers only. */
   withdrawn: boolean;
 }
@@ -260,6 +278,7 @@ export function spawnCombatant(
     intrinsicRange: spec.intrinsicRange ?? 0,
     detachmentStrength: spec.detachmentStrength ?? 0,
     stolen: [],
+    corrupted: [],
     withdrawn: false,
   };
   // Never reused within a raid, even when the combatant dies: a dead summon's
@@ -301,12 +320,50 @@ export function sideHasSummonRoom(roster: SideRoster, tuning: RaidTuning): boole
  */
 export const RAIDING_ROLES: ReadonlySet<number> = new Set<number>([MAGE_ROLE.raider]);
 
-/** Wardens lead the defence, and everyone else is there too. */
+/**
+ * Wardens lead the defence, and every **standing** mage is there too.
+ *
+ * ## Students are not on this list, and the omission is a decision
+ *
+ * W193 made a student a `MAGE` row, so *"everybody defends"* would now put
+ * children in a battle line by default — the set is enumerated rather than
+ * derived, so nothing changed silently, and this comment is the record of the
+ * choice rather than of an accident.
+ *
+ * Two reasons, and the second is the stronger one. The fiction: a first-year who
+ * knows one tier-1 node is not a combatant, and `magical-prevalence.md`'s
+ * taxonomy makes *"able to defend at any given random time"* an end state a
+ * student has not reached. And the measurement: a defender pool that grew by the
+ * whole student body the month enrolment landed would move every raid outcome in
+ * every committed baseline for a reason unrelated to raids, and W193 already has
+ * enough to answer for.
+ *
+ * The consequence is real and worth naming: a universe can be *"knowledge-rich
+ * and undefended"* in a new way — a great many enrolled students and few
+ * graduates is a soft target. That is a strategic shape, not a bug, and the god
+ * closes it by building enough curriculum to graduate them.
+ *
+ * ## Populace mages *are* on this list, and that omission would have been a
+ * silent balance move
+ *
+ * W197 sorts roughly half of each graduating class into `populace` — mages who
+ * before it would have been researchers, and researchers are on this list. So
+ * leaving `populace` off would have cut the defender pool by about half as a
+ * *side effect* of a change about careers, which is precisely the shape of
+ * regression this repository keeps finding months later. Including it holds the
+ * defender count where it was.
+ *
+ * It is also the reading `magical-prevalence.md` gives: *"people who are able to
+ * defend at any given random time"* is one of its named end states, and
+ * `DEFENDING_ROLES` being all four standing roles is how the document describes
+ * the code today. A populace mage is a graduate with a job, not a child.
+ */
 export const DEFENDING_ROLES: ReadonlySet<number> = new Set<number>([
   MAGE_ROLE.warden,
   MAGE_ROLE.professor,
   MAGE_ROLE.researcher,
   MAGE_ROLE.raider,
+  MAGE_ROLE.populace,
 ]);
 
 /** The side a participant fights on, spelled out so call sites do not guess. */

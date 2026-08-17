@@ -80,14 +80,19 @@ import type {
 import { decodeSnapshot, envelopeToState, floorDiv } from '@mm/sim-core';
 
 import {
+  BAR_PHASE,
   BLESSING,
   EFFORT_PROGRESS,
   ERA_EVALUATION,
   GOAL_COMMITMENT,
   GOD_STATE,
   GRANT_BUDGET,
+  KNOWLEDGE_FIDELITY,
   MATERIAL_STOCK,
+  MID_RAID_CHANGE,
+  TERRITORY_HOLDING,
   UNIVERSE,
+  UNIVERSITY_SITE,
   UPHEAVAL,
 } from './components.js';
 
@@ -101,12 +106,32 @@ import {
  * | 3        | `mages-and-species` | adds `effort-progress` (`contracts.md` §1.2)  |
  * | 4        | `god-agency`        | adds `god-state`, `blessing`, `upheaval`, `era-evaluation` (§1.1) |
  * | 5        | `city-and-supply-chain` | adds `material-stock`; **removes** `universe.materials` |
+ * | 6        | `god-agency`        | adds `grant-budget` (`contracts.md` §1.1)     |
+ * | 7        | `raid-engagement`   | adds `mid-raid-change` (`raid-engagement.md` §1) |
+ * | 11        | `scribing-fidelity` | adds `knowledge-fidelity` (`docs/design/scribing-fidelity.md`) |
  *
  * Revision 5 is the first step that does not only append. It splits the one
  * `materials` scalar into three kinds and takes the old field out of the
  * `universe` layout, because leaving it would leave a stock nothing spends
  * beside three stocks everything does. See {@link splitMaterialsByKind} for the
  * split rule and for why a section rewrite is safe here.
+ * | **7**    | *reserved*          | **not in this tree** — `material-stock` widened from three kinds to seven, on `w247/material-economy-build`. See {@link addBarPhase}. |
+ * | 8        | W21 timing          | adds `bar-phase` — sound-design §5.2's eight-bar unease |
+ *
+ * Revision 7 appends `mid-raid-change`. It was written against revision 4 on
+ * `w37/raid-playable` and renumbered on the merge — `material-stock` and
+ * `grant-budget` had taken 5 and 6 in the meantime, and a revision number is
+ * what a migration step is keyed on, so keeping the branch's 5 would have
+ * silently applied a raid repair to a save that only needed the materials
+ * split.
+ * | 10       | `university-siting` | adds `territory-holding` (§1.1) and `university-site` (§1.4) |
+ *
+ * Revision 10 is W24's, renumbered twice: once to 7 on its own merge, and again here, because 7 is reserved for `material-economy` and 8 and 9 were taken by `bar-phase` and `mid-raid-change` while this branch was out. It was written as revision 5
+ * against a tree where 5 was free; `main` took 5 for the material split and 6
+ * for the grant budget while W24 was out of date, and a migration's number is
+ * its position in a walk, not a name. Nothing else about it changed: it still
+ * appends two empty sections and reads an absent row the way every append step
+ * here does.
  *
  * Revision 4 adds four components in one step, where the two before it added
  * one each. That is not a loosening of the rule — it is what the rule is for.
@@ -116,10 +141,14 @@ import {
  * revisions would invent three intermediate versions nothing ever wrote, and
  * three migration steps that could only ever be exercised by a test.
  *
+ * Revision 5 adds two for the same reason: a university's site is meaningless
+ * without a holding to stand in, and no build has ever shipped one without the
+ * other.
+ *
  * **Append; never renumber.** A revision number is what a migration step is
  * keyed on, so reusing one silently applies the wrong repair to a save.
  */
-export const WORLD_SCHEMA_VERSION = 6;
+export const WORLD_SCHEMA_VERSION = 11;
 
 /**
  * The world-schema revision an envelope was written by.
@@ -137,6 +166,37 @@ export const WORLD_SCHEMA_VERSION = 6;
  */
 export function worldSchemaVersionOf(envelope: SnapshotEnvelope): number {
   const carried = new Set(envelope.components.map((component) => component.name));
+  // Revision 7's marker is `knowledge-fidelity`, newest first for the reason the
+  // next comment gives: a revision-7 envelope also carries `grant-budget`, so
+  // asking about the budget first would walk every save written since fidelity
+  // landed through a migration it has already had.
+    // **Revision 11's marker is `knowledge-fidelity`, and it leads the chain.**
+  // Authored as 7 — the fourth branch in this group to find that number taken.
+  if (carried.has(KNOWLEDGE_FIDELITY.name)) return 11;
+  // Revision 10's marker is `territory-holding`, and it leads the chain because newest
+  // marker wins — a revision-10 envelope also carries `grant-budget` and
+  // `material-stock`, and reading it as either would walk it through migrations
+  // it has already had. It is the first of its own pair in `WORLD_COMPONENTS`,
+  // so an envelope that somehow carried only `university-site` reads as the
+  // older revision and is completed rather than left short.
+  if (carried.has(TERRITORY_HOLDING.name)) return 10;
+  // **Revision 9's marker is `mid-raid-change`, and it leads the chain** — §4.4
+  // step 3, newest marker first. Authored as revision 7; 7 is reserved for
+  // `w247/material-economy-build` and 8 was taken by `bar-phase` one merge
+  // earlier, so this is the third renumber in arrival order.
+  if (carried.has(MID_RAID_CHANGE.name)) return 9;
+  // **Revision 8's marker is `bar-phase`, and it is checked first** — §4.4 step
+  // 3: the newest marker leads the chain, or a save written by this build reads
+  // as revision 6 (it carries `grant-budget` too) and is walked through a
+  // migration it has already had.
+  //
+  // Revision 7 has no arm here on purpose. It belongs to
+  // `w247/material-economy-build`, which is not in this tree, and its marker is
+  // a **field** on `material-stock` rather than a component — so it cannot be
+  // detected by this function's component test at all, and adding a component
+  // arm for it would misidentify some other revision. The combiner adds the
+  // field test, above this line, when that branch arrives.
+  if (carried.has(BAR_PHASE.name)) return 8;
   // Revision 6's marker is `grant-budget`, and it is checked first because a
   // revision-6 envelope also carries `material-stock` — newest marker wins, or
   // every save written since the budget landed would be walked through a
@@ -154,7 +214,6 @@ export function worldSchemaVersionOf(envelope: SnapshotEnvelope): number {
   // not any row was written — and because it is the first of the four in
   // `WORLD_COMPONENTS`, so a partially-appended envelope reads as the older
   // revision and is completed rather than being read as current and left short.
-  if (carried.has(GRANT_BUDGET.name)) return 5;
   if (carried.has(GOD_STATE.name)) return 4;
   if (carried.has(EFFORT_PROGRESS.name)) return 3;
   if (carried.has(GOAL_COMMITMENT.name)) return 2;
@@ -245,6 +304,32 @@ export const addEffortProgress: WorldSchemaMigration = {
     return {
       ...envelope,
       components: [...envelope.components, emptySection(EFFORT_PROGRESS)],
+    };
+  },
+};
+
+/**
+ * Revision 6 → 7: append an empty `mid-raid-change` section.
+ *
+ * Empty is the correct repair and not merely the convenient one. A mark records
+ * a ruleset change made **during a raid**, and no build before this one could
+ * make one — the rule it descends from said a raid in progress was frozen
+ * policy. So there is no save in existence holding a change this section should
+ * describe, and synthesising rows would invent constitutional history: every
+ * restored universe would owe a surcharge on edicts it issued in peacetime.
+ */
+export const addMidRaidChange: WorldSchemaMigration = {
+  // Authored as `{ from: 6, to: 7 }`. Renumbered on the `integration/group-e`
+  // merge: 7 is reserved for `w247/material-economy-build` (a **field** marker
+  // on `material-stock`, not a component — see {@link addBarPhase}), and 8 was
+  // taken by `bar-phase` one merge before this one. Arrival order, which is what
+  // §4.4 says settles a revision number.
+  from: 8,
+  to: 9,
+  migrate(envelope) {
+    return {
+      ...envelope,
+      components: [...envelope.components, emptySection(MID_RAID_CHANGE)],
     };
   },
 };
@@ -430,6 +515,122 @@ export const addGrantBudget: WorldSchemaMigration = {
   },
 };
 
+/**
+ * Revision 6 → **8**: append an empty `bar-phase` section, across a reserved
+ * revision 7 that is not in this tree.
+ *
+ * `sound-design.md` §5.2's eight-bar unease needs one integer per universe, and
+ * §1.1's note on `god-state` says plainly which shape to give it: an added
+ * component is an appended empty section, an added *field* reshapes a section
+ * and rewrites every older save column by column.
+ *
+ * Empty, for the reason the four steps before it were. No row means the universe
+ * has never changed its own law, which is true of every save written before the
+ * rule existed — and a synthesised row would hand a restored universe a decaying
+ * unease over an act nobody ever committed, which is the cost surcharge
+ * equivalent of inventing a `favorWasted` nobody wasted.
+ *
+ * ## Why this step spans two revisions, which no other step does
+ *
+ * W21 authored this as `{ from: 4, to: 5 }` against a `main` at revision 4. By
+ * the time it merged, `main` was at 6 and **revision 7 was already spoken for**
+ * by `w247/material-economy-build`, which widens `material-stock` from three
+ * kinds to seven and marks the revision with a **field** rather than a
+ * component. That branch is combined with this one afterwards, so 7 must be left
+ * free here — and this component takes **8**.
+ *
+ * The hole cannot be filled with a placeholder. {@link migrateWorldEnvelope}
+ * refuses a step whose result does not read as a higher revision than its input,
+ * and no marker for 7 exists in this tree to leave behind, so a no-op 6 → 7 step
+ * would throw rather than pass through. Bridging 6 → 8 is the only shape that
+ * both reserves 7 and leaves a revision-6 save migratable, which is the property
+ * that actually matters to a player.
+ *
+ * **What the combiner must do**, stated here so it is not rediscovered: once
+ * `material-economy`'s `{ from: 6, to: 7 }` step is in the tree, this step's
+ * `from` becomes **7** and the bridge disappears. Until that flip,
+ * `worldSchemaVersionOf` will read a snapshot written by this build as revision
+ * 8 and the combined build will therefore never run the widening on it — so **no
+ * snapshot serialized from this branch may be persisted across the combine.**
+ * Nothing in this repository writes one today; that sentence is here for the day
+ * something does.
+ */
+export const addBarPhase: WorldSchemaMigration = {
+  from: 6,
+  to: 8,
+  migrate(envelope) {
+    return {
+      ...envelope,
+      components: [...envelope.components, emptySection(BAR_PHASE)],
+    };
+  },
+};
+
+/**
+ * Revision 9 → 10: append empty `territory-holding` and `university-site`
+ * sections.
+ *
+ * An append, and empty is the whole repair. A save written before a universe
+ * held ground has no holdings to recover, and the world step materializes the
+ * content endowment into an empty section on its first tick — `god-state`'s
+ * lazy-creation rule, for the same reason. A university with no site row is
+ * unsited, which is representable and is what every save before W24 describes.
+ *
+ * Renumbered 4 → 5, then 6 → 7, then 9 → 10; see the table above and the note at
+ * the step itself.
+ */
+export const addTerritorySiting: WorldSchemaMigration = {
+  // Authored as `{ from: 5, to: 6 }`, renumbered to `{ from: 6, to: 7 }` on W24's
+  // own merge, and renumbered again here to `{ from: 9, to: 10 }`: 7 is reserved
+  // for `w247/material-economy-build`, and `bar-phase` and `mid-raid-change`
+  // took 8 and 9 while this branch was out. Third assignment for one step, and
+  // the reason §4.4 says a revision number is settled by arrival rather than by
+  // authoring.
+  from: 9,
+  to: 10,
+  migrate(envelope) {
+    return {
+      ...envelope,
+      components: [
+        ...envelope.components,
+        emptySection(TERRITORY_HOLDING),
+        emptySection(UNIVERSITY_SITE),
+      ],
+    };
+  },
+};
+
+/**
+ * Revision 10 → 11: append an empty `knowledge-fidelity` section.
+ *
+ * Empty, and for the strongest version of the argument the steps above make:
+ * every reader of this component treats an **absent row as generation zero and
+ * sound**, which is exactly what a save written before scribing fidelity existed
+ * recorded. A revision-6 save restored into this build therefore holds a library
+ * of books that are all fresh from a living holder and none of them corrupted —
+ * the only reading of the old state that is not an invention.
+ *
+ * The alternative would be to synthesise a generation for every written
+ * instance from its `acquiredTick`, and there is no honest rule for it: the old
+ * state does not record what a book was copied from, so any number chosen would
+ * be a fidelity loss the save never suffered, applied retroactively to a library
+ * the player already has.
+ */
+export const addKnowledgeFidelity: WorldSchemaMigration = {
+  // Authored as `{ from: 6, to: 7 }`. Renumbered to `{ from: 10, to: 11 }` on
+  // the `integration/group-e` merge — the fourth and last renumber in this
+  // group. 7 is reserved for `material-economy`; 8, 9 and 10 went to
+  // `bar-phase`, `mid-raid-change` and `university-siting` ahead of it.
+  from: 10,
+  to: 11,
+  migrate(envelope) {
+    return {
+      ...envelope,
+      components: [...envelope.components, emptySection(KNOWLEDGE_FIDELITY)],
+    };
+  },
+};
+
 /** Every step this build knows, ascending by source revision. */
 export const WORLD_SCHEMA_MIGRATIONS: readonly WorldSchemaMigration[] = [
   addGoalCommitment,
@@ -437,6 +638,10 @@ export const WORLD_SCHEMA_MIGRATIONS: readonly WorldSchemaMigration[] = [
   addGodAgencyState,
   splitMaterialsByKind,
   addGrantBudget,
+  addBarPhase,
+  addMidRaidChange,
+  addTerritorySiting,
+  addKnowledgeFidelity,
 ];
 
 /**

@@ -105,6 +105,7 @@ import {
   KNOWLEDGE_INSTANCE,
   LOCATION_KIND,
   MAGE,
+  MAGE_ROLE,
   OCCUPATION,
   POPULACE_COHORT,
   MATERIAL_STOCK,
@@ -141,6 +142,7 @@ import type {
   StepRng,
   TargetAppealWeights,
   TerritoryExtent,
+  TerritoryKind,
 } from '@mm/rules-world';
 import {
   CohortStore,
@@ -167,20 +169,32 @@ import {
   castingDemand,
   consumeMaterials,
   createMage,
+  classCapacityOf,
   effectiveLifespan,
+  enrolmentFraction,
   fertilityBrake,
   hazardAt,
+  heldTerritoryExtent,
   insertNewborns,
   killMage,
   libraryRateMultiplier,
   libraryUpkeep,
   materialsProduced,
+  graduate,
+  prevalenceOf,
+  materializeTerritoryHoldings,
   promoteStudentCohort,
   readCommitment,
   rollMortality,
   scribingThroughput,
+  sortGraduateCareer,
+  siteCapacityMultiplier,
+  siteKindOf,
+  sitedCapacity,
   stepMageAutonomy,
+  territoryKindIndex,
   stepPopulace,
+  STUDENT_MAGE_ROLE,
   subsistenceDemand,
   totalAmount,
   zeroAmounts,
@@ -192,6 +206,7 @@ import type { AcademicEffectIndex, AcademicRateBonuses } from './academic-effect
 import { NO_ACADEMIC_BONUSES, academicRateBonuses } from './academic-effects.js';
 import type { VitalityBonuses, VitalityIndex } from './knowledge-vitality.js';
 import { NO_VITALITY_BONUSES, lifespanBonusesFor, vitalityBonuses } from './knowledge-vitality.js';
+import type { EnvelopeResolver } from './envelopes.js';
 import type { LibraryCapital } from './capital.js';
 import { libraryCapital } from './capital.js';
 import { EffortLedger } from './effort-store.js';
@@ -238,6 +253,16 @@ export interface WorldStepDeps {
    */
   readonly cells: ExclusionResolver;
   /**
+   * A node's technique envelope — `sound-design.md` §4.1's shape over the
+   * duration an acquisition takes.
+   *
+   * Optional for the same reason `agent-api`'s hooks are: a loop built over a
+   * synthetic content set has no technique records to read one from, and the
+   * flat curve it falls back to is both Rego's shape and exactly what this loop
+   * did before envelopes existed.
+   */
+  readonly envelopes?: EnvelopeResolver;
+  /**
    * A node's cell, form and effect primitives, and a species' resolved
    * affinities.
    *
@@ -274,14 +299,30 @@ export interface WorldStepDeps {
    */
   readonly acquire: AcquirePolicy;
   /**
-   * The universe's territory, summed from content by `territoryExtent`.
+   * The universe's **founding endowment**, summed from content by
+   * `territoryExtent`.
    *
-   * Carried on the deps rather than read from state because it is fixed for the
-   * length of a run (`contracts.md` §2.7) — and because `carrying-capacity.ts`
-   * derives `K` from it precisely so that `K` cannot be moved by anything the
-   * loop below produces.
+   * No longer what `K` is derived from. `contracts.md` §2.7 said `landUnits`
+   * would move to §1.1 *"when a raid takes ground"*, and `university-siting`
+   * made the move: the loop below reads {@link heldTerritoryExtent} off the
+   * `territory-holding` rows, and this figure is what those rows are
+   * materialized from on the first tick that finds none.
+   *
+   * It stays on the deps because it is still the right input to
+   * `maxCarryingCapacity` — the *documented* population bound is a claim about
+   * content, assertable without knowing how a run went, and a bound computed
+   * from state would move with the run it is supposed to bound.
    */
   readonly territory: TerritoryExtent;
+  /**
+   * What each kind of country is like, and what it endows.
+   *
+   * The content half of §2.7's split (`rules-world`'s `TerritoryKind`). Read for
+   * three things: materializing holdings, converting a holding's land into the
+   * people it carries, and converting a university's site into what that site
+   * does to its seats and to its library's upkeep.
+   */
+  readonly territoryKinds: readonly TerritoryKind[];
   /**
    * What this universe's land yields, as shares over the three material kinds
    * summing to `fp(1024)` — `territoryYieldShares` of the same content records
@@ -578,7 +619,119 @@ export interface WorldStepReport {
   readonly constructionStonePaid: Fixed;
   readonly carryingCapacity: number;
   readonly mageDeaths: number;
+  /**
+   * New mage entities created this tick.
+   *
+   * **Its meaning moved in W193 and the name did not.** It used to count
+   * *graduations* — a cohort matured, `mageAptitude` took its cut, and what was
+   * left arrived as working researchers. It now counts **enrolments**: the same
+   * event, the creation of an individual, moved to the start of her education
+   * rather than the end. Equal to {@link studentsEnrolled} by construction; both
+   * are emitted because a reader comparing this figure across the change is
+   * comparing two different things, and a second name is the cheapest way to say
+   * so.
+   *
+   * The number that means what this one used to mean is {@link magesGraduated}.
+   */
   readonly magesPromoted: number;
+  /** Cohort members who became student mages this tick. */
+  readonly studentsEnrolled: number;
+  /**
+   * People of school age this tick who could be magic users at all:
+   * `Σ cohortCount × prevalence[species]`, over every cohort past maturity.
+   *
+   * **The *"1,200 latent"* of `magical-prevalence.md`'s inequality**, and since
+   * W197 the only place in the loop `prevalence` is applied. It was previously
+   * computed, handed to the demand controller and discarded; a species ceiling
+   * that nothing reports is a lever a player cannot see.
+   *
+   * A **stock**, not a flow — it is every school-age person who could go, this
+   * tick, not the ones who went. Compare it against {@link studentsEnrolled} for
+   * *"should be" versus "are"*, which is the gap the whole design says a
+   * university exists to close.
+   */
+  readonly latentMagicUsers: number;
+  /**
+   * People of school age this tick who could have been mages and were not
+   * seated, **excluding** those who found no chair.
+   *
+   * **Structurally zero since W197, and the zero is honest.** The species gate
+   * moved entirely into the demand controller, so somebody prevalence rejects is
+   * now never placed in the `student` occupation at all and never reaches this
+   * phase to be counted. Everyone who arrives here is latent by construction,
+   * and the only way to miss out is {@link unseated}.
+   *
+   * Kept rather than deleted because the *quantity* it names is still the one
+   * `magical-prevalence.md` cares about — it is now
+   * {@link latentMagicUsers} minus {@link studentsEnrolled}, one phase earlier
+   * and universe-wide, and both of those are reported. Removing the field would
+   * have made a reader think the question went away with it.
+   */
+  readonly latentUnactivated: number;
+  /**
+   * People who cleared the species gate this tick and found no free seat.
+   *
+   * **The half of the gap the god can close**, split out from
+   * {@link latentUnactivated} because the two have different levers and their
+   * sum has none: a rare species and an unbuilt university look identical in the
+   * total and opposite here. *"The more universities you have, the more latent
+   * magic users you can activate"* is a claim about this number falling.
+   */
+  readonly unseated: number;
+  /**
+   * Students who finished their university's curriculum this tick.
+   *
+   * The metric `teach-rate` can move, and could not before: graduation used to be
+   * `age >= maturityMonths`, so no rate that made lessons land faster could
+   * change when a mage started working. Measured on `main`, a doubled `teach-rate`
+   * moved lessons `+0.1%` and living mages not at all.
+   *
+   * Equal to {@link graduatedAcademic} plus {@link graduatedPopulace} by
+   * construction. It no longer means *"became researchers"*: since W197 roughly
+   * half of a class does not.
+   */
+  readonly magesGraduated: number;
+  /**
+   * Of this tick's graduates, how many the career draw put on the academic
+   * track — the `researcher` role, and through the god's action 10 the pool that
+   * professors, wardens and raiders come out of.
+   */
+  readonly graduatedAcademic: number;
+  /**
+   * Of this tick's graduates, how many joined the populace: mages who cast for a
+   * living rather than for an institution.
+   *
+   * **Reported beside its counterpart rather than derived from it**, because the
+   * ratio is the thing being claimed. *"Something for the other half of people
+   * to do"* is a statement about this number relative to
+   * {@link graduatedAcademic}, and a reader who has to subtract to find it will
+   * eventually subtract the wrong thing. A run where this is zero is as much a
+   * signal as one where it is everything — *"my mages are all very advanced"* is
+   * meant to be a legible failure.
+   */
+  readonly graduatedPopulace: number;
+  /**
+   * Students whose university has nothing left to teach them and who hold
+   * nothing — stuck, and holding a seat until they die.
+   *
+   * Reported rather than fixed. It is reachable only by an institution losing
+   * everything it had while a student was mid-enrolment, it is bounded by seats
+   * and by lifespan, and the two alternatives are both worse: graduating her
+   * makes a knowledge-free researcher, and expelling her needs a way to put a
+   * mage entity back into a cohort that nothing else in the loop has. A
+   * non-zero value here is a signal, not a crash.
+   */
+  readonly studentsStalled: number;
+  /**
+   * Living mages currently in the `student` role.
+   *
+   * Emitted **because {@link livingMages} silently changed meaning.** Students
+   * are mage entities now, so the living-mage count includes people who are not
+   * working, and a before/after comparison across this change is otherwise
+   * comparing a working population against a working population plus a school.
+   * `livingMages - studentMages` is the old quantity.
+   */
+  readonly studentMages: number;
   readonly births: number;
   /**
    * Populace members lost to the cohort hazard table this tick.
@@ -817,6 +970,10 @@ export function defineWorldSimulation(deps: WorldStepDeps): WorldSimulation {
   // a second place the two could disagree about which tick a count belongs to.
   const god = godSystems({
     ...deps.god,
+    // Threaded from the world deps rather than duplicated onto `GodDeps` by the
+    // composition root: there is exactly one territory content set per run, and
+    // two places to configure it is two places for it to disagree.
+    territoryKinds: deps.territoryKinds,
     nodesLostThisTick: (worldTick) => (last?.worldTick === worldTick ? last.nodesLost : 0),
   });
   return {
@@ -862,6 +1019,23 @@ export function worldSystem(
       const universe = findUniverse(state);
       if (universe === 0) return;
       const ruleset: Ruleset = readRulesetForObservation(state, universe);
+
+      // ---- 0. Territory ----------------------------------------------------
+      // `contracts.md` §2.7's own migration, executed once per universe: the
+      // content endowment becomes `territory-holding` rows the first tick that
+      // finds none. A world-schema revision-4 save arrives here with an empty
+      // section — `migrations.ts` says why the repair could not go in the
+      // migration — and leaves this line holding exactly the land it always did.
+      materializeTerritoryHoldings(state, deps.territoryKinds);
+      const kindIndex = territoryKindIndex(deps.territoryKinds);
+      // Two reads of one relationship, resolved once for the tick. Both take a
+      // university handle, because §1.4 pins the site on the university and a
+      // library carries no back-link to its owner.
+      const siteSeatMultiplier = (university: Handle): Fixed =>
+        siteCapacityMultiplier(kindIndex.get(siteKindOf(state, university as EntityHandle)));
+      const siteUpkeepMultiplier = (university: Handle): Fixed =>
+        kindIndex.get(siteKindOf(state, university as EntityHandle))?.libraryUpkeepMultiplier ??
+        FP_ONE;
 
       const knowledge = deps.knowledgeFor(state);
       const cohorts = new CohortStore(state.entities, componentOf(state, POPULACE_COHORT));
@@ -932,6 +1106,7 @@ export function worldSystem(
         catalog: deps.catalog,
         cells: deps.cells,
         ruleset,
+        siteUpkeepMultiplier,
       });
       // One counter per tick, for the §7 emission. `contracts.md` §3's cap is
       // the only bound on the capital loop, so how often it binds is the
@@ -953,7 +1128,7 @@ export function worldSystem(
       // costs upkeep forever and contributes nothing to depth — which is the
       // asymmetry that makes "hoard everything" a losing line.
       const upkeepOwed = capital.libraries.reduce(
-        (total, entry) => total + libraryUpkeep(entry.depth),
+        (total, entry) => total + libraryUpkeep(entry.depth, entry.siteMultiplier),
         0,
       );
       let materialsScribed = 0;
@@ -983,6 +1158,7 @@ export function worldSystem(
           knowledge,
           catalog: deps.catalog,
           cells: deps.cells,
+          ...(deps.envelopes === undefined ? {} : { envelopes: deps.envelopes }),
           facets: deps.facets,
           nodesByCell,
           ruleset,
@@ -996,6 +1172,11 @@ export function worldSystem(
         });
 
       // ---- 2. Populace ----------------------------------------------------
+      // Hoisted out of the demand literal so the report can carry it. It is the
+      // *"1,200 latent"* of `magical-prevalence.md`'s inequality, and W197 made
+      // it the only place `prevalence` is applied — so a reader who cannot see
+      // it cannot see the species gate at all.
+      const latent = latentMagicUsers(cohorts, deps, worldTick);
       const populace = stepPopulace(cohorts, {
         hazard,
         species: (speciesId) => demographyOf(speciesId, deps),
@@ -1009,7 +1190,14 @@ export function worldSystem(
           // over a 200-year run and nothing could backfill it, so vision §6's
           // *"scribes copy grimoires"* had a workforce that only shrank.
           scribingQueueDepth: unwrittenNodeCount(state),
-          universityCapacity: completedCapacity(state),
+          // W24's site multiplier and W197's latent count are independent
+          // widenings of the same call, and the union produced two
+          // `universityCapacity` keys and two `standingSoldierTarget`s — the
+          // second of each silently winning. Composed: the capacity is the
+          // *sited* one, and the soldier target keeps `main`'s cited constant
+          // rather than W24's bare `0`.
+          universityCapacity: completedCapacity(state, siteSeatMultiplier),
+          latentMagicUsers: latent,
           // Zero, by citation rather than by omission. `ages-of-magic.md` §2b:
           // *"A university's stationed mages are its faculty, its researchers
           // and its garrison at once. There is no separate military."* The
@@ -1094,8 +1282,14 @@ export function worldSystem(
         vitality,
       });
 
-      // ---- 4. Promotion -----------------------------------------------------
-      const promoted = promoteMaturedStudents(state, cohorts, { rng, worldTick, deps });
+      // ---- 4. Enrolment -----------------------------------------------------
+      // Was "Promotion". The rename is the change: a cohort member becomes an
+      // individual **when she starts school**, not when she finishes it, and she
+      // arrives as a `student`-role mage holding a seat at a named university.
+      // `enrolment.ts` carries the pipeline and `promotion.ts` carries the
+      // arithmetic, which is unchanged.
+      const enrolment = enrolMaturedStudents(state, cohorts, { rng, worldTick, deps }, gatewayFor());
+      const promoted = enrolment.enrolled;
 
       // ---- 5. Work -----------------------------------------------------------
       const work = spendTheMonth(
@@ -1108,6 +1302,11 @@ export function worldSystem(
         academic,
         stock.vellum,
       );
+
+      // ---- 5g. Graduation ----------------------------------------------------
+      // After the month is spent, so a student who completed her last lesson this
+      // tick leaves this tick. `graduateStudents` says why the lag would matter.
+      const graduation = graduateStudents(state, gatewayFor(), { rng, deps });
 
       // ---- 5a. What the mages who cast at the world made ----------------------
       // Banked through the phase and settled once, so that a mage adding vellum
@@ -1215,13 +1414,17 @@ export function worldSystem(
               ),
             );
       const capacity = carryingCapacity({
-        territory: deps.territory,
+        // Held, not endowed. The two are equal until something takes ground, and
+        // `territory-holdings.test.ts` proves the equality on the seeded world
+        // rather than assuming it — but `K` must read what the universe *has*,
+        // or colonization would move the map and leave the population alone.
+        territory: heldTerritoryExtent(state, deps.territoryKinds),
         // Food, not the three kinds summed. `carrying-capacity.ts` says why: a
         // country holds more people because there is more to eat, and a heap of
         // quarried stone should raise what a universe can build rather than
         // what it can feed.
         food: stock.food,
-        completedCapacity: completedCapacity(state),
+        completedCapacity: completedCapacity(state, siteSeatMultiplier),
         subsistenceShortfallShare,
       });
       const births = deliverBirths(cohorts, {
@@ -1314,6 +1517,15 @@ export function worldSystem(
         carryingCapacity: capacity,
         mageDeaths: mortality.deaths,
         magesPromoted: promoted,
+        studentsEnrolled: enrolment.enrolled,
+        latentMagicUsers: latent,
+        latentUnactivated: enrolment.latentUnactivated,
+        unseated: enrolment.unseated,
+        magesGraduated: graduation.graduated,
+        graduatedAcademic: graduation.academics,
+        graduatedPopulace: graduation.populace,
+        studentsStalled: graduation.stalled,
+        studentMages: countStudentMages(state),
         births,
         populaceDeaths: populace.mortality.deaths,
         populaceRetired: populace.retired,
@@ -1904,7 +2116,6 @@ function spendTheMonth(
   let researchCompleted = 0;
   let lessonsTaught = 0;
   let grimoiresScribed = 0;
-  let practiceCompleted = 0;
   for (const done of gateway.completions()) {
     completedBy.add(done.subject);
     if (done.counterparty !== 0) completedBy.add(done.counterparty);
@@ -1915,7 +2126,6 @@ function spendTheMonth(
     if (done.kind === EFFORT_KIND.research) researchCompleted += 1;
     else if (done.kind === EFFORT_KIND.teaching) lessonsTaught += 1;
     else if (done.kind === EFFORT_KIND.scribing) grimoiresScribed += 1;
-    else if (done.kind === EFFORT_KIND.practice) practiceCompleted += 1;
   }
   return {
     castingOwed,
@@ -1924,7 +2134,7 @@ function spendTheMonth(
     researchCompleted,
     lessonsTaught,
     grimoiresScribed,
-    practiceCompleted,
+    practiceCompleted: gateway.practised(),
     applied,
     applyingMages,
     magesAffiliated: affiliation.moved,
@@ -2226,28 +2436,22 @@ function workOne(
             ),
           ),
         );
+        return undefined;
       }
+      // No living holder. The archive is the fallback and never the first
+      // choice, which is the whole of *"a real reason to keep the person alive
+      // rather than merely the book"* expressed as an order of preference
+      // rather than as a penalty. See `outlook.ts` for why this shares a goal
+      // with the lesson above instead of taking a tenth id.
+      //
+      // The `teach-rate` primitive does **not** multiply this. A book does not
+      // teach faster because a god blessed the art of instruction; nothing is
+      // instructing. The library's own capital term does apply, through
+      // `libraryRateMultiplier` on the mage's rates, and that is the multiplier
+      // a deep shelf is supposed to earn.
+      gateway.contributeStudy(mage, nodeId, MAGE_MONTHS_PER_TICK);
       return undefined;
     }
-    case GOAL.practice:
-      // The month is a month and the rate travels separately, exactly as
-      // research's does: `practice.ts` scales the *requirement* rather than the
-      // progress, for the one-place-for-rates reason `research.ts` argues.
-      //
-      // This is where the god's verbs reach maintenance. `shelves` is the
-      // library depth a funded university produces, and `practiceBonusesFor`
-      // carries the blessing and the cell emphasis; both arrive in the same
-      // `(1 + Σ)` channel that research and teaching use, under the same cap.
-      gateway.contributePractice(
-        mage,
-        nodeId,
-        MAGE_MONTHS_PER_TICK,
-        rate(
-          deps.primitives.practiceRate,
-          deps.practiceBonusesFor?.(state, worldTick, mage, nodeId) ?? NO_BONUSES,
-        ),
-      );
-      return;
     case GOAL.scribe:
       // The `universities` requirement names three rates and this is the third.
       // The ceiling gating it is the **author's**, not the reader's: the mage at
@@ -2280,6 +2484,20 @@ function workOne(
       const authored = deps.universeEffects?.appliedYieldOf(nodeId);
       if (authored === undefined) return undefined;
       if (!gateway.castableNodes(mage).includes(nodeId)) return undefined;
+      // Casting **is** practice, and the same arithmetic runs under both
+      // triggers rather than a second one that could disagree. A mage who
+      // spends her career casting *identify object* at the world keeps her hand
+      // in on it for as long as she keeps casting, which is the whole of the
+      // design's *"you need low level spell casters to stay in the population
+      // to continuously cast"*: her mastery is maintained by the work itself
+      // and she never needs a month at the desk to stay useful.
+      //
+      // It cannot *bootstrap* anything, and that is why `GOAL.practice` exists
+      // separately. `castableNodes` gates at `MASTERY_ACTIVATION_THRESHOLD`,
+      // which is the teach threshold, so nothing a mage researched for herself
+      // is ever castable in the first place. This trigger maintains; the goal
+      // is what lifts.
+      gateway.contributePractice(mage, nodeId, MAGE_MONTHS_PER_TICK);
       // The library does **not** multiply this. §6a's loop is about the rates at
       // which a mage learns, teaches and copies — `libraryRateMultiplier` is
       // named for exactly those three — and a deep shelf making the harvest
@@ -2296,6 +2514,40 @@ function workOne(
         ...(deps.ablation === undefined ? {} : { ablation: deps.ablation }),
       });
     }
+    case GOAL.practice:
+      // The library does **not** multiply this, for the reason the branch above
+      // gives about applied work: `libraryRateMultiplier` is named for the
+      // three rates §6a's loop is about — how fast a mage learns, teaches and
+      // copies — and a deep shelf making practice faster would be a fourth
+      // reading of the capital term that no balance assertion is written over.
+      // What a library is for on this path is `study` (`rules-magic`'s reading
+      // edge), which puts a *new* instance in a mind; practice improves one
+      // that is already there, and improves it at a rate set by her species and
+      // bounded by her reach.
+      //
+      // **The node-driven `practice-rate` travels in the months, and that is
+      // exact rather than a convenience.** `practice`'s gain is
+      // `gainPerMonth × effort × learnRate`, strictly linear in `effort`, so
+      // scaling the months is the same arithmetic as scaling the increment and
+      // it keeps `rules-magic` free of a second rate input. The channel is the
+      // one research and scribing use: the god's magnitudes and the mage's own
+      // castable knowledge through `stackMagnitudes` once, under §3's `(1 + Σ)`
+      // cap. Two branches built practice and only one of them authored a
+      // `practice-rate` primitive; without this line that primitive would be an
+      // authored effect with no node-driven consumer, which is exactly what
+      // `check:consumption` refuses.
+      gateway.contributePractice(
+        mage,
+        nodeId,
+        mul(
+          MAGE_MONTHS_PER_TICK,
+          rate(
+            deps.primitives.practiceRate,
+            deps.practiceBonusesFor?.(state, worldTick, mage, nodeId) ?? NO_BONUSES,
+          ),
+        ),
+      );
+      return undefined;
     default:
       return undefined;
   }
@@ -2353,6 +2605,16 @@ function degradeUnkeptLibraries(
   return { instances, nodesLost };
 }
 
+/**
+ * The enrolment fraction, now that `prevalence` is spent in the demand
+ * controller: **all of them**.
+ *
+ * A named constant rather than a bare `FP_ONE` at the call site, because the
+ * whole content of W197's second change is *which stage owns the species gate*,
+ * and a literal `1024` in an argument list is the least visible way to say it.
+ */
+const ENROLS_EVERY_LATENT_MEMBER: Fixed = FP_ONE;
+
 interface PromotionPhase {
   readonly rng: StepRng;
   readonly worldTick: number;
@@ -2368,50 +2630,338 @@ interface PromotionPhase {
  * That is an economy decision rather than a mage-lifecycle one, and it is made
  * here because here is where the two meet.
  */
-function promoteMaturedStudents(
+function enrolMaturedStudents(
   state: SimState,
   cohorts: CohortStore,
   phase: PromotionPhase,
-): number {
+  gateway: CoordinatingKnowledgeGateway,
+): EnrolmentReport {
   const matured: { cohort: EntityHandle; speciesId: number; count: number }[] = [];
   cohorts.forEach((handle, key, count) => {
     if (key.occupation !== OCCUPATION.student || count === 0) return;
     const species = phase.deps.speciesOf(key.speciesId);
     if (species === undefined) return;
+    // Still `maturityMonths`, and still measured from birth — because this is
+    // now the **enrolment** gate rather than the graduation one, and a person
+    // starts school when she is old enough to. What W193 moved off an age is
+    // when she *leaves*; see `hasCurriculumFor`.
     if (phase.worldTick - key.birthTickBucket < species.maturityMonths) return;
     matured.push({ cohort: handle, speciesId: key.speciesId, count });
   });
 
-  let promoted = 0;
+  const seats = freeSeatsByUniversity(state, gateway);
+  let enrolled = 0;
+  let latentUnactivated = 0;
+  let unseated = 0;
   for (const entry of matured) {
     const species = phase.deps.speciesOf(entry.speciesId);
     if (species === undefined) continue;
+    // ## Every matured member of a student cohort is seated. That is the fix.
+    //
+    // **`prevalence` used to be applied here as well as in the demand
+    // controller, and the double application is why seats never bound.** The
+    // `student` occupation is not the general population: `computeOccupationDemand`
+    // already sized it as `min(universityCapacity, latentMagicUsers)`, and
+    // `latentMagicUsers` is `Σ count × prevalence[species]`. Multiplying by
+    // `prevalence` a second time meant a universe enrolled roughly a tenth of the
+    // pool it had just decided was latent — so `unseated` was zero on every tick
+    // of a 1,200-tick run and university capacity constrained nothing.
+    //
+    // Measured on this branch at unchanged content, seed 589825: enrolments over
+    // 1,200 ticks `70 → 190`, and `unseated` peaks at 21 in a tick instead of 0
+    // in all of them. The seat is the constraint again, which is what
+    // `magical-prevalence.md` says a university is *for*.
+    //
+    // The fraction is `FP_ONE` rather than absent so that the arithmetic, the
+    // overflow ceiling and the `draws: 1` contract all stay where W193 put them
+    // — and so that a reader sees the fraction being *deliberately* spent
+    // upstream rather than finding a call site that quietly stopped taking one.
+    // At `FP_ONE` the remainder is zero and the draw never promotes, which makes
+    // `promoteStudentCohort` an identity here; the rare-species floor it exists
+    // to prevent now lives in `latentInCohort`, whose own comment says it floors
+    // to zero and declines to draw. See the PR body: if a species ever truncates
+    // out of existence there, the remainder draw has to move into the demand
+    // path, and that is a larger change than this one.
     const outcome = promoteStudentCohort(
       phase.rng,
       entry.cohort,
       entry.count,
-      species.mageAptitude,
+      ENROLS_EVERY_LATENT_MEMBER,
     );
 
-    // Removed before the mages are created, so the cohort's members are in
-    // exactly one place at every moment of the phase.
-    if (outcome.promoted > 0) cohorts.remove(entry.cohort, outcome.promoted);
-    if (outcome.notPromoted > 0) {
-      cohorts.transfer(entry.cohort, OCCUPATION.laborer, outcome.notPromoted);
+    // **Seats are claimed before the cohort is touched, and the whole cohort's
+    // bookkeeping is then settled in two calls.** The obvious shape — remove
+    // one, transfer one, per person — destroys the cohort entity the moment its
+    // count reaches zero, and every later call in the same loop then throws
+    // `StaleHandleError` on a handle that was valid when the loop started. The
+    // suite caught it; it is written down because the per-person shape reads as
+    // the more careful one.
+    const classSize = classCapacityOf(species);
+    const admitted: EntityHandle[] = [];
+    for (let index = 0; index < outcome.promoted && admitted.length < classSize; index += 1) {
+      const university = claimSeat(seats);
+      if (university === 0) break;
+      admitted.push(university);
     }
 
-    for (let index = 0; index < outcome.promoted; index += 1) {
+    // Everyone else goes back to the populace as a laborer rather than waiting:
+    // a queue would need a fifth cohort field to remember she was in it, and the
+    // design wants the shortfall visible as *unmet* demand rather than as a
+    // hidden backlog. `magical-prevalence.md`'s "1,200 latent, 340 found" is
+    // exactly this number.
+    const passedOver = entry.count - admitted.length;
+    if (admitted.length > 0) cohorts.remove(entry.cohort, admitted.length);
+    if (passedOver > 0) cohorts.transfer(entry.cohort, OCCUPATION.laborer, passedOver);
+    // **Split, because the two halves have different levers and a sum has
+    // none.** Somebody the fraction rejected is beyond the god's reach — she was
+    // not born able, or was never found — and somebody who passed the fraction
+    // and found no chair is a building the god did not fund. Reporting only the
+    // total would make "build more universities" and "this species is rare"
+    // indistinguishable, which is precisely the inequality
+    // `magical-prevalence.md` wants a player to be able to read.
+    unseated += Math.max(0, outcome.promoted - admitted.length);
+    latentUnactivated += Math.max(0, passedOver - Math.max(0, outcome.promoted - admitted.length));
+
+    for (const university of admitted) {
       const mage = state.entities.create();
       attachRecord(
         state,
         MAGE,
         mage,
-        createMage(phase.rng, mage, species, entry.speciesId, phase.worldTick),
+        // `roleId` is overwritten immediately below rather than passed, because
+        // `createMage` gives every mage `DEFAULT_MAGE_ROLE` and adding a role
+        // parameter to it would make the god's default and the enrolment role
+        // two arguments at one call site that must never be confused.
+        createMage(phase.rng, mage, species, entry.speciesId, phase.worldTick, university),
       );
-      promoted += 1;
+      componentOf(state, MAGE).set(mage, 'roleId', STUDENT_MAGE_ROLE);
+      enrolled += 1;
     }
   }
-  return promoted;
+  return { enrolled, latentUnactivated, unseated };
+}
+
+/** What one enrolment phase did. */
+interface EnrolmentReport {
+  /** Cohort members who became student mages this tick. */
+  readonly enrolled: number;
+  /**
+   * People who were of school age and did **not** get a seat — either the
+   * species ceiling and the aptitude gate kept them out, or the seats were full.
+   *
+   * The visible half of `magical-prevalence.md`'s inequality, and the reason it
+   * is returned rather than discarded: *"a god looking at '12,000 people, 1,200
+   * latent, 340 found' has an immediately legible problem and an obvious lever,
+   * and neither of those exists in the game today."*
+   */
+  readonly latentUnactivated: number;
+  /**
+   * People who cleared the species gate and found **no chair** — the god's half
+   * of the gap, and the one he can close by building.
+   */
+  readonly unseated: number;
+}
+
+/**
+ * Free student seats per completed university, ascending by handle.
+ *
+ * `contracts.md` §1.4's `capacity` minus the students already sitting in it.
+ * Ascending handle rather than any other order because a seat allocation that
+ * followed the cohort walk would be insertion-variant: founding a university
+ * would change which school every later student attended, and two peers with the
+ * same state and different creation histories would disagree.
+ *
+ * A university under construction seats nobody — `buildProgress >= FP_ONE` is the
+ * same completion test `completedCapacity` uses, and a half-built lecture hall
+ * that could enrol students would make founding, rather than finishing, the
+ * lever.
+ *
+ * **A university with nothing to teach seats nobody either**, which is the floor
+ * against `magical-prevalence.md`'s named failure mode: *"a university with
+ * nothing to teach graduates its students instantly, which would make a bare
+ * founding a mage factory."* Refusing at the door is stronger than refusing at
+ * graduation, because it also means no student is ever stranded in an
+ * institution she can never finish.
+ */
+function freeSeatsByUniversity(
+  state: SimState,
+  gateway: CoordinatingKnowledgeGateway,
+): { university: EntityHandle; free: number }[] {
+  const seated = new Map<number, number>();
+  const mages = componentOf(state, MAGE);
+  const alive = mages.field('alive');
+  const roles = mages.field('roleId');
+  const affiliations = mages.field('universityId');
+  mages.forEach((row) => {
+    if ((alive[row] as number) === 0) return;
+    if ((roles[row] as number) !== MAGE_ROLE.student) return;
+    const at = affiliations[row] as number;
+    if (at === 0) return;
+    seated.set(at, (seated.get(at) ?? 0) + 1);
+  });
+
+  const free: { university: EntityHandle; free: number }[] = [];
+  for (const { handle, row } of collectRecords(state, UNIVERSITY)) {
+    if (row.buildProgress < FP_ONE) continue;
+    const remaining = row.capacity - (seated.get(handle) ?? 0);
+    if (remaining <= 0) continue;
+    if (!gateway.hasCurriculum(handle)) continue;
+    free.push({ university: handle, free: remaining });
+  }
+  free.sort((left, right) => left.university - right.university);
+  return free;
+}
+
+/** Takes one seat from the lowest-handle university that has one, or returns `0`. */
+function claimSeat(seats: { university: EntityHandle; free: number }[]): EntityHandle {
+  for (const seat of seats) {
+    if (seat.free <= 0) continue;
+    seat.free -= 1;
+    return seat.university;
+  }
+  return 0;
+}
+
+/**
+ * Graduates every student whose university has run out of things to teach her,
+ * and sorts her into a career.
+ *
+ * ## The career sort is one draw per graduate, and it is not a second gate
+ *
+ * `careers.ts` holds the arithmetic and the argument. What matters here is that
+ * **nothing in this function can refuse to graduate her for being weak** — a
+ * student who is magical and educated graduates, and `mageAptitude` decides only
+ * what she graduates *into*. The two guards below are about curriculum, not
+ * about talent.
+ *
+ * ## Why this runs after the work phase and not before it
+ *
+ * A student who completed her last lesson **this tick** graduates in the same
+ * tick. Running it before the month is spent would put a whole tick's lag
+ * between finishing the curriculum and leaving, which is invisible in a single
+ * run and is exactly the kind of off-by-one that shows up later as an unexplained
+ * constant in a graduation-time measurement.
+ *
+ * ## The floor, and the failure mode it exists for
+ *
+ * She must hold **at least one node**. A university that can teach her nothing
+ * would otherwise graduate her the instant she arrived — *"a bare founding
+ * becomes a mage factory"* — and while {@link freeSeatsByUniversity} already
+ * refuses to seat anyone at an empty school, the two guards protect against
+ * different things: that one stops her enrolling, this one stops her graduating
+ * out of an institution whose faculty all died the month after she arrived.
+ *
+ * The residue is a student who is stuck: enrolled somewhere that has lost
+ * everything it had, holding nothing. She keeps her seat until she dies of old
+ * age. That is a real leak and it is bounded — by seats, and by her lifespan —
+ * and it is reported as {@link WorldStepReport.studentsStalled} rather than left
+ * to be discovered. Graduating her into a researcher who knows nothing would be
+ * the mage factory arriving by the back door.
+ */
+function graduateStudents(
+  state: SimState,
+  gateway: CoordinatingKnowledgeGateway,
+  phase: { rng: StepRng; deps: WorldStepDeps },
+): GraduationReport {
+  const mages = componentOf(state, MAGE);
+  const alive = mages.field('alive');
+  const roles = mages.field('roleId');
+  const students: EntityHandle[] = [];
+  mages.forEach((row, handle) => {
+    if ((alive[row] as number) === 0) return;
+    if ((roles[row] as number) !== MAGE_ROLE.student) return;
+    students.push(handle as EntityHandle);
+  });
+
+  let graduated = 0;
+  let stalled = 0;
+  let academics = 0;
+  let populace = 0;
+  for (const student of students) {
+    if (gateway.hasCurriculumFor(student)) continue;
+    const held = gateway.heldNodes(student).length;
+    if (held === 0) {
+      stalled += 1;
+      continue;
+    }
+    const row = readRecord(state, MAGE, student);
+    const species = phase.deps.speciesOf(row.speciesId);
+    // A graduate whose species record has gone missing is a content fault, not
+    // a career: she takes the default rather than being left a student forever,
+    // which is what `?? DEFAULT` on the aptitude would have hidden.
+    const career =
+      species === undefined
+        ? undefined
+        : sortGraduateCareer(phase.rng, student, species.mageAptitude, held);
+    graduate(row, career?.role);
+    mages.set(student, 'roleId', row.roleId);
+    graduated += 1;
+    if (career?.academic === false) populace += 1;
+    else academics += 1;
+  }
+  return { graduated, stalled, academics, populace };
+}
+
+/** What one graduation phase did, and how it sorted the class. */
+interface GraduationReport {
+  /** Students who finished their curriculum this tick. */
+  readonly graduated: number;
+  /** Students with nothing left to learn and nothing held. See {@link WorldStepReport.studentsStalled}. */
+  readonly stalled: number;
+  /** Of those, how many the career draw put on the academic track. */
+  readonly academics: number;
+  /** Of those, how many joined the populace. */
+  readonly populace: number;
+}
+
+/**
+ * People of school age who could become mages at all, summed over cohorts.
+ *
+ * `count × prevalence`, per species — and `prevalence` alone since W197, so
+ * this is still the same quantity the enrolment phase will actually realise,
+ * computed one phase earlier and universe-wide. It
+ * feeds `computeOccupationDemand`, which is the fix for *intake is seats*: see
+ * `demand.ts`'s `latentMagicUsers`.
+ *
+ * Every cohort of school age, not just the ones already in the `student`
+ * occupation — the point of the number is what the labour market should be
+ * *asking for*, and asking for the people it already has would be a controller
+ * with no error term.
+ */
+function latentMagicUsers(cohorts: CohortStore, deps: WorldStepDeps, worldTick: number): number {
+  let latent = 0;
+  cohorts.forEach((_handle, key, count) => {
+    if (count === 0) return;
+    const species = deps.speciesOf(key.speciesId);
+    if (species === undefined) return;
+    if (worldTick - key.birthTickBucket < species.maturityMonths) return;
+    latent += latentInCohort(count, species);
+  });
+  return latent;
+}
+
+/**
+ * One cohort's contribution to {@link latentMagicUsers}.
+ *
+ * **A named function rather than the arrow it started as**, because
+ * `scenario`'s annihilation registry keys on the function name and reported it
+ * as `world-step:<anonymous>` — a site nobody could look up. The registry's own
+ * header says a name *"moves only when the function is renamed, which is a
+ * change worth a reviewer's attention anyway"*, and that argument works only if
+ * the function has one.
+ *
+ * **It floors to zero, on purpose and often.** `floorDiv(count × fraction,
+ * FP_ONE)` is zero for every cohort smaller than `1 / fraction` — at the shipped
+ * numbers an orc cohort under about 114 people contributes nobody. That is the
+ * design: a population too small or too mundane to yield a single mage should
+ * ask for no students, and rounding it up would have every hamlet demanding a
+ * seat. The remainder is *not* banked here, unlike `promoteStudentCohort`, and
+ * the asymmetry is deliberate — this is a demand signal read once per tick, and
+ * a draw taken to round it would be an RNG call in the controller rather than in
+ * the event.
+ */
+function latentInCohort(count: number, species: SpeciesRecord): number {
+  return floorDiv(count * enrolmentFraction(prevalenceOf(species)), FP_ONE);
 }
 
 interface BirthPhase {
@@ -2482,6 +3032,7 @@ function ratesOf(state: SimState, mage: Handle, deps: WorldStepDeps): MageRates 
     rediscoveryAffinity: species.rediscoveryAffinity,
     depthCeiling: species.depthCeiling,
     scribeAffinity: species.scribeAffinity,
+    curiosity: species.curiosity,
   };
 }
 
@@ -2547,6 +3098,19 @@ function mageRowOf(state: SimState, mage: Handle): MageRecord | undefined {
   const store = componentOf(state, MAGE);
   if (!store.has(mage as EntityHandle)) return undefined;
   return readRecord(state, MAGE, mage as EntityHandle);
+}
+
+/** Living mages in the `student` role. See {@link WorldStepReport.studentMages}. */
+function countStudentMages(state: SimState): number {
+  let count = 0;
+  const store = componentOf(state, MAGE);
+  const alive = store.field('alive');
+  const roles = store.field('roleId');
+  store.forEach((row) => {
+    if ((alive[row] as number) === 0) return;
+    if ((roles[row] as number) === MAGE_ROLE.student) count += 1;
+  });
+  return count;
 }
 
 function countLivingMages(state: SimState): number {
@@ -2619,11 +3183,27 @@ export function unwrittenNodeCount(state: SimState): number {
   return unwritten;
 }
 
-/** Student seats across completed universities. Unfinished ones carry nobody. */
-function completedCapacity(state: SimState): number {
+/**
+ * Student seats across completed universities, **as their sites keep them**.
+ * Unfinished ones carry nobody.
+ *
+ * `capacity` is the designed seat count — how many desks were built. What the
+ * surrounding country can keep at those desks is `sitedCapacity`, and the two
+ * differ by up to 16× across the shipped kinds. This is the one figure siting
+ * moves, and it reaches both halves of what siting is supposed to change:
+ * `seatsBonus` in `K` (and so population), and student demand (and so, through
+ * promotion, mages and knowledge).
+ *
+ * `worshipInputs` deliberately keeps reading the *designed* capacity through
+ * `effectiveCapacity`. §7 pays worship for what an institution **is**, not for
+ * how the harvest went, and leaving it alone keeps the snowball metric measuring
+ * one thing.
+ */
+function completedCapacity(state: SimState, siteMultiplier: (university: Handle) => Fixed): number {
   let total = 0;
-  for (const { row } of collectRecords(state, UNIVERSITY)) {
-    if (row.buildProgress >= FP_ONE) total += row.capacity;
+  for (const { handle, row } of collectRecords(state, UNIVERSITY)) {
+    if (row.buildProgress < FP_ONE) continue;
+    total += sitedCapacity(row, siteMultiplier(handle));
   }
   return total;
 }

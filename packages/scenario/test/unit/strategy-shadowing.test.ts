@@ -72,11 +72,24 @@ const KNOWN_SHADOWED: Readonly<Record<string, string>> = Object.freeze({
     'version-4 note predicted this for the version-3 build and it is still true at version 4: ' +
     '"it sits third, behind openPortal and encourageResearch". Not a signature action, which is ' +
     'why degeneracyOf reports the strategy healthy.',
-  'portal-rush/12':
-    'encourageResearch sits third, behind assignRole, which is legal on 599 of 600 ticks. The ' +
-    'comment above it calls it "tempo while the portal is unreachable" — the portal is reachable ' +
-    'on 384 of 600 ticks now, and on the other 216 assignRole takes the slot instead. So the ' +
-    'strategy has no tempo behaviour at all, and the cell it claims to push is pushed by nobody.',
+  // `portal-rush/12` was here and is **gone on `w190/scribing-fidelity`**, so it
+  // is deleted rather than left: this file's own rule is that a stale entry is
+  // worse than a missing one, because it says a defect is known and accepted
+  // when it is in fact gone and the next reader trusts it.
+  //
+  // What it said: *"encourageResearch sits third, behind assignRole, which is
+  // legal on 599 of 600 ticks… the portal is reachable on 384 of 600 ticks now,
+  // and on the other 216 assignRole takes the slot instead."* Nothing on this
+  // branch touched `portal-rush`, the mask or the preference order. What moved
+  // is the tick arithmetic underneath it — a renumbered node graph and a
+  // `seek-teaching` that the shelf can now satisfy — so `encourageResearch`
+  // reaches the slot and is submitted.
+  //
+  // **This is a shadow lifting by accident, not a fix**, and it can come back
+  // the same way. The durable reading is the one the entry above it still
+  // carries: portal-rush's preference order puts its tempo move behind a verb
+  // that is legal almost every tick, and whether that shadows anything depends
+  // on numbers no one is holding still.
   'worship-maximizer/11':
     'fundUniversity is a signature action and is never submitted. Both of its entries sit behind ' +
     'blessMage: the first inside the `worship < favor` branch and the second after it, and ' +
@@ -183,6 +196,17 @@ describe('every verb a strategy asks for is a verb it can reach', () => {
           'legal every time it is.',
       }));
 
+    // **LEFT RED, `integration/group-e`, 2026-08-16.** One surprise:
+    // `narrow-depth` lists `grantFoundingKnowledge` (action 8), the mask allows
+    // it on 6 ticks, and it is never submitted — something ahead of it in its
+    // preference list is legal every time it is.
+    //
+    // This instrument's whole purpose is to report a verb a strategy asks for
+    // and cannot reach, and adding the entry to `KNOWN_SHADOWED` would convert
+    // exactly that report into silence. It is not pinned: a strategy that
+    // silently never plays a verb is measuring a different agent than the one
+    // its name describes, and every balance number taken from `narrow-depth`
+    // since this merge is a number about eight verbs, not nine.
     const surprises = found.filter((verb) => KNOWN_SHADOWED[verb.key] === undefined);
     expect(surprises.map((verb) => verb.detail)).toEqual([]);
   });

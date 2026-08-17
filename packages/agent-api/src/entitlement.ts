@@ -204,6 +204,32 @@ export const TRAIT_CLASSIFICATION: Readonly<
     // a fully mastered one.
     mastery: undecided(),
   },
+  // The telephone problem, and it is invisible for the same reason `mastery`
+  // above is. No channel carries either field, so an agent sees a library's
+  // *count* of instances and can learn nothing about whether they are worth
+  // reading: a shelf of pristine first copies and a shelf of exhausted
+  // fifth-generation ones are the same number in `institutions[331]`.
+  //
+  // `corruption` is the sharper case and is deliberately left `undecided()`
+  // rather than argued either way. Hiddenness is the mechanic — a corrupted
+  // book is indistinguishable from a sound one until a reader fails against it
+  // — so an observation channel carrying it would delete the design, while an
+  // observation channel carrying *whether a reader has marked it* would be
+  // legitimate and does not exist. Those are two different entitlement
+  // questions wearing one field, and `docs/design/scribing-fidelity.md` decides
+  // neither. See {@link CORRUPTION} in `@mm/rules-magic` for the three states.
+  'knowledge-fidelity': { copyGeneration: undecided(), corruption: undecided() },
+  // `w24/university-siting`'s two sections, classified on the
+  // `integration/group-e` merge because that branch predates this classifier and
+  // therefore never had a row here — `assertAllTraitsClassified` caught the gap,
+  // which is the mechanism working.
+  //
+  // Both `undecided()`. A holding is how much of what kind of country the
+  // universe works, and a site is which kind its academy stands in; §4.1's
+  // observation has no channel for either, and a PvP opponent learning where a
+  // rival's academy stands is a disclosure question nobody has ruled on yet.
+  'territory-holding': { kindId: undecided(), landUnits: undecided() },
+  'university-site': { kindId: undecided() },
   // The entire rediscovery signal. An agent cannot distinguish a node never
   // discovered from one discovered and lost, which are the two states with the
   // most different expected value in the knowledge model.
@@ -266,6 +292,39 @@ export const TRAIT_CLASSIFICATION: Readonly<
     cap: undecided(),
     grantsUsed: undecided(),
     seededNodes: undecided(),
+  },
+  // §5.2's eight-bar unease. Both fields are ticks on a universe row, and both
+  // are `undecided()` for the same reason `grant-budget`'s are: they price the
+  // god's next constitutional act and the agent is subject to them without
+  // seeing them. Classified here rather than left absent because
+  // `assertAllTraitsClassified` refuses a component with no classification at
+  // all — which is the check working, on the `w21/timing-and-envelopes` merge
+  // that introduced the component.
+  'bar-phase': {
+    uneaseUntilTick: undecided(),
+    lastConstitutionalTick: undecided(),
+  },
+  // `raid-engagement.md` §1's mark on a ruleset change made during a raid. All
+  // five `undecided()`, on `grant-budget`'s and `bar-phase`'s argument: the mark
+  // sets what unmaking the change will cost, and the agent is subject to that
+  // price without being shown the mark. Classified on the
+  // `design/raid-engagement` merge because `assertAllTraitsClassified` refuses a
+  // component with no classification at all.
+  //
+  // W182 arrived at the identical classification independently, and its
+  // argument is kept because it is the better statement of why: *"the whole
+  // point of the row is that it survives the raid to price a later revert, so
+  // it is state the god is subject to and cannot see. §4.1's observation has no
+  // channel for it."* Two branches, one conclusion.
+  'mid-raid-change': {
+    scope: undecided(),
+    targetId: undecided(),
+    changeKind: undecided(),
+    // The surcharge base. An agent that could read it could price its own
+    // walk-back exactly; one that cannot is guessing, and `revertSurcharge`
+    // being deterministic means that guess is recoverable from the action log.
+    paidCost: undecided(),
+    markedTick: undecided(),
   },
   combatant: {
     sourceKind: undecided(),

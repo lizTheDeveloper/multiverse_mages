@@ -1,5 +1,5 @@
 /*
- * Multiverse Mages — practice: the one operation that gives mastery back.
+ * Multiverse Mages — practice: the one operation that raises mastery.
  * Copyright (C) 2026 Ann Kelner
  *
  * This program is free software: you can redistribute it and/or modify it under
@@ -12,258 +12,263 @@
  */
 
 /**
- * The operation `decay.ts` named and nobody wrote.
+ * The missing operation, named by the module that could not perform it.
  *
- * > *"Nothing in this subsystem restores mastery; **practice does, and practice
- * > is an operation somebody has to perform.**"* — `decay.ts`, about itself
+ * `decay.ts` about itself: *"Nothing in this subsystem restores mastery;
+ * **practice does, and practice is an operation somebody has to perform.**"*
+ * This is that operation. Until it existed `setMastery` had exactly one
+ * rules-path caller — the decay sweep — and that caller only ever lowered, so
+ * the knowledge lifecycle was a strict descent:
  *
- * Until this file, that sentence described a hole. Mastery fell every tick for
- * every held instance and **nothing anywhere raised it**, so the game shipped
- * the perish half of publish-or-perish and none of the publish half:
- * `ages-of-magic.md` §2c records the consequence, 93.4% of held instances below
- * the teach threshold and 28 of 51 nodes with no teachable copy anywhere, at an
- * instant when every redundancy metric reported the library healthy.
+ * - research creates an instance at `DEFAULT_INITIAL_MASTERY` (256),
+ * - `DEFAULT_TEACH_THRESHOLD` (512) is the mastery below which nobody may teach,
+ * - and `MASTERY_ACTIVATION_THRESHOLD` (512) is the mastery below which nobody
+ *   may cast.
  *
- * ## Restoration lives here and not in `decay.ts`, and that is the whole point
+ * **The interval was empty.** A node a mage worked out for herself could never
+ * be taught, never be cast, and never reach the economy: it sat in one head at
+ * 256, declined to her species' floor, and died with her. Every teachable
+ * instance in a universe descended from a god's founding grant at 1024 and was
+ * sliding back down. `tools/w196/mastery-crossings.mjs` measured the
+ * consequence over the reference scenario rather than deriving it: **zero**
+ * upward crossings of the threshold, across every seed, while 31–150 nodes per
+ * run were *born* above it from grants.
  *
- * `decayedMastery` is *"a monotonically non-increasing function of mastery,
- * unconditionally"*, and it is that way because the alternative was a live
- * exploit: a fragment that survived an interdiction being clamped back **up** to
- * an ordinary retention floor the first non-dormant sweep after the god
- * relented, worth over a hundred ticks of forgetting, for free. Relaxing the
- * clamp to let mastery come back would reopen exactly that. So restoration is a
- * separate operation with a separate cost, in a separate file, and `decay.ts` is
- * untouched by this change.
+ * ## Why practice and not use, teaching, study, or tenure
  *
- * ## Practice is a project, not a per-tick top-up
+ * `docs/design/metis-from-use-results.md` §6 recommends exactly this operation
+ * and the recommendation survives its own ruling — see that document's
+ * re-decision section. The short form of why the alternatives lose:
  *
- * It accrues mage-months against a requirement and pays out once, the same shape
- * as research, teaching and scribing — because the design's claim is that
- * practice **competes for the month**. `ages-of-magic.md` §2b calls the
- * stationed set the tightest coupling in the design; a free per-tick refresh
- * would have added a fourth thing a mage does *without* taking anything away
- * from the other three, which is not a mechanic, it is a rebate.
+ * - **Applied use** (`GOAL.applyMagic`) cannot bootstrap. `castableNodes` gates
+ *   casting at `MASTERY_ACTIVATION_THRESHOLD`, which *is* 512, so a
+ *   self-researched node at 256 is not castable either. Casting does raise
+ *   mastery now — it is practice with a product — but it can only maintain what
+ *   something else lifted.
+ * - **Teaching and study create instances**; neither raises one already held.
+ *   Teaching from a below-threshold teacher is forbidden by the same threshold,
+ *   so a universe with nothing above it has nothing to transmit.
+ * - **Time at an institution** is a passive per-tick accrual, which is the shape
+ *   `metis-from-use-results` §2 measured and rejected: it ranks a god by how
+ *   little it interferes (1.0001× for the idle bot, 877× against the active
+ *   one). A goal spends a month, so an idle universe does not get it for free.
  *
- * ## The requirement scales with tier, so mages drill their fundamentals
+ * ## The ceiling is what keeps a population stratified
  *
- * A first-tier node is cheap to keep sharp and a seventh-tier one is not. With
- * `target-appeal.ts`' effort term preferring the cheaper candidate, that makes a
- * mage's practice load fall on the low tiers by default — which is
- * `ages-of-magic.md` §2c's own reading of what maintenance is for: *"it is the
- * prerequisites, the low tiers, the fundamentals, which is exactly the mass that
- * marooning eats."* The deep node she is famous for is expensive to maintain,
- * and letting it go is a decision she can be made to face.
+ * Mastery rising must not mean every mage converges on mastery of everything.
+ * The design is explicit that low-tier casters have to stay in the population —
+ * *"you need low level spell casters to stay in the population to continuously
+ * cast, like, identify objects"* — so practice is bounded by
+ * {@link practiceCeiling}, and the bound is **per mage, per node**: it depends
+ * on how much room the mage's species `depthCeiling` leaves above the node's
+ * tier.
  *
- * ## A forbidden cell cannot be practised, and that gate is load-bearing
+ * At `PRACTICE_CEILING_BASE` = the teach threshold and
+ * `PRACTICE_CEILING_PER_TIER` = 256, the rule reads:
  *
- * `refusePractice` checks `permits()` first. Without it the god's interdiction
- * would be reversible by the universe's own labour — issue an interdiction,
- * watch dormant decay run floorless toward destruction, and have the holder
- * practise the fragment back up. That is the same recovery `decay.ts` closed,
- * re-opened through a different door. An interdicted cell is one a mage may not
- * *work in*, which is what makes an interdiction cost anything.
+ * | headroom (`depthCeiling − tier`) | ceiling | what it means |
+ * |---|---|---|
+ * | 0 — at her limit | 512 | teachable only *while she keeps practising*; one tick of decay takes it back |
+ * | 1 | 768 | teachable, with a window |
+ * | ≥2 — well within reach | 1024 | full mastery; teachable and lossless |
  *
- * ## No draw, deliberately — and the reason is not `decay.ts`'s
+ * So an orc (`depthCeiling` 3) masters tier-1 utility magic completely and
+ * teaches it forever, and is permanently incapable of teaching tier 3 without
+ * standing at the desk every month. A draconic scholar (`depthCeiling` 7) is
+ * the only creature in the shipped six who can practise a tier-7 node at all,
+ * and even she can only hold it at exactly the threshold. Deep knowledge stays
+ * rare and fragile; shallow knowledge becomes common and durable. **That is the
+ * stratification, and it falls out of one subtraction.**
  *
- * `decay.ts` takes no `rng` because a decay roll would jostle draw ordinals for
- * every instance in the universe. Practice takes none for a narrower reason:
- * `research.ts` argues that *"a subsystem that never draws is a subsystem whose
- * stream isolation nothing has ever exercised"*, and that argument is about
- * subsystems that own a stream. Practice owns none and inserts none. It adds no
- * ordinal to any existing stream either, so `rng-insertion-invariance` has
- * nothing new to test and every committed balance baseline's stream sequences
- * are untouched by this file. A restore quantum that was randomised would have
- * had to belong to somebody's stream, and there is no question here that
- * randomness answers: the mage did the months, she gets the mastery.
+ * ## Nothing here draws
+ *
+ * No RNG stream, no new stream id, and deliberately: `RNG_STREAM` is a
+ * committed enumeration and a new draw re-rolls every baseline that follows it.
+ * Practice is a deterministic function of effort, species and the node's tier.
+ * Research's jitter already exercises stream isolation for this package.
  */
 
 import type { ContentId, Fp } from '@mm/content';
-import type { Handle, Ruleset, Tick } from '@mm/state';
+import { FP_ONE, mul } from '@mm/sim-core';
+import type { Handle, Ruleset } from '@mm/state';
 import { permits } from '@mm/state';
-import { FP_ONE, div } from '@mm/sim-core';
 
-import type { CellResolver, KnowledgeNode, NodeCatalog } from './catalog.js';
+import type { CellResolver, NodeCatalog } from './catalog.js';
 import { requireNode } from './catalog.js';
-import { MASTERY_MAX, PRACTICE_COST_PER_TIER, PRACTICE_MASTERY_RESTORE } from './constants.js';
+import {
+  DEFAULT_TEACH_THRESHOLD,
+  MASTERY_MAX,
+  PRACTICE_CEILING_BASE,
+  PRACTICE_CEILING_PER_TIER,
+  PRACTICE_GAIN_PER_MONTH,
+} from './constants.js';
 import type { KnowledgeRefusal } from './outcomes.js';
 import type { KnowledgeSubsystem } from './subsystem.js';
 import { isHeldLocation } from './subsystem.js';
 
-/** What one step of practice reads. */
+/**
+ * The highest mastery practice can carry one mage's copy of one node to.
+ *
+ * `min(MASTERY_MAX, base + perTier × max(0, depthCeiling − tier))`.
+ *
+ * The subtraction is the whole rule and the clamp at zero is what makes it safe
+ * to call for a node the mage should not be able to hold at all: a negative
+ * headroom is treated as none, so the ceiling is the base rather than something
+ * below it. A node above her `depthCeiling` is refused elsewhere — by the
+ * gateway's frontier and by the teachability scan — and this function does not
+ * duplicate that judgement, it merely declines to reward it.
+ *
+ * **Untuned**, like everything else in `constants.ts`, but two properties are
+ * claims rather than placeholders and `practice.test.ts` pins both: it is
+ * monotone non-decreasing in headroom, and it never exceeds {@link MASTERY_MAX}.
+ */
+export function practiceCeiling(
+  tier: number,
+  depthCeiling: number,
+  base: Fp = PRACTICE_CEILING_BASE,
+  perTier: Fp = PRACTICE_CEILING_PER_TIER,
+): Fp {
+  const headroom = Math.max(0, depthCeiling - tier);
+  return Math.min(MASTERY_MAX, base + perTier * headroom);
+}
+
+/**
+ * Mastery after one contribution of practice. Pure, and **never lower than the
+ * mastery it was given**.
+ *
+ * The mirror of `decayedMastery`'s monotonicity, and for the same reason that
+ * function gives: an operation named for one direction that can move the other
+ * way is a bug nobody reads as one. A mage already above her ceiling — which a
+ * god's grant at 1024 puts her, for any node at her limit — keeps every unit of
+ * it. Practice does not level knowledge down to what she could have reached on
+ * her own; it only declines to add.
+ */
+export function practicedMastery(current: Fp, ceiling: Fp, gain: Fp): Fp {
+  if (gain <= 0) return current;
+  if (current >= ceiling) return current;
+  return Math.min(ceiling, current + gain);
+}
+
 export interface PracticeInputs {
   readonly knowledge: KnowledgeSubsystem;
   readonly catalog: NodeCatalog;
   readonly cells: CellResolver;
   readonly ruleset: Ruleset;
-  /**
-   * The practitioner. An opaque handle, exactly as `research` takes one: it is
-   * the instance's `locationId` and is never dereferenced into a mage record.
-   */
+  /** The mage at the desk. Her own copy is the one that improves. */
   readonly subject: Handle;
   readonly nodeId: ContentId;
-  readonly worldTick: Tick;
-  /** Months accumulated before this step. The caller owns storing it. */
-  readonly progress: Fp;
-  /** Work applied this step. */
+  /** Mage-months spent, `fp`. `FP_ONE` is one month. */
   readonly effort: Fp;
   /**
-   * The **already stacked** `practice-rate` multiplier.
+   * Species `learnRate` (`contracts.md` §2.4), `fp(1024)` neutral.
    *
-   * Divides the requirement rather than multiplying the progress, for
-   * `research.ts`' reason: *"a quick learner needs less progress rather than
-   * earning more per step, which keeps a step's progress a function of the
-   * effort supplied and nothing else — one place for rates to apply instead of
-   * two."* Already stacked and already capped by the caller; a second fold here
-   * is how two `+20%` bonuses come to mean different things in two packages.
+   * A multiplier on the gain rather than a divisor on a requirement, which is
+   * the opposite of what `research.ts` does with the same trait — and the
+   * difference is real rather than an inconsistency. Research has a
+   * *requirement* to scale; practice has no project and no completion, only a
+   * rate of improvement, so the only place a rate can apply is the increment.
    */
-  readonly practiceRate?: Fp;
+  readonly learnRate?: Fp;
+  /** Species `depthCeiling` (`contracts.md` §2.4). Sets {@link practiceCeiling}. */
+  readonly depthCeiling: number;
+  /** Defaults to {@link PRACTICE_GAIN_PER_MONTH}. */
+  readonly gainPerMonth?: Fp;
+  /**
+   * Defaults to {@link DEFAULT_TEACH_THRESHOLD}.
+   *
+   * **Reported against only.** It decides
+   * {@link PracticeOutcome.crossedTeachThreshold} and nothing else — it does
+   * not move the ceiling, which comes from {@link PRACTICE_CEILING_BASE}. The
+   * two are equal in the shipped constants on purpose, so a caller who raises
+   * this one alone will get an outcome that can never report a crossing. Raise
+   * both or neither.
+   */
+  readonly teachThreshold?: Fp;
 }
 
-/** What one step of practice did. */
 export interface PracticeOutcome {
-  /** Present exactly when nothing changed. */
   readonly refusal?: KnowledgeRefusal;
-  /** Months after this step. Unchanged from the input on a refusal. */
-  readonly progress: Fp;
-  /** Months this node needs to restore one quantum, under this subject's rate. */
-  readonly required: Fp;
-  readonly completed: boolean;
-  /** The instance whose mastery moved, or `0`. */
+  /** The instance that improved, or `0`. */
   readonly instance: Handle;
-  /** Mastery actually restored, after the clamp at {@link MASTERY_MAX}. */
-  readonly restored: Fp;
+  /** Her mastery after the month. On a refusal, what she had. */
+  readonly mastery: Fp;
+  /** Units added. `0` for a mage already at her ceiling — not a refusal. */
+  readonly gained: Fp;
+  /** The ceiling this month was bounded by, for reporting and for tests. */
+  readonly ceiling: Fp;
+  /**
+   * Whether this contribution carried the instance **up** across the teach
+   * threshold.
+   *
+   * The event the whole change exists to make possible, reported so that a
+   * caller can count it without diffing state. `false` when she was already
+   * above it: a crossing is a transition, not a level.
+   */
+  readonly crossedTeachThreshold: boolean;
 }
 
 /**
- * Mage-months one restore quantum of a node costs, under a practice rate.
+ * Spends effort improving a node the subject already holds.
  *
- * Exported because the outlook builder quotes it as a candidate's
- * `remainingCost` and the gateway charges it, and a price quoted in one place
- * and charged in another is how True Naming's halved teaching came to be
- * invisible to every mage deciding whether to seek a teacher.
+ * Refuses on a forbidden cell — practice is a *use* of magic and an interdicted
+ * art cannot be used, which is the same gate `castableNodes` applies and the
+ * reason a dormant instance decays instead of being drilled back up — and on a
+ * node she does not hold in mind or palace. A book on her shelf is not
+ * practice: reading one is `study`, and it creates an instance rather than
+ * improving one.
+ *
+ * Takes the **best** copy she holds, matching `teach`'s rule for the same
+ * situation: *"a mage with two instances of one node is unusual but reachable
+ * through raid theft, and teaching from the worse copy would be a rule nobody
+ * wrote down."*
  */
-export function practiceRequirement(node: KnowledgeNode, practiceRate: Fp = FP_ONE): Fp {
-  const base = PRACTICE_COST_PER_TIER * node.tier;
-  // A zero rate is a mage who cannot practise at all rather than one who
-  // practises instantly, and `div()` by zero is not a question the rules path
-  // asks. Same guard, same wording, as `researchRequirement`.
-  if (practiceRate <= 0) return base;
-  return div(base, practiceRate);
+export function practice(inputs: PracticeInputs): PracticeOutcome {
+  const node = requireNode(inputs.catalog, inputs.nodeId);
+  const threshold = inputs.teachThreshold ?? DEFAULT_TEACH_THRESHOLD;
+
+  const cellId = inputs.cells.cellOf(inputs.nodeId);
+  if (!permits(inputs.ruleset, cellId)) {
+    return refuse({ reason: 'forbidden-cell', nodeId: inputs.nodeId, cellId });
+  }
+
+  const best = bestHeldInstance(inputs.knowledge, inputs.subject, inputs.nodeId);
+  if (best === undefined) {
+    return refuse({ reason: 'node-not-held', nodeId: inputs.nodeId, subject: inputs.subject });
+  }
+
+  const ceiling = practiceCeiling(node.tier, inputs.depthCeiling);
+  const effort = Math.max(0, inputs.effort);
+  const gain = mul(
+    mul(inputs.gainPerMonth ?? PRACTICE_GAIN_PER_MONTH, effort),
+    inputs.learnRate ?? FP_ONE,
+  );
+  const mastery = practicedMastery(best.mastery, ceiling, gain);
+  if (mastery !== best.mastery) inputs.knowledge.setMastery(best.instance, mastery);
+
+  return {
+    instance: best.instance,
+    mastery,
+    gained: mastery - best.mastery,
+    ceiling,
+    crossedTeachThreshold: best.mastery < threshold && mastery >= threshold,
+  };
 }
 
-/**
- * The instance this practice would sharpen: the subject's stalest copy.
- *
- * A mage may hold more than one instance of a node — the Art of Memory's palace
- * slots are the shipped case — and practising has to name one. The lowest
- * mastery is chosen because that is what maintenance means, and ties fall to the
- * lower handle, which is a total order over stable identities rather than over
- * whatever order the index happened to build.
- *
- * Exported for the outlook builder, which needs the same answer to quote a
- * candidate's staleness without duplicating the choice rule.
- */
-export function stalestHeldInstance(
+/** The best copy of one node a subject holds in mind or palace, with its handle. */
+function bestHeldInstance(
   knowledge: KnowledgeSubsystem,
   subject: Handle,
   nodeId: ContentId,
-): Handle {
-  let best: Handle = 0;
-  let bestMastery = 0;
-  for (const handle of knowledge.instancesHeldBy(subject)) {
-    const row = knowledge.read(handle);
-    if (row.nodeId !== nodeId) continue;
-    if (!isHeldLocation(row.locationKind)) continue;
-    if (best === 0 || row.mastery < bestMastery) {
-      best = handle;
-      bestMastery = row.mastery;
-    }
+): { instance: Handle; mastery: Fp } | undefined {
+  let best: { instance: Handle; mastery: Fp } | undefined;
+  for (const instance of knowledge.instancesHeldBy(subject)) {
+    const view = knowledge.read(instance);
+    if (view.nodeId !== nodeId || !isHeldLocation(view.locationKind)) continue;
+    if (best === undefined || view.mastery > best.mastery) best = { instance, mastery: view.mastery };
   }
   return best;
 }
 
-/** What stops a practice step, or `undefined`. */
-function refusePractice(inputs: PracticeInputs): KnowledgeRefusal | undefined {
-  const cellId = inputs.cells.cellOf(inputs.nodeId);
-  if (!permits(inputs.ruleset, cellId)) {
-    return { reason: 'forbidden-cell', nodeId: inputs.nodeId, cellId };
-  }
-  const instance = stalestHeldInstance(inputs.knowledge, inputs.subject, inputs.nodeId);
-  if (instance === 0) {
-    return { reason: 'node-not-held', nodeId: inputs.nodeId, subject: inputs.subject };
-  }
-  if (inputs.knowledge.read(instance).mastery >= MASTERY_MAX) {
-    return {
-      reason: 'mastery-at-maximum',
-      nodeId: inputs.nodeId,
-      subject: inputs.subject,
-      mastery: MASTERY_MAX,
-    };
-  }
-  return undefined;
-}
-
-/**
- * Spends mage-months keeping a node sharp, and restores mastery on the tick the
- * requirement is met.
- *
- * A refusal leaves the stored total exactly where it was and changes no mastery,
- * which is `contributeResearch`' property and is what makes an interdiction
- * survivable: re-permitting the cell restores the project along with the
- * instances rather than needing a migration.
- */
-export function practice(inputs: PracticeInputs): PracticeOutcome {
-  const node = requireNode(inputs.catalog, inputs.nodeId);
-  const required = practiceRequirement(node, inputs.practiceRate ?? FP_ONE);
-
-  const refusal = refusePractice(inputs);
-  if (refusal !== undefined) {
-    return { refusal, progress: inputs.progress, required, completed: false, instance: 0, restored: 0 };
-  }
-
-  const progress = inputs.progress + inputs.effort;
-  if (progress < required) {
-    return { progress, required, completed: false, instance: 0, restored: 0 };
-  }
-
-  const instance = stalestHeldInstance(inputs.knowledge, inputs.subject, inputs.nodeId);
-  const before = inputs.knowledge.read(instance).mastery;
-  const after = Math.min(before + PRACTICE_MASTERY_RESTORE, MASTERY_MAX);
-  inputs.knowledge.setMastery(instance, after);
-  return { progress, required, completed: true, instance, restored: after - before };
-}
-
-/**
- * Whether {@link practice} would refuse this subject on this node right now.
- *
- * Kept beside the refusal it mirrors so the two cannot drift: a candidate this
- * returns `false` for is one `practice` would refuse, and offering it would let
- * a mage commit a month to a project that can never complete — the "career
- * quietly evaporates" failure `feasibility.ts` rejects by name.
- *
- * **It is not the autonomy gate, and the first draft of this comment said it
- * was.** The list the utility-AI actually scores is built by `coordination`'s
- * `practisableBy`, which is deliberately *narrower*: it stops at
- * {@link DEFAULT_TEACH_THRESHOLD} rather than at {@link MASTERY_MAX}, because
- * decay puts every held instance below full mastery within a month and a goal
- * that is feasible for everyone forever does not compete for the month, it wins
- * it by default. The reasoning and the measurement are on that method.
- *
- * The two are allowed to differ in exactly one direction — never offer what the
- * rule would refuse — and this is the same asymmetry `MAX_CANDIDATE_TARGETS`
- * already introduces by truncating the list. What this function answers is
- * *would the rule refuse it*, which is a question about `practice` and stays
- * here.
- */
-export function isPractisable(
-  knowledge: KnowledgeSubsystem,
-  cells: CellResolver,
-  ruleset: Ruleset,
-  subject: Handle,
-  nodeId: ContentId,
-): boolean {
-  if (!permits(ruleset, cells.cellOf(nodeId))) return false;
-  const instance = stalestHeldInstance(knowledge, subject, nodeId);
-  if (instance === 0) return false;
-  return knowledge.read(instance).mastery < MASTERY_MAX;
+function refuse(refusal: KnowledgeRefusal): PracticeOutcome {
+  return { refusal, instance: 0, mastery: 0, gained: 0, ceiling: 0, crossedTeachThreshold: false };
 }

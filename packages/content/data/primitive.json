@@ -112,6 +112,13 @@
     "cap": { "kind": "none" }
   },
   {
+    "id": "knowledge-corrupt",
+    "unit": "fp-probability-per-attempt-of-corrupting-an-instance",
+    "scale": "engagement",
+    "stacking": "max",
+    "cap": { "kind": "none" }
+  },
+  {
     "id": "portal",
     "unit": "boolean-gate-enables-raid-initiation",
     "scale": "world",

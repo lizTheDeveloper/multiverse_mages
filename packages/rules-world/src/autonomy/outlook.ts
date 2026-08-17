@@ -125,16 +125,24 @@ export interface MageOutlook {
    */
   readonly applicableTargets: readonly KnowledgeTarget[];
   /**
-   * Nodes she already holds and could keep sharp, with the months one restore
-   * quantum costs as `remainingCost`.
+   * Nodes she could spend the month **drilling**, already gated.
    *
-   * The gateway builds this from her own held instances, filtered to permitted
-   * cells and to instances below full mastery — the same three conditions
-   * `practice` refuses on — and sorted **stalest first**, so a truncation at
-   * `MAX_CANDIDATE_TARGETS` drops the nodes she is closest to full on rather
-   * than the ones she has lost standing in. That ordering is the publish-or-
-   * perish half of `ages-of-magic.md` §2c arriving as a candidate list rather
-   * than as a scoring weight: a weight can be outvoted, and this cannot.
+   * The gates are the coordinating layer's, for the reason every other target
+   * list's are: held at a mind or a memory palace, in a cell the ruleset
+   * permits *now*, within her species' `depthCeiling`, and — the one that is
+   * particular to practice — at a mastery **below** what `rules-magic`'s
+   * `practiceCeiling` allows her for that node's tier. A mage already at her
+   * ceiling has nothing to gain from the month, so she is not offered it, and
+   * the goal is masked rather than selected and wasted.
+   *
+   * That last filter is also what keeps mastery from levelling a population.
+   * The ceiling is per mage and per node — deeper nodes cap lower, for a given
+   * species — so a mage runs out of things to practise long before she runs out
+   * of things she knows, and the ones she cannot perfect are exactly the ones
+   * at the top of her reach.
+   *
+   * `remainingCost` is zero for every entry: practice has no project to finish
+   * and can be done again next month.
    */
   readonly practiceTargets: readonly KnowledgeTarget[];
 
@@ -169,16 +177,4 @@ export interface MageOutlook {
   /** How much the universe wants raiders ready, `fp`. Zero at 0.4.0, same reason. */
   readonly raidPressure: Fixed;
 
-  /**
-   * How many nodes she holds at a mastery below the teaching threshold.
-   *
-   * Not derivable from {@link practiceTargets}: that list is bounded at
-   * `MAX_CANDIDATE_TARGETS` and is a *cost* device, and reading a count off a
-   * truncated list is the "reading a truncation as a fact about the world"
-   * mistake `select.ts` records at length. This is the untruncated count, and it
-   * is what makes `practice` attractive to a scholar who has lost the standing
-   * to supervise anything — `ages-of-magic.md` §2c's *"faculty who have not had
-   * a new result in twenty years"*.
-   */
-  readonly staleHoldings: number;
 }

@@ -56,10 +56,10 @@ const AS_SHIPPED: readonly (readonly [string, number])[] = [
   // Appended by `apply-magic` (w107). Nothing above it moved, which is the only
   // thing this pin is here to check.
   ['apply-magic', 9],
-  // Appended by W53, at 10 rather than the 9 it was authored against, because
-  // `apply-magic` reached `main` first. Nothing above it moved, which is the
-  // whole property this file exists to hold: a baseline taken before this line
-  // is a baseline over a ten-goal world, and it still means what it meant.
+  // Appended by `practice` (w196). Nothing above it moved. The pin is updated
+  // deliberately and in the same commit as the append, which is the procedure
+  // this file exists to force: a new goal takes the next unused id, and the
+  // literal below is what a reviewer checks that claim against.
   ['practice', 10],
 ];
 
@@ -137,10 +137,8 @@ describe('goals that need a node say so once', () => {
       // with no project behind it — every candidate's `remainingCost` is zero,
       // because she already knows them all.
       GOAL.applyMagic,
-      // Practice is pointed at a node she already holds, which is the one thing
-      // that makes it different from every other entry here: the other five name
-      // a node she is trying to get, and this one names a node she is trying to
-      // keep.
+      // `practice` names the node she drills, and is the second goal with no
+      // project behind it for the same reason.
       GOAL.practice,
     ]);
   });

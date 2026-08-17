@@ -252,6 +252,93 @@ plausibly library shelving all move.
 **The cheapest real win here is `lifespan` and `fertility` getting consumers**, because the effects are
 already authored and the pipeline that would use them is the one being designed on this page.
 
+## Implementation record: what W193 and W197 actually shipped
+
+**Added 2026-08-14, measured on `w197/aptitude-sorts-careers`. This section is dated because the
+rest of this page is the author's design and the numbers below are a machine's measurements of one
+ref — the two must not be read as the same kind of statement.**
+
+Two changes landed against this page, and the second corrected the first:
+
+- **W193 (#181)** made students `MAGE` entities in a `student` role, moved the crossing from the
+  aggregate into the individual from *graduation* to *enrolment*, and made student demand
+  `min(universityCapacity, latentMagicUsers)` instead of `universityCapacity`. It read
+  *"some never get discovered because their skills are weak"* as a **second gate** and applied
+  `prevalence × mageAptitude` at enrolment.
+- **W197** removed `mageAptitude` from that gate entirely, on the owner's design: *"the point of
+  the mage aptitude was to create something for the other half of people to do."* Aptitude now
+  decides **what kind of mage a graduate becomes**, never whether she becomes one.
+
+### Where the taxonomy landed
+
+The page above says the named end states are *"a reshaping of the role set, not an addition to it"*
+and that whoever implements it *"must reconcile the two lists deliberately rather than appending"*.
+The reconciliation, recorded:
+
+| named end state | shipped as |
+| --- | --- |
+| student mage | `MAGE_ROLE.student` (W193) |
+| **populace mage** | **`MAGE_ROLE.populace` (W197)** — a new role, because all four standing roles are institutional and none of them meant *"has an ordinary job"* |
+| battle mage | `warden` / `raider`, assigned by the god's action 10 out of the academic pool |
+| portal-goer | `raider` |
+| defender | every standing role, `populace` included — `DEFENDING_ROLES` is now five |
+
+`populace` is **not** god-assignable. Graduation sorts mages down into it and action 10 is how one
+comes back out, which is the *"who gets to keep going"* decision this page asks for, at no cost to
+the action-10 candidate space every trained policy is sized against.
+
+### `prevalence` was being applied twice, and that is why seats never bound
+
+Found while retuning, and it is W193's code rather than W197's design: `latentMagicUsers` applied
+`prevalence` to size student demand, and `enrolMaturedStudents` then applied it **again** to the
+pool demand had just sized. A universe therefore enrolled roughly a tenth of the people it had just
+decided were latent, and `unseated` — the number this page calls the god's half of the gap — was
+**zero on every tick of a 1,200-tick run**. University capacity constrained nothing.
+
+W197 applies it once, in the demand controller, which is the pipeline this page draws.
+
+**Seats now bind — but they are not the constraint that mostly binds, and `unseated` conflates the
+two.** Instrumented at the enrolment phase (seeds 589825 and 1234567, 1,200 ticks): of the ticks
+with a shortfall, 6 of 10 and 7 of 15 were genuinely *"no free chair anywhere"*, costing 7 and 8
+people. The rest — and **52 and 82 people, the large majority** — were the *per-tick class intake
+cap*, `12 × retention / 1024`, which is derived from a species trait and **cannot be closed by
+building**. The report field's own description calls `unseated` *"the half the god can close by
+building"*, and that is now true of only a small part of it. **Splitting the two is a follow-up**;
+what matters here is that #181's *"nothing binds at all"* is no longer the answer.
+
+### The numbers, four seeds, 1,200 ticks each
+
+| ref | living mages | **working mages** | population | enrolments | seats ever bind |
+| --- | ---: | ---: | ---: | ---: | --- |
+| `main` at `cf5a73a7` (pre-#181) | 60.8 | 60.8 | 5,518 | — | n/a |
+| `w193/students-are-entities` at `a5aeb8f6` | 33.5 | 30.5 | 7,168 | 47.8 | **never** |
+| `w197/aptitude-sorts-careers` | 81.0 | 58.3 | 3,953 | 186.5 | **yes, on every seed** |
+
+Means over seeds 589825, 1234567, 42424242, 7777777. *Working* excludes students, so it is the
+column comparable with pre-#181, and it lands within 4% of it — **with `species.json` prevalence
+left at the values quoted above.** No authored number was moved to get there.
+
+### The populace mage is employed, and she is not casting
+
+The role exists, `GOAL.applyMagic` exists, and the bias row points her at it — and across ~35,000
+populace goal decisions per seed she is **`scribe` 0.66–0.70, `research-node` 0.18–0.22,
+`apply-magic` 0.107–0.108, `idle` 0.000.** She casts at the world about **five times** as often as a
+researcher (0.019–0.024) — so the row works — but a tenth of her months is not the base of a pyramid
+doing *"the small continuous work the economy runs on"*.
+
+**This page predicted it.** *"Five of 59 `resource-yield` effects are in enabled cells and all five
+route to stone, and stone buys nothing without a god action… nothing worth casting at the bottom of
+the tree."* `apply-magic` scores highest for her and is infeasible most months, so she falls through
+to scribing. Raising the bias would only make her idle when the goal masks out. **The sharpest
+content ask on this page is still the open one**, and it now has a role and a measurement waiting
+for it.
+
+**Population fell 45% against W193 and 28% against `main`, and the mechanism is on this page's own
+terms:** an enrolled student is `cohorts.remove`d from the populace permanently, at exactly
+reproductive age, and W197 enrols four times as many of them. Activating latent mages therefore has
+a demographic price that compounds over a run. That is a real coupling and it is not tuned; whether
+it is the intended shape is the author's call.
+
 ## What this bears on
 
 - **Task 9.9, species differentiation** — unmet on every ref tested, with two approaches tried and

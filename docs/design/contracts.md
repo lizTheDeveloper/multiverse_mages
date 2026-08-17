@@ -88,6 +88,7 @@ state would have no mechanism preventing mid-raid rule changes at all.
 | `blessings` | array of `{mageId, expiryTick}` | one row per blessed mage, which is what makes "re-blessing refreshes rather than stacks" structural: there is no representation in which a mage holds two |
 | `upheavals` | array of `{factor, expiryTick}` | worship shocks in force. An entity per shock, because two forbiddings can overlap and the combined factor is the shared multiplicative-on-remainder arithmetic over both |
 | `eraEvaluations` | array of `{era, libraryDependence, nodesLost, passed}` | what each era boundary found. `libraryDependence` at era 2 is not recoverable from state at era 4, so the Enduring Canon ascension path cannot be decided without retaining these |
+| `territoryHoldings` | separate `territory-holding` component, one row per kind: `{kindId: uint16, landUnits: uint32}` | how much of each kind of country this universe holds (§2.7). **No rows means "not yet materialized", never "holds nothing"** — a universe that has lost all its ground carries rows saying `landUnits: 0` |
 | `godState` | singleton, below | counters, high-water marks, and cached derivations that one tick of state cannot see |
 | `grantBudget` | singleton, below | the founding-grant allowance and its ledger. **Absent means unbounded** |
 | `ascended` | `bool` | terminal flag |
@@ -314,6 +315,26 @@ The reasoning, in the order it forced the decision:
   revision 3 appends an empty `effort-progress` section, and `sim-core`'s `SNAPSHOT_VERSION` again
   does not move. A revision-1 save reaches revision 3 by running both steps in turn.
 
+**Revision 5 — `territory-holding` and `university-site` — is the fourth world-schema step and the
+one whose empty sections needed the most argument.** `god-agency` took revision 4 for four
+components; `university-siting` takes revision 5 for two, and the pair arrive together because a
+site is meaningless without ground to stand in. `SNAPSHOT_VERSION` does not move, for the third
+time and the same reason.
+
+The step appends **empty** sections, like the three before it, and for `university-site` that needs
+no argument at all: an unsited university is neutral in every rate, so a restored save's
+universities stand exactly where they did before the concept existed. For `territory-holding` it
+does, because the obvious repair is wrong in a way nobody would notice. A revision-4 save's `K` came
+from `territory.json`, so restoring it with no holding rows would give it a `K` of zero and starve
+it — and yet the migration must **not** synthesize the shipped five rows. `packages/state` takes only
+*types* from `content` (§5), and a table of literals frozen at revision 5 could only describe the
+*shipped* territory; a revision-4 save written against a scenario's own content set meant *its*
+endowment, and no constant in a migration can say so. So absent rows keep the meaning `god-state`
+gave them — *"this universe has not been stepped by a build that knows about this"* — and the world
+step materializes the endowment on the first tick that finds none. The consequence is a rule
+colonization depends on: **a universe that holds no ground carries rows saying `landUnits: 0`, not
+no rows.**
+
 ### 1.3 Populace cohort (aggregate entity)
 
 | Field | Type | Notes |
@@ -333,9 +354,40 @@ this document first.
 | Field | Type | Notes |
 |---|---|---|
 | `libraryId` | `uint32` | handle |
-| `capacity` | `uint16` | students supportable |
+| `capacity` | `uint16` | students supportable — the **designed** seat count |
 | `staffCohorts` | array of handles | |
 | `buildProgress` | `fp` | `fp(1024)` = complete |
+| `site` | separate `university-site` component, `{kindId: uint16}` | the kind of country the university stands in (§2.7). **Absent = unsited**, which is neutral in every rate |
+
+**A site is a relationship, and that is what makes it legal here.** `vision.md` §7a: *"At world
+scale there is no map. Universities, populations, materials, and knowledge are **counts and
+relationships**. […] **World-scale entities carry no coordinates at all.**"* What §7a forbids is
+coordinates, distance and spatial indexing; what it names as the substance of world scale is counts
+and relationships. *"This university stands in that kind of country"* is one: it makes **co-location**
+expressible — two universities with the same `kindId` stand in the same country, which is what a
+multi-mage ritual needs from siting — and it makes **terrain** expressible, and it makes neither
+distance nor direction expressible, because at this scale neither exists. `assertNoWorldPositions`
+passes on the component unchanged, for the ordinary reason: it declares no `x` and no `y`.
+
+**A component rather than a field, for the third time and the same reason.** A field exists for every
+university, so "unsited" would need a sentinel content id — a reserved entry in a namespace whose
+whole contract is that its ids are permanent and each mean one kind of country. An absent row says it
+with nothing invented, and makes the world-schema step an appended empty section rather than a
+column-by-column rewrite of every older save's university section.
+
+**What the site changes, and what it deliberately does not.** Two mechanisms, in
+`rules-world`'s `universities/siting.ts`:
+
+1. **Seats.** `capacity` is the *designed* count; how many students the surrounding country can keep
+   at those desks is `capacityPerLandUnit` read against the ordinary country, bounded to
+   `[fp(128), fp(2048)]`. That one figure reaches `seatsBonus` in `K` (and so population) and student
+   demand (and so, through promotion, mages and knowledge).
+2. **Library upkeep.** `libraryUpkeepMultiplier` on the per-instance upkeep the owning university's
+   library owes.
+
+Not build cost (`advanceConstruction` has no caller in the tree), not materials yield (production is
+a populace quantity, not a university relationship), and **not worship** — §7 pays for what an
+institution *is*, and `worshipInputs` keeps reading the designed `capacity`.
 
 ### 1.5 Knowledge
 
@@ -429,12 +481,38 @@ A silently-ignored malformed node is a balance bug that takes weeks to find.
 ### 2.1 `technique.json` / `form.json`
 
 ```jsonc
-{ "id": "rego", "name": "Rego", "gloss": "control, bind, compel", "bit": 4 }
+{
+  "id": "rego", "name": "Rego", "gloss": "control, bind, compel", "bit": 4,
+  "envelope": {                       // sound-design.md §4.1: techniques ARE envelopes
+    "id": "rigid",
+    "gloss": "§4.1, Rego: 'Zero attack, gated release, rhythmically rigid.'",
+    "slots": [1024, 1024, 1024, 1024, 1024, 1024, 1024, 1024],
+    "tuningStatus": "untuned"         // as §2.3: every magnitude is a placeholder
+  }
+}
 { "id": "corpus", "name": "Corpus", "gloss": "body", "bit": 3 }
 ```
 
 Exactly 5 techniques and 14 forms. `bit` values are dense, stable, and never reordered — they are
 serialized into snapshots.
+
+**`envelope` is the technique's shape over an acquisition's own duration**, and it is required.
+`sound-design.md` §4.1 gives the five techniques five different shapes over time — Creo *"the only
+technique whose energy increases across its duration"*, Perdo *"subtractive… Perdo's signature is a
+hole"*, Rego *"zero attack… rhythmically rigid"* — and before this field nothing in the tree
+branched on technique identity at all, so the five were mechanically the same thing.
+
+`slots` are eight `fp` multipliers on the effort a mage spends, indexed on `progress / required`.
+The curve is over **acquisition**, not over an effect's `durationTicks`, because 369 of the 407
+shipped effects have `durationTicks: 0` and the rest are raid-only `area-denial` fields: a curve
+there would be inert for 91% of content. The arithmetic is `@mm/primitives`' `envelopeMultiplier`.
+
+**A curve redistributes work and never discounts it.** The loader refuses any envelope whose slot
+reciprocals do not sum to the flat curve's — `Σ floor(1024²/mᵢ) = 8192` — because a slot with
+multiplier `m` is crossed at rate `m` and so consumes months proportional to `1/m`. Holding that
+sum fixed is what makes "same cost, different shape" true rather than aspirational, and it is why
+the shipped slots are not round numbers. It is also why no slot may be zero: `1/0` diverges, so a
+zero attack would not be a technique that starts slowly but one that never finishes.
 
 ### 2.2 `cell.json`
 
@@ -531,8 +609,16 @@ prerequisite has a higher `tier`.
   "rediscoveryAffinity": 768,       // fp DIVISOR against rediscoveryMultiplier. Higher is better,
                                     // uniform with every other trait -- so this dwarf is a
                                     // below-average rediscoverer, and gnomes lead (vision §5)
-  "maturityMonths": 600,            // before which a mage cannot be promoted from a student cohort
-  "mageAptitude": 448,              // fp; share of matured students who become mages at all
+  "maturityMonths": 600,            // before which a person cannot enrol from a populace cohort
+  "mageAptitude": 448,              // fp; share of the LATENT who are strong enough to be found
+                                    // and seated. Stage two of magical-prevalence.md's pipeline;
+                                    // applied at enrolment, never at graduation
+  "prevalence": 512,                // OPTIONAL fp <= 1024; share of this species born able to do
+                                    // magic at all (magical-prevalence.md). ABSENT IS MEANINGFUL:
+                                    // the author authored four of the six species and left dwarf
+                                    // and gnome unstated rather than mix an author's number with
+                                    // a machine's. An absent value reads as rules-world's
+                                    // PREVALENCE_WHEN_UNAUTHORED, which is not authored content
   "laborAffinity": 1280,            // fp multiplier on non-magical labour productivity
   "affinities": { "terram": 1536, "ignem": 1152 },  // by form or by cell id
   "personality": { "curiosity": 512, "ambition": 1024, "caution": 1024 },  // optional; means, each
@@ -608,8 +694,9 @@ normative and this file must match it.
   "id": "arable-lowland",
   "name": "The Arable Lowland",
   "gloss": "The ordinary country most people live in, and the reason there are most people.",
-  "landUnits": 1600,             // how much of this region the universe holds. A count, not fp
+  "landUnits": 1600,             // the FOUNDING endowment of this kind. A count, not fp
   "capacityPerLandUnit": 20480,  // fp; people one land unit carries. 20480 = 20 people
+  "libraryUpkeepMultiplier": 1024, // fp; what a library standing here pays. 1024 = neutral
   "tuningStatus": "untuned"
 }
 ```
@@ -627,10 +714,22 @@ people than a bare one — but only as a **bounded multiplier** on the territory
 addend that can grow without limit. `packages/rules-world/src/economy/carrying-capacity.ts` states
 the shape and the ceiling it implies.
 
-`landUnits` is a per-universe endowment carried in content because a simulation instance holds
-exactly one universe (§1.1). When that stops being true — a raid that takes ground, a scenario that
-seeds a smaller world — `landUnits` moves to §1.1 and this record keeps `capacityPerLandUnit`, which
-is a property of the *kind* of country and not of who holds it.
+`landUnits` **was** a per-universe endowment carried in content because a simulation instance holds
+exactly one universe (§1.1). When that stopped being true — a raid that takes ground, a scenario that
+seeds a smaller world — `landUnits` was to move to §1.1 and this record was to keep
+`capacityPerLandUnit`, which is a property of the *kind* of country and not of who holds it.
+
+**`university-siting` made that move, ahead of the raid that needed it.** The universe's holding is
+now the `territory-holding` component in §1.1, one row per kind, and `K` is derived from those rows
+rather than from this file. What stays here is what a *kind* of country is like: `capacityPerLandUnit`
+and, new with the same change, `libraryUpkeepMultiplier`. `landUnits` stays too, demoted to what it
+now is — the **founding endowment**, the value the first world tick materializes a holding row from,
+and the value a scenario seeds a starting position with. Nothing reads it after tick zero.
+
+`libraryUpkeepMultiplier` is authored **anti-correlated with `capacityPerLandUnit`** on purpose: the
+delta feeds three harvests a year and floods the archive; the highland waste feeds nobody and is cold
+and dry. Without an opposing term, siting a university would be a *ranking* rather than a decision
+and the richest kind would strictly dominate every choice a god ever makes about where to build.
 
 **A universe that cannot feed itself carries fewer people, and the world loop is what says so.**
 `carryingCapacity` has taken a `subsistenceShortfallShare` since `mages-and-species` task 8.5 and
@@ -641,7 +740,7 @@ subsistence demand against the stock as it stands, before consumption runs — b
 phase 9 and births are phase 8, and the alternatives were storing last tick's share in state (a
 world-schema revision for a number one line reads) or charging subsistence for a population and
 then letting it grow inside the same tick. With it wired, the reference run's `K` falls from 57,205
-to 29,831 across two centuries while the population rises to 18,722, so *"population never exceeds
+to 29,887 across two centuries while the population peaks at 18,657, so *"population never exceeds
 `K`"* is finally a question with a narrow answer rather than a bound running away ahead of the thing
 it bounds.
 
@@ -829,6 +928,7 @@ all of them.
 | `worship-yield` | multiplier on favor regeneration | world | additive into `(1 + Σ)`, cap `fp(2048)` |
 | `concealment` | fp probability of evading targeting/detection | both | multiplicative on the remainder, cap `fp(870)` = 85% |
 | `knowledge-steal` | fp probability per attempt of copying an instance | engagement | max, not sum |
+| `knowledge-corrupt` | fp probability per attempt of corrupting an instance | engagement | max, not sum |
 | `portal` | boolean gate; enables raid initiation | world | n/a — presence only |
 
 **Magnitudes are signed, and a negative one is a COST.** `node.schema.json` read `"minimum": 1`
@@ -1338,14 +1438,64 @@ invalidates every committed balance baseline.**
 | 10 | objective and raid generation |
 | 11 | terrain generation and combatant deployment |
 | 12 | the opening square — which techniques and forms a universe is founded holding |
+| 13 | the partial-detachment draw at portal open — whether a soldier cohort with fewer people left than `detachment-strength` fields one more detachment |
+| 14 | the career sort at graduation — academic track or populace mage |
+| 15 | corruption — whether a book is silently wrong, by scribal error or by attack |
 
-**Stream 12 is the first append since the baselines were committed, and it is what taught us that
+**Stream 12 was the first append since the baselines were committed, and it is what taught us that
 appending is not free.** The gate compares `provenance.rngRegistryHash` as a block-level refusal,
 and that hash is taken over this whole table — so adding a row invalidates every committed
 baseline *by identity*, before a single number has moved. That is conservative rather than wrong,
 but it means **any** future subsystem addition forces a re-baseline event, and the cost belongs in
 the plan for one rather than being discovered in a red gate. See
 `docs/design/opening-square.md` §4.
+
+**Stream 13 is an append, and it is one of those events.** It exists because deployment
+truncated a per-cohort threshold — `floor(count / 100)` detachments, on a populace fragmented by
+species × occupation × birth decade — so cohorts under a hundred fielded nothing, for every seed,
+forever. Resolving the remainder with a draw is `promotion.ts`'s idiom, and it needs an ID of its
+own rather than `terrain`'s: the two are the only deployment-time draws, and sharing a cursor would
+make how many detachments a side fields move every deployment position behind it.
+
+**It was authored as 14, and the renumber is the rule in §6 working rather than an erratum.** Three
+changes appended to a twelve-row table at the same time — `w190/scribing-fidelity` (#170) with
+`corruption`, `w200/layer-one-fixes` (#186) with the row above, and `w193/students-are-entities`
+(#185) with `career` — and the assignment ruled then was **13, 14, 15** respectively. That queue did
+not happen: #170 has not landed, this table still ended at 12 when #186 came to merge, and 14 over a
+twelve-row registry is the gap `1..12, 14` with the density assertion red. So #186 takes **13**, and
+#170 and #185 renumber behind it by the same rule, on their own branches — no edit to either is
+implied here.
+
+Because the registry must be **dense from 1**, an ID here is a position in a merge queue and cannot
+be chosen around; a PR holding a later slot reads as a gap, and its density assertion is red, until
+the earlier one lands. That is the check working. The alternative — each branch taking the next
+number it personally sees free — is three PRs shipping one ID and three baselines that silently stop
+describing the game they were measured on.
+
+**`w207/mastery-and-vellum` reached the same conclusion independently**, renumbering `detachment`
+14 → 13 against its own stack (#183, which appends no stream, plus #186 onto a `main` ending at 12)
+on 2026-08-15. Two branches, two different queues, one arithmetic — which is the strongest available
+evidence that the general rule below is the thing to read and none of the individual assignments is.
+
+Stated generally, because the assignment above is one queue's arithmetic and not a rule: **an
+append's ID is valid only once every ID below it has landed.** So an ID is settled by a branch's
+position in the merge queue rather than at the moment it is authored, and **re-checking it is part
+of merging** — a change that has sat while another append landed must confirm its ID is still the
+next one and renumber if it is not. That costs nothing extra: the `rngRegistryHash` refusal forces a
+re-baseline for any append regardless. "Take the next free number" is correct only when nothing else
+is in flight, and is precisely wrong when something is, because both changes see the same number
+free.
+
+**Stream 14 is the second append of that queue, and it is the same rule fired twice.**
+`w197/aptitude-sorts-careers` authored `career` as **15**, behind the ruling above, and wrote a
+paragraph predicting its own density assertion would stay red until #170 and #186 landed ahead of
+it. On `integration/group-e` #186 landed first and took 13, #170 had not landed at all, and the next
+free ID at W197's merge position was **14** — so the row was renumbered 15 → 14 at merge and the
+table is dense rather than gapped.
+
+That is now three successive rulings — *13/14/15*, then *#186 takes 13*, then *W197 takes 14* — each
+correct for its own queue and wrong for the next. Read the general rule below, not any of the three
+assignments: **an append's ID is settled by merge position, and re-checking it is part of merging.**
 
 Draws key on `(rootSeed, stream, tick, actorKey, drawOrdinal)` where `actorKey` is stable identity,
 never array index. This gives **insertion invariance**: adding a combatant, or adding a draw,

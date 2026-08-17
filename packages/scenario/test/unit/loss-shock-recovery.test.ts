@@ -216,21 +216,22 @@ describe('recovery, per species', () => {
     // species in the game into an invariant, and every branch that perturbed
     // the simulation at all tripped it — which is a test reporting its own
     // fragility, not a regression.
-    // **A third case, found on W116: present, and not shocked.** The cull takes
-    // half the living mages and orc reached the cull tick with **two**, of which
-    // it lost **none** — so `killed > 0` holds for five species while
-    // `preShock > 0` holds for six, and the equality above fails on a run where
-    // nothing is wrong.
+    // **And the replacement assertion was wrong too, one layer deeper.** It read
+    // "every species that *had* a roster lost mages", and the cull does not
+    // promise that: it takes every `EVERY_KTH`th mage from one **global**
+    // ordering, so what a species loses depends on where its handles fall in
+    // that ordering and not on how many it has. On `w190/scribing-fidelity`
+    // orc reaches the shock tick with `preShock: 2` and `killed: 0` — two mages,
+    // both on the wrong parity. That is not a smaller roster than before; it is
+    // the same accident of ordering the previous author diagnosed, expressed at
+    // `preShock: 2` instead of at `preShock: 0`.
     //
-    // The comment above already tells this story one case short. It moved from
-    // "all six, always" to "all six that had a roster" because orc reads zero at
-    // many seeds; the surviving assumption was that having a roster means losing
-    // somebody, and at a roster of two that is a coin flip rather than a fact.
-    //
-    // So what is asserted is what the cull actually promises: **it shocked
-    // somebody, and it shocked nobody who was not there.** A species with a
-    // roster that happened to lose nobody is reported below with the extinct
-    // ones rather than counted as a failure.
+    // So this asserts what an every-kth global cull actually guarantees — that
+    // it took about the fraction it claims to take, across the universe — and
+    // *names* any species that had a roster and lost nobody, which is the
+    // finding the length check was accidentally carrying. A per-species
+    // guarantee would need a per-species cull, and that is a different
+    // instrument.
     const withRoster = detail.species.filter((row) => (row['preShock'] as number) > 0);
     // Every species the cull *reached* is one that had a roster — the direction
     // that says the cull is not inventing losses. The converse does not hold and

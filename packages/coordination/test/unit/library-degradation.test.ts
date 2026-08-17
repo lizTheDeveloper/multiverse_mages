@@ -177,6 +177,7 @@ function shelfOf(books: readonly Book[]): Shelf {
           rediscoveryAffinity: species.rediscoveryAffinity,
           depthCeiling: species.depthCeiling,
           scribeAffinity: species.scribeAffinity,
+          curiosity: species.curiosity,
         }),
         store: shippedStorePolicy(traditionId),
         acquire: shippedAcquirePolicy(traditionId),

@@ -57,6 +57,7 @@ import type { Fixed } from '@mm/sim-core';
 import type { PrimitiveRecord, SpeciesRecord } from '@mm/content';
 import type { CellResolver, KnowledgeSubsystem, NodeCatalog } from '@mm/rules-magic';
 import type { ClampCounters } from '@mm/primitives';
+import type { TerritoryKind } from '@mm/rules-world';
 import {
   ASCENSION_PATH,
   BLESSING,
@@ -142,6 +143,18 @@ export interface GodDeps {
   readonly invitableSpecies?: ReadonlySet<number>;
   /** The species table, for the traits an arriving scholar is built from. */
   readonly speciesOf?: (speciesId: number) => SpeciesRecord | undefined;
+  /**
+   * What each kind of country is like (`contracts.md` §2.7), for siting a newly
+   * founded university on `defaultSiteKind`'s documented default. Supplied by
+   * `defineWorldSimulation` from the one set on `WorldStepDeps`, so that there
+   * is one territory content set per run rather than two places to configure it.
+   *
+   * Optional for the reason {@link GodDeps.nodesLostThisTick} is: a test may
+   * drive the god systems alone. Absent means the god founds unsited
+   * universities, which is neutral ground and exactly what a world with no
+   * territory has to offer.
+   */
+  readonly territoryKinds?: readonly TerritoryKind[] | undefined;
   /** Where `worship-yield` cap clamps are counted, when a caller keeps counters. */
   readonly clampCounters?: ClampCounters;
   /**
@@ -288,6 +301,7 @@ function interventionSystem(
         invitableSpecies: deps.invitableSpecies ?? EMPTY_SPECIES_ROSTER,
         speciesOf: deps.speciesOf ?? (() => undefined),
         rng: ctx.rng,
+        territoryKinds: deps.territoryKinds ?? [],
         requestEngagement: () => {
           ctx.requestEngagement();
         },

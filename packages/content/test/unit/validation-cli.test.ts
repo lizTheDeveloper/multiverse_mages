@@ -169,8 +169,8 @@ describe('validation reports every violation in a run', () => {
     expect(code).toBe(0);
     expect(output.errors).toEqual([]);
     expect(output.lines.join('\n')).toContain(
-      'OK — 5 techniques, 14 forms, 70 cells (12 flagged v1), 300 nodes, 6 species, ' +
-        '3 traditions, 17 primitives',
+      'OK — 5 techniques, 14 forms, 70 cells (12 flagged v1), 301 nodes, 6 species, ' +
+        '3 traditions, 18 primitives',
     );
     expect(output.lines.join('\n')).toMatch(/contentRevision [0-9a-f]{32}/u);
   });

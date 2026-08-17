@@ -132,6 +132,7 @@ import {
   LIBRARY,
   LOCATION_KIND,
   MAGE,
+  MAGE_ROLE,
   UNIVERSITY,
   componentOf,
   permits,
@@ -143,6 +144,7 @@ import type {
   KnowledgeRng,
   KnowledgeSubsystem,
   NodeCatalog,
+  PracticeOutcome,
   StoreHook,
   StorePolicy,
 } from '@mm/rules-magic';
@@ -150,18 +152,22 @@ import {
   DEFAULT_TEACH_THRESHOLD,
   MASTERY_ACTIVATION_THRESHOLD,
   disownGrimoire,
+  fidelityOf,
   isRediscovery,
   practice,
-  practiceRequirement,
+  practiceCeiling,
   research,
   researchRequirement,
   scribe,
   scribeCapacityCost,
   shelveGrimoire,
+  study,
   teach,
 } from '@mm/rules-magic';
-import type { RediscoveryClampCounter } from '@mm/primitives';
+import type { EffortEnvelope, RediscoveryClampCounter } from '@mm/primitives';
 import { createRediscoveryClampCounter } from '@mm/primitives';
+
+import type { EnvelopeResolver } from './envelopes.js';
 import type {
   KnowledgeGateway,
   KnowledgeTarget,
@@ -186,6 +192,14 @@ export interface MageRates {
   readonly depthCeiling: number;
   /** Species `scribeAffinity`. Raises a finished book's durability. */
   readonly scribeAffinity: Fp;
+  /**
+   * Species `curiosity`. The defence against a corrupted text.
+   *
+   * The one trait that decides whether a mage can read through a book that is
+   * silently wrong, and it is why the species best at *writing* books is second
+   * worst at *recovering* them — see `rules-magic`'s `fidelity.ts`.
+   */
+  readonly curiosity: Fp;
 }
 
 /**
@@ -221,6 +235,16 @@ export interface GatewayDeps {
   readonly knowledge: KnowledgeSubsystem;
   readonly catalog: NodeCatalog;
   readonly cells: CellResolver;
+  /**
+   * A node's technique envelope — `sound-design.md` §4.1's shape over the
+   * duration an acquisition takes.
+   *
+   * Optional, and absent means the flat curve, which is both Rego's shape and
+   * the behaviour every acquisition path had before envelopes existed. That is
+   * what lets a caller with no content registry — a fixture, a probe — drive
+   * this gateway unchanged.
+   */
+  readonly envelopes?: EnvelopeResolver;
   /**
    * A node's cell, form and effect primitives, for the utility score that
    * decides which target a mage takes.
@@ -348,8 +372,6 @@ export class CoordinatingKnowledgeGateway implements KnowledgeGateway {
 
   /** Memoized for this phase. See the module note on staleness. */
   #rosters: Map<Handle, MageHandle[]> | undefined;
-  /** A mage's affiliation, resolved once per mage per phase. See {@link #universityOf}. */
-  readonly #affiliations = new Map<MageHandle, Handle>();
   readonly #rates = new Map<MageHandle, MageRates | undefined>();
   /** Every mage's held nodes and mastery, from one pass. See {@link #holdings}. */
   #heldByMage: Map<MageHandle, Map<ContentId, Fp>> | undefined;
@@ -370,11 +392,15 @@ export class CoordinatingKnowledgeGateway implements KnowledgeGateway {
    * rule `capital.ts` states for the depth reading.
    */
   readonly #shelfContents = new Map<Handle, ReadonlySet<ContentId>>();
+  /** Non-student mages per university, built once per phase. See {@link #facultyOf}. */
+  #faculty: Map<UniversityHandle, MageHandle[]> | undefined;
   /** Books in mages' hands, from one pass. See {@link #grimoiresHeldBy}. */
   #grimoiresByHolder: Map<MageHandle, Handle[]> | undefined;
 
   /** Projects finished while this gateway was alive. Reporting only. */
   readonly #completed: CompletedEffort[] = [];
+  /** Practice months that moved a mastery. See {@link practised}. */
+  #practised = 0;
   readonly #clampCounter: RediscoveryClampCounter;
 
   constructor(deps: GatewayDeps) {
@@ -520,7 +546,22 @@ export class CoordinatingKnowledgeGateway implements KnowledgeGateway {
     return found.length > limit ? found.slice(0, limit) : found;
   }
 
+  /**
+   * Whether this mage holds `nodeId` well enough to pass it on.
+   *
+   * **A student never does, however well she holds it.** Since W193 a student is
+   * a `MAGE` row like any other, so without this line every enrolled student
+   * would join the teaching roster the month she learned her first node — wrong
+   * on the fiction, and worse as a measurement: `lessonsTaught` would rise for a
+   * reason that is not teaching, and the before/after comparison that diagnosed
+   * `teach-rate` as inert would stop being a comparison of like with like.
+   *
+   * Asked here rather than in each of the three callers, because
+   * {@link teachableTo}, {@link teacherFor} and {@link studentFor} all mean *the
+   * teacher's half* by it and the fourth caller is the one that would forget.
+   */
   canTeach(teacher: MageHandle, nodeId: ContentId): boolean {
+    if (this.#isStudent(teacher)) return false;
     const mastery = this.#holdings(teacher).get(nodeId);
     return mastery !== undefined && mastery >= DEFAULT_TEACH_THRESHOLD;
   }
@@ -540,6 +581,7 @@ export class CoordinatingKnowledgeGateway implements KnowledgeGateway {
   teachableTo(teacher: MageHandle, student: MageHandle): ContentId | undefined {
     if (teacher === student) return undefined;
     if (!this.#sharesInstitution(teacher, student)) return undefined;
+    if (this.#isStudent(teacher)) return undefined;
     const rates = this.#ratesOf(student);
     if (rates === undefined) return undefined;
 
@@ -555,6 +597,105 @@ export class CoordinatingKnowledgeGateway implements KnowledgeGateway {
       best = nodeId;
     }
     return best;
+  }
+
+  /**
+   * Every node this mage could spend a month **improving**, ascending by id.
+   *
+   * Three gates, and the third is the one that is particular to practice:
+   *
+   * 1. she holds it in mind or palace (`#holdings` walks exactly those),
+   * 2. the cell is permitted **now** — practice is a use of magic and an
+   *    interdicted art cannot be used, which is the same gate `castableNodes`
+   *    applies,
+   * 3. her mastery is **below** `practiceCeiling(tier, depthCeiling)`.
+   *
+   * The third gate is why `practice` is never a month thrown away, and it is
+   * the population-level rule as well: a mage's list empties as she perfects
+   * what is well inside her reach, and what is left at the top of it she cannot
+   * improve at all.
+   *
+   * ## The depth filter is this method's, not `practice()`'s
+   *
+   * `node.tier > depthCeiling` is checked **here** and nowhere else, matching
+   * `teachableTo`'s use of the same trait so that the list a mage is offered
+   * cannot disagree with the frontier about what she may work on.
+   *
+   * `practice()` itself does **not** refuse an over-deep node, and that is a
+   * decision rather than an oversight. Two paths put a node above a mage's
+   * ceiling into her mind without consulting the frontier — a god's founding
+   * grant and raid theft — and for those `practiceCeiling` clamps headroom at
+   * zero, so she can drill something beyond her only as far as
+   * `PRACTICE_CEILING_BASE` and no further: barely held, teachable for a tick,
+   * gone by the next sweep unless she stays at it. That is the right shape for
+   * knowledge somebody handed her that she was never equipped for, and
+   * `practice.test.ts` pins it. What it is *not* is an implication of the
+   * ceiling arithmetic, which is what this comment used to claim.
+   */
+  practicableNodes(mage: MageHandle): readonly ContentId[] {
+    const rates = this.#ratesOf(mage);
+    if (rates === undefined) return [];
+    const found: ContentId[] = [];
+    for (const [nodeId, mastery] of this.#holdings(mage)) {
+      const node = this.#deps.catalog.node(nodeId);
+      if (node === undefined || node.tier > rates.depthCeiling) continue;
+      if (!permits(this.#deps.ruleset, this.#deps.cells.cellOf(nodeId))) continue;
+      if (mastery >= practiceCeiling(node.tier, rates.depthCeiling)) continue;
+      found.push(nodeId);
+    }
+    return found.sort((a, b) => a - b);
+  }
+
+  /**
+   * Spends mage-months drilling a node she already holds.
+   *
+   * **No effort ledger, and that is the difference from every other
+   * contribution on this class.** Research, teaching and scribing are projects:
+   * they bank progress against an authored requirement and produce an instance
+   * on the tick the requirement is met, so the running total has to live
+   * somewhere between two calls. Practice has no completion — there is nothing
+   * to finish, only a mastery that is higher this month than it was last month
+   * — so the month is spent immediately and the state it moves is the
+   * instance's own `mastery` field. That is one fewer `EFFORT_PROGRESS` row per
+   * practising mage per node, and one fewer thing a save has to carry.
+   *
+   * A refusal — an interdicted cell, a node she has since lost — writes
+   * nothing, exactly as `contributeResearch`'s does.
+   */
+  contributePractice(mage: MageHandle, nodeId: ContentId, mageMonths: Fixed): PracticeOutcome | undefined {
+    const rates = this.#ratesOf(mage);
+    if (rates === undefined) return undefined;
+    const outcome = practice({
+      knowledge: this.#deps.knowledge,
+      catalog: this.#deps.catalog,
+      cells: this.#deps.cells,
+      ruleset: this.#deps.ruleset,
+      subject: mage,
+      nodeId,
+      effort: mageMonths,
+      learnRate: rates.learnRate,
+      depthCeiling: rates.depthCeiling,
+    });
+    if (outcome.refusal === undefined) this.#practised += 1;
+    return outcome;
+  }
+
+  /**
+   * Months of practice that actually moved a mastery, while this gateway lived.
+   *
+   * **Counted here rather than pushed onto {@link completions}, and the
+   * distinction is the merge.** Two branches built practice: one as a project
+   * with an effort ledger, which completed and so could be counted off
+   * `completions()` like research and scribing; this one as a month that is
+   * spent and gone. The world report's `practiceCompleted` came from the first
+   * and the rule kept is the second, so the counter has to come from somewhere
+   * — and it may not come from `#completed`, because `completions()` feeds
+   * `isComplete` and a practice that "completed" every month would release the
+   * mage's commitment every month. That would be a behaviour change wearing a
+   * counter's clothes.
+   */
+  practised(): number {
+    return this.#practised;
   }
 
   scribableBy(mage: MageHandle, nodeId: ContentId): KnowledgeTarget | undefined {
@@ -587,16 +728,7 @@ export class CoordinatingKnowledgeGateway implements KnowledgeGateway {
   #shelfHolds(mage: MageHandle, nodeId: ContentId): boolean {
     const shelf = this.#shelfFor(mage);
     if (shelf === 0) return false;
-    let held = this.#shelfContents.get(shelf);
-    if (held === undefined) {
-      held = new Set(
-        this.#deps.knowledge
-          .instancesAt(LOCATION_KIND.library, shelf)
-          .map((instance) => this.#deps.knowledge.read(instance).nodeId),
-      );
-      this.#shelfContents.set(shelf, held);
-    }
-    return held.has(nodeId);
+    return this.#shelfNodes(shelf).has(nodeId);
   }
 
   /**
@@ -636,6 +768,156 @@ export class CoordinatingKnowledgeGateway implements KnowledgeGateway {
       if (this.canTeach(teacher, nodeId)) return teacher;
     }
     return undefined;
+  }
+
+  /**
+   * Whether the university this student is enrolled at still has **anything**
+   * to teach her — from a colleague's mind or from its own shelf.
+   *
+   * ## This is the graduation condition, and it replaces an age
+   *
+   * *"They're students until they learn everything that the university they
+   * enrolled in can teach them."* The old rule was
+   * `worldTick - birthTickBucket >= maturityMonths`: promotion was gated on
+   * **age since birth**, so nothing a university did could move the date a mage
+   * arrived, and `teach-rate` was consequently inert — measured at `+0.1%` on
+   * lessons and flat on living mages while research completions moved `+28.8%`.
+   * A date that is *when she has learned it all* responds to every rate that
+   * makes learning faster, which is the point.
+   *
+   * ## Scoped to her own institution, deliberately
+   *
+   * Not `teacherFor`, which scans the whole universe. A curriculum that meant
+   * *"every node any living mage anywhere holds"* would make graduation a
+   * property of the world rather than of the school, and would delete the two
+   * consequences the design wants: that **university depth is what matters**,
+   * and that a graduate of a shallow school has somewhere to transfer *to*.
+   *
+   * Faculty are her university's non-student mages. Her shelf is her
+   * university's library, which is exactly {@link #shelfFor} — so an
+   * unaffiliated student has no curriculum at all, and by construction there is
+   * no such thing: enrolment refuses to seat anyone without a university.
+   *
+   * **Both halves ask {@link #admitsLesson}**, the same admission test a lesson
+   * gets, so a node beyond her depth ceiling, in a forbidden cell, or missing a
+   * prerequisite is not part of any curriculum. Her ceiling is hers: two
+   * students of different species at the same university graduate at different
+   * times, and the deeper one stays longer.
+   */
+  hasCurriculumFor(student: MageHandle): boolean {
+    const university = this.#universityOf(student);
+    if (university === 0) return false;
+
+    for (const teacher of this.#facultyOf(university)) {
+      if (teacher === student) continue;
+      for (const [nodeId, mastery] of this.#holdings(teacher)) {
+        if (mastery < DEFAULT_TEACH_THRESHOLD) continue;
+        if (this.#admitsLesson(student, nodeId)) return true;
+      }
+    }
+
+    const shelf = this.#shelfFor(student);
+    if (shelf === 0) return false;
+    for (const nodeId of this.#shelfNodes(shelf)) {
+      if (this.#admitsLesson(student, nodeId)) return true;
+    }
+    return false;
+  }
+
+  /**
+   * Whether this university can teach **anybody** anything.
+   *
+   * The door-side counterpart to {@link hasCurriculumFor}, and deliberately not
+   * the same question. That one is asked of a named student, so it can check her
+   * depth ceiling and her prerequisites; this one is asked before a student
+   * exists, so it can only ask whether the institution holds *any* legal,
+   * teachable knowledge — a faculty member at or above the teaching threshold,
+   * or a book on the shelf, in a cell this universe's ruleset permits.
+   *
+   * A `false` here is what stops a bare founding from being a mage factory. It
+   * is a weaker test than the per-student one on purpose: a university that
+   * passes it may still have nothing for a *particular* student, and she simply
+   * graduates immediately — which is correct, and is why the graduation path
+   * keeps its own floor.
+   */
+  hasCurriculum(university: UniversityHandle): boolean {
+    for (const teacher of this.#facultyOf(university)) {
+      for (const [nodeId, mastery] of this.#holdings(teacher)) {
+        if (mastery < DEFAULT_TEACH_THRESHOLD) continue;
+        if (permits(this.#deps.ruleset, this.#deps.cells.cellOf(nodeId))) return true;
+      }
+    }
+    const shelf = this.#libraryOf(university);
+    if (shelf === 0) return false;
+    for (const nodeId of this.#shelfNodes(shelf)) {
+      if (permits(this.#deps.ruleset, this.#deps.cells.cellOf(nodeId))) return true;
+    }
+    return false;
+  }
+
+  /**
+   * The non-student living mages affiliated to one university, ascending.
+   *
+   * One pass over the roster for the whole phase rather than one per student,
+   * because the graduation walk asks once per student. Built on
+   * {@link #byUniversity}'s single grouping pass rather than on a second walk of
+   * `MAGE`: this branch's `livingMages()` — a globally bounded flat roster — was
+   * replaced by that per-affiliation index on the teaching-boundary change, and
+   * a faculty index is the same grouping with the students filtered out. Without
+   * it the phase would be `students × mages`, which is the cost shape
+   * `#holdings` exists to collapse and which would arrive on the same commit
+   * that made students numerous.
+   */
+  #facultyOf(university: UniversityHandle): readonly MageHandle[] {
+    if (this.#faculty === undefined) {
+      const index = new Map<UniversityHandle, MageHandle[]>();
+      for (const [at, roster] of this.#byUniversity()) {
+        if (at === 0) continue;
+        const staff: MageHandle[] = [];
+        for (const mage of roster) {
+          if (this.#isStudent(mage)) continue;
+          staff.push(mage);
+        }
+        index.set(at as UniversityHandle, staff);
+      }
+      this.#faculty = index;
+    }
+    return this.#faculty.get(university) ?? EMPTY_FACULTY;
+  }
+
+  /** Distinct node ids on one library's shelf, memoised for the phase. */
+  #shelfNodes(shelf: Handle): ReadonlySet<ContentId> {
+    let held = this.#shelfContents.get(shelf);
+    if (held === undefined) {
+      held = new Set(
+        this.#deps.knowledge
+          .instancesAt(LOCATION_KIND.library, shelf)
+          .map((instance) => this.#deps.knowledge.read(instance).nodeId),
+      );
+      this.#shelfContents.set(shelf, held);
+    }
+    return held;
+  }
+
+  /** This mage's university handle, or `0`. */
+  #universityOf(mage: MageHandle): UniversityHandle {
+    const mages = componentOf(this.#deps.state, MAGE);
+    if (!mages.has(mage as EntityHandle)) return 0;
+    return mages.get(mage as EntityHandle, 'universityId') as UniversityHandle;
+  }
+
+  /**
+   * Whether this handle names an enrolled student.
+   *
+   * A field read per call rather than a memo: the answer changes **inside** the
+   * phase that reads it — graduation writes `roleId` while the same gateway is
+   * alive — and a cached `true` would let a mage who graduated this tick keep
+   * being refused as a teacher until the next one.
+   */
+  #isStudent(mage: MageHandle): boolean {
+    const mages = componentOf(this.#deps.state, MAGE);
+    if (!mages.has(mage as EntityHandle)) return false;
+    return mages.get(mage as EntityHandle, 'roleId') === MAGE_ROLE.student;
   }
 
   /**
@@ -717,6 +999,11 @@ export class CoordinatingKnowledgeGateway implements KnowledgeGateway {
       // at. `initialMastery` is deliberately not passed alongside it — one
       // route, so the two cannot be wired half-way.
       acquire: this.#deps.acquire,
+      // §4.1's shape. `research` applies it to the effort *inside* the call,
+      // because that is where `required` is computed and the curve is indexed on
+      // `progress / required` — resolving it out here would mean pricing the
+      // node twice and betting the two agreed.
+      ...envelopeInput(this.#deps.envelopes, nodeId),
     });
 
     if (outcome.refusal !== undefined) return;
@@ -763,6 +1050,23 @@ export class CoordinatingKnowledgeGateway implements KnowledgeGateway {
     // below and the clamp further down cannot come to different conclusions.
     const required = this.#deps.acquire.teachCost(node.teachCost);
     const key = effortKey(EFFORT_KIND.teaching, teacher, nodeId, student);
+    // **No envelope here, and the reason is structural.** §4.1's shape is
+    // applied to *research* — a mage deriving a node over months against a
+    // requirement the rates divide, where `progress / required` is a true
+    // position within the acquisition's own duration. Teaching is different
+    // arithmetic: the requirement is flat authored content and the rate scales
+    // the *numerator* (`mageMonths`), so a lesson has no comparable interior for
+    // a curve to be a curve over.
+    //
+    // A measurement agrees, and is stated carefully because the effect is real
+    // and is not the whole cause. On the reference seed's 200-year run, lessons
+    // in the last two 20-year windows went `19 / 0` with the research envelope
+    // alone and `5 / 0` with teaching curved as well — so curving teaching
+    // *deepened* the thinning without being what produced it. §3.1 calls
+    // teaching *"the healthiest process in the game… the thing that keeps
+    // knowledge alive against mortality"*, and a curve that makes an
+    // interrupted lesson bank less is pushing directly against that for no
+    // reason the design gives.
     const progress = ledger.accrue(key, mageMonths);
     if (progress < required) return;
 
@@ -827,6 +1131,9 @@ export class CoordinatingKnowledgeGateway implements KnowledgeGateway {
 
     const key = effortKey(EFFORT_KIND.scribing, mage, nodeId, 0);
     const required = scribeCapacityCost(node.tier);
+    // No envelope here either, for the reason `contributeTeaching` gives: the
+    // requirement is a flat function of tier, not a rate-scaled cost, so there
+    // is no acquisition interior for a curve to shape.
     const progress = ledger.accrue(key, scribeMonths);
     if (progress < required) return;
 
@@ -863,170 +1170,161 @@ export class CoordinatingKnowledgeGateway implements KnowledgeGateway {
   }
 
   /**
-   * This mage's best mastery of a node she holds, or `0`.
+   * Spends mage-months reading a book, and creates the instance when the node's
+   * `teachCost` is met.
    *
-   * The same reading {@link canTeach} takes — the best copy, not the stalest —
-   * so that "how stale is she in this subject" has one answer across the outlook
-   * builder, the teaching mask and the staleness count.
+   * **The book on the shelf is the teacher.** `teachCost` is the price rather
+   * than a new content field because §2.3 already prices "one person acquiring
+   * this node with help", and a text is help. What differs from a lesson is
+   * everything on the other side: no second mage is committed, no `teach-rate`
+   * bonus applies, and what arrives is bounded by the *book's* fidelity rather
+   * than by a teacher's mastery.
+   *
+   * **The source is chosen, and the choice is the freshest copy on the shelf.**
+   * Ties break on the instance handle, so the pick is a function of state and
+   * not of iteration order. A library holding a pristine copy and a spent one
+   * teaches from the pristine one, which is the behaviour that makes refreshing
+   * a scriptorium from minds worth doing.
+   *
+   * **A corrupted source consumes the month and clamps.** That is deliberate and
+   * is the design's deferred cost: the reader spent the time, got nothing, and —
+   * unless she was deep enough to diagnose it — does not know why. The clamp
+   * stops her re-reading it forever at no cost, and the mark, when she can make
+   * one, is the only signal a player ever receives that a raid happened.
    */
-  masteryOf(mage: MageHandle, nodeId: ContentId): Fp {
-    return this.#holdings(mage).get(nodeId) ?? 0;
-  }
-
-  /**
-   * A node this mage holds and **has lost teaching standing in**, or
-   * `undefined`.
-   *
-   * Two of the three conditions are `practice`'s own refusals — permitted cell,
-   * held instance — asked here so that the utility-AI never commits a month to a
-   * project that can never complete. `remainingCost` is the months still owed
-   * **after** what she has already banked, because the outlook quotes it to
-   * `target-appeal.ts`' effort term and a mage two months from finishing should
-   * read as cheaper than one who has not started.
-   *
-   * ## The third condition is `DEFAULT_TEACH_THRESHOLD`, not `MASTERY_MAX`
-   *
-   * The rule refuses only at full mastery, and offering candidates on that gate
-   * was measured to be wrong in two directions at once.
-   *
-   * **It never empties.** `MASTERY_DECAY_PER_TICK` takes a point off every held
-   * instance every month, so *below full mastery* is a condition every instance
-   * in the universe satisfies within a month of acquiring it. A goal that is
-   * feasible for every mage on every tick forever is not a goal that competes
-   * for the month; it is one that wins the month by default, and the appeal
-   * terms behind it — `GOAL_BASE_APPEAL`, `OPPORTUNITY_PER_STALE_HOLDING` — were
-   * written for a candidate list that could be empty.
-   *
-   * **And its far end is nearly free of value.** A mage practising a node at
-   * `fp(1023)` pays a whole month and `practice`'s clamp gives her back **one**
-   * point. The quantum is `PRACTICE_MASTERY_RESTORE`; what she banks is
-   * `min(before + quantum, MASTERY_MAX) - before`. Every month spent in the top
-   * eighth of the scale is a month bought at up to 128× the price of the same
-   * month spent by a scholar who has fallen out of standing.
-   *
-   * `DEFAULT_TEACH_THRESHOLD` is the line that already means something here: it
-   * is what {@link staleHoldings} counts against, what `canTeach` reads, and
-   * what `ages-of-magic.md` §2c's *"faculty who have not had a new result in
-   * twenty years"* have fallen below. Gating candidacy on it makes practice a
-   * **hysteresis loop around teaching standing** — she drops below, she
-   * practises back over, she stops and goes back to the frontier — which is the
-   * publish-or-perish loop the goal was built for and *not* a permanent
-   * top-up.
-   *
-   * ## Why this is narrower than `isPractisable`, deliberately
-   *
-   * `rules-magic`' `isPractisable` still mirrors `practice`'s refusals exactly
-   * and is right to: it answers *would the rule refuse this*. This answers
-   * *should autonomy be offered this*, and the two are allowed to differ in one
-   * direction only — never offer what the rule would refuse. Offering **less**
-   * than the rule accepts is already the case here (`MAX_CANDIDATE_TARGETS`
-   * truncates the list), and this is the same asymmetry with a reason attached.
-   *
-   * ## What it was measured to cost and buy
-   *
-   * On thirty-two paired seeds of the reference long run, gating at
-   * `MASTERY_MAX` cut library **breadth** by 6.3 distinct nodes against a
-   * practice-free control (`t = -2.96`) while leaving the book count unchanged —
-   * the same volume of copies spread over fewer subjects — and killed the last
-   * scribing window outright on four of eight seeds at the two-century horizon.
-   * `docs/design/practice-results.md` records both series and the control.
-   */
-  practisableBy(mage: MageHandle, nodeId: ContentId): KnowledgeTarget | undefined {
+  contributeStudy(mage: MageHandle, nodeId: ContentId, mageMonths: Fixed): void {
+    const ledger = this.#ledger('study');
     const node = this.#deps.catalog.node(nodeId);
-    if (node === undefined) return undefined;
-    if (!permits(this.#deps.ruleset, this.#deps.cells.cellOf(nodeId))) return undefined;
-    const mastery = this.#holdings(mage).get(nodeId);
-    if (mastery === undefined || mastery >= DEFAULT_TEACH_THRESHOLD) return undefined;
+    const rates = this.#ratesOf(mage);
+    if (node === undefined || rates === undefined) return;
 
-    const required = practiceRequirement(node);
-    // The banked months, when there is a ledger to ask. A query-only gateway —
-    // the observation path — has none, and quoting the full price there is
-    // right: it is the price of starting, which is what a reader of an
-    // observation is being told.
-    const banked =
-      this.#deps.effort?.progressOf({
-        subject: mage,
-        kind: EFFORT_KIND.practice,
-        nodeId,
-        counterparty: 0,
-      }) ?? 0;
+    const source = this.readableSourceFor(mage, nodeId);
+    if (source === undefined) return;
 
-    const facets = this.#deps.facets(nodeId);
-    return {
-      nodeId,
-      tier: node.tier,
-      remainingCost: Math.max(required - banked, 0),
-      cellId: facets.cellId,
-      formId: facets.formId,
-      primitives: facets.primitives,
-    };
-  }
+    const required = this.#deps.acquire.teachCost(node.teachCost);
+    const key = effortKey(EFFORT_KIND.study, mage, nodeId, 0);
+    const progress = ledger.accrue(key, mageMonths);
+    if (progress < required) return;
 
-  /**
-   * How many nodes this mage holds at a mastery below the teaching threshold.
-   *
-   * The count `ages-of-magic.md` §2c's 93.4% is the population share of, asked
-   * per mage. Her *best* copy of each node is the one compared, because that is
-   * the copy `canTeach` reads: a scholar with one stale duplicate and one fresh
-   * copy has not lost her standing in that subject.
-   */
-  staleHoldings(mage: MageHandle): number {
-    let stale = 0;
-    for (const mastery of this.#holdings(mage).values()) {
-      if (mastery < DEFAULT_TEACH_THRESHOLD) stale += 1;
-    }
-    return stale;
-  }
-
-  /**
-   * Spends mage-months keeping a node sharp, and restores a mastery quantum on
-   * the tick the requirement is met.
-   *
-   * The arithmetic is entirely `rules-magic`'s `practice`; what this method owns
-   * is where the running total sits between two calls, which is the same
-   * division of labour {@link contributeResearch} describes.
-   *
-   * **No RNG.** `practice` draws nothing — see its module note — so unlike the
-   * other three accruals this one does not reach for `#rng`, and a gateway built
-   * without one can still run it. That is the property that keeps every
-   * committed balance baseline's stream sequences untouched by this change.
-   */
-  contributePractice(
-    mage: MageHandle,
-    nodeId: ContentId,
-    mageMonths: Fixed,
-    practiceRate: Fixed = NEUTRAL_RATE,
-  ): void {
-    const ledger = this.#ledger('practice');
-    const key = effortKey(EFFORT_KIND.practice, mage, nodeId, 0);
-    const outcome = practice({
+    const outcome = study({
       knowledge: this.#deps.knowledge,
       catalog: this.#deps.catalog,
       cells: this.#deps.cells,
       ruleset: this.#deps.ruleset,
-      subject: mage,
-      nodeId,
+      reader: mage,
+      source,
       worldTick: this.#deps.state.clock.worldTick,
-      progress: ledger.progressOf(key),
-      effort: mageMonths,
-      practiceRate,
+      curiosity: rates.curiosity,
+      readerDeepestTier: this.deepestTierHeld(mage),
+      store: this.#deps.store,
     });
 
-    if (outcome.refusal !== undefined) return;
-    if (!outcome.completed) {
-      ledger.accrue(key, outcome.progress - ledger.progressOf(key));
+    if (outcome.refusal !== undefined) {
+      ledger.clampTo(key, required);
       return;
     }
-    // Cleared rather than carried: a completed quantum is a finished project,
-    // and leaving the surplus behind would let a mage bank months against a node
-    // she is about to abandon and cash them all at once on returning to it.
     ledger.clear(key);
     this.#completed.push({
-      kind: EFFORT_KIND.practice,
+      kind: EFFORT_KIND.study,
       subject: mage,
-      counterparty: 0,
+      counterparty: source,
       nodeId,
     });
+  }
+
+  /**
+   * The freshest written instance of `nodeId` this mage could open, or
+   * `undefined`.
+   *
+   * Her own shelf first, then books in her own hands. Nothing else: a library
+   * she is not affiliated with is somebody else's, and reaching into it here
+   * would make affiliation decorative.
+   *
+   * "Freshest" is lowest copy distance, ties on the instance handle. **A
+   * corrupted book is not skipped** — it is invisible until read, which is the
+   * whole mechanic, and a chooser that avoided corrupted texts would be the
+   * omniscience the design is built to deny.
+   */
+  readableSourceFor(mage: MageHandle, nodeId: ContentId): Handle | undefined {
+    const candidates: Handle[] = [];
+    const shelf = this.#shelfFor(mage);
+    if (shelf !== 0) {
+      candidates.push(...this.#deps.knowledge.instancesAt(LOCATION_KIND.library, shelf));
+    }
+    for (const grimoire of this.#grimoiresHeldBy(mage)) {
+      const instance = this.#deps.knowledge.instanceForGrimoire(grimoire);
+      if (instance !== 0) candidates.push(instance);
+    }
+
+    let best: Handle | undefined;
+    let bestGeneration = 0;
+    for (const instance of candidates) {
+      if (this.#deps.knowledge.read(instance).nodeId !== nodeId) continue;
+      const { copyGeneration } = fidelityOf(this.#deps.state, instance);
+      if (best === undefined) {
+        best = instance;
+        bestGeneration = copyGeneration;
+        continue;
+      }
+      // The handle tie-break is not decoration. `candidates` arrives in
+      // `instancesAt`'s slot order followed by the mage's own books, and slots
+      // move under swap-removal — so a strict `<` alone would break ties on the
+      // *destruction history* of the universe rather than on its values, and two
+      // peers agreeing on every number could open different books.
+      if (copyGeneration < bestGeneration || (copyGeneration === bestGeneration && instance < best)) {
+        best = instance;
+        bestGeneration = copyGeneration;
+      }
+    }
+    return best;
+  }
+
+  /**
+   * Nodes this mage could learn by opening a book she can reach.
+   *
+   * The archive's half of `seek-teaching`. Same admission test a lesson gets —
+   * permitted cell, not already held, prerequisites in hand — asked of the
+   * shelf instead of of a colleague.
+   *
+   * **Corrupted texts are included.** A mage cannot tell a sound book from a
+   * silently wrong one by looking at the spine, so neither may this list; the
+   * month is spent and lost, which is the design's deferred cost and not an
+   * oversight in the candidate scan.
+   */
+  readableToMe(mage: MageHandle): ContentId[] {
+    const found = new Set<ContentId>();
+    const shelf = this.#shelfFor(mage);
+    const candidates: Handle[] = [];
+    if (shelf !== 0) {
+      candidates.push(...this.#deps.knowledge.instancesAt(LOCATION_KIND.library, shelf));
+    }
+    for (const grimoire of this.#grimoiresHeldBy(mage)) {
+      const instance = this.#deps.knowledge.instanceForGrimoire(grimoire);
+      if (instance !== 0) candidates.push(instance);
+    }
+    for (const instance of candidates) {
+      const nodeId = this.#deps.knowledge.read(instance).nodeId;
+      if (found.has(nodeId)) continue;
+      if (!this.#admitsLesson(mage, nodeId)) continue;
+      found.add(nodeId);
+    }
+    return [...found].sort((left, right) => left - right);
+  }
+
+  /**
+   * The deepest tier this mage already holds — the corruption discovery gate.
+   *
+   * Zero for a mage holding nothing, which is correct and is the design's point:
+   * *"the newest students can't discover corruption"*, and a mage who knows
+   * nothing at all cannot diagnose anything.
+   */
+  deepestTierHeld(mage: MageHandle): number {
+    let deepest = 0;
+    for (const instance of this.#deps.knowledge.instancesHeldBy(mage)) {
+      const node = this.#deps.catalog.node(this.#deps.knowledge.read(instance).nodeId);
+      if (node !== undefined && node.tier > deepest) deepest = node.tier;
+    }
+    return deepest;
   }
 
   /**
@@ -1310,18 +1608,6 @@ export class CoordinatingKnowledgeGateway implements KnowledgeGateway {
     return this.#universityOf(a) === this.#universityOf(b);
   }
 
-  /** A mage's affiliation, or `0` — unaffiliated, and for a row that is gone. */
-  #universityOf(mage: MageHandle): Handle {
-    const cached = this.#affiliations.get(mage);
-    if (cached !== undefined) return cached;
-    const store = componentOf(this.#deps.state, MAGE);
-    const university = store.has(mage as EntityHandle)
-      ? store.get(mage as EntityHandle, 'universityId')
-      : 0;
-    this.#affiliations.set(mage, university);
-    return university;
-  }
-
   /**
    * What one mage holds in mind or palace: node id to best mastery.
    *
@@ -1573,6 +1859,23 @@ export function effortKey(
  * not because this module knows its name — the four extension points stay the
  * only place a tradition changes anything.
  */
+/**
+ * The `envelope` field for a `research` call, or no field at all.
+ *
+ * Spread rather than passed as `envelope: … | undefined` because
+ * `exactOptionalPropertyTypes` is on: *"no envelope resolved"* and *"an
+ * envelope whose value is undefined"* are the same behaviour and must not be
+ * two spellings, or a caller reading the type would have to decide which one
+ * means the flat curve.
+ */
+function envelopeInput(
+  envelopes: EnvelopeResolver | undefined,
+  nodeId: ContentId,
+): { envelope?: EffortEnvelope } {
+  const envelope = envelopes?.envelopeOf(nodeId);
+  return envelope === undefined ? {} : { envelope };
+}
+
 function storeHookOf(policy: StorePolicy): StoreHook {
   return { kind: policy.kind, keepsWrittenCopies: policy.scribingAvailable };
 }
@@ -1585,6 +1888,9 @@ const EMPTY_HOLDINGS: ReadonlyMap<ContentId, Fp> = new Map<ContentId, Fp>();
 
 /** A mage with no books. Shared, and never written to. */
 const EMPTY_BOOKS: readonly Handle[] = Object.freeze([]);
+
+/** Shared so a university with no faculty allocates nothing per student. */
+const EMPTY_FACULTY: readonly Handle[] = Object.freeze([]);
 
 /** Whether a location kind is one a mage carries in her own head. */
 export function isHeldAtMind(locationKind: number): boolean {

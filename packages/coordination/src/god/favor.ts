@@ -154,7 +154,11 @@ export function hysteresisMultiplier(changeCount: number, constants: GodConstant
 export function interventionCost(
   actionId: number,
   costs: GodCosts,
-  options: { readonly hysteresis?: Fixed; readonly nodeTier?: number } = {},
+  options: {
+    readonly hysteresis?: Fixed;
+    readonly nodeTier?: number;
+    readonly timing?: Fixed;
+  } = {},
 ): Fixed {
   const base = costs.byAction[actionId] ?? 0;
   if (base === 0) return 0;
@@ -163,7 +167,18 @@ export function interventionCost(
   // The tier factor multiplies the *base* before the hysteresis division, so a
   // tier-4 grant is exactly four tier-1 grants rather than four floors of a
   // quarter each.
-  return mul(base * tier, multiplier);
+  const hysteresed = mul(base * tier, multiplier);
+  // `sound-design.md` §3.2's off-grid surcharge and §5.2's eight-bar unease,
+  // applied *here* and not at the resolver, for the reason this function exists
+  // at all: the legality mask, the ledger and the resolution path must not be
+  // able to disagree about a price. A timing rule priced anywhere else would be
+  // an action the mask says is affordable and the resolver refuses.
+  //
+  // Composed after hysteresis rather than folded into it, because the two price
+  // different mistakes — flipping one axis back and forth, and changing the law
+  // twice in one phrase — and a product of two named factors can be attributed
+  // in a sweep where a single collapsed one cannot.
+  return mul(hysteresed, options.timing ?? FP_ONE);
 }
 
 /**

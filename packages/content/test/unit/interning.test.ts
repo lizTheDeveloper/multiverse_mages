@@ -140,13 +140,21 @@ describe('interning', () => {
     expect(registry.intern('cell', 'creo-animal')).toBe(1);
     expect(registry.intern('cell', 'rego-nomen')).toBe(70);
     expect(registry.intern('node', 'can-call-the-pack')).toBe(1);
-    // 300, not 299: pre-authoring the other 58 cells brought 249 nodes, and
-    // `knowledge-model` task 2.5's `rn-keep-the-name-close` is the one neither
-    // side of that merge shared. Node ids intern in sort order, so it lands at
-    // 285 and every node after it shifts by one — the renumbering these
-    // assertions exist to surface.
-    expect(registry.intern('node', 'rn-keep-the-name-close')).toBe(285);
-    expect(registry.intern('node', 'rv-turn-the-casting')).toBe(300);
+    // 301, not 300: `w190/scribing-fidelity` authored `pn-the-wrong-true-name`,
+    // the one v1 node carrying `knowledge-corrupt`. Node ids intern in **sort
+    // order**, not file order, so it lands at 227 and every node after it shifts
+    // by one — `rn-keep-the-name-close` from 285 to 286, `rv-turn-the-casting`
+    // from 300 to 301. That renumbering is exactly what these assertions exist
+    // to surface, and the considered decision is that a new primitive needs a
+    // node to carry it: an effect primitive with no authored node is a rule that
+    // behaves as a comment.
+    //
+    // The count before that was 300, from pre-authoring the other 58 cells (249
+    // nodes) plus `knowledge-model` task 2.5's `rn-keep-the-name-close`, the one
+    // neither side of that merge shared.
+    expect(registry.intern('node', 'pn-the-wrong-true-name')).toBe(227);
+    expect(registry.intern('node', 'rn-keep-the-name-close')).toBe(286);
+    expect(registry.intern('node', 'rv-turn-the-casting')).toBe(301);
     expect(registry.intern('species', 'draconic')).toBe(1);
     expect(registry.intern('tradition', 'art-of-memory')).toBe(1);
     expect(registry.intern('primitive', 'area-denial')).toBe(1);
@@ -431,6 +439,16 @@ describe('contentRevision', () => {
     // reason the check is a digest over the preimage rather than a
     // hand-maintained list of files.
     //
+    // e8442af2c5f91ae6f80ad9a178e0e451 -> 8a20c0a64242b6322283d439724f6993,
+    // when scribing fidelity added the `knowledge-corrupt` primitive and
+    // `pn-the-wrong-true-name`, the one v1 node carrying it. In the preimage for
+    // the plainest reason on the list: two universes disagreeing about whether
+    // corruption is a thing magic can do would disagree about what a raid into
+    // either of them is *able to do*, which is the arbitration question the host
+    // ruleset exists to answer. And because node ids intern in sort order, the
+    // new node renumbers 74 nodes after it — a save's `nodeId` columns mean
+    // different nodes across the boundary, which is precisely what a revision
+    // mismatch has to refuse.
     // 162f80bf169296d0e5fd516cc3c5257a -> 87fdff6cbf4414b584fef95bf9d4916a,
     // when `w109` appended the seventeenth god cost — action 16, the alliance
     // invitation. A price is in the preimage for the same reason every god
@@ -581,7 +599,204 @@ describe('contentRevision', () => {
     // effects, `08f5fc0d` (Group F's) the reverse. Read from
     // `node packages/content/bin/validate-content.mjs` on the merged tree and
     // then confirmed by this test.
-    expect(registry.contentRevision).toBe('67caa64523465b3fe1b16760400a028a');
+    //
+    // 0dfdd5efc2c6dad07bd486a7d80c851d -> 3fa982e302f5b191c417d6bce36d1660,
+    // when `rn-call-by-name` gained a second effect: `resource-yield`, magnitude
+    // 128, target `universe` — the tier-1 magnitude eighteen other yield nodes
+    // already carry, so no new number is authored here.
+    //
+    // It is in the preimage for the reason every value edit above is, and this
+    // one is emphatically **not** inert at ship. Before it, no node in the v1
+    // rectangle routed any yield to vellum at all: of the 300 nodes, 59 carry
+    // `resource-yield`, exactly five of those sit in a v1 cell, and all five are
+    // `*-terram`, whose form weights are `stone` — while library upkeep and
+    // scribing both *spend* vellum. The single nomen yield node in the corpus,
+    // `mn-call-it-iron-until-it-is`, is in `muto-nomen`, and `muto` is not a v1
+    // technique. So the opening square had a vellum sink, a labour source in
+    // `territory.json`, and no magical source whatsoever — a god could permit
+    // every cell she had and still not make a universe that could write books
+    // faster by doing magic.
+    //
+    // `rego-nomen` is a v1 cell and `nomen`'s `yieldWeights` are `vellum: 1024`,
+    // so the whole of a yield in it is vellum, and the node's own text already
+    // said so: *"Say a thing's name in the imperative and have it arrive."* The
+    // gloss's standing joke — that it does not specify in what condition — is
+    // why the magnitude is the tier-1 one rather than a generous one. Nothing
+    // was invented to fill the hole; a second effect was hung on the sentence
+    // that already implied it.
+    //
+    // Union, and by the file's own convention neither side's literal survives.
+    // On this branch that same vellum edit was first recorded as `e8442af2 ->
+    // 7277d3f6`, over a preimage that has neither the seventeenth god cost nor
+    // the anti-requisite exclusions; `0dfdd5ef` is a digest over a preimage that
+    // has both of those and no vellum yield. This tree is the first one holding
+    // all three, so a further value is what a digest over the union is supposed
+    // to produce — not a disagreement being settled. The literal below is
+    // MEASURED on the merged tree, not carried from either side.
+    //
+    // 3fa982e302f5b191c417d6bce36d1660 -> cbcfb32c8fcf886ca381ccb81bed1a0a, on
+    // this merge. Union for the fifth time in this list, and for the fifth time
+    // neither side's literal survives: `8681bf84` is a digest over a preimage
+    // holding the signed `teach-rate` cost on `pn-the-nameless` and no vellum
+    // yield, `3fa982e3` over one holding the vellum yield and no signed cost.
+    // `integration/group-e` is the first tree holding both.
+    //
+    // MEASURED on the merged tree, not carried from either side:
+    // `node packages/content/bin/validate-content.mjs` reports
+    // `contentRevision cbcfb32c8fcf886ca381ccb81bed1a0a`, and this assertion
+    // agrees with it.
+    // W193 moves it again, to `3f23c8da`, and the cause is one content edit:
+    // `prevalence` authored on four of the six species in `species.json`. The
+    // digest is over the preimage, so a field added to four records changes it
+    // exactly as a new node would — which is the check working, not a surprise.
+    //
+    // cbcfb32c8fcf886ca381ccb81bed1a0a -> 1f5036f71cd6a1b6e2036c70e32a7530, on this merge. Union for
+    // the sixth time, and for the sixth time neither literal survives: this tree
+    // is the first holding both the signed/vellum preimage above and W193's
+    // `prevalence` field.
+    //
+    // **Unmoved by the `w207/mastery-and-vellum` merge, and that is the finding.**
+    // W207 pinned `3fa982e302f5b191c417d6bce36d1660` here, which is `w200`'s
+    // vellum edit re-keyed against W207's own stack — a literal this tree passed
+    // through two merges ago. Taking its side would have walked the revision
+    // *backwards* while every content file stayed where it was. W207 changes no
+    // file under `packages/content/data` on this tree (`git diff --stat` is
+    // empty), because its only content contribution is that same vellum edit,
+    // already here.
+    //
+    // MEASURED rather than assumed: `node packages/content/bin/validate-content.mjs`
+    // on the merged tree still reports `1f5036f71cd6a1b6e2036c70e32a7530`.
+    // a622452a3b55e38fd902a2d3264b44d7 -> d89d4eefa457f08c90a25e9f02039675, when W21 gave
+    // each technique an `envelope` (§2.1) — `sound-design.md` §4.1's shape over
+    // the duration an acquisition takes — and added §5.2's two unease constants
+    // to `god-constant.json`. The envelope belongs in the preimage more squarely
+    // than most: it is the only thing in the project that makes the five
+    // techniques mechanically different from one another, so two universes
+    // disagreeing about a curve would be researching at different speeds, on
+    // different trajectories, while their revisions agreed they were
+    // compatible. The unease constants belong for the reason the rest of the
+    // god table does — two universes disagreeing about what changing the law
+    // costs are playing different games.
+    //
+    // 1f5036f71cd6a1b6e2036c70e32a7530 -> c0276a360357ff2e4e27932552e2a3e0, on
+    // the W21 merge, and neither side's literal survives for the eighth time.
+    // `1f5036f7` is a digest over a preimage with no technique envelope and no
+    // unease constants; `d89d4eef` over one with both and without the signed
+    // magnitudes, the vellum yield, the seventeenth god cost or `prevalence`.
+    // MEASURED: `node packages/content/bin/validate-content.mjs` reports 74 god
+    // constants (72 + `unease-bars` + `unease-step`) and this digest.
+    // ---- And a fourth confluence, which is why the literal moved again ----
+    //
+    // Everything above describes `main`'s history. What follows arrived on
+    // `w182/raid-seam`, and the merge of the two is what this literal is a
+    // digest over. Neither side's value survives, for the same reason as every
+    // paragraph above: a digest over a union is a third value.
+    //
+    // d4e3047657b4fa8a1a74e1d52f9f5c86 -> fd8ce7ef5fded0b0a23fc85f8006f595, when `main` met
+    // `w37/raid-playable` and took the fourteen magnitudes that make
+    // `raid-engagement.md` §§1-3 playable: eleven in `raid-constant.json` —
+    // where §2's two phase boundaries fall, what each of §3's six raid verbs
+    // costs and does, the concealment ceiling, and the Vis a raiding party
+    // carries — plus `mid-raid-revert-multiplier` in `god-constant.json`, which
+    // prices §1's walk-back of a wartime edict. They are in the preimage for the
+    // reason every other raid and god magnitude is: two universes that disagreed
+    // about when the defender stops having verbs, or about what unmaking a
+    // wartime edict costs, would be playing two different games while their
+    // revisions agreed they were compatible. Nothing existing changed a byte.
+    //
+    // Neither literal survives, for the third time in this list. The branch
+    // asserted 74e73627 over a preimage that had W17's autonomy weights and the
+    // raid magnitudes but neither the material split, the summon cap, the two
+    // `node.json` passes, the grant budget nor `apply-magic`'s two scalars;
+    // `main` asserted d4e30476 over a preimage holding all of those and none of
+    // the raid magnitudes. This tree is the first holding both, and the value
+    // below was **measured from this merged tree** rather than carried from
+    // either side.
+    //
+    // c0276a360357ff2e4e27932552e2a3e0 -> 3e2d1727655f3e0eab9f910430c5a56c, on
+    // the `design/raid-engagement` merge. Ninth union in this list. 75 god
+    // constants now: main's 72, W21's `unease-bars`/`unease-step`, and this
+    // branch's `mid-raid-revert-multiplier` — plus the eleven raid constants.
+    // MEASURED on the merged tree.
+    // the raid magnitudes. This tree is the first holding both, and fd8ce7ef
+    // was measured from that merged tree.
+    //
+    // **And it moves again here, deliberately.** Two raid constants were
+    // renamed, re-valued and re-united: `withdraw-stability-margin` (409,600
+    // raw) became `withdraw-after-ticks` (56 ticks) and
+    // `resolution-stability-margin` (614,400 raw) became
+    // `resolution-onset-ticks` (96 ticks). Both were thresholds on *remaining
+    // portal stability* against a portal that outlives the raid by a factor of
+    // twenty, so neither could ever fire — 0 of 169 raiders withdrew across 97
+    // raids, and resolution was a phase no raid entered. An id, a value and a
+    // unit are all in the preimage, which is exactly right: two universes that
+    // disagreed about when a raider runs for the door would be playing
+    // different games while their revisions claimed compatibility.
+    //
+    // 3e2d1727655f3e0eab9f910430c5a56c -> 206e51013c0105332269cca96ff35643 on
+    // the `w182/raid-seam` merge — the two renamed withdrawal constants above,
+    // over a preimage that also holds W21's unease pair and the mid-raid revert
+    // multiplier. Tenth union; MEASURED, not carried from either side.
+    // a622452a3b55e38fd902a2d3264b44d7 -> 5be755471cd46620625b01b77d2888a7, when
+    // W24 added `libraryUpkeepMultiplier` to every `territory.json` record (§2.7)
+    // — what a library standing in that kind of country pays to stay standing.
+    // It is in the preimage for the reason `capacityPerLandUnit` is: two
+    // universes that disagreed about what the weather does to parchment would
+    // lose different books while their revisions agreed they were compatible.
+    // No existing value changed; five records each gained one field.
+    //
+    // Union again, and this is the merge that produced the literal below:
+    // `main`'s chain met `w24/university-siting`'s `libraryUpkeepMultiplier` on
+    // every territory record — what a library standing in this kind of country
+    // pays to stay standing. In the preimage for the reason every other
+    // territory field is: two universes disagreeing about what a written record
+    // costs in the highland waste would keep different libraries while their
+    // revisions agreed they were compatible.
+    //
+    // Neither side's literal is a digest over a preimage holding both, so the
+    // value below was **re-measured from the merged tree**.
+    //
+    // 206e51013c0105332269cca96ff35643 -> 869b4e45c7852df1f2c7e705e032a8f6 on
+    // the W24 merge — `libraryUpkeepMultiplier` on all five territory records,
+    // over a preimage that also holds the unease pair, the revert multiplier and
+    // the two renamed withdrawal constants. Eleventh union; MEASURED.
+    //
+    // 8a20c0a64242b6322283d439724f6993 / 0dfdd5efc2c6dad07bd486a7d80c851d ->
+    // 5a8761689881767dafd7aa7507c69a7b, when this branch merged the `main` that
+    // had meanwhile landed the seventeenth god cost and anti-requisites. Union,
+    // and for the same reason the list has already given four times: neither
+    // side's literal is a digest over a preimage holding both. `8a20c0a6` is a
+    // digest over a preimage carrying `knowledge-corrupt` and
+    // `pn-the-wrong-true-name` and knowing nothing of action 16 or the exclusion
+    // pair; `0dfdd5ef` is a digest over one carrying both of those and knowing
+    // nothing of corruption. This tree is the first one holding all three, so a
+    // new value is what a digest over the union is supposed to produce — not a
+    // disagreement being settled.
+    //
+    // MEASURED on the merged tree rather than reasoned about: `npm run
+    // check:content` on this commit prints `data: contentRevision
+    // 5a8761689881767dafd7aa7507c69a7b`. That is the whole method, and it is the
+    // only method — a revision literal that was written rather than read is the
+    // one thing on this list nothing downstream can catch, because every
+    // consumer compares against it rather than deriving it.
+    //
+    // 869b4e45c7852df1f2c7e705e032a8f6 -> 24399a8680be722f65dd24a57898717a on
+    // the `w190/scribing-fidelity` merge, and the twelfth and last union in this
+    // group. MEASURED with `npm run check:content`, which is the method the
+    // paragraph above insists on and the only one that catches a literal that
+    // was written rather than read.
+    // RECOMPUTED AGAIN on the merge of `integration/group-e` into
+    // `integration/all-branches`, 2026-08-16 — the tenth union in this list and
+    // the same reason as the nine above it. This side reached the merge
+    // asserting `67caa64523465b3fe1b16760400a028a`, over a preimage holding
+    // Group B's `w80` repricing and Group F's node effects and god costs;
+    // `integration/group-e` asserted `24399a8680be722f65dd24a57898717a`, over
+    // one holding W200's vellum yield, W193's `prevalence`, W21's envelopes and
+    // unease pair, the raid magnitudes and W24's `libraryUpkeepMultiplier` —
+    // and neither is a digest over a set holding the other's. Read from
+    // `node packages/content/bin/validate-content.mjs` on the merged tree and
+    // then confirmed by this test.
+    expect(registry.contentRevision).toBe('8e55225f332353298cb465c9bfceb4ba');
   });
 
   it('is stable across loads of identical content', () => {

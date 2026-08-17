@@ -347,6 +347,14 @@ describe('time to tier, by species', () => {
     const human = interval('human');
     const elf = interval('elf');
     const draconic = interval('draconic');
+    //
+    // **W21's side of this conflict is not merged.** It re-asserts `orc.high >=
+    // elf.low`, `orc.low < elf.low`, `draconic.low <= human.low` and three
+    // pairwise-overlap claims — every one of which `main` retired after
+    // re-rolling twelve independent seed sets (`species-separation-spread`).
+    // W21 predates that sweep. Merging its hunk would restore four separations
+    // measured to be seed artifacts, which is the precise failure the sweep was
+    // built to prevent.
     // `orc` is deliberately not bound. Both claims that read it — `orc.high <
     // elf.low` at 11/12 and `human.high < orc.low` at 0/12 — are retired, and
     // leaving the binding would invite the next author to reach for it.

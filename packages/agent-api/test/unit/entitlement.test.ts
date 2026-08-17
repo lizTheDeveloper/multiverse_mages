@@ -138,13 +138,31 @@ describe('unclassifiedTraits (step 2)', () => {
    * The inventory's headline number, asserted rather than described. If this
    * moves, `docs/design/observable-trait-inventory.md` is stale and its date and
    * ref line are lying about the tree.
+   *
+   * **108 at `be446a6` → 113 on `w182/raid-seam`.** The five are
+   * `mid-raid-change`'s, which arrived with `w37/raid-playable` on a branch this
+   * inventory had never seen; the merged tree is the first on which the
+   * component and the classifier coexist. All five are `not-yet-decided`, so the
+   * undecided count below moves by the same five and no existing row was
+   * reclassified to absorb them.
    */
-  it('covers the 108 traits the inventory counted at be446a6', () => {
+  it('covers the 120 traits: 108 at be446a6, plus five merged components', () => {
     let traits = 0;
     for (const spec of [...WORLD_COMPONENTS, ...ENGAGEMENT_COMPONENTS]) {
       traits += Object.keys(spec.fields).length;
     }
-    expect(traits).toBe(108);
+    // 108 at `be446a6`, plus every component Group E merged: `bar-phase`'s two
+    // (W21), `mid-raid-change`'s five (raid-engagement), `territory-holding`'s
+    // two and `university-site`'s one (W24), and `knowledge-fidelity`'s two
+    // (W190). 108 + 2 + 5 + 3 + 2 = 120. The count is the point of the test, so
+    // it moves with the component set rather than being loosened to `>=`;
+    // `docs/design/observable-trait-inventory.md` is the document this is
+    // keeping honest and it now reads seven traits short.
+    //
+    // W182 reached 113 on its own tree — the same five `mid-raid-change` fields
+    // over a base with no `bar-phase`. 115 is the count of the union, and
+    // neither branch's literal is.
+    expect(traits).toBe(120);
 
     let classified = 0;
     for (const rows of Object.values(TRAIT_CLASSIFICATION)) {
@@ -168,7 +186,11 @@ describe('unclassifiedTraits (step 2)', () => {
         byReason.set(reason, (byReason.get(reason) ?? 0) + 1);
       }
     }
-    expect(byReason.get('not-yet-decided')).toBe(70);
+    // 70 + the nine above less the two `knowledge-fidelity` W190 already
+    // counted, all `undecided()` for
+    // `grant-budget`'s reason: they price the god's next constitutional act, or
+    // the unmaking of one, and the agent is subject to them without seeing them.
+    expect(byReason.get('not-yet-decided')).toBe(82);
     expect(byReason.get('internal-bookkeeping')).toBe(6);
     // Unused until there is an opponent-facing projection to hide anything
     // from. Asserted at zero so that the day it stops being zero is a diff.

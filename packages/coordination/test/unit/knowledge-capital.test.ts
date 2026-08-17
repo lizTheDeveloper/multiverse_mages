@@ -105,13 +105,32 @@ interface Academy {
 }
 
 /** A completed university with an empty library, and nothing on its staff. */
+/**
+ * An academy that **enrols nobody**, and the zero is W193's doing.
+ *
+ * This file's claim is *"a deep library makes the mages who work in it faster"*,
+ * and its fixture is two academies identical except for which one the founding
+ * mages are affiliated with. Since W193, that affiliation also decides which
+ * academies have a **curriculum** — faculty are one of the two halves of one —
+ * and therefore which of them can seat a student at all. The scholarly arm ended
+ * up with 64 seats and the bare arm with 128, so the two arms differed in their
+ * mage *population* (76 against 345) rather than in their library depth, and the
+ * comparison stopped being a comparison.
+ *
+ * `capacity: 0` restores like-for-like by taking enrolment out of this fixture
+ * entirely: both arms run the founding faculty against two shelves, which is
+ * what the test was written to measure. It is a **narrowing**, stated here
+ * rather than hidden, and the thing it gives up — whether a deep library
+ * graduates more students — is a claim this file never made and which
+ * `student-enrolment.test.ts` makes directly.
+ */
 function foundAcademy(state: SimState): Academy {
   const library = state.entities.create();
   attachRecord(state, LIBRARY, library, { foundedTick: 0 });
   const university = state.entities.create();
   attachRecord(state, UNIVERSITY, university, {
     libraryId: library,
-    capacity: 64,
+    capacity: 0,
     buildProgress: FP_ONE,
   });
   return { university, library };

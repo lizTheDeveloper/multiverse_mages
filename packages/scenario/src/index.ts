@@ -56,6 +56,16 @@ export {
   worldDeps,
 } from './content-set.js';
 
+export type { RaidRecord, RaidSystemDeps } from './raids.js';
+export { raidSystem } from './raids.js';
+
+export type { DirectiveLog, EngagementPolicy, TranslatedDirective } from './raid-directives.js';
+export {
+  admitsRuleChange,
+  applySubmittedDirectives,
+  runRaidWithPolicy,
+} from './raid-directives.js';
+
 export type { AnnihilationSite } from './annihilation.js';
 export { AnnihilationRecorder } from './annihilation.js';
 
@@ -89,6 +99,7 @@ export {
   REFERENCE_FACTOR_IDS,
   REFERENCE_SCENARIO_ID,
   TRADITION_FACTOR_ID,
+  academySiteKindOf,
   buildReferenceState,
   referenceContent,
   referenceOptions,

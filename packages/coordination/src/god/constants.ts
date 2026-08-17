@@ -78,6 +78,22 @@ export interface GodConstants {
   readonly favorCapPerTier: Fp;
   readonly hysteresisDecayTicks: number;
   readonly hysteresisStep: Fp;
+  /**
+   * `raid-engagement.md` §1: what unmaking a mid-raid ruleset change costs, as
+   * a multiple of the larger of the ordinary price and what the change cost
+   * inside the raid.
+   *
+   * Distinct from {@link hysteresisStep} even though both make repeated policy
+   * changes expensive, and the distinction is the design's: hysteresis prices
+   * *churn*, decays with time, and applies to everybody. This prices exactly one
+   * thing — walking back a commitment made under fire — never decays, and is the
+   * only favor drain in the game attached to a decision rather than to existing.
+   */
+  readonly midRaidRevertMultiplier: Fp;
+
+  // The timing rule. `sound-design.md` §5.2's eight bars — see `timing.ts`.
+  readonly uneaseBars: number;
+  readonly uneaseStep: Fp;
 
   // Upheaval.
   readonly upheavalTicks: number;
@@ -258,6 +274,10 @@ export function resolveGodConstants(registry: ContentRegistry): GodConstants {
     favorCapPerTier: value('favor-cap-per-tier'),
     hysteresisDecayTicks: value('hysteresis-decay-ticks'),
     hysteresisStep: value('hysteresis-step'),
+    midRaidRevertMultiplier: value('mid-raid-revert-multiplier'),
+
+    uneaseBars: value('unease-bars'),
+    uneaseStep: value('unease-step'),
 
     upheavalTicks: value('upheaval-ticks'),
     upheavalShockFloor: value('upheaval-shock-floor'),

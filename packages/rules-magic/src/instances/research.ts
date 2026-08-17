@@ -76,8 +76,8 @@
 import type { ContentId, Fp } from '@mm/content';
 import type { Handle, Ruleset, Tick } from '@mm/state';
 import { LOCATION_KIND, permits } from '@mm/state';
-import type { RediscoveryClampCounter } from '@mm/primitives';
-import { effectiveRediscoveryMultiplier } from '@mm/primitives';
+import type { EffortEnvelope, RediscoveryClampCounter } from '@mm/primitives';
+import { effectiveRediscoveryMultiplier, shapedEffort } from '@mm/primitives';
 import { FP_ONE, RNG_STREAM, div, mul, nextBounded } from '@mm/sim-core';
 
 import type { AcquirePolicy } from '../traditions/acquire.js';
@@ -163,6 +163,24 @@ export interface ResearchInputs {
    * is what `store: standard` resolves to.
    */
   readonly store?: PersonalStore;
+  /**
+   * The technique's envelope — `sound-design.md` §4.1's shape over this
+   * acquisition's own duration.
+   *
+   * Optional, and **omitting it is exactly the behaviour this file had before
+   * envelopes existed**: `shapedEffort` returns the effort unchanged, which is
+   * also what Rego's flat curve returns. That is what makes threading a
+   * per-technique shape through the acquisition path safe to do incrementally —
+   * a caller that has not resolved a technique is not silently given someone
+   * else's curve.
+   *
+   * It is deliberately *not* a fifth tradition hook. Vision §4a fixes the hooks
+   * at four and sound-design §4.4 says a tradition recolours cast and cost; the
+   * curve is technique content, and it composes with {@link
+   * ResearchInputs.acquire} multiplicatively — `acquire` prices the node, the
+   * curve redistributes effort across that price.
+   */
+  readonly envelope?: EffortEnvelope;
 }
 
 export interface ResearchOutcome {
@@ -329,7 +347,20 @@ export function research(inputs: ResearchInputs): ResearchOutcome {
   //
   // Unreachable for any content that could be authored before this change: with
   // every magnitude positive, `(1 + Σ)` was never below `fp(1024)`.
-  const effort = effectiveResearchRate(inputs.learnRate, inputs.researchRate) <= 0 ? 0 : inputs.effort;
+  // W21's envelope shaping composes *inside* the zero guard rather than
+  // replacing it, and the order is load-bearing in both directions. The guard is
+  // outermost because a zero rate means the month produces nothing whatever the
+  // curve says; the shaping is applied to the surviving effort because a curve
+  // that ran after the jitter would let a technique change how much randomness a
+  // month carries, which is a different claim than the one §4.1 makes.
+  //
+  // Shaped against the progress standing at the *start* of the step, because
+  // that is the position the month is worked from. Using the post-step figure
+  // would make a slot boundary depend on the size of the step that crossed it.
+  const effort =
+    effectiveResearchRate(inputs.learnRate, inputs.researchRate) <= 0
+      ? 0
+      : shapedEffort(inputs.envelope, inputs.effort, inputs.progress, required);
   const progress = inputs.progress + mul(effort, FP_ONE + jitter);
 
   if (progress < required) {

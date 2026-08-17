@@ -40,25 +40,34 @@ import {
 import {
   BLESSING,
   EFFORT_PROGRESS,
+  BAR_PHASE,
   ERA_EVALUATION,
   GOAL_COMMITMENT,
   GOD_STATE,
   GRANT_BUDGET,
+  KNOWLEDGE_FIDELITY,
   MAGE,
   MATERIAL_STOCK,
+  TERRITORY_HOLDING,
   UNIVERSE,
+  UNIVERSITY_SITE,
   UPHEAVAL,
+  WORLD_COMPONENTS,
   WORLD_SCHEMA_VERSION,
   addEffortProgress,
   addGoalCommitment,
   addGodAgencyState,
   addGrantBudget,
+  addMidRaidChange,
+  addTerritorySiting,
+  addKnowledgeFidelity,
   attachRecord,
   collectRecords,
   componentOf,
   defineWorldStateSchema,
   findUniverse,
   foundingGrantsRemaining,
+  MID_RAID_CHANGE,
   loadWorldSnapshot,
   migrateWorldEnvelope,
   readRecord,
@@ -80,6 +89,9 @@ function envelopeWithout(...names: readonly string[]): SnapshotEnvelope {
 
 /** The four sections `god-agency` appended, named once. */
 const GOD_SECTIONS = [GOD_STATE.name, BLESSING.name, UPHEAVAL.name, ERA_EVALUATION.name];
+
+/** The two sections `university-siting` appended, named once. */
+const SITING_SECTIONS = [TERRITORY_HOLDING.name, UNIVERSITY_SITE.name];
 
 /**
  * A `materials` value to give a synthetic pre-revision-5 `universe` section.
@@ -133,30 +145,50 @@ function withLegacyMaterialsField(
 /** The world as a build that had never heard of goal commitments saw it. */
 function revisionOneEnvelope(): SnapshotEnvelope {
   return withLegacyMaterialsField(
-    envelopeWithout(GOAL_COMMITMENT.name, EFFORT_PROGRESS.name, MATERIAL_STOCK.name, ...GOD_SECTIONS, GRANT_BUDGET.name),
+    envelopeWithout(GOAL_COMMITMENT.name, EFFORT_PROGRESS.name, MATERIAL_STOCK.name, ...GOD_SECTIONS, GRANT_BUDGET.name, BAR_PHASE.name, MID_RAID_CHANGE.name, ...SITING_SECTIONS, KNOWLEDGE_FIDELITY.name),
   );
 }
 
 /** The world as the build that added the goal commitment, and nothing after it, saw it. */
 function revisionTwoEnvelope(): SnapshotEnvelope {
   return withLegacyMaterialsField(
-    envelopeWithout(EFFORT_PROGRESS.name, MATERIAL_STOCK.name, ...GOD_SECTIONS, GRANT_BUDGET.name),
+    envelopeWithout(EFFORT_PROGRESS.name, MATERIAL_STOCK.name, ...GOD_SECTIONS, GRANT_BUDGET.name, BAR_PHASE.name, MID_RAID_CHANGE.name, ...SITING_SECTIONS, KNOWLEDGE_FIDELITY.name),
   );
 }
 
 /** The world as the last build before the god had verbs saw it. */
 function revisionThreeEnvelope(): SnapshotEnvelope {
-  return withLegacyMaterialsField(envelopeWithout(MATERIAL_STOCK.name, ...GOD_SECTIONS, GRANT_BUDGET.name));
+  return withLegacyMaterialsField(envelopeWithout(MATERIAL_STOCK.name, ...GOD_SECTIONS, GRANT_BUDGET.name, BAR_PHASE.name, MID_RAID_CHANGE.name, ...SITING_SECTIONS, KNOWLEDGE_FIDELITY.name));
 }
 
 /** The world as the last build before the economy differentiated into kinds saw it. */
 function revisionFourEnvelope(materialsValue: number = LEGACY_MATERIALS_VALUE): SnapshotEnvelope {
-  return withLegacyMaterialsField(envelopeWithout(MATERIAL_STOCK.name, GRANT_BUDGET.name), materialsValue);
+  return withLegacyMaterialsField(envelopeWithout(MATERIAL_STOCK.name, GRANT_BUDGET.name, BAR_PHASE.name, MID_RAID_CHANGE.name, ...SITING_SECTIONS, KNOWLEDGE_FIDELITY.name), materialsValue);
 }
 
 /** The world as the last build whose founding grants were unlimited saw it. */
 function revisionFiveEnvelope(): SnapshotEnvelope {
-  return envelopeWithout(GRANT_BUDGET.name);
+  return envelopeWithout(GRANT_BUDGET.name, BAR_PHASE.name, MID_RAID_CHANGE.name, ...SITING_SECTIONS, KNOWLEDGE_FIDELITY.name);
+}
+
+/** The world as the last build before the god's law had a clock saw it. */
+function revisionSixEnvelope(): SnapshotEnvelope {
+  return envelopeWithout(BAR_PHASE.name, MID_RAID_CHANGE.name, ...SITING_SECTIONS, KNOWLEDGE_FIDELITY.name);
+}
+
+/** The world as the last build that believed a raid was frozen policy saw it. */
+function revisionEightEnvelope(): SnapshotEnvelope {
+  return envelopeWithout(MID_RAID_CHANGE.name, ...SITING_SECTIONS, KNOWLEDGE_FIDELITY.name);
+}
+
+/** The world as the last build in which a university stood nowhere saw it. */
+function revisionNineEnvelope(): SnapshotEnvelope {
+  return envelopeWithout(...SITING_SECTIONS, KNOWLEDGE_FIDELITY.name);
+}
+
+/** The world as the last build before scribing fidelity saw it. */
+function revisionTenEnvelope(): SnapshotEnvelope {
+  return envelopeWithout(KNOWLEDGE_FIDELITY.name);
 }
 
 describe('the world-schema revision is read off the snapshot itself', () => {
@@ -166,6 +198,12 @@ describe('the world-schema revision is read off the snapshot itself', () => {
     expect(worldSchemaVersionOf(revisionThreeEnvelope())).toBe(3);
     expect(worldSchemaVersionOf(revisionFourEnvelope())).toBe(4);
     expect(worldSchemaVersionOf(revisionFiveEnvelope())).toBe(5);
+    expect(worldSchemaVersionOf(revisionSixEnvelope())).toBe(6);
+    // No revision-7 arm: 7 is reserved for `w247/material-economy-build`, whose
+    // marker is a field rather than a component. See `migrations.ts`.
+    expect(worldSchemaVersionOf(revisionEightEnvelope())).toBe(8);
+    expect(worldSchemaVersionOf(revisionNineEnvelope())).toBe(9);
+    expect(worldSchemaVersionOf(revisionTenEnvelope())).toBe(10);
     expect(worldSchemaVersionOf(stateToEnvelope(populatedWorld().state))).toBe(
       WORLD_SCHEMA_VERSION,
     );
@@ -178,7 +216,7 @@ describe('the world-schema revision is read off the snapshot itself', () => {
     // hash in the project and fails the fixtures with a version error rather
     // than a behaviour diff.
     expect(SNAPSHOT_VERSION).toBe(1);
-    expect(WORLD_SCHEMA_VERSION).toBe(6);
+    expect(WORLD_SCHEMA_VERSION).toBe(11);
   });
 });
 
@@ -220,7 +258,9 @@ describe('migrating a revision-1 world snapshot forward', () => {
     expect(carried).toContain(GOAL_COMMITMENT.name);
     expect(carried).toContain(EFFORT_PROGRESS.name);
     for (const name of GOD_SECTIONS) expect(carried).toContain(name);
+    expect(carried).toContain(BAR_PHASE.name);
     expect(carried).toContain(MATERIAL_STOCK.name);
+    expect(carried).toContain(MID_RAID_CHANGE.name);
 
     // And the rewrite actually ran: `universe` no longer carries `materials`,
     // which is the one part of this walk that is not "append an empty
@@ -228,6 +268,8 @@ describe('migrating a revision-1 world snapshot forward', () => {
     // wrong without any test noticing.
     const universe = walked.components.find((component) => component.name === UNIVERSE.name);
     expect(universe?.fields.map((field) => field.name)).not.toContain('materials');
+
+    for (const name of SITING_SECTIONS) expect(carried).toContain(name);
   });
 
   it('returns an already-current envelope untouched, as the same object', () => {
@@ -517,6 +559,91 @@ describe('migrating a revision-5 world snapshot forward', () => {
   });
 });
 
+describe('migrating a revision-6 world snapshot forward', () => {
+  it('appends mid-raid-change as an empty section, in last position', () => {
+    const before = revisionSixEnvelope();
+    const after = addMidRaidChange.migrate(before);
+    const appended = after.components.slice(before.components.length);
+
+    expect(appended.map((component) => component.name)).toEqual([MID_RAID_CHANGE.name]);
+    expect(appended[0]?.slots.length).toBe(0);
+    expect(appended[0]?.values.length).toBe(0);
+    expect(appended[0]?.fields.map((field) => field.name)).toEqual(
+      Object.keys(MID_RAID_CHANGE.fields),
+    );
+  });
+});
+
+describe('migrating a revision-9 world snapshot forward', () => {
+  it("appends university-siting's two sections, in WORLD_COMPONENTS order, both empty", () => {
+    const before = revisionNineEnvelope();
+    const after = addTerritorySiting.migrate(before);
+    const appended = after.components.slice(before.components.length);
+
+    expect(appended.map((component) => component.name)).toEqual(SITING_SECTIONS);
+    for (const component of appended) {
+      expect(component.slots.length).toBe(0);
+      expect(component.values.length).toBe(0);
+    }
+    expect(appended[0]?.fields.map((field) => field.name)).toEqual(
+      Object.keys(TERRITORY_HOLDING.fields),
+    );
+  });
+
+  it('leaves the container format version exactly where it found it', () => {
+    const before = revisionNineEnvelope();
+    expect(addTerritorySiting.migrate(before).version).toBe(before.version);
+    expect(addTerritorySiting.migrate(before).version).toBe(SNAPSHOT_VERSION);
+  });
+
+  it('restores a pre-raid-engagement save owing no surcharge on anything', () => {
+    // Empty rather than synthesised, and here the distinction is a bill. Before
+    // this revision the rule was that a raid in progress was frozen policy, so
+    // no save in existence holds a change this section could describe. A zeroed
+    // row would charge a god four times over for an edict she issued in
+    // peacetime.
+    const migrated = loadWorldSnapshot(
+      encodeSnapshot(revisionSixEnvelope()),
+      defineWorldStateSchema(),
+    );
+    expect(componentOf(migrated, MID_RAID_CHANGE).size).toBe(0);
+  });
+
+  it('does not mutate the envelope it was given', () => {
+    const before = revisionNineEnvelope();
+    const componentCount = before.components.length;
+    addTerritorySiting.migrate(before);
+    expect(before.components).toHaveLength(componentCount);
+  });
+
+  it('restores a pre-siting save holding no ground and standing nowhere', () => {
+    // Empty sections, and for `territory-holding` that is the *load-bearing*
+    // choice rather than the obvious one. A revision-4 save's `K` came from
+    // `territory.json`, so "no holding rows" would starve it if it were read as
+    // "holds nothing" -- and the repair is deliberately not to synthesise the
+    // shipped rows here, because this package takes only types from `content`
+    // and a frozen table could not describe a save written against a different
+    // content set. Absent rows mean "not yet materialized", the world step
+    // materializes the endowment on the first tick that finds none, and a
+    // universe that has genuinely lost its ground carries rows saying zero.
+    const migrated = loadWorldSnapshot(
+      encodeSnapshot(revisionNineEnvelope()),
+      defineWorldStateSchema(),
+    );
+    expect(componentOf(migrated, TERRITORY_HOLDING).size).toBe(0);
+    expect(componentOf(migrated, UNIVERSITY_SITE).size).toBe(0);
+  });
+
+  it('keeps the god state a revision-4 save did record', () => {
+    const { universe } = populatedWorld();
+    const migrated = loadWorldSnapshot(
+      encodeSnapshot(revisionNineEnvelope()),
+      defineWorldStateSchema(),
+    );
+    expect(componentOf(migrated, GOD_STATE).has(universe)).toBe(true);
+  });
+});
+
 describe('an older save loads into a current world', () => {
   it('loads, and nobody in it is committed to anything or part-way through anything', () => {
     const bytes = encodeSnapshot(revisionOneEnvelope());
@@ -531,8 +658,12 @@ describe('an older save loads into a current world', () => {
   });
 
   it('re-serializes to exactly the bytes a fresh save with neither makes', () => {
-    const { state, universe, mage, effort } = populatedWorld();
+    const { state, universe, mage, effort, instance } = populatedWorld();
     componentOf(state, GOAL_COMMITMENT).remove(mage);
+    // And the fidelity row, for the same reason as the god sections below: the
+    // revision-1 envelope has no `knowledge-fidelity` section, so the fresh
+    // save it is compared against must carry no `knowledge-fidelity` row.
+    componentOf(state, KNOWLEDGE_FIDELITY).remove(instance);
     // The row, not the entity. Both sides of the comparison come from the same
     // fixture and therefore from the same entity table; destroying one here
     // would be comparing two different allocation histories.
@@ -550,6 +681,10 @@ describe('an older save loads into a current world', () => {
       BLESSING,
       UPHEAVAL,
       ERA_EVALUATION,
+      BAR_PHASE,
+      MID_RAID_CHANGE,
+      TERRITORY_HOLDING,
+      UNIVERSITY_SITE,
     ];
     for (const spec of godSpecs) {
       const store = componentOf(state, spec);
@@ -597,11 +732,78 @@ describe('an older save loads into a current world', () => {
       [encodeSnapshot(revisionThreeEnvelope()), /god-state/],
       [encodeSnapshot(revisionFourEnvelope()), /material-stock/],
       [encodeSnapshot(revisionFiveEnvelope()), /grant-budget/],
+      [encodeSnapshot(revisionSixEnvelope()), /bar-phase/],
+      [encodeSnapshot(revisionEightEnvelope()), /mid-raid-change/],
+      [encodeSnapshot(revisionNineEnvelope()), /territory-holding/],
+      [encodeSnapshot(revisionTenEnvelope()), /knowledge-fidelity/],
     ] as const) {
       expect(() => loadWorldSnapshot(bytes, defineWorldStateSchema())).not.toThrow();
       expect(() => envelopeToState(decodeSnapshot(bytes), defineWorldStateSchema())).toThrow(
         missing,
       );
     }
+  });
+});
+
+describe('migrating a revision-6 world snapshot forward', () => {
+  it('appends knowledge-fidelity as an empty section, in last position', () => {
+    const before = revisionSixEnvelope();
+    const after = addKnowledgeFidelity.migrate(before);
+
+    const appended = after.components[after.components.length - 1];
+    expect(appended?.name).toBe(KNOWLEDGE_FIDELITY.name);
+    expect(appended?.slots.length).toBe(0);
+    expect(appended?.values.length).toBe(0);
+    expect(appended?.fields.map((field) => field.name)).toEqual(
+      Object.keys(KNOWLEDGE_FIDELITY.fields),
+    );
+  });
+
+  it('appends it last, which is where WORLD_COMPONENTS puts it', () => {
+    // The position, not merely the presence. Section order in an envelope is
+    // `WORLD_COMPONENTS` order, so a component declared anywhere but last would
+    // line every revision-6 save's sections up against the wrong layouts -- and
+    // the failure would not be a refusal, it would be one component's values
+    // read as another's. Asserted against the declaration itself rather than
+    // against a literal index, so it keeps holding at revision 11.
+    //
+    // The second assertion named `grant-budget` because, on W190's own branch,
+    // that *was* the component before this one. Four more have been appended
+    // since (`bar-phase`, `mid-raid-change`, and siting's two), so the
+    // predecessor is now `university-site`. Only the **last** position is a
+    // property of this component; the identity of its predecessor is not, so
+    // that half is dropped rather than re-pinned to a name the next append would
+    // move again.
+    const declared = WORLD_COMPONENTS.map((spec) => spec.name);
+    expect(declared[declared.length - 1]).toBe(KNOWLEDGE_FIDELITY.name);
+  });
+
+  it('leaves the container format version exactly where it found it', () => {
+    const before = revisionTenEnvelope();
+    expect(addKnowledgeFidelity.migrate(before).version).toBe(before.version);
+    expect(addKnowledgeFidelity.migrate(before).version).toBe(SNAPSHOT_VERSION);
+  });
+
+  it('does not mutate the envelope it was given', () => {
+    const before = revisionSixEnvelope();
+    const componentCount = before.components.length;
+    addKnowledgeFidelity.migrate(before);
+    expect(before.components).toHaveLength(componentCount);
+  });
+
+  it('restores a pre-fidelity save with every book fresh and sound', () => {
+    // Empty, and the emptiness is the whole repair. Every reader of this
+    // component treats an absent row as copy generation zero and `sound`, which
+    // is exactly what a save written before scribing fidelity recorded: nothing.
+    //
+    // Synthesising a distance from `acquiredTick` was the alternative and there
+    // is no honest rule for it -- the old state does not record what a book was
+    // copied *from*, so any number chosen would be a fidelity loss the save
+    // never suffered, applied retroactively to a library the player already has.
+    const migrated = loadWorldSnapshot(
+      encodeSnapshot(revisionSixEnvelope()),
+      defineWorldStateSchema(),
+    );
+    expect(componentOf(migrated, KNOWLEDGE_FIDELITY).size).toBe(0);
   });
 });

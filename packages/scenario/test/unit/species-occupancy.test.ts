@@ -122,6 +122,15 @@ describe('the founding position', () => {
     // count-only reading of this founding position is indistinguishable from
     // six species crowded into one cell, and those are different games.
     const sample = runTo(0);
+    // **Re-derived on `integration/group-e`, 2026-08-16, and the paragraph
+    // directly above is the fourth reading in a row to be overturned.** Gnome is
+    // three cells short again — `perdo-limen`, `perdo-mentem`, `perdo-terram` —
+    // so W200's "both remaining gaps are Terram" does not hold on the merged
+    // tree, and the Perdo-gap count has now gone 2, 3, 2, 1, 3 across five
+    // measurements. Whatever else this pin is, it is not a finding: it is a
+    // handle-keyed re-roll reported at four decimal places of confidence, and
+    // the block's own instruction — *"the next agent to see it move should not
+    // read the movement as a defect"* — is the durable part.
     const cellName = new Map(content.registry.cells.map((e) => [e.contentId, e.record.id]));
     expect(
       sample.species.map((entry) => [
@@ -360,6 +369,22 @@ describe('twenty world years in', () => {
     // reading is "gnome is short, and disproportionately short in Perdo"; the
     // exact membership is a pin, not a finding, and the next agent to see it
     // move should not read the movement as a defect.
+    //
+    // **Re-derived again on W200's merge with `main` (245e04f1), 2026-08-14,
+    // and the paragraph above is now the third reading in a row to be
+    // overturned.** Gnome picked up Perdo Mentem and is two cells short, not
+    // three: `perdo-terram` and `rego-terram`. So the shortfall is no longer
+    // disproportionately Perdo at all — **both remaining gaps are Terram**, and
+    // the count of Perdo gaps has gone 2, 3, 2, 1 across four measurements.
+    //
+    // The block above predicted exactly this and said what to do about it: *"the
+    // exact membership is a pin, not a finding, and the next agent to see it
+    // move should not read the movement as a defect."* Two cells is a small
+    // enough sample that "gnome is short in Terram" is a hypothesis and not yet
+    // a reading — but it is the first time the two gaps have shared a *form*
+    // rather than a technique, and a species locked out of a form is a different
+    // defect from one that is merely slow. The horizon this samples is twenty
+    // world years; the durable claim remains only "gnome is short".
     const cellName = new Map(content.registry.cells.map((e) => [e.contentId, e.record.id]));
     const held = new Set(bySpecies('gnome').occupiedCellIds.map((id) => cellName.get(id)));
     // Re-pinned 2026-08-14 on the rebase onto `main` (245e04f1): `rego-terram`

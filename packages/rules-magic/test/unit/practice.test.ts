@@ -1,6 +1,5 @@
 /*
- * Multiverse Mages — practice: mastery comes back, at a price, and never in a
- * forbidden cell.
+ * Multiverse Mages — practice: the operation that raises mastery, and its ceiling.
  * Copyright (C) 2026 Ann Kelner
  *
  * This program is free software: you can redistribute it and/or modify it under
@@ -12,226 +11,240 @@
  * SPDX-License-Identifier: AGPL-3.0-or-later
  */
 
-/**
- * The counterweight `decay.ts` named and nobody had written. Four of these are
- * refusals, and the forbidden-cell one is the load-bearing one: without it the
- * god's interdiction becomes reversible by the universe's own labour, which is
- * the recovery `decayedMastery`'s monotonicity clamp exists to close.
- */
-
 import { describe, expect, it } from 'vitest';
 
+import { FP_ONE } from '@mm/sim-core';
 import { LOCATION_KIND } from '@mm/state';
 
 import {
+  DEFAULT_INITIAL_MASTERY,
   DEFAULT_TEACH_THRESHOLD,
   MASTERY_MAX,
-  PRACTICE_COST_PER_TIER,
-  PRACTICE_MASTERY_RESTORE,
+  PRACTICE_CEILING_BASE,
+  PRACTICE_CEILING_PER_TIER,
+  PRACTICE_GAIN_PER_MONTH,
 } from '../../src/instances/constants.js';
-import { decayHeldKnowledge } from '../../src/instances/decay.js';
-import { practice, practiceRequirement } from '../../src/instances/practice.js';
+import { decayedMastery, masteryDecayPerTick } from '../../src/instances/decay.js';
+import type { PracticeInputs } from '../../src/instances/practice.js';
+import { practice, practiceCeiling, practicedMastery } from '../../src/instances/practice.js';
 import { KnowledgeSubsystem } from '../../src/instances/subsystem.js';
+import { teach } from '../../src/instances/teaching.js';
 import {
   HOME_CELL,
   ROOT_NODE,
   TEST_NODE_COUNT,
   interdicting,
   permissiveRuleset,
+  stepRng,
   testCatalog,
   testCells,
   testWorld,
 } from '../support/scenario.js';
 
-const HOLDER = 400;
-const STRANGER = 401;
-const RETENTION = 1024;
+const MAGE = 100;
+const STUDENT = 200;
 
-/** One mage holding one node at a stated mastery. */
-function held(mastery: number): { knowledge: KnowledgeSubsystem; instance: number } {
+/** A mage holding one node at a given mastery, in mind. */
+function fixture(mastery: number, holder = MAGE): KnowledgeSubsystem {
   const knowledge = new KnowledgeSubsystem(testWorld(), TEST_NODE_COUNT);
-  const instance = knowledge.createInstance({
+  knowledge.createInstance({
     nodeId: ROOT_NODE,
     locationKind: LOCATION_KIND.mind,
-    locationId: HOLDER,
+    locationId: holder,
     acquiredTick: 0,
     mastery,
   });
-  return { knowledge, instance };
+  return knowledge;
 }
 
-/** One step of practice by `HOLDER` on `ROOT_NODE`. */
-function step(
+function inputs(
   knowledge: KnowledgeSubsystem,
-  options: {
-    progress?: number;
-    effort?: number;
-    forbidden?: boolean;
-    subject?: number;
-    practiceRate?: number;
-  } = {},
-) {
-  return practice({
+  overrides: Partial<PracticeInputs> = {},
+): PracticeInputs {
+  return {
     knowledge,
     catalog: testCatalog(),
     cells: testCells,
-    ruleset: options.forbidden === true ? interdicting(HOME_CELL) : permissiveRuleset(),
-    subject: options.subject ?? HOLDER,
+    ruleset: permissiveRuleset(),
+    subject: MAGE,
     nodeId: ROOT_NODE,
-    worldTick: 10,
-    progress: options.progress ?? 0,
-    effort: options.effort ?? 0,
-    ...(options.practiceRate === undefined ? {} : { practiceRate: options.practiceRate }),
-  });
+    effort: FP_ONE,
+    // Two tiers of headroom over the fixture's tier-1 node, so the ceiling is
+    // full mastery unless a test says otherwise.
+    depthCeiling: 3,
+    ...overrides,
+  };
 }
 
-describe('practice restores mastery, and it is the only thing that does', () => {
-  it('gives back one quantum when the months are paid', () => {
-    const { knowledge, instance } = held(256);
-    const required = practiceRequirement(testCatalog().node(ROOT_NODE)!);
+describe('practice — the defect it exists to close', () => {
+  it('carries a self-researched node across the teach threshold, which nothing else could', () => {
+    // The exact starting point `research` creates an instance at, and the exact
+    // threshold `teach` refuses below. Before this operation existed the
+    // interval between them was empty: `setMastery`'s only rules-path caller
+    // was the decay sweep and it lowers.
+    const knowledge = fixture(DEFAULT_INITIAL_MASTERY);
+    let months = 0;
+    let mastery = DEFAULT_INITIAL_MASTERY;
+    let crossings = 0;
 
-    const outcome = step(knowledge, { effort: required });
-
-    expect(outcome.completed).toBe(true);
-    expect(outcome.restored).toBe(PRACTICE_MASTERY_RESTORE);
-    expect(knowledge.read(instance).mastery).toBe(256 + PRACTICE_MASTERY_RESTORE);
-  });
-
-  it('changes nothing until the requirement is met', () => {
-    const { knowledge, instance } = held(256);
-    const required = practiceRequirement(testCatalog().node(ROOT_NODE)!);
-
-    const outcome = step(knowledge, { effort: required - 1 });
-
-    expect(outcome.completed).toBe(false);
-    expect(outcome.progress).toBe(required - 1);
-    expect(knowledge.read(instance).mastery).toBe(256);
-  });
-
-  it('carries banked progress across steps, so a project finishes over months', () => {
-    const { knowledge, instance } = held(256);
-    const required = practiceRequirement(testCatalog().node(ROOT_NODE)!);
-    const half = Math.floor(required / 2);
-
-    const first = step(knowledge, { effort: half });
-    expect(first.completed).toBe(false);
-    const second = step(knowledge, { progress: first.progress, effort: required - half });
-
-    expect(second.completed).toBe(true);
-    expect(knowledge.read(instance).mastery).toBe(256 + PRACTICE_MASTERY_RESTORE);
-  });
-
-  it('clamps at full mastery rather than writing above it', () => {
-    const { knowledge, instance } = held(MASTERY_MAX - 1);
-    const required = practiceRequirement(testCatalog().node(ROOT_NODE)!);
-
-    const outcome = step(knowledge, { effort: required });
-
-    expect(outcome.restored).toBe(1);
-    expect(knowledge.read(instance).mastery).toBe(MASTERY_MAX);
-  });
-});
-
-describe('what practice refuses', () => {
-  it('refuses a forbidden cell, so an interdiction cannot be practised away', () => {
-    const { knowledge, instance } = held(64);
-    const required = practiceRequirement(testCatalog().node(ROOT_NODE)!);
-
-    const outcome = step(knowledge, { effort: required * 4, forbidden: true });
-
-    expect(outcome.refusal?.reason).toBe('forbidden-cell');
-    expect(outcome.completed).toBe(false);
-    // The fragment is exactly where dormant decay left it. This is the property
-    // `decay.ts` protects from the other side: recovering means keeping what
-    // survived, not being handed back what was already lost.
-    expect(knowledge.read(instance).mastery).toBe(64);
-  });
-
-  it('refuses a mage who does not hold the node', () => {
-    const { knowledge } = held(256);
-    const outcome = step(knowledge, { effort: 1e6, subject: STRANGER });
-    expect(outcome.refusal?.reason).toBe('node-not-held');
-  });
-
-  it('refuses a node already at full mastery', () => {
-    const { knowledge, instance } = held(MASTERY_MAX);
-    const outcome = step(knowledge, { effort: 1e6 });
-    expect(outcome.refusal?.reason).toBe('mastery-at-maximum');
-    expect(knowledge.read(instance).mastery).toBe(MASTERY_MAX);
-  });
-
-  it('leaves banked progress alone on a refusal', () => {
-    const { knowledge } = held(64);
-    const outcome = step(knowledge, { progress: 512, effort: 4096, forbidden: true });
-    expect(outcome.progress).toBe(512);
-  });
-});
-
-describe('the price of keeping a node sharp', () => {
-  it('scales with tier, so the fundamentals are cheap and the specialty is not', () => {
-    const tierOne = practiceRequirement({ ...testCatalog().node(ROOT_NODE)!, tier: 1 });
-    const tierSeven = practiceRequirement({ ...testCatalog().node(ROOT_NODE)!, tier: 7 });
-
-    expect(tierOne).toBe(PRACTICE_COST_PER_TIER);
-    expect(tierSeven).toBe(PRACTICE_COST_PER_TIER * 7);
-  });
-
-  it('falls as the practice rate rises, which is the seam the god reaches through', () => {
-    const node = testCatalog().node(ROOT_NODE)!;
-    // fp(2048) is a doubled rate: `libraryRateMultiplier` hands this channel a
-    // stacked multiplier, and a deeper library or a cell encouragement is what
-    // makes it larger than fp(1024).
-    expect(practiceRequirement(node, 2048)).toBe(Math.floor(practiceRequirement(node) / 2));
-  });
-
-  it('treats a zero rate as a mage who cannot practise rather than one who practises instantly', () => {
-    const node = testCatalog().node(ROOT_NODE)!;
-    expect(practiceRequirement(node, 0)).toBe(practiceRequirement(node));
-  });
-});
-
-describe('publish or perish, closed', () => {
-  it('carries a scholar who fell below the teaching threshold back over it', () => {
-    // Start where `ages-of-magic.md` §2c's 93.4% sit: held, alive, and no longer
-    // able to supervise the subject.
-    const { knowledge, instance } = held(DEFAULT_TEACH_THRESHOLD - 1);
-    expect(knowledge.read(instance).mastery).toBeLessThan(DEFAULT_TEACH_THRESHOLD);
-
-    const required = practiceRequirement(testCatalog().node(ROOT_NODE)!);
-    let progress = 0;
-    let projects = 0;
-    while (knowledge.read(instance).mastery < DEFAULT_TEACH_THRESHOLD && projects < 100) {
-      const outcome = step(knowledge, { progress, effort: required });
-      progress = outcome.completed ? 0 : outcome.progress;
-      if (outcome.completed) projects += 1;
+    while (mastery < DEFAULT_TEACH_THRESHOLD && months < 200) {
+      const outcome = practice(inputs(knowledge));
+      expect(outcome.refusal).toBeUndefined();
+      if (outcome.crossedTeachThreshold) crossings += 1;
+      mastery = outcome.mastery;
+      months += 1;
     }
 
-    expect(knowledge.read(instance).mastery).toBeGreaterThanOrEqual(DEFAULT_TEACH_THRESHOLD);
-    // One project is not enough by construction: a quantum that restored
-    // standing in a single completion would make publish-or-perish a formality.
-    expect(projects).toBe(1);
+    expect(mastery).toBeGreaterThanOrEqual(DEFAULT_TEACH_THRESHOLD);
+    expect(crossings).toBe(1);
+    expect(months).toBeLessThan(200);
   });
 
-  it('races decay rather than outlawing it — practice adds, decay still subtracts', () => {
-    const { knowledge, instance } = held(512);
-    const required = practiceRequirement(testCatalog().node(ROOT_NODE)!);
-
-    step(knowledge, { effort: required });
-    const afterPractice = knowledge.read(instance).mastery;
-    expect(afterPractice).toBe(512 + PRACTICE_MASTERY_RESTORE);
-
-    decayHeldKnowledge({
+  it('makes her a teacher: the same instance that could not teach now can', () => {
+    const knowledge = fixture(DEFAULT_INITIAL_MASTERY);
+    const teaching = {
       knowledge,
+      catalog: testCatalog(),
       cells: testCells,
       ruleset: permissiveRuleset(),
-      elapsedTicks: 40,
-      worldTick: 50,
-      retentionOf: () => RETENTION,
-    });
+      rng: stepRng(5, 8),
+      teacher: MAGE,
+      student: STUDENT,
+      nodeId: ROOT_NODE,
+      worldTick: 8,
+    };
 
-    // Decay is untouched by this change: it still runs, still monotone, still
-    // floored at retention. Practice is a second force on the same number, not a
-    // suspension of the first.
-    expect(knowledge.read(instance).mastery).toBeLessThan(afterPractice);
+    const before = teach(teaching);
+    expect(before.refusal?.reason).toBe('teacher-below-threshold');
+
+    for (let i = 0; i < 40; i += 1) practice(inputs(knowledge));
+
+    const after = teach(teaching);
+    expect(after.refusal).toBeUndefined();
+    expect(after.instance).not.toBe(0);
+  });
+
+  it('outruns decay at the same retention, or it would be a slower loss', () => {
+    // The bracket `PRACTICE_GAIN_PER_MONTH`'s docstring claims. A gain below the
+    // per-tick loss would make a month of practice a month of falling behind.
+    expect(PRACTICE_GAIN_PER_MONTH).toBeGreaterThan(masteryDecayPerTick(FP_ONE));
+    const drilled = practicedMastery(400, MASTERY_MAX, PRACTICE_GAIN_PER_MONTH);
+    const decayed = decayedMastery(drilled, 1, FP_ONE, false);
+    expect(decayed).toBeGreaterThan(400);
+  });
+});
+
+describe('practice — the ceiling that keeps a population stratified', () => {
+  it('gives a node at the top of a mage’s reach exactly the teach threshold', () => {
+    expect(practiceCeiling(4, 4)).toBe(DEFAULT_TEACH_THRESHOLD);
+    expect(practiceCeiling(7, 7)).toBe(DEFAULT_TEACH_THRESHOLD);
+    expect(PRACTICE_CEILING_BASE).toBe(DEFAULT_TEACH_THRESHOLD);
+  });
+
+  it('rises by one step per tier of headroom and stops at full mastery', () => {
+    expect(practiceCeiling(3, 4)).toBe(DEFAULT_TEACH_THRESHOLD + PRACTICE_CEILING_PER_TIER);
+    expect(practiceCeiling(1, 4)).toBe(MASTERY_MAX);
+    expect(practiceCeiling(1, 7)).toBe(MASTERY_MAX);
+  });
+
+  it('is monotone in headroom and never exceeds full mastery', () => {
+    for (let ceiling = 0; ceiling <= 7; ceiling += 1) {
+      let previous = -1;
+      for (let tier = 7; tier >= 1; tier -= 1) {
+        const value = practiceCeiling(tier, ceiling);
+        expect(value).toBeGreaterThanOrEqual(previous);
+        expect(value).toBeLessThanOrEqual(MASTERY_MAX);
+        previous = value;
+      }
+    }
+  });
+
+  it('treats a node above her reach as no headroom rather than as negative', () => {
+    expect(practiceCeiling(7, 3)).toBe(PRACTICE_CEILING_BASE);
+  });
+
+  it('lets her drill something beyond her reach, but only to barely-teachable', () => {
+    // A god's grant and raid theft both put a node in a mind without consulting
+    // the frontier, so "she holds a node above her `depthCeiling`" is reachable.
+    // `practice` does not refuse it — the gateway's candidate list is what
+    // applies the depth filter — and the clamp at zero headroom is what bounds
+    // it: she gets to exactly `PRACTICE_CEILING_BASE`, which one tick of decay
+    // takes away again.
+    const knowledge = fixture(DEFAULT_INITIAL_MASTERY);
+    let instance = 0;
+    for (let i = 0; i < 100; i += 1) {
+      const outcome = practice(inputs(knowledge, { depthCeiling: 0 }));
+      expect(outcome.refusal).toBeUndefined();
+      instance = outcome.instance;
+    }
+    expect(knowledge.read(instance).mastery).toBe(PRACTICE_CEILING_BASE);
+  });
+
+  it('refuses to level a granted instance down to what she could have reached', () => {
+    // A god grants at 1024. A mage at her limit has a ceiling of 512. Practice
+    // must not take the difference away: it is an operation that raises.
+    const knowledge = fixture(MASTERY_MAX);
+    const outcome = practice(inputs(knowledge, { depthCeiling: 1 }));
+    expect(outcome.gained).toBe(0);
+    expect(outcome.mastery).toBe(MASTERY_MAX);
+    expect(knowledge.read(outcome.instance).mastery).toBe(MASTERY_MAX);
+  });
+
+  it('stops a mage at her limit at exactly teachable, not above it', () => {
+    const knowledge = fixture(DEFAULT_INITIAL_MASTERY);
+    let instance = 0;
+    for (let i = 0; i < 100; i += 1) instance = practice(inputs(knowledge, { depthCeiling: 1 })).instance;
+    expect(knowledge.read(instance).mastery).toBe(DEFAULT_TEACH_THRESHOLD);
+  });
+});
+
+describe('practice — what it refuses', () => {
+  it('refuses a node the subject does not hold in mind or palace', () => {
+    const knowledge = fixture(DEFAULT_INITIAL_MASTERY, 999);
+    const outcome = practice(inputs(knowledge));
+    expect(outcome.refusal?.reason).toBe('node-not-held');
+    expect(outcome.gained).toBe(0);
+  });
+
+  it('refuses an interdicted cell, and writes nothing', () => {
+    const knowledge = fixture(DEFAULT_INITIAL_MASTERY);
+    const held = knowledge.instancesHeldBy(MAGE)[0] ?? 0;
+    const outcome = practice(inputs(knowledge, { ruleset: interdicting(HOME_CELL) }));
+    expect(outcome.refusal?.reason).toBe('forbidden-cell');
+    expect(knowledge.read(held).mastery).toBe(DEFAULT_INITIAL_MASTERY);
+  });
+
+  it('adds nothing for a month nobody spent', () => {
+    const knowledge = fixture(DEFAULT_INITIAL_MASTERY);
+    const outcome = practice(inputs(knowledge, { effort: 0 }));
+    expect(outcome.gained).toBe(0);
+    expect(outcome.mastery).toBe(DEFAULT_INITIAL_MASTERY);
+  });
+
+  it('reports a crossing as a transition and not as a level', () => {
+    const knowledge = fixture(DEFAULT_TEACH_THRESHOLD);
+    const outcome = practice(inputs(knowledge));
+    expect(outcome.mastery).toBeGreaterThan(DEFAULT_TEACH_THRESHOLD);
+    expect(outcome.crossedTeachThreshold).toBe(false);
+  });
+});
+
+describe('practice — species differentiation', () => {
+  it('gives a faster learner more per month, and neither less than zero', () => {
+    const quick = fixture(DEFAULT_INITIAL_MASTERY);
+    const slow = fixture(DEFAULT_INITIAL_MASTERY);
+    const fast = practice(inputs(quick, { learnRate: 1536 }));
+    const plodding = practice(inputs(slow, { learnRate: 512 }));
+
+    expect(fast.gained).toBeGreaterThan(plodding.gained);
+    expect(plodding.gained).toBeGreaterThan(0);
+  });
+
+  it('is monotone non-decreasing in mastery for every input', () => {
+    for (const current of [0, 1, 255, 512, 1023, MASTERY_MAX]) {
+      for (const gain of [-100, 0, 1, 4096]) {
+        expect(practicedMastery(current, MASTERY_MAX, gain)).toBeGreaterThanOrEqual(current);
+      }
+    }
   });
 });

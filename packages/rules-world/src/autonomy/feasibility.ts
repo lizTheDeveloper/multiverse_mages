@@ -129,12 +129,12 @@ export function isFeasible(goal: GoalId, outlook: MageOutlook): boolean {
       // pass.
       return anyOf(outlook.applicableTargets);
     case GOAL.practice:
-      // Held, permitted, and below full mastery — the gateway has already
-      // applied all three, because they are `practice`'s own refusals and a
-      // second copy here would be the private rule this directory keeps
-      // refusing. An empty list is a mage with nothing to keep sharp, which is
-      // a real state: a novice who holds one node at full mastery has no
-      // maintenance to do.
+      // A mage with nothing left to perfect has nothing to practise. The list
+      // is already filtered by the coordinating layer to nodes she holds, in
+      // cells permitted now, whose mastery is **below** what `practiceCeiling`
+      // allows her — so a month of practice is never a month spent on a node
+      // that cannot improve. Every one of those is again a question this
+      // package may not ask (`contracts.md` §5 rule 3).
       return anyOf(outlook.practiceTargets);
     default:
       throw new RangeError(

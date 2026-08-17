@@ -59,6 +59,106 @@ export const RNG_STREAM = {
    * the mages'.
    */
   openingSquare: 12,
+  /**
+   * The partial-detachment draw at portal open: whether a soldier cohort with
+   * fewer people left than `detachment-strength` fields one more detachment.
+   *
+   * Its own id rather than `terrain`'s — which is the other deployment-time
+   * draw — because the two are taken at the same moment from the same source.
+   * Sharing `terrain`'s cursor would make *how many detachments a side fields*
+   * shift every deployment position behind it, so a change in the populace
+   * would move the battlefield, and no committed raid baseline could be read as
+   * a statement about either.
+   *
+   * **13, assigned by merge order rather than chosen — and it was 14 first.**
+   * Three open PRs each appended a stream to a table that ends at 12: #170
+   * (`corruption`), this one (`detachment`), and #185 (`career`). One id, three
+   * claimants, and the ruling at the time was #170 = 13, this = 14, #185 = 15.
+   * There is no dodging that by picking a spare number —
+   * `rng-registry-append-only.test.ts` requires the table **dense from 1**, so
+   * an id *is* a merge position.
+   *
+   * That queue did not happen. #170 has not landed, `main`'s registry still
+   * ends at 12, and a branch holding 14 over a twelve-row table reads as a gap
+   * — `1..12, 14` — with the density assertion red. So this append is **13**,
+   * which is what the general rule below already required of it: the id was
+   * re-checked at merge rather than carried from the commit that authored it.
+   * #170 and #185 renumber behind it by the same rule, on their own branches,
+   * and nothing here has to be edited when they do.
+   *
+   * ## The general rule, because the case above is not one
+   *
+   * **An append's id is valid only once every id below it has landed.** Density
+   * makes that a hard consequence rather than etiquette: a branch that takes
+   * `N` while anything under `N` is still unmerged reads as a gap, and its
+   * density assertion is red until those land — so "take the next free number"
+   * is wrong advice the moment two changes are in flight, because they both see
+   * the same number free.
+   *
+   * Two things follow, and the second is the one that gets forgotten:
+   *
+   * 1. An id is **not** settled when it is authored. It is settled by the
+   *    branch's position in the merge queue, which can change after the commit
+   *    that wrote it.
+   * 2. **Re-checking it is part of merging**, not part of authoring. A branch
+   *    that has sat while another append landed must confirm its id is still
+   *    the next one, and renumber if it is not — which is cheap, because the
+   *    `rngRegistryHash` refusal already forces a re-baseline either way.
+   *
+   * Do not read "this is 13" as an instruction either. It is one queue's
+   * arithmetic on one day, and it is wrong on any tree with a different queue —
+   * as the ruling that read "this is 14" already turned out to be.
+   */
+  detachment: 13,
+  /**
+   * The career sort at graduation: whether a graduate takes the academic track
+   * or joins the populace (`magical-prevalence.md`, "Not all mages should be
+   * equal").
+   *
+   * Its own id rather than `mageBirth`'s, which is where every other decision
+   * about *who this mage is* is drawn. The two are taken from different ends of
+   * a life but from the same subsystem in spirit, and sharing a cursor would
+   * mean that adding a graduate this tick re-rolled the personality of every
+   * mage enrolled in it — the insertion-variance defect that §6's per-actor
+   * streams exist to remove, arriving through the stream registry instead.
+   *
+   * **14, renumbered from 15 on `integration/group-e` (2026-08-16), and that is
+   * the rule above being applied rather than quoted.** This branch was authored
+   * against a ruling that read #170 (`corruption`) = 13, #186 (`detachment`) =
+   * 14, this = 15, and it said so in a paragraph that also predicted the density
+   * assertion would be red until the two branches ahead landed. **That queue did
+   * not happen either.** In this tree #186 landed first and took 13, #170 has
+   * not landed yet, and the next free id at the moment this branch merged was
+   * 14. So the id follows the merge position, not the authoring, and the density
+   * assertion is green rather than red — which is the whole of what the
+   * paragraph above asks of an append.
+   */
+  career: 14,
+  /**
+   * Corruption: whether a book is *silently wrong*, by scribal error or by
+   * attack (`docs/design/scribing-fidelity.md`).
+   *
+   * Its own id rather than borrowing `scribing` (5), which is the other draw
+   * taken at the moment a book is finished, and by the same actor. A shared
+   * cursor would make *whether this book is corrupt* shift every subsequent
+   * durability roll that scribe takes — so adding the error rate would move
+   * "dwarven books resist burning" for reasons that have nothing to do with
+   * burning, and every committed balance number downstream of durability would
+   * change without any of them being about the change.
+   *
+   * That is the whole content of §6's insertion-invariance rule, applied to the
+   * one case where it was cheapest to get wrong.
+   */
+  /**
+   * **15, renumbered from 13 on `integration/group-e` (2026-08-16).** The last
+   * of the three simultaneous appends to land, and the third branch in a row to
+   * find its authored id already taken: `w200/layer-one-fixes` took 13 and
+   * `w197/aptitude-sorts-careers` took 14 earlier in this group. Every one of
+   * the three was authored believing it was 13 or that the ruling 13/14/15 held;
+   * none of the three merged in that order. Read the general rule above and not
+   * any of the assignments.
+   */
+  corruption: 15,
 } as const;
 
 /** Any ID in the permanent registry. */

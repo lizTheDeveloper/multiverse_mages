@@ -249,6 +249,14 @@ describe('two hundred world years of the reference universe', () => {
     console.log(`9.5 lessons taught per 20-year window: ${taught.join(' / ')}`);
     console.log(`9.5 books scribed per 20-year window:  ${scribed.join(' / ')}`);
 
+    //
+    // **W21's side of this conflict is not merged, and the reason is on the
+    // record above.** It restores the per-window form — `for (const [index,
+    // lessons] of taught.slice(0, 8))`, every window must teach — which is
+    // exactly the assertion `main` retired after measuring five run seeds and
+    // finding three with an empty window. W21 predates that measurement; taking
+    // its hunk would re-assert a claim about one seed as a claim about the
+    // build.
     // **The per-window form of this assertion has been retired, and not
     // because this branch could not satisfy it.** It read "a lesson is taught
     // in every one of the ten windows" and it was never a property of the

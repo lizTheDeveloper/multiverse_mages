@@ -41,8 +41,9 @@ export {
   MASTERY_DECAY_PER_TICK,
   MASTERY_FLOOR_SHARE,
   MASTERY_MAX,
-  PRACTICE_COST_PER_TIER,
-  PRACTICE_MASTERY_RESTORE,
+  PRACTICE_CEILING_BASE,
+  PRACTICE_CEILING_PER_TIER,
+  PRACTICE_GAIN_PER_MONTH,
   RESEARCH_JITTER_SPAN,
   SCRIBE_CAPACITY_PER_TIER,
   SCRIBE_DURABILITY_BASE,
@@ -74,13 +75,44 @@ export {
 } from './research.js';
 
 export type { PracticeInputs, PracticeOutcome } from './practice.js';
-export { isPractisable, practice, practiceRequirement, stalestHeldInstance } from './practice.js';
+export { practice, practiceCeiling, practicedMastery } from './practice.js';
 
 export type { TeachingInputs, TeachingOutcome } from './teaching.js';
 export { heldMastery, teach, transmittedMastery } from './teaching.js';
 
 export type { ScribingInputs, ScribingOutcome, StoreHook } from './scribing.js';
 export { PALACE_STORE, STANDARD_STORE, scribe, scribeCapacityCost } from './scribing.js';
+
+export type { CorruptionValue, Fidelity } from './fidelity.js';
+export {
+  BOOK_MASTERY_FLOOR,
+  BOOK_MASTERY_SPAN,
+  CORRUPTION,
+  CORRUPTION_READ_BASE,
+  CORRUPTION_READ_PER_TIER,
+  FIDELITY_PLATEAU_END,
+  FIDELITY_ZERO_AT,
+  GENERATION_STEP_BASE,
+  GENERATION_STEP_MAX,
+  GENERATION_STEP_MIN,
+  KNOWLEDGE_KIND_STEP,
+  PRISTINE,
+  SCRIBAL_ERROR_BASE,
+  SCRIBAL_ERROR_MAX,
+  canDiscoverCorruption,
+  corruptionReadBar,
+  fidelityAt,
+  fidelityOf,
+  generationStep,
+  isCorruptionValue,
+  masteryFromBook,
+  readsThroughCorruption,
+  scribalErrorChance,
+  setFidelity,
+} from './fidelity.js';
+
+export type { StudyInputs, StudyOutcome } from './study.js';
+export { study } from './study.js';
 
 export {
   destroyGrimoire,

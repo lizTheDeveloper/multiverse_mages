@@ -182,6 +182,23 @@ export interface DemandInputs {
   /** Student seats across completed universities — `contracts.md` §1.4 `capacity`. */
   readonly universityCapacity: number;
   /**
+   * People of school age who could be magic users at all — the sum over cohorts
+   * of `count × prevalence[species] × mageAptitude[species]`.
+   *
+   * **The fix for W193's first defect, and it is one line below.** Student
+   * demand used to be `universityCapacity` alone: intake was *seats*, so the
+   * number of mages a universe produced was a property of its buildings and not
+   * of its people, and doubling the population changed nothing. Seats are a
+   * **ceiling**, not a demand. What the labour market should ask for is the
+   * smaller of *how many could go* and *how many will fit*.
+   *
+   * Supplied by the caller rather than computed here, for the reason this
+   * module's header gives about `universityCapacity`: cohorts are the populace
+   * layer's and species content is `@mm/content`'s, and a demand module that
+   * walked either would be acquiring an input nobody sanctioned.
+   */
+  readonly latentMagicUsers: number;
+  /**
    * The universe's standing soldier target.
    *
    * **Still supplied as {@link NO_STANDING_ARMY} in every production run, and
@@ -233,6 +250,7 @@ export function computeOccupationDemand(inputs: DemandInputs): OccupationDemand 
   assertNonNegativeInteger(inputs.constructionBacklog, 'constructionBacklog');
   assertNonNegativeInteger(inputs.scribingQueueDepth, 'scribingQueueDepth');
   assertNonNegativeInteger(inputs.universityCapacity, 'universityCapacity');
+  assertNonNegativeInteger(inputs.latentMagicUsers, 'latentMagicUsers');
   assertNonNegativeInteger(inputs.standingSoldierTarget, 'standingSoldierTarget');
   assertNonNegativeInteger(inputs.materialsObligation, 'materialsObligation');
 
@@ -246,7 +264,13 @@ export function computeOccupationDemand(inputs: DemandInputs): OccupationDemand 
       floorDiv(inputs.constructionBacklog * LABORERS_PER_BUILD_UNIT, FP_ONE) +
       ceilDiv(inputs.materialsObligation, LABORER_MATERIALS_YIELD),
     [OCCUPATION.scribe]: inputs.scribingQueueDepth * SCRIBES_PER_QUEUED_GRIMOIRE,
-    [OCCUPATION.student]: inputs.universityCapacity,
+    // `min`, not `universityCapacity`. See {@link DemandInputs.latentMagicUsers}:
+    // a universe cannot school more people than it has seats, and it should not
+    // ask for more students than it has people who could become mages. The
+    // shortfall between the two is `magical-prevalence.md`'s whole point — empty
+    // seats mean a population too small or too mundane, and unmet student demand
+    // means a god who has not built enough. `unmetDemand` tells them apart.
+    [OCCUPATION.student]: Math.min(inputs.universityCapacity, inputs.latentMagicUsers),
     [OCCUPATION.soldier]: inputs.standingSoldierTarget,
     [OCCUPATION.idle]: 0,
   };

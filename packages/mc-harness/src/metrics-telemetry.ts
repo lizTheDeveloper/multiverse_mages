@@ -199,6 +199,36 @@ export interface RaidObservation {
   readonly attackerTempoCostWorldTicks: number;
 
   /**
+   * The attacking side's mages: sent, brought home, and lost to the timer.
+   *
+   * Attacker-relative whichever side the observing universe was on, matching
+   * {@link RaidObservation.combatSources}. Three counts and not a rate: a
+   * withdrawal rule that never fires and one that fires and is survived produce
+   * the same casualty total, and telling them apart is the whole reason these
+   * are here.
+   */
+  readonly raidersFielded: number;
+  readonly raidersWithdrawn: number;
+  readonly raidersStranded: number;
+  /** Nodes the attacking side carried out of the host universe. */
+  readonly nodesTakenByAttacker: number;
+  /** Mid-raid ruleset changes this god made, and the raid favor they cost. */
+  readonly directivesApplied: number;
+  readonly directiveFavorSpent: number;
+
+  /**
+   * Who won, and why it ended. `RAID_SIDE` and `RAID_END_REASON` values,
+   * carried as the integers `rules-raid` computed rather than as names.
+   *
+   * Present because an observation that could not say who won made the two
+   * halves of a withdrawal tuning indistinguishable: a threshold early enough
+   * that every raider comes home is also early enough that none of them takes
+   * anything, and without the victor the first reads as a success.
+   */
+  readonly victor: number;
+  readonly reason: number;
+
+  /**
    * Per-primitive action economy, ascending by `source`.
    *
    * Required, not optional, for the reason the module opens with: absence is
@@ -259,14 +289,22 @@ export interface SpeciesGridReach {
    * from full mastery: `floor((MASTERY_MAX − TEACH_THRESHOLD) /
    * masteryDecayPerTick(retention))`.
    *
-   * **The quantity that actually separates the species**, and it exists because
-   * nothing in the rules path ever *raises* mastery. `setMastery` has one
-   * non-test caller, `decay.ts`, and it only lowers. Researched knowledge is
-   * born at `DEFAULT_INITIAL_MASTERY` (256), below the 512 teach threshold, and
-   * can never climb; every teachable instance descends from a god grant at 1024
-   * and is sliding back down. Breadth is limited not by what a species can learn
-   * but by how long it can still pass on what it was given — 32 to 102 ticks
-   * across the shipped six.
+   * **The span a granted instance stays transmissible for, and nothing else.**
+   *
+   * When this metric was written it was the quantity that separated the species
+   * outright, because nothing in the rules path ever *raised* mastery:
+   * `setMastery` had one non-test caller, `decay.ts`, which only lowers, so
+   * researched knowledge born at `DEFAULT_INITIAL_MASTERY` (256) could never
+   * climb to the 512 threshold and every teachable instance descended from a
+   * god grant at 1024 and was sliding back down.
+   *
+   * `rules-magic`'s `practice` (`w196/mastery-rises`) removed that monopoly: a
+   * mage can now carry her own work up to `practiceCeiling(tier,
+   * depthCeiling)`. So this number is no longer the whole story of what a
+   * species can transmit — it is the decay half of it, measured from full
+   * mastery, and it still runs from 32 ticks to 102 across the shipped six.
+   * What it does **not** report is how far a species can climb on its own,
+   * which is a function of `depthCeiling` against a node's tier.
    *
    * `0` means a species that cannot teach a granted node even once.
    */

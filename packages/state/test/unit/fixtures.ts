@@ -26,6 +26,7 @@ import {
   ASCENSION_PATH,
   AXIS_CHANGE_COUNTER,
   AXIS_KIND,
+  BAR_PHASE,
   BLESSING,
   COMBATANT,
   COMBATANT_SOURCE_KIND,
@@ -41,19 +42,25 @@ import {
   GRANT_BUDGET,
   GRIMOIRE,
   HOLDER_KIND,
+  KNOWLEDGE_FIDELITY,
   KNOWLEDGE_INSTANCE,
   LIBRARY,
   LOCATION_KIND,
   MAGE,
   MAGE_ROLE,
   MATERIAL_STOCK,
+  MID_RAID_CHANGE,
   OBJECTIVE,
   OBJECTIVE_STATUS,
   OCCUPATION,
   POPULACE_COHORT,
   PREPARED_SPELL,
   RAID_SIDE,
+  RULE_CHANGE_KIND,
+  RULE_SCOPE,
   UNIVERSITY,
+  TERRITORY_HOLDING,
+  UNIVERSITY_SITE,
   UNIVERSITY_STAFF,
   UPHEAVAL,
   WORLD_COMPONENTS,
@@ -80,7 +87,11 @@ export interface PopulatedWorld {
   readonly university: EntityHandle;
   readonly library: EntityHandle;
   readonly grimoire: EntityHandle;
+  /** The shelved knowledge instance, which also carries the fidelity row. */
+  readonly instance: EntityHandle;
   readonly effort: EntityHandle;
+  /** The one `territory-holding` row. The site hangs on `university` instead. */
+  readonly holding: EntityHandle;
 }
 
 /**
@@ -190,6 +201,13 @@ export function populatedWorld(): PopulatedWorld {
     mastery: FP_ONE,
   });
 
+  // On the instance's own handle, which is what makes the component a sparse
+  // side table rather than two more columns on every instance in a Monte Carlo
+  // run. The values are deliberately *not* the defaults: an absent row already
+  // means generation zero and sound, so a fixture row carrying zeros would
+  // round-trip identically to no row at all and would test nothing.
+  attachRecord(state, KNOWLEDGE_FIDELITY, instance, { copyGeneration: 1536, corruption: 1 });
+
   const everKnown = state.entities.create();
   attachRecord(state, EVER_KNOWN, everKnown, { nodeId: 7 });
 
@@ -252,6 +270,13 @@ export function populatedWorld(): PopulatedWorld {
     passed: 1,
   });
 
+  // `university-siting`'s two. The holding is an entity of its own — one per
+  // kind of country held — while the site hangs on the university's own handle,
+  // because §1.4 gives a university exactly one site and two rows would make
+  // "which country is this in" depend on iteration order.
+  const holding = state.entities.create();
+  attachRecord(state, TERRITORY_HOLDING, holding, { kindId: 1, landUnits: 1600 });
+  attachRecord(state, UNIVERSITY_SITE, university, { kindId: 1 });
   // On the universe handle too, and for the same singleton reason as god-state:
   // one universe, one budget. Every field distinct and none of them zero, so a
   // round-trip that dropped or transposed one is visible.
@@ -262,9 +287,29 @@ export function populatedWorld(): PopulatedWorld {
     grantsUsed: 1,
     seededNodes: 3,
   });
+  // On the universe's handle, like the god-state row and for the same reason:
+  // one universe has one law, so it has one unease.
+  attachRecord(state, BAR_PHASE, universe, {
+    uneaseUntilTick: 46,
+    lastConstitutionalTick: 38,
+  });
+
+  // One raid-scarred technique, so the mark `raid-engagement.md` §1 leaves is
+  // in the round-trip like everything else.
+  const midRaidChange = state.entities.create();
+  attachRecord(state, MID_RAID_CHANGE, midRaidChange, {
+    scope: RULE_SCOPE.technique,
+    targetId: 3,
+    changeKind: RULE_CHANGE_KIND.forbid,
+    paidCost: 4096,
+    markedTick: 41,
+  });
 
   assertEveryWorldComponentPopulated(state);
-  return { state, universe, mage, cohort, university, library, grimoire, effort };
+  // Union of both branches' handles. The auto-merge left *two* return
+  // statements here — the second unreachable — so whichever branch's handles
+  // came second were silently unavailable to every consumer.
+  return { state, universe, mage, cohort, university, library, grimoire, instance, effort, holding };
 }
 
 /** Fails if any world component has no rows, so "every component" stays true. */

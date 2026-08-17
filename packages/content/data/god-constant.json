@@ -516,5 +516,26 @@
     "unit": "count",
     "gloss": "Ceiling on grants ever authorized — starting allowance plus everything accrued. A ceiling on what may be granted, never on what is held, so a frugal god keeps earning and a spent one is not refunded. Unreachable at this build for the same reason the starting allowance is.",
     "tuningStatus": "untuned"
+  },
+  {
+    "id": "unease-bars",
+    "value": 8,
+    "unit": "ticks",
+    "gloss": "sound-design.md §5.2: the permit chord's low partial 'decays over about eight bars', and §3.1 makes one world tick one bar. The only duration the design attaches to a constitutional act, taken literally.",
+    "tuningStatus": "untuned"
+  },
+  {
+    "id": "unease-step",
+    "value": 256,
+    "unit": "fp",
+    "gloss": "Surcharge per bar of §5.2's unease still ringing when another constitutional act lands. A quarter again per bar, so an act on the very next tick pays 2.75x and one eight bars later pays nothing. Prices churning the constitution, which §1.1's axisChangeCounters does not: that counter needs one axis flipped twice, and a god who permits nineteen different things once each never trips it.",
+    "tuningStatus": "untuned"
+  },
+  {
+    "id": "mid-raid-revert-multiplier",
+    "value": 4096,
+    "unit": "fp",
+    "gloss": "Cost of unmaking a ruleset change made during a raid, as a multiple of the larger of the ordinary action price and what the change cost inside the engagement. fp(4) -- 'substantially more', four rather than two because the decision should sometimes stand unwanted: a doubling is an inconvenience, a quadrupling is a reason to keep a constitution you regret. The first favor drain attached to a decision rather than to existing.",
+    "tuningStatus": "untuned"
   }
 ]

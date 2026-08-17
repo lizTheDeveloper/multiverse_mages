@@ -411,6 +411,7 @@ describe('release claim 0.3.0 — rediscovery costs at least 3× the original re
       teachCost: 1024,
       scribeCost: 2048,
       rediscoveryMultiplier,
+      knowledgeKind: 'episteme',
     };
   }
 

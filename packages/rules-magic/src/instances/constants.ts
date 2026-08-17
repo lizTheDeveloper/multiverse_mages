@@ -115,42 +115,6 @@ export const SCRIBE_CAPACITY_PER_TIER = 1024;
 /** Full mastery, `contracts.md` §1.5. Mastery is never written above this. */
 export const MASTERY_MAX = 1024;
 
-/**
- * Mage-months one restore quantum of practice costs, **per tier**. **Untuned.**
- *
- * A tier-1 node costs `fp(1)` of a mage's month per quantum and a tier-7 node
- * costs seven, so keeping the deep specialty sharp is a real expense and keeping
- * the fundamentals sharp is not. That ordering is the design's, not a
- * convenience: `ages-of-magic.md` §2c makes the maintained mass *"the
- * prerequisites, the low tiers, the fundamentals"*, and a flat cost would have
- * made a seventh-tier node exactly as cheap to hold as a first-tier one, which
- * removes the only decision practice contains.
- *
- * Deliberately of the same order as {@link PRACTICE_MASTERY_RESTORE} divided by
- * `MASTERY_DECAY_PER_TICK`, so that a mage who practises one node continuously
- * roughly holds it and does not run away to `MASTERY_MAX` in a decade. That is
- * an order-of-magnitude claim about a placeholder, not a balance claim, and
- * `practice-restores-mastery.test.ts` pins the arithmetic rather than the
- * intent.
- */
-export const PRACTICE_COST_PER_TIER = 1024;
-
-/**
- * Mastery one completed practice project gives back. **Untuned.**
- *
- * `fp(128)` — an eighth of full mastery. Above {@link MASTERY_DECAY_PER_TICK}
- * by enough that a completed project is visible against ordinary forgetting,
- * and well below the gap between `DEFAULT_INITIAL_MASTERY` and
- * {@link DEFAULT_TEACH_THRESHOLD}, so that a scholar who has fallen out of
- * teaching standing takes **more than one** project to earn it back. A quantum
- * large enough to restore standing in a single completion would make
- * publish-or-perish a formality; `ages-of-magic.md` §2c's whole complaint is
- * that there was no price on the way back.
- *
- * Clamped at {@link MASTERY_MAX} where it lands, so the value is a step size and
- * never a level.
- */
-export const PRACTICE_MASTERY_RESTORE = 128;
 
 /**
  * The share of `retention` that becomes an instance's decay floor. **Untuned.**
@@ -173,3 +137,58 @@ export const MASTERY_FLOOR_SHARE = 256;
  * century, slow enough that it is not the dominant term in anything.
  */
 export const MASTERY_DECAY_PER_TICK = 8;
+
+/**
+ * Mastery one full mage-month of practice adds at neutral `learnRate`.
+ * **Untuned.**
+ *
+ * Chosen, like everything else here, to make the mechanism *observable* rather
+ * than because anybody measured it. Three magnitudes bracket it. It must exceed
+ * {@link MASTERY_DECAY_PER_TICK} (8) or practice would be a month spent losing
+ * ground more slowly; it must not be so large that one month at the desk
+ * replaces the whole knowledge lifecycle; and — the one that was found by
+ * measurement rather than by argument — **it has to fit inside a commitment.**
+ *
+ * At 32 a crossing took about eleven months of *sustained* practice net of
+ * decay, which is longer than a mage typically holds one goal. The measured
+ * consequence was 21,564 mage-months of practice buying 26 crossings, because
+ * a mage who drilled for six months and then went back to research lost the
+ * whole gain to decay before she next sat down. At 64 the same crossing takes
+ * about five months, which a commitment covers, and the operation converts
+ * effort into teachable knowledge instead of into a treadmill. See
+ * `tools/w196/mastery-crossings.mjs` for both numbers.
+ */
+export const PRACTICE_GAIN_PER_MONTH = 64;
+
+/**
+ * The mastery practice reaches for a node at the very top of a mage's reach.
+ * **Untuned.**
+ *
+ * Equal to {@link DEFAULT_TEACH_THRESHOLD} on purpose, and the equality is the
+ * design rather than a coincidence to be tidied away: a mage practising at her
+ * species' limit arrives at *exactly* teachable and one tick of decay takes it
+ * away again. She can pass on what she barely grasps only while she keeps her
+ * hand in. Raising this above the threshold would give her a window she did not
+ * earn; lowering it would make the deepest tier of every species' reach
+ * permanently untransmittable, which is a wall rather than a gradient.
+ *
+ * `scenario`'s `teachableWindowTicks` measures the same span from the other
+ * end — how long a *granted* instance at full mastery stays transmissible — and
+ * it is deliberately **not** rewritten in terms of this constant. That metric
+ * answers a question about a god's grant, which arrives at 1024 whatever a
+ * mage's reach; the ceiling here answers a question about what she can reach on
+ * her own. Two spans, two questions, and folding them together would make a
+ * published metric mean something different without renaming it.
+ */
+export const PRACTICE_CEILING_BASE = DEFAULT_TEACH_THRESHOLD;
+
+/**
+ * How much further practice reaches per tier of headroom below a mage's
+ * `depthCeiling`. **Untuned.**
+ *
+ * At 256, two tiers inside her reach is full mastery. See `practice.ts` for the
+ * table and for why the ceiling is per-mage-per-node rather than global: it is
+ * the whole of the answer to *"mastery rising must not mean everybody converges
+ * on mastery."*
+ */
+export const PRACTICE_CEILING_PER_TIER = 256;

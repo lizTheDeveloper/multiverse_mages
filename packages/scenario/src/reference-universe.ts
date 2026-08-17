@@ -79,7 +79,9 @@ import {
 } from '@mm/state';
 import { KnowledgeSubsystem, MASTERY_MAX, MagicGrid } from '@mm/rules-magic';
 import { readRaidTuning } from '@mm/rules-raid';
-import { createMage } from '@mm/rules-world';
+
+import type { EngagementPolicy } from './raid-directives.js';
+import { createMage, defaultSiteKind, siteUniversity } from '@mm/rules-world';
 import type {
   AblationMask,
   GodConstants,
@@ -195,6 +197,23 @@ const DEFAULT_OPENING_AXIS_COUNT = 0;
  * square is still one flag away, and W82's arms take it.
  */
 const DEFAULT_OPENING_SQUARE_SEEDED = 0;
+
+/**
+ * The founding academy stands wherever the endowment carries the most people.
+ *
+ * Zero, and zero means *the documented default* rather than *nowhere* — the same
+ * encoding, and for the same reason, as {@link DEFAULT_FOUNDING_SPECIES_MASK}
+ * above: a literal id here would hardcode a content id into a default, and
+ * `CLAUDE.md` puts territory in validated content data. `defaultSiteKind`
+ * resolves it against whatever the content set declares.
+ *
+ * Over the shipped content that is `arable-lowland`, whose site multiplier is
+ * `fp(1024)` by construction (it is the reference kind) and whose
+ * `libraryUpkeepMultiplier` is also `fp(1024)`. **So the reference universe's
+ * default site is exactly neutral in both mechanisms**, and the divergence this
+ * change measures is entirely attributable to a site deliberately named.
+ */
+const DEFAULT_ACADEMY_SITE_KIND = 0;
 
 /**
  * The occupations a founding population is seeded into.
@@ -370,6 +389,31 @@ export interface ReferenceOptions {
   readonly grantAccrualNodes?: number | undefined;
   /** Ceiling on grants ever authorized. */
   readonly grantBudgetCap?: number | undefined;
+  /**
+   * The kind of country the founding academy stands in, as an interned
+   * `territory` content id — or **`0` for the documented default**, which is
+   * `defaultSiteKind`'s: the kind whose endowment carries the most people.
+   *
+   * `vision.md` §7a permits this because a site is a *relationship*, not a
+   * coordinate: it says which kind of country the academy is in, and it says
+   * nothing about where that country is, because at world scale there is no
+   * where. What it changes is in `rules-world`'s `universities/siting.ts` — the
+   * seats the surrounding land can keep filled, and what the library pays to
+   * survive the weather.
+   *
+   * An interned integer rather than a string id for the reason
+   * {@link ReferenceOptions.foundingSpeciesMask} is a bitmask:
+   * `ScenarioConfig.options` is restricted to scalars so a sweep can hash a
+   * config without inventing a serialization. Over the shipped content set the
+   * ids are a code-unit sort of the file — `arable-lowland` 1, `deep-forest` 2,
+   * `highland-waste` 3, `river-delta` 4, `upland-pasture` 5 — and
+   * `academySiteKindOf` resolves a name to one rather than making a caller count.
+   *
+   * Like `foundingSpeciesMask` this is an **instrument**: it turns no constant
+   * and changes no rule. It exists because *"does where a university stands
+   * change anything"* is not measurable without it.
+   */
+  readonly academySiteKind: number;
 }
 
 /**
@@ -388,6 +432,7 @@ export interface ReferenceOptions {
  */
 
 export const REFERENCE_FACTOR_IDS: readonly string[] = Object.freeze([
+  'academySiteKind',
   'cohortSize',
   'foundingMages',
   'foundingNodes',
@@ -515,7 +560,21 @@ export function referenceOptions(config: ScenarioConfig): ReferenceOptions {
     grantBudgetStart: readOptionalCount(config, 'grantBudgetStart'),
     grantAccrualNodes: readOptionalCount(config, 'grantAccrualNodes'),
     grantBudgetCap: readOptionalCount(config, 'grantBudgetCap'),
+    academySiteKind: readCount(config, 'academySiteKind', DEFAULT_ACADEMY_SITE_KIND),
   };
+}
+
+/**
+ * The interned `territory` content id a name resolves to, or `0`.
+ *
+ * A convenience for tests and sweep authors, so that *"site the academy in the
+ * river delta"* is written as a name and turned into the scalar a
+ * {@link ReferenceOptions} field has to be. Returns `0` — the documented default
+ * — for a name the content set does not declare, which is what an unrecognised
+ * kind should do rather than silently siting somewhere else.
+ */
+export function academySiteKindOf(content: ReferenceContent, territoryId: string): number {
+  return content.registry.intern('territory', territoryId);
 }
 
 /**
@@ -725,6 +784,28 @@ export function buildReferenceState(input: {
   const universities: EntityHandle[] = [];
   for (let index = 0; index < options.foundingUniversities; index += 1) {
     universities.push(foundAcademy(state));
+  }
+
+  // The academy stands in a *kind of country* — a relationship, which is what
+  // `vision.md` §7a says world scale is made of, and not a coordinate, which is
+  // what it forbids. Sited here rather than left to the first tick because a
+  // starting position is exactly the thing a scenario owns, and because
+  // `academySiteKind` has to be able to differ between two otherwise identical
+  // universes for the divergence this change claims to be measurable at all.
+  //
+  // `defaultSiteKind` is handed the *endowment* rather than the holdings: the
+  // first world tick has not run, so no `territory-holding` row exists yet, and
+  // the endowment is what those rows will be materialized from.
+  const siteKind =
+    options.academySiteKind !== 0
+      ? options.academySiteKind
+      : defaultSiteKind(content.deps.territoryKinds, content.deps.territoryKinds);
+  // Every founded academy, not just the first: `academySiteKind` is a property
+  // of the starting position, and two academies standing in different country
+  // would confound siting with institutional structure — the same reason
+  // `rival-universe.ts` pins both options together.
+  if (siteKind !== 0) {
+    for (const university of universities) siteUniversity(state, university, siteKind);
   }
 
   const { speciesOf, ids } = speciesTable(content.registry);
@@ -1058,6 +1139,22 @@ export interface ReferenceScenarioOptions {
    * path with baselines attached.
    */
   readonly ablation?: AblationMask;
+  /**
+   * A policy asked on every engagement tick of every raid, or absent.
+   *
+   * Absent is the build before the raid seam existed, byte for byte: the raid
+   * loop steps, resolves and throws exactly as `runRaid` did, so every
+   * committed baseline takes the branch it was recorded on. Installing one is
+   * what makes `raid-engagement.md` §3's verbs reachable at all — the god's
+   * world-tick submission cannot serve, because `coordination`'s world-scale
+   * resolver has already consumed it by the time a portal opens.
+   *
+   * Per **scenario** rather than per `ReferenceContent`, for the reason
+   * {@link ReferenceScenarioOptions.ablation} gives at length: a content set is
+   * memoized for the life of a worker and a policy folded into one would be
+   * shared by every run the worker executed afterwards.
+   */
+  readonly engagementPolicy?: EngagementPolicy;
 }
 
 /**
@@ -1150,6 +1247,11 @@ export function referenceScenario(
       // arm neutralizing a combat primitive would neutralize nothing and report
       // a null result for a wire that was live the whole time.
       ...(options.ablation === undefined ? {} : { ablation: options.ablation }),
+      // Same placement and the same reason as the mask above: per run, so a
+      // policy cannot leak into the arms scheduled after it.
+      ...(options.engagementPolicy === undefined
+        ? {}
+        : { engagementPolicy: options.engagementPolicy, maskCatalogue: content.catalogue }),
     }),
   ]);
 

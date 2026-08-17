@@ -35,6 +35,13 @@
  * Id 0 is a convenience on top: `contracts.md` §0's absent value is `0`, so a
  * zeroed goal component reads as `idle` rather than as a goal nobody selected.
  *
+ * ## The tenth goal was appended, not inserted
+ *
+ * `practice` took id 10 because the registry is append-only and `applyMagic`
+ * already held 9. Every baseline taken before it exists is keyed on a goal set
+ * that could not express practice — which is a fact about those baselines, not
+ * a reason to renumber anything.
+ *
  * ## Two goals here are placeholders for capabilities that do not exist
  *
  * `ward-duty` and `raid-readiness` are scored and selectable at 0.4.0, but the
@@ -44,7 +51,7 @@
  * would have been taken over a goal set that could not express warding, and
  * would need retaking.
  *
- * ## `practice` is id 9, and it is the first goal appended after 0.4.0
+ * ## `practice` is id 10, and it is the first goal appended after 0.4.0
  *
  * It is here because `decay.ts` asked for it by name — *"Nothing in this
  * subsystem restores mastery; practice does, and practice is an operation
@@ -96,13 +103,24 @@ export const GOAL = {
    */
   applyMagic: 9,
   /**
-   * Keep a node she already holds sharp, restoring its mastery.
+   * Spend the month **drilling a node she already holds**, raising her mastery
+   * of it.
    *
-   * The tenth goal. It was authored on its branch as the ninth and takes 10
-   * here because `applyMagic` reached `main` first — the registry is
-   * append-only (`state/src/components.ts` serializes `goalId` into
-   * `goal-commitment`), so ids 0-8 are untouched and the two new goals are
-   * ordered by which one landed, not by which is more important.
+   * The tenth goal, and the one that closes the knowledge lifecycle. Before it
+   * existed nothing in the rules path raised mastery at all: research created
+   * an instance at 256, the teach threshold sat at 512, and `setMastery`'s only
+   * caller was the decay sweep, which lowers. A mage could discover something
+   * and was structurally incapable of ever passing it on.
+   *
+   * `docs/design/metis-from-use-results.md` §6 named this goal and its shape —
+   * *"a tenth entry in the permanent goal registry… it competes. A mage
+   * practising is not researching, not teaching, not on the wall"* — and the
+   * competition is the point. An accrual that did not cost a month would rank
+   * gods by how little they interfere, which is the finding that killed the
+   * hook §6 was recommending against.
+   *
+   * See `rules-magic`'s `practice.ts` for the ceiling that keeps a population
+   * stratified while mastery rises.
    */
   practice: 10,
 } as const;

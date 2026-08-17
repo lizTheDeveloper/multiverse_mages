@@ -56,24 +56,36 @@ describe('shipped content', () => {
       forms: 14,
       cells: 70,
       v1Cells: 12,
-      nodes: 300,
+      nodes: 301,
       species: 6,
       traditions: 3,
       territories: 5,
-      primitives: 17,
+      // Eighteen: `main`'s sixteen, this side's `practice-rate` and
+      // `integration/group-e`'s `knowledge-corrupt`. Neither branch's literal
+      // counted the union — COUNTED on the merged data file.
+      primitives: 18,
       // One per action id in contracts.md §4.2, and one per magnitude the
       // god-agency rules read by name. Both coverings are checked by the
       // loader; these are the counts they come out at.
       godCosts: 17,
-      godConstants: 74,
+      // 77 = main's 72, plus W21's `unease-bars` and `unease-step`,
+      // raid-engagement's `mid-raid-revert-multiplier`, and the two this
+      // integration's other side brought. Four separate branches added
+      // constants and no side's literal was a count of the union: HEAD reached
+      // this merge asserting 74 and `integration/group-e` 75. COUNTED on the
+      // merged data file rather than chosen between them.
+      godConstants: 77,
       // One per magnitude the raid rules read by name, checked in both
       // directions by the loader for the reason the god constants are. Five of
       // them are the composition root's rather than the engine's — how many
       // rivals hang in the sky, how they are armed, how often one arrives, and
       // how long after a raid the next may not — because §1.1 keeps the
       // multiverse out of state and something has to say who is on the other
-      // end of the portal.
-      raidConstants: 46,
+      // end of the portal. Fifty-nine is `main`'s 46 plus the thirteen
+      // `raid-engagement` authored: §2's two phase boundaries, what each of §3's
+      // six verbs costs and does, the concealment ceiling, and the Vis a
+      // raiding party carries.
+      raidConstants: 59,
       // Thirty-eight since `apply-magic` added `apply-output-per-month` and
       // `apply-ration-per-month`. Both are scalars rather than role-appeal rows
       // — they price what applied work makes and eats, not what a role wants —

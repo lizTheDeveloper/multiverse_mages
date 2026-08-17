@@ -47,12 +47,10 @@ import type {
   SpeciesAffinities,
 } from '@mm/rules-world';
 import {
-  MAX_CANDIDATE_TARGETS,
   ageInMonths,
   boundCandidates,
   gatherFrontier,
   normalizedAge,
-  withinDepthCeiling,
 } from '@mm/rules-world';
 
 import type { CoordinatingKnowledgeGateway } from './gateway.js';
@@ -157,7 +155,7 @@ export function buildOutlook(
     teachableByMe: boundCandidates(teachableByMe(mage, deps), species),
     scribableTargets: boundCandidates(scribableBy(mage, deps), species),
     applicableTargets: boundCandidates(applicableBy(mage, deps), species),
-    practiceTargets: practisableBy(mage, deps, species),
+    practiceTargets: boundCandidates(practicableBy(mage, deps), species),
 
     materials: deps.materials,
     scribeThroughput: deps.scribeThroughputOf(row.universityId),
@@ -169,56 +167,11 @@ export function buildOutlook(
     wardPressure: 0,
     raidPressure: 0,
 
-    staleHoldings: deps.gateway.staleHoldings(mage),
   };
 }
 
 /**
- * Nodes this mage holds that are worth keeping sharp, stalest first.
- *
- * ## The sort is the mechanic, and it is why `boundCandidates` is not used here
- *
- * Every other list on the outlook goes through `boundCandidates`, which filters
- * to the species depth ceiling, sorts by `compareTargets` — novel before cheap,
- * for the reason `candidates.ts` records — and truncates. Novelty is the right
- * order for a node she is trying to *acquire* and exactly the wrong one for a
- * node she is trying to *keep*: nothing she already holds is novel, so the
- * comparator would fall through to cost and the truncation would keep the nodes
- * she is closest to full on and drop the ones she has not touched in twenty
- * years. Those are `ages-of-magic.md` §2c's whole subject.
- *
- * So this bound sorts on **held mastery ascending** and truncates after that:
- * the stalest node survives, and `target-appeal.ts`' effort term chooses among
- * the survivors. The depth-ceiling filter is still applied, from the same shared
- * predicate rather than a second copy — she cannot hold a node above her
- * ceiling today, but a species retune could make that false and a filter that
- * only works because of a fact elsewhere is a filter waiting to be wrong. Ties
- * fall to the lower node id, a total order over content ids; `heldNodes` already
- * sorts, so this is a stable refinement of a declared order rather than a rescue
- * of an undeclared one.
- *
- * `boundCandidates` stays imported and used by the three lists above it, so a
- * reader comparing them can see that this one is deliberately different.
- */
-function practisableBy(
-  mage: Handle,
-  deps: OutlookDeps,
-  species: SpeciesRecord,
-): readonly KnowledgeTarget[] {
-  const found: { target: KnowledgeTarget; mastery: Fixed }[] = [];
-  for (const nodeId of deps.gateway.heldNodes(mage)) {
-    const target = deps.gateway.practisableBy(mage, nodeId);
-    if (target === undefined) continue;
-    if (!withinDepthCeiling(target, species)) continue;
-    found.push({ target, mastery: deps.gateway.masteryOf(mage, nodeId) });
-  }
-  found.sort((a, b) => a.mastery - b.mastery || a.target.nodeId - b.target.nodeId);
-  return found.slice(0, MAX_CANDIDATE_TARGETS).map((entry) => entry.target);
-}
-
-/**
- * Nodes a living, willing holder **inside her own institution** could teach this
- * mage.
+ * Nodes a living holder could teach this mage, **or a book on her shelf could**.
  *
  * The counterparty scan is the gateway's, and bounded there. Each answer is one
  * node — the lowest the pair admits — so the list is at most one entry per
@@ -229,6 +182,19 @@ function practisableBy(
  * walk the same list or a mage commits to a lesson nobody turns up for. See
  * `gateway.ts`'s `teachingRosterFor` for why the container is the right scope
  * and why `0` is one of the containers.
+ *
+ * ## Why the archive is folded into this list rather than given a tenth goal
+ *
+ * `seek-teaching` is *"seek instruction"*, and a text is instruction. Reading it
+ * that way costs nothing: the goal registry is untouched, so every balance
+ * baseline stays comparable goal-for-goal, the appeal terms and the feasibility
+ * mask keep working unchanged, and the agent action space does not grow.
+ *
+ * A tenth goal would have bought one thing this does not — a mage able to
+ * *prefer* a book to a person — and the design wants the opposite preference.
+ * `world-step.ts` tries the living teacher first and falls back to the shelf,
+ * because *"scribing from a living holder beats scribing from a grimoire"* is
+ * the same sentence read from the learner's end.
  */
 function teachableToMe(mage: Handle, deps: OutlookDeps): KnowledgeTarget[] {
   const found = new Map<number, KnowledgeTarget>();
@@ -243,6 +209,23 @@ function teachableToMe(mage: Handle, deps: OutlookDeps): KnowledgeTarget[] {
       // Teaching is cheaper than research by construction (`contracts.md` §2.3
       // authors `teachCost` below `researchCost`), and what the utility-AI needs
       // here is the pair's cost rather than the learner's solo cost.
+      remainingCost: deps.gateway.teachCostOf(nodeId),
+      cellId: facets.cellId,
+      formId: facets.formId,
+      primitives: facets.primitives,
+    });
+  }
+  for (const nodeId of deps.gateway.readableToMe(mage)) {
+    if (found.has(nodeId)) continue;
+    const facets = deps.facetsOf(nodeId);
+    found.set(nodeId, {
+      nodeId,
+      tier: deps.tierOf(nodeId),
+      // The same `teachCost`, deliberately. §2.3 prices "acquiring this node
+      // with help" and a book is help; inventing a `readCost` would be a content
+      // field with no authored value on three hundred nodes, chosen by whoever
+      // wrote the default. What differs between a book and a teacher is what
+      // *arrives*, not what it costs to sit down with it.
       remainingCost: deps.gateway.teachCostOf(nodeId),
       cellId: facets.cellId,
       formId: facets.formId,
@@ -370,6 +353,35 @@ export interface UniversityStanding {
   unboundedFor(current: Handle): Handle;
   /** Records a move, so the seat is gone for whoever is asked about next. */
   takeSeat(to: Handle, from: Handle): void;
+}
+
+/**
+ * Nodes this mage could spend the month **drilling**.
+ *
+ * The gateway answers the whole question — held, permitted, within her reach,
+ * and below the ceiling practice can carry that tier to — so this builder does
+ * no filtering of its own. It only shapes the ids into targets, the way
+ * `applicableBy` does, and for the same reason: `rules-world` scores *targets*
+ * and may not read a node record.
+ *
+ * `remainingCost` is `0` for every entry. There is no project: a month of
+ * practice is spent and gone, and next month she may spend another.
+ */
+function practicableBy(mage: Handle, deps: OutlookDeps): KnowledgeTarget[] {
+  const found: KnowledgeTarget[] = [];
+  for (const nodeId of deps.gateway.practicableNodes(mage)) {
+    const facets = deps.facetsOf(nodeId);
+    found.push({
+      nodeId,
+      tier: deps.tierOf(nodeId),
+      remainingCost: 0,
+      cellId: facets.cellId,
+      formId: facets.formId,
+      primitives: facets.primitives,
+      libraryHolds: false,
+    });
+  }
+  return found;
 }
 
 /**

@@ -1,14 +1,14 @@
 {
   "note": "Pinned reachability findings. Generated — do not hand-edit. Regenerate with `npm run reachability:pin` and explain the diff in the commit message: an entry removed is a repair, an entry added is a debt someone accepted.",
   "scan": {
-    "examinedSymbolCount": 882,
-    "productionFileCount": 329
+    "examinedSymbolCount": 1017,
+    "productionFileCount": 354
   },
   "scanFloor": {
-    "examinedSymbolCount": 705,
-    "productionFileCount": 263
+    "examinedSymbolCount": 813,
+    "productionFileCount": 283
   },
-  "findingCount": 127,
+  "findingCount": 138,
   "findings": [
     {
       "key": "constant:packages/coordination/src/god/constants.ts:legacyArchiveMaxTier",
@@ -201,6 +201,50 @@
       "kind": "function"
     },
     {
+      "key": "symbol:packages/primitives/src/envelope.ts:ENVELOPE_HARMONIC_TARGET",
+      "group": "symbol",
+      "category": "reachedOnlyByUnreached",
+      "file": "packages/primitives/src/envelope.ts",
+      "name": "ENVELOPE_HARMONIC_TARGET"
+    },
+    {
+      "key": "symbol:packages/primitives/src/envelope.ts:ENVELOPE_SLOT_CEILING",
+      "group": "symbol",
+      "category": "reachedOnlyByUnreached",
+      "file": "packages/primitives/src/envelope.ts",
+      "name": "ENVELOPE_SLOT_CEILING"
+    },
+    {
+      "key": "symbol:packages/primitives/src/envelope.ts:ENVELOPE_SLOT_FLOOR",
+      "group": "symbol",
+      "category": "reachedOnlyByUnreached",
+      "file": "packages/primitives/src/envelope.ts",
+      "name": "ENVELOPE_SLOT_FLOOR"
+    },
+    {
+      "key": "symbol:packages/primitives/src/envelope.ts:RIGID_ENVELOPE",
+      "group": "symbol",
+      "category": "unreached",
+      "file": "packages/primitives/src/envelope.ts",
+      "name": "RIGID_ENVELOPE",
+      "kind": "const"
+    },
+    {
+      "key": "symbol:packages/primitives/src/envelope.ts:envelopeHarmonicSum",
+      "group": "symbol",
+      "category": "reachedOnlyByUnreached",
+      "file": "packages/primitives/src/envelope.ts",
+      "name": "envelopeHarmonicSum"
+    },
+    {
+      "key": "symbol:packages/primitives/src/envelope.ts:envelopeProblems",
+      "group": "symbol",
+      "category": "unreached",
+      "file": "packages/primitives/src/envelope.ts",
+      "name": "envelopeProblems",
+      "kind": "function"
+    },
+    {
       "key": "symbol:packages/primitives/src/rediscovery.ts:speciesRediscoveryMultiplier",
       "group": "symbol",
       "category": "unreached",
@@ -309,14 +353,6 @@
       "category": "unreached",
       "file": "packages/rules-magic/src/instances/scribing.ts",
       "name": "PALACE_STORE",
-      "kind": "const"
-    },
-    {
-      "key": "symbol:packages/rules-magic/src/instances/scribing.ts:STANDARD_STORE",
-      "group": "symbol",
-      "category": "unreached",
-      "file": "packages/rules-magic/src/instances/scribing.ts",
-      "name": "STANDARD_STORE",
       "kind": "const"
     },
     {
@@ -478,12 +514,51 @@
       "kind": "function"
     },
     {
+      "key": "symbol:packages/rules-raid/src/phases.ts:ENGAGEMENT_PHASE_NAMES",
+      "group": "symbol",
+      "category": "unreached",
+      "file": "packages/rules-raid/src/phases.ts",
+      "name": "ENGAGEMENT_PHASE_NAMES",
+      "kind": "const"
+    },
+    {
       "key": "symbol:packages/rules-raid/src/raid.ts:BURNABLE_LOCATION_KINDS",
       "group": "symbol",
       "category": "unreached",
       "file": "packages/rules-raid/src/raid.ts",
       "name": "BURNABLE_LOCATION_KINDS",
       "kind": "const"
+    },
+    {
+      "key": "symbol:packages/rules-raid/src/verbs.ts:legalVerbs",
+      "group": "symbol",
+      "category": "unreached",
+      "file": "packages/rules-raid/src/verbs.ts",
+      "name": "legalVerbs",
+      "kind": "function"
+    },
+    {
+      "key": "symbol:packages/rules-raid/src/verbs.ts:runPlanFor",
+      "group": "symbol",
+      "category": "unreached",
+      "file": "packages/rules-raid/src/verbs.ts",
+      "name": "runPlanFor",
+      "kind": "function"
+    },
+    {
+      "key": "symbol:packages/rules-raid/src/verbs.ts:verbSide",
+      "group": "symbol",
+      "category": "reachedOnlyByUnreached",
+      "file": "packages/rules-raid/src/verbs.ts",
+      "name": "verbSide"
+    },
+    {
+      "key": "symbol:packages/rules-world/src/autonomy/affiliation.ts:completeAffiliation",
+      "group": "symbol",
+      "category": "unreached",
+      "file": "packages/rules-world/src/autonomy/affiliation.ts",
+      "name": "completeAffiliation",
+      "kind": "function"
     },
     {
       "key": "symbol:packages/rules-world/src/autonomy/age-bands.ts:AGE_BANDS_IN_ORDER",
@@ -558,14 +633,6 @@
       "kind": "const"
     },
     {
-      "key": "symbol:packages/rules-world/src/economy/carrying-capacity.ts:NO_TERRITORY",
-      "group": "symbol",
-      "category": "unreached",
-      "file": "packages/rules-world/src/economy/carrying-capacity.ts",
-      "name": "NO_TERRITORY",
-      "kind": "const"
-    },
-    {
       "key": "symbol:packages/rules-world/src/economy/counts.ts:ECONOMIC_INPUTS",
       "group": "symbol",
       "category": "unreached",
@@ -620,6 +687,21 @@
       "file": "packages/rules-world/src/mages/death.ts",
       "name": "isWorkingMage",
       "kind": "function"
+    },
+    {
+      "key": "symbol:packages/rules-world/src/mages/roles.ts:ASSIGNABLE_MAGE_ROLES",
+      "group": "symbol",
+      "category": "unreached",
+      "file": "packages/rules-world/src/mages/roles.ts",
+      "name": "ASSIGNABLE_MAGE_ROLES",
+      "kind": "const"
+    },
+    {
+      "key": "symbol:packages/rules-world/src/mages/roles.ts:changeAffiliation",
+      "group": "symbol",
+      "category": "reachedOnlyByUnreached",
+      "file": "packages/rules-world/src/mages/roles.ts",
+      "name": "changeAffiliation"
     },
     {
       "key": "symbol:packages/rules-world/src/populace/buckets.ts:BIRTH_BUCKET_TAIL_ALLOWANCE",
@@ -741,13 +823,6 @@
       "kind": "function"
     },
     {
-      "key": "symbol:packages/rules-world/src/universities/construction.ts:effectiveCapacity",
-      "group": "symbol",
-      "category": "reachedOnlyByUnreached",
-      "file": "packages/rules-world/src/universities/construction.ts",
-      "name": "effectiveCapacity"
-    },
-    {
       "key": "symbol:packages/rules-world/src/universities/construction.ts:readUniversity",
       "group": "symbol",
       "category": "unreached",
@@ -817,6 +892,14 @@
       "category": "unreached",
       "file": "packages/scenario/src/long-run.ts",
       "name": "longestOccupationAlternation",
+      "kind": "function"
+    },
+    {
+      "key": "symbol:packages/scenario/src/reference-universe.ts:academySiteKindOf",
+      "group": "symbol",
+      "category": "unreached",
+      "file": "packages/scenario/src/reference-universe.ts",
+      "name": "academySiteKindOf",
       "kind": "function"
     },
     {

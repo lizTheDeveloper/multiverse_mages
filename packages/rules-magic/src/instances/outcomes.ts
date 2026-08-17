@@ -111,19 +111,22 @@ export type KnowledgeRefusal =
       readonly required: Fp;
     }
   /**
-   * The subject already holds this node at full mastery, so practice has
-   * nothing to restore.
+   * The text is silently wrong and this reader could not read through it.
    *
-   * A refusal rather than a no-op completion, because the two are different
-   * facts about a mage's month and the autonomy layer masks on the difference:
-   * a goal that "completes" without changing anything is the *"whole career
-   * quietly evaporates"* failure `feasibility.ts` rejects by name.
+   * `discovered` is the half that matters and is the reason this is a refusal
+   * shape of its own rather than a `node-not-held`. It says whether the reader
+   * was competent enough to tell *"this book is wrong"* from *"I am not good
+   * enough yet"* — see `fidelity.ts`'s `canDiscoverCorruption`. A refusal with
+   * `discovered: false` is a month a novice spent and learned nothing from,
+   * including about the book.
    */
   | {
-      readonly reason: 'mastery-at-maximum';
+      readonly reason: 'source-corrupted';
       readonly nodeId: ContentId;
       readonly subject: Handle;
-      readonly mastery: Fp;
+      readonly source: Handle;
+      /** Whether the reader could name the failure. Marks the book when true. */
+      readonly discovered: boolean;
     };
 
 /** A refusal rendered for a human. Never parsed; assert on the fields instead. */
@@ -173,10 +176,12 @@ export function describeRefusal(refusal: KnowledgeRefusal): string {
         `scribing node ${String(refusal.nodeId)} needs ${String(refusal.required)} scribe ` +
         `capacity and ${String(refusal.supplied)} was supplied`
       );
-    case 'mastery-at-maximum':
+    case 'source-corrupted':
       return (
-        `${String(refusal.subject)} already holds node ${String(refusal.nodeId)} at the maximum ` +
-        `mastery of ${String(refusal.mastery)}, so there is nothing for practice to restore`
+        `instance ${String(refusal.source)} of node ${String(refusal.nodeId)} is corrupted and ` +
+        `${String(refusal.subject)} could not read through it; the failure was ` +
+        `${refusal.discovered ? 'diagnosed and the text marked' : 'silent — the reader cannot ' +
+        'tell a wrong book from her own limits'}`
       );
   }
 }
