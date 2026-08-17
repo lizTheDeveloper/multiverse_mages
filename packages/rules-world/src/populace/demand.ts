@@ -179,7 +179,26 @@ export interface DemandInputs {
    * check the till as well would count the same constraint twice and hide it.
    */
   readonly scribingQueueDepth: number;
-  /** Student seats across completed universities — `contracts.md` §1.4 `capacity`. */
+  /**
+   * Student seats **granted** this tick — `contracts.md` §1.4 `capacity`, after
+   * admission.
+   *
+   * Not the raw seat total, and the difference is the whole of the
+   * `universities` spec's *"refused rather than silently truncated"*. Passing
+   * the raw capacity makes this driver a **cap**: `reallocateOccupations` moves
+   * `demand − supply` people into `student` and stops, so nobody is ever
+   * refused because nobody is ever asked, and the only observable left is
+   * `unmetDemand[student]` — which reports empty desks whether they are empty
+   * for want of people or for want of eligible ones. This module's own note on
+   * the scribing queue draws the same line: a driver is *a want*, and the
+   * affordability check belongs where the thing is actually handed out.
+   *
+   * `coordination`'s `admissions.ts` is that check. It counts who would take a
+   * seat, offers them to each completed university through `admitStudents`,
+   * and supplies the grant here. The two numbers coincide whenever there are
+   * more applicants than seats; below that the grant is smaller, and the
+   * refusal it leaves behind is what capacity tuning reads.
+   */
   readonly universityCapacity: number;
   /**
    * People of school age who could be magic users at all — the sum over cohorts

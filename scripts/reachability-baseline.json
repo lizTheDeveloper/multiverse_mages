@@ -1,14 +1,14 @@
 {
   "note": "Pinned reachability findings. Generated — do not hand-edit. Regenerate with `npm run reachability:pin` and explain the diff in the commit message: an entry removed is a repair, an entry added is a debt someone accepted.",
   "scan": {
-    "examinedSymbolCount": 1017,
-    "productionFileCount": 354
+    "examinedSymbolCount": 895,
+    "productionFileCount": 339
   },
   "scanFloor": {
-    "examinedSymbolCount": 813,
-    "productionFileCount": 283
+    "examinedSymbolCount": 716,
+    "productionFileCount": 271
   },
-  "findingCount": 138,
+  "findingCount": 120,
   "findings": [
     {
       "key": "constant:packages/coordination/src/god/constants.ts:legacyArchiveMaxTier",
@@ -308,14 +308,6 @@
       "kind": "function"
     },
     {
-      "key": "symbol:packages/rules-magic/src/grid.ts:heldNodes",
-      "group": "symbol",
-      "category": "unreached",
-      "file": "packages/rules-magic/src/grid.ts",
-      "name": "heldNodes",
-      "kind": "function"
-    },
-    {
       "key": "symbol:packages/rules-magic/src/instances/location.ts:destroyLibrary",
       "group": "symbol",
       "category": "unreached",
@@ -345,6 +337,14 @@
       "category": "unreached",
       "file": "packages/rules-magic/src/instances/outcomes.ts",
       "name": "describeRefusal",
+      "kind": "function"
+    },
+    {
+      "key": "symbol:packages/rules-magic/src/instances/practice.ts:isPractisable",
+      "group": "symbol",
+      "category": "unreached",
+      "file": "packages/rules-magic/src/instances/practice.ts",
+      "name": "isPractisable",
       "kind": "function"
     },
     {
@@ -796,54 +796,6 @@
       "category": "unreached",
       "file": "packages/rules-world/src/traits.ts",
       "name": "traitValueOf",
-      "kind": "function"
-    },
-    {
-      "key": "symbol:packages/rules-world/src/universities/capacity.ts:AdmissionRefusals",
-      "group": "symbol",
-      "category": "unreached",
-      "file": "packages/rules-world/src/universities/capacity.ts",
-      "name": "AdmissionRefusals",
-      "kind": "class"
-    },
-    {
-      "key": "symbol:packages/rules-world/src/universities/capacity.ts:admitStudents",
-      "group": "symbol",
-      "category": "unreached",
-      "file": "packages/rules-world/src/universities/capacity.ts",
-      "name": "admitStudents",
-      "kind": "function"
-    },
-    {
-      "key": "symbol:packages/rules-world/src/universities/construction.ts:createUniversity",
-      "group": "symbol",
-      "category": "unreached",
-      "file": "packages/rules-world/src/universities/construction.ts",
-      "name": "createUniversity",
-      "kind": "function"
-    },
-    {
-      "key": "symbol:packages/rules-world/src/universities/construction.ts:readUniversity",
-      "group": "symbol",
-      "category": "unreached",
-      "file": "packages/rules-world/src/universities/construction.ts",
-      "name": "readUniversity",
-      "kind": "function"
-    },
-    {
-      "key": "symbol:packages/rules-world/src/universities/profile.ts:dominantCell",
-      "group": "symbol",
-      "category": "unreached",
-      "file": "packages/rules-world/src/universities/profile.ts",
-      "name": "dominantCell",
-      "kind": "function"
-    },
-    {
-      "key": "symbol:packages/rules-world/src/universities/profile.ts:universityProfile",
-      "group": "symbol",
-      "category": "unreached",
-      "file": "packages/rules-world/src/universities/profile.ts",
-      "name": "universityProfile",
       "kind": "function"
     },
     {
