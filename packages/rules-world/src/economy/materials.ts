@@ -54,10 +54,23 @@ import { LAND_MATERIAL_KINDS, MATERIAL_KINDS, zeroAmounts } from './kinds.js';
  * than a loss: a universe can no longer starve its people to finish a building,
  * because a building is not made of food.
  *
- * **There is no substitution between kinds, deliberately.** Letting a hungry
- * universe eat its quarry would be a market, and a market is a mechanic nobody
- * asked for that dissolves the differentiation the three kinds exist to create.
- * A shortfall in one kind is a shortfall, and it is recorded as one.
+ * **No substitution between kinds is implemented.** A shortfall in one kind is a
+ * shortfall, and it is recorded as one — nothing here lets a hungry universe eat
+ * its quarry.
+ *
+ * **That is a description of the code, not a ruling against a market.** An
+ * earlier revision of this comment said a market was "a mechanic nobody asked
+ * for". It was written by an agent exercising restraint, in the register of a
+ * design decision, and it was then quoted back as authority three separate times
+ * in one night — including to justify scoping a machine out of a spec, when
+ * mills, kilns and furnaces are precisely rate-limited conversions between
+ * kinds. The author's ruling, 2026-08-16: *"that's not something that I said.
+ * You could have a market."*
+ *
+ * So: the behaviour below is deliberate and load-bearing — substitution really
+ * would dissolve the differentiation the kinds exist to create, and anything
+ * adding it owes an argument for why. But the argument is open, and this comment
+ * does not close it. Keep the justification and the permission apart.
  *
  * ## Every magnitude here is untuned
  *
