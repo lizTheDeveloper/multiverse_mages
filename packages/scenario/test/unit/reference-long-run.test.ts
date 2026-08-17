@@ -453,6 +453,71 @@ describe('two hundred world years of the reference universe', () => {
     // stronger than a ratio — a ratio near one is also what an empty library
     // reports. Compared against the run's own `nodesKnown` rather than a
     // literal, so that widening the ruleset does not silently weaken it.
+    //
+    // ## RED, and the red is the finding — the shelf did not shrink, the grid opened
+    //
+    // *Measured on this tree, 2026-08-17, `integration/all-branches`, at
+    // `LONG_RUN_SEED` over the full 2,400 ticks, through `WorldStepReport`'s
+    // per-tick flow ledger.* This assertion reads **53 against 227**.
+    //
+    // The obvious reading — the library lost its coverage — is wrong, and the
+    // ledger says which number moved. When W23 wrote the equality it recorded
+    // *"51 of 51 nodes shelved"*: depth and knowledge coincided at 51 because
+    // the twelve v1 cells were all there was to know. Today `libraryDepth` is
+    // **53** — it went *up* — and `grimoires` is **3,530** against W23's 2,746.
+    // What went up 4.5x is `nodesKnown`, 51 -> **227**, because this campaign
+    // opened all seventy cells. The equality was a claim about a universe with
+    // 51 things in it.
+    //
+    // | tick | 240 | 720 | 1200 | 1680 | 2400 |
+    // | `nodesKnown` | 102 | 175 | 222 | 228 | 227 |
+    // | `libraryDepth` | 40 | 51 | 51 | 52 | 53 |
+    // | `grimoires` | 266 | 245 | 496 | 1575 | 3530 |
+    // | vellum `opening` | 0 | 620 | 343 | 253 | 880 |
+    // | vellum `faucet` | 546 | 651 | 2158 | 6344 | 8931 |
+    // | `libraryUpkeep` owed | 532 | 490 | 990 | 3144 | **7056** |
+    // | `scribing` paid | 0 | 0 | 1024 | 3072 | 2048 |
+    //
+    // ## What bounds the shelf, and what does not
+    //
+    // **Not a faucet that lost a source in a merge**, which was the competing
+    // hypothesis. Both faucets are live and the land one is growing: vellum
+    // `produced` runs 206 -> 8,931 fp across the run, `applied` 340 -> 0 as
+    // casting tails off, and `spilled` is 0 at every sample — nothing is being
+    // made and thrown away.
+    //
+    // **Not scribing being refused for want of vellum either.** The `scribing`
+    // claimant's shortfall is **0 fp summed over all 2,400 ticks**: scribing is
+    // throttled by affordability *before* the priority walk, so it never asks
+    // for what is not there and the claimant row cannot see the pressure. That
+    // negative is trustworthy only because the same reader on the same field
+    // reports a positive: `libraryUpkeep` shortfall totals **42,643 fp** over
+    // the run and shows 38 fp at tick 240. The probe works; scribing genuinely
+    // is not short.
+    //
+    // What bounds it is `CONSUMPTION_ORDER`, working exactly as authored:
+    // `libraryUpkeep` is paid at position 4 and `scribing` at 5, and the upkeep
+    // bill scales with the pile. By tick 2,400 upkeep owes 7,056 fp of an 8,931
+    // fp faucet — **79% of every sheet of vellum the universe makes goes to
+    // keeping the books it already has** — leaving 2,048 fp, which is two
+    // grimoires a month. `shortKinds.vellum` is true on **389 of 2,400 ticks**
+    // and `opening` never rises above 880 fp, so the stock is a pass-through and
+    // not a reserve. A universe that knows 227 things cannot shelve them at two
+    // books a month against a bill that grows with every book it shelves.
+    //
+    // That is a **negative feedback loop between shelf size and shelf growth**,
+    // and it is the mechanic `casting-vellum-per-month` was swept against — its
+    // own gloss says *"at 16 and 8 the library sheds nodes and 9.8's tripwire
+    // fires; 4 is the highest rate that costs without shedding"*, tuned on a
+    // branch where knowledge topped out at 51.
+    //
+    // **Left red deliberately.** Re-pinning this to `53` would be re-pinning a
+    // measurement to agree with the code, and the equality is the only thing
+    // that would tell anybody the shelf had stopped tracking the universe. The
+    // decision it is waiting on is the author's: either the vellum faucet scales
+    // with what there is to know, or upkeep stops scaling linearly with the
+    // pile, or the claim narrows from *"everything the universe knows"* to
+    // something a 70-cell grid can actually fund. None of those is a test edit.
     expect(last?.libraryDepth ?? 0).toBe(last?.nodesKnown ?? -1);
     //
     // ## The coverage equality stays; the books-to-depth ratio is withdrawn

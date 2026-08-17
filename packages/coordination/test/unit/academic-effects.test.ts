@@ -453,6 +453,56 @@ describe('a universe that knows these nodes outworks one that does not', () => {
 
     console.log(lift(`${primitive} vs knowledge-moves-nothing (${metric})`, knowing[metric], inert[metric]));
 
+    // ## `scribe-rate` is RED here, and the red is a finding about *this arm*
+    //
+    // *Measured on this tree, 2026-08-17, `integration/all-branches`, seed
+    // `0x00041000`, 60 ticks, through `WorldStepReport`'s per-tick flow ledger.*
+    // The `scribe-rate` case reads **control 823 books -> treatment 274**: a
+    // universe whose knowledge reaches its rates finishes *fewer* grimoires.
+    //
+    // | | treatment (index on) | control (knowledge moves nothing) |
+    // | books scribed | 274 | 823 |
+    // | vellum spent scribing | 809,984 fp | 1,134,592 fp |
+    // | fp per book | 2,956 | 1,379 |
+    // | book tiers | t1 81, t2 67, t3 108, t4 18 | t1 668, t2 122, t3 17, t4 16 |
+    // | distinct nodes held | **69** | 47 |
+    // | vellum `opening`, tick 59 | **372,366** | 148 |
+    //
+    // ### Vellum starvation is ruled out, and the negative has a positive control
+    //
+    // The hypothesis on file was that the differentiated economy starves the
+    // scribes. It does not starve *these* ones. In the treatment arm the
+    // `scribing` claimant's `owed` equals its `paid` with **0 shortfall at every
+    // sampled tick**, `shortKinds.vellum` is never true, and the arm finishes
+    // holding 372,366 fp of vellum. It is the **control** that goes broke: its
+    // stock falls 1,024,000 -> 352 fp by tick 36 and its output collapses from
+    // 28 books a tick to 1. The same reader reports a live shortfall elsewhere
+    // — `libraryUpkeep` in `reference-long-run`, 42,643 fp — so a zero here is a
+    // zero and not a dead probe.
+    //
+    // ### The confound is tier, and this file already argues it
+    //
+    // `grimoiresScribed` is a **count**, and `contracts.md` §2.3 authors
+    // `scribeCost` at 1024 for tier 1 doubling per tier. Switching the index on
+    // switches all three academic primitives on at once, so the treatment's
+    // mages research deeper — 69 distinct nodes against 47 — and then scribe
+    // what they know: 126 of its 274 books are tier 3 or 4, against 33 of the
+    // control's 823. The control's count is 668 tier-1 copies, the cheapest book
+    // in the game, bought by emptying the granary of vellum.
+    //
+    // So the "knowledge moves nothing" arm is **not a counterfactual for
+    // `scribe-rate`** — it changes what mages choose to do, not merely how fast
+    // they do it. The module note above already says the mask is the better
+    // counterfactual for exactly this reason, and the mask agrees: *"attributes
+    // a grimoire gain to `scribe-rate` alone"* is **green** on this tree.
+    //
+    // **Left red deliberately.** The assertion is true of `research-rate` and
+    // `teach-rate` and false of `scribe-rate`, and flipping it or dropping the
+    // case would delete the only place the tier confound is visible. What it is
+    // waiting on is the author's call on whether "work finished" should be
+    // counted in books or in fp — and note that the treatment is behind on *both*
+    // (809,984 fp against 1,134,592), so an fp metric would not rescue it either.
+    // The claim that survives the measurement is depth, not throughput.
     expect(inert[metric]).toBeGreaterThan(0);
     expect(knowing[metric]).toBeGreaterThan(inert[metric]);
   });
