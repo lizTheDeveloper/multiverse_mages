@@ -233,11 +233,20 @@ describe('control 1 — the sidecar reconciles, on a real run', () => {
   });
 
   it('names every claimant the economy has, in priority order, and each with its stock', () => {
-    // Built from `CONSUMPTION_ORDER` and `CLAIMANT_KIND` rather than transcribed,
-    // so this pins the wire and not a copy of the list. A claimant added to
-    // `rules-world` and not reaching a client is the failure being guarded
-    // against, and it is what happened to `subsistence` and `casting` for the
-    // whole life of the ledger.
+    // The ledger's rows are built from `CONSUMPTION_ORDER` and `CLAIMANT_KIND`
+    // in `world-step.ts`; this transcribes them, so it pins the wire and not the
+    // way the object literal was built. A claimant added to `rules-world` and
+    // not reaching a client is the failure being guarded against, and it is what
+    // happened to `subsistence` and `casting` for the whole life of the ledger.
+    // Transcription is deliberate in both directions: a claimant that arrives
+    // and *does* reach the client has to be admitted here on purpose, which is
+    // what `refining` is doing below.
+    //
+    // `refining` was placed after `construction` (not appended) by the ore-grade
+    // work; it draws grade-0 `stone` for `mt-turn-the-poor-ore`, and it is the
+    // first time `stone` has had two claimants. Re-recorded 2026-08-17 off
+    // `CONSUMPTION_ORDER`/`CLAIMANT_KIND` in
+    // `packages/rules-world/src/economy/materials.ts`, not off a failure message.
     const first = ledgerFrames()[0]?.flow as RawLedger;
     expect(first?.claimants.map((row) => row.claimant)).toEqual([
       'subsistence',
@@ -246,6 +255,7 @@ describe('control 1 — the sidecar reconciles, on a real run', () => {
       'libraryUpkeep',
       'scribing',
       'construction',
+      'refining',
       'constructionLabor',
     ]);
     expect(first?.claimants.map((row) => row.kind)).toEqual([
@@ -254,6 +264,7 @@ describe('control 1 — the sidecar reconciles, on a real run', () => {
       'insight',
       'vellum',
       'vellum',
+      'stone',
       'stone',
       'labor',
     ]);
