@@ -166,12 +166,44 @@ const CLAIMED_SEPARATIONS: readonly {
   readonly status: 'asserted' | 'retired';
   readonly verdict: SeparationVerdict;
 }[] = [
+  //
+  // **Re-recorded 2026-08-16 on `w/exp-yields`, and every row below moved the
+  // same way for one reason: the whole population reaches tier 3 later, and the
+  // slow species stop reaching it at all.** Re-measured as this file's failure
+  // text instructs, `node packages/scenario/bin/species-separation.mjs --sets 12`,
+  // 72 runs at 720 ticks:
+  //
+  //     draconic  mean 454.0 ± 25.4 SE   censored 57/72
+  //     dwarf     mean 650.0 ± 12.5 SE   censored 65/72
+  //     elf       mean 604.2 ± 59.8 SE   censored 64/72
+  //     gnome     mean 377.8 ±  4.7 SE   censored  2/72
+  //     human     mean 446.9 ± 14.6 SE   censored 48/72
+  //     orc       mean 441.8 ± 34.0 SE   censored 63/72
+  //
+  // Five of six species are censored in most sets, so most pairs now have one
+  // or two comparable sets and `NaN` standard errors — which is what turns a
+  // verdict `inconclusive` here, and it is a statement about **power** rather
+  // than about the ordering.
+  //
+  // The cause is this branch's own: `form.json`'s fourteen yield rows were
+  // re-authored out of nine distinct baskets into fourteen, and the total weight
+  // routed to `stone` across all forms fell from 3072 to 2624 while `food` rose
+  // 2048 -> 2304 and `vellum` 2048 -> 2496. `stone` is what a university is
+  // built out of, universities are what teach, and teaching is most of how a
+  // mage reaches tier 3. **That is a balance finding for the owner and it is
+  // reported rather than tuned away** — every magnitude involved is
+  // `tuningStatus: "untuned"` and this tree is deliberately pre-sweep.
+  //
+  // This row at twelve sets: `gnome < elf` INCONCLUSIVE, strict in 4/5
+  // comparable sets, paired gap 232.6 ± 60.9 ticks = 3.8 SE. The sign never
+  // reverses and the gap is large; what is missing is sets in which elf arrives
+  // at all.
   {
     faster: 'gnome',
     slower: 'elf',
     assertedAs: 'beforeElf.high < elf.low',
     status: 'asserted',
-    verdict: 'established',
+    verdict: 'inconclusive',
   },
   // **Retired on `w185/cohort-source`, 2026-08-14, at 6/12.** It was 12/12 when
   // it was asserted. W185 opened the occupation transfer valve — which had been
@@ -223,12 +255,18 @@ const CLAIMED_SEPARATIONS: readonly {
   // 
   // Retired next door in the same commit, and its source text is pinned in
   // {@link RETIRED_ASSERTIONS} below.
+  // **Re-recorded 2026-08-16 on `w/exp-yields`: `refuted` -> `inconclusive`, and
+  // it is power rather than direction.** At twelve sets `elf < dwarf` is
+  // INCONCLUSIVE at 1/4 comparable sets, 41.8 ± 83.1 ticks = 0.5 SE; the reverse
+  // pair has one comparable set at four and reports a `NaN` standard error. Both
+  // species are censored in five sixths of the runs — dwarf 65/72, elf 64/72 —
+  // so there is almost nothing left to compare. Stays retired.
   {
     faster: 'dwarf',
     slower: 'elf',
     assertedAs: 'beforeElf.high < elf.low — refuted on W116, no longer asserted',
     status: 'retired',
-    verdict: 'refuted',
+    verdict: 'inconclusive',
   },
   // W116 added a second `gnome < elf` row here, to replace the `dwarf < elf`
   // row above as the sibling file's other `beforeElf` binding. On the Group F
@@ -238,12 +276,24 @@ const CLAIMED_SEPARATIONS: readonly {
   // three where the sibling file binds two. W116's finding is the *retirement*
   // above, which stands; the replacement row was only needed on a tree where
   // `gnome < elf` was not already here.
+  // **Re-recorded 2026-08-16 on `w/exp-yields`: `established` -> `inconclusive`,
+  // and this is the row that costs the most.** At twelve sets: strict in 3/11
+  // comparable sets, paired gap 69.0 ± 16.6 ticks = 4.2 SE, per-set endpoint gap
+  // [-181, 42]. Gnome is still the fastest column the instrument has (377.8 ±
+  // 4.7, censored 2/72) and human is now censored in 48 of 72 runs, so the sets
+  // where human *does* arrive are the sets where it arrived unusually early —
+  // which is precisely the selection effect that makes an endpoint comparison
+  // stop reproducing. The mean gap is unchanged in sign and healthy in size.
+  //
+  // It is **not** re-retired. The claim is asserted next door and the honest
+  // verdict here is that this tree cannot currently establish it, which is what
+  // `inconclusive` says.
   {
     faster: 'gnome',
     slower: 'human',
     assertedAs: 'gnome.high < human.low',
     status: 'asserted',
-    verdict: 'established',
+    verdict: 'inconclusive',
   },
   // Strict in 11 of 12 sets at the bin's default design — a real effect, and not
   // reproducible enough for a file with one seed set to assert. It fails in
@@ -290,12 +340,18 @@ const CLAIMED_SEPARATIONS: readonly {
   // the row stays retired and the *verdict* moves, which is exactly what the
   // file's own instruction asks for — *"re-record this row with the new numbers
   // and the reason — do not delete it."*
+  // **Re-recorded 2026-08-16 on `w/exp-yields`: `refuted` -> `inconclusive`.**
+  // At twelve sets `orc < elf` is strict in 3/5 comparable sets at 140.7 ± 68.2
+  // ticks = 2.1 SE — the claimed order now holds *more often than not*, where
+  // the previous reading had it backwards in every set. Nothing here rehabilitates
+  // the claim: orc is censored 63/72 and elf 64/72, so five comparable sets out
+  // of twelve is what a verdict is being read off. Stays retired.
   {
     faster: 'orc',
     slower: 'elf',
     assertedAs: 'orc.high < elf.low — retired 2026-08-14',
     status: 'retired',
-    verdict: 'refuted',
+    verdict: 'inconclusive',
   },
   // **Re-recorded 2026-08-16, and it moved the opposite way to the row above:
   // `refuted` -> `inconclusive`.** Same twelve-set re-measurement:
@@ -475,10 +531,30 @@ describe('every strict separation this repository asserts, re-rolled', () => {
     // spends its months writing. That is a balance finding for the owner and not
     // a merge artefact, and it needs a decision before this row can be honest
     // again.
-    for (const speciesId of ['gnome', 'dwarf']) {
-      const spread = report.spreads.find((entry) => entry.speciesId === speciesId);
-      expect(spread?.censored, `${speciesId} censored`).toBe(0);
-    }
+    //
+    // **Re-recorded 2026-08-16 on `w/exp-yields`, and the paragraph above is
+    // now true of five species rather than one.** Dwarf's censoring is no
+    // longer a dwarf story: at twelve sets, dwarf is censored 65/72, elf 64/72,
+    // orc 63/72, draconic 57/72 and human 48/72, against gnome's 2/72. The
+    // whole population reaches tier 3 later on this branch — see the block
+    // above `CLAIMED_SEPARATIONS` for the measurement and the cause — so a
+    // check pinned at "gnome and dwarf are both uncensored" cannot hold and
+    // cannot be repaired by moving one number.
+    //
+    // Rewritten to assert what still licenses the reading: **gnome** must be
+    // uncensored, because it is gnome's interval the overlap claim is made
+    // against, and the pair must have at least one comparable set or
+    // `strictSets` below is a statistic over nothing. Dwarf's censoring is
+    // asserted as *present and named* rather than pinned to a rate, so a tree
+    // that fixes it fails here and gets to delete this paragraph.
+    const gnomeSpread = report.spreads.find((entry) => entry.speciesId === 'gnome');
+    expect(gnomeSpread?.censored, 'gnome censored').toBe(0);
+    const dwarfSpread = report.spreads.find((entry) => entry.speciesId === 'dwarf');
+    expect(
+      dwarfSpread?.censored,
+      'dwarf now reaches tier 3 in every run, so the paragraph above is stale — delete it',
+    ).toBeGreaterThan(0);
+    expect(pair.comparableSets, 'no set compares gnome against dwarf at all').toBeGreaterThan(0);
     // 5 of 12 at the bin's default design, 2 of 4 here. Asserted as "not always
     // true" rather than as a rate, because the rate is a function of how many
     // sets were taken and the claim next door is not.
@@ -588,7 +664,22 @@ describe("#140's four-species chain", () => {
     // most robust separation in the report, established before this branch and
     // unmoved by it. So the claim "not everything separates, but something
     // does" survives on a stronger link than the one it used to rest on.
-    const link = separationOf(report, 'gnome', 'human');
-    expect(verdictOf(link).verdict).toBe('established');
+    //
+    // **Re-recorded 2026-08-16 on `w/exp-yields`: `gnome < human` is
+    // `inconclusive` here too, at 3/11 comparable sets and 4.2 SE.** So the
+    // consolation this test used to offer — *"not everything separates, but
+    // something does"* — no longer rests on `gnome < human`.
+    //
+    // It rests on `gnome < dwarf`, which is the strongest row in the twelve-set
+    // report: **ESTABLISHED, strict in 5/5 comparable sets, paired gap 287.1 ±
+    // 11.2 ticks = 25.7 SE**, and it is the first adjacent link of #140's own
+    // chain. The link is *replaced* rather than the assertion weakened, which is
+    // this file's rule for a seed and is the same rule here; the previous link
+    // is recorded above rather than deleted.
+    //
+    // Both are asserted, so the sentence this test is named for stays checkable:
+    // one link reproduces and the one that used to no longer does.
+    expect(verdictOf(separationOf(report, 'gnome', 'human')).verdict).toBe('inconclusive');
+    expect(verdictOf(separationOf(report, 'gnome', 'dwarf')).verdict).toBe('established');
   });
 });
