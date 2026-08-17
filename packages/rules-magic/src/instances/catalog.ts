@@ -39,7 +39,7 @@
  * a node is interdicted by. Wiring is `{ cellOf }` at the call site.
  */
 
-import type { ContentId, ContentRegistry, Fp, NodeRecord } from '@mm/content';
+import type { ContentId, ContentRegistry, EffectTarget, Fp, NodeRecord } from '@mm/content';
 import type { RngStream } from '@mm/sim-core';
 
 /**
@@ -52,6 +52,12 @@ import type { RngStream } from '@mm/sim-core';
  * runs millions of times. It also keeps the effects list out of reach: effect
  * gathering is task group 5's, and a type that cannot see `effects` cannot
  * quietly start applying them here.
+ *
+ * The projection *reads* `effects` in exactly one place and keeps none of it —
+ * {@link scopeMultiplierOf} folds the list down to a single multiplier. That is
+ * deliberately a scalar and not the list: pricing a node by its reach is not
+ * applying its effects, and a field holding one number cannot become the second
+ * effect pipeline this note exists to prevent.
  */
 export interface KnowledgeNode {
   readonly nodeId: ContentId;
@@ -64,6 +70,18 @@ export interface KnowledgeNode {
   readonly scribeCost: Fp;
   /** At least `@mm/primitives`' `REDISCOVERY_FLOOR`; the loader enforces it. */
   readonly rediscoveryMultiplier: Fp;
+  /**
+   * What this node's **reach** multiplies its research cost by.
+   *
+   * Derived once per content load from the node's effects, not authored — see
+   * {@link scopeMultiplierOf}. Absent means unpriced, i.e. `FP_ONE`, which is
+   * how a hand-built {@link catalogOf} node and every save written before this
+   * axis existed keep the behaviour they were written against. That is the same
+   * reading `grant-budget`'s absent row takes, and for the same reason: a
+   * default that changes old behaviour is a balance edit disguised as a
+   * migration.
+   */
+  readonly scopeMultiplier?: Fp;
 }
 
 /** The loaded node graph, addressed by interned id. */
@@ -198,8 +216,73 @@ function projectNode(
     teachCost: record.teachCost,
     scribeCost: record.scribeCost,
     rediscoveryMultiplier: record.rediscoveryMultiplier,
+    scopeMultiplier: scopeMultiplierOf(record, registry),
   };
 }
+
+/**
+ * The scope multiplier of a node: **the widest target any of its effects has.**
+ *
+ * ## Why the widest, and not a sum or a mean
+ *
+ * A node reaching the universe *at all* has universe-scale reach — the narrow
+ * effects riding along with it do not make it narrower, and the god who forbade
+ * it did not forbid two-thirds of it. A mean would let an author dilute a
+ * universe-wide effect by attaching three personal ones, which is a cost
+ * reduction bought by adding content; a sum would price a node with four
+ * `self` effects above one that rewrites the world. Widest is the only fold of
+ * the three that cannot be gamed downward by authoring *more*.
+ *
+ * It costs the resolution to say so: a node whose widest effect is `universe`
+ * and whose other three are `self` is priced identically to one whose four
+ * effects are all `universe`. That is a real loss and it is the price of a rule
+ * a content author can predict without arithmetic.
+ *
+ * ## The ordering is `EffectTarget`'s own
+ *
+ * {@link SCOPE_ORDER} restates the union's declaration order rather than
+ * inventing a ranking. Only 6 of the 300 shipped nodes are `side`-widest, so
+ * the one genuinely arguable rung — whether a side outranks an area — decides
+ * almost nothing today, and the loader's monotonicity check means it can never
+ * decide it *backwards*.
+ *
+ * ## And it is computed here rather than in `researchRequirement`
+ *
+ * It is a fact about content that cannot change between ticks, and the research
+ * loop is what the Monte Carlo harness runs millions of times. Folding it once
+ * per content load also means the two callers of `researchRequirement` — the
+ * accrual that charges the cost, and `researchFrontier`'s quotation of it —
+ * agree by construction rather than by both remembering.
+ *
+ * `effects` is `minItems: 1` in the schema, so the fold below always sees at
+ * least one target; the seed is the narrowest rung anyway, because a node that
+ * reaches nothing should not be priced as though it reached everything.
+ */
+function scopeMultiplierOf(record: NodeRecord, registry: ContentRegistry): Fp {
+  let widest = 0;
+  for (const effect of record.effects) {
+    const rung = SCOPE_ORDER.indexOf(effect.target);
+    if (rung > widest) widest = rung;
+  }
+  const target = SCOPE_ORDER[widest] as EffectTarget;
+  return registry.autonomyWeight(`scope-multiplier-${target}`);
+}
+
+/**
+ * The five effect targets, narrowest reach first.
+ *
+ * A local copy of `@mm/content`'s `EFFECT_SCOPE_ORDER`, and the duplication is
+ * the point: this package depends on `@mm/content` **for types only** — its
+ * manifest says so and it builds under `types: []` so it runs unchanged in a
+ * browser — while content's public surface re-exports a filesystem-reading
+ * loader. Importing the constant would drag `node:fs` into the client. The same
+ * trade `@mm/content`'s own `AutonomyRoleName` makes against `@mm/state`.
+ *
+ * `research-scope.test.ts` asserts the two lists are identical and that every id
+ * this file builds resolves in the shipped registry, so the copy cannot drift
+ * without a named failure.
+ */
+const SCOPE_ORDER: readonly EffectTarget[] = ['self', 'single', 'area', 'side', 'universe'];
 
 /**
  * The node behind an id, or a thrown error naming the id.

@@ -47,13 +47,29 @@
  * (see above), so a caller that wants to model it can, and nothing here has to
  * decide what a reserved slot means.
  *
- * ## The `acquire` hook prices the node, and nothing else here does
+ * ## The `acquire` hook prices the node, and so does its reach
  *
  * `researchCost` arrives from content and is the tradition's to scale
  * (`vision.md` §4a). It is scaled in exactly one place — {@link
  * researchRequirement}, from {@link ResearchInputs.acquire} — so that the cost a
  * mage is quoted while choosing and the cost she is charged while working are
  * the same number by construction rather than by two call sites agreeing.
+ *
+ * The **second** term on the authored cost is scope, and it is there because
+ * the authored cost is a pure function of tier: measured on the 300 shipped
+ * nodes, all five effect targets appear at the same `researchCost` at every
+ * tier, so a node that reaches the whole universe was priced exactly as one
+ * that reaches a single mage. `docs/design/ars-magica-and-what-we-owe-it.md`
+ * makes the argument; `catalog.ts`'s `scopeMultiplierOf` derives the factor
+ * from content and this function applies it. It multiplies rather than being
+ * folded into `node.researchCost` on purpose — 300 authored numbers rewritten
+ * is a balance change nobody could review, and it would destroy the authored
+ * cost curve the multiplier is deliberately layered *on top of*.
+ *
+ * Duration is **not** a second such axis and was measured before being
+ * declined: `durationTicks` is non-zero on 38 of 408 shipped effects, every one
+ * of them an `area-denial`, and only `rules-raid` reads it. Pricing it would
+ * price a near-constant.
  *
  * ## The rediscovery multiplier is not computed here
  *
@@ -228,7 +244,20 @@ export function researchRequirement(node: KnowledgeNode, inputs: RequirementInpu
   // multiplicative and commute up to rounding, so the order is chosen to be the
   // one a reader can check against content rather than against this line.
   const authored = inputs.acquire?.researchCost(node.researchCost) ?? node.researchCost;
-  const base = mul(authored, multiplier);
+  // Scope: what the node's *reach* costs. Derived once per content load in
+  // `catalog.ts` from the widest target any of the node's effects carries, so
+  // the hot path is one multiply and both callers price a node identically.
+  //
+  // Applied **after** the tradition and before rediscovery, which keeps the
+  // reading above literally true — the hook still prices the authored number
+  // and nothing else — and leaves scope as a fact about the node sitting
+  // between the two. All three are multiplicative and commute up to rounding.
+  //
+  // Absent means `FP_ONE`. A hand-built catalog node has no scope, and reading
+  // an absent field as "priced at the middle rung" would make a fixture's cost
+  // depend on a tuning edit it never asked to be part of.
+  const scoped = mul(authored, node.scopeMultiplier ?? FP_ONE);
+  const base = mul(scoped, multiplier);
   const rate = effectiveResearchRate(inputs.learnRate, inputs.researchRate);
   // A zero rate would be a mage who cannot learn at all rather than one who
   // learns instantly, and div() by zero is not a question the rules path asks.

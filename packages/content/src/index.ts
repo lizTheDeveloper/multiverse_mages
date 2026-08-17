@@ -112,9 +112,12 @@ export {
 export type { AutonomyRoleName } from './autonomy.js';
 export {
   AUTONOMY_ROLE_IDS,
+  EFFECT_SCOPE_ORDER,
   REQUIRED_AUTONOMY_WEIGHTS,
+  SCOPE_MULTIPLIER_CEILING,
   checkAutonomyWeights,
   isRoleAppeal,
+  scopeMultiplierId,
 } from './autonomy.js';
 
 export {

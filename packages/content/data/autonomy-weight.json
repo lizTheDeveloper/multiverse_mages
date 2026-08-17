@@ -313,5 +313,40 @@
     "unit": "fp",
     "gloss": "Vellum one mage-month of magical work consumes. A quarter of MATERIALS_PER_LABORER (16), which is the unit it is expressed in so the two compare. Chosen by sweep: at 16 and 8 the library sheds nodes and reference-long-run 9.8's tripwire fires; 4 is the highest rate that costs without shedding. Vellum because vellum is the contended stock \u2014 stone is never short across 2400 ticks, so a claim there would cost nothing. Paid before libraryUpkeep.",
     "tuningStatus": "untuned"
+  },
+  {
+    "id": "scope-multiplier-self",
+    "value": 512,
+    "unit": "fp",
+    "gloss": "What a node whose widest effect target is `self` costs to research, as a multiplier on the authored researchCost. The five scope weights are the whole of this axis: before them a node reaching the whole universe cost what a personal one cost at the same tier (docs/design/ars-magica-and-what-we-owe-it.md). `area` is the unit and the others are steps either side, so the axis redistributes cost by reach rather than raising it: cost-weighted over the 300 shipped nodes the aggregate moves 1.05x.",
+    "tuningStatus": "untuned"
+  },
+  {
+    "id": "scope-multiplier-single",
+    "value": 768,
+    "unit": "fp",
+    "gloss": "The `single` rung: one other subject. Between `self` and `area` because reaching past yourself is the first thing that costs and reaching a place is the next. Three quarters of the `area` unit.",
+    "tuningStatus": "untuned"
+  },
+  {
+    "id": "scope-multiplier-area",
+    "value": 1024,
+    "unit": "fp",
+    "gloss": "The `area` rung, and fp(1024) on purpose: the middle of the five is the unit the other four are steps away from. Anchoring here rather than at `self` is what makes this axis a redistribution instead of a research tax, which keeps a balance-gate delta readable as \"scope now matters\" rather than as \"everything got dearer\".",
+    "tuningStatus": "untuned"
+  },
+  {
+    "id": "scope-multiplier-side",
+    "value": 1280,
+    "unit": "fp",
+    "gloss": "The `side` rung: every mage of one party to an engagement. Only 6 of the 300 shipped nodes are `side`-widest, so the gap between this and `area` is the least load-bearing number in the table.",
+    "tuningStatus": "untuned"
+  },
+  {
+    "id": "scope-multiplier-universe",
+    "value": 1792,
+    "unit": "fp",
+    "gloss": "The `universe` rung, and the reason the axis exists: 98 of 300 shipped nodes reach this far, including the one tier-6 node, and every one was priced as though it reached a single mage. 1792 is also near the ceiling the arithmetic allows — at fp(2048) the worst authorable requirement (deepest node x worst rediscovery x a research rate of 1) lands one past FP_MAX, and mul/div throw rather than saturate.",
+    "tuningStatus": "untuned"
   }
 ]

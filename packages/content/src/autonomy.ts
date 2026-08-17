@@ -43,6 +43,17 @@
  *   out of the id, and the id must agree with them, so the file cannot say one
  *   thing to a reader and another to the loader.
  *
+ * ## Three groups of scalar now, not one
+ *
+ * The file's name is still true of most of it and no longer of all of it. Two
+ * applied-work magnitudes and one casting cost already lived here, and the five
+ * `scope-multiplier-*` weights join them: they price how far a node's effects
+ * *reach* rather than which node a mage wants. They are here for the one
+ * property the file exists to provide — the rules read each magnitude **by
+ * name**, so the id set is a contract the loader checks in both directions
+ * while every value stays an untuned placeholder the balance harness owns. A
+ * second table holding five scalars would be a second place to forget.
+ *
  * ## The dominance check is the design pillar, not tuning hygiene
  *
  * `role-bias.ts` makes the argument at the goal level and it is the same one
@@ -57,13 +68,56 @@
  */
 
 import type { ContentDiagnostic } from './diagnostics.js';
-import type { AutonomyWeightRecord, PrimitiveRecord } from './types.js';
+import type { AutonomyWeightRecord, EffectTarget, PrimitiveRecord } from './types.js';
 
 /** The four standing roles of `contracts.md` §1.2, in role-id order. */
 export const AUTONOMY_ROLE_IDS = ['researcher', 'warden', 'professor', 'raider'] as const;
 
 /** One of the four. Mirrors `@mm/state`'s `MageRoleValue` without importing it. */
 export type AutonomyRoleName = (typeof AUTONOMY_ROLE_IDS)[number];
+
+/**
+ * The five effect targets, narrowest reach first.
+ *
+ * Not a new ordering: it is `EffectTarget`'s own declaration order in
+ * `types.js`, restated as a value so the loader can walk it. Inventing a second
+ * ordering here would be a second answer to "which of two nodes reaches
+ * further", and the two would drift.
+ */
+export const EFFECT_SCOPE_ORDER: readonly EffectTarget[] = [
+  'self',
+  'single',
+  'area',
+  'side',
+  'universe',
+] as const;
+
+/** The weight id that prices one effect target. */
+export function scopeMultiplierId(target: EffectTarget): string {
+  return `scope-multiplier-${target}`;
+}
+
+/**
+ * The largest scope multiplier the arithmetic survives, and where it comes from.
+ *
+ * `researchRequirement` ends in `div(base, rate)`, which is
+ * `base * FP_ONE / rate`, and `rate` can legitimately be `1` — the smallest
+ * positive product of `learnRate` and a stacked `research-rate`, which
+ * `research.ts` records as reachable since magnitudes became signed. So `base`
+ * itself must stay inside `FP_MAX / FP_ONE`, i.e. `2097151`.
+ *
+ * The worst `base` authorable against the shipped ceilings is the deepest node
+ * (`researchCost` fp(65536)) at the worst effective rediscovery multiplier
+ * (`fp(8192)` divided by the orc's `fp(512)`, so 16x) — `1048576` before scope.
+ * `2097151 / 1024` of that is `2047`, and `fp(2048)` overflows by exactly one.
+ *
+ * A literal rather than a figure derived from `node.json` and `species.json`,
+ * for the reason `load.ts`'s `WORST_REDISCOVERY_AFFINITY` is one: deriving it
+ * would make whether this file loads depend on whoever last edited a node.
+ * `research-scope.test.ts` runs the real worst case through the real function
+ * and fails naming this constant if the coupling ever breaks.
+ */
+export const SCOPE_MULTIPLIER_CEILING = 2047;
 
 /**
  * The scalar weights `rules-world` reads by name.
@@ -101,6 +155,17 @@ export const REQUIRED_AUTONOMY_WEIGHTS = [
   // the rules read it by name, so the id is a contract checked in both
   // directions while the value stays an untuned placeholder the harness owns.
   'casting-vellum-per-month',
+  // The five scope multipliers. Not target-selection weights either — they
+  // price a node's *reach*, per `docs/design/ars-magica-and-what-we-owe-it.md`
+  // — and they are here for the reason the three above are: `rules-magic` reads
+  // each by name at content load, so the id set is a contract checked in both
+  // directions while the values stay untuned placeholders the harness owns.
+  // Kept in `EFFECT_SCOPE_ORDER` so the file reads narrowest-first.
+  'scope-multiplier-self',
+  'scope-multiplier-single',
+  'scope-multiplier-area',
+  'scope-multiplier-side',
+  'scope-multiplier-universe',
 ] as const;
 
 /** The scalar ids that must be at least 1, because they are divisors. */
@@ -308,6 +373,51 @@ export function checkAutonomyWeights(
         ),
       );
     }
+  }
+
+  // ---- The scope multipliers (docs/design/ars-magica-and-what-we-owe-it.md) ----
+  //
+  // Two invariants, and the second is the design claim rather than hygiene.
+  //
+  // A multiplier below 1 is not a cheap node: `mul` floors, so fp(0) makes every
+  // node in that band free and completes it on the first step that supplies any
+  // effort at all. The ceiling is {@link SCOPE_MULTIPLIER_CEILING}, which is
+  // where the fixed-point domain runs out rather than where taste does.
+  //
+  // And **wider must never cost less**. That is the whole content of the axis,
+  // and without the check a tuning edit could invert it — leaving a table that
+  // still looks like a scope curve while paying a universe-wide effect a
+  // discount, which reads in a sweep as an unremarkable number.
+  let previousScope: number | undefined;
+  let previousScopeId: string | undefined;
+  for (const target of EFFECT_SCOPE_ORDER) {
+    const id = scopeMultiplierId(target);
+    const multiplier = value(id);
+    if (multiplier === undefined) continue;
+    if (multiplier < 1 || multiplier > SCOPE_MULTIPLIER_CEILING) {
+      out.push(
+        problem(
+          '',
+          `"${id}" is ${String(multiplier)}, outside [1, ${String(SCOPE_MULTIPLIER_CEILING)}]. ` +
+            'Below 1 it floors a whole band of nodes to a research cost of zero; above the ' +
+            'ceiling the worst authorable requirement leaves the fixed-point domain, and the ' +
+            'rules path throws rather than saturating.',
+        ),
+      );
+    }
+    if (previousScope !== undefined && previousScopeId !== undefined && multiplier < previousScope) {
+      out.push(
+        problem(
+          '',
+          `"${id}" is ${String(multiplier)}, below "${previousScopeId}" at ` +
+            `${String(previousScope)}. The scope axis says a node that reaches further costs at ` +
+            'least as much to research; a table that inverts it still looks like a scope curve ' +
+            'and quietly discounts the widest effects in the game.',
+        ),
+      );
+    }
+    previousScope = multiplier;
+    previousScopeId = id;
   }
 
   return out;
