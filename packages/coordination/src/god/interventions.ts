@@ -65,7 +65,7 @@ import type { Fixed } from '@mm/sim-core';
 import type { CellResolver, KnowledgeSubsystem, NodeCatalog } from '@mm/rules-magic';
 import type { SpeciesRecord } from '@mm/content';
 import type { StepRng } from '@mm/rules-world';
-import { createMage } from '@mm/rules-world';
+import { createMage, createUniversity } from '@mm/rules-world';
 import {
   AXIS_CHANGE_COUNTER,
   AXIS_KIND,
@@ -808,11 +808,18 @@ function fundPlan(
       apply: () => {
         const library = state.entities.create();
         attachRecord(state, LIBRARY, library, { foundedTick: worldTick });
-        const university = state.entities.create();
-        attachRecord(state, UNIVERSITY, university, {
+        // `createUniversity` rather than a second `attachRecord`: it is the
+        // constructor `construction.ts` exports for exactly this, it starts the
+        // site at zero progress — which is the paragraph above, expressed once
+        // instead of twice — and it rejects a capacity that is not a
+        // non-negative integer. That last cannot fire from here, because
+        // `god-constant.schema.json` types every `value` as
+        // `integer, minimum 0`; it is worth having anyway, because the
+        // alternative to a `RangeError` is a `u16` silently truncating a
+        // magnitude somebody authored.
+        createUniversity(state, {
           libraryId: library,
           capacity: deps.god.constants.foundUniversityCapacity,
-          buildProgress: 0,
         });
       },
     };

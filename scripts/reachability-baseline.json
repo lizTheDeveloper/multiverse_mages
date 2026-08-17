@@ -2,13 +2,13 @@
   "note": "Pinned reachability findings. Generated — do not hand-edit. Regenerate with `npm run reachability:pin` and explain the diff in the commit message: an entry removed is a repair, an entry added is a debt someone accepted.",
   "scan": {
     "examinedSymbolCount": 895,
-    "productionFileCount": 338
+    "productionFileCount": 339
   },
   "scanFloor": {
     "examinedSymbolCount": 716,
-    "productionFileCount": 270
+    "productionFileCount": 271
   },
-  "findingCount": 122,
+  "findingCount": 120,
   "findings": [
     {
       "key": "constant:packages/coordination/src/god/constants.ts:legacyArchiveMaxTier",
@@ -714,22 +714,6 @@
       "category": "unreached",
       "file": "packages/rules-world/src/traits.ts",
       "name": "traitValueOf",
-      "kind": "function"
-    },
-    {
-      "key": "symbol:packages/rules-world/src/universities/construction.ts:createUniversity",
-      "group": "symbol",
-      "category": "unreached",
-      "file": "packages/rules-world/src/universities/construction.ts",
-      "name": "createUniversity",
-      "kind": "function"
-    },
-    {
-      "key": "symbol:packages/rules-world/src/universities/construction.ts:readUniversity",
-      "group": "symbol",
-      "category": "unreached",
-      "file": "packages/rules-world/src/universities/construction.ts",
-      "name": "readUniversity",
       "kind": "function"
     },
     {

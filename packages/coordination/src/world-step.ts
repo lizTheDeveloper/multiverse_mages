@@ -177,6 +177,7 @@ import {
   materialsProduced,
   promoteStudentCohort,
   readCommitment,
+  readUniversity,
   rollMortality,
   scribingThroughput,
   stepMageAutonomy,
@@ -2749,7 +2750,10 @@ function scribeThroughputFor(
   }
   if (scribes === 0) return 0;
 
-  return scribingThroughput(readRecord(state, UNIVERSITY, universityId as EntityHandle), {
+  // `readUniversity` rather than an inline `readRecord`: `construction.ts` owns
+  // the university row's shape, and a second place that spells out which
+  // component a university lives in is a second place to update when it moves.
+  return scribingThroughput(readUniversity(state, universityId as EntityHandle), {
     scribeCount: scribes,
     scribeAffinity: affinity,
     scribeRate: deps.primitives.scribeRate,
