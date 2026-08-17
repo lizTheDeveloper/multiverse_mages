@@ -536,3 +536,57 @@ The populace faucet is inside `materialsProduced`, which phase 1 already feeds i
 faucet side, so `delta == faucet − sink` learns about it for free. Neither faucet adds an RNG draw —
 one is a share of a quantity the tick already had, the other is the existing applied-magic channel
 routed through a form that was already in `form.json` — so no stream id moves and nothing re-rolls.
+
+### Wiring consequences of opening the grid, reported rather than solved
+
+Measured **2026-08-16** on this branch. None of these is repaired here; each is a finding about a
+subsystem the widening woke up or put to sleep.
+
+**1. Raid looting is silently inert.** `rival-universe.ts`'s `shelveForeignBooks` picks the rival's
+shelf from cells **not flagged `"v1"`** — the *content* gate — while `raid-constant.json`'s gloss
+for `rival-foreign-book-count` describes it as *"cells this universe's own ruleset forbids"* — the
+*god's* gate. The two coincided while twelve of seventy were flagged. With all seventy flagged,
+`foreign` is empty, the early return fires, and no rival shelves anything. Re-keying it to
+`permits()` would not fix it today either: the reference universe's opening ruleset permits all
+seventy, so there is nothing to forbid, and it needs a narrow opening square — `seededOpeningAxes`
+is where one would come from. That is a design decision, not a comment fix, and it is recorded in
+the function rather than taken.
+
+`raiderNodeCandidates` in the same file reads the flag too and moves the *other* way: it now admits
+every node, widening the warband's pool. That is safe for the reason the restriction was written —
+the set means *"what arbitration would not mask"*, and nothing is masked when nothing is forbidden.
+
+**2. Species depth ceilings can bind for the first time.**
+
+| | nodes | max authored tier | tier-5+ nodes |
+|---|---|---|---|
+| the old twelve cells | 51 | **5** | 2 |
+| all seventy | 300 | **6** | 16 |
+
+Against `species.json`'s `depthCeiling`: `orc` 3, `human` 4, `gnome` 4 already bound; `dwarf` 5 did
+not bind and **now does**; `elf` 6 and `draconic` 7 still do not. More important than the one
+species crossing over is the density — two reachable nodes above tier 4 became sixteen — so a
+ceiling that was *close to inert* is now a live constraint on most of the pool.
+
+**3. `fertility` and `lifespan` reach a body for the first time.**
+`knowledge-vitality.ts` recorded its own worth as *"zero, in any v1 universe … all twenty-two
+authored nodes sit outside the twelve enabled cells"*, and named its closing condition as *"an
+authored effect on a v1 node, or a v1 rectangle that includes Corpus"*. The second is what
+happened. `PRIMITIVE_COVERAGE_EXCLUSIONS` empties accordingly.
+
+**4. The frontier scan now pays the cost it was designed to bound.** `gateway.ts` narrowed 300
+nodes to 51 once per gateway; with nothing forbidden it walks all 300. The bound is unchanged and
+is a *rule* rather than a constant — a god who forbids cells still shrinks it — which is exactly
+the property that replaced the old `min(nodeCount, 256)` window.
+
+**5. `insight` slows down.** Two nodes in the catalog yield it, against 300 nodes to research
+instead of 51, so a mage reaches one later: first flow moves from inside 600 ticks to **t619**. It
+is a real cost of the widening and is reported, not tuned.
+
+The four source comments that stated the twelve-cell narrowing in the present tense were corrected
+in the same pass — `frontier-index.ts`, `gateway.ts`, `god/ascension.ts` (three places),
+`academic-effects.ts`, `knowledge-vitality.ts` and `world-step.ts`. Where the surrounding text still
+matched, the wording is taken verbatim from `origin/w115/enable-all-cells`; where this tree had
+moved past it, the correction is re-derived. `git grep`'s pathspec form returned **nothing at all**
+for a string known to be present, which is why the search was re-run with a positive control first —
+the same "checker answering about the wrong input" shape `CLAUDE.md` catalogues.

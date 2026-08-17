@@ -528,11 +528,12 @@ export interface WorldStepReport {
    *
    * The sibling of {@link WorldStepReport.economicNodes}, emitted for the same
    * reason. Both primitives were declared exclusions in the consumption check
-   * until `knowledge-vitality.ts`, and under v1 content this figure is **zero**
-   * on every tick — every node authoring either sits outside the twelve enabled
-   * cells, so `permits()` refuses it. A zero here and a zero in the birth rate
-   * therefore mean different things, and without this counter they would look
-   * the same.
+   * until `knowledge-vitality.ts`. Under the twelve-cell v1 content this figure
+   * was **zero** on every tick — every node authoring either sat outside the
+   * enabled cells, so `permits()` refused it — and since `material-economy`
+   * opened all seventy it can move. A zero here and a zero in the birth rate
+   * still mean different things, which is why this counter exists: without it
+   * they look the same.
    */
   readonly vitalityContributions: number;
   /**
