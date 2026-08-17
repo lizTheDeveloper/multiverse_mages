@@ -83,6 +83,7 @@ import { KnowledgeSubsystem, MASTERY_MAX, MagicGrid } from '@mm/rules-magic';
 import { readRaidTuning } from '@mm/rules-raid';
 
 import type { EngagementPolicy } from './raid-directives.js';
+import type { MaterialKind } from '@mm/rules-world';
 import { createMage, defaultSiteKind, siteUniversity } from '@mm/rules-world';
 import type {
   AblationMask,
@@ -1292,6 +1293,25 @@ export interface ReferenceScenarioOptions {
    */
   readonly ablation?: AblationMask;
   /**
+   * An unrecorded drain on one stock, or absent. **The positive control on the
+   * conservation ledger, and nothing else may set it.**
+   *
+   * `WorldStepDeps.leak` lives on the shipped path on purpose — a checker that
+   * has never failed is not known to work, and a control that re-implements the
+   * tick can agree with itself while both have drifted from the real loop. What
+   * was missing was a way to reach it *through the composition root*, so that
+   * the thing exercised is the loop a client is really fed by rather than a
+   * hand-built world beside it.
+   *
+   * **A run built with this is a run that dies.** The tick reports its breach
+   * and then `assertMaterialsConserved` throws, which is the whole point: a flow
+   * that changes a stock without recording itself is the defect it asserts
+   * against. Nothing in `src/` sets this, and `material-ledger.test.ts` holds
+   * the deps to `leak === undefined` so a composition root cannot acquire one by
+   * accident.
+   */
+  readonly leak?: { readonly kind: MaterialKind; readonly perTick: number };
+  /**
    * A policy asked on every engagement tick of every raid, or absent.
    *
    * Absent is the build before the raid seam existed, byte for byte: the raid
@@ -1361,9 +1381,15 @@ export function referenceScenario(
   content: ReferenceContent = referenceContent(),
   options: ReferenceScenarioOptions = {},
 ): ReferenceRun {
-  const simulation = defineWorldSimulation(
-    options.ablation === undefined ? content.deps : { ...content.deps, ablation: options.ablation },
-  );
+  const simulation = defineWorldSimulation({
+    ...content.deps,
+    ...(options.ablation === undefined ? {} : { ablation: options.ablation }),
+    // Spread conditionally rather than assigned, so an absent option leaves the
+    // key off entirely and every control run takes the byte-identical
+    // `deps.leak === undefined` branch — the same reasoning `ablation` carries
+    // one field up.
+    ...(options.leak === undefined ? {} : { leak: options.leak }),
+  });
   const raiding = options.raids ?? true;
 
   // The sandbox, resolved once. Four reads follow — the schema builder, the

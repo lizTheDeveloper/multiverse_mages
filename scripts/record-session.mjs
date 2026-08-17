@@ -275,6 +275,35 @@ const record = () => {
      * the distinction `GOAL_COMMITMENT` makes load-bearing between "has not
      * chosen" and "chose idle".
      */
+    /**
+     * §4.4's flow ledger for the tick just stepped — where this tick's material
+     * came from and where it went.
+     *
+     * The fourth sidecar off the same §4.4 projection surface as `stocks`,
+     * `candidateDetail` and `academy`, and the first that is not a reading of
+     * state at all: `economy-flow-models.md` §5.2 is the finding — *"every metric
+     * in the registry measures a level, a rate, or a distribution at a
+     * checkpoint. None reconciles flows."* `obs` carries seven closing levels and
+     * nothing about how they got there, so a universe that spent its vellum and
+     * one that leaked it are the same two numbers.
+     *
+     * **Absent rather than null on the opening frame**, and absent again on any
+     * frame whose report is of a different tick — `JSON.stringify` drops an
+     * undefined field, which is the distinction a client must be able to make.
+     * `session.flowLedger()` returns `undefined` in both cases and `ui/shared/
+     * session.js` renders that as absent rather than as zero, because an empty
+     * granary is a crisis and an unknown granary is not.
+     *
+     * Emitted as the projection returns it: it is already a fresh structure of
+     * plain objects, arrays and integers, so nothing is reshaped here. A field
+     * renamed on the way through would be a second vocabulary for one projection.
+     *
+     * **Kept in step with the sibling script by hand.** A comment in this
+     * repository refers to `scripts/play-control.mjs --shape` as the thing that
+     * holds the recorder and the live server equivalent; that script does not
+     * exist, so nothing automated checks it.
+     */
+    flow: session.flowLedger(),
     candidateDetail: encodeCandidateDetail(session.candidateDetails()),
     /**
      * §4.4's academy projection — every college, its roster, its shelf, the
