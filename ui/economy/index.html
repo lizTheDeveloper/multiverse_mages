@@ -1,0 +1,1214 @@
+<!doctype html>
+<!--
+  Multiverse Mages — the economy.
+  Copyright (C) 2026 Ann Kelner
+  SPDX-License-Identifier: AGPL-3.0-or-later
+
+  The author asked for producers, consumers, and allocation. Two of those three
+  are drawable. **The third does not exist, and its absence is the design.**
+
+  `packages/coordination/src/god/interventions.ts` is 1,207 lines covering all
+  seventeen god actions and contains zero occurrences of `food`, `stone`,
+  `vellum`, `POPULACE_COHORT` or `occupation` — checked 2026-08-16 on
+  `ui/legible-and-linked`. There is no verb that moves a person from idle to
+  laborer, and there is not meant to be: vision.md §1 *"you never command a mage
+  … pressure, not control"*, §2 Pillar 3 *"You are a god, not a general"*, §7
+  *"You never issue direct orders"*. So this page has no build queue and no
+  allocation control. It ends at the four verbs that are the god's real levers
+  over the flow, and says out loud how each one reaches it.
+
+  What it can honestly draw, and what it cannot:
+
+  - **Stocks, yes.** All three kinds come over the `stocks` sidecar on every
+    frame. §4.1's resources block has *one* materials slot, so the split is not
+    in `obs` and a recorder made before the sidecar existed does not carry it.
+    All three or none, `undefined` rather than `0` — an empty granary is a crisis
+    and an unknown granary is not.
+  - **Standing structure, yes.** The occupation census is real: §4.1's
+    `population` block is 30 slots, 6 species × 5 occupations, and nothing in
+    `ui/shared/session.js` decodes it, so this page does — the layout is
+    `speciesSlot(s) * 5 + occupation` from `packages/agent-api/src/layout.ts:780`.
+  - **Per-tick flows, no.** `producedByKind`, `shortKinds` and owed-vs-paid are
+    computed every tick into a closure and thrown away
+    (`world-step.ts:447-459, 1165`); nothing persists them and no script exposes
+    them. Where this page wants a flow it *diffs two frames' stocks* and labels
+    the result a diff, because a net change is production minus consumption and
+    saying otherwise would be inventing a number.
+
+  It reads through `ui/shared/session.js` like every other surface: it decodes
+  and never computes. No rule is evaluated here. The one table it carries that
+  is not fed — the form→material routing weights — is drawn under a banner that
+  says so and names the file it was copied from, because the read path does not
+  publish it and pretending otherwise would be the exact failure the WHY_ABSENT
+  vocabulary exists to prevent.
+-->
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Multiverse Mages — the economy</title>
+<link rel="stylesheet" href="../shared/theme.css" />
+
+<style>
+  :root {
+    --gap: 1rem;
+    --raised: color-mix(in oklab, currentColor 5%, transparent);
+  }
+
+  body {
+    max-width: 72rem;
+    margin: 0 auto;
+    padding: 1.1rem 1.25rem 4rem;
+  }
+
+  h1 {
+    font-size: 1.35rem;
+    margin: 0 0 0.15rem;
+  }
+  .sub {
+    font-size: 0.85rem;
+    color: var(--soft);
+    margin: 0 0 1rem;
+    max-width: 52rem;
+  }
+
+  .topbar {
+    display: flex;
+    gap: 0.6rem;
+    align-items: center;
+    flex-wrap: wrap;
+    margin: 0.9rem 0 var(--gap);
+  }
+  button {
+    font: inherit;
+    font-size: 0.85rem;
+    padding: 0.35rem 0.7rem;
+    border: 1px solid var(--edge);
+    border-radius: 3px;
+    background: var(--raised);
+    color: inherit;
+    cursor: pointer;
+  }
+  button:hover:not(:disabled) {
+    border-color: currentColor;
+  }
+  button:focus-visible {
+    outline: 2px solid var(--god);
+    outline-offset: 2px;
+  }
+  .hint {
+    font-size: 0.75rem;
+    color: var(--soft);
+  }
+
+  section {
+    margin-top: 1.9rem;
+  }
+  section > h2 {
+    font-size: 0.95rem;
+    margin: 0 0 0.15rem;
+    display: flex;
+    align-items: baseline;
+    gap: 0.55rem;
+    flex-wrap: wrap;
+  }
+  section > h2 .s {
+    font-weight: 400;
+    font-size: 0.75rem;
+    color: var(--soft);
+  }
+  section > p.lede {
+    margin: 0 0 0.7rem;
+    font-size: 0.8rem;
+    color: var(--soft);
+    max-width: 50rem;
+  }
+  /*
+   * `--soft` rather than `opacity` on every recessive line here, deliberately.
+   * An opacity on an ancestor multiplies through every descendant, and that is
+   * how a 3.68:1 failure got shipped on another surface tonight — the token is
+   * measured against the ground, the multiplication is not.
+   */
+
+  cite {
+    font-style: normal;
+    font-family: var(--mono);
+    font-size: 0.68rem;
+    color: var(--soft);
+  }
+
+  /* ---- the stocks ------------------------------------------------------- */
+  .stocks {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(13rem, 1fr));
+    gap: 0.5rem;
+  }
+  .stat {
+    border: 1px solid var(--edge);
+    border-left-width: 3px;
+    border-radius: 3px;
+    padding: 0.55rem 0.7rem;
+  }
+  .stat .k {
+    font-size: 0.7rem;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--soft);
+  }
+  .stat .v {
+    font-size: 1.55rem;
+    font-variant-numeric: tabular-nums;
+    line-height: 1.15;
+  }
+  .stat .n {
+    font-size: 0.73rem;
+    color: var(--soft);
+  }
+  .stat .d {
+    font-size: 0.78rem;
+    font-variant-numeric: tabular-nums;
+    margin-top: 0.2rem;
+  }
+  .stat[data-kind='food'] { border-left-color: var(--mentem); }
+  .stat[data-kind='stone'] { border-left-color: var(--terram); }
+  .stat[data-kind='vellum'] { border-left-color: var(--nomen); }
+  .stat[data-empty='true'] { border-left-color: var(--loss); }
+  .up { color: var(--ok); }
+  .down { color: var(--loss); }
+  .flat { color: var(--soft); }
+
+  /* ---- the run, as small multiples --------------------------------------
+   *
+   * Small multiples rather than one three-series chart, and the reason is
+   * measured rather than aesthetic. The theme's four form hues were run through
+   * the palette validator against both grounds: `--terram` against `--book`
+   * separates by ΔE 5.8 for normal vision on vellum, and `--terram` against
+   * `--nomen` by 8.3 on ink — both under the 15 floor, i.e. two lines a
+   * full-colour reader could not reliably tell apart. One series per facet
+   * makes categorical separation carry nothing at all: each line is named
+   * beside itself and colour is decoration. Facets in a row also put the three
+   * shapes side by side, which is the comparison this page is for.
+   *
+   * The three stock facets share a y-domain so their heights are comparable.
+   * Counts of a different unit — grimoires, people — get their own row and
+   * their own domain, and never a second axis on someone else's chart.
+   */
+  .facets {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr));
+    gap: 0.6rem;
+  }
+  .facet {
+    border: 1px solid var(--edge);
+    border-radius: 3px;
+    padding: 0.5rem 0.6rem 0.35rem;
+  }
+  .facet h3 {
+    margin: 0;
+    font-size: 0.78rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 0.5rem;
+  }
+  .facet h3 .now {
+    font-variant-numeric: tabular-nums;
+    font-weight: 400;
+    color: var(--soft);
+  }
+  .facet svg {
+    display: block;
+    width: 100%;
+    height: 4.6rem;
+    overflow: visible;
+  }
+  .facet .axis {
+    font-size: 0.66rem;
+    color: var(--soft);
+    display: flex;
+    justify-content: space-between;
+    font-variant-numeric: tabular-nums;
+  }
+  .facet .line {
+    fill: none;
+    stroke-width: 2;
+    stroke-linejoin: round;
+    stroke-linecap: round;
+  }
+  .facet .base {
+    stroke: var(--rule-hi);
+    stroke-width: 1;
+  }
+  .facet .cross {
+    stroke: var(--god);
+    stroke-width: 1;
+    opacity: 0;
+  }
+  .facet .dot {
+    fill: var(--god);
+    opacity: 0;
+  }
+  .facets[data-scrub='on'] .cross,
+  .facets[data-scrub='on'] .dot {
+    opacity: 1;
+  }
+  .readout {
+    font: 12px var(--mono);
+    color: var(--soft);
+    min-height: 1.4rem;
+    margin: 0.4rem 0 0;
+  }
+  .readout b {
+    color: var(--ink);
+    font-weight: 600;
+  }
+
+  /* ---- the census ------------------------------------------------------- */
+  .census {
+    border-collapse: collapse;
+    font-size: 0.82rem;
+    font-variant-numeric: tabular-nums;
+    width: 100%;
+    max-width: 44rem;
+  }
+  .census th,
+  .census td {
+    padding: 0.24rem 0.55rem;
+    border-bottom: 1px solid var(--edge);
+    text-align: right;
+  }
+  .census th:first-child,
+  .census td:first-child {
+    text-align: left;
+  }
+  .census thead th {
+    font-size: 0.68rem;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    color: var(--soft);
+    font-weight: 500;
+  }
+  .census tfoot td {
+    border-bottom: 0;
+    border-top: 1px solid var(--rule-hi);
+    font-weight: 600;
+  }
+  .census td[data-zero='true'] {
+    color: var(--soft);
+  }
+  .census .produces {
+    color: var(--terram);
+    font-weight: 600;
+  }
+  /* `--book` and `--warn` are the same hex in both themes — measured, not
+     assumed — so the scribe column and the idle column would have been one
+     colour telling two stories. The library green is the honest third: a scribe
+     is what stocks a shelf. Colour reinforces here and never carries identity;
+     the column header does that. */
+  .census .books {
+    color: var(--lib);
+    font-weight: 600;
+  }
+  .census .idle {
+    color: var(--warn);
+    font-weight: 600;
+  }
+
+  /* ---- consumers -------------------------------------------------------- */
+  .claims {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+    max-width: 54rem;
+  }
+  .claim {
+    display: grid;
+    grid-template-columns: 1.6rem 9.5rem 4.6rem 1fr;
+    gap: 0.55rem;
+    align-items: baseline;
+    border: 1px solid var(--edge);
+    border-left-width: 3px;
+    border-radius: 3px;
+    padding: 0.4rem 0.6rem;
+    font-size: 0.8rem;
+  }
+  .claim[data-kind='food'] { border-left-color: var(--mentem); }
+  .claim[data-kind='stone'] { border-left-color: var(--terram); }
+  .claim[data-kind='vellum'] { border-left-color: var(--nomen); }
+  .claim[data-short='true'] {
+    border-left-color: var(--loss);
+    background: var(--loss-bg);
+  }
+  .claim .ord {
+    font: 11px var(--mono);
+    color: var(--soft);
+  }
+  .claim .who {
+    font-weight: 600;
+  }
+  .claim .paid {
+    font: 11px var(--mono);
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+  }
+  .claim .cons {
+    color: var(--soft);
+  }
+  .claim[data-short='true'] .cons {
+    color: var(--ink);
+  }
+
+  /* ---- defects ---------------------------------------------------------- */
+  .defect {
+    border: 1px solid var(--edge);
+    border-left: 3px solid var(--loss);
+    border-radius: 3px;
+    padding: 0.55rem 0.75rem;
+    margin-bottom: 0.5rem;
+    max-width: 54rem;
+    font-size: 0.85rem;
+  }
+  .defect.decided {
+    border-left-color: var(--rule-hi);
+  }
+  .defect h3 {
+    margin: 0 0 0.2rem;
+    font-size: 0.85rem;
+    font-family: var(--mono);
+  }
+  .defect p {
+    margin: 0 0 0.3rem;
+  }
+
+  /* ---- the levers ------------------------------------------------------- */
+  .forms {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.25rem;
+    margin: 0 0 0.6rem;
+    max-width: 54rem;
+  }
+  .form {
+    border: 1px solid var(--ctl-latent-border);
+    border-radius: 3px;
+    padding: 0.22rem 0.5rem;
+    font-size: 0.76rem;
+    color: var(--ctl-denied-fg);
+    border-style: dashed;
+  }
+  .form[data-permitted='true'] {
+    border-style: solid;
+    border-color: var(--god);
+    color: var(--ink);
+    font-weight: 600;
+  }
+  .form .routes {
+    font: 10px var(--mono);
+    color: var(--soft);
+    margin-left: 0.35rem;
+    letter-spacing: 0.03em;
+  }
+  .form[data-permitted='true'] .routes {
+    color: var(--faint);
+  }
+  .levers {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr));
+    gap: 0.5rem;
+    max-width: 60rem;
+  }
+  .lever {
+    border: 1px solid var(--edge);
+    border-left: 3px solid var(--god);
+    border-radius: 3px;
+    padding: 0.5rem 0.7rem;
+    font-size: 0.8rem;
+  }
+  .lever h3 {
+    margin: 0 0 0.2rem;
+    font-size: 0.85rem;
+  }
+  .lever .verb {
+    font: 10px var(--mono);
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--soft);
+    display: block;
+  }
+  .lever p {
+    margin: 0.25rem 0 0;
+    color: var(--soft);
+  }
+  .lever p b {
+    color: var(--ink);
+    font-weight: 600;
+  }
+
+  .copied {
+    border: 1px dashed var(--warn);
+    border-radius: 3px;
+    padding: 0.4rem 0.6rem;
+    margin: 0 0 0.6rem;
+    font-size: 0.75rem;
+    color: var(--ink);
+    max-width: 54rem;
+  }
+
+  .absent {
+    border: 1px solid var(--edge);
+    border-left: 3px solid var(--warn);
+    border-radius: 3px;
+    padding: 0.55rem 0.75rem;
+    max-width: 54rem;
+  }
+  .absent dt {
+    font-family: var(--mono);
+    font-size: 0.78rem;
+    margin-top: 0.45rem;
+  }
+  .absent dt:first-child {
+    margin-top: 0;
+  }
+  .absent dd {
+    margin: 0.1rem 0 0;
+    font-size: 0.8rem;
+    color: var(--soft);
+  }
+
+  #err {
+    color: var(--loss);
+    font-size: 0.85rem;
+    min-height: 1.2rem;
+  }
+
+  footer {
+    margin-top: 2.6rem;
+    padding-top: 0.8rem;
+    border-top: 1px solid var(--edge);
+    font-size: 0.76rem;
+    color: var(--soft);
+  }
+</style>
+
+<h1>The economy</h1>
+<p class="sub" id="sub">
+  Who produces, who consumes, and what is short — and why there is no allocation control on this
+  page.
+</p>
+
+<div id="src"></div>
+
+<div class="topbar">
+  <button id="reread" type="button">Re-read the universe</button>
+  <span class="hint" id="rereadhint"></span>
+</div>
+<p id="err"></p>
+
+<section>
+  <h2>The stocks <span class="s">three kinds, no substitution between them</span></h2>
+  <p class="lede">
+    A shortfall in one kind is a shortfall. There is no market and no debt: a claimant that cannot
+    be paid gets what is there and the rest is recorded as short
+    (<cite>materials.ts:58-61, 287-317</cite>). Letting a hungry universe eat its quarry would be a
+    mechanic nobody asked for.
+  </p>
+  <div class="stocks" id="stocks"></div>
+</section>
+
+<section>
+  <h2>The whole run <span class="s" id="runspan"></span></h2>
+  <p class="lede">
+    Every frame this page holds, at a shared scale within each row. These are <b>stocks over
+    time</b>, not production: the read path drops per-tick flows, so the slope of a line is
+    production minus consumption and this page will not claim to know which half moved. Hover any
+    facet to read every series at one tick.
+  </p>
+  <div class="facets" id="facets-stocks"></div>
+  <p class="readout" id="readout">&nbsp;</p>
+  <div class="facets" id="facets-books" style="margin-top: 0.6rem"></div>
+  <div class="facets" id="facets-people" style="margin-top: 0.6rem"></div>
+  <p class="lede" style="margin: 0.6rem 0 0.3rem">
+    The three trades below are drawn against <b>their own, much smaller scale</b> — put them on the
+    row above and all three flatten onto the baseline, which is true and hides the shape of the
+    decline. Each axis prints the maximum it was drawn against.
+  </p>
+  <div class="facets" id="facets-work"></div>
+</section>
+
+<section>
+  <h2>Who produces <span class="s">a formula over population, not over entities</span></h2>
+  <p class="lede">
+    There is no farm and no quarry. Field production is
+    <code>laborers × 16 × the species' labour affinity</code>, split across the three kinds by this
+    universe's territory yield shares (<cite>materials.ts:86, 164-174</cite>). A laborer standing on
+    a building site is excluded from the fields that month — labour is exclusive, and letting her be
+    both would make founding a university free (<cite>world-step.ts:1240</cite>). Mages casting
+    <code>apply-magic</code> produce too, routed to a kind by the node's <em>form</em>
+    (<cite>kinds.ts:172</cite>).
+  </p>
+  <div id="census"></div>
+</section>
+
+<section>
+  <h2>Who consumes <span class="s">five claimants, in a fixed order</span></h2>
+  <p class="lede">
+    Walked in this order every tick (<cite>materials.ts:194-202</cite>). Only the vellum pair still
+    competes — library upkeep is paid before scribing out of the same stock, because losing a shelved
+    instance is permanent in a way a delayed grimoire is not. The consequence of running short
+    differs per kind, and that is the most useful thing on this page.
+  </p>
+  <div class="claims" id="claims"></div>
+</section>
+
+<section>
+  <h2>Two things the code says out loud <span class="s">one defect, one decision</span></h2>
+  <div id="defects"></div>
+</section>
+
+<section>
+  <h2>Your levers <span class="s">you are a god, not a general</span></h2>
+  <p class="lede" id="leverlede"></p>
+  <div class="copied">
+    <b>Drawn, not fed.</b> Which forms are permitted is read live from §4.1's ruleset block. The
+    routing weights beside them are <em>not</em> on the wire — <code>play-server.mjs</code> publishes
+    a form as <code>{bit, id, name}</code> and nothing more — so they are copied from
+    <code>packages/content/data/form.json</code>, read 2026-08-16 on
+    <code>ui/legible-and-linked</code>. A copied constant rots; this one should come over the
+    projection.
+  </div>
+  <div class="forms" id="forms"></div>
+  <div class="levers" id="levers"></div>
+</section>
+
+<section>
+  <h2>What this screen cannot show <span class="s">read-path facts, not TODOs</span></h2>
+  <dl class="absent" id="absent"></dl>
+</section>
+
+<footer>
+  Composed through <code>ui/shared/session.js</code> — from a live universe under
+  <code>npm run play</code>, or from <code>ui/session.json</code> under <code>npm run ui</code>.
+  Read-only: this page issues no god action and advances no clock. Every citation names a file and a
+  line on <code>ui/legible-and-linked</code>, read 2026-08-16.
+</footer>
+
+<script type="module">
+  import { mountSourceNote, openSession, WHY_ABSENT } from '../shared/session.js';
+  import { mountThemeControl } from '../shared/theme.js';
+  import { mountNav } from '../shared/nav.js';
+
+  mountNav();
+
+  const $ = (id) => document.getElementById(id);
+
+  /*
+   * The one guard every number on this page goes through.
+   *
+   * `undefined` is what `resources()` hands back for a stock the sidecar does
+   * not carry, and `0` is what a naive `?? 0` would print instead. An empty
+   * granary is a crisis and an unknown granary is not, so the two must not
+   * render alike.
+   */
+  const fmt = (n, dp = 1) => {
+    if (typeof n !== 'number' || !Number.isFinite(n)) return '—';
+    if (Number.isInteger(n)) return String(n);
+    return n.toFixed(dp);
+  };
+  const signed = (n) => (n > 0 ? `+${fmt(n)}` : fmt(n));
+
+  /* ---- §4.1's population block, decoded here ------------------------------
+   *
+   * `ui/shared/session.js` decodes resources, institutions, clock, ruleset,
+   * knowledge and mages, and stops there — nothing exposes the census. The
+   * layout is `packages/agent-api/src/layout.ts:780`:
+   *
+   *     slot = (speciesId - 1) * 5 + occupation
+   *
+   * and the occupations are `packages/state/src/enums.ts:67`. Six species is
+   * `OBSERVATION_SPECIES_COUNT`, and §4.1 sizes the block from the content space
+   * rather than from what a run happens to hold, so a species with nobody in it
+   * reads as five zeroes rather than as a missing row.
+   *
+   * Not decoded here: cohort saturation. `OBSERVATION_SCALE.cohortCount` is
+   * 1,000,000 and the largest cohort measured on this seed over 1,800 ticks was
+   * 6,908, so the ceiling is four orders of magnitude away and a `N+` would be
+   * theatre. If a cohort ever approaches it, `raw.sat` carries the flag and this
+   * is the comment that says where to put it.
+   */
+  const OCCUPATIONS = ['laborer', 'scribe', 'student', 'soldier', 'idle'];
+
+  function census(frame, species) {
+    const p = frame.block('population');
+    return species.map((meta, s) => {
+      const counts = OCCUPATIONS.map((_, o) => p[s * OCCUPATIONS.length + o] ?? 0);
+      return {
+        name: meta?.name ?? `Species ${s + 1}`,
+        counts,
+        total: counts.reduce((a, b) => a + b, 0),
+      };
+    });
+  }
+
+  const censusTotals = (rows) =>
+    OCCUPATIONS.map((_, o) => rows.reduce((n, r) => n + (r.counts[o] ?? 0), 0));
+
+  /* ---- one tick, everything this page reads ------------------------------ */
+
+  function readTick(frame, species) {
+    const r = frame.resources();
+    const i = frame.institutions();
+    const c = frame.clock();
+    const rows = census(frame, species);
+    const totals = censusTotals(rows);
+    /* All three or none — a partial sidecar is treated as no sidecar, which is
+       `hasStocks`'s own rule in session.js and the reason this page never draws
+       two thirds of a breakdown. */
+    const have = [r.food, r.stone, r.vellum].every(
+      (x) => typeof x === 'number' && Number.isFinite(x),
+    );
+    return {
+      tick: c.worldTick,
+      food: have ? r.food : undefined,
+      stone: have ? r.stone : undefined,
+      vellum: have ? r.vellum : undefined,
+      materials: r.materials,
+      saturated: r.saturated,
+      haveStocks: have,
+      universities: i.universities,
+      capacity: i.capacity,
+      libraryDepth: i.libraryDepth,
+      grimoires: i.grimoires,
+      rows,
+      totals,
+      people: totals.reduce((a, b) => a + b, 0),
+    };
+  }
+
+  /* ---- the stocks now, and the diff that is not a flow ------------------- */
+
+  const KINDS = [
+    ['food', 'Food', 'eaten, 1 per person per tick'],
+    ['stone', 'Stone', 'spent on construction only'],
+    ['vellum', 'Vellum', 'casting, library upkeep, scribing'],
+  ];
+
+  function drawStocks(now, then) {
+    const cells = KINDS.map(([key, label, note]) => {
+      const v = now[key];
+      const known = typeof v === 'number' && Number.isFinite(v);
+      const empty = known && v < 0.5;
+      /* Three distinct reasons there is no delta, and they must not share a
+         sentence: the kind is unknown, there is no earlier frame, or the run is
+         one frame long. Saying "no earlier frame" over a 120-frame recording
+         whose sidecar is missing is a checker answering about the wrong input. */
+      let delta = known
+        ? '<span class="flat">no earlier frame to diff against</span>'
+        : '<span class="flat">nothing to diff — this kind is not on the read path</span>';
+      if (then !== null && typeof then[key] === 'number' && typeof v === 'number') {
+        const d = v - then[key];
+        const months = now.tick - then.tick;
+        const cls = Math.abs(d) < 0.05 ? 'flat' : d > 0 ? 'up' : 'down';
+        /* A **diff**, and labelled as one. Production and consumption both
+           happen inside the tick and neither survives it, so this is their sum
+           and nothing on the read path can take it apart. */
+        delta =
+          `<span class="${cls}">${signed(d)}</span> ` +
+          `<span class="flat">net over ${months} month${months === 1 ? '' : 's'} — a diff, not production</span>`;
+      }
+      return (
+        `<div class="stat" data-kind="${key}" data-empty="${String(empty)}">` +
+        `<div class="k">${label}</div>` +
+        `<div class="v">${known ? fmt(v) : '—'}</div>` +
+        `<div class="n">${known ? note : 'the read path did not carry this kind'}</div>` +
+        `<div class="d">${delta}</div>` +
+        '</div>'
+      );
+    });
+
+    /* The summed channel is always present — §4.1 gives materials one slot — so
+       it is drawn beside the split rather than instead of it, and it is the only
+       one of the four that can saturate. */
+    const sat = now.saturated?.materials === true;
+    cells.push(
+      '<div class="stat">' +
+        '<div class="k">All three, summed</div>' +
+        `<div class="v">${fmt(now.materials)}${sat ? '+' : ''}</div>` +
+        `<div class="n">§4.1 resources[39]${sat ? ' · at its ceiling' : ''}</div>` +
+        `<div class="d flat">${now.haveStocks ? 'the split above comes from the stocks sidecar' : 'the split is unavailable; this is all there is'}</div>` +
+        '</div>',
+    );
+    $('stocks').innerHTML = cells.join('');
+  }
+
+  /* ---- small multiples ---------------------------------------------------
+   *
+   * One series per facet. `history` is sampled by stride when the run is longer
+   * than the pixel budget, and the stride is printed rather than hidden: a
+   * sampled line can miss a spike between two samples, and a reader who cannot
+   * see the sampling cannot know that.
+   */
+  const PLOT = { w: 260, h: 64, pad: 3 };
+  const MAX_POINTS = 320;
+
+  function sample(frames) {
+    const stride = Math.max(1, Math.ceil(frames.length / MAX_POINTS));
+    const out = [];
+    for (let i = 0; i < frames.length; i += stride) out.push(frames[i]);
+    if (out.at(-1) !== frames.at(-1)) out.push(frames.at(-1));
+    return { points: out, stride };
+  }
+
+  function facet(title, series, colour, domainMax, xs, unit) {
+    const max = domainMax > 0 ? domainMax : 1;
+    const n = series.length;
+    const x = (i) => PLOT.pad + (i / Math.max(1, n - 1)) * (PLOT.w - 2 * PLOT.pad);
+    const y = (v) => PLOT.h - PLOT.pad - (Math.max(0, v) / max) * (PLOT.h - 2 * PLOT.pad);
+    const d = series.map((v, i) => `${i === 0 ? 'M' : 'L'}${x(i).toFixed(1)},${y(v).toFixed(1)}`).join('');
+    const last = series.at(-1);
+    return (
+      `<div class="facet" data-unit="${unit}">` +
+      `<h3><span>${title}</span><span class="now">${fmt(last)}</span></h3>` +
+      `<svg viewBox="0 0 ${PLOT.w} ${PLOT.h}" preserveAspectRatio="none" role="img" ` +
+      `aria-label="${title}, ${n} samples, from ${fmt(series[0])} to ${fmt(last)}">` +
+      `<line class="base" x1="0" y1="${PLOT.h - PLOT.pad}" x2="${PLOT.w}" y2="${PLOT.h - PLOT.pad}" />` +
+      `<line class="cross" x1="0" y1="0" x2="0" y2="${PLOT.h}" />` +
+      `<circle class="dot" r="3" cx="0" cy="0" />` +
+      `<path class="line" d="${d}" stroke="${colour}" />` +
+      '</svg>' +
+      `<div class="axis"><span>tick ${xs[0]}</span><span>0 – ${fmt(max)} ${unit}</span>` +
+      `<span>tick ${xs.at(-1)}</span></div>` +
+      '</div>'
+    );
+  }
+
+  /* ---- the census table -------------------------------------------------- */
+
+  function drawCensus(now) {
+    const head =
+      '<tr><th>Species</th>' +
+      OCCUPATIONS.map((o) => `<th>${o}</th>`).join('') +
+      '<th>all</th></tr>';
+    const body = now.rows
+      .map(
+        (r) =>
+          `<tr><td>${r.name}</td>` +
+          r.counts
+            .map((c, o) => `<td data-zero="${String(c === 0)}">${c}</td>`)
+            .join('') +
+          `<td>${r.total}</td></tr>`,
+      )
+      .join('');
+    const foot =
+      '<tr><td>everyone</td>' +
+      now.totals
+        .map((c, o) => {
+          const cls = o === 0 ? 'produces' : o === 1 ? 'books' : o === 4 ? 'idle' : '';
+          return `<td class="${cls}">${c}</td>`;
+        })
+        .join('') +
+      `<td>${now.people}</td></tr>`;
+    $('census').innerHTML =
+      `<table class="census"><thead>${head}</thead><tbody>${body}</tbody>` +
+      `<tfoot>${foot}</tfoot></table>` +
+      '<p class="lede" style="margin-top:.6rem">' +
+      `<b>${now.totals[0]}</b> laborers are the entire field workforce of a universe of ` +
+      `<b>${now.people}</b>. <b>${now.totals[1]}</b> scribes make every grimoire. ` +
+      `<b>${now.totals[3]}</b> soldiers, by decision rather than by omission. ` +
+      `<b>${now.totals[4]}</b> idle — nobody is asking for them.</p>`;
+  }
+
+  /* ---- the five claimants ------------------------------------------------ */
+
+  const CLAIMS = [
+    {
+      who: 'subsistence',
+      kind: 'food',
+      cost: '1 per person per tick',
+      short:
+        'Kills nobody. It brakes fertility through carrying capacity — a shortfall of the whole ' +
+        'demand costs the maximum penalty on K, linearly (carrying-capacity.ts:331-353).',
+    },
+    {
+      who: 'casting',
+      kind: 'vellum',
+      cost: 'per cast, by node',
+      short: 'The spell does not go off.',
+    },
+    {
+      who: 'library upkeep',
+      kind: 'vellum',
+      cost: 'per shelf, per tick',
+      short:
+        'Libraries degrade and shelved instances are destroyed — permanently ' +
+        '(world-step.ts:1150). Paid before scribing out of the same stock, because losing what ' +
+        'is held beats delaying what is not yet written.',
+    },
+    {
+      who: 'scribing',
+      kind: 'vellum',
+      cost: 'per grimoire',
+      short: 'No book. Charged early, at the desk, rather than on completion.',
+    },
+    {
+      who: 'construction',
+      kind: 'stone',
+      cost: 'per person-month of build labour',
+      short: 'Labour stalls: the person-months go unspent and the site does not advance (world-step.ts:1385).',
+    },
+  ];
+
+  function drawClaims(now) {
+    /* "Short" is a claim about a *tick*, and a tick's shortfalls are not on the
+       read path. What this page can say is that a stock is at zero, which is a
+       claim about the frame in front of it — so that is the only thing the red
+       edge means, and the row says so. */
+    const emptyKinds = new Set(
+      KINDS.filter(([k]) => typeof now[k] === 'number' && now[k] < 0.5).map(([k]) => k),
+    );
+    $('claims').innerHTML = CLAIMS.map(
+      (c, i) =>
+        `<div class="claim" data-kind="${c.kind}" data-short="${String(emptyKinds.has(c.kind))}">` +
+        `<span class="ord">${i + 1}</span>` +
+        `<span class="who">${c.who}</span>` +
+        `<span class="paid">${c.kind}</span>` +
+        `<span class="cons">${emptyKinds.has(c.kind) ? `<b>${c.kind} is at zero.</b> ` : ''}${c.short}</span>` +
+        '</div>',
+    ).join('');
+  }
+
+  /* ---- the levers, and the ruleset as economic policy -------------------- */
+
+  /*
+   * Copied from `packages/content/data/form.json`, read 2026-08-16, because the
+   * projection does not carry it. Weights are fp/1024 shares of one
+   * `resource-yield` magnitude; the ten forms not listed route nothing anywhere,
+   * which is the intended reading of a form whose material is not a material.
+   */
+  const ROUTES = {
+    animal: 'food 50% · vellum 50%',
+    aquam: 'food 75% · stone 25%',
+    auram: 'food 25% · stone 75%',
+    herbam: 'food 50% · vellum 50%',
+    ignem: 'stone 100%',
+    terram: 'stone 100%',
+    nomen: 'vellum 100%',
+  };
+
+  function drawLevers(frame) {
+    const forms = frame.ruleset().forms;
+    $('forms').innerHTML = forms
+      .map(
+        (f) =>
+          `<span class="form" data-permitted="${String(f.permitted)}">${f.name}` +
+          (ROUTES[f.id] === undefined ? '' : `<span class="routes">${ROUTES[f.id]}</span>`) +
+          '</span>',
+      )
+      .join('');
+
+    const open = forms.filter((f) => f.permitted && ROUTES[f.id] !== undefined);
+    const shut = forms.filter((f) => !f.permitted && ROUTES[f.id] !== undefined);
+    $('leverlede').innerHTML =
+      'The god has no verb that moves a person from idle to laborer, or a coin from one stock to ' +
+      'another. <code>interventions.ts</code> covers all seventeen actions and mentions none of ' +
+      '<code>food</code>, <code>stone</code>, <code>vellum</code>, <code>POPULACE_COHORT</code> or ' +
+      '<code>occupation</code>. So the ruleset <em>is</em> the economic policy: a form you forbid ' +
+      'is a material no mage can raise. Right now ' +
+      (open.length === 0
+        ? '<b>no material-bearing form is permitted at all</b> — magic adds nothing to any stock'
+        : `<b>${open.map((f) => f.name).join(', ')}</b> ${open.length === 1 ? 'is' : 'are'} open`) +
+      (shut.length === 0
+        ? '.'
+        : `, and <b>${shut.map((f) => f.name).join(', ')}</b> ${shut.length === 1 ? 'is' : 'are'} shut.`);
+
+    const LEVERS = [
+      {
+        verb: 'actions 1–6 · permit / forbid',
+        head: 'Change what magic can be',
+        body:
+          'A form is a material. <b>Nomen</b> routes every point of a resource-yield into vellum ' +
+          'and <b>Terram</b> into stone; <b>Herbam</b> is the only permitted route to food that ' +
+          'is not also half vellum. Closing a form does not confiscate a stock — it stops the ' +
+          'supply that was topping it up.',
+      },
+      {
+        verb: 'action 12 · encourage research',
+        head: 'Point the academy at one cell',
+        body:
+          'Mages who cast <code>apply-magic</code> on a node produce, routed by that node’s form ' +
+          '(<code>kinds.ts:172</code>). Aiming research at a cell on a material-bearing form is ' +
+          'the closest thing to an economic order that exists, and it still names no person.',
+      },
+      {
+        verb: 'action 11 · fund a university',
+        head: 'Raise the backlog, and the workforce follows',
+        body:
+          'A founding grant raises <code>constructionBacklog</code>, which raises laborer demand, ' +
+          'which pulls people out of idle at <b>6.25% of a cohort per tick</b> ' +
+          '(<code>TRANSFER_RATE_PER_TICK</code>, <code>reallocation.ts:98</code>) and redirects ' +
+          'their stone. <b>You caused an allocation without naming a person or a unit.</b> This ' +
+          'is the one indirect lever over the workforce that exists today.',
+      },
+      {
+        verb: 'action 9 · bless a mage',
+        head: 'Raise one mage’s research, teaching and life',
+        body:
+          'Reaches the economy only through what she then casts and teaches. Slow, and the design ' +
+          'means it to be: pressure, not control.',
+      },
+    ];
+    $('levers').innerHTML = LEVERS.map(
+      (l) =>
+        `<div class="lever"><span class="verb">${l.verb}</span>` +
+        `<h3>${l.head}</h3><p>${l.body}</p></div>`,
+    ).join('');
+  }
+
+  /* ---- what the code says out loud --------------------------------------- */
+
+  function drawDefects(now) {
+    $('defects').innerHTML =
+      '<div class="defect">' +
+      '<h3>scribingQueueDepth: 0 — hardcoded</h3>' +
+      '<p><code>world-step.ts:915</code> passes a literal zero into ' +
+      '<code>computeOccupationDemand</code>, so <b>the game never demands a scribe.</b> The scribe ' +
+      'workforce is an initial condition that only drains away as reallocation pulls people ' +
+      'toward the demands that do exist — and scribes make grimoires, which is why the book count ' +
+      'peaks and then falls. This universe holds <b>' +
+      `${now.totals[1]}</b> scribes and <b>${now.grimoires}</b> grimoires.</p>` +
+      '</div>' +
+      '<div class="defect decided">' +
+      '<h3>standingSoldierTarget: NO_STANDING_ARMY</h3>' +
+      '<p>Also zero, but by citation rather than by omission — <code>ages-of-magic.md</code> §2b: ' +
+      '<em>“A university’s stationed mages are its faculty, its researchers and its garrison at ' +
+      'once. There is no separate military.”</em> The constant is named ' +
+      '(<code>demand.ts:108</code>) so that a reader can tell a decision from a stub. The soldier ' +
+      'column is therefore expected to be empty, and is.</p>' +
+      '</div>';
+  }
+
+  /* ---- the gaps ---------------------------------------------------------- */
+
+  const GAPS = {
+    perTickFlows:
+      'What was produced and what went short this tick are computed into a closure in ' +
+      '`world-step.ts` and thrown away (447-459, 1165). `onReport` carries `producedByKind` and ' +
+      '`shortKinds` to whoever passes a callback, and no script does — so the client can see a ' +
+      'stock and never a flow, and every rate on this page is a diff of two stocks.',
+    labourAffinity:
+      '`play-server.mjs` publishes a species as `{speciesId, id, name}`. `laborAffinity` is the ' +
+      'multiplier on every laborer’s output and it is not on the wire, so this page can count ' +
+      'laborers and cannot say what a laborer is worth.',
+    yieldShares:
+      'A universe’s territory yield shares decide how one pool of labour splits across the three ' +
+      'kinds — the whole reason two universes with the same workforce have different economies. ' +
+      'They are `WorldStepDeps.yieldShares`, not a projection field.',
+    formRouting:
+      'Which material a form raises is content (`form.json`), and the projection publishes a form ' +
+      'as `{bit, id, name}`. The table above is copied rather than fed, and is marked as such.',
+    buildingSites:
+      'Laborers on building sites are excluded from field production (`world-step.ts:1240`), so ' +
+      'the laborer count above is an upper bound on who is actually in a field. `onSites` is ' +
+      'internal to the step and no observation channel carries it.',
+  };
+
+  function drawAbsent() {
+    const rows = [
+      ['per-tick flows', GAPS.perTickFlows],
+      ['labour affinity', GAPS.labourAffinity],
+      ['territory yield shares', GAPS.yieldShares],
+      ['form → material routing', GAPS.formRouting],
+      ['who is on a building site', GAPS.buildingSites],
+      ['event deltas', WHY_ABSENT.eventDeltas],
+    ];
+    $('absent').innerHTML = rows
+      .map(([k, v]) => `<dt>${k}</dt><dd>${v}</dd>`)
+      .join('');
+  }
+
+  /* ---- the run, drawn ---------------------------------------------------- */
+
+  let scrubIndex = null;
+
+  function drawRun(session, species) {
+    const n = session.frameCount;
+    const indices = [];
+    for (let i = 0; i < n; i += 1) indices.push(i);
+    const { points, stride } = sample(indices);
+    const read = points.map((i) => readTick(session.frame(i), species));
+    const xs = read.map((t) => t.tick);
+
+    $('runspan').textContent =
+      `${n} frame${n === 1 ? '' : 's'}, tick ${xs[0]} to ${xs.at(-1)}` +
+      (stride > 1 ? ` · every ${stride}th frame drawn` : '');
+
+    const haveStocks = read.at(-1).haveStocks;
+    const stockMax = haveStocks
+      ? Math.max(...read.flatMap((t) => [t.food, t.stone, t.vellum]))
+      : 0;
+
+    /* One shared domain across the three stock facets, so their heights compare.
+       Where the sidecar is absent the whole row says so rather than drawing
+       three flat lines at an invented zero. */
+    $('facets-stocks').innerHTML = haveStocks
+      ? [
+          facet('Food', read.map((t) => t.food), 'var(--mentem)', stockMax, xs, 'units'),
+          facet('Stone', read.map((t) => t.stone), 'var(--terram)', stockMax, xs, 'units'),
+          facet('Vellum', read.map((t) => t.vellum), 'var(--nomen)', stockMax, xs, 'units'),
+        ].join('')
+      : '<p class="lede">The <code>stocks</code> sidecar is absent from this source, so the three ' +
+        'kinds cannot be drawn apart. §4.1 sums them into one slot; the total is on the tile above.</p>';
+
+    /* Own domain each, and the axis prints it. Books, distinct nodes and
+       buildings are three different units, and a shared scale across them would
+       be the dual-axis mistake wearing a different hat: it would let a reader
+       compare two heights that mean nothing to each other. */
+    const top = (pick) => Math.max(1, ...read.map(pick));
+    $('facets-books').innerHTML = [
+      facet('Grimoires', read.map((t) => t.grimoires), 'var(--book)', top((t) => t.grimoires), xs, 'books'),
+      facet('Library depth', read.map((t) => t.libraryDepth), 'var(--lib)', top((t) => t.libraryDepth), xs, 'nodes'),
+      facet('Universities', read.map((t) => t.universities), 'var(--god)', top((t) => t.universities), xs, 'built'),
+    ].join('');
+
+    /*
+     * Two rows, and the split is the finding rather than a layout choice.
+     *
+     * Everyone and the idle are the same quantity at the same magnitude, so they
+     * share a domain and the second line lying under the first is the whole
+     * story. Put the workforce on that same domain and all three trades flatten
+     * onto the baseline — true, and it destroys the shape of the scribe decline,
+     * which is the defect this page exists to show. So the trades get their own
+     * shared domain, three orders of magnitude smaller, and each row's axis
+     * prints the maximum it was drawn against so the difference cannot be read
+     * off the heights by mistake.
+     */
+    const peopleMax = Math.max(...read.map((t) => t.people));
+    $('facets-people').innerHTML = [
+      facet('Everyone', read.map((t) => t.people), 'var(--ink)', peopleMax, xs, 'people'),
+      facet('Idle — nobody asked for them', read.map((t) => t.totals[4]), 'var(--warn)', peopleMax, xs, 'people'),
+    ].join('');
+
+    const workMax = Math.max(
+      1,
+      ...read.flatMap((t) => [t.totals[0], t.totals[1], t.totals[2]]),
+    );
+    $('facets-work').innerHTML = [
+      facet('Laborers', read.map((t) => t.totals[0]), 'var(--terram)', workMax, xs, 'people'),
+      facet('Scribes', read.map((t) => t.totals[1]), 'var(--lib)', workMax, xs, 'people'),
+      facet('Students', read.map((t) => t.totals[2]), 'var(--god)', workMax, xs, 'people'),
+    ].join('');
+
+    /*
+     * One crosshair across every facet at once. A sparkline whose value can only
+     * be guessed from its height is decoration; this is the table view, served
+     * on demand instead of as four hundred rows.
+     */
+    const groups = ['facets-stocks', 'facets-books', 'facets-people', 'facets-work'].map((id) =>
+      $(id),
+    );
+    const setScrub = (i) => {
+      scrubIndex = i;
+      for (const g of groups) g.dataset.scrub = i === null ? 'off' : 'on';
+      if (i === null) {
+        $('readout').innerHTML = '&nbsp;';
+        return;
+      }
+      const t = read[i];
+      const x = PLOT.pad + (i / Math.max(1, read.length - 1)) * (PLOT.w - 2 * PLOT.pad);
+      for (const g of groups) {
+        for (const svg of g.querySelectorAll('svg')) {
+          const path = svg.querySelector('.line');
+          const line = svg.querySelector('.cross');
+          const dot = svg.querySelector('.dot');
+          if (line !== null) {
+            line.setAttribute('x1', String(x));
+            line.setAttribute('x2', String(x));
+          }
+          if (dot !== null && path !== null) {
+            const total = path.getTotalLength();
+            const at = path.getPointAtLength((total * i) / Math.max(1, read.length - 1));
+            dot.setAttribute('cx', String(at.x));
+            dot.setAttribute('cy', String(at.y));
+          }
+        }
+      }
+      $('readout').innerHTML =
+        `tick <b>${t.tick}</b> · food <b>${fmt(t.food)}</b> · stone <b>${fmt(t.stone)}</b> · ` +
+        `vellum <b>${fmt(t.vellum)}</b> · grimoires <b>${t.grimoires}</b> · ` +
+        `library <b>${t.libraryDepth}</b> · people <b>${t.people}</b> ` +
+        `(<b>${t.totals[0]}</b> laborers, <b>${t.totals[1]}</b> scribes, <b>${t.totals[4]}</b> idle)`;
+    };
+
+    for (const g of groups) {
+      g.dataset.scrub = 'off';
+      g.addEventListener('mousemove', (event) => {
+        const svg = event.target.closest('svg');
+        if (svg === null) return;
+        const box = svg.getBoundingClientRect();
+        const frac = Math.min(1, Math.max(0, (event.clientX - box.left) / box.width));
+        setScrub(Math.round(frac * (read.length - 1)));
+      });
+      g.addEventListener('mouseleave', () => setScrub(null));
+    }
+
+    return read;
+  }
+
+  /* ---- composition ------------------------------------------------------- */
+
+  let session = null;
+
+  async function load() {
+    session = null;
+    $('err').textContent = '';
+    $('src').innerHTML = '';
+    /* Live first, recording as the fallback — the pattern every other surface
+       uses (`ui/console/index.html:337`). A page that only reads the recording
+       cannot watch a collapse happen. */
+    session =
+      (await openSession({ live: '' }).catch(() => null)) ??
+      (await openSession({ recording: '../session.json' }).catch(() => null));
+
+    mountSourceNote($('src'), session, ['materialBreakdown']);
+    if (session === null) {
+      $('err').textContent =
+        'No universe and no recording. Run `npm run play` and open /ui/economy/, or `npm run ui`.';
+      return;
+    }
+
+    const species = session.content.species;
+    const last = session.last();
+    const now = readTick(last, species);
+    /*
+     * The diff window: forty frames back, or the first frame if the run is
+     * shorter. Chosen rather than "since the last frame" because a one-tick
+     * delta on a stock this size is noise, and rather than "since tick 0"
+     * because the page is meant to say what is happening *now*.
+     */
+    const back = Math.max(0, session.frameCount - 1 - 40);
+    const then = back === session.frameCount - 1 ? null : readTick(session.frame(back), species);
+
+    drawStocks(now, then);
+    drawRun(session, species);
+    drawCensus(now);
+    drawClaims(now);
+    drawDefects(now);
+    drawLevers(last);
+    drawAbsent();
+
+    $('rereadhint').textContent = session.live
+      ? `Live universe · ${session.frameCount} frames held · this page never advances the clock, ` +
+        'so re-read after playing elsewhere.'
+      : `Recording · ${session.frameCount} frames · nothing here can advance it.`;
+  }
+
+  mountThemeControl(document.querySelector('.topbar'));
+  $('reread').addEventListener('click', () => {
+    load().catch((error) => {
+      $('err').textContent = String(error.message ?? error);
+    });
+  });
+
+  try {
+    await load();
+  } catch (error) {
+    $('err').textContent = String(error.message ?? error);
+  }
+</script>

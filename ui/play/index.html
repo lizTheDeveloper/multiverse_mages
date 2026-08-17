@@ -7,7 +7,7 @@
   The console next door asks whether every surface composes. This page asks a
   smaller question: can a person sit down and play the universe.
 
-  Three things it does that the console does not.
+  Four things it does that the console does not.
 
   1. **It names what it can, and refuses to name what it cannot.** Techniques,
      forms, cells, species and traditions all carry names in `content`, so the
@@ -23,10 +23,20 @@
   3. **It says what changed.** Every action and every span of time prints a diff
      against the frame before it. A god who cannot see the consequence of a verb
      is pressing buttons, and that was the honest description of playing here.
+  4. **It shows the ruleset it is asking you to govern.** Playtested 2026-08-15
+     on `origin/main` at ad7f80c2: the first thing said out loud was *"it's not
+     clear what magic is available to my mages"*, and the page drew no grid at
+     all — §1.1's nineteen switches and §4.1's seventy knowledge cells were both
+     on the read path and neither was on the screen. The same session found the
+     other three gaps this revision closes: masked verbs were dumped into one
+     sentence of prose at the bottom, the materials tile claimed a breakdown the
+     observation does not carry, and there was no way to reach any other surface.
 
   It reads through `ui/shared/session.js` like every other surface, so it decodes
   and never computes: no rule is evaluated here, and a number this page cannot
-  source it does not show.
+  source it does not show. That is why the grid draws the nineteen switches and
+  each cell's knowledge but prints **no per-cell permitted verdict** — combining
+  an axis pair with the eight edicts is `permits()`, and `permits()` is a rule.
 -->
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -53,9 +63,9 @@
   }
 
   body {
-    max-width: 62rem;
+    max-width: 68rem;
     margin: 0 auto;
-    padding: 1.5rem 1.25rem 4rem;
+    padding: 1.1rem 1.25rem 4rem;
   }
 
   h1 {
@@ -66,7 +76,31 @@
     font: inherit;
     font-size: 0.85rem;
     opacity: 0.72;
-    margin: 0 0 1.25rem;
+    margin: 0 0 1.1rem;
+  }
+
+  /* ---- sections --------------------------------------------------------- */
+  section {
+    margin-top: 1.6rem;
+  }
+  section > h2 {
+    font-size: 0.95rem;
+    margin: 0 0 0.15rem;
+    display: flex;
+    align-items: baseline;
+    gap: 0.55rem;
+    flex-wrap: wrap;
+  }
+  section > h2 .s {
+    font-weight: 400;
+    font-size: 0.75rem;
+    opacity: 0.6;
+  }
+  section > p.lede {
+    margin: 0 0 0.7rem;
+    font-size: 0.8rem;
+    opacity: 0.72;
+    max-width: 46rem;
   }
 
   /* ---- the world -------------------------------------------------------- */
@@ -80,6 +114,9 @@
     border: 1px solid var(--edge);
     border-radius: 3px;
     padding: 0.5rem 0.6rem;
+  }
+  .stat.wide {
+    grid-column: span 2;
   }
   .stat .k {
     font-size: 0.7rem;
@@ -95,6 +132,17 @@
   .stat .n {
     font-size: 0.72rem;
     opacity: 0.6;
+  }
+  .stat .split {
+    display: flex;
+    gap: 0.7rem;
+    margin-top: 0.15rem;
+    font-size: 0.72rem;
+    font-variant-numeric: tabular-nums;
+    opacity: 0.8;
+  }
+  .stat .split b {
+    font-weight: 600;
   }
 
   /* ---- what changed ----------------------------------------------------- */
@@ -154,15 +202,189 @@
     outline-offset: 2px;
   }
 
+  /* ---- the ruleset grid ------------------------------------------------- */
+  .gridwrap {
+    overflow-x: auto;
+  }
+  /*
+   * Sized so the twelve armed cells are the figure and the other fifty-eight
+   * are ground. The first cut used `aspect-ratio: 1` against `1fr` columns,
+   * which grew every box to 3.5rem square: the hatching then carried more ink
+   * than the numbers and the grid read as a texture. Fixed 1.7rem cells, a
+   * lighter hatch, and axis labels legible whether armed or closed.
+   */
+  .grid70 {
+    display: grid;
+    grid-template-columns: 5.2rem repeat(14, 1.7rem);
+    justify-content: start;
+    gap: 2px;
+    font-size: 0.66rem;
+  }
+  .grid70 .h {
+    font-size: 0.56rem;
+    letter-spacing: 0;
+    text-transform: uppercase;
+    opacity: 0.8;
+    writing-mode: vertical-rl;
+    transform: rotate(180deg);
+    justify-self: center;
+    padding-bottom: 0.25rem;
+    white-space: nowrap;
+  }
+  .grid70 .h[data-armed='true'],
+  .grid70 .rl[data-armed='true'] {
+    font-weight: 700;
+    opacity: 1;
+  }
+  /* Struck through only where the text runs horizontally. On the vertical
+     column heads a 0.56rem line-through reads as a smudge rather than as a
+     closed switch, so those carry weight and opacity alone. */
+  .grid70 .rl[data-armed='false'] {
+    opacity: 0.55;
+    text-decoration: line-through;
+    text-decoration-thickness: 1px;
+  }
+  .grid70 .h[data-armed='false'] {
+    opacity: 0.5;
+    font-weight: 400;
+  }
+  .grid70 .rl {
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    align-self: center;
+    text-align: right;
+    padding-right: 0.45rem;
+    font-size: 0.66rem;
+    opacity: 0.85;
+    white-space: nowrap;
+  }
+  .grid70 .c {
+    height: 1.7rem;
+    border-radius: 2px;
+    border: 1px solid var(--edge);
+    background: var(--raised);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-variant-numeric: tabular-nums;
+    opacity: 0.9;
+  }
+  /* Outside the enabled rectangle: the schema carries the cell, the content
+     does not. Drawn as absent rather than as empty-but-possible. */
+  .grid70 .c[data-enabled='false'] {
+    border-style: dotted;
+    background: transparent;
+    color: transparent;
+    opacity: 0.4;
+  }
+  .grid70 .c[data-known='true'] {
+    border-color: var(--good);
+    background: color-mix(in oklab, var(--good) 16%, transparent);
+    opacity: 1;
+    font-weight: 600;
+  }
+  /* Ground, not figure: enough to read as struck out, not enough to compete
+     with a number. */
+  .grid70 .c[data-closed='true'] {
+    border-color: color-mix(in oklab, var(--edge) 60%, transparent);
+    background: repeating-linear-gradient(
+      -45deg,
+      transparent 0 4px,
+      color-mix(in oklab, currentColor 6%, transparent) 4px 5px
+    );
+    opacity: 0.6;
+  }
+  .gridkey {
+    font-size: 0.72rem;
+    opacity: 0.68;
+    margin-top: 0.55rem;
+    line-height: 1.65;
+  }
+  .gridkey b {
+    font-weight: 600;
+    opacity: 0.9;
+  }
+  .edicts {
+    margin-top: 0.6rem;
+    font-size: 0.76rem;
+    opacity: 0.8;
+  }
+
+  /* ---- who is alive ----------------------------------------------------- */
+  .popwrap {
+    overflow-x: auto;
+  }
+  .pop {
+    display: grid;
+    grid-template-columns: 5.2rem repeat(8, 1.7rem) 3rem;
+    justify-content: start;
+    gap: 2px;
+    font-size: 0.7rem;
+  }
+  .pop .h {
+    font-size: 0.56rem;
+    letter-spacing: 0;
+    overflow: visible;
+    white-space: nowrap;
+    text-align: center;
+    opacity: 0.6;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+  .pop .rl {
+    align-self: center;
+    text-align: right;
+    padding-right: 0.4rem;
+    opacity: 0.85;
+  }
+  .pop .c {
+    height: 1.7rem;
+    border-radius: 2px;
+    background: var(--raised);
+    border: 1px solid var(--edge);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-variant-numeric: tabular-nums;
+    opacity: 0.45;
+  }
+  .pop .c[data-any='true'] {
+    opacity: 1;
+    border-color: var(--good);
+    background: color-mix(in oklab, var(--good) 14%, transparent);
+  }
+  .pop .tot {
+    align-self: center;
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+    padding-right: 0.2rem;
+  }
+  .pop .gone {
+    opacity: 0.45;
+    text-decoration: line-through;
+  }
+
+  /* ---- the verbs -------------------------------------------------------- */
   .verbs {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(17rem, 1fr));
+    /* Cards size to their own content. Stretched to the tallest in the row,
+       `revokeEdict` grew an inch of nothing under one line of text. */
+    align-items: start;
     gap: 0.6rem;
   }
   .verb {
     border: 1px solid var(--edge);
     border-radius: 3px;
     padding: 0.6rem 0.7rem;
+    display: flex;
+    flex-direction: column;
+  }
+  .verb[data-state='latent'],
+  .verb[data-state='denied'] {
+    opacity: 0.62;
+    background: transparent;
+    border-style: dashed;
   }
   .verb h3 {
     font-size: 0.95rem;
@@ -172,41 +394,159 @@
     gap: 0.5rem;
     align-items: baseline;
   }
+  .verb .num {
+    font-size: 0.68rem;
+    opacity: 0.5;
+    font-variant-numeric: tabular-nums;
+    margin-right: 0.35rem;
+  }
   .verb .cost {
     font-size: 0.75rem;
     opacity: 0.7;
     font-variant-numeric: tabular-nums;
     white-space: nowrap;
   }
+  .verb .cost[data-afford='false'] {
+    color: var(--spend);
+    opacity: 0.95;
+  }
   .verb p {
     margin: 0 0 0.45rem;
     font-size: 0.78rem;
     opacity: 0.72;
   }
-  .verb select {
-    font: inherit;
-    font-size: 0.82rem;
-    width: 100%;
-    padding: 0.25rem;
-    margin-bottom: 0.4rem;
-    background: var(--raised);
-    color: inherit;
-    border: 1px solid var(--edge);
-    border-radius: 3px;
+  /* Chips, not dropdowns. Every option visible at the moment of deciding. */
+  .chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.22rem;
+    align-items: baseline;
+    margin: 0 0 0.5rem;
   }
-  .unnamed {
+  .chipcap {
+    flex-basis: 100%;
+    font-size: 0.68rem;
+    opacity: 0.55;
+    margin-bottom: 0.1rem;
+  }
+  .chip {
+    font-size: 0.74rem;
+    padding: 0.14rem 0.42rem;
+    border-radius: 999px;
+    opacity: 0.72;
+    min-width: 1.55rem;
+  }
+  .chip[aria-pressed='true'] {
+    opacity: 1;
+    font-weight: 600;
+    border-color: var(--good);
+    background: color-mix(in oklab, var(--good) 20%, transparent);
+  }
+  /*
+   * A candidate is a person, a college, or the standing option to found one —
+   * and it stopped being a number here. Rows rather than chips, because the
+   * whole point is that each one carries a sentence: twenty enriched chips is a
+   * wall of text with no edges, and twenty rows in a scroller is a list you read
+   * down. The container is capped so a 32-slot verb cannot push the button that
+   * casts it off the card.
+   */
+  .cands {
+    display: flex;
+    flex-direction: column;
+    gap: 0.14rem;
+    margin: 0 0 0.5rem;
+    max-height: 13rem;
+    overflow-y: auto;
+    padding-right: 0.15rem;
+  }
+  .cand {
+    display: block;
+    width: 100%;
+    text-align: left;
+    padding: 0.3rem 0.45rem;
+    font-size: 0.78rem;
+    border-radius: 0.35rem;
+    background: transparent;
+  }
+  .cand[aria-pressed='true'] {
+    border-color: var(--god);
+    background: color-mix(in oklab, var(--god) 10%, transparent);
+  }
+  .cand .cix {
+    color: var(--faint);
+    font-size: 0.66rem;
+    margin-right: 0.35rem;
+  }
+  .cand .chead {
+    font-weight: 600;
+    color: var(--ink);
+  }
+  /* Not `.sub`: the page already has a `.sub` for its own header line, at
+     opacity .72, and inheriting it dropped this row's second line to 3.68:1
+     against the ground — measured, not guessed. */
+  .cand .csub {
+    display: block;
+    margin-top: 0.12rem;
+    font-size: 0.7rem;
+    line-height: 1.45;
+    color: var(--soft);
+  }
+  .aim {
+    font-size: 0.76rem;
+    margin: 0 0 0.5rem;
+  }
+  .aim b {
+    font-weight: 600;
+  }
+  .aim .ask {
+    opacity: 0.75;
+    font-style: italic;
+  }
+
+  /* Anything on the grid you can aim a verb at. */
+  [data-pick] {
+    cursor: pointer;
+  }
+  [data-pick]:hover {
+    outline: 1px solid currentColor;
+    outline-offset: 1px;
+  }
+  [data-pick]:focus-visible {
+    outline: 2px solid currentColor;
+    outline-offset: 1px;
+  }
+  [data-chosen='true'] {
+    outline: 2px solid var(--good);
+    outline-offset: 1px;
+  }
+  .grid70 .rl[data-chosen='true'],
+  .grid70 .h[data-chosen='true'] {
+    opacity: 1;
+    font-weight: 700;
+  }
+  .verb .go {
+    margin-top: auto;
+    align-self: flex-start;
+  }
+  .unnamed,
+  .why {
     font-size: 0.72rem;
-    opacity: 0.6;
+    opacity: 0.65;
     margin: -0.2rem 0 0.4rem;
   }
-  #dead {
-    margin-top: 1.5rem;
-    font-size: 0.8rem;
-    opacity: 0.62;
+  .why {
+    margin-top: auto;
+    font-style: italic;
   }
   #err {
     color: #b3261e;
     font-size: 0.85rem;
+  }
+  .footnote {
+    margin-top: 2rem;
+    font-size: 0.75rem;
+    opacity: 0.6;
+    line-height: 1.7;
   }
 </style>
 
@@ -224,12 +564,46 @@
   <button data-ticks="240">+20 years</button>
 </div>
 
-<div class="verbs" id="verbs"></div>
-<p id="dead"></p>
+<section id="magic-section">
+  <h2>What magic is <span class="s">§1.1's nineteen switches · §4.1's seventy cells</span></h2>
+  <p class="lede">
+    Five techniques down, fourteen forms across. A faded axis label is a switch you
+    closed. A number in a cell is how many nodes your mages actually hold there — that is
+    knowledge, not permission, and it is the only sense in which magic is
+    <em>available to them</em> rather than merely legal.
+  </p>
+  <div class="gridwrap"><div class="grid70" id="grid70"></div></div>
+  <div class="gridkey" id="gridkey"></div>
+  <div class="edicts" id="edicts"></div>
+</section>
+
+<section id="alive-section">
+  <h2>Who is alive <span class="s">species × deepest tier reached</span></h2>
+  <p class="lede">
+    Tier 0 is untaught. A species with no living mage is struck through: it is not coming back
+    unless you buy one, and <code>inviteScholar</code> is the only verb that can.
+  </p>
+  <div class="popwrap"><div class="pop" id="pop"></div></div>
+</section>
+
+<section id="hand-section">
+  <h2>The god's hand <span class="s">§4.2's action space, all of it</span></h2>
+  <p class="lede">
+    Every verb in the space is here whether or not you can use it right now, because a
+    verb you cannot see is a verb you cannot plan for. A dashed card is closed to you;
+    each says which of the two reasons it is, as far as the read path can tell.
+  </p>
+  <div class="verbs" id="verbs"></div>
+</section>
+
+<p class="footnote" id="footnote"></p>
 
 <script type="module">
-  import { openSession, units } from '../shared/session.js';
+  import { openSession, units, reconstructedCharge, candidateNamer, WHY_ABSENT } from '../shared/session.js';
   import { mountThemeControl } from '../shared/theme.js';
+  import { mountNav } from '../shared/nav.js';
+
+  mountNav();
 
   const $ = (id) => document.getElementById(id);
 
@@ -258,16 +632,65 @@
     16: 'Buy a scholar of a species you cannot breed.',
   };
 
-  /* The four channels a player watches, and the four institutions beside them. */
-  const STATS = [
-    ['favor', 'Favor', 'what you spend'],
-    ['worship', 'Worship', 'income'],
-    ['materials', 'Materials', 'food + stone + vellum'],
-    ['prestige', 'Prestige', 'carried in'],
-  ];
-
   let session;
   let previous = null;
+
+  /*
+   * ---- picking a target, without a dropdown -------------------------------
+   *
+   * A `<select>` hides the board behind a list of words and makes the player
+   * read a menu to find something already drawn on screen. So the grid *is* the
+   * control: click a technique label, a form label or a cell, and every verb
+   * that takes that kind of parameter arms itself against what you picked.
+   *
+   *   1, 2   take a technique  → click a row label
+   *   3, 4   take a form       → click a column label
+   *   5, 6   take a cell       → click a cell
+   *   12     takes a cell, but only one §4.4 offered → click an offered cell
+   *
+   * The rest take a §4.4 slot, a tradition or a species. Those are small closed
+   * sets with no board to click, so they get a row of chips inside the card —
+   * every option visible at once, one click to choose, which is the property a
+   * dropdown gives up.
+   *
+   * `picked` is keyed by action id and survives a redraw, so advancing the clock
+   * does not silently drop the target you lined up.
+   */
+  const AXIS = { 1: 'technique', 2: 'technique', 3: 'form', 4: 'form', 5: 'cell', 6: 'cell', 12: 'cell' };
+  /* One aim per kind, so a chosen technique and a chosen cell can both stay
+     lit — the grid shows every target you currently hold, not just the last
+     one you touched. */
+  const aimed = new Map();                 // 'technique' | 'form' | 'cell' -> value
+  const picked = new Map();                // action id -> parameter value
+
+  function select(kind, value, label) {
+    aimed.set(kind, value);
+    for (const [id, wants] of Object.entries(AXIS)) {
+      if (wants === kind) picked.set(Number(id), value);
+    }
+    const frame = session.last();
+    drawGrid(frame);
+    drawVerbs(frame);
+  }
+
+  /* ---- formatting ------------------------------------------------------- */
+
+  /*
+   * Every number on this page goes through here.
+   *
+   * The guard is the point. `fmt` used to be
+   * `Number.isInteger(n) ? String(n) : n.toFixed(1)`, which turns a `NaN` into
+   * the string "NaN" on the screen and throws outright on `undefined` — so a
+   * channel the read path stopped serving would either lie in four characters
+   * or take the whole page down. An em dash says "this page cannot source that
+   * number", which is the only honest thing to draw.
+   */
+  const fmt = (n) => {
+    if (typeof n !== 'number' || !Number.isFinite(n)) return '—';
+    return Number.isInteger(n) ? String(n) : n.toFixed(1);
+  };
+
+  const signed = (n) => (n > 0 ? `+${fmt(n)}` : fmt(n));
 
   /* ---- naming ----------------------------------------------------------- */
 
@@ -303,8 +726,21 @@
      * `Candidate` carries `params` and no label. Naming it would mean inventing
      * a mage, and a UI that invents is worse than one that admits.
      */
+    /*
+     * `value` is what gets submitted. `aim` is what a click on the grid has to
+     * match, and it differs from `value` for exactly one verb — see 12 below.
+     *
+     * The axis verbs take a **1-based content id**, not the 0-based bit the
+     * ruleset block is indexed by: `interventions.ts:405` is `const bit =
+     * axisId - 1` and `gate.ts:267` refuses anything `< 1`. Sending the bit
+     * therefore made the first technique `parameter-out-of-range` and every
+     * other one hit its neighbour — a silent wrong target, which is the worse
+     * half. Measured 2026-08-15: aiming at Creo and casting `permitTechnique`
+     * came back `refused (parameter-out-of-range)`.
+     */
     return (id, candidates) => {
-      const list = (rows) => rows.map((name, i) => ({ value: i, label: name })).filter((o) => o.label);
+      const list = (rows) =>
+        rows.map((name, i) => ({ value: i + 1, label: name })).filter((o) => o.label);
       if (id === 1 || id === 2) return list(techniques);
       if (id === 3 || id === 4) return list(forms);
       /*
@@ -315,8 +751,13 @@
        * choices to offer.
        */
       if (id === 12) {
-        return (candidates ?? []).map((c) => ({
-          value: c.params[0],
+        /* `CANDIDATE_SLOTS` covers this one, so `gate.ts:225` resolves the
+           parameter through `candidateAt` — a slot index, not the cell id the
+           slot happens to carry. The cell id is what the grid click matches, so
+           it rides along as `aim`. */
+        return (candidates ?? []).map((c, slot) => ({
+          value: slot,
+          aim: c.params[0],
           label: cellName.get(c.params[0]) ?? `cell ${c.params[0]}`,
         }));
       }
@@ -326,14 +767,14 @@
           .map(([cellId, label]) => ({ value: cellId, label }));
       }
       if (id === 13) {
-        return (candidates ?? []).map((c) => ({
-          value: c.params[0],
+        return (candidates ?? []).map((c, slot) => ({
+          value: slot,
           label: traditions.get(c.params[0]) ?? `tradition ${c.params[0]}`,
         }));
       }
       if (id === 16) {
-        return (candidates ?? []).map((c) => ({
-          value: c.params[0],
+        return (candidates ?? []).map((c, slot) => ({
+          value: slot,
           label: species.get(c.params[0]) ?? `species ${c.params[0]}`,
         }));
       }
@@ -341,7 +782,7 @@
     };
   }
 
-  /* ---- rendering -------------------------------------------------------- */
+  /* ---- the world -------------------------------------------------------- */
 
   function snapshot(frame) {
     const r = frame.resources();
@@ -353,7 +794,13 @@
       worship: r.worship,
       worshipTier: r.worshipTier,
       materials: r.materials,
+      /* Undefined until the observation carries the three stocks separately;
+         `drawWorld` prints the breakdown only when all three are numbers. */
+      food: r.food,
+      stone: r.stone,
+      vellum: r.vellum,
       prestige: r.prestige,
+      saturated: r.saturated,
       universities: i.universities,
       capacity: i.capacity,
       libraryDepth: i.libraryDepth,
@@ -361,22 +808,52 @@
       tick: c.worldTick,
       era: c.era,
       mages: mages ? mages.reduce((n, b) => n + b.living, 0) : null,
+      taught: mages ? mages.reduce((n, b) => n + b.taught, 0) : null,
+      speciesAlive: mages ? mages.filter((b) => b.living > 0).length : null,
     };
   }
 
-  const fmt = (n) => (Number.isInteger(n) ? String(n) : n.toFixed(1));
-
   function drawWorld(s) {
-    const cell = (k, v, n) => `<div class="stat"><div class="k">${k}</div>
-      <div class="v">${v}</div><div class="n">${n}</div></div>`;
+    const cell = (k, v, n, extra = '', wide = false) =>
+      `<div class="stat${wide ? ' wide' : ''}"><div class="k">${k}</div><div class="v">${v}</div>` +
+      `<div class="n">${n}</div>${extra}</div>`;
+
+    /* Saturation is a ceiling the channel hit, not a value. Say so rather than
+       printing a number the observation is knowingly wrong about. */
+    const sat = (key, v) => (s.saturated?.[key] ? `${fmt(v)}+` : fmt(v));
+
+    /*
+     * The three stocks are a real component (`packages/state` MATERIAL_STOCK:
+     * food, stone, vellum) but §4.1's resources block sums them into one slot.
+     * Print the breakdown when the read path serves it and the total alone when
+     * it does not — the old caption asserted "food + stone + vellum" under a
+     * number that could not be taken apart.
+     */
+    const stocks = [s.food, s.stone, s.vellum];
+    const haveStocks = stocks.every((x) => typeof x === 'number' && Number.isFinite(x));
+    const materialNote = haveStocks ? 'food · stone · vellum' : 'one summed channel';
+    const materialSplit = haveStocks
+      ? `<div class="split"><span>f <b>${fmt(s.food)}</b></span>` +
+        `<span>s <b>${fmt(s.stone)}</b></span><span>v <b>${fmt(s.vellum)}</b></span></div>`
+      : '';
+
     $('world').innerHTML = [
-      ...STATS.map(([key, label, note]) =>
-        cell(label, fmt(s[key]), key === 'worship' ? `tier ${s.worshipTier}` : note),
+      cell('Favor', sat('favor', s.favor), 'what you spend'),
+      cell('Worship', sat('worship', s.worship), `tier ${s.worshipTier} · your income`),
+      /* Two columns wide when it carries the breakdown: three numbers and a
+         three-word caption do not fit a 7.5rem tile without wrapping twice. */
+      cell('Materials', sat('materials', s.materials), materialNote, materialSplit, haveStocks),
+      cell('Prestige', sat('prestige', s.prestige), 'carried in'),
+      cell('Universities', fmt(s.universities), `${fmt(s.capacity)} seats`),
+      cell('Library', fmt(s.libraryDepth), 'distinct nodes'),
+      cell('Grimoires', fmt(s.grimoires), 'books'),
+      cell(
+        'Mages',
+        s.mages === null ? '—' : fmt(s.mages),
+        s.taught === null
+          ? `tick ${fmt(s.tick)} · era ${fmt(s.era)}`
+          : `${fmt(s.taught)} taught · ${fmt(s.speciesAlive)} species`,
       ),
-      cell('Universities', `${s.universities}`, `${fmt(s.capacity)} seats`),
-      cell('Library', `${s.libraryDepth}`, 'distinct nodes'),
-      cell('Grimoires', `${s.grimoires}`, 'books'),
-      cell('Mages', s.mages === null ? '—' : s.mages, `tick ${s.tick} · era ${s.era}`),
     ].join('');
   }
 
@@ -386,24 +863,31 @@
     ['favor', 'favor'],
     ['worship', 'worship'],
     ['materials', 'materials'],
+    ['food', 'food'],
+    ['stone', 'stone'],
+    ['vellum', 'vellum'],
     ['prestige', 'prestige'],
     ['universities', 'universities'],
     ['capacity', 'seats'],
     ['libraryDepth', 'library depth'],
     ['grimoires', 'grimoires'],
     ['mages', 'mages'],
+    ['speciesAlive', 'species alive'],
   ];
 
   function drawChanged(head, before, after) {
     const rows = [];
     for (const [key, label] of DIFF) {
-      if (before?.[key] == null || after?.[key] == null) continue;
-      const d = after[key] - before[key];
+      const a = before?.[key];
+      const b = after?.[key];
+      if (typeof a !== 'number' || typeof b !== 'number') continue;
+      if (!Number.isFinite(a) || !Number.isFinite(b)) continue;
+      const d = b - a;
       if (Math.abs(d) < 0.05) continue;
       const cls = d > 0 ? 'up' : 'down';
       rows.push(
-        `<li><span class="${cls}">${d > 0 ? '+' : ''}${fmt(d)}</span> ${label}
-         <span style="opacity:.55">(${fmt(before[key])} → ${fmt(after[key])})</span></li>`,
+        `<li><span class="${cls}">${signed(d)}</span> ${label}
+         <span style="opacity:.55">(${fmt(a)} → ${fmt(b)})</span></li>`,
       );
     }
     const months = after.tick - before.tick;
@@ -413,80 +897,431 @@
       (rows.length ? `<ul>${rows.join('')}</ul>` : ' — nothing measurable moved.');
   }
 
+  /* ---- what magic is ---------------------------------------------------- */
+
+  /*
+   * The grid draws three separate facts and never combines them:
+   *
+   *   - which cells `content` enables at all (dotted = the schema carries the
+   *     cell, this release does not),
+   *   - the nineteen axis switches, on the row and column labels,
+   *   - how many nodes the universe's mages hold in each cell.
+   *
+   * It deliberately prints **no per-cell permitted verdict**. Folding an axis
+   * pair together with the eight edicts is `permits()`, which is a rule, and
+   * this page decodes rather than computes. The hatching marks a cell whose row
+   * or column you closed — a projection of a switch you set, not a claim about
+   * what the rules would allow after edicts.
+   */
+  function drawGrid(frame) {
+    const rules = frame.ruleset();
+    const grid = $('grid70');
+    grid.innerHTML = '';
+
+    /* `content` carries the node list for every cell, so a cell can say how many
+       of its nodes exist as well as how many are held. "4 of 5" is a far more
+       useful number to a player than "4". */
+    /* `nodeCount` is served by the live play server and by any recording made
+       after it was added. An older recording has no such field, and then the
+       page says "4 nodes" instead of "4 of 5" rather than inventing a
+       denominator. */
+    const nodeTotal = new Map(
+      (session.content.cells ?? [])
+        .filter((c) => typeof c.nodeCount === 'number')
+        .map((c) => [`${c.technique} ${c.form}`, c.nodeCount]),
+    );
+    const haveTotals = nodeTotal.size > 0;
+    /* The knowledge block's `id` is the content slug; the edict verbs take the
+       numeric `cellId`. Keep them apart — passing the slug would be rejected. */
+    const cellIdOf = new Map(
+      (session.content.cells ?? []).map((c) => [`${c.technique} ${c.form}`, c.cellId]),
+    );
+
+    const known = new Map();
+    let liveCells = 0;
+    let nodesHeld = 0;
+    let nodesExist = 0;
+    for (const cell of frame.knowledge()) {
+      if (cell.technique === undefined || cell.form === undefined) continue;
+      if (cell.live) liveCells += 1;
+      nodesHeld += cell.nodesKnown;
+      nodesExist += nodeTotal.get(`${cell.technique} ${cell.form}`) ?? 0;
+      known.set(`${cell.technique} ${cell.form}`, cell);
+    }
+
+    const span = (cls, text) => {
+      const el = document.createElement('span');
+      el.className = cls;
+      if (text !== undefined) el.textContent = text;
+      return el;
+    };
+
+    /* Every label and every cell is a button. `bit` is what the axis actions
+       take as their parameter and `cellId` is what the edicts take, so a click
+       hands the verb cards exactly the integer they need. */
+    const pick = (el, kind, value, label) => {
+      el.tabIndex = 0;
+      el.dataset.pick = kind;
+      el.dataset.chosen = String(aimed.get(kind) === value);
+      el.addEventListener('click', () => select(kind, value, label));
+      el.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          select(kind, value, label);
+        }
+      });
+      return el;
+    };
+
+    grid.append(span('rl'));
+    for (const form of rules.forms) {
+      const name = form.name ?? form.id;
+      const head = span('h', name);
+      head.dataset.armed = String(form.permitted);
+      head.title = `${name} — ${form.permitted ? 'armed' : 'closed'}. Click to aim the form verbs at it.`;
+      /* `bit + 1`: the axis verbs take a 1-based content id. See `namers`. */
+      grid.append(pick(head, 'form', form.bit + 1, name));
+    }
+
+    for (const technique of rules.techniques) {
+      const tname = technique.name ?? technique.id;
+      const label = span('rl', tname);
+      label.dataset.armed = String(technique.permitted);
+      label.title = `${tname} — ${technique.permitted ? 'armed' : 'closed'}. Click to aim the technique verbs at it.`;
+      grid.append(pick(label, 'technique', technique.bit + 1, tname));
+
+      for (const form of rules.forms) {
+        const cell = known.get(`${technique.id} ${form.id}`);
+        const box = span('c');
+        box.dataset.enabled = String(cell !== undefined);
+        box.dataset.known = String((cell?.nodesKnown ?? 0) > 0);
+        box.dataset.closed = String(!technique.permitted || !form.permitted);
+        const cellLabel = `${technique.name ?? technique.id} ${form.name ?? form.id}`;
+        if (cell === undefined) {
+          box.title = `${cellLabel} — not in this release`;
+          grid.append(box);
+        } else {
+          const total = nodeTotal.get(`${technique.id} ${form.id}`);
+          box.textContent = cell.nodesKnown > 0 ? String(cell.nodesKnown) : '';
+          box.title =
+            `${cellLabel} — ` +
+            (total === undefined
+              ? `${cell.nodesKnown} node${cell.nodesKnown === 1 ? '' : 's'} known`
+              : `${cell.nodesKnown} of ${total} node${total === 1 ? '' : 's'} known`) +
+            `, deepest tier ${cell.deepestTier}, redundancy ${cell.redundancy}. ` +
+            `Click to aim the cell verbs at it.`;
+          grid.append(pick(box, 'cell', cellIdOf.get(`${technique.id} ${form.id}`), cellLabel));
+        }
+      }
+    }
+
+    const armedT = rules.techniques.filter((t) => t.permitted).length;
+    const armedF = rules.forms.filter((f) => f.permitted).length;
+    $('gridkey').innerHTML =
+      `<b>${armedT}</b> of ${rules.techniques.length} techniques and <b>${armedF}</b> of ` +
+      `${rules.forms.length} forms are armed, and their rows and columns cross in ` +
+      `<b>${armedT * armedF}</b> of the ${rules.techniques.length * rules.forms.length} cells. ` +
+      `Your mages hold nodes in <b>${liveCells}</b> cells — ` +
+      (haveTotals
+        ? `<b>${nodesHeld}</b> nodes of the <b>${nodesExist}</b> the content carries. `
+        : `<b>${nodesHeld}</b> nodes in all. `) +
+      `Hatching marks a cell whose row or column you closed. ` +
+      `<em>No cell here claims to be permitted or forbidden: an edict can open or shut one ` +
+      `against the axes, and folding those together is <code>permits()</code> — a rule, and not ` +
+      `something this page may compute.</em>`;
+
+    const inForce = rules.edicts.filter((e) => !e.empty);
+    $('edicts').textContent = inForce.length
+      ? `Edicts in force (${inForce.length} of ${rules.edicts.length} slots): ` +
+        inForce.map((e) => `${e.kindName} on ${e.cell?.id ?? `cell ${e.cellId}`}`).join('; ') + '.'
+      : `No edicts in force. All ${rules.edicts.length} slots are free.`;
+  }
+
+  /* ---- who is alive ----------------------------------------------------- */
+
+  function drawPop(frame) {
+    const buckets = frame.mageBuckets?.();
+    const host = $('pop');
+    host.innerHTML = '';
+    if (!buckets || buckets.length === 0) return;
+
+    const span = (cls, text) => {
+      const el = document.createElement('span');
+      el.className = cls;
+      if (text !== undefined) el.textContent = text;
+      return el;
+    };
+
+    host.append(span('rl'));
+    for (let tier = 0; tier < buckets[0].tiers.length; tier += 1) {
+      /* `untaught` overran its 1.7rem column and collided with t1. The lede
+         says what t0 means, so the header only has to be a label. */
+      host.append(span('h', `t${tier}`));
+    }
+    host.append(span('h', 'living'));
+
+    for (const bucket of buckets) {
+      const label = span('rl', bucket.name);
+      if (bucket.living === 0) label.classList.add('gone');
+      host.append(label);
+      for (const count of bucket.tiers) {
+        const box = span('c', count > 0 ? String(count) : '');
+        box.dataset.any = String(count > 0);
+        host.append(box);
+      }
+      const total = span('tot', String(bucket.living));
+      if (bucket.living === 0) total.classList.add('gone');
+      host.append(total);
+    }
+  }
+
+  /* ---- the god's hand --------------------------------------------------- */
+
+  /**
+   * A row of chips: every option on screen at once, one click to choose.
+   *
+   * This is what replaced the `<select>`s. A dropdown costs a click to find out
+   * what the choices even are, hides how many there are, and cannot show which
+   * ones matter — none of which a strategy game can afford at the moment a
+   * player is deciding.
+   */
+  function chips(options, value, onPick, caption) {
+    const wrap = document.createElement('div');
+    wrap.className = 'chips';
+    if (caption) {
+      const cap = document.createElement('span');
+      cap.className = 'chipcap';
+      cap.textContent = caption;
+      wrap.append(cap);
+    }
+    for (const option of options) {
+      const chip = document.createElement('button');
+      chip.className = 'chip';
+      chip.type = 'button';
+      chip.textContent = option.label;
+      chip.title = option.title ?? option.label;
+      chip.setAttribute('aria-pressed', String(option.value === value));
+      chip.addEventListener('click', () => onPick(option.value));
+      wrap.append(chip);
+    }
+    return wrap;
+  }
+
   function drawVerbs(frame) {
     const nameFor = namers(session.content);
     const candidates = frame.candidateLists();
+    /* §4.4's descriptors and the shared formatter over them. `null` when this
+       source predates the sidecar, which the branch below tests rather than
+       assumes. */
+    const detail = frame.candidateDetails();
+    const describe = candidateNamer(session.content);
+    const scrollNotes = [];
+    const { favor } = frame.resources();
     const host = $('verbs');
     host.innerHTML = '';
-    const dead = [];
 
     for (const action of frame.actions()) {
       if (action.id === 0) continue;
-      if (!action.legal) {
-        dead.push(action.name);
-        continue;
-      }
+
+      /*
+       * §4.2 gives one bit for three player-facing states, so an unaffordable
+       * verb and an impossible one carry the same zero. `reconstructedCharge`
+       * prices the action to tell them apart and flags that it did — every use
+       * has to say the answer was reconstructed, which is why the card prints
+       * "priced here" rather than stating it as fact.
+       */
+      const charge = reconstructedCharge(frame, session, action.id);
       const options = nameFor(action.id, candidates.get(action.id));
       const slots = candidates.get(action.id)?.length ?? 0;
       const cost = session.actionCost(action.id) ?? 0;
+      const price = units(cost);
+      const affordable = !Number.isFinite(price) || price <= favor;
 
       const card = document.createElement('div');
       card.className = 'verb';
+      card.dataset.state = charge.state;
       card.innerHTML =
-        `<h3>${action.name}<span class="cost">${cost === 0 ? 'free' : `${fmt(units(cost))} favor`}</span></h3>` +
-        (GLOSS[action.id] ? `<p>${GLOSS[action.id]}</p>` : '');
+        `<h3><span><span class="num">${String(action.id).padStart(2, '0')}</span>${action.name}</span>` +
+        `<span class="cost" data-afford="${affordable}">${
+          cost === 0 ? 'free' : `${fmt(price)} favor`
+        }</span></h3>` + (GLOSS[action.id] ? `<p>${GLOSS[action.id]}</p>` : '');
 
-      let read = () => [];
-      if (options && options.length > 0) {
-        const select = document.createElement('select');
-        for (const option of options) {
-          const node = document.createElement('option');
-          node.value = String(option.value);
-          node.textContent = option.label;
-          select.append(node);
+      if (charge.state === 'charged') {
+        const wants = AXIS[action.id];
+        let value = picked.get(action.id);
+        let valueLabel = null;
+        let needsPick = false;
+
+        if (wants) {
+          /* Aimed from the grid. `options` still supplies the labels, and for
+             action 12 it also supplies the only cells §4.4 offered — a cell
+             outside that list is not a legal target and the card says so
+             rather than letting the player fire and be refused. */
+          const allowed = options ?? [];
+          /* Match on `aim` where an option has one — action 12's grid target is
+             its cell id while the parameter it submits is a §4.4 slot. */
+          const match = allowed.find((o) => (o.aim ?? o.value) === value);
+          if (match) {
+            valueLabel = match.label;
+            value = match.value;
+          } else {
+            value = undefined;
+            needsPick = true;
+          }
+
+          const aim = document.createElement('p');
+          aim.className = 'aim';
+          aim.innerHTML = needsPick
+            ? `<span class="ask">Pick a ${wants} in the grid above.</span>` +
+              (action.id === 12 && allowed.length
+                ? ` Only the ${allowed.length} cells §4.4 offered can take it.`
+                : '')
+            : `Aimed at <b>${valueLabel}</b>.`;
+          card.append(aim);
+        } else if (options && options.length > 0) {
+          /* A small closed set with no board to click: every option is a chip,
+             all of them visible, one click to choose. */
+          if (value === undefined || !options.some((o) => o.value === value)) {
+            value = options[0].value;
+            picked.set(action.id, value);
+          }
+          card.append(chips(options, value, (v) => {
+            picked.set(action.id, v);
+            drawVerbs(session.last());
+          }));
+          valueLabel = options.find((o) => o.value === value)?.label ?? null;
+        } else if (slots > 0) {
+          if (value === undefined || value >= slots) {
+            value = 0;
+            picked.set(action.id, value);
+          }
+          const list = candidates.get(action.id) ?? [];
+          /*
+             §4.4's descriptors, when the source carries them. The value stays
+             the **slot index** — that is what `gate.ts` resolves and changing it
+             would break every one of these verbs — and only the label grows.
+             When they are absent the page falls back to what it drew before:
+             numbered chips and a sentence saying the numbers are all there is.
+          */
+          const described = detail === null
+            ? null
+            : list.map((c, slot) => ({ slot, text: describe(detail, action.id, slot, c.params) }));
+
+          if (described && described.every((row) => row.text !== null)) {
+            const wrap = document.createElement('div');
+            wrap.className = 'cands';
+            for (const { slot, text } of described) {
+              const row = document.createElement('button');
+              row.className = 'cand';
+              row.type = 'button';
+              row.title = text.title;
+              row.setAttribute('aria-pressed', String(slot === value));
+              row.innerHTML =
+                `<span class="cix">${slot + 1}</span><span class="chead"></span>` +
+                (text.sub ? '<span class="csub"></span>' : '');
+              /* textContent after the fact, not interpolated: every string here
+                 comes from content the run was built with, and a page that
+                 injects a name into markup is a page that will inject the wrong
+                 thing the day content carries an apostrophe. */
+              row.querySelector('.chead').textContent = text.head;
+              if (text.sub) row.querySelector('.csub').textContent = text.sub;
+              row.addEventListener('click', () => {
+                picked.set(action.id, slot);
+                drawVerbs(session.last());
+              });
+              wrap.append(row);
+            }
+            const cap = document.createElement('p');
+            cap.className = 'unnamed';
+            /* The gap line is per verb, not per page: what a description cannot
+               say about a college is not what it cannot say about a mage, and
+               one sentence for both said "how long she has left" under a list
+               of buildings. */
+            cap.textContent =
+              `${slots} candidates, in §4.4's ranked order. ${describe.missing(detail, action.id)}`.trim();
+            card.append(wrap, cap);
+            /* A capped list that ends on a whole row looks like a list with
+               three entries in it. Whether it actually scrolls is a layout
+               fact, so it is measured after the card is in the document rather
+               than guessed from the count — a four-row list does not scroll and
+               must not claim to. */
+            scrollNotes.push({ wrap, cap, base: cap.textContent });
+            /* The cast button restates the choice, and an enriched head is a
+               sentence — cut so the button stays a button. The full row is
+               above it and unabridged. */
+            const head = described[value]?.text?.head ?? null;
+            valueLabel = head === null || head.length <= 44 ? head : `${head.slice(0, 43)}…`;
+          } else {
+            /* Honest about what it cannot name: numbered chips, and a line saying
+               the numbers are all there is. */
+            const ranked = Array.from({ length: slots }, (_, slot) => ({
+              value: slot,
+              label: String(slot + 1),
+            }));
+            card.append(chips(ranked, value, (v) => {
+              picked.set(action.id, v);
+              drawVerbs(session.last());
+            }, `${slots} candidates, in §4.4's ranked order`));
+            const note = document.createElement('p');
+            note.className = 'unnamed';
+            note.textContent = WHY_ABSENT.mageNames;
+            card.append(note);
+          }
         }
-        card.append(select);
-        read = () => [Number(select.value)];
-      } else if (slots > 0) {
-        /* Honest about what it cannot name. */
-        const select = document.createElement('select');
-        for (let slot = 0; slot < slots; slot += 1) {
-          const node = document.createElement('option');
-          node.value = String(slot);
-          node.textContent = `${slot + 1} of ${slots}, by §4.4 ranking`;
-          select.append(node);
-        }
-        card.append(select);
-        const note = document.createElement('p');
-        note.className = 'unnamed';
-        note.textContent = 'These are entity handles. Nothing in the read path says who they are.';
-        card.append(note);
-        read = () => [Number(select.value)];
+
+        const go = document.createElement('button');
+        go.className = 'go';
+        go.textContent = needsPick
+          ? 'Pick a target first'
+          : valueLabel
+            ? `Do it — ${valueLabel}`
+            : 'Do it';
+        go.disabled = needsPick;
+        go.addEventListener('click', () =>
+          act(action.id, action.name, value === undefined ? [] : [value]),
+        );
+        card.append(go);
+      } else {
+        const why = document.createElement('p');
+        why.className = 'why';
+        why.textContent =
+          charge.state === 'latent'
+            ? `Closed for its price — priced here, it needs ${fmt(charge.needs)} favor and you hold ${fmt(favor)}.`
+            : charge.reconstructed
+              ? 'Closed, and you can afford it. Something other than favor has to change first, and the mask does not say what.'
+              : 'Closed. The mask is one bit and does not say why.';
+        card.append(why);
       }
 
-      const go = document.createElement('button');
-      go.textContent = 'Do it';
-      go.addEventListener('click', () => act(action.id, action.name, read()));
-      card.append(go);
       host.append(card);
     }
 
-    $('dead').textContent = dead.length
-      ? `Closed to you right now: ${dead.join(', ')}. Advance time, or change the ruleset, and some open.`
-      : '';
+    for (const { wrap, cap, base } of scrollNotes) {
+      if (wrap.scrollHeight > wrap.clientHeight + 1) {
+        cap.textContent = `${base.replace(', in §4.4', ' — the list scrolls — in §4.4')}`;
+      }
+    }
   }
+
+  /* ---- the loop --------------------------------------------------------- */
 
   function redraw(head, before) {
     const frame = session.last();
     const now = snapshot(frame);
     drawWorld(now);
     if (before) drawChanged(head, before, now);
+    drawGrid(frame);
+    drawPop(frame);
     drawVerbs(frame);
     previous = now;
     const p = session.provenance;
     $('sub').textContent =
       `seed ${p.seed} · tick ${now.tick} of ${p.tickCap} · ${frame.status()} · ` +
       `${p.actionSpaceSize} verbs`;
+    $('footnote').textContent =
+      `Everything above is decoded from ${p.observationSchemaVersion === undefined ? 'the' : `schema v${p.observationSchemaVersion} of the`} ` +
+      `observation vector, layout ${String(p.observationLayoutDigest ?? '').slice(0, 8)}. ` +
+      'Nothing on this page evaluates a rule.';
   }
 
   async function act(id, name, params) {

@@ -1,0 +1,965 @@
+<!doctype html>
+<!--
+  Multiverse Mages — one college, whole.
+  Copyright (C) 2026 Ann Kelner
+  SPDX-License-Identifier: AGPL-3.0-or-later
+
+  The author's question, verbatim: *"see the university as a view … what does
+  that university's graph look like? which professors teach what? how do I think
+  of the mages at each university and what is the strategy space on the
+  university?"*
+
+  Four of those five were not on the read path at all before this page. §4.1's
+  institutions block is four numbers — universities, total capacity, library
+  depth, grimoires — and none of them is about *a* university. `MAGE.universityId`
+  reaches no slot, `EFFORT_PROGRESS` reaches no slot, and the mage block is six
+  species by eight tiers of counts, so a policy cannot tell a college of five
+  from five hermits. What feeds this page is `academy`, a §4.4 projection
+  emitted on request and read by no rule, plus the prerequisite graph published
+  in the header — 300 nodes and 292 edges that no client had ever been shipped.
+
+  ## It is a dossier and not a map, and that is a refusal rather than a gap
+
+  `assertNoWorldPositions` throws if any world-scale component declares x or y
+  (contracts §0). Only combatants and objectives have coordinates. There is no
+  campus, no district, no location — so this page draws none, and says so.
+
+  Nor does it draw a research focus. `rules-world`'s `universities/profile.ts`
+  records specialization as *emergent from library contents and staff knowledge*
+  — vision §13's resolution — and a test there scans the component layout to fail
+  if anyone adds a focus field. So the page ships the two inputs and lets the
+  reader derive it, which is what the design says it is.
+
+  ## Two findings it surfaces rather than hides
+
+  1. **A professor is not a professor.** `MAGE_ROLE.professor = 2` is a scoring
+     bias — `role-bias.ts` raises `teach` by 384 — and no rule gates teaching on
+     it. A researcher holding a teachable node will teach. Measured at seed
+     20260813: every living mage is `roleId 0` at tick 200 and again at 1000, and
+     lessons are running anyway.
+  2. **Sixty-four seats that nothing fills.** `capacity` is written once when a
+     college is founded and mutated nowhere in `src/`; `admitStudents` and its
+     admission-refusal tally have no caller outside a lab test.
+
+  ## What it computes, and what it refuses to
+
+  The frontier is set arithmetic over the shipped graph — is every prerequisite
+  of this node in *her* holdings, and is its cell permitted — and the second half
+  of that is **not** computed here: `academy.permittedCells` is `permits()`,
+  evaluated in `agent-api`, precisely so this page does not reconstruct a rule
+  out of nineteen ruleset bits and eight edict slots. The arithmetic that is
+  left is checked, per frame of a real run, against `MagicGrid.prerequisiteStatus`
+  in `packages/scenario/test/unit/ui-recording.test.ts` — in both directions, so
+  an empty frontier cannot pass.
+
+  Per mage and never per college, which is the whole correctness of it: the
+  gateway asks `knows(mage, prerequisite)`, so *her* holdings satisfy *her*
+  prerequisites. A union of the college's knowledge would let one scholar's
+  groundwork unlock another's next step, which no rule permits.
+-->
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Multiverse Mages — university</title>
+<link rel="stylesheet" href="../shared/theme.css" />
+
+<style>
+  :root {
+    --edge: color-mix(in oklab, currentColor 14%, transparent);
+    --raised: color-mix(in oklab, currentColor 5%, transparent);
+  }
+
+  body {
+    max-width: 72rem;
+    margin: 0 auto;
+    padding: 1.1rem 1.25rem 4rem;
+  }
+
+  h1 {
+    font-size: 1.35rem;
+    margin: 0 0 0.15rem;
+  }
+  /*
+   * Every secondary line on this page is a colour and never an opacity. The
+   * play page's `.sub` is `opacity: .72`, and a second line nested inside it
+   * measured 3.68:1 — an inherited opacity multiplies, and nothing warns. So
+   * `--soft` is used directly: 7.4:1 on vellum, 9.1:1 on ink, and it cannot
+   * compound because there is nothing to compound with.
+   */
+  .sub {
+    font-size: 0.85rem;
+    color: var(--soft);
+    margin: 0 0 1.1rem;
+    max-width: 54rem;
+  }
+
+  section {
+    margin-top: 1.7rem;
+  }
+  section > h2 {
+    font-size: 0.95rem;
+    margin: 0 0 0.15rem;
+    display: flex;
+    align-items: baseline;
+    gap: 0.55rem;
+    flex-wrap: wrap;
+  }
+  section > h2 .s {
+    font-weight: 400;
+    font-size: 0.75rem;
+    color: var(--soft);
+  }
+  section > p.lede {
+    margin: 0 0 0.7rem;
+    font-size: 0.8rem;
+    color: var(--soft);
+    max-width: 52rem;
+  }
+
+  /* ---- the colleges, as chips ------------------------------------------- */
+  .chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+  }
+  .chip {
+    font: inherit;
+    font-size: 0.82rem;
+    padding: 0.35rem 0.7rem;
+    border: 1px solid var(--edge);
+    border-radius: 3px;
+    background: var(--raised);
+    color: var(--ink);
+    cursor: pointer;
+    text-align: left;
+  }
+  .chip[aria-pressed='true'] {
+    border-color: var(--god);
+    box-shadow: inset 0 0 0 1px var(--god);
+    color: var(--god);
+    font-weight: 600;
+  }
+  .chip:focus-visible {
+    outline: 2px solid currentColor;
+    outline-offset: 2px;
+  }
+
+  /* ---- the stat strip ---------------------------------------------------- */
+  .stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(9rem, 1fr));
+    gap: 0.5rem;
+  }
+  .stat {
+    border: 1px solid var(--edge);
+    border-radius: 3px;
+    padding: 0.5rem 0.6rem;
+  }
+  .stat .k {
+    font-size: 0.7rem;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--soft);
+  }
+  .stat .v {
+    font-size: 1.3rem;
+    font-variant-numeric: tabular-nums;
+    line-height: 1.25;
+    color: var(--ink);
+  }
+  .stat .n {
+    font-size: 0.72rem;
+    color: var(--soft);
+    line-height: 1.45;
+  }
+  .stat.warnish {
+    border-left: 3px solid var(--warn);
+  }
+  .stat.warnish .n {
+    color: var(--warn);
+  }
+
+  /* ---- lists of people and lessons --------------------------------------- */
+  .rows {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+  }
+  .row {
+    border: 1px solid var(--edge);
+    border-radius: 3px;
+    padding: 0.45rem 0.6rem;
+    background: var(--raised);
+  }
+  .row .head {
+    font-size: 0.88rem;
+    font-weight: 600;
+    color: var(--ink);
+  }
+  .row .line {
+    font-size: 0.76rem;
+    color: var(--soft);
+    line-height: 1.55;
+    font-variant-numeric: tabular-nums;
+  }
+  .row .line b {
+    color: var(--ink);
+    font-weight: 600;
+  }
+  .row .line em {
+    font-style: normal;
+    color: var(--god);
+  }
+
+  /* ---- node chips -------------------------------------------------------- */
+  .nodes {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.25rem;
+    margin-top: 0.3rem;
+  }
+  .node {
+    font-size: 0.72rem;
+    padding: 0.12rem 0.4rem;
+    border: 1px solid var(--edge);
+    border-radius: 2px;
+    color: var(--ink);
+    background: var(--raised);
+    font-variant-numeric: tabular-nums;
+  }
+  .node .t {
+    color: var(--soft);
+  }
+  .node[data-reach='open'] {
+    border-color: var(--ok);
+    color: var(--ok);
+  }
+  .node[data-reach='axis'] {
+    border-color: var(--warn);
+    color: var(--warn);
+  }
+  .node[data-reach='prereq'] {
+    border-color: var(--edge);
+    color: var(--soft);
+  }
+  .node[data-reach='here'] {
+    border-color: var(--god);
+    color: var(--god);
+  }
+
+  .cols {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(18rem, 1fr));
+    gap: 0.6rem;
+    align-items: start;
+  }
+  .card {
+    border: 1px solid var(--edge);
+    border-radius: 3px;
+    padding: 0.55rem 0.7rem;
+  }
+  .card h3 {
+    font-size: 0.85rem;
+    margin: 0 0 0.15rem;
+    color: var(--ink);
+  }
+  .card .why {
+    font-size: 0.75rem;
+    color: var(--soft);
+    line-height: 1.5;
+    margin: 0 0 0.35rem;
+  }
+  .card .count {
+    font-variant-numeric: tabular-nums;
+    font-weight: 600;
+  }
+  .card[data-tone='open'] .count {
+    color: var(--ok);
+  }
+  .card[data-tone='axis'] .count {
+    color: var(--warn);
+  }
+  .card[data-tone='prereq'] .count {
+    color: var(--ink);
+  }
+
+  /* ---- the strategy space ------------------------------------------------- */
+  .verb {
+    border: 1px solid var(--edge);
+    border-radius: 3px;
+    padding: 0.55rem 0.7rem;
+  }
+  .verb h3 {
+    font-size: 0.88rem;
+    margin: 0 0 0.1rem;
+    display: flex;
+    justify-content: space-between;
+    gap: 0.5rem;
+    align-items: baseline;
+    color: var(--ink);
+  }
+  .verb .num {
+    font-size: 0.68rem;
+    color: var(--soft);
+    font-variant-numeric: tabular-nums;
+    font-weight: 400;
+  }
+  .verb p {
+    margin: 0.15rem 0 0;
+    font-size: 0.78rem;
+    color: var(--soft);
+    line-height: 1.5;
+  }
+  .verb p b {
+    color: var(--ink);
+  }
+  .verb .state {
+    font-size: 0.72rem;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    font-weight: 600;
+  }
+  .verb[data-legal='true'] .state {
+    color: var(--ok);
+  }
+  .verb[data-legal='false'] .state {
+    color: var(--soft);
+  }
+
+  .scroller {
+    max-height: 22rem;
+    overflow-y: auto;
+  }
+
+  .note {
+    margin-top: 1.8rem;
+    border-top: 1px solid var(--edge);
+    padding-top: 0.7rem;
+    font-size: 0.78rem;
+    color: var(--soft);
+    line-height: 1.65;
+    max-width: 54rem;
+  }
+  .note b {
+    color: var(--ink);
+  }
+  .note code {
+    font-family: var(--mono);
+    font-size: 0.95em;
+  }
+
+  .empty {
+    font-size: 0.8rem;
+    color: var(--soft);
+    line-height: 1.55;
+  }
+</style>
+
+<h1>The university</h1>
+<p class="sub">
+  One college, as state actually holds it: a roster, a shelf, the lessons running through it, and
+  what it could learn next drawn from the real prerequisite graph. No name, no place, no endowment
+  and no declared research focus — none of those exists in <code>UNIVERSITY</code>, and this page
+  prints what is there.
+</p>
+
+<div id="src"></div>
+
+<section id="pick-sec">
+  <h2>Colleges <span class="s">every standing university, not only the ones action 11 is offering</span></h2>
+  <div class="chips" id="pick"></div>
+</section>
+
+<section>
+  <h2 id="college-head">The college</h2>
+  <div class="stats" id="stats"></div>
+</section>
+
+<section>
+  <h2>Who is here <span class="s">the roster §4.1 cannot express</span></h2>
+  <p class="lede" id="roster-lede"></p>
+  <div class="rows scroller" id="roster"></div>
+</section>
+
+<section>
+  <h2>Who is teaching what to whom <span class="s">a join, not a record</span></h2>
+  <p class="lede" id="teach-lede"></p>
+  <div class="rows" id="teaching"></div>
+</section>
+
+<section>
+  <h2>On the shelf <span class="s">every node in this college's library</span></h2>
+  <p class="lede" id="shelf-lede"></p>
+  <div class="nodes" id="shelf"></div>
+</section>
+
+<section>
+  <h2>What it could learn next <span class="s">the frontier, per mage, against the real graph</span></h2>
+  <p class="lede" id="frontier-lede"></p>
+  <div class="cols" id="frontier"></div>
+</section>
+
+<section>
+  <h2>The strategy space <span class="s">what each verb would change here</span></h2>
+  <p class="lede">
+    Prices and legality come from the frame; the sentence under each is what the verb would do to
+    <em>this</em> college, computed from its own dossier. Nothing is cast from this page — it is a
+    view. <code>ui/play/</code> is where a god presses things.
+  </p>
+  <div class="cols" id="strategy"></div>
+</section>
+
+<p class="note" id="note"></p>
+
+<script type="module">
+  import {
+    openSession,
+    units,
+    mountSourceNote,
+    mageVocabulary,
+    collegeFrontier,
+    WHY_ABSENT,
+    FP,
+  } from '../shared/session.js';
+  import { mountThemeControl } from '../shared/theme.js';
+  import { mountNav } from '../shared/nav.js';
+
+  mountNav();
+
+  const $ = (id) => document.getElementById(id);
+  const el = (tag, cls, text) => {
+    const n = document.createElement(tag);
+    if (cls !== undefined && cls !== null) n.className = cls;
+    if (text !== undefined) n.textContent = text;
+    return n;
+  };
+
+  /**
+   * The index inside an entity handle. `sim-core` packs a generation into the
+   * top twelve bits, and a college the player has funded for two centuries
+   * should not be called `#1048578`. The full handle rides in every `title`.
+   */
+  const shortHandle = (h) => h & 0xfffff;
+
+  /** fp to a percentage. `FP_ONE` is complete for `buildProgress`. */
+  const pct = (fp) => `${Math.round((fp / FP) * 100)}%`;
+
+  let session;
+  let vocab;
+  /** The chosen college, by handle. Survives a redraw so the clock does not reset it. */
+  let picked = null;
+
+  /* ------------------------------------------------------------ the verbs -- */
+
+  /**
+   * What each verb would do to *this* college.
+   *
+   * Five, because five of §4.2's sixteen bear on an academy, and each takes the
+   * dossier so the sentence is about the college on the screen rather than a
+   * generic one. `null` means the verb has nothing to say here and the card is
+   * not drawn — an invented consequence would be worse than an absent one.
+   */
+  const STRATEGY = [
+    {
+      id: 11,
+      name: 'Fund this university',
+      say: (d) =>
+        d.college.buildProgress >= FP
+          ? `It is built. §4.2 gives founding and funding one id, and action 11's own §4.4 ranking ` +
+            `puts the least complete college first — so a finished one drops off the funding slate ` +
+            `entirely. Funding here buys ${d.college.hasLibrary ? 'depth on a library that already exists' : 'the library it has not got'}.`
+          : `Build progress is ${pct(d.college.buildProgress)}. Until it reaches 100% the college's ` +
+            `effective capacity is zero whatever its ${d.college.capacity} seats say — ` +
+            `construction.ts is explicit that capacity is the designed figure.`,
+    },
+    {
+      id: 12,
+      name: 'Encourage a cell',
+      say: (d, f) =>
+        f.reachable.length === 0
+          ? 'Nothing here is one step from starting, so pointing the academy at a cell would aim it at work nobody can begin.'
+          : `${f.reachable.length} nodes are one step from starting, across ` +
+            `${new Set(f.reachable.map((r) => nodeCell(r.nodeId))).size} cells. Encouraging one of ` +
+            `those cells biases goal selection toward it — and the effect decays.`,
+    },
+    {
+      id: 9,
+      name: 'Bless a mage here',
+      say: (d) => {
+        const lowest = [...d.roster]
+          .map((r) => session.frame(at).academy().mage(r.handle))
+          .filter((m) => m !== undefined)
+          .sort((a, b) => a.vigor - b.vigor)[0];
+        return lowest === undefined
+          ? 'Nobody is affiliated here, so no blessing lands on this college.'
+          : `Action 9 ranks by ascending vigor, so the first of the ${d.roster.length} here it would ` +
+            `offer is the ${vocab.who(lowest)} at ${vocab.vigour(lowest)}. A blessing raises research, ` +
+            `teaching and life — not what she is allowed to study.`;
+      },
+    },
+    {
+      id: 10,
+      name: 'Move a role',
+      say: (d) => {
+        const roles = new Map();
+        for (const r of d.roster) {
+          const m = session.frame(at).academy().mage(r.handle);
+          if (m === undefined) continue;
+          roles.set(m.roleId, (roles.get(m.roleId) ?? 0) + 1);
+        }
+        const spread = [...roles]
+          .sort((a, b) => b[1] - a[1])
+          .map(([id, n]) => `${n} ${vocab.roleName(id)}${n === 1 ? '' : 's'}`)
+          .join(', ');
+        return `This college is ${spread || 'empty'}. A professor is a **scoring bias and nothing more** — ` +
+          `role-bias.ts raises the teach goal by 384 and no rule gates teaching on the role, so a ` +
+          `researcher holding a teachable node teaches anyway. Moving a role changes who is likely ` +
+          `to, never who may.`;
+      },
+    },
+    {
+      id: 5,
+      name: 'Prise a cell open',
+      say: (d, f) =>
+        f.blockedByAxis.length === 0
+          ? 'Nothing this college is ready for sits in a closed cell, so an edict would open a door it is not standing at.'
+          : `${f.blockedByAxis.length} nodes here have every prerequisite met and sit in a cell the ` +
+            `ruleset closes. That is the whole of what an edict would unlock, and it is the one ` +
+            `number on this page that a technique or form switch moves directly.`,
+    },
+  ];
+
+  /* ------------------------------------------------------------- drawing --- */
+
+  let at = 0;
+  const nodeById = new Map();
+  const cellNameOf = new Map();
+  const nodeCell = (id) => nodeById.get(id)?.cellId ?? 0;
+
+  const nodeChip = (nodeId, reach, extra) => {
+    const n = nodeById.get(nodeId);
+    const chip = el('span', 'node');
+    if (reach !== undefined) chip.dataset.reach = reach;
+    chip.append(document.createTextNode(n?.name ?? `node ${nodeId}`));
+    const t = el('span', 't', ` t${n?.tier ?? '?'}`);
+    chip.append(t);
+    chip.title =
+      `${n?.id ?? nodeId} · node ${nodeId} · tier ${n?.tier ?? '?'} · ` +
+      `${cellNameOf.get(n?.cellId) ?? `cell ${n?.cellId ?? '?'}`}` +
+      (extra === undefined ? '' : ` · ${extra}`);
+    return chip;
+  };
+
+  function draw() {
+    const frame = session.frame(at);
+    const academy = frame.academy();
+    if (academy === null) {
+      $('stats').replaceChildren(
+        el('p', 'empty', 'This source carries no academy projection, so there is nothing to draw.'),
+      );
+      return;
+    }
+
+    /* ---- the chip strip. Every college, always visible, never a dropdown. */
+    if (picked === null || academy.university(picked) === undefined) {
+      picked = academy.handles[0] ?? null;
+    }
+    const chips = academy.handles.map((h) => {
+      const d = academy.university(h);
+      const b = el('button', 'chip');
+      b.type = 'button';
+      b.setAttribute('aria-pressed', String(h === picked));
+      b.append(el('span', null, `college #${shortHandle(h)}`));
+      b.append(
+        el(
+          'span',
+          null,
+          ` — ${pct(d.college.buildProgress)} built · ${d.roster.length} mages · ${d.shelf.length} shelved`,
+        ),
+      );
+      b.title = `handle ${h} · buildProgress ${d.college.buildProgress} fp`;
+      b.addEventListener('click', () => {
+        picked = h;
+        draw();
+      });
+      return b;
+    });
+    $('pick').replaceChildren(
+      ...(chips.length > 0
+        ? chips
+        : [
+            el(
+              'p',
+              'empty',
+              'No university stands in this universe yet. Action 11 slot 0 founds one — §4.2 gives founding and funding a single id.',
+            ),
+          ]),
+    );
+
+    const dossier = picked === null ? undefined : academy.university(picked);
+    if (dossier === undefined) {
+      for (const id of ['stats', 'roster', 'teaching', 'shelf', 'frontier', 'strategy']) {
+        $(id).replaceChildren();
+      }
+      $('note').textContent = '';
+      return;
+    }
+
+    const frontier = collegeFrontier(session.content, dossier, academy);
+    drawStats(frame, academy, dossier);
+    drawRoster(academy, dossier, frontier);
+    drawTeaching(academy, dossier);
+    drawShelf(dossier, academy);
+    drawFrontier(dossier, frontier, academy);
+    drawStrategy(frame, dossier, frontier);
+    drawNote(academy, dossier);
+  }
+
+  function drawStats(frame, academy, dossier) {
+    const c = dossier.college;
+    $('college-head').firstChild.textContent = `College #${shortHandle(c.handle)} `;
+    const tile = (k, v, n, cls) => {
+      const s = el('div', cls === undefined ? 'stat' : `stat ${cls}`);
+      s.append(el('div', 'k', k), el('div', 'v', v));
+      if (n !== undefined) s.append(el('div', 'n', n));
+      return s;
+    };
+    const copies = dossier.shelf.reduce((sum, e) => sum + e.copies, 0);
+    $('stats').replaceChildren(
+      tile(
+        'built',
+        pct(c.buildProgress),
+        c.buildProgress >= FP ? 'complete' : `${c.buildProgress} of ${FP} fp`,
+      ),
+      tile(
+        'seats',
+        String(c.capacity),
+        'Written once at founding and mutated nowhere in src/. admitStudents has no caller outside a lab test, so nothing fills or competes for these.',
+        'warnish',
+      ),
+      tile(
+        'shelf',
+        c.hasLibrary ? String(dossier.shelf.length) : '—',
+        c.hasLibrary ? `distinct nodes · ${copies} instances` : 'no library yet',
+      ),
+      tile('roster', String(dossier.roster.length), `of ${dossier.roster.length + academy.unaffiliated} living mages here or unaffiliated`),
+      tile('lessons', String(dossier.teaching.length), 'teaching efforts touching this college'),
+      tile(
+        'staff',
+        String(dossier.staffHeadcount),
+        `${c.staffCohorts} populace cohorts — §1.4 links a college to cohorts, never to mages`,
+      ),
+      tile('unaffiliated', String(academy.unaffiliated), 'living mages at no college at all'),
+    );
+  }
+
+  function drawRoster(academy, dossier, frontier) {
+    $('roster-lede').textContent =
+      `${dossier.roster.length} affiliated, and what each of them holds in her own head — mind and palace, ` +
+      `which is what she can work. A book on the shelf beside her is the college's. ${WHY_ABSENT.mageNames}`;
+    if (dossier.roster.length === 0) {
+      $('roster').replaceChildren(
+        el(
+          'p',
+          'empty',
+          "No living mage's MAGE.universityId names this college. A newly founded one starts empty — " +
+            'nothing in §4.2 assigns a mage to a college, so affiliation is the world\'s to decide.',
+        ),
+      );
+      return;
+    }
+    const openTo = new Map();
+    for (const row of frontier.reachable) {
+      for (const h of row.by) openTo.set(h, (openTo.get(h) ?? 0) + 1);
+    }
+    $('roster').replaceChildren(
+      ...dossier.roster.map((entry) => {
+        const m = academy.mage(entry.handle);
+        const row = el('div', 'row');
+        if (m === undefined) {
+          row.append(el('div', 'head', `mage ${entry.handle} — not in the table`));
+          return row;
+        }
+        row.append(el('div', 'head', vocab.who(m)));
+        const line = el('div', 'line');
+        line.append(document.createTextNode(vocab.mageSub(m)));
+        line.append(document.createTextNode(' · '));
+        const can = el('em', null, `${openTo.get(entry.handle) ?? 0} she could start now`);
+        line.append(can);
+        row.append(line);
+        row.title = vocab.mageTitle(m);
+        const nodes = el('div', 'nodes');
+        for (const id of entry.nodeIds) nodes.append(nodeChip(id, 'here', 'in her head'));
+        if (entry.nodeIds.length === 0) {
+          nodes.append(el('span', 'empty', 'holds nothing yet'));
+        }
+        row.append(nodes);
+        return row;
+      }),
+    );
+  }
+
+  function drawTeaching(academy, dossier) {
+    $('teach-lede').textContent = WHY_ABSENT.classrooms;
+    if (dossier.teaching.length === 0) {
+      $('teaching').replaceChildren(
+        el(
+          'p',
+          'empty',
+          'No teaching effort has either party affiliated here this tick. That is a statement about the join, ' +
+            'not about the college: EFFORT_PROGRESS rows come and go as lessons finish, and a college with no ' +
+            'lesson running is not a college where nobody teaches.',
+        ),
+      );
+      return;
+    }
+    $('teaching').replaceChildren(
+      ...dossier.teaching.map((lesson) => {
+        const t = academy.mage(lesson.teacher);
+        const s = academy.mage(lesson.student);
+        const row = el('div', 'row');
+        row.append(
+          el(
+            'div',
+            'head',
+            `${t === undefined ? `mage ${lesson.teacher}` : vocab.who(t)} → ` +
+              `${s === undefined ? `mage ${lesson.student}` : vocab.who(s)}`,
+          ),
+        );
+        const line = el('div', 'line');
+        line.append(document.createTextNode('teaching '));
+        const b = el('b', null, vocab.nodeName(lesson.nodeId));
+        line.append(b);
+        line.append(
+          document.createTextNode(
+            ` · ${lesson.progress} fp banked against the node's authored teachCost · ` +
+              `${lesson.teacherHere ? 'she is here' : 'the teacher is elsewhere'}, ` +
+              `${lesson.studentHere ? 'the student is here' : 'the student is unaffiliated or elsewhere'}`,
+          ),
+        );
+        row.append(line);
+        row.title =
+          `teacher ${lesson.teacher} · student ${lesson.student} · node ${lesson.nodeId} · ` +
+          `progress ${lesson.progress} fp — EFFORT_PROGRESS carries no university, so the placement ` +
+          `of this lesson is the affiliation join and nothing more`;
+        return row;
+      }),
+    );
+  }
+
+  function drawShelf(dossier, academy) {
+    const c = dossier.college;
+    if (!c.hasLibrary) {
+      $('shelf-lede').textContent =
+        'This college has no library — UNIVERSITY.libraryId is 0 — so there is no shelf to read. Funding it is what buys one.';
+      $('shelf').replaceChildren();
+      return;
+    }
+    const copies = dossier.shelf.reduce((sum, e) => sum + e.copies, 0);
+    if (dossier.shelf.length === 0) {
+      $('shelf-lede').textContent =
+        'The library exists and holds nothing. A library is founded empty — every instance on a shelf ' +
+        'got there because somebody scribed it, so an empty shelf is a college that has not written ' +
+        'anything down yet rather than one that has lost what it had.';
+      $('shelf').replaceChildren();
+      return;
+    }
+    $('shelf-lede').textContent =
+      `${dossier.shelf.length} distinct nodes across ${copies} instances. Redundancy is the thing §1.5 makes ` +
+      `load-bearing: one copy is a book that can be lost, and the count beside each name is how many stand ` +
+      `between this node and the college forgetting it. This is half of what vision §13 calls the college's ` +
+      `specialization — the other half is the roster above, and neither is a stored field.`;
+    $('shelf').replaceChildren(
+      ...dossier.shelf.map((entry) => {
+        const chip = nodeChip(
+          entry.nodeId,
+          undefined,
+          `${entry.copies} instances · best mastery ${entry.bestMastery} fp`,
+        );
+        chip.append(el('span', 't', ` ×${entry.copies}`));
+        return chip;
+      }),
+    );
+  }
+
+  function drawFrontier(dossier, frontier, academy) {
+    $('frontier-lede').textContent =
+      `Per mage, never per college: a node is within reach when every one of its prerequisites is in ` +
+      `her own head and its cell is one the ruleset permits. ${academy.permittedCells.size} of the 70 cells are ` +
+      `permitted right now, and that verdict is permits() computed in agent-api rather than reconstructed here. ` +
+      `The graph is the 292 authored prerequisite edges, published in the header.`;
+
+    const card = (tone, title, why, rows, render) => {
+      const c = el('div', 'card');
+      c.dataset.tone = tone;
+      const h = el('h3');
+      h.append(document.createTextNode(`${title} `));
+      const n = el('span', 'count', String(rows.length));
+      h.append(n);
+      c.append(h, el('p', 'why', why));
+      if (rows.length === 0) {
+        c.append(el('p', 'empty', 'none'));
+        return c;
+      }
+      const nodes = el('div', 'nodes');
+      /* Capped, and the cap is a layout decision rather than a data one: a
+         fifty-eight-chip column makes the other three read as empty by
+         comparison, and the number in the heading is the fact. */
+      for (const row of rows.slice(0, 24)) nodes.append(render(row));
+      if (rows.length > 24) nodes.append(el('span', 'empty', `+${rows.length - 24} more`));
+      c.append(nodes);
+      return c;
+    };
+
+    $('frontier').replaceChildren(
+      card(
+        'open',
+        'Ready to start',
+        'Every prerequisite held, the cell permitted, and inside her species depth ceiling. This is exactly what CoordinatingKnowledgeGateway.researchFrontier would return, plus gatherFrontier’s depth gate.',
+        frontier.reachable,
+        (row) => nodeChip(row.nodeId, 'open', `${row.by.length} of the roster could begin this`),
+      ),
+      card(
+        'axis',
+        'One edict away',
+        `Prerequisites met and the cell closed, across ` +
+          `${new Set(frontier.blockedByAxis.map((r) => nodeCell(r.nodeId))).size} cells — an edict opens ` +
+          `one cell and a technique or form switch opens a whole row or column. Nothing the college itself ` +
+          `does moves these.`,
+        frontier.blockedByAxis,
+        (row) => nodeChip(row.nodeId, 'axis', `${cellNameOf.get(nodeCell(row.nodeId)) ?? 'cell'} is closed`),
+      ),
+      card(
+        'prereq',
+        'Waiting on a prerequisite',
+        'The cell is open and somebody is short a prerequisite. Where the missing piece is already in the building, the answer is a lesson rather than a decree.',
+        frontier.blockedByPrerequisite,
+        (row) =>
+          nodeChip(
+            row.nodeId,
+            row.missingHeldHere.length === row.missing.length ? 'here' : 'prereq',
+            `needs ${row.missing.map((id) => vocab.nodeName(id)).join(', ')}` +
+              (row.missingHeldHere.length > 0
+                ? ` — ${row.missingHeldHere.length} of them already in this college`
+                : ' — none of them is here'),
+          ),
+      ),
+      card(
+        'prereq',
+        'Past her depth',
+        'Prerequisites met, cell open, and the node deeper than her species can research. §1.3 puts the ceiling on the species, so this is a case for inviting a scholar rather than for funding anything.',
+        frontier.blockedByDepth,
+        (row) => nodeChip(row.nodeId, 'prereq', `ceiling ${row.ceiling}`),
+      ),
+    );
+  }
+
+  function drawStrategy(frame, dossier, frontier) {
+    $('strategy').replaceChildren(
+      ...STRATEGY.map((verb) => {
+        const c = el('div', 'verb');
+        const legal = frame.isLegal(verb.id);
+        c.dataset.legal = String(legal);
+        const h = el('h3');
+        h.append(el('span', null, verb.name));
+        const cost = session.actionCost(verb.id);
+        h.append(
+          el(
+            'span',
+            'num',
+            `${verb.id} · ${cost === undefined ? 'unpriced' : `${units(cost)} favor`}`,
+          ),
+        );
+        c.append(h);
+        c.append(
+          el('div', 'state', legal ? 'legal this tick' : 'masked this tick'),
+        );
+        const p = el('p');
+        /* The sentence is built from the dossier, so it is about this college.
+           `**bold**` is the only markup allowed through, because one clause in
+           one of these needs emphasis and a full parser here would be a
+           renderer nobody asked for. */
+        for (const [i, part] of verb.say(dossier, frontier).split('**').entries()) {
+          if (i % 2 === 1) p.append(el('b', null, part));
+          else p.append(document.createTextNode(part));
+        }
+        c.append(p);
+        if (!legal) {
+          c.append(
+            el(
+              'p',
+              null,
+              WHY_ABSENT.maskReason,
+            ),
+          );
+        }
+        return c;
+      }),
+    );
+  }
+
+  function drawNote(academy, dossier) {
+    const note = $('note');
+    note.replaceChildren();
+    const put = (label, text) => {
+      note.append(el('b', null, `${label} `));
+      note.append(document.createTextNode(`${text} `));
+    };
+    put('What a player still cannot see here.', '');
+    put('Identity:', WHY_ABSENT.universityIdentity);
+    put('Names:', WHY_ABSENT.mageNames);
+    put('Lifespan:', WHY_ABSENT.mageLifespan);
+    put('Admission:', WHY_ABSENT.admission);
+    put(
+      'Founding:',
+      'When this college was founded is not readable — LIBRARY.foundedTick exists and reaches no ' +
+        'projection, and UNIVERSITY carries no founding tick at all, so a college two centuries old ' +
+        'and one founded last month read identically.',
+    );
+    put(
+      'Money:',
+      'There is no endowment. A college holds no resources of its own — §1.1 puts materials on the ' +
+        'universe — so "how rich is this college" is not a question state can answer.',
+    );
+  }
+
+  /* ---------------------------------------------------------------- boot --- */
+
+  async function boot() {
+    try {
+      session = await openSession({ live: true });
+    } catch {
+      session = await openSession({ recording: '../session.json' });
+    }
+    vocab = mageVocabulary(session.content);
+    for (const n of session.content.nodes ?? []) nodeById.set(n.nodeId, n);
+    for (const c of session.content.cells ?? []) {
+      const t = (session.content.techniques ?? []).find((x) => x.id === c.technique);
+      const f = (session.content.forms ?? []).find((x) => x.id === c.form);
+      cellNameOf.set(c.cellId, `${t?.name ?? c.technique} ${f?.name ?? c.form}`);
+    }
+    mountSourceNote($('src'), session, ['academy', 'candidateDetail']);
+    at = session.frameCount - 1;
+    draw();
+    /* A live run's frame array grows under the page. A passive surface that
+       fetched once would keep drawing its load tick forever and say "running
+       now" while doing it — the defect `mountSourceNote` records having had.
+       So this one asks, and only redraws when the clock has actually moved. */
+    if (session.live === true) {
+      setInterval(async () => {
+        // `poll`, not `advance`: this page is a view, and a view that ticked the
+        // clock to find out what time it was would be driving the universe it
+        // claims to be watching — two tabs open would race each other.
+        const fresh = await session.poll();
+        if (fresh > 0) {
+          at = session.frameCount - 1;
+          draw();
+        }
+      }, 1200);
+    }
+  }
+
+  mountThemeControl(document.body);
+  boot().catch((error) => {
+    $('stats').replaceChildren(el('p', 'empty', String(error)));
+  });
+</script>

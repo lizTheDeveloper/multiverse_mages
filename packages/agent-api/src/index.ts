@@ -229,6 +229,41 @@ export {
   mageContainment,
 } from './knowledge-census.js';
 
+/**
+ * §4.4's third projection: what a candidate slot *is*, for a reader who is not
+ * a policy.
+ *
+ * Same placement and the same reasoning as the census above — emitted on
+ * request, unreachable from {@link AgentView}, read by no rule.
+ * `./candidate-detail.ts` argues it, and `docs/design/interface-findings.md`
+ * §1.11 is the finding it answers.
+ */
+export type {
+  CandidateDetail,
+  CandidateDetailInput,
+  CandidateDetailProjection,
+  MageDescriptor,
+  UniversityDescriptor,
+} from './candidate-detail.js';
+export { describeCandidates } from './candidate-detail.js';
+
+/**
+ * §4.4's fourth projection: one college, whole.
+ *
+ * Same placement and the same reasoning as the three above — emitted on
+ * request, unreachable from {@link AgentView}, read by no rule.
+ * `./academy.ts` argues it, and it is what a university screen is drawn from.
+ */
+export type {
+  AcademyInput,
+  AcademyProjection,
+  RosterEntry,
+  ShelfEntry,
+  TeachingEffort,
+  UniversityDossier,
+} from './academy.js';
+export { describeAcademy } from './academy.js';
+
 export type { AgentRng, AgentRngInput } from './agent-rng.js';
 export { agentRng } from './agent-rng.js';
 
