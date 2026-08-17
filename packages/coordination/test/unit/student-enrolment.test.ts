@@ -73,6 +73,32 @@ interface RunTotals {
   readonly studentsStalled: number;
 }
 
+/**
+ * ## This fixture's enrolment is one-shot, and that is a property of the
+ * fixture rather than of the game
+ *
+ * `seededWorld` seeds `laborer`, `scribe` and `student` cohorts and **no `idle`
+ * cohort**, and it has no birth process that fills one inside sixty ticks.
+ * `sourcePriorityFor(student)` is `[idle]` and nothing else
+ * (`packages/rules-world/src/populace/reallocation.ts`, with the measurement
+ * that made it a rule), so once the seeded student cohort matures and enrols,
+ * this world can never put anybody back in a seat. All of them enrol on one
+ * tick, nothing enrols again, and the unseated stand there for the rest of the
+ * run.
+ *
+ * That reads as *"a university is a one-time conversion"*, and it is not.
+ * **W257 measured the reference universe and it refills** — 2026-08-17,
+ * `integration/all-branches` @ `49597350`, `node
+ * scripts/w257-university-refill-probe.mjs --ticks 900`: the `student`
+ * occupation is non-empty on 824 of 900 ticks, is refilled from `idle` on
+ * essentially every tick, and enrolment fires again at ticks 217, 337, 601, 721
+ * and 841 — the 120-tick birth-decade cadence of `BIRTH_BUCKET_TICKS`. The
+ * probe's sealed arm (every academy's `capacity` zeroed) reports zero, which is
+ * what makes the open arm's non-zero mean something.
+ *
+ * So do not generalise a zero taken here. This fixture is for asserting what one
+ * tick's arithmetic does; the cadence question is the reference universe's.
+ */
 function runWorld(options: { cohortSize?: number; ticks?: number }): RunTotals {
   const simulation = defineWorldSimulation(worldDeps(traditionId()));
   const { state } = seededWorld(simulation.schema, {

@@ -13715,3 +13715,100 @@ The rule: **"the fix is elsewhere" is a claim, and it is cheap to check.** I sai
 before measuring, and the measurement happens to agree — but it agreed by luck until it was
 run, and a wrong version of that sentence would have sent someone rewriting a test that was
 already right.
+
+## W257 — The university refills. The seats were never the bound
+
+[executed, 2026-08-17, `integration/all-branches` @ `49597350`;
+`node scripts/w257-university-refill-probe.mjs --ticks 900`, reference universe at
+`cohortSize 4`, seed `0x00090001`, both arms]
+
+A sibling agent reading `student-enrolment.test.ts` found enrolment there to be **one-shot**: all
+64 seats fill at t0, the cohort enrols, and nothing enrols again for the remaining fifty-seven
+ticks while hundreds stand unseated. It traced the cause correctly — `sourcePriorityFor(student)`
+is `[idle]` and nothing else, and that fixture seeds no idle cohort — and then could not settle
+whether the same was true of the game. If it were, a university would be a one-time conversion
+rather than an institution, and *"the more universities you have, the more latent magic users you
+can activate"* would be a claim about tick 0 only.
+
+**It is a property of the fixture. The reference universe refills, and here is the cadence.**
+
+| window | enrolled | ticks that enrolled | `student` headcount | `latent` | idle | seats |
+| ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| 1–100 | 24 | 1 | 0..4 | 16..24 | 15 | 64 |
+| 101–200 | 0 | 0 | 4..15 | 15..16 | 30 | 64 |
+| 201–300 | 3 | 1 | 12..15 | 14..15 | 54 | 64 |
+| 301–400 | 3 | 1 | 12..15 | 14..15 | 82 | 64 |
+| 401–500 | 0 | 0 | 14..15 | 14..15 | 159 | 64 |
+| 501–600 | 0 | 0 | 15..19 | 14..19 | 229 | 64 |
+| 601–700 | 4 | 1 | 15..23 | 17..23 | 331 | 64 |
+| 701–800 | 2 | 1 | 21..26 | 20..26 | 456 | 64 |
+| 801–900 | 2 | 1 | 26..34 | 24..34 | 785 | 64 |
+
+- **The `student` occupation is non-empty on 824 of 900 ticks** and never returns to zero after
+  tick 100. It is refilled from `idle` continuously — 50 people summed over the positive deltas —
+  not in a burst.
+- **Enrolment fires at ticks 1, 217, 337, 601, 721, 841.** Every gap is a multiple of 120, which is
+  `BIRTH_BUCKET_TICKS` — a decade. A student cohort inherits its `idle` cohort's `birthTickBucket`,
+  and `enrolMaturedStudents` gates on that bucket against `maturityMonths`, so enrolment can only
+  happen on the tick a whole birth decade crosses maturity. **A floor, not a decay**: 24 at t1, then
+  2–4 per firing, still firing at t841.
+- **The pool is never empty.** `idle` is non-zero from tick 2 and reaches 785 by t900, fed by
+  births — newborns enter `OCCUPATION.idle` (`populace/births.ts`), and `mayTransitionTo` lets an
+  immature cohort go to `student` and nowhere else. `laborer` and `scribe` are visited *before*
+  `student` in `OCCUPATIONS_IN_ORDER` and drew 168 and 195 against `student`'s 50, but they never
+  exhausted the 6.25% pool: at t900 `ratePool[idle]` is 49 a tick against a total movement of under
+  half a person a tick.
+
+**Both arms, because a zero of exactly this shape has been wrong repeatedly this campaign.** The
+probe runs one counter over two worlds: `open`, the reference universe as shipped, and `sealed`,
+the same universe with every academy's `capacity` zeroed before the first step. `sealed` reports
+**0 enrolments and an empty `student` occupation on all 900 ticks**; `open` reports 38 enrolments
+across six ticks. Neither number means anything without the other.
+
+### The finding underneath the answer: the seats are not the bound
+
+`demand[student]` is `min(min(admissions.granted, sited), latentMagicUsers)`, and `latentMagicUsers`
+sits at **14–34 for the whole run against 64 seats**. It never reaches them. So:
+
+- `WorldStepReport.unseated` — people who reached the enrolment gate and found no chair — is
+  **zero on every tick of the open arm**. Nobody is ever short of a chair.
+- `studentsRefused` — the admission-gate observable this campaign built — reads **460 at tick 841
+  while 56 of the 64 chairs are free**. Both are correct; they are about different gates. The
+  admission pass counts every non-senescent idle person as an applicant, children included; the
+  demand controller then applies `prevalence` and counts only school-age cohorts.
+
+So **a non-zero `studentsRefused` is not, on this build, evidence that another university would
+activate another mage.** `latent` is the operative constraint and more seats change nothing until
+the populace does. That qualifies — it does not retract — the observable W-series added: the bound
+is observable, and what the measurement shows is that a *different* bound is tighter.
+
+Two contributing facts, both recorded rather than changed:
+
+- `latentInCohort` floors `count × prevalence` **per cohort**, over a cohort space fragmented by
+  species × occupation × birth decade. At t900 that is 25 school-age cohorts of which **11
+  contribute anybody**: `Σ floor` is 34 where `floor(Σ)` is 43, a fifth thrown away. This is the
+  same per-cohort-truncation shape `reallocation.ts` documents as W185, in the controller rather
+  than in the mover. `world-step.ts` declares it deliberate ("it floors to zero, on purpose and
+  often"), so it is reported here and not touched.
+- `compareSourceCohorts` sorts source cohorts **youngest birth bucket first**, and its own comment
+  justifies that for *work*. For `student` the reasoning inverts: the youngest recruit is the one
+  furthest from `maturityMonths` and therefore furthest from ever enrolling. The module calls the
+  policy untuned; this is the measurement that says which way it is untuned.
+
+### What happens to the people who are turned away, which inverts the worry
+
+Two populations, and only one of them leaves:
+
+- **Refused applicants** (129,043 applicant-ticks over the run) stay in `idle` and are counted
+  again next tick. They are **queued, not lost** — the sibling's "permanently reclassified" reading
+  does not apply to this number.
+- **Passed-over students** — a matured student cohort's members who find no chair — are
+  transferred to `laborer` (`world-step.ts`), and that exit *is* permanent: `sourcePriorityFor`
+  never draws `student` from `laborer`, and the only `laborer → idle` route is retirement, after
+  which `mayTransitionTo` refuses `student`. In the open arm this path fires **zero times in 900
+  ticks**. The sealed arm fires it once — `unseated: 24`, the founding student cohort dumped into
+  `laborer` when the chairs vanished — which is what proves the probe can see it at all.
+
+One thing this run does *not* answer, deliberately: 21 mages graduate in the first hundred ticks
+and **none** in the following eight hundred, while enrolment continues. That is the known
+"there is no study loop" limit `reference-universe.ts` states as limit 2, not a new finding.

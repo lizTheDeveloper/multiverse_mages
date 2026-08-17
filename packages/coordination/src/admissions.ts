@@ -152,7 +152,45 @@ export interface StudentAdmissions {
    * never above {@link StudentAdmissions.applicants}.
    */
   readonly granted: number;
-  /** Applicants who got a seat nowhere. The number the spec requires. */
+  /**
+   * Applicants who got a seat nowhere. The number the spec requires.
+   *
+   * ## It is offers refused at a door, and in the reference universe it is not
+   * the bound that binds. Measured, not argued.
+   *
+   * *2026-08-17, `integration/all-branches` @ `49597350`,
+   * `node scripts/w257-university-refill-probe.mjs --ticks 900` — the reference
+   * universe at `cohortSize 4`, seed `0x00090001`:*
+   *
+   * | tick | refused | seats | seats **free** | `unseated` |
+   * | ---: | ---: | ---: | ---: | ---: |
+   * | 337 | 23 | 64 | 58 | 0 |
+   * | 601 | 182 | 64 | 57 | 0 |
+   * | 841 | 460 | 64 | **56** | 0 |
+   *
+   * Four hundred and sixty people turned away from an academy with fifty-six
+   * empty chairs, on the same tick, in the same report. Both numbers are
+   * correct and they are about different gates:
+   *
+   * - **This one** counts everybody `countApplicants` calls eligible — which is
+   *   every non-senescent idle person, children included — against
+   *   `effectiveCapacity`. It is the *want*.
+   * - `demand[student]` is then `min(min(granted, sited), latentMagicUsers)`,
+   *   and `latentMagicUsers` applies `prevalence` **and only counts school-age
+   *   cohorts**. In this run it sits at 14–34 for the whole nine hundred ticks,
+   *   always *below* the 64 seats. So the seats never actually constrain
+   *   anything, and `WorldStepReport.unseated` — the count of people who
+   *   reached the enrolment gate and found no chair — is **zero on every tick**.
+   *
+   * The consequence for a reader, and it is the one worth carrying away: on
+   * this build **a non-zero `refused` is not evidence that another university
+   * would activate another mage.** `latent` is the operative bound, so more
+   * seats change nothing until the populace does. `unseated` is the number that
+   * moves when a god funds a building; this one moves when the populace grows.
+   *
+   * Whether the applicant pool *ought* to be filtered through `prevalence` so
+   * that the two agree is a design decision and is deliberately not taken here.
+   */
   readonly refused: number;
   /** Per-university refusals, ascending by handle. Empty when nobody refused. */
   readonly byUniversity: readonly StudentRefusal[];
