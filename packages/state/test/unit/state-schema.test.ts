@@ -197,6 +197,13 @@ describe('the world schema is stable in the way the snapshot format needs', () =
       // disk was written with twenty sections and expects the twenty-first to be
       // the one it does not know.
       'knowledge-fidelity',
+      // Appended by `working-duration`, as world-schema revision 12: a working
+      // that stands after the cast and expires unless a mage spends a month
+      // renewing it. It hangs off a mage handle and a node id and so reads as if
+      // it belonged beside `knowledge-instance`; it goes last, because every
+      // revision-11 save on disk was written with twenty-one sections and
+      // expects the twenty-second to be the one it does not know.
+      'standing-working',
     ]);
   });
 

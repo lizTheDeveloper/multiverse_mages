@@ -90,6 +90,7 @@ import {
   KNOWLEDGE_FIDELITY,
   MATERIAL_STOCK,
   MID_RAID_CHANGE,
+  STANDING_WORKING,
   TERRITORY_HOLDING,
   UNIVERSE,
   UNIVERSITY_SITE,
@@ -112,6 +113,7 @@ import {
  * | 9        | `raid-engagement`   | adds `mid-raid-change` (`raid-engagement.md` §1) |
  * | 10       | `university-siting` | adds `territory-holding` (§1.1) and `university-site` (§1.4) |
  * | 11       | `scribing-fidelity` | adds `knowledge-fidelity` (`docs/design/scribing-fidelity.md`) |
+ * | 12       | `working-duration`   | adds `standing-working` — an effect that expires unless renewed |
  *
  * The table above is the walk, in order, and it is the only place the order is
  * stated. It was rewritten on the `material-economy` combine because four
@@ -159,10 +161,24 @@ import {
  * without a holding to stand in, and no build has ever shipped one without the
  * other.
  *
+ * Revision 12 appends `standing-working`, and it is the first step whose
+ * *absent* section had to be argued about rather than assumed. Every step
+ * above appends a component whose missing row means a benign zero — no goal
+ * adopted, no project in flight, generation zero and sound. A missing
+ * `standing-working` row could be read two ways, and one of them is a
+ * catastrophe: *never lit* (nothing reverts) or *expired* (every working in
+ * the universe lapses on the first tick of a restored save). It means the
+ * first. `components.ts` states the rule at the component and
+ * `standing-working-migrates-empty.test.ts` pins it from the other end, by
+ * migrating a revision-11 save and asserting the tick reports **zero** lapses
+ * rather than by asserting the section is empty — an empty section that some
+ * later reader treated as a shortage would satisfy the second test and fail
+ * the first.
+ *
  * **Append; never renumber.** A revision number is what a migration step is
  * keyed on, so reusing one silently applies the wrong repair to a save.
  */
-export const WORLD_SCHEMA_VERSION = 11;
+export const WORLD_SCHEMA_VERSION = 12;
 
 /**
  * The world-schema revision an envelope was written by.
@@ -180,7 +196,14 @@ export const WORLD_SCHEMA_VERSION = 11;
  */
 export function worldSchemaVersionOf(envelope: SnapshotEnvelope): number {
   const carried = new Set(envelope.components.map((component) => component.name));
-  // **Revision 11's marker is `knowledge-fidelity`, and it leads the chain** —
+  // **Revision 12's marker is `standing-working`, and it leads the chain** —
+  // `docs/design/sim-rigor-2026-08-15.md` §4.4 step 3, newest marker first. A
+  // revision-12 envelope also carries `knowledge-fidelity` and every marker
+  // below, so asking about any of them first would walk every current save
+  // through migrations it has already had.
+  if (carried.has(STANDING_WORKING.name)) return 12;
+  // Revision 11's marker is `knowledge-fidelity`, and it led the chain until
+  // revision 12 arrived —
   // §4.4 step 3, newest marker first. A revision-11 envelope also carries
   // `grant-budget` and the widened `material-stock`, so asking about either
   // first would walk every current save through migrations it has already had.
@@ -771,6 +794,49 @@ export const addKnowledgeFidelity: WorldSchemaMigration = {
   },
 };
 
+/**
+ * Revision 11 → 12: append an empty `standing-working` section.
+ *
+ * Empty, and this is the one append in the walk where empty is a *decision*
+ * rather than the obvious repair.
+ *
+ * A save written before this component was written by a build in which a node's
+ * effects applied for as long as anybody knew the node. Every one of those
+ * standing effects is, under this build, an unlit working. There are exactly
+ * three things this step could do about that and only one of them is honest:
+ *
+ * - **Synthesise a live row per contributing instance**, so nothing changes on
+ *   the load. That invents a `litTick` nobody ever cast on and a renewal history
+ *   nobody ever paid for, and it is the repair `addTerritorySiting` refuses for
+ *   the same reason. It would also make the load itself the last free month in
+ *   the universe's history.
+ * - **Synthesise a row per instance at `expiresTick: 0`**, which reads as
+ *   *expired* and fires the whole universe's lapse on the first tick of a
+ *   restored save. That is the failure this component's own note is about: it
+ *   throws nothing, it looks exactly like the rule functioning, and the player
+ *   watches every wall fall down at once.
+ * - **Append nothing**, which says *no working has ever been established in this
+ *   universe* — which is true, because none ever was. Nothing reverts, nothing
+ *   is reported as lapsed, and a mage who wants the effect back spends the month
+ *   the design says it costs.
+ *
+ * The third. The consequence is real and is not hidden: a duration-bearing
+ * effect that a revision-11 save was getting for free stops arriving until
+ * somebody lights it. That is the change, applied to old saves and new ones
+ * alike, rather than a grandfather clause that would make one save's physics
+ * differ from another's.
+ */
+export const addStandingWorking: WorldSchemaMigration = {
+  from: 11,
+  to: 12,
+  migrate(envelope) {
+    return {
+      ...envelope,
+      components: [...envelope.components, emptySection(STANDING_WORKING)],
+    };
+  },
+};
+
 /** Every step this build knows, ascending by source revision. */
 export const WORLD_SCHEMA_MIGRATIONS: readonly WorldSchemaMigration[] = [
   addGoalCommitment,
@@ -783,6 +849,7 @@ export const WORLD_SCHEMA_MIGRATIONS: readonly WorldSchemaMigration[] = [
   addMidRaidChange,
   addTerritorySiting,
   addKnowledgeFidelity,
+  addStandingWorking,
 ];
 
 /**

@@ -46,6 +46,7 @@ import {
   GOD_STATE,
   GRANT_BUDGET,
   KNOWLEDGE_FIDELITY,
+  STANDING_WORKING,
   MAGE,
   MATERIAL_STOCK,
   TERRITORY_HOLDING,
@@ -146,25 +147,25 @@ function withLegacyMaterialsField(
 /** The world as a build that had never heard of goal commitments saw it. */
 function revisionOneEnvelope(): SnapshotEnvelope {
   return withLegacyMaterialsField(
-    envelopeWithout(GOAL_COMMITMENT.name, EFFORT_PROGRESS.name, MATERIAL_STOCK.name, ...GOD_SECTIONS, GRANT_BUDGET.name, BAR_PHASE.name, MID_RAID_CHANGE.name, ...SITING_SECTIONS, KNOWLEDGE_FIDELITY.name),
+    envelopeWithout(GOAL_COMMITMENT.name, EFFORT_PROGRESS.name, MATERIAL_STOCK.name, ...GOD_SECTIONS, GRANT_BUDGET.name, BAR_PHASE.name, MID_RAID_CHANGE.name, ...SITING_SECTIONS, KNOWLEDGE_FIDELITY.name, STANDING_WORKING.name),
   );
 }
 
 /** The world as the build that added the goal commitment, and nothing after it, saw it. */
 function revisionTwoEnvelope(): SnapshotEnvelope {
   return withLegacyMaterialsField(
-    envelopeWithout(EFFORT_PROGRESS.name, MATERIAL_STOCK.name, ...GOD_SECTIONS, GRANT_BUDGET.name, BAR_PHASE.name, MID_RAID_CHANGE.name, ...SITING_SECTIONS, KNOWLEDGE_FIDELITY.name),
+    envelopeWithout(EFFORT_PROGRESS.name, MATERIAL_STOCK.name, ...GOD_SECTIONS, GRANT_BUDGET.name, BAR_PHASE.name, MID_RAID_CHANGE.name, ...SITING_SECTIONS, KNOWLEDGE_FIDELITY.name, STANDING_WORKING.name),
   );
 }
 
 /** The world as the last build before the god had verbs saw it. */
 function revisionThreeEnvelope(): SnapshotEnvelope {
-  return withLegacyMaterialsField(envelopeWithout(MATERIAL_STOCK.name, ...GOD_SECTIONS, GRANT_BUDGET.name, BAR_PHASE.name, MID_RAID_CHANGE.name, ...SITING_SECTIONS, KNOWLEDGE_FIDELITY.name));
+  return withLegacyMaterialsField(envelopeWithout(MATERIAL_STOCK.name, ...GOD_SECTIONS, GRANT_BUDGET.name, BAR_PHASE.name, MID_RAID_CHANGE.name, ...SITING_SECTIONS, KNOWLEDGE_FIDELITY.name, STANDING_WORKING.name));
 }
 
 /** The world as the last build before the economy differentiated into kinds saw it. */
 function revisionFourEnvelope(materialsValue: number = LEGACY_MATERIALS_VALUE): SnapshotEnvelope {
-  return withLegacyMaterialsField(envelopeWithout(MATERIAL_STOCK.name, GRANT_BUDGET.name, BAR_PHASE.name, MID_RAID_CHANGE.name, ...SITING_SECTIONS, KNOWLEDGE_FIDELITY.name), materialsValue);
+  return withLegacyMaterialsField(envelopeWithout(MATERIAL_STOCK.name, GRANT_BUDGET.name, BAR_PHASE.name, MID_RAID_CHANGE.name, ...SITING_SECTIONS, KNOWLEDGE_FIDELITY.name, STANDING_WORKING.name), materialsValue);
 }
 
 /**
@@ -210,7 +211,7 @@ function withThreeKindStock(envelope: SnapshotEnvelope): SnapshotEnvelope {
 /** The world as the last build whose founding grants were unlimited saw it. */
 function revisionFiveEnvelope(): SnapshotEnvelope {
   return withThreeKindStock(
-    envelopeWithout(GRANT_BUDGET.name, BAR_PHASE.name, MID_RAID_CHANGE.name, ...SITING_SECTIONS, KNOWLEDGE_FIDELITY.name),
+    envelopeWithout(GRANT_BUDGET.name, BAR_PHASE.name, MID_RAID_CHANGE.name, ...SITING_SECTIONS, KNOWLEDGE_FIDELITY.name, STANDING_WORKING.name),
   );
 }
 
@@ -226,28 +227,33 @@ function revisionFiveEnvelope(): SnapshotEnvelope {
  */
 function revisionSixEnvelope(): SnapshotEnvelope {
   return withThreeKindStock(
-    envelopeWithout(BAR_PHASE.name, MID_RAID_CHANGE.name, ...SITING_SECTIONS, KNOWLEDGE_FIDELITY.name),
+    envelopeWithout(BAR_PHASE.name, MID_RAID_CHANGE.name, ...SITING_SECTIONS, KNOWLEDGE_FIDELITY.name, STANDING_WORKING.name),
   );
 }
 
 /** The world as the last build before the god's law had a clock saw it. */
 function revisionSevenEnvelope(): SnapshotEnvelope {
-  return envelopeWithout(BAR_PHASE.name, MID_RAID_CHANGE.name, ...SITING_SECTIONS, KNOWLEDGE_FIDELITY.name);
+  return envelopeWithout(BAR_PHASE.name, MID_RAID_CHANGE.name, ...SITING_SECTIONS, KNOWLEDGE_FIDELITY.name, STANDING_WORKING.name);
 }
 
 /** The world as the last build that believed a raid was frozen policy saw it. */
 function revisionEightEnvelope(): SnapshotEnvelope {
-  return envelopeWithout(MID_RAID_CHANGE.name, ...SITING_SECTIONS, KNOWLEDGE_FIDELITY.name);
+  return envelopeWithout(MID_RAID_CHANGE.name, ...SITING_SECTIONS, KNOWLEDGE_FIDELITY.name, STANDING_WORKING.name);
 }
 
 /** The world as the last build in which a university stood nowhere saw it. */
 function revisionNineEnvelope(): SnapshotEnvelope {
-  return envelopeWithout(...SITING_SECTIONS, KNOWLEDGE_FIDELITY.name);
+  return envelopeWithout(...SITING_SECTIONS, KNOWLEDGE_FIDELITY.name, STANDING_WORKING.name);
 }
 
 /** The world as the last build before scribing fidelity saw it. */
 function revisionTenEnvelope(): SnapshotEnvelope {
-  return envelopeWithout(KNOWLEDGE_FIDELITY.name);
+  return envelopeWithout(KNOWLEDGE_FIDELITY.name, STANDING_WORKING.name);
+}
+
+/** The world as the last build before a working could expire saw it. */
+function revisionElevenEnvelope(): SnapshotEnvelope {
+  return envelopeWithout(STANDING_WORKING.name);
 }
 
 describe('the world-schema revision is read off the snapshot itself', () => {
@@ -267,6 +273,7 @@ describe('the world-schema revision is read off the snapshot itself', () => {
     expect(worldSchemaVersionOf(revisionEightEnvelope())).toBe(8);
     expect(worldSchemaVersionOf(revisionNineEnvelope())).toBe(9);
     expect(worldSchemaVersionOf(revisionTenEnvelope())).toBe(10);
+    expect(worldSchemaVersionOf(revisionElevenEnvelope())).toBe(11);
     expect(worldSchemaVersionOf(stateToEnvelope(populatedWorld().state))).toBe(
       WORLD_SCHEMA_VERSION,
     );
@@ -279,7 +286,7 @@ describe('the world-schema revision is read off the snapshot itself', () => {
     // hash in the project and fails the fixtures with a version error rather
     // than a behaviour diff.
     expect(SNAPSHOT_VERSION).toBe(1);
-    expect(WORLD_SCHEMA_VERSION).toBe(11);
+    expect(WORLD_SCHEMA_VERSION).toBe(12);
   });
 });
 
@@ -896,6 +903,12 @@ describe('an older save loads into a current world', () => {
       MID_RAID_CHANGE,
       TERRITORY_HOLDING,
       UNIVERSITY_SITE,
+      // And revision 12's. A revision-1 envelope has no `standing-working`
+      // section, so the fresh save it is compared against must hold no working
+      // — which is also the assertion `standing-working-migrates-empty.test.ts`
+      // makes from the behavioural end: an old save has no working standing, and
+      // therefore has none lapsing.
+      STANDING_WORKING,
     ];
     for (const spec of godSpecs) {
       const store = componentOf(state, spec);
@@ -964,6 +977,7 @@ describe('an older save loads into a current world', () => {
       [encodeSnapshot(revisionEightEnvelope()), /mid-raid-change/],
       [encodeSnapshot(revisionNineEnvelope()), /territory-holding/],
       [encodeSnapshot(revisionTenEnvelope()), /knowledge-fidelity/],
+      [encodeSnapshot(revisionElevenEnvelope()), /standing-working/],
     ] as const) {
       expect(() => loadWorldSnapshot(bytes, defineWorldStateSchema())).not.toThrow();
       expect(() => envelopeToState(decodeSnapshot(bytes), defineWorldStateSchema())).toThrow(
@@ -1003,7 +1017,11 @@ describe('migrating a revision-6 world snapshot forward', () => {
     // that half is dropped rather than re-pinned to a name the next append would
     // move again.
     const declared = WORLD_COMPONENTS.map((spec) => spec.name);
-    expect(declared[declared.length - 1]).toBe(KNOWLEDGE_FIDELITY.name);
+    expect(declared[declared.length - 1]).toBe(STANDING_WORKING.name);
+    // And `knowledge-fidelity`, which held that position at revision 11, is now
+    // its predecessor. Pinned as a pair so the next append has to move both
+    // lines and cannot quietly leave one describing an older tree.
+    expect(declared[declared.length - 2]).toBe(KNOWLEDGE_FIDELITY.name);
   });
 
   it('leaves the container format version exactly where it found it', () => {
