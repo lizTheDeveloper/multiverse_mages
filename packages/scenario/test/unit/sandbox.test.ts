@@ -16,14 +16,31 @@
  * Four claims, and the order is the order in which failing one would matter
  * most.
  *
- * 1. **Off by default, byte for byte.** The two hashes in
- *    {@link PRE_CHANGE_HASHES} were measured on a working tree byte-identical
- *    to `origin/main` at `57bcbc44`, *before* `sandbox.ts` was written —
- *    `git status --porcelain` empty, `npx tsc --build`, then a script driving
- *    `referenceScenario(content, { raids: true })` through `createSession` for
- *    N no-op ticks. They are a genuine pre-change anchor rather than a number
- *    this branch wrote down about itself, which is the difference between a
- *    control and a tautology.
+ * 1. **Off by default, byte for byte.** The three hashes in
+ *    {@link INERT_DEFAULT_HASHES} are what the default scenario produces with
+ *    no cheat sheet, at three horizons.
+ *
+ *    They began as a genuine pre-change anchor: measured on a working tree
+ *    byte-identical to `origin/main` at `57bcbc44`, *before* `sandbox.ts` was
+ *    written — `git status --porcelain` empty, `npx tsc --build`, then a script
+ *    driving `referenceScenario(content, { raids: true })` through
+ *    `createSession` for N no-op ticks. **They are no longer that**, and the
+ *    constant is renamed rather than quietly re-filled, because a name that
+ *    still said `PRE_CHANGE` would be asserting a provenance it had lost.
+ *
+ *    Re-measured 2026-08-17 at `c6d11439` on `integration/all-branches`, by the
+ *    procedure above and with the same `sessionHashAfter` this file ships. The
+ *    world moved on purpose and repeatedly since `57bcbc44` — seven material
+ *    kinds, all seventy grid cells enabled, the ore grades, the flow ledger —
+ *    and each of those is a change a reviewer was told about at the time. What
+ *    a re-measured anchor can no longer prove is that *`sandbox.ts` itself* was
+ *    inert when it landed; that claim is spent, and the two structural
+ *    assertions beside this one — the schema is the plain schema, and no
+ *    `sandbox-cheats` system is installed — are what carry it now, because they
+ *    are properties rather than numbers.
+ *
+ *    What the hashes still do, and it is worth keeping: they fail on the *next*
+ *    unannounced move of the reference universe.
  * 2. **On, it does something.** A checker that has never fired is not known to
  *    work. Every assertion below that says "the sandbox refuses this" is paired
  *    with one that says "and here is the input it must accept".
@@ -83,19 +100,23 @@ const content = referenceContent();
 const ANCHOR_SEED = 20260813;
 
 /**
- * Snapshot hashes of the **default** reference scenario, measured on
- * `origin/main` before this layer existed. See this file's opening note for how
- * they were taken.
+ * Snapshot hashes of the **default** reference scenario — no cheat sheet — at
+ * three horizons. See this file's opening note for how they were taken and for
+ * what they can and cannot prove now.
  *
  * If one of these moves, either the sandbox stopped being inert or somebody
  * changed the reference universe. Both are things a reviewer must be told about
  * rather than allowed to discover later, which is why this is a hash equality
  * and not a tolerance.
+ *
+ * Measured at `c6d11439`, 2026-08-17. The previous set, taken at `57bcbc44`,
+ * was `1b95bef9afe5b5d4` / `251dc6441d9c707b` / `3097649cf676def1`; it is kept
+ * here so the size of the move is readable rather than only its fact.
  */
-const PRE_CHANGE_HASHES: Readonly<Record<number, string>> = {
-  0: '1b95bef9afe5b5d4',
-  200: '251dc6441d9c707b',
-  500: '3097649cf676def1',
+const INERT_DEFAULT_HASHES: Readonly<Record<number, string>> = {
+  0: '8d469da1580f04dd',
+  200: 'c7f1cb92d46363cd',
+  500: '1f0ecc854f46abab',
 };
 
 /** Generous, for the reason `balance-telemetry.test.ts` gives at length. */
@@ -158,10 +179,10 @@ function taskFor(runSeed: number): RunTask {
 
 describe('the sandbox is off by default, and provably so', () => {
   it(
-    'reproduces the pre-change snapshot hashes at every measured horizon',
+    'reproduces the recorded inert-default snapshot hashes at every measured horizon',
     { timeout: SLOW_TEST_MS },
     () => {
-      for (const [ticks, expected] of Object.entries(PRE_CHANGE_HASHES)) {
+      for (const [ticks, expected] of Object.entries(INERT_DEFAULT_HASHES)) {
         expect(sessionHashAfter(Number(ticks)), `at ${ticks} ticks`).toBe(expected);
       }
     },
@@ -198,7 +219,7 @@ describe('the brand is in the bytes and cannot be taken off', () => {
     const cheated = referenceScenario(content, { raids: true, sandbox: {} });
     const a = honest.scenario.create(ANCHOR_SEED, { worldTickCap: 10 });
     const b = cheated.scenario.create(ANCHOR_SEED, { worldTickCap: 10 });
-    expect(snapshotHash(a)).toBe(PRE_CHANGE_HASHES[0]);
+    expect(snapshotHash(a)).toBe(INERT_DEFAULT_HASHES[0]);
     expect(snapshotHash(b)).not.toBe(snapshotHash(a));
     expect(isSandboxSchema(b.schema)).toBe(true);
   });
@@ -362,9 +383,19 @@ describe('the cheats act', () => {
 
     // Every technique and form the content declares, read from the registry —
     // never `0xff`. The honest arm holds strictly fewer of each.
+    //
+    // **The honest arm is opened at 1x1 on purpose, as of 2026-08-17.** It used
+    // to be the plain default, and that stopped being a control the day the
+    // default opening square became the whole grid: an honest universe already
+    // holds all five techniques and all fourteen forms, so `armEverything`
+    // cannot widen anything and `toBeGreaterThan` compared 31 with 31. Relaxing
+    // the comparison to `>=` would have kept the file green and thrown the
+    // control away — a cheat that did nothing would then pass. A narrow opening
+    // square restores a universe there is something to arm, so the assertion is
+    // still the one it was written to be.
     const honest = referenceScenario(content, { raids: true }).scenario.create(ANCHOR_SEED, {
       worldTickCap: 10,
-      options: { ...OPTIONS },
+      options: { ...OPTIONS, openingTechniqueCount: 1, openingFormCount: 1 },
     });
     const before = readUniverse(honest, findUniverse(honest));
     expect(universe.permittedTechniques).toBeGreaterThan(before.permittedTechniques);
