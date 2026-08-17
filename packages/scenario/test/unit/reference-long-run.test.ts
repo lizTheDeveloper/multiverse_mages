@@ -536,14 +536,18 @@ describe('births and deaths over two centuries (task 8.7, unmet)', () => {
     // roughly three fifths of K with the ratio still above one, and what could
     // honestly be asserted was the approach.
     //
-    // **On the 4x5 square it overshoots instead.** Measured per 20-year window:
+    // **On the 4x5 square the ratio crosses one anyway, and the population
+    // still does not reach K.** Not an overshoot: the run ends at 25,014
+    // against a K of 30,781 — 81% — and the final assertion below still checks
+    // that share is under one. Measured per 20-year window:
     // `9.85 / 8.75 / 2.38 / 1.14 / 0.99 / 0.80 / 1.07 / 1.20 / 1.21 / 0.77`.
     // The ratio crosses one at window five and then oscillates around it rather
     // than settling — which is not the balance task 8.7 asks for, and is a
-    // different unmet state from the old one. The mechanism is in the headline
-    // numbers of the widening: population rises 18,731 to 25,014 and the food
-    // shortage nearly doubles, 1,174 short ticks to 1,860. The binding
-    // constraint moved from parchment to bread.
+    // different unmet state from the old one. Births and deaths balance *below*
+    // capacity, which means something other than capacity is doing the
+    // balancing: the food shortage nearly doubles with the widening, 1,174
+    // short ticks to 1,860, against a population that rises 18,731 to 25,014.
+    // The binding constraint moved from parchment to bread.
     //
     // So the monotone-tail assertion is gone, replaced by the two properties
     // this series actually has. It is **not** a loosening: "falls below one and

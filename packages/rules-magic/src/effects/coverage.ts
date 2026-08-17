@@ -59,10 +59,14 @@ import type { ContentRegistry, NodeRecord } from '@mm/content';
 /**
  * The one primitive no v1 node exercises, and the reason.
  *
- * `lifespan` is Corpus-bound, and Corpus is not in the v1 form set: including
- * it would have cost either Nomen — stranding True Naming with no form to bite
- * on — or Terram, and the primitive has nothing to act on until mages age,
- * which is `mages-and-species` at 0.4.0.
+ * `lifespan` has seventeen authored carriers and **not one of them is in the
+ * rectangle**. Enumerated from `node.json` rather than inherited from the
+ * comment this replaces, which said "Corpus-bound" and was wrong: the carriers
+ * sit across four forms — `aquam`, `corpus`, `fatum`, `herbam` — in nine cells
+ * (`creo-corpus`, `intellego-aquam`, `intellego-corpus`, `intellego-fatum`,
+ * `intellego-herbam`, `muto-corpus`, `muto-fatum`, `rego-corpus`,
+ * `rego-fatum`). So this gap is closable by more than one widening, and a
+ * future author should not read it as "admit Corpus or nothing".
  *
  * Sorted, and asserted to be exactly this list by test. Adding an entry is a
  * claim that another primitive is unmeasurable at 0.5.0, and should be as hard
@@ -79,10 +83,10 @@ import type { ContentRegistry, NodeRecord } from '@mm/content';
  * (128), `The Fat Year` (256) and `The Made Beast` (192). The check fails in
  * both directions precisely so that this diff had to be written by hand.
  *
- * `lifespan` did **not** close. Its seventeen carriers are all Corpus, and
- * Corpus is still outside the rectangle — so the widening is a real test of the
- * two-directional rule rather than a blanket amnesty: one exclusion died, one
- * survived, and each for a reason a reader can check against `node.json`.
+ * `lifespan` did **not** close. None of its seventeen carriers falls inside the
+ * 4x5 rectangle — so the widening is a real test of the two-directional rule
+ * rather than a blanket amnesty: one exclusion died, one survived, and each for
+ * a reason a reader can check against `node.json`.
  *
  * ## This list is no longer the consumption check's
  *

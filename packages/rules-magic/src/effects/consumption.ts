@@ -187,8 +187,9 @@ import type { ContentId, ContentRegistry, EffectRecord, Fp } from '@mm/content';
  * apart. What is lost is the composed claim for these two primitives
  * specifically: coverage no longer certifies that the node whose magnitude
  * reaches the consumer is one a mage could legally learn. For `lifespan` it is
- * not — all seventeen authored carriers are Corpus, which sits outside the
- * enabled rectangle — and `knowledge-vitality.ts` says so in its own module
+ * not — all seventeen authored carriers sit in `aquam`, `corpus`, `fatum` or
+ * `herbam` cells, none of which is in the enabled rectangle — and
+ * `knowledge-vitality.ts` says so in its own module
  * note rather than leaving a reader to infer it from a green check. For
  * `fertility` it now is: the 4×5 rectangle contains `creo-animal`, so the
  * composed claim holds again for that primitive and `coverage.ts` no longer

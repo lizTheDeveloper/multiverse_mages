@@ -121,6 +121,33 @@ export interface ApotheosisFacts {
  * mastered cell can only exist if a technique or a form was permitted that the
  * universe did not begin with.
  *
+ * ## That argument was invalidated by content, and the constants have not moved
+ *
+ * `ascension-summit-cells` is 13 because the tuner measured twelve infeasible
+ * and thirteen feasible **against a twelve-cell rectangle**. Widening the
+ * shipped v1 rectangle to 4x5 makes it twenty cells holding eighty-four nodes,
+ * and an unattended universe still learns all of them. Measured by stepping
+ * `referenceScenario` for 2,400 ticks with no action submitted at any tick and
+ * reading this system's own `ascensionProgress` and `ascensionPath` — not a
+ * reimplemented predicate:
+ *
+ * | rectangle | masteredCells | nodesKnown | cellsKnown | ascensionPath |
+ * | --- | --: | --: | --: | --- |
+ * | 3x4 (`57bcbc44`) | 12 | 51 | 12 | `none` |
+ * | 4x5 | **20** | **84** | **20** | **`apotheosis`** |
+ *
+ * So on the wider square **Path A is satisfied by a god who never acts**, which
+ * is precisely the reading the count was introduced to prevent, and the same
+ * applies to Path B's anchors: `ascension-canon-breadth` 77 and
+ * `ascension-canon-cells` 18 were set at 1.5x a passive baseline of 51 and 12,
+ * and the passive baseline is now 84 and 20.
+ *
+ * **Deliberately not retuned here.** Every one of those constants is authored
+ * content with a calibration recorded in `god-constant.json`'s glosses, and
+ * choosing new multiples is a design decision with a measurement attached, not
+ * a rename. This note is the record that the old ones no longer mean what their
+ * glosses say.
+ *
  * Iterating the deepest-by-cell map rather than the held set is deliberate: the
  * quantity is "cells at their floor", and a mage holding two summits would
  * otherwise be counted twice while a cell held by two mages counted once.
@@ -242,10 +269,13 @@ export function lossAllowance(nodesKnown: number, constants: GodConstants): numb
  *
  * So a passing boundary now also requires a canon of a stated size, spread over
  * a stated number of cells. Both are anchored to the *passive baseline* rather
- * than to any strategy's score — the starting rectangle is twelve cells holding
+ * than to any strategy's score — the starting rectangle was twelve cells holding
  * fifty-one nodes and an unattended universe learns every one of them, so those
- * two numbers are the game's own autonomous ceiling and the constants are
- * multiples of them.
+ * two numbers were the game's own autonomous ceiling and the constants are
+ * multiples of them. **The rectangle has since widened to twenty cells and
+ * eighty-four nodes**, so the anchor has moved out from under the multiples;
+ * see the note on {@link masteredCellCount} for the measurement and for why
+ * nothing here was retuned to match.
  *
  * The two breadth conjuncts are not redundant with each other and the tension
  * between them is the point: node count alone is satisfied by driving a few
