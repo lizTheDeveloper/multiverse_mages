@@ -58,6 +58,7 @@ import type {
   ContentRegistry,
   FormRecord,
   GodConstantRecord,
+  GradeEdgeRecord,
   RaidConstantRecord,
   GodCostRecord,
   Interned,
@@ -295,6 +296,7 @@ interface ParsedDocuments {
   readonly godConstant: readonly GodConstantRecord[];
   readonly raidConstant: readonly RaidConstantRecord[];
   readonly autonomyWeight: readonly AutonomyWeightRecord[];
+  readonly gradeEdge: readonly GradeEdgeRecord[];
 }
 
 let cachedSchemas: ReadonlyMap<ContentFileName, CompiledSchema> | undefined;
@@ -381,6 +383,7 @@ export function validateContent(source: ContentSource): ValidationResult {
     godConstant: raw.get('god-constant.json') as readonly GodConstantRecord[],
     raidConstant: raw.get('raid-constant.json') as readonly RaidConstantRecord[],
     autonomyWeight: raw.get('autonomy-weight.json') as readonly AutonomyWeightRecord[],
+    gradeEdge: raw.get('grade-edge.json') as readonly GradeEdgeRecord[],
   };
 
   // ---- Phase 3: graph integrity. ----
@@ -451,6 +454,7 @@ function checkGraph(documents: ParsedDocuments): readonly ContentDiagnostic[] {
   indexById(documents.godConstant, 'god-constant.json', out);
   indexById(documents.raidConstant, 'raid-constant.json', out);
   indexById(documents.autonomyWeight, 'autonomy-weight.json', out);
+  indexById(documents.gradeEdge, 'grade-edge.json', out);
 
   checkBits(documents.technique, 'technique.json', TECHNIQUE_COUNT, out);
   checkBits(documents.form, 'form.json', FORM_COUNT, out);
@@ -471,8 +475,98 @@ function checkGraph(documents: ParsedDocuments): readonly ContentDiagnostic[] {
   // `mage-autonomy`'s target-appeal table. Its dominance check is the §7 pillar
   // rather than tuning hygiene — see `autonomy.ts`.
   out.push(...checkAutonomyWeights(documents.autonomyWeight, documents.primitive));
+  // The grade ladder. Its one-step rule is the whole mechanic `mt-turn-the-poor-ore`
+  // specifies, and JSON Schema cannot express `toGrade === fromGrade + 1` — so a
+  // rung that skipped a grade would validate and would read as content.
+  checkGradeEdges(documents.gradeEdge, nodeById, documents.node, out);
 
   return out;
+}
+
+/**
+ * The grade ladder's two invariants, neither of which JSON Schema can express.
+ *
+ * **One step, and it is the whole mechanic.** `mt-turn-the-poor-ore` states it
+ * as content rather than as code — *"Change worthless rock into ore that is
+ * merely bad. Never into good ore: the working improves a thing by one step and
+ * has never once been made to take two."* A rung authored `0 → 2` would satisfy
+ * every schema keyword in the file (both grades are in range, both are
+ * integers) and would ship a working the writing says has never once been made.
+ * So the cap is checked here, where a relation between two fields can be.
+ *
+ * **A demand must have a producer.** An effect requiring grade 2 of a kind no
+ * rung ever reaches is a gate that can only ever be shut, and it would report
+ * as *"machines change nothing"* rather than as *"this content is unfinished"*.
+ * `CLAUDE.md` records five checkers that answered confidently about the wrong
+ * input in one night; a metric that could only ever read zero is the same
+ * defect one layer down, and this is the cheapest place to refuse it.
+ */
+function checkGradeEdges(
+  edges: readonly GradeEdgeRecord[],
+  nodeById: ReadonlyMap<string, NodeRecord>,
+  nodes: readonly NodeRecord[],
+  out: ContentDiagnostic[],
+): void {
+  const file = 'grade-edge.json';
+  const reachable = new Set<string>();
+
+  for (let position = 0; position < edges.length; position += 1) {
+    const edge = edges[position];
+    if (edge === undefined) continue;
+    const at = pointerAppend('', position);
+
+    if (!nodeById.has(edge.node)) {
+      out.push(
+        diagnostic(
+          file,
+          `${at}/node`,
+          'unknown-reference',
+          `grade edge "${edge.id}" names node "${edge.node}", which node.json does not define. A ` +
+            'rung is performed by a working, and a rung with no working is a conversion nothing ' +
+            'in the tech tree can ever reach.',
+        ),
+      );
+    }
+
+    if (edge.toGrade !== edge.fromGrade + 1) {
+      out.push(
+        diagnostic(
+          file,
+          `${at}/toGrade`,
+          'grade-ladder',
+          `grade edge "${edge.id}" moves ${edge.kind} from grade ${String(edge.fromGrade)} to ` +
+            `grade ${String(edge.toGrade)}. A working improves a thing by exactly one step: ` +
+            `toGrade must be ${String(edge.fromGrade + 1)}. mt-turn-the-poor-ore states the rule ` +
+            'in its own gloss — "the working improves a thing by one step and has never once been ' +
+            'made to take two" — and a rung that skipped would ship that working anyway.',
+        ),
+      );
+      continue;
+    }
+
+    reachable.add(`${edge.kind}:${String(edge.toGrade)}`);
+  }
+
+  for (let position = 0; position < nodes.length; position += 1) {
+    const node = nodes[position];
+    if (node === undefined) continue;
+    for (let index = 0; index < node.effects.length; index += 1) {
+      const requirement = node.effects[index]?.requires;
+      if (requirement === undefined) continue;
+      if (reachable.has(`${requirement.kind}:${String(requirement.grade)}`)) continue;
+      out.push(
+        diagnostic(
+          'node.json',
+          `${pointerAppend('', position)}/effects/${String(index)}/requires`,
+          'grade-ladder',
+          `node "${node.id}" declares an effect requiring ${requirement.kind} at grade ` +
+            `${String(requirement.grade)}, which no grade-edge.json rung produces. A demand with ` +
+            'no producer is a gate that can only ever be shut, and it reports as a mechanic that ' +
+            'changes nothing rather than as content that is unfinished.',
+        ),
+      );
+    }
+  }
 }
 
 /** Builds an id index, reporting duplicates rather than silently overwriting. */
@@ -1480,6 +1574,7 @@ function buildRegistry(documents: ParsedDocuments): ContentRegistry {
   const godConstants = internNamespace(documents.godConstant);
   const raidConstants = internNamespace(documents.raidConstant);
   const autonomyWeights = internNamespace(documents.autonomyWeight);
+  const gradeEdges = internNamespace(documents.gradeEdge);
 
   const tables = new Map<ContentNamespace, ReadonlyMap<string, ContentId>>([
     ['technique', tableOf(techniques)],
@@ -1494,6 +1589,7 @@ function buildRegistry(documents: ParsedDocuments): ContentRegistry {
     ['god-constant', tableOf(godConstants)],
     ['raid-constant', tableOf(raidConstants)],
     ['autonomy-weight', tableOf(autonomyWeights)],
+    ['grade-edge', tableOf(gradeEdges)],
   ]);
   const reverse = new Map<ContentNamespace, ReadonlyMap<ContentId, string>>();
   for (const [namespace, table] of tables) {
@@ -1546,6 +1642,10 @@ function buildRegistry(documents: ParsedDocuments): ContentRegistry {
   append('god-constant', godConstants);
   append('raid-constant', raidConstants);
   append('autonomy-weight', autonomyWeights);
+  // Appended last. `append` order is the revision preimage's line order, so a
+  // namespace inserted anywhere but the end would move every `contentRevision`
+  // this project has ever recorded for a reason that is not a content change.
+  append('grade-edge', gradeEdges);
 
   const counts: ContentCounts = {
     techniques: techniques.length,
@@ -1561,6 +1661,7 @@ function buildRegistry(documents: ParsedDocuments): ContentRegistry {
     godConstants: godConstants.length,
     raidConstants: raidConstants.length,
     autonomyWeights: autonomyWeights.length,
+    gradeEdges: gradeEdges.length,
   };
 
   return {
@@ -1578,6 +1679,7 @@ function buildRegistry(documents: ParsedDocuments): ContentRegistry {
     godConstants,
     raidConstants,
     autonomyWeights,
+    gradeEdges,
     intern(namespace, id) {
       return tables.get(namespace)?.get(id) ?? 0;
     },

@@ -208,6 +208,7 @@ describe('shipped content', () => {
       // unchanged either way — every weight is read by name, so one nothing
       // reads fails the load.
       autonomyWeights: 47,
+      gradeEdges: 2,
     });
   });
 

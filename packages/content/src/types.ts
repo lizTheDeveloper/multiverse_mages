@@ -44,7 +44,8 @@ export type ContentNamespace =
   | 'god-cost'
   | 'god-constant'
   | 'raid-constant'
-  | 'autonomy-weight';
+  | 'autonomy-weight'
+  | 'grade-edge';
 
 /**
  * `sound-design.md` §4.1's envelope, as content.
@@ -242,6 +243,76 @@ export interface EffectRecord {
   readonly magnitude: Fp;
   readonly target: EffectTarget;
   readonly durationTicks: number;
+  /**
+   * Refined material this one effect needs in order to contribute at all.
+   *
+   * **Absent means unconditional**, which is what all 301 nodes meant before
+   * grades existed and must go on meaning — the same absent-value reading
+   * `grant-budget` took for an unbounded budget, and the reason adding grades
+   * changes no behaviour in a universe that never refines anything.
+   *
+   * Per **effect** and not per node, because `cig-the-standing-furnace` both
+   * *"runs the great foundries"* and *"denies a field to anyone who would
+   * rather not walk through a foundry"*. The first wants ore; gating the second
+   * on a quarry would be a raid effect switched off by an economy.
+   */
+  readonly requires?: GradeRequirement;
+}
+
+/**
+ * What one effect must be holding to run, and eats while it runs.
+ *
+ * `economy-flow-models.md` §1.1's **gate**, not its drain: *"A drain destroys
+ * unconditionally and accumulates nothing. A gate accumulates nothing either
+ * but destroys only as a side effect."* An unpaid effect contributes nothing
+ * that tick; nothing is destroyed and nothing already spent is refunded.
+ */
+export interface GradeRequirement {
+  /** Which of the seven kinds. Only `stone` carries a ladder today. */
+  readonly kind: 'stone';
+  /** 1 worked, 2 fine. Never 0 — grade 0 is the ungraded stock every effect already sees. */
+  readonly grade: number;
+  /** What it eats per world tick while it is running, `fp`. */
+  readonly amountPerTick: Fp;
+}
+
+/**
+ * One rung of a material grade ladder.
+ *
+ * The anchor is `mt-turn-the-poor-ore` — *"Change worthless rock into ore that
+ * is merely bad. Never into good ore: the working improves a thing by one step
+ * and has never once been made to take two."* Four mechanics in two sentences:
+ * a graded material, an ordinal on it, a converter that moves one step, and a
+ * cap on how far one working can move. The cap is the loader's, not the
+ * runtime's — see `checkGradeEdges` — because a rung that skipped a grade would
+ * otherwise be authorable and would read as content rather than as a defect.
+ *
+ * In `economy-flow-models.md` §1.1's vocabulary a rung is a **converter**, not
+ * a trader: nothing changes owner and the total does not survive the
+ * conversion. `mh-the-second-harvest` states the ratio out loud — *"Nothing is
+ * created; a field of straw becomes a smaller field of grain"* — and it is the
+ * reason {@link GradeEdgeRecord.ratio} is authored per rung rather than being
+ * one constant in the rules path.
+ */
+export interface GradeEdgeRecord {
+  readonly id: string;
+  /** The `node.json` id whose knowledge performs this working. */
+  readonly node: string;
+  /** Which of the seven material kinds this ladder is on. */
+  readonly kind: 'stone';
+  /** The grade consumed. */
+  readonly fromGrade: number;
+  /** The grade produced. Always `fromGrade + 1`. */
+  readonly toGrade: number;
+  /**
+   * What one unit in becomes out, `fp`. `fp(1024)` is a rung whose gloss states
+   * no loss; below it is `mh-the-second-harvest`'s smaller field.
+   */
+  readonly ratio: Fp;
+  /** What the rung draws from the grade below, per world tick, `fp`. */
+  readonly inputPerTick: Fp;
+  readonly gloss: string;
+  readonly tuningStatus: TuningStatus;
 }
 
 export type TuningStatus = 'untuned' | 'tuned';
@@ -540,6 +611,7 @@ export interface ContentCounts {
   readonly godConstants: number;
   readonly raidConstants: number;
   readonly autonomyWeights: number;
+  readonly gradeEdges: number;
 }
 
 /**
@@ -565,6 +637,7 @@ export interface ContentRegistry {
   readonly godConstants: readonly Interned<GodConstantRecord>[];
   readonly raidConstants: readonly Interned<RaidConstantRecord>[];
   readonly autonomyWeights: readonly Interned<AutonomyWeightRecord>[];
+  readonly gradeEdges: readonly Interned<GradeEdgeRecord>[];
 
   /** String id to interned integer, per namespace. */
   intern(namespace: ContentNamespace, id: string): ContentId;

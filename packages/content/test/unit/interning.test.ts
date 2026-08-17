@@ -922,7 +922,31 @@ describe('contentRevision', () => {
     // MEASURED with `node packages/content/bin/validate-content.mjs` on the
     // merged tree, then confirmed by this test, which is the two independent
     // paths the paragraphs above insist on.
-    expect(registry.contentRevision).toBe('db63c9365903af34057e4a852401aab9');
+    //
+    // db63c936... -> 2cca0227f06152143b2a8c9600dfc96b, on `w/exp-grades`,
+    // 2026-08-16. The fourteenth entry, and the first to add a *namespace*
+    // rather than records inside existing ones. Two edits, both traceable to a
+    // gloss that was already in `node.json`:
+    //
+    // 1. **A new `grade-edge.json` table, two rungs.** `mt-turn-the-poor-ore`
+    //    specifies the mechanic in its own gloss — *"Change worthless rock into
+    //    ore that is merely bad. Never into good ore: the working improves a
+    //    thing by one step and has never once been made to take two"* — and
+    //    `mn-call-it-iron-until-it-is` supplies the rung above it. The
+    //    namespace is appended **last** in `buildRegistry`'s `append` order,
+    //    because that order is the revision preimage's line order.
+    // 2. **An optional `requires` on two `node.json` effects**, gating
+    //    `cig-the-standing-furnace`'s and `iig-the-colour-of-ready-iron`'s
+    //    `resource-yield` on refined stone. Absent on the other 299 nodes and
+    //    on every other effect of those two, so it is `canonicalJson`-invisible
+    //    everywhere it is not authored — the digest moves for exactly the two
+    //    records that changed, plus the new namespace's two lines.
+    //
+    // MEASURED with `node packages/content/bin/validate-content.mjs` after
+    // `npx tsc --build`, then confirmed by this test — the two independent
+    // paths the paragraphs above insist on. Not pasted out of a failure
+    // message.
+    expect(registry.contentRevision).toBe('2cca0227f06152143b2a8c9600dfc96b');
   });
 
   it('is stable across loads of identical content', () => {

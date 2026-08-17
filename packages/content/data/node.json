@@ -871,7 +871,12 @@
         "primitive": "resource-yield",
         "magnitude": 224,
         "target": "universe",
-        "durationTicks": 0
+        "durationTicks": 0,
+        "requires": {
+          "kind": "stone",
+          "grade": 1,
+          "amountPerTick": 64
+        }
       }
     ],
     "knowledgeKind": "episteme",
@@ -2406,7 +2411,12 @@
         "primitive": "resource-yield",
         "magnitude": 128,
         "target": "universe",
-        "durationTicks": 0
+        "durationTicks": 0,
+        "requires": {
+          "kind": "stone",
+          "grade": 2,
+          "amountPerTick": 32
+        }
       }
     ],
     "knowledgeKind": "episteme",

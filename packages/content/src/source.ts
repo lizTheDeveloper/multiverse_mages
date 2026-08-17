@@ -65,6 +65,10 @@ export const CONTENT_FILES = [
   'god-constant.json',
   'raid-constant.json',
   'autonomy-weight.json',
+  // Appended last, and the position is the same decision every other table's
+  // is: `CONTENT_FILES` is a load order, and `grade-edge.json` references
+  // `node.json` by id, so it must be read after the table it points into.
+  'grade-edge.json',
 ] as const;
 
 export type ContentFileName = (typeof CONTENT_FILES)[number];
