@@ -50,6 +50,28 @@ export interface Provenance {
   readonly observationLayoutDigest: string;
   /** Every collected metric's `definitionVersion`, keyed by metric id. */
   readonly metricDefinitionVersions: Readonly<Record<string, number>>;
+  /**
+   * Present **only** on a run taken under the sandbox cheat layer, carrying the
+   * cheat sheet's digest.
+   *
+   * The harness treats a cheated run as *not evidence*: `provenanceProblems`
+   * reports the presence of this key as a problem, which makes `runSweep`
+   * refuse to dispatch a single task and makes a baseline carrying it refuse to
+   * load. That is deliberately harsher than a warning. The failure it prevents
+   * is somebody months from now reading a number off a run whose materials were
+   * granted, whose ruleset was armed for free and whose consumer never ran
+   * short, and taking it for a measurement of the economy — and the point at
+   * which that becomes unrecoverable is the point at which the run is written
+   * down as a record like any other.
+   *
+   * Optional so that every record, baseline and provenance block written before
+   * the sandbox existed keeps validating byte for byte. Absent means *not
+   * cheated*, which is what an honest build has always meant.
+   *
+   * The value is the digest rather than `true` so two cheated runs taken under
+   * different sheets are distinguishable in the refusal message.
+   */
+  readonly sandbox?: string;
 }
 
 /** Why a run failed. Recorded instead of a status the simulation could produce. */

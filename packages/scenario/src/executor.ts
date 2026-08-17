@@ -67,6 +67,8 @@ import { censusOf } from './census.js';
 import type { RunMeasurement } from './measures.js';
 import { REFERENCE_METRIC_VERSIONS, collectReferenceMetrics } from './measures.js';
 import type { RaidRecord } from './raids.js';
+import type { SandboxSpec } from './sandbox.js';
+import { sandboxProvenance } from './sandbox.js';
 import type { ReferenceContent } from './reference-universe.js';
 import {
   AXIS_PRICE_FACTOR_ID,
@@ -392,6 +394,19 @@ function configFor(task: RunTask): ScenarioConfig {
 export interface ReferenceExecutorOptions {
   /** Resolved content. Defaults to the shipped set, resolved once per process. */
   readonly content?: ReferenceContent;
+  /**
+   * The sandbox cheat sheet, or absent — which is the default and the only
+   * setting anything shipped uses.
+   *
+   * It is here at all so the refusal one level up has a **positive control**.
+   * `provenanceProblems` rejecting a cheated record is worth nothing unless a
+   * cheated record can actually be produced by the ordinary executor and seen
+   * to be rejected; a gate that has never fired is not known to work, and this
+   * repository has found five checkers that answered about the wrong input. So
+   * this path exists precisely to be refused, and `sandbox.test.ts` runs it end
+   * to end.
+   */
+  readonly sandbox?: SandboxSpec;
   /** Ticks between census readings. Defaults to {@link CENSUS_INTERVAL_TICKS}. */
   readonly censusIntervalTicks?: number;
   /**
@@ -623,9 +638,10 @@ export function executeReferenceRun(
 
   const raiding = options.raids ?? true;
   const ablation = ablationFor(task);
-  const { scenario, lastGodReport, raids, balanceTelemetry } = referenceScenario(content, {
+  const { scenario, lastGodReport, raids, balanceTelemetry, sandbox } = referenceScenario(content, {
     raids: raiding,
     ...(ablation === undefined ? {} : { ablation }),
+    ...(options.sandbox === undefined ? {} : { sandbox: options.sandbox }),
   });
   const strategyId = task.strategies[0];
   if (strategyId === undefined) {
@@ -699,7 +715,13 @@ export function executeReferenceRun(
       ticksRun: episode.ticksRun,
       metrics: collectDeclaredMetrics(task.metrics, measurement, runTelemetry),
       accounting: episode.accounting,
-      provenance: referenceProvenance(content),
+      // Stamped here rather than by the caller, so that a cheated run cannot be
+      // recorded honestly by somebody forgetting a step. The stamp is what
+      // `provenanceProblems` refuses on.
+      provenance:
+        sandbox === undefined
+          ? referenceProvenance(content)
+          : sandboxProvenance(referenceProvenance(content), sandbox.digest),
       armContribution: armContributionOf(recorder.checkpoints, content, mechanics),
       godSpendByAction: { ...recorder.godSpendByAction },
       censusTrace: [...recorder.trace],

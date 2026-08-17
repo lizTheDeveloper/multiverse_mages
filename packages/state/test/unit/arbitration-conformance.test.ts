@@ -458,6 +458,14 @@ describe('ruleset legality is computed in exactly one place', () => {
       // `permits()` rather than reading edicts, which is why there is no
       // second implementation of the precedence here to find.
       'packages/state/src/rule-change.ts',
+      // The sandbox's `armEverything` runs the same arithmetic in the same
+      // direction `content-set.ts` does — it ORs axis bits into a starting
+      // ruleset — and asks nothing about a cell. It is a *composition-root*
+      // write to a starting position, not a legality decision: a universe armed
+      // this way is arbitrated by exactly the same `permits()` as one armed by
+      // god actions 1 and 3, and it can still be closed again by actions 2 and
+      // 4. Nothing in the sandbox layer evaluates whether a cell is castable.
+      'packages/scenario/src/sandbox.ts',
     ]);
   });
 });

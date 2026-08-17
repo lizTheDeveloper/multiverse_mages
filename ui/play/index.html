@@ -208,10 +208,119 @@
     color: #b3261e;
     font-size: 0.85rem;
   }
+
+  /* ---- the sandbox ------------------------------------------------------ */
+
+  /*
+   * The banner is not decoration. Everything below it is a universe somebody
+   * granted, and a person reading this screen months from now has to be able to
+   * tell that from a screenshot alone — so it is loud, it is at the top, it
+   * names the cheats, and there is no control anywhere on the page that removes
+   * it from a cheated run. Leaving the sandbox builds a new universe.
+   */
+  #cheated {
+    display: none;
+    border: 2px solid #b3261e;
+    border-left-width: 8px;
+    border-radius: 3px;
+    padding: 0.6rem 0.8rem;
+    margin: 0 0 1rem;
+    background: color-mix(in oklab, #b3261e 10%, transparent);
+    font-size: 0.85rem;
+  }
+  #cheated.on {
+    display: block;
+  }
+  #cheated b {
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+  #cheated .d {
+    font-family: ui-monospace, monospace;
+    opacity: 0.8;
+  }
+
+  #sandbox {
+    border: 1px solid var(--edge);
+    border-radius: 3px;
+    padding: 0.75rem 0.85rem;
+    margin-top: 1.75rem;
+  }
+  #sandbox h2 {
+    font-size: 0.95rem;
+    margin: 0 0 0.15rem;
+  }
+  #sandbox .sub2 {
+    font-size: 0.78rem;
+    opacity: 0.72;
+    margin: 0 0 0.7rem;
+  }
+  #sandbox fieldset {
+    border: 0;
+    padding: 0;
+    margin: 0 0 0.6rem;
+  }
+  #sandbox legend {
+    padding: 0;
+    font-size: 0.7rem;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    opacity: 0.65;
+    margin-bottom: 0.3rem;
+  }
+  /* Chips, never a dropdown: every option is on the screen at once. */
+  .chip {
+    font: inherit;
+    font-size: 0.78rem;
+    padding: 0.2rem 0.55rem;
+    margin: 0 0.3rem 0.3rem 0;
+    border: 1px solid var(--edge);
+    border-radius: 999px;
+    background: transparent;
+    color: inherit;
+    cursor: pointer;
+  }
+  .chip[aria-pressed='true'] {
+    background: var(--good);
+    border-color: var(--good);
+    color: #fff;
+  }
+  .num {
+    display: inline-flex;
+    align-items: baseline;
+    gap: 0.3rem;
+    margin: 0 0.9rem 0.35rem 0;
+    font-size: 0.78rem;
+  }
+  .num input {
+    font: inherit;
+    width: 7rem;
+    padding: 0.15rem 0.3rem;
+    background: var(--raised);
+    color: inherit;
+    border: 1px solid var(--edge);
+    border-radius: 3px;
+  }
+  #sandbox .go {
+    font: inherit;
+    font-size: 0.85rem;
+    padding: 0.35rem 0.8rem;
+    margin-right: 0.5rem;
+    border: 1px solid var(--edge);
+    border-radius: 3px;
+    background: var(--raised);
+    color: inherit;
+    cursor: pointer;
+  }
+  #sandbox .off {
+    font-size: 0.82rem;
+    opacity: 0.75;
+  }
 </style>
 
 <h1>Multiverse Mages</h1>
 <p class="sub" id="sub">Opening a universe…</p>
+<div id="cheated"></div>
 <p id="err"></p>
 
 <div class="world" id="world"></div>
@@ -226,6 +335,12 @@
 
 <div class="verbs" id="verbs"></div>
 <p id="dead"></p>
+
+<section id="sandbox" hidden>
+  <h2>Sandbox</h2>
+  <p class="sub2" id="sandbox-note"></p>
+  <div id="sandbox-body"></div>
+</section>
 
 <script type="module">
   import { openSession, units } from '../shared/session.js';
@@ -510,6 +625,251 @@
     }
   }
 
+  /* ---- the sandbox ------------------------------------------------------ */
+
+  /*
+   * The cheat panel, and the banner that outlives it.
+   *
+   * Two rules shape everything below.
+   *
+   * **No dropdowns.** Every option is a chip or a number on the screen at once,
+   * because a `<select>` hides the thing an operator is here to find — which of
+   * the seventy cells, which of the five claimants, which of the material kinds
+   * this build actually has. The kinds and the claimants are fetched from
+   * `/live/sandbox` rather than written here, so the day the economy grows four
+   * more kinds this panel grows four more chips and nobody edits it.
+   *
+   * **A cheat is a starting position.** Applying one rebuilds the universe at
+   * the same seed rather than mutating the running one, which is what the
+   * server's `/live/sandbox` does and why. The page reloads afterwards, so
+   * everything on it — including the banner — is drawn from the new run's
+   * provenance rather than from what the panel believes it asked for.
+   */
+  const cheatState = { toggles: new Set(), numbers: new Map(), grants: new Map() };
+
+  function drawBanner() {
+    const mark = session?.provenance?.sandbox;
+    const host = $('cheated');
+    if (!mark) {
+      host.className = '';
+      host.innerHTML = '';
+      return;
+    }
+    host.className = 'on';
+    host.innerHTML =
+      `<b>Cheated universe</b> — <span class="d">${mark.digest}</span><br />` +
+      `Granted: ${(mark.cheats ?? []).join(', ') || 'branded, nothing declared'}. ` +
+      'Nothing on this page is a measurement of the game. This run is branded inside its own ' +
+      'snapshot, refuses to load into an honest build, and the balance harness will not take it ' +
+      'as evidence. Leaving the sandbox builds a <em>new</em> universe; it does not clean this one.';
+  }
+
+  function chip(label, key, on) {
+    const b = document.createElement('button');
+    b.className = 'chip';
+    b.type = 'button';
+    b.textContent = label;
+    b.setAttribute('aria-pressed', String(on));
+    b.addEventListener('click', () => {
+      const next = b.getAttribute('aria-pressed') !== 'true';
+      b.setAttribute('aria-pressed', String(next));
+      if (next) cheatState.toggles.add(key);
+      else cheatState.toggles.delete(key);
+    });
+    return b;
+  }
+
+  function number(label, key, placeholder) {
+    const wrap = document.createElement('label');
+    wrap.className = 'num';
+    const span = document.createElement('span');
+    span.textContent = label;
+    const input = document.createElement('input');
+    input.type = 'number';
+    input.placeholder = placeholder;
+    input.addEventListener('input', () => {
+      if (input.value === '') cheatState.numbers.delete(key);
+      else cheatState.numbers.set(key, Number(input.value));
+    });
+    wrap.append(span, input);
+    return wrap;
+  }
+
+  function group(legend, nodes) {
+    const set = document.createElement('fieldset');
+    const cap = document.createElement('legend');
+    cap.textContent = legend;
+    set.append(cap, ...nodes);
+    return set;
+  }
+
+  /* `fp` is 1/1024. The panel takes whole game units and converts once, here,
+     so nobody types 102400 meaning a hundred. */
+  const FP = 1024;
+
+  function buildSpec() {
+    const spec = {};
+    const grants = {};
+    for (const [kind, value] of cheatState.grants) if (value > 0) grants[kind] = value * FP;
+    if (Object.keys(grants).length > 0) spec.grantMaterials = grants;
+
+    const starve = {};
+    for (const key of cheatState.toggles) {
+      if (key.startsWith('starve:')) starve[key.slice(7)] = 0;
+    }
+    if (Object.keys(starve).length > 0) spec.materialCeiling = starve;
+
+    const satisfy = [...cheatState.toggles]
+      .filter((k) => k.startsWith('satisfy:'))
+      .map((k) => k.slice(8));
+    if (satisfy.length > 0) spec.satisfy = satisfy;
+
+    if (cheatState.toggles.has('armEverything')) spec.armEverything = true;
+    if (cheatState.toggles.has('completeConstruction')) spec.completeConstruction = true;
+
+    for (const [key, value] of cheatState.numbers) {
+      if (key === 'favor') {
+        spec.favor = value * FP;
+        // A pool above its cap is not clamped back down, but regeneration stops
+        // contributing the moment it is spent to the cap — so a favor grant
+        // moves the cap with it unless the operator says otherwise.
+        spec.favorCap = Math.max(value, cheatState.numbers.get('favorCap') ?? 0) * FP;
+      } else if (key === 'favorCap') {
+        spec.favorCap = value * FP;
+      } else if (key === 'prestige') spec.prestige = value * FP;
+      else if (key === 'worship') spec.worship = value * FP;
+      else if (key === 'studentSeats') spec.studentSeats = value;
+      else if (key === 'foundUniversities') spec.foundUniversities = value;
+      else if (key === 'edictBudget') spec.edictBudget = value;
+      else if (key === 'grantNode' && value > 0) spec.grantKnowledge = [{ nodeId: value }];
+      else if (key === 'shelveNode' && value > 0) spec.shelveKnowledge = [value];
+    }
+    return spec;
+  }
+
+  async function applySandbox(spec) {
+    const res = await fetch('/live/sandbox', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ spec }),
+    });
+    const body = await res.json();
+    if (!res.ok) {
+      $('err').textContent = body.error ?? 'the sandbox refused';
+      return;
+    }
+    /* Reload rather than patch. Every pane on this page is a function of the
+       run, and the run is a different one now. */
+    location.reload();
+  }
+
+  async function drawSandbox() {
+    const host = $('sandbox-body');
+    const section = $('sandbox');
+    let info;
+    try {
+      info = await (await fetch('/live/sandbox')).json();
+    } catch {
+      return; /* Not a live server. The panel simply is not there. */
+    }
+    section.hidden = false;
+    host.replaceChildren();
+
+    if (info.enabled !== true) {
+      $('sandbox-note').textContent =
+        'Off. Restart with `npm run play -- --sandbox` to enable it. Off is a refusal, not a ' +
+        'no-op: the routes return 403 rather than pretending a grant landed.';
+      const why = document.createElement('p');
+      why.className = 'off';
+      why.textContent =
+        'The sandbox puts a universe into a state a passive run never reaches — armed cells, a ' +
+        'satisfied consumer, a starved one — so a mechanism that has never fired can be watched. ' +
+        'Any run it touches is branded for life.';
+      host.append(why);
+      return;
+    }
+
+    $('sandbox-note').textContent =
+      'Every cheat is a starting position, so applying one builds a NEW universe at the same seed. ' +
+      'The old run is gone, not converted — and the new one is branded in its snapshot forever.';
+
+    host.append(
+      group('Grant materials (whole units, added to the founding stock)', [
+        ...info.materialKinds.map((kind) => {
+          const wrap = document.createElement('label');
+          wrap.className = 'num';
+          const span = document.createElement('span');
+          span.textContent = kind;
+          const input = document.createElement('input');
+          input.type = 'number';
+          input.placeholder = '0';
+          input.addEventListener('input', () =>
+            cheatState.grants.set(kind, Number(input.value || 0)),
+          );
+          wrap.append(span, input);
+          return wrap;
+        }),
+      ]),
+      group('Satisfy a consumer — its kind is kept topped up every tick, before any claimant runs', [
+        ...info.claimants.map((claimant) =>
+          chip(`${claimant} (${info.claimantKind[claimant]})`, `satisfy:${claimant}`, false),
+        ),
+      ]),
+      group('Starve a kind — held at zero every tick, so a shortfall can be watched', [
+        ...info.materialKinds.map((kind) => chip(kind, `starve:${kind}`, false)),
+      ]),
+      group('Ruleset and institutions', [
+        chip('arm every technique and form', 'armEverything', false),
+        chip('finish every construction', 'completeConstruction', false),
+      ]),
+      /*
+       * Knowledge, by node id, and a number rather than a chip.
+       *
+       * Three hundred nodes will not fit as chips and a `<select>` of three
+       * hundred is the dropdown this page refuses on principle. A number input
+       * is the honest middle: it names no node it cannot name, and the ids are
+       * visible in `/live/session.json`'s content block. A named picker is a
+       * real piece of work and belongs beside the grid view, not bolted here.
+       */
+      group('Knowledge, by node id (0 for none)', [
+        number('into the first mage’s mind', 'grantNode', '0'),
+        number('onto the first library’s shelf', 'shelveNode', '0'),
+      ]),
+      group('Set outright', [
+        number('favor', 'favor', '0'),
+        number('favor cap', 'favorCap', '0'),
+        number('prestige', 'prestige', '0'),
+        number('worship', 'worship', '0'),
+        number('edict budget', 'edictBudget', '4'),
+        number('student seats', 'studentSeats', '64'),
+        number('extra universities', 'foundUniversities', '0'),
+      ]),
+    );
+
+    const go = document.createElement('button');
+    go.className = 'go';
+    go.type = 'button';
+    go.textContent = 'Rebuild this universe with these cheats';
+    go.addEventListener('click', () => applySandbox(buildSpec()));
+    host.append(go);
+
+    if (session?.provenance?.sandbox) {
+      const leave = document.createElement('button');
+      leave.className = 'go';
+      leave.type = 'button';
+      leave.textContent = 'Leave the sandbox (a new, honest universe)';
+      leave.addEventListener('click', async () => {
+        await fetch('/live/reset', {
+          method: 'POST',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({ sandbox: null }),
+        });
+        location.reload();
+      });
+      host.append(leave);
+    }
+  }
+
   mountThemeControl(document.querySelector('.clock'));
 
   for (const button of document.querySelectorAll('.clock button')) {
@@ -523,6 +883,8 @@
         'This page needs a running universe: `npm run play`, then open http://localhost:8300/ui/play/.';
     }
     redraw(null, null);
+    drawBanner();
+    await drawSandbox();
   } catch (error) {
     $('err').textContent = String(error.message ?? error);
     $('sub').textContent = 'No universe.';
