@@ -109,6 +109,7 @@ import {
   OCCUPATION,
   POPULACE_COHORT,
   MATERIAL_STOCK,
+  STANDING_WORKING,
   UNIVERSE,
   UNIVERSITY,
   attachRecord,
@@ -238,6 +239,7 @@ import type { StudentRefusal } from './admissions.js';
 import { admitStudentBodies } from './admissions.js';
 import type { WorkingDurations, WorkingOutcome } from './standing-workings.js';
 import {
+  NO_WORKING_DURATIONS,
   WORKING_OUTCOME,
   endWorkingsOf,
   establishOrRenewWorking,
@@ -1986,7 +1988,13 @@ export function worldSystem(
         // which is what makes the three series add up.
         workingsLapsed: workings.lapsed.length,
         workingsLapsedNodes: workings.lapsed.map((entry) => entry.nodeId),
-        workingsStanding: workings.standing + work.workingsLit,
+        // Recounted from the rows rather than arithmetic on the sweep's number.
+        // `workings.standing` was true at the top of the tick and three phases
+        // have moved it since: the work phase lit some, and `killTheDead` ended
+        // every working its dead were holding up. `standing + lit` would have
+        // over-reported by exactly the workings of everyone who died this month,
+        // which is the tick you would most want the number to be right on.
+        workingsStanding: componentOf(state, STANDING_WORKING).size,
         workingsLit: work.workingsLit,
         workingsRenewed: work.workingsRenewed,
         materialsScribed,
@@ -3168,7 +3176,12 @@ function workOne(
       // branch never reaches it, which is the same rule stated twice on purpose:
       // 381 of 419 authored effects are zero, and a working over one of them
       // would be a lapse on the report for something that cannot lapse.
-      const duration = deps.workingDurations?.durationOf(nodeId) ?? 0;
+      // `NO_WORKING_DURATIONS` rather than `?.` and a `?? 0`, so a build with
+      // no index takes a *named* path that says "nothing in this content set
+      // expires" instead of a silent optional-chain zero. The two behave
+      // identically and only one of them is legible in a stack trace.
+      const durations = deps.workingDurations ?? NO_WORKING_DURATIONS;
+      const duration = durations.durationOf(nodeId);
       if (duration === 0) return undefined;
       if (!gateway.castableNodes(mage).includes(nodeId)) return undefined;
       noteWorking(establishOrRenewWorking(state, mage, nodeId, worldTick, duration));

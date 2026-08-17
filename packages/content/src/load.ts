@@ -1261,6 +1261,48 @@ function checkNodes(
         );
       }
     }
+
+    // ---- One node, one working ------------------------------------------
+    //
+    // A node's non-zero `durationTicks` must all be the same number.
+    //
+    // `standing-working` is one row per **(holder, node)**, carrying one
+    // `expiresTick`. A node authoring a two-year effect beside a ten-year one
+    // would need two workings to be expressible, and what the rules would
+    // actually do is keep one — silently giving the two-year effect ten years,
+    // or the ten-year effect two. Neither throws, both look like the mechanism
+    // functioning, and the only symptom is a magnitude that persists for the
+    // wrong span.
+    //
+    // **Zero beside a non-zero is fine and is common** — 21 of the 38 shipped
+    // durable nodes do it. Zero is not a short duration: it means
+    // *instantaneous or permanent*, an effect that needs no working at all, so
+    // it composes with a working rather than competing with one.
+    //
+    // Zero content churn at the time of writing: no shipped node carries two
+    // distinct non-zero durations, measured over all 301.
+    const authoredDurations = new Set<number>();
+    for (const effect of node.effects) {
+      if (effect !== undefined && effect.durationTicks !== 0) {
+        authoredDurations.add(effect.durationTicks);
+      }
+    }
+    if (authoredDurations.size > 1) {
+      const listed = [...authoredDurations].sort((a, b) => a - b).join(', ');
+      out.push(
+        diagnostic(
+          file,
+          `${at}/effects`,
+          'content-invariant',
+          `node "${node.id}" authors more than one non-zero durationTicks (${listed}). A working ` +
+            'stands over a node, not over an effect, and carries one expiry — so two durations on ' +
+            'one node cannot both be kept, and whichever the rules pick silently gives the other ' +
+            'effect the wrong span. Author one duration for the node, or split it into two nodes. ' +
+            '(A zero beside a non-zero is fine: zero means instantaneous or permanent, which needs ' +
+            'no working.)',
+        ),
+      );
+    }
   }
 
   out.push(...findPrerequisiteCycles(nodes, nodeById));

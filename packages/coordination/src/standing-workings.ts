@@ -54,7 +54,13 @@ import type { ContentId, ContentRegistry } from '@mm/content';
 import type { Fixed, SimState } from '@mm/sim-core';
 import { FP_ONE, floorDiv } from '@mm/sim-core';
 import type { StandingWorkings } from '@mm/rules-magic';
-import { authoredDurationOf, expiryTickOf, isLive } from '@mm/rules-magic';
+import {
+  NO_WORKINGS_STAND,
+  authoredDurationOf,
+  expiryTickOf,
+  hasLapsed,
+  isLive,
+} from '@mm/rules-magic';
 import type { Handle, StandingWorkingRecord } from '@mm/state';
 import { STANDING_WORKING, attachRecord, collectRecords, componentOf } from '@mm/state';
 
@@ -118,9 +124,16 @@ export function standingWorkingsOf(state: SimState): StandingWorkings {
     live.add(pairKey(row.holder, row.nodeId));
   }
 
-  const view: StandingWorkings = {
-    standsAt: (holder, nodeId) => live.has(pairKey(holder, nodeId)),
-  };
+  // The named view for the common case, rather than a closure over an empty
+  // set that would answer identically. `universe-effects.ts` returns
+  // `NO_ECONOMY_BONUSES` on the same argument: a universe that has never lit a
+  // working — which is every universe until somebody spends the month, and
+  // every universe restored from a revision-11 save — reaches the gate through
+  // the constant that says so by name.
+  const view: StandingWorkings =
+    live.size === 0
+      ? NO_WORKINGS_STAND
+      : { standsAt: (holder, nodeId) => live.has(pairKey(holder, nodeId)) };
   cached.set(state, view);
   return view;
 }
@@ -208,7 +221,7 @@ export function sweepLapsedWorkings(state: SimState, worldTick: number): Working
   const ending: Handle[] = [];
   let standing = 0;
   for (const { handle, row } of collectRecords(state, STANDING_WORKING)) {
-    if (isLive(row, worldTick)) {
+    if (!hasLapsed(row, worldTick)) {
       standing += 1;
       continue;
     }
