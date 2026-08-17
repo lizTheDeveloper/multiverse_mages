@@ -108,6 +108,7 @@ import {
   MAGE_ROLE,
   OCCUPATION,
   POPULACE_COHORT,
+  MATERIAL_GRADE,
   MATERIAL_STOCK,
   UNIVERSE,
   UNIVERSITY,
@@ -140,6 +141,7 @@ import type {
   ConservationBreach,
   GoalAppealWeights,
   MageGoalCommitment,
+  GradedStock,
   MaterialAmounts,
   MaterialKind,
   ScaleFreeHazard,
@@ -160,6 +162,7 @@ import {
   advanceConstruction,
   NO_EMPHASIS,
   appliedYield,
+  NO_GRADED_STOCK,
   applyStockCeiling,
   assertMaterialsConserved,
   conservationBreaches,
@@ -178,6 +181,8 @@ import {
   affordableMageMonths,
   castingDemand,
   consumeMaterials,
+  rawRefiningDemand,
+  settleGrades,
   createMage,
   classCapacityOf,
   effectiveLifespan,
@@ -1777,6 +1782,16 @@ export function worldSystem(
         // The hired half of the same work, in the kind a body is made of.
         // Zero whenever no site hired anybody, which is every world that holds
         // no `labor` at all.
+        // The ladder's ground rung. `mt-turn-the-poor-ore` draws worthless rock
+        // and returns ore that is merely bad, and it is placed **after**
+        // `construction` in `CONSUMPTION_ORDER` on purpose: a half-built
+        // university outranks improving rock. This is the first tick on which
+        // `stone` has had two claimants, so it is also the first on which
+        // `construction`'s position in that order is not inert.
+        //
+        // Zero in every universe that knows no rung, which is every universe
+        // whose god never armed `muto-terram`.
+        refining: rawRefiningDemand(economy.gradeEdges),
         constructionLabor: construction.laborOwed,
       });
       // ---- 9a. The ceiling, which spills rather than truncating ------------
@@ -1853,6 +1868,34 @@ export function worldSystem(
       // notices and the world does not. Identical to `closing` on every run that
       // asks for no leak.
       writeMaterialStock(state, universe, leaked);
+
+      // ---- 9c. The grade ladder --------------------------------------------
+      //
+      // After the raw stock is settled, because refining is paid out of it
+      // through `CONSUMPTION_ORDER` like every other claimant — `spent.refining`
+      // is already on the `stone` sink side of the ledger above, folded in by
+      // the loop over `CONSUMPTION_ORDER`, so the conservation assertion covers
+      // this faucet without a line of its own. That is the property that made
+      // routing the draw through a claimant worth the compile error it cost:
+      // a rung that reached for `stock.stone` directly would be a second writer
+      // and would unbalance the ledger silently.
+      //
+      // Graded material itself is *not* in that ledger, and deliberately: it is
+      // a different stock with a different conservation law. A rung whose ratio
+      // is below one destroys material on purpose — `mh-the-second-harvest`'s
+      // *"a field of straw becomes a smaller field of grain"* — so asserting
+      // `delta == faucet - sink` over it would fail by design. What is asserted
+      // instead is that the draw was paid for, which the raw ledger already
+      // does, and `convertedAway` is returned rather than dropped so the loss
+      // is a number somebody can read.
+      const gradesOpening = readMaterialGrade(state, universe);
+      const grades = settleGrades(
+        gradesOpening,
+        economy.gradeEdges,
+        economy.gradeDemands,
+        consumption.spent.refining,
+      );
+      writeMaterialGrade(state, universe, grades.closing);
 
       // The shortfall, apportioned per library and settled in ascending handle
       // order — `applyLibraryUpkeep`'s documented order, and the reason it is
@@ -2268,6 +2311,43 @@ function readMaterialStock(state: SimState, universe: EntityHandle): MaterialAmo
  * already in the row `readMaterialStock` opened the tick with. Sequential, not
  * concurrent: there is still exactly one writer per phase.
  */
+/**
+ * What the universe holds above grade 0, or all zeroes if it holds nothing.
+ *
+ * **An absent row is nothing refined, never a shortage.** A world restored from
+ * a pre-revision-12 save, or a hand-built test world that never mentions
+ * grades, reads all-zero here — so every gated effect is refused and the
+ * economy behaves exactly as it did before the ladder existed.
+ */
+function readMaterialGrade(state: SimState, universe: EntityHandle): GradedStock {
+  const store = componentOf(state, MATERIAL_GRADE);
+  if (!store.has(universe)) return NO_GRADED_STOCK;
+  return {
+    stoneWorked: store.get(universe, 'stoneWorked'),
+    stoneFine: store.get(universe, 'stoneFine'),
+  };
+}
+
+/** The one grade-stock write of the tick, mirroring {@link writeMaterialStock}. */
+function writeMaterialGrade(
+  state: SimState,
+  universe: EntityHandle,
+  grades: GradedStock,
+): void {
+  const store = componentOf(state, MATERIAL_GRADE);
+  if (!store.has(universe)) {
+    // Attached only once something has actually been refined. A universe that
+    // never refines never grows a row, which keeps "absent means zero" true of
+    // a live world and not only of an old save — and keeps a snapshot of a
+    // grade-free universe byte-identical to what it was before this change.
+    if (grades.stoneWorked === 0 && grades.stoneFine === 0) return;
+    attachRecord(state, MATERIAL_GRADE, universe, { ...grades });
+    return;
+  }
+  store.set(universe, 'stoneWorked', grades.stoneWorked);
+  store.set(universe, 'stoneFine', grades.stoneFine);
+}
+
 function writeMaterialStock(
   state: SimState,
   universe: EntityHandle,

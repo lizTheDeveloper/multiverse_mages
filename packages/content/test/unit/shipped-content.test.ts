@@ -21,6 +21,7 @@
 import { describe, expect, it } from 'vitest';
 
 import {
+  CONTENT_FILES,
   MATERIAL_KIND_IDS,
   MAX_CONTENT_NODES,
   REQUIRED_V1_CELL,
@@ -28,7 +29,9 @@ import {
   V1_REDISCOVERY_AUTHORING_FLOOR,
   WORST_REDISCOVERY_AFFINITY,
   loadContent,
+  memorySource,
   shippedContentSource,
+  validateContent,
 } from '@mm/content';
 import type { ContentRegistry } from '@mm/content';
 
@@ -745,5 +748,58 @@ describe('shipped content', () => {
     expect(
       registry.cells.find((entry) => entry.record.id === 'rego-mentem')?.record.classicalLabels,
     ).toEqual(['enchantment']);
+  });
+});
+
+// ---------------------------------------------------------------------------
+
+describe('the grade ladder refuses the two mistakes JSON Schema cannot see', () => {
+  /**
+   * Both checks answer about a *relation*, which no schema keyword expresses,
+   * so both would be silently absent if they were written wrong. `CLAUDE.md`
+   * records five checkers in one night that reported confidently about the
+   * wrong input; these are the positive controls that say these two look at
+   * theirs.
+   */
+  function withEdges(edges: readonly unknown[]): ReturnType<typeof validateContent> {
+    const files: Record<string, string> = {};
+    for (const name of CONTENT_FILES) {
+      files[name] =
+        name === 'grade-edge.json'
+          ? JSON.stringify(edges)
+          : (shippedContentSource().read(name) as string);
+    }
+    return validateContent(memorySource(files));
+  }
+
+  const shippedEdges = (): Record<string, unknown>[] =>
+    JSON.parse(shippedContentSource().read('grade-edge.json') as string) as Record<
+      string,
+      unknown
+    >[];
+
+  it('NEGATIVE CONTROL: the shipped ladder loads clean, so a rejection below is the mutation', () => {
+    expect(withEdges(shippedEdges()).diagnostics).toEqual([]);
+  });
+
+  it('refuses a rung authored to skip a grade', () => {
+    // "the working improves a thing by one step and has never once been made to
+    // take two" — 0 -> 2 satisfies every keyword in the schema and ships the
+    // working the gloss says has never been made.
+    const skipping = shippedEdges();
+    (skipping[0] as Record<string, unknown>)['toGrade'] = 2;
+
+    const codes = withEdges(skipping).diagnostics.map((entry) => entry.code);
+    expect(codes).toContain('grade-ladder');
+  });
+
+  it('refuses a demand no rung can ever produce', () => {
+    // A gate that can only ever be shut reports as "this mechanic changes
+    // nothing" rather than as "this content is unfinished".
+    const withoutTop = shippedEdges().filter((edge) => edge['toGrade'] !== 2);
+
+    const problems = withEdges(withoutTop).diagnostics;
+    expect(problems.map((entry) => entry.code)).toContain('grade-ladder');
+    expect(problems.some((entry) => entry.file === 'node.json')).toBe(true);
   });
 });

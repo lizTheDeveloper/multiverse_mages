@@ -141,21 +141,24 @@
  * one is collectable, and there is no invalidation rule to forget.
  */
 
-import type { ContentId, ContentRegistry, FormRecord } from '@mm/content';
+import type { ContentId, ContentRegistry, FormRecord, GradeEdgeRecord } from '@mm/content';
 import type { Fixed, SimState } from '@mm/sim-core';
 import { TIME_MODE } from '@mm/sim-core';
 import type { CellResolver, ConsumptionRecorder, EffectSourceInstance } from '@mm/rules-magic';
 import { gatherEffects } from '@mm/rules-magic';
-import type { MaterialAmounts, MaterialKind } from '@mm/rules-world';
+import type { ActiveDemand, GradedStock, MaterialAmounts, MaterialKind } from '@mm/rules-world';
 import {
   MATERIAL_KINDS,
+  NO_GRADED_STOCK,
   NO_YIELD_BONUSES,
+  demandKey,
   formRoutesToMaterials,
+  metDemands,
   routeYieldByForm,
   zeroAmounts,
 } from '@mm/rules-world';
 import type { Handle, Ruleset } from '@mm/state';
-import { KNOWLEDGE_INSTANCE, collectRecords } from '@mm/state';
+import { KNOWLEDGE_INSTANCE, MATERIAL_GRADE, collectRecords } from '@mm/state';
 import { GOAL, readCommitment } from '@mm/rules-world';
 import { isHeldLocation } from '@mm/rules-magic';
 
@@ -314,6 +317,35 @@ export interface UniverseEconomyBonuses {
    * interdicted.
    */
   readonly contributingNodes: number;
+  /**
+   * Every grade rung whose working this universe knows, in content order.
+   *
+   * The ladder reaches the tick through exactly the gate every other effect
+   * does: a rung fires when its node has an instance that is held, mastered
+   * past the activation threshold, and in a cell the god permits. **No second
+   * gating mechanism** — which machines a universe can run is already decided
+   * by `prerequisitesOf` plus `permits()`, and a late material is a deep node
+   * in an unarmed cell.
+   */
+  readonly gradeEdges: readonly GradeEdgeRecord[];
+  /**
+   * Every gated effect asking to run this tick, in content order.
+   *
+   * Handed on so that phase 9 charges for exactly the effects phase 1 let
+   * contribute. Both call `metDemands` with the **opening** holding, so the two
+   * agree by construction rather than by two call sites happening to match.
+   */
+  readonly gradeDemands: readonly ActiveDemand[];
+  /**
+   * Gated contributions refused this tick for want of refined material.
+   *
+   * Reported because *"the furnace contributed nothing"* and *"there is no
+   * furnace"* are the same zero in `resourceYield`, and telling them apart is
+   * the whole claim of this change. A universe that knows
+   * `cig-the-standing-furnace` and cannot make ore shows a nonzero here; one
+   * that never learned it shows zero, and so does one that is running it.
+   */
+  readonly gradeGateShut: number;
 }
 
 /** Nothing castable, or nothing permitted. */
@@ -322,6 +354,9 @@ export const NO_ECONOMY_BONUSES: UniverseEconomyBonuses = {
   buildRate: [],
   contributingNodes: 0,
   practisedInstances: 0,
+  gradeEdges: [],
+  gradeDemands: [],
+  gradeGateShut: 0,
 };
 
 /** What {@link universeEconomyBonuses} reads. */
@@ -395,6 +430,36 @@ export function universeEconomyBonuses(
   ) as Record<MaterialKind, Fixed[]>;
   const buildRate: Fixed[] = [];
   let contributingNodes = 0;
+  let gradeGateShut = 0;
+
+  // ---- The grade ladder ------------------------------------------------
+  //
+  // Read from the same gathered set the economy is, so a rung and a bonus pass
+  // through one legality point rather than two that could drift. `instances`
+  // rather than `practised` for the rungs, matching `build-rate` next door: a
+  // standing conversion is a property of what the universe knows how to do,
+  // not of which single node one mage chose to drill this month, and gating it
+  // on practice would make ore appear only in the ticks somebody happened to be
+  // committed to rock.
+  const activeNodes = new Set<ContentId>();
+  const gradeDemands: ActiveDemand[] = [];
+  for (const contribution of gatherEffects(instances, gatherDeps)) {
+    activeNodes.add(contribution.nodeId);
+    if (contribution.requires === undefined) continue;
+    gradeDemands.push({
+      nodeId: contribution.nodeId,
+      effectIndex: contribution.effectIndex,
+      requires: contribution.requires,
+    });
+  }
+  const gradeEdges = deps.index.registry.gradeEdges
+    .filter((entry) => activeNodes.has(deps.index.registry.intern('node', entry.record.node)))
+    .map((entry) => entry.record);
+  // The opening holding, and both the phase-1 gate and phase 9's charge are
+  // computed from it. An absent `material-grade` row reads as nothing refined,
+  // which is the §0 absent-value reading and not a special case.
+  const opening = openingGradedStock(state);
+  const { met } = metDemands(opening, gradeDemands);
 
   for (const contribution of gatherEffects(instances, gatherDeps)) {
     if (contribution.target !== 'universe') continue;
@@ -422,6 +487,24 @@ export function universeEconomyBonuses(
     if (contribution.primitiveId !== 'resource-yield') continue;
     contributingNodes += 1;
 
+    // **The grade gate, and this is the line that makes a niche discovery
+    // matter later.** `cig-the-standing-furnace` *"runs the great foundries"*,
+    // and a foundry runs on ore rather than on rock — so its yield contributes
+    // only while the universe is holding refined stone, and the working that
+    // refines stone is `mt-turn-the-poor-ore`, two cells away in `muto-terram`.
+    // Nobody authored "if poor-ore then foundry": the requirement did it.
+    //
+    // A **gate**, not a drain (`economy-flow-models.md` §1.1). Refused, the
+    // effect contributes nothing this tick and nothing is destroyed — and it is
+    // counted, because a furnace standing idle and a universe with no furnace
+    // are the same zero everywhere else.
+    if (contribution.requires !== undefined) {
+      if (!met.has(demandKey(contribution.nodeId, contribution.effectIndex))) {
+        gradeGateShut += 1;
+        continue;
+      }
+    }
+
     const form = deps.index.formOf(contribution.nodeId);
     if (form === undefined) continue;
     const routed = routeYieldByForm(form, contribution.magnitude);
@@ -439,6 +522,9 @@ export function universeEconomyBonuses(
     buildRate,
     contributingNodes,
     practisedInstances: practised.length,
+    gradeEdges,
+    gradeDemands,
+    gradeGateShut,
   };
   cached.set(state, built);
   return built;
@@ -456,6 +542,23 @@ function practisesNode(state: SimState, holder: Handle, nodeId: ContentId): bool
   const commitment = readCommitment(state, holder);
   if (commitment === undefined) return false;
   return commitment.goalId === GOAL.practice && commitment.targetNodeId === nodeId;
+}
+
+/**
+ * What the universe holds above grade 0 at the top of the tick.
+ *
+ * One row, on the universe's handle, exactly as `material-stock` is — grades
+ * are a second axis on that stock and not a second economy. **No row means
+ * nothing refined**, never a shortage: a world written before revision 12, or a
+ * hand-built test world that never mentions grades, reads as all-zero and every
+ * gated effect is simply refused, which is what it would have been before the
+ * requirement existed.
+ */
+function openingGradedStock(state: SimState): GradedStock {
+  for (const { row } of collectRecords(state, MATERIAL_GRADE)) {
+    return { stoneWorked: row.stoneWorked, stoneFine: row.stoneFine };
+  }
+  return NO_GRADED_STOCK;
 }
 
 /** Sums a routed basket, for tests and diagnostics that want one number. */

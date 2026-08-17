@@ -230,8 +230,14 @@ describe('legality is evaluated once per candidate and carried nowhere', () => {
     expect(contribution).toBeDefined();
     if (contribution === undefined) return;
 
+    // `effectIndex` joins the set, and `requires` deliberately does **not**
+    // appear on a node that authors none — absent, not `undefined`, so an
+    // ungated effect carries no field at all and cannot be re-tested into one.
+    // Neither is a legality field, which is what this assertion guards: the
+    // permission answer is asked once and stored nowhere.
     expect(Object.keys(contribution).sort()).toEqual([
       'durationTicks',
+      'effectIndex',
       'magnitude',
       'nodeId',
       'primitiveId',

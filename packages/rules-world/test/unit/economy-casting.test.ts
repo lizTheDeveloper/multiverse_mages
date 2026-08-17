@@ -95,6 +95,7 @@ describe('casting takes its vellum before the library does', () => {
       subsistence: 500,
       casting: 80,
       teaching: 0,
+      refining: 0,
       constructionLabor: 0,
       libraryUpkeep: 80,
       scribing: 0,

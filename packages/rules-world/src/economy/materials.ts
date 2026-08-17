@@ -54,10 +54,25 @@ import { LAND_MATERIAL_KINDS, MATERIAL_KINDS, zeroAmounts } from './kinds.js';
  * than a loss: a universe can no longer starve its people to finish a building,
  * because a building is not made of food.
  *
- * **There is no substitution between kinds, deliberately.** Letting a hungry
- * universe eat its quarry would be a market, and a market is a mechanic nobody
- * asked for that dissolves the differentiation the three kinds exist to create.
- * A shortfall in one kind is a shortfall, and it is recorded as one.
+ * **No substitution between kinds is implemented, and this is not a ruling
+ * against one.** A hungry universe cannot eat its quarry: a shortfall in one
+ * kind is a shortfall and is recorded as one. That is the behaviour, and it is
+ * still the behaviour.
+ *
+ * The sentence that used to stand here called a market *"a mechanic nobody
+ * asked for"*. **That was an agent's self-restraint written in the register of
+ * a design ruling, and it has been quoted back as authority at least three
+ * times.** Its provenance was checked with the project author and it is not his
+ * decision. So the paragraph is amended rather than deleted — the behaviour and
+ * its justification should not go together — and the standing is now correct:
+ * conversion between kinds is on the table, and anything adding it owes an
+ * argument rather than a permission.
+ *
+ * **Grades are the first thing to arrive under that correction, and they are
+ * not substitution.** `refining` converts `stone` grade 0 into `stone` grade 1,
+ * within one kind. `economy-flow-models.md` §1.1 calls that a **converter**,
+ * not a trader: nothing changes owner and the total does not survive. See
+ * `grades.ts`.
  *
  * ## Every magnitude here is untuned
  *
@@ -318,6 +333,15 @@ export const CONSUMPTION_ORDER = [
   'libraryUpkeep',
   'scribing',
   'construction',
+  // **Placed, not appended**, and the note below this list says why that
+  // matters: a second claimant on a kind has to be positioned against the one
+  // already there rather than written wherever it was thought of. `refining`
+  // draws grade-0 `stone` for `mt-turn-the-poor-ore`, and it goes **after**
+  // `construction` — a half-built university outranks improving rock, which is
+  // the same call the economy already makes when it pays subsistence before
+  // anything. It is the first time `stone` has had two claimants, so this is
+  // also the first tick on which `construction`'s position is not inert.
+  'refining',
   'constructionLabor',
 ] as const;
 
@@ -374,6 +398,11 @@ export const CLAIMANT_KIND: Readonly<Record<ConsumptionKind, MaterialKind>> = {
   libraryUpkeep: 'vellum',
   scribing: 'vellum',
   construction: 'stone',
+  // Grade 0 `stone` — worthless rock, on its way to being ore that is merely
+  // bad. The draw is what makes `ge-turn-the-poor-ore` cost anything at all:
+  // its gloss states no loss in the conversion, so *"the whole cost of the rung
+  // is the raw stone it draws"* is the only price it has.
+  refining: 'stone',
   // Hired person-months, over and above the crew the populace supplied. Never
   // charged for a month a site could not use: `advanceUniversities` attributes
   // the months a site actually bought to the crew first, and only the excess to

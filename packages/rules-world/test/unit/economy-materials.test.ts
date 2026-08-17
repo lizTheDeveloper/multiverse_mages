@@ -84,6 +84,7 @@ const demand = (overrides: Partial<ConsumptionDemand> = {}): ConsumptionDemand =
   libraryUpkeep: 0,
   scribing: 0,
   construction: 0,
+  refining: 0,
   constructionLabor: 0,
   ...overrides,
 });
@@ -168,6 +169,12 @@ describe('consumption follows a documented priority order', () => {
     // order is a decision a reviewer checks, and a second insight claimant
     // added later has to be placed against this one rather than appended
     // wherever it happened to be written.
+    // `refining` joined on 2026-08-16 (the grade ladder), and it is the first
+    // addition whose position is **not** inert: it draws `stone`, which
+    // `construction` already draws, so this is the first tick on which the two
+    // rank against each other. It goes after — a half-built university outranks
+    // improving rock, the same call the order already makes when it feeds people
+    // before it writes anything down.
     expect([...CONSUMPTION_ORDER]).toEqual([
       'subsistence',
       'casting',
@@ -175,6 +182,7 @@ describe('consumption follows a documented priority order', () => {
       'libraryUpkeep',
       'scribing',
       'construction',
+      'refining',
       'constructionLabor',
     ]);
   });
@@ -195,6 +203,7 @@ describe('consumption follows a documented priority order', () => {
       libraryUpkeep: 'vellum',
       scribing: 'vellum',
       construction: 'stone',
+      refining: 'stone',
       constructionLabor: 'labor',
     });
   });
@@ -212,6 +221,7 @@ describe('consumption follows a documented priority order', () => {
       libraryUpkeep: 50,
       scribing: 25,
       construction: 10,
+      refining: 0,
       constructionLabor: 0,
     });
     expect(outcome.anyShortfall).toBe(false);

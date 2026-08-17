@@ -176,6 +176,7 @@ function run(share: number): Trace {
       libraryUpkeep: 0,
       scribing: 0,
       construction: 0,
+      refining: 0,
       constructionLabor: 0,
     });
     stock = outcome.remaining;

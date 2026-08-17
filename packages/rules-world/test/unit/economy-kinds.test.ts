@@ -111,12 +111,20 @@ describe('the seven kinds, and the total claimant map', () => {
       expect(MATERIAL_KINDS).toContain(CLAIMANT_KIND[claimant]);
     }
     const kindsClaimed = CONSUMPTION_ORDER.map((claimant) => CLAIMANT_KIND[claimant]);
-    // Vellum has two claimants (libraryUpkeep, scribing); food and stone have
-    // exactly one each. That is the whole of "only the vellum pair still
-    // competes", stated as a count rather than as prose.
+    // Vellum has three claimants (casting, libraryUpkeep, scribing) and food
+    // has one. **Stone now has two**, and that is the sentence this assertion
+    // exists to keep honest: "only the vellum pair still competes" stopped
+    // being true when `refining` arrived. `CONSUMPTION_ORDER` ranks only
+    // claimants that share a kind, so `construction`'s position was inert until
+    // this tick and is now a decision that binds — a half-built university is
+    // paid before rock is improved.
     expect(kindsClaimed.filter((kind) => kind === 'vellum')).toHaveLength(3);
     expect(kindsClaimed.filter((kind) => kind === 'food')).toHaveLength(1);
-    expect(kindsClaimed.filter((kind) => kind === 'stone')).toHaveLength(1);
+    expect(kindsClaimed.filter((kind) => kind === 'stone')).toHaveLength(2);
+    // And the order within stone, since it is now load-bearing.
+    expect(CONSUMPTION_ORDER.indexOf('construction')).toBeLessThan(
+      CONSUMPTION_ORDER.indexOf('refining'),
+    );
   });
 });
 
