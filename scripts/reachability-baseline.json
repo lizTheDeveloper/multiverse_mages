@@ -1,14 +1,14 @@
 {
   "note": "Pinned reachability findings. Generated — do not hand-edit. Regenerate with `npm run reachability:pin` and explain the diff in the commit message: an entry removed is a repair, an entry added is a debt someone accepted.",
   "scan": {
-    "examinedSymbolCount": 1098,
-    "productionFileCount": 374
+    "examinedSymbolCount": 1100,
+    "productionFileCount": 376
   },
   "scanFloor": {
-    "examinedSymbolCount": 878,
-    "productionFileCount": 299
+    "examinedSymbolCount": 880,
+    "productionFileCount": 300
   },
-  "findingCount": 111,
+  "findingCount": 113,
   "findings": [
     {
       "key": "symbol:packages/content/src/audio-selection-merge.ts:assetIdOf",
@@ -648,6 +648,21 @@
       "category": "unreached",
       "file": "packages/scenario/src/census.ts",
       "name": "censusLine",
+      "kind": "function"
+    },
+    {
+      "key": "symbol:packages/scenario/src/executor.ts:executeReferenceRunAsync",
+      "group": "symbol",
+      "category": "reachedOnlyByUnreached",
+      "file": "packages/scenario/src/executor.ts",
+      "name": "executeReferenceRunAsync"
+    },
+    {
+      "key": "symbol:packages/scenario/src/executor.ts:makeReferenceExecutorAsync",
+      "group": "symbol",
+      "category": "unreached",
+      "file": "packages/scenario/src/executor.ts",
+      "name": "makeReferenceExecutorAsync",
       "kind": "function"
     },
     {
