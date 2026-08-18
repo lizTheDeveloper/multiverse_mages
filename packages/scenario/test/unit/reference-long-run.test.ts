@@ -388,11 +388,16 @@ describe('two hundred world years of the reference universe', () => {
     // competes with subsistence's `food`. Measured over this run: the fall is
     // **gone**. `libraryDepth` and `capitalContribution` are non-decreasing
     // across every one of the 2,400 ticks — the run's peak *is* its final
-    // value on both series, exactly (peak `fp(384)`, depth 48 nodes) — even
-    // though `food` still collapses `K` and the population from world year
-    // seventy on. Brake 4 (`applyLibraryUpkeep`) has not net-degraded the
-    // shelf even once in two centuries, because `vellum` never actually runs
-    // out here.
+    // value on both series, exactly — even though `food` still collapses `K`
+    // and the population from world year seventy on. Brake 4
+    // (`applyLibraryUpkeep`) has not net-degraded the shelf even once in two
+    // centuries, because `vellum` never actually runs out here.
+    //
+    // *Re-measured 2026-08-17 on `integration/all-branches`: peak `fp(404)` at
+    // depth 53, where this paragraph was written at `fp(384)` and depth 48. The
+    // shape held and the magnitudes moved with the open grid; the assertions
+    // below are all taken against the run's own series rather than against
+    // either pair of literals.*
     //
     // This is the honest replacement for the old "rises, peaks and falls
     // back" claim, not a loosened version of it: that claim is now false, and
@@ -461,73 +466,150 @@ describe('two hundred world years of the reference universe', () => {
     // reports. Compared against the run's own `nodesKnown` rather than a
     // literal, so that widening the ruleset does not silently weaken it.
     //
-    // ## RED, and the red is the finding — the shelf did not shrink, the grid opened
+    // ## Re-authored 2026-08-17, `integration/all-branches`: the coverage
+    // equality is withdrawn and the curve itself is asserted
     //
-    // *Measured on this tree, 2026-08-17, `integration/all-branches`, at
-    // `LONG_RUN_SEED` over the full 2,400 ticks, through `WorldStepReport`'s
-    // per-tick flow ledger.* This assertion reads **53 against 227**.
+    // **What it measured before.** `libraryDepth === nodesKnown` — the shelf
+    // holds *everything* the universe knows. W23 wrote that when the two
+    // coincided at 51, because the twelve enabled v1 cells were all there was to
+    // know, and it is a strong claim only while that is true.
     //
-    // The obvious reading — the library lost its coverage — is wrong, and the
-    // ledger says which number moved. When W23 wrote the equality it recorded
-    // *"51 of 51 nodes shelved"*: depth and knowledge coincided at 51 because
-    // the twelve v1 cells were all there was to know. Today `libraryDepth` is
-    // **53** — it went *up* — and `grimoires` is **3,530** against W23's 2,746.
-    // What went up 4.5x is `nodesKnown`, 51 -> **227**, because this campaign
-    // opened all seventy cells. The equality was a claim about a universe with
-    // 51 things in it.
+    // **Which decision voided it.** This campaign flagged all seventy grid cells
+    // `v1`. At the end of this run `nodesKnown` is **227** where W23 measured 51,
+    // and `libraryDepth` is **53** where W23 measured 51. The shelf did not
+    // shrink — it grew, and so did the pile, 2,746 books -> **3,530**. The
+    // equality broke because its right-hand side went up 4.5x, and a claim about
+    // a universe with 51 things in it is not a claim about one with 227.
     //
-    // | tick | 240 | 720 | 1200 | 1680 | 2400 |
-    // | `nodesKnown` | 102 | 175 | 222 | 228 | 227 |
-    // | `libraryDepth` | 40 | 51 | 51 | 52 | 53 |
-    // | `grimoires` | 266 | 245 | 496 | 1575 | 3530 |
-    // | vellum `opening` | 0 | 620 | 343 | 253 | 880 |
-    // | vellum `faucet` | 546 | 651 | 2158 | 6344 | 8931 |
-    // | `libraryUpkeep` owed | 532 | 490 | 990 | 3144 | **7056** |
-    // | `scribing` paid | 0 | 0 | 1024 | 3072 | 2048 |
+    // **What it measures now.** The property task 9.8 actually asked for: that
+    // total effective capital contribution is *a curve*, and that under the
+    // differentiated economy it does not fall back — measured across the whole
+    // run rather than at its end, which is the only form in which "does not fall
+    // back" is checkable at all.
     //
-    // ## What bounds the shelf, and what does not
+    // **Measured on this tree at `LONG_RUN_SEED` over 2,400 ticks:**
     //
-    // **Not a faucet that lost a source in a merge**, which was the competing
-    // hypothesis. Both faucets are live and the land one is growing: vellum
-    // `produced` runs 206 -> 8,931 fp across the run, `applied` 340 -> 0 as
-    // casting tails off, and `spilled` is 0 at every sample — nothing is being
-    // made and thrown away.
+    // | | founding | final | peak |
+    // |---|--:|--:|--:|
+    // | `capitalContribution` | 0 | **404 fp** | 404 fp |
+    // | `libraryDepth` | 0 | **53** | 53 |
+    // | `nodesKnown` | 6 | 227 | **230** |
     //
-    // **Not scribing being refused for want of vellum either.** The `scribing`
-    // claimant's shortfall is **0 fp summed over all 2,400 ticks**: scribing is
-    // throttled by affordability *before* the priority walk, so it never asks
-    // for what is not there and the claimant row cannot see the pressure. That
-    // negative is trustworthy only because the same reader on the same field
-    // reports a positive: `libraryUpkeep` shortfall totals **42,643 fp** over
-    // the run and shows 38 fp at tick 240. The probe works; scribing genuinely
-    // is not short.
+    // Neither of the first two falls at **any** of the 2,399 tick boundaries, so
+    // peak and final coincide by construction rather than by luck. `nodesKnown`
+    // is the control that keeps that from being vacuous: it *does* fall back,
+    // 230 -> 227, so the run being reported is not one in which nothing is ever
+    // lost. What the pair says is that **minds forget and shelves do not** —
+    // which is exactly `degradeLibrary`'s authored order, and the destruction
+    // assertion at the bottom of this case argues the same point from the other
+    // side. Depth is the *last* thing that brake touches, so its non-decrease is
+    // a claim that the shelf was never degraded past its last copy of a title in
+    // two centuries, and not a claim that nothing was destroyed: **733**
+    // instances were, measured on this tree by the same case's brake-4 line
+    // below. (The 597 an earlier revision of this comment carried was taken
+    // before the grid opened.)
+    //
+    // ## And the shelf stops growing, which is what the equality was hiding
+    //
+    // Depth reaches 40 by tick **91** and 53 by tick **1,705** — thirteen further
+    // titles across the intervening twenty-three centuries of month-ticks. Growth
+    // over the last fifth of the run is **0** against **40** over the first
+    // fifth. The curve is monotone and flattening, and the gap to `nodesKnown`
+    // widens for the rest of the run.
     //
     // What bounds it is `CONSUMPTION_ORDER`, working exactly as authored:
     // `libraryUpkeep` is paid at position 4 and `scribing` at 5, and the upkeep
-    // bill scales with the pile. By tick 2,400 upkeep owes 7,056 fp of an 8,931
-    // fp faucet — **79% of every sheet of vellum the universe makes goes to
-    // keeping the books it already has** — leaving 2,048 fp, which is two
-    // grimoires a month. `shortKinds.vellum` is true on **389 of 2,400 ticks**
-    // and `opening` never rises above 880 fp, so the stock is a pass-through and
-    // not a reserve. A universe that knows 227 things cannot shelve them at two
-    // books a month against a bill that grows with every book it shelves.
+    // bill scales with the pile. Measured per twenty-year window rather than
+    // inferred from the depth series:
     //
-    // That is a **negative feedback loop between shelf size and shelf growth**,
-    // and it is the mechanic `casting-vellum-per-month` was swept against — its
-    // own gloss says *"at 16 and 8 the library sheds nodes and 9.8's tripwire
-    // fires; 4 is the highest rate that costs without shedding"*, tuned on a
-    // branch where knowledge topped out at 51.
+    // | window (ticks) | 1-240 | 481-720 | 961-1200 | 1441-1680 | 2161-2400 |
+    // |---|--:|--:|--:|--:|--:|
+    // | `libraryUpkeep` owed, fp | 215,690 | 114,234 | 186,798 | 589,850 | **1,579,364** |
+    // | vellum faucet, fp | 163,049 | 138,907 | 390,576 | 1,278,583 | 2,117,968 |
+    // | owed as % of faucet | 132% | 82% | 48% | 46% | **75%** |
+    // | `libraryDepth` at window end | 40 | 51 | 51 | 52 | 53 |
     //
-    // **Left red deliberately.** Re-pinning this to `53` would be re-pinning a
-    // measurement to agree with the code, and the equality is the only thing
-    // that would tell anybody the shelf had stopped tracking the universe. The
-    // decision it is waiting on is the author's: either the vellum faucet scales
-    // with what there is to know, or upkeep stops scaling linearly with the
-    // pile, or the claim narrows from *"everything the universe knows"* to
-    // something a 70-cell grid can actually fund. None of those is a test edit.
-    expect(last?.libraryDepth ?? 0).toBe(last?.nodesKnown ?? -1);
+    // At the final tick upkeep owes **7,056 fp of an 8,931 fp faucet — 79%** —
+    // leaving under two grimoires a month. That is a negative feedback loop
+    // between shelf size and shelf growth, and it is asserted below as its own
+    // measured figure rather than left as an inference from a flat series.
     //
-    // ## The coverage equality stays; the books-to-depth ratio is withdrawn
+    // ### The `scribing` shortfall is zero, and that zero has a positive control
+    //
+    // Scribing is throttled by affordability *before* the priority walk, so it
+    // never asks for what is not there and its claimant row cannot show the
+    // pressure: `scribing` owed == paid == 4,365,312 fp, shortfall **0** summed
+    // over all 2,400 ticks. The same reader on the same field reports
+    // `libraryUpkeep` short by **42,643 fp** and `shortKinds.vellum` true on
+    // **389 of 2,400 ticks**, so the probe works and the zero is a fact about
+    // scribing rather than a dead field.
+    //
+    // ### What would bring the coverage claim back
+    //
+    // Either the vellum faucet scales with what there is to know, or upkeep stops
+    // scaling linearly with the pile. Both are content or rules decisions and
+    // neither is a test edit. Until one is taken, the honest statement is the one
+    // asserted here: the shelf covers *part* of what the universe knows, that
+    // part is shrinking as a fraction, and the capital curve built on it still
+    // does not fall back.
+    const fallsIn = (series: readonly number[]): number => {
+      let falls = 0;
+      for (let index = 1; index < series.length; index += 1) {
+        if ((series[index] ?? 0) < (series[index - 1] ?? 0)) falls += 1;
+      }
+      return falls;
+    };
+    const capitalSeries = run.ticks.map((tick) => tick.capitalContribution);
+    const depthSeries = run.ticks.map((tick) => tick.libraryDepth);
+    const knownSeries = run.ticks.map((tick) => tick.nodesKnown);
+    const fifth = Math.floor(run.ticks.length / 5);
+    const depthAt = (index: number): number => run.ticks[index]?.libraryDepth ?? 0;
+    const firstFifthGrowth = depthAt(fifth - 1) - run.founding.libraryDepth;
+    const lastFifthGrowth = depthAt(run.ticks.length - 1) - depthAt(run.ticks.length - fifth - 1);
+    const upkeepOwedLast = last?.report.libraryUpkeepOwed ?? 0;
+    const vellumFaucetLast = last?.report.faucetByKind.vellum ?? 0;
+    console.log(
+      `9.8 the curve does not fall back: ${String(fallsIn(capitalSeries))} decreases in ` +
+        `capitalContribution and ${String(fallsIn(depthSeries))} in libraryDepth over ` +
+        `${String(run.ticks.length)} ticks, against ${String(fallsIn(knownSeries))} in nodesKnown. ` +
+        `Depth grew ${String(firstFifthGrowth)} over the first fifth and ` +
+        `${String(lastFifthGrowth)} over the last, ending at ${String(last?.libraryDepth ?? 0)} ` +
+        `against ${String(last?.nodesKnown ?? 0)} nodes known. Final-tick libraryUpkeep owes ` +
+        `${String(upkeepOwedLast)} fp of a ${String(vellumFaucetLast)} fp vellum faucet.`,
+    );
+
+    // The curve, over the whole run and not at its end. `nodesKnown` is the
+    // positive control for the counter: an instrument that reports "no decreases"
+    // on every series it is handed is reporting nothing.
+    expect(fallsIn(capitalSeries)).toBe(0);
+    expect(fallsIn(depthSeries)).toBe(0);
+    expect(fallsIn(knownSeries)).toBeGreaterThan(0);
+
+    // It grew, and it stopped growing. Both halves, because either alone is
+    // satisfied by a shelf that never existed.
+    expect(last?.libraryDepth ?? 0).toBeGreaterThan(run.founding.libraryDepth);
+    expect(lastFifthGrowth).toBeLessThan(firstFifthGrowth);
+
+    // The coverage gap, asserted in the direction it was measured, as the mirror
+    // of the tripwire the equality used to be: if a later change funds the shelf
+    // well enough to catch up with what the universe knows, this fails, and that
+    // is the signal to restore W23's equality rather than to widen this.
+    expect(last?.libraryDepth ?? 0).toBeLessThan(last?.nodesKnown ?? 0);
+
+    // The upkeep pressure that explains the flattening, as its own figure. A
+    // majority of every sheet of vellum the universe makes goes to keeping the
+    // books it already has; 79% at the final tick, asserted as "more than half"
+    // so that a tuning pass has room to move it without silently repealing the
+    // mechanism.
+    expect(upkeepOwedLast * 2).toBeGreaterThan(vellumFaucetLast);
+    //
+    // ## The books-to-depth ratio is withdrawn — and so, now, is the equality
+    //
+    // *Heading corrected 2026-08-17: this section was written as "the coverage
+    // equality stays", and the block above withdraws it. The ruling below about
+    // the **ratio** is unaffected — it was never an argument for the equality,
+    // only against a bound over duplication — so it is left standing as it was
+    // decided.*
     //
     // Three branches reached this line with three different answers and the
     // Group F merge, 2026-08-16, had to rule between them. `main` replaced the
@@ -541,9 +623,10 @@ describe('two hundred world years of the reference universe', () => {
     // the ratio is a bad instrument, and the `8 x` this group measured two rows
     // ago is a fourth number for a quantity that should not have a bound at all.
     //
-    // So: the equality is kept, the ratio is withdrawn, and the number is
-    // printed instead. What survives from `w78` is its finding, recorded below
-    // and no longer asserted.
+    // So: the ratio is withdrawn and the number is printed instead. The
+    // equality was kept at that ruling and is withdrawn in its turn by the block
+    // above, for a different reason — the open grid, not the instrument. What
+    // survives from `w78` is its finding, recorded below and no longer asserted.
     //
     // ### Recorded, not asserted: what `w78` measured
     //
@@ -556,7 +639,10 @@ describe('two hundred world years of the reference universe', () => {
     // decision and widened the ratio instead. Resolved on the Group F merge,
     // 2026-08-16, by keeping both: the equality is the coverage claim and the
     // ratio is the duplication claim, and neither implies the other. Both were
-    // re-measured on this tree rather than inherited — see below.
+    // re-measured on this tree rather than inherited — see below. *(The coverage
+    // half of that ruling is superseded 2026-08-17; the reasoning about why the
+    // two are distinct claims is why the block above replaces the equality with
+    // a coverage **gap** rather than dropping coverage altogether.)*
     // **The two effects compound, and the merged tree is the first one holding
     // both.** `w78/teaching-boundary` measured this same ratio independently and
     // widened it to `6 ×` for its own reason: teaching stops at the institution,
