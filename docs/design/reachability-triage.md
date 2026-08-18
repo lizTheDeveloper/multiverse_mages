@@ -1,10 +1,27 @@
-# The 111 reachability findings, triaged
+# The 113 reachability findings, triaged
 
 **Measured at `d7af4468` on 2026-08-17**, by `npm run check:reachability` plus the capability
 analysis described in §5. This is an **inventory, not a fix**: the point is to convert the single
-number "111 findings" into a count of things somebody would act on, because that number is what
+number "113 findings" into a count of things somebody would act on, because that number is what
 nobody currently knows.
 
+> **Eighth round — 2026-08-18, re-derived at `14affa55` on
+> `integration/all-branches`: 111 → 113, and both arrivals are one commit's.**
+>
+> `executeReferenceRunAsync` and `makeReferenceExecutorAsync` —
+> `packages/scenario/src/executor.ts` — are the async drains added to close the
+> suite's `[vitest-worker]: Timeout calling "onTaskUpdate"`. Neither has a
+> production caller and **neither can have one**: the synchronous entry points
+> must stay synchronous because `RunExecutor` and every sweep worker depend on
+> them, and the async pair exists for test arms running inside a vitest worker,
+> which is the only place birpc's hardcoded 60 s window bites. A sweep worker has
+> no runner to answer.
+>
+> So they are tooling-only in §4's sense rather than integration debt: not a
+> mechanism the game ships and never runs, but infrastructure that had to live in
+> `src` because the loop it paces lives in `src`. Same shape as
+> `FOUNDING_PROBE`, `auditFounding` and `formatFounding` three rows below.
+>
 > **Seventh round — 2026-08-17, re-derived at `d7af4468` after seven merges onto
 > `integration/all-branches`: `docs/invention-and-machines`, `w/flow-ledger`, `w/flow-map`,
 > `w/exp-yields`, `w/exp-grades`, `w/exp-duration` and `origin/main` itself. 110 → 111, and the
@@ -170,14 +187,15 @@ is what happens when you skip that step.
 | `rules-magic` | 4 | 10 | 14 |
 | `rules-raid` | 5 | 6 | 11 |
 | `rules-world` | 2 | 32 | 34 |
-| `scenario` | 0 | 19 | 19 |
+| `scenario` | 0 | 21 | 21 |
 | `sim-core` | 0 | 6 | 6 |
 | `state` | 2 | 5 | 7 |
-| **Total** | **19** | **92** | **111** |
+| **Total** | **19** | **94** | **113** |
 
 The headline is no longer a proportion, because a proportion needs a denominator somebody judged.
 It is a direction, and for the first time the last step of it is upward: **129 at `origin/main`,
-125 on the combined base, 108 after the five wiring merges, 110 at `bf96bdfb`, 111 here.** The nineteen that closed
+125 on the combined base, 108 after the five wiring merges, 110 at `bf96bdfb`, 111 at `d7af4468`,
+113 here.** The nineteen that closed
 between `origin/main` and the wiring round are not spread thinly, and the two that re-opened are
 three arrivals against one repair — see the sixth-round note above for all four by name. Four whole §2 rows went to zero — spell preparation and its cost
 half, the tradition store policy, `changeTradition` and its two companions, and three of the seven
@@ -385,6 +403,8 @@ delete it, or accept the debt and say so. This is the third, with the argument f
 | `FOUNDING_PROBE` | `scenario` | tooling-only | The probe's declaration. `reachedOnlyByUnreached`, which is the ratchet correctly refusing to count a symbol as live because the only thing reaching it is itself unreached. |
 | `auditFounding` | `scenario` | tooling-only | Drives a scripted god at the reference universe and reports what it founded. Called by `founding-instrument.test.ts` and by nothing in a running universe, which is what an instrument is. |
 | `formatFounding` | `scenario` | tooling-only | Renders that audit for a human. Same argument. |
+| `executeReferenceRunAsync` | `scenario` | tooling-only | Added 2026-08-18. The run executor drained with a pause between world years, so a vitest worker can answer the runner inside birpc's hardcoded 60 s. `reachedOnlyByUnreached` for the same reason `FOUNDING_PROBE` is. A running universe must never call it: pausing costs a sweep worker scheduler round trips and buys it nothing. |
+| `makeReferenceExecutorAsync` | `scenario` | tooling-only | Added 2026-08-18. The same, for an inline sweep. `RunExecutor` has always permitted a promise and `runTasksInline` has always awaited one, so nothing widened to admit it. |
 
 **The distinction the table draws is the one worth keeping.** `characterFor` is *integration debt*:
 something a running universe should eventually call and does not. The three `scenario` symbols are

@@ -105,7 +105,7 @@ describe('the reachability triage document', () => {
     }
   });
 
-  it('has a totals row equal to the sum of the package rows, and to 111', () => {
+  it('has a totals row equal to the sum of the package rows, and to 113', () => {
     expect(totalsRow).toHaveLength(1);
     const totals = totalsRow[0]!.slice(1);
 
@@ -142,11 +142,20 @@ describe('the reachability triage document', () => {
     // measure. Six merges bringing two world-schema revisions, a nineteenth
     // metric, a new content namespace and a per-tick flow ledger added no
     // finding at all.
+    // 111 until the yield that closed `[vitest-worker]: Timeout calling
+    // "onTaskUpdate"` landed on `integration/all-branches`: **113**, and both
+    // arrivals are `scenario`'s `executeReferenceRunAsync` and
+    // `makeReferenceExecutorAsync`. Tooling-only in §4's sense rather than
+    // integration debt — the synchronous entry points must stay synchronous
+    // because `RunExecutor` and every sweep worker depend on them, so the async
+    // drains can only ever be called by a test arm inside a vitest worker, which
+    // is the only place birpc's window bites. **A second measurement where the
+    // count went up because the suite got more honest, not less wired.**
     // The literal is deliberate — a total derived from the document could not
     // catch a document that had drifted from the tree — so it moves only with a
     // change that says why, and `describes the same tree the ratchet baseline
     // pins` below is the other half of the tie.
-    expect(totals.at(-1)).toBe(111);
+    expect(totals.at(-1)).toBe(113);
   });
 
   it('has a §2 table whose counts sum to the total its closing sentence claims', () => {
