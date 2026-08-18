@@ -78,7 +78,13 @@ import type { WorldStepReport } from '@mm/coordination';
 import { defineWorldSimulation } from '@mm/coordination';
 
 import type { ReferenceContent, ReferenceOptions } from './reference-universe.js';
-import { buildReferenceState, referenceContent } from './reference-universe.js';
+import {
+  REFERENCE_SCENARIO_ID,
+  buildReferenceState,
+  referenceContent,
+} from './reference-universe.js';
+import type { LegacyRecord } from './legacy.js';
+import { legacyRecordOf } from './legacy.js';
 
 /** World ticks in a world year (`contracts.md` §0: a tick is a month). */
 export const TICKS_PER_WORLD_YEAR = 12;
@@ -135,6 +141,14 @@ export const LONG_RUN_OPTIONS: ReferenceOptions = Object.freeze({
   // The long run measures a demographic question and the gate is not part of
   // it; zero is what this constant meant before the instrument existed.
   foundingPortalMagic: 0,
+  // One academy, which is what the long run has always founded and what every
+  // committed baseline was measured against. The two-academy starting position
+  // is `scripts/w78-university-divergence.mjs`'s, not this one's.
+  foundingUniversities: 1,
+  // The documented default site, which over the shipped content is
+  // `arable-lowland` and therefore neutral in both siting mechanisms. Pinned at
+  // the default so that the long run keeps measuring what it always measured.
+  academySiteKind: 0,
 });
 
 /** One world tick of the long run, stocks and flows together. */
@@ -200,6 +214,20 @@ export interface LongRunResult {
   readonly speciesIds: readonly ContentId[];
   /** What the loss shock removed, or absent when the run was not shocked. */
   readonly shock?: LossShockOutcome;
+  /**
+   * What this universe leaves the next one, or absent when it left nothing.
+   *
+   * A long run is stopped by its caller at a tick count rather than by the
+   * rules, so this is the **cutoff** ending in almost every case — see
+   * `LegacyRecordInput.endedAtCap`. It is absent only when the world has no god
+   * systems installed and therefore no constants to price an ending with.
+   *
+   * This is the run boundary `god/ascension.ts` said was missing, closed at the
+   * one layer §1.1 permits: hand this record to {@link LongRunOptions.legacy} of
+   * a *second* run and that universe starts with the carried prestige and the
+   * four stock channels this one earned.
+   */
+  readonly legacy?: LegacyRecord;
 }
 
 /** What {@link runLongReference} may be told. */
@@ -210,6 +238,13 @@ export interface LongRunOptions {
   readonly content?: ReferenceContent;
   /** A deterministic mage cull to apply mid-run. See {@link LossShock}. */
   readonly shock?: LossShock;
+  /**
+   * What a previous universe left this one, or absent for a first universe.
+   *
+   * Absent builds the byte-identical founding state it always did; the
+   * assertion is in `test/unit/legacy-carry.test.ts`, not in this sentence.
+   */
+  readonly legacy?: LegacyRecord;
 }
 
 /**
@@ -398,11 +433,13 @@ export async function runLongReference(input: LongRunOptions = {}): Promise<Long
   const ticks = input.ticks ?? LONG_RUN_TICKS;
   const simulation = defineWorldSimulation(content.deps);
 
+  const runSeed = input.runSeed ?? LONG_RUN_SEED;
   let state = buildReferenceState({
-    runSeed: input.runSeed ?? LONG_RUN_SEED,
+    runSeed,
     options: input.options ?? LONG_RUN_OPTIONS,
     content,
     schema: simulation.schema,
+    ...(input.legacy === undefined ? {} : { legacy: input.legacy }),
   });
 
   const foundingObservation = readObservation(state, content);
@@ -436,6 +473,21 @@ export async function runLongReference(input: LongRunOptions = {}): Promise<Long
     }
   }
 
+  // The run boundary. Taken after the loop and before anything is returned,
+  // because a legacy is a fact about a *finished* run — and `endedAtCap` is the
+  // caller saying what only the caller knows, that the tick count above was the
+  // end rather than a pause.
+  const constants = content.deps.god?.content.constants;
+  const legacy =
+    constants === undefined
+      ? undefined
+      : legacyRecordOf(state, {
+          constants,
+          scenarioId: REFERENCE_SCENARIO_ID,
+          runSeed,
+          endedAtCap: true,
+        });
+
   return {
     ticks: recorded,
     founding: foundingObservation,
@@ -444,6 +496,7 @@ export async function runLongReference(input: LongRunOptions = {}): Promise<Long
     populationBound: maxCarryingCapacity(content.deps.territory),
     speciesIds: Object.freeze([...content.registry.species.map((entry) => entry.contentId)]),
     ...(shockOutcome === undefined ? {} : { shock: shockOutcome }),
+    ...(legacy === undefined ? {} : { legacy }),
   };
 }
 

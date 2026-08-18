@@ -1,0 +1,106 @@
+{
+  "probe": "w247-illegal-action-rate",
+  "takenAt": "2026-08-16T23:35:18.934Z",
+  "requestedTicks": 600,
+  "runSeed": 20260813,
+  "pooled": {
+    "submitted": 8197,
+    "rejected": 57,
+    "rate": 0.006953763572038551,
+    "ceiling": 0.01,
+    "overCeiling": false
+  },
+  "rejectedByAction": {
+    "12 encourageResearch": 24,
+    "14 openPortal": 15,
+    "11 fundUniversity": 10,
+    "9 blessMage": 7,
+    "16 inviteScholar": 1
+  },
+  "rows": [
+    {
+      "strategyId": "passive-control",
+      "submitted": 600,
+      "rejected": 0,
+      "rate": 0
+    },
+    {
+      "strategyId": "uniform-random-legal",
+      "submitted": 600,
+      "rejected": 50,
+      "rate": 0.08333333333333333
+    },
+    {
+      "strategyId": "permissive-breadth",
+      "submitted": 562,
+      "rejected": 0,
+      "rate": 0
+    },
+    {
+      "strategyId": "narrow-depth",
+      "submitted": 525,
+      "rejected": 0,
+      "rate": 0
+    },
+    {
+      "strategyId": "denial-warden",
+      "submitted": 510,
+      "rejected": 0,
+      "rate": 0
+    },
+    {
+      "strategyId": "archivist",
+      "submitted": 600,
+      "rejected": 0,
+      "rate": 0
+    },
+    {
+      "strategyId": "portal-rush",
+      "submitted": 600,
+      "rejected": 0,
+      "rate": 0
+    },
+    {
+      "strategyId": "worship-maximizer",
+      "submitted": 600,
+      "rejected": 0,
+      "rate": 0
+    },
+    {
+      "strategyId": "idle-then-declare",
+      "submitted": 600,
+      "rejected": 0,
+      "rate": 0
+    },
+    {
+      "strategyId": "permit-then-idle",
+      "submitted": 600,
+      "rejected": 0,
+      "rate": 0
+    },
+    {
+      "strategyId": "allocate-concentrate",
+      "submitted": 600,
+      "rejected": 0,
+      "rate": 0
+    },
+    {
+      "strategyId": "allocate-spread",
+      "submitted": 600,
+      "rejected": 7,
+      "rate": 0.011666666666666667
+    },
+    {
+      "strategyId": "alliance-seeker",
+      "submitted": 600,
+      "rejected": 0,
+      "rate": 0
+    },
+    {
+      "strategyId": "alliance-abstainer",
+      "submitted": 600,
+      "rejected": 0,
+      "rate": 0
+    }
+  ]
+}

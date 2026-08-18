@@ -73,7 +73,7 @@ import {
   createUniverse,
 } from '@mm/state';
 import type { Ruleset } from '@mm/state';
-import { MASTERY_MAX, MagicGrid, gatherEffects } from '@mm/rules-magic';
+import { MASTERY_MAX, MagicGrid, NO_WORKINGS_STAND, gatherEffects } from '@mm/rules-magic';
 import type { CellResolver, EffectSourceInstance } from '@mm/rules-magic';
 
 import { defineWorldSimulation, universeEconomyBonuses, universeEffectIndex } from '../../src/index.js';
@@ -117,6 +117,7 @@ describe('DEFECT (still open post-4d836d2): a negative build-rate magnitude is g
     const cells: CellResolver = MagicGrid.from(registry);
     const instance: EffectSourceInstance = {
       nodeId: nodeContentId,
+      holder: 1,
       locationKind: LOCATION_KIND.mind,
       mastery: MASTERY_MAX,
     };
@@ -126,6 +127,7 @@ describe('DEFECT (still open post-4d836d2): a negative build-rate magnitude is g
       ruleset: permissiveRuleset(),
       mode: TIME_MODE.world,
       cellOf: (id) => cells.cellOf(id),
+      standing: NO_WORKINGS_STAND,
     });
 
     const buildContribution = contributions.find(
@@ -163,7 +165,7 @@ describe('DEFECT (still open post-4d836d2): a negative build-rate magnitude is g
       favorCap: 0,
       ascended: 0,
     });
-    attachRecord(state, MATERIAL_STOCK, universe, { food: 0, stone: 0, vellum: 0 });
+    attachRecord(state, MATERIAL_STOCK, universe, { food: 0, stone: 0, vellum: 0, labor: 0, essence: 0, insight: 0, passage: 0 });
 
     const holder = state.entities.create();
     attachRecord(state, KNOWLEDGE_INSTANCE, holder, {

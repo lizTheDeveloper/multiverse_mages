@@ -41,12 +41,27 @@
  */
 
 import type { ContentRegistry, Fp } from '@mm/content';
+import type { MaterialKind } from '@mm/rules-world';
 import { GOD_ACTION_ID_MAX } from '@mm/content';
 
 /** Costs by `contracts.md` §4.2 action id, plus the two prices that have no id. */
+/** One action's material price, per kind, `fp`. Absent kinds cost nothing. */
+export type ActionMaterialCost = Readonly<Partial<Record<MaterialKind, Fp>>>;
+
 export interface GodCosts {
   /** Base favor price of each action id `0..15`, before hysteresis and tier scaling. */
   readonly byAction: readonly Fp[];
+  /**
+   * What each action id costs in **materials**, or `undefined` where the table
+   * names none.
+   *
+   * `material-economy`: favor stays the pacing currency, and a verb that makes
+   * a thing in the world now also spends the material that thing is made of.
+   * Unscaled by hysteresis or node tier — those two scale a *favor* price
+   * because they price a decision's disruption and its depth, and neither is a
+   * statement about how much stone a building takes.
+   */
+  readonly materialByAction: readonly (ActionMaterialCost | undefined)[];
   /** Action 11 with a target of 0 — §4.2 gives founding and funding one id. */
   readonly foundUniversity: Fp;
 }
@@ -78,6 +93,22 @@ export interface GodConstants {
   readonly favorCapPerTier: Fp;
   readonly hysteresisDecayTicks: number;
   readonly hysteresisStep: Fp;
+  /**
+   * `raid-engagement.md` §1: what unmaking a mid-raid ruleset change costs, as
+   * a multiple of the larger of the ordinary price and what the change cost
+   * inside the raid.
+   *
+   * Distinct from {@link hysteresisStep} even though both make repeated policy
+   * changes expensive, and the distinction is the design's: hysteresis prices
+   * *churn*, decays with time, and applies to everybody. This prices exactly one
+   * thing — walking back a commitment made under fire — never decays, and is the
+   * only favor drain in the game attached to a decision rather than to existing.
+   */
+  readonly midRaidRevertMultiplier: Fp;
+
+  // The timing rule. `sound-design.md` §5.2's eight bars — see `timing.ts`.
+  readonly uneaseBars: number;
+  readonly uneaseStep: Fp;
 
   // Upheaval.
   readonly upheavalTicks: number;
@@ -88,6 +119,7 @@ export interface GodConstants {
   // Interventions.
   readonly blessResearchRate: Fp;
   readonly blessTeachRate: Fp;
+  readonly blessPracticeRate: Fp;
   readonly blessLifespanMonths: number;
   readonly blessDurationTicks: number;
   readonly encourageMagnitude: Fp;
@@ -119,6 +151,12 @@ export interface GodConstants {
   readonly ascensionCanonCells: number;
   /** Share of the canon a passing era may lose, fp. Floored by `ascensionLossMax`. */
   readonly ascensionLossFraction: Fp;
+  /**
+   * Completed universities both paths require. The one conjunct in either path
+   * that no ruleset edit can produce: the world loop founds no site, so every
+   * university past the scenario's seeded academy was bought.
+   */
+  readonly ascensionInstitutions: number;
 
   // Stagnation.
   readonly stagnationMagelessTicks: number;
@@ -150,24 +188,24 @@ export interface GodConstants {
    * that the numbers beside it are falsifiable — a baseline without the tick it
    * was measured at is a magnitude nobody can reproduce or disprove.
    *
-   * It is also **staged ahead of a consumer that is named in content**. All
-   * three baselines carry glosses disowning themselves — *"Placeholder for the
-   * median unaided universe's ... A measurement that has not been taken: the
-   * first prestigeAdvantage sweep replaces it"* — and this is the tick that
-   * sweep has to read them at. Today two of the three are not measurements at
-   * all: `legacy-baseline-materials` is `1024000`, which is `scenario`'s
+   * **Its consumer is the record, not a formula.** `scenario/src/legacy.ts`
+   * copies it into every `LegacyRecord` as `baselineReferenceTick`, which is
+   * exactly the job the sentence above describes: a legacy record outlives the
+   * process that wrote it, and a saved head start whose baselines cannot be
+   * located in time is the same magnitude with its provenance thrown away.
+   * This field previously had no reader at all and was the one entry in
+   * `check:reachability`'s *"resolved and never consumed"* bucket.
+   *
+   * All three baselines still carry glosses disowning themselves — *"Placeholder
+   * for the median unaided universe's ... A measurement that has not been taken:
+   * the first prestigeAdvantage sweep replaces it"* — and this is the tick that
+   * sweep has to read them at. Two of the three are not measurements at all:
+   * `legacy-baseline-materials` is `1024000`, which is `scenario`'s
    * `STARTING_MATERIALS` exactly, and `legacy-baseline-populace` is `72`, which
    * is its founding population exactly (4 per cohort × 6 species × 3
    * occupations). They are the starting position wearing the name of a tick-120
-   * median.
-   *
-   * So the owed work is a measurement, and this constant is the half of it that
-   * can be authored in advance. It is not deleted, for two reasons: dropping it
-   * from `god-constant.json` would move `contentRevision`, which sits inside
-   * every snapshot; and dropping only the field here — leaving the constant
-   * required and consumed by nothing — would take the finding off
-   * `check:reachability`'s report without changing anything true about the
-   * repository, which is the silence that check is written to refuse.
+   * median, and wiring the mechanic did not change that — it only made the
+   * provenance travel with the number.
    */
   readonly legacyReferenceTick: number;
   readonly legacyBaselineFavor: Fp;
@@ -251,6 +289,10 @@ export function resolveGodConstants(registry: ContentRegistry): GodConstants {
     favorCapPerTier: value('favor-cap-per-tier'),
     hysteresisDecayTicks: value('hysteresis-decay-ticks'),
     hysteresisStep: value('hysteresis-step'),
+    midRaidRevertMultiplier: value('mid-raid-revert-multiplier'),
+
+    uneaseBars: value('unease-bars'),
+    uneaseStep: value('unease-step'),
 
     upheavalTicks: value('upheaval-ticks'),
     upheavalShockFloor: value('upheaval-shock-floor'),
@@ -259,6 +301,7 @@ export function resolveGodConstants(registry: ContentRegistry): GodConstants {
 
     blessResearchRate: value('bless-research-rate'),
     blessTeachRate: value('bless-teach-rate'),
+    blessPracticeRate: value('bless-practice-rate'),
     blessLifespanMonths: value('bless-lifespan-months'),
     blessDurationTicks: value('bless-duration-ticks'),
     encourageMagnitude: value('encourage-magnitude'),
@@ -281,6 +324,7 @@ export function resolveGodConstants(registry: ContentRegistry): GodConstants {
     ascensionCanonBreadth: value('ascension-canon-breadth'),
     ascensionCanonCells: value('ascension-canon-cells'),
     ascensionLossFraction: value('ascension-loss-fraction'),
+    ascensionInstitutions: value('ascension-institutions'),
 
     stagnationMagelessTicks: value('stagnation-mageless-ticks'),
     stagnationWorshipFloor: value('stagnation-worship-floor'),
@@ -320,6 +364,7 @@ export function resolveGodConstants(registry: ContentRegistry): GodConstants {
  */
 export function resolveGodCosts(registry: ContentRegistry): GodCosts {
   const byAction: Fp[] = [];
+  const materialByAction: (ActionMaterialCost | undefined)[] = [];
   for (let actionId = 0; actionId <= ACTION_ID_MAX; actionId += 1) {
     const record = registry.godCost(actionId);
     if (record === undefined) {
@@ -330,9 +375,16 @@ export function resolveGodCosts(registry: ContentRegistry): GodCosts {
       );
     }
     byAction.push(record.favorCost);
+    // Frozen on the way through, because a cost table handed to the resolver is
+    // read once per action per tick and must not be something a caller can edit
+    // between two reads of the same price.
+    materialByAction.push(
+      record.materialCost === undefined ? undefined : Object.freeze({ ...record.materialCost }),
+    );
   }
   return Object.freeze({
     byAction: Object.freeze(byAction),
+    materialByAction: Object.freeze(materialByAction),
     foundUniversity: registry.godConstant('found-university-cost'),
   });
 }

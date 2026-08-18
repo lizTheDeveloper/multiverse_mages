@@ -55,7 +55,9 @@ export type ContentDiagnosticCode =
   | 'hook-set'
   | 'hook-kind'
   | 'hook-params'
-  | 'species-invariant';
+  | 'species-invariant'
+  | 'envelope-imbalance'
+  | 'grade-ladder';
 
 /**
  * Thrown by {@link loadContent} when the content set has any defect at all.

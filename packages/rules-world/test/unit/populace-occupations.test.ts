@@ -17,7 +17,9 @@ import { FP_ONE, NULL_ENTITY, floorDiv } from '@mm/sim-core';
 import { OCCUPATION } from '@mm/state';
 
 import {
+  BIRTH_BUCKET_TICKS,
   LABORERS_PER_BUILD_UNIT,
+  cohortShare,
   NO_DEMAND,
   OCCUPATIONS_IN_ORDER,
   OCCUPATION_COUNT,
@@ -35,7 +37,7 @@ import {
   zeroPerOccupation,
 } from '@mm/rules-world';
 
-import { SHORT_LIVED, SHORT_LIVED_ID, fixtureSpecies } from './populace-fixtures.js';
+import { LONG_LIVED_ID, SHORT_LIVED, SHORT_LIVED_ID, fixtureSpecies } from './populace-fixtures.js';
 
 const ADULT_BIRTH_BUCKET = 0;
 /** A tick at which the `ADULT_BIRTH_BUCKET` cohort is a working adult, not senescent. */
@@ -197,6 +199,183 @@ describe('reallocation is rate-limited', () => {
   });
 });
 
+/**
+ * W185. `scribe` in the reference universe had a sink and no source: over 600
+ * ticks at `cohortSize: 4` it fell from 24 to 13 while reallocation moved
+ * **zero** scribes in *either* direction, on every tick. The cause was not an
+ * asymmetric comparison — `need` is computed for `scribe` exactly as for
+ * `student`, and injecting `scribe` demand of 44 produced a byte-identical run.
+ * It was that the transfer budget floored **per cohort**, and cohorts are keyed
+ * on species × occupation × birth decade, so essentially all of them sit below
+ * `1 / TRANSFER_RATE_PER_TICK` = 16 and floored to a budget of zero.
+ *
+ * Every other flow through an occupation is unrated — mortality, retirement,
+ * and the promotion phase writing failed students into `laborer` — so the floor
+ * bound in one direction only.
+ */
+const ADULT_LONG_LIVED_BUCKET = 7_200;
+/** A tick at which every bucket below is a working adult long-lived cohort. */
+const LONG_LIVED_ADULT_TICK = 20_000;
+
+function fragmentedIdle(cohorts: number, each: number) {
+  const store = createCohortStore();
+  for (let index = 0; index < cohorts; index += 1) {
+    store.add(
+      {
+        speciesId: LONG_LIVED_ID,
+        occupation: OCCUPATION.idle,
+        // Distinct birth decades: distinct cohort keys, same age band.
+        birthTickBucket: ADULT_LONG_LIVED_BUCKET + index * BIRTH_BUCKET_TICKS,
+      },
+      each,
+    );
+  }
+  return store;
+}
+
+describe('an occupation can be grown, not only shrunk (W185)', () => {
+  it('moves people out of cohorts that are all below the old sixteen-member cliff', () => {
+    // Ten cohorts of four. Under the per-cohort floor every budget was
+    // floorDiv(4 * 64, 1024) = 0 and this moved nobody, forever.
+    const store = fragmentedIdle(10, 4);
+    const demand = { ...NO_DEMAND, [OCCUPATION.laborer]: 40 };
+
+    const report = reallocateOccupations(store, {
+      demand,
+      species: fixtureSpecies,
+      worldTick: LONG_LIVED_ADULT_TICK,
+    });
+
+    expect(report.moved).toBeGreaterThan(0);
+    expect(report.movedInto[OCCUPATION.laborer]).toBe(report.moved);
+    expect(report.movedOutOf[OCCUPATION.idle]).toBe(report.moved);
+  });
+
+  it('moves the same number of people however the occupation is fragmented', () => {
+    // The trap `portal.ts` fell into: a universe-wide target deployed *per
+    // cohort* multiplies by the number of cohorts. The rate pool is a property
+    // of the occupation, so splitting forty people forty ways changes nothing.
+    const demand = { ...NO_DEMAND, [OCCUPATION.laborer]: 40 };
+    const options = {
+      demand,
+      species: fixtureSpecies,
+      worldTick: LONG_LIVED_ADULT_TICK,
+    };
+
+    const whole = reallocateOccupations(fragmentedIdle(1, 40), options);
+    const split = reallocateOccupations(fragmentedIdle(10, 4), options);
+    const dust = reallocateOccupations(fragmentedIdle(40, 1), options);
+
+    expect(whole.moved).toBe(floorDiv(40 * TRANSFER_RATE_PER_TICK, FP_ONE));
+    expect(split.moved).toBe(whole.moved);
+    expect(dust.moved).toBe(whole.moved);
+  });
+
+  it('holds the aggregate rate even when every cohort rounds its share up', () => {
+    // A hundred cohorts of four: the shares sum to 100, the control law asks
+    // for 6.25% of 400, and the pool is what binds.
+    const store = fragmentedIdle(100, 4);
+    const report = reallocateOccupations(store, {
+      demand: { ...NO_DEMAND, [OCCUPATION.laborer]: 400 },
+      species: fixtureSpecies,
+      worldTick: LONG_LIVED_ADULT_TICK,
+    });
+
+    expect(cohortShare(4, TRANSFER_RATE_PER_TICK)).toBe(1);
+    expect(report.moved).toBe(floorDiv(400 * TRANSFER_RATE_PER_TICK, FP_ONE));
+    expect(report.moved).toBeLessThan(100);
+  });
+
+  it('grows a fragmented occupation to its demand over repeated ticks', () => {
+    // Forty cohorts of four: not one of them could move a person before W185.
+    const store = fragmentedIdle(40, 4);
+    const demand = { ...NO_DEMAND, [OCCUPATION.scribe]: 100 };
+    const options = {
+      demand,
+      species: fixtureSpecies,
+      worldTick: LONG_LIVED_ADULT_TICK,
+    };
+
+    let ticks = 0;
+    while (countByOccupation(store)[OCCUPATION.scribe] < 100 && ticks < 500) {
+      reallocateOccupations(store, options);
+      ticks += 1;
+    }
+
+    expect(countByOccupation(store)[OCCUPATION.scribe]).toBe(100);
+    // Still a governor, not an assignment: it took more than one tick.
+    expect(ticks).toBeGreaterThan(1);
+  });
+
+  it('rounds a cohort share up so that a small cohort is not frozen', () => {
+    // The fork, stated in `reallocation.ts`: four people may send one, which is
+    // 25% and not 6.25%. Flooring is the defect; the occupation pool is what
+    // preserves the control law.
+    expect(cohortShare(4, TRANSFER_RATE_PER_TICK)).toBe(1);
+    expect(cohortShare(15, TRANSFER_RATE_PER_TICK)).toBe(1);
+    expect(cohortShare(16, TRANSFER_RATE_PER_TICK)).toBe(1);
+    expect(cohortShare(17, TRANSFER_RATE_PER_TICK)).toBe(2);
+    expect(cohortShare(0, TRANSFER_RATE_PER_TICK)).toBe(0);
+  });
+
+  it('fills a university seat from idle and from nowhere else', () => {
+    // `student` consumes rather than produces, and the promotion phase empties
+    // its seats every tick, so letting it draw from working occupations makes
+    // the university a pump that converts the populace into mages. Without
+    // this rule and with the pool fix, three of five founding species reach
+    // zero populace inside sixty years of the long run.
+    const store = createCohortStore();
+    const key = {
+      speciesId: SHORT_LIVED_ID,
+      occupation: OCCUPATION.laborer,
+      birthTickBucket: ADULT_BIRTH_BUCKET,
+    };
+    store.add(key, 4_000);
+    store.add({ ...key, occupation: OCCUPATION.scribe }, 4_000);
+
+    const report = reallocateOccupations(
+      store,
+      options(ADULT_TICK, { ...NO_DEMAND, [OCCUPATION.student]: 4_000 }),
+    );
+
+    expect(report.moved).toBe(0);
+    expect(report.unmetDemand[OCCUPATION.student]).toBe(4_000);
+    expect(countByOccupation(store)[OCCUPATION.laborer]).toBe(4_000);
+    expect(countByOccupation(store)[OCCUPATION.scribe]).toBe(4_000);
+  });
+
+  it('still fills a university seat from idle', () => {
+    const store = createCohortStore();
+    store.add(
+      { speciesId: SHORT_LIVED_ID, occupation: OCCUPATION.idle, birthTickBucket: ADULT_BIRTH_BUCKET },
+      4_000,
+    );
+    const report = reallocateOccupations(
+      store,
+      options(ADULT_TICK, { ...NO_DEMAND, [OCCUPATION.student]: 4_000 }),
+    );
+
+    expect(report.movedInto[OCCUPATION.student]).toBe(
+      floorDiv(4_000 * TRANSFER_RATE_PER_TICK, FP_ONE),
+    );
+  });
+
+  it('reports what left each occupation, not only what arrived', () => {
+    const store = createCohortStore();
+    store.add(
+      { speciesId: SHORT_LIVED_ID, occupation: OCCUPATION.idle, birthTickBucket: ADULT_BIRTH_BUCKET },
+      10_000,
+    );
+    const report = reallocateOccupations(
+      store,
+      options(ADULT_TICK, { ...NO_DEMAND, [OCCUPATION.laborer]: 10_000 }),
+    );
+
+    expect(report.movedOutOf[OCCUPATION.idle]).toBe(report.moved);
+    expect(report.movedOutOf[OCCUPATION.laborer]).toBe(0);
+  });
+});
+
 describe('allocation order is deterministic', () => {
   it('draws from idle before draining a working occupation', () => {
     const store = createCohortStore();
@@ -287,13 +466,15 @@ describe('allocation order is deterministic', () => {
   });
 });
 
-describe('demand comes from the four sources the spec names', () => {
-  it('turns construction backlog, the scribing queue, capacity, and the soldier target into headcount', () => {
+describe('demand comes from the sources the spec names', () => {
+  it('turns construction backlog, the scribing queue, capacity, the soldier target and the bill into headcount', () => {
     const demand = computeOccupationDemand({
       constructionBacklog: FP_ONE * 2,
       scribingQueueDepth: 7,
       universityCapacity: 60,
+      latentMagicUsers: 10_000,
       standingSoldierTarget: 25,
+      materialsObligation: 0,
     });
 
     expect(demand[OCCUPATION.laborer]).toBe(2 * LABORERS_PER_BUILD_UNIT);
@@ -302,23 +483,64 @@ describe('demand comes from the four sources the spec names', () => {
     expect(demand[OCCUPATION.soldier]).toBe(25);
   });
 
+  // W193. The defect this replaces was `[OCCUPATION.student]: universityCapacity`
+  // — intake was seats, so a universe's mage production was a property of its
+  // buildings and not of its people, and doubling the population changed nothing.
+  it('asks for the smaller of the seats it has and the people who could fill them', () => {
+    const seatBound = computeOccupationDemand({
+      constructionBacklog: 0,
+      scribingQueueDepth: 0,
+      universityCapacity: 60,
+      latentMagicUsers: 10_000,
+      standingSoldierTarget: 0,
+      materialsObligation: 0,
+    });
+    expect(seatBound[OCCUPATION.student]).toBe(60);
+
+    const peopleBound = computeOccupationDemand({
+      constructionBacklog: 0,
+      scribingQueueDepth: 0,
+      universityCapacity: 60,
+      latentMagicUsers: 9,
+      standingSoldierTarget: 0,
+      materialsObligation: 0,
+    });
+    expect(peopleBound[OCCUPATION.student]).toBe(9);
+  });
+
+  it('asks for no students at all in a population with none who could be mages', () => {
+    const demand = computeOccupationDemand({
+      constructionBacklog: 0,
+      scribingQueueDepth: 0,
+      universityCapacity: 1_000,
+      latentMagicUsers: 0,
+      standingSoldierTarget: 0,
+      materialsObligation: 0,
+    });
+    expect(demand[OCCUPATION.student]).toBe(0);
+  });
+
   it('never demands idle — it is the residual, not a job', () => {
     const demand = computeOccupationDemand({
       constructionBacklog: FP_ONE,
       scribingQueueDepth: 3,
       universityCapacity: 10,
+      latentMagicUsers: 10,
       standingSoldierTarget: 4,
+      materialsObligation: 96,
     });
     expect(demand[OCCUPATION.idle]).toBe(0);
   });
 
-  it('asks for nobody when nothing is being built, queued, taught, or garrisoned', () => {
+  it('asks for nobody when nothing is being built, queued, taught, garrisoned, or owed', () => {
     expect(
       computeOccupationDemand({
         constructionBacklog: 0,
         scribingQueueDepth: 0,
         universityCapacity: 0,
+        latentMagicUsers: 0,
         standingSoldierTarget: 0,
+        materialsObligation: 0,
       }),
     ).toEqual(NO_DEMAND);
   });
@@ -329,7 +551,9 @@ describe('demand comes from the four sources the spec names', () => {
         constructionBacklog: -1,
         scribingQueueDepth: 0,
         universityCapacity: 0,
+        latentMagicUsers: 0,
         standingSoldierTarget: 0,
+        materialsObligation: 0,
       }),
     ).toThrow(RangeError);
   });

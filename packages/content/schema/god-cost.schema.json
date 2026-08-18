@@ -2,29 +2,90 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://multiverse-mages.invalid/schema/god-cost.schema.json",
   "title": "god-cost.json",
-  "description": "What each action in contracts.md §4.2 costs the god in favor. One record per action id, 0 through 16, with no gaps and no additions — the loader checks that separately, because a schema can require a shape but not a covering. Every magnitude is an untuned placeholder awaiting the balance harness (god-agency design.md).",
+  "description": "What each action in contracts.md \u00a74.2 costs the god in favor, and optionally in materials. One record per action id, 0 through 16, with no gaps and no additions \u2014 the loader checks that separately, because a schema can require a shape but not a covering. Every magnitude is an untuned placeholder awaiting the balance harness (god-agency design.md).",
   "type": "array",
   "minItems": 17,
-  "items": { "$ref": "#/$defs/godCost" },
+  "items": {
+    "$ref": "#/$defs/godCost"
+  },
   "$defs": {
     "godCost": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["id", "actionId", "favorCost", "gloss", "tuningStatus"],
+      "required": [
+        "id",
+        "actionId",
+        "favorCost",
+        "gloss",
+        "tuningStatus"
+      ],
       "properties": {
-        "id": { "$ref": "#/$defs/contentId" },
-        "actionId": { "type": "integer", "minimum": 0, "maximum": 16 },
-        "favorCost": { "$ref": "#/$defs/fp" },
-        "gloss": { "type": "string", "minLength": 1, "maxLength": 400 },
-        "tuningStatus": { "type": "string", "enum": ["untuned", "tuned"] }
+        "id": {
+          "$ref": "#/$defs/contentId"
+        },
+        "actionId": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 16
+        },
+        "favorCost": {
+          "$ref": "#/$defs/fp"
+        },
+        "gloss": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 400
+        },
+        "tuningStatus": {
+          "type": "string",
+          "enum": [
+            "untuned",
+            "tuned"
+          ]
+        },
+        "materialCost": {
+          "$ref": "#/$defs/materialCost"
+        }
       }
     },
-    "fp": { "type": "integer", "minimum": 0, "maximum": 1073741823 },
+    "fp": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 1073741823
+    },
     "contentId": {
       "type": "string",
       "minLength": 1,
       "maxLength": 64,
       "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$"
+    },
+    "materialCost": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "What the action costs in materials, per kind, fp. Optional: most actions name none, and an action naming a kind outside the seven fails the load here and again in load.ts, which names the action. Every value is a non-negative fp quantity of that stock. An empty object is refused by load.ts rather than by the schema: this interpreter enforces no minProperties, and a keyword added for one table would be a constraint nobody else could rely on.",
+      "properties": {
+        "food": {
+          "$ref": "#/$defs/fp"
+        },
+        "stone": {
+          "$ref": "#/$defs/fp"
+        },
+        "vellum": {
+          "$ref": "#/$defs/fp"
+        },
+        "labor": {
+          "$ref": "#/$defs/fp"
+        },
+        "essence": {
+          "$ref": "#/$defs/fp"
+        },
+        "insight": {
+          "$ref": "#/$defs/fp"
+        },
+        "passage": {
+          "$ref": "#/$defs/fp"
+        }
+      }
     }
   }
 }

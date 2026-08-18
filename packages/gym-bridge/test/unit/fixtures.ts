@@ -38,6 +38,7 @@ import type {
   CandidateLists,
   EpisodeAccounting,
   EpisodeStatus,
+  FlowLedger,
   OutcomeRecord,
   PlayerState,
   Scenario,
@@ -129,7 +130,15 @@ export function probeScenario(scenarioId = PROBE_SCENARIO_ID): Scenario {
         favorCap: 100 * FP,
         ascended: 0,
       });
-      attachRecord(state, MATERIAL_STOCK, universe, { food: 100 * FP, stone: 0, vellum: 0 });
+      attachRecord(state, MATERIAL_STOCK, universe, {
+        food: 100 * FP,
+        stone: 0,
+        vellum: 0,
+        labor: 0,
+        essence: 0,
+        insight: 0,
+        passage: 0,
+      });
       const cohort = state.entities.create();
       attachRecord(state, POPULACE_COHORT, cohort, {
         speciesId: 1,
@@ -239,6 +248,21 @@ export function fixedSession(options: FixedSessionOptions = {}): AgentSession {
         permittedCells: Object.freeze([]),
         unaffiliated: 0,
       }),
+    /*
+     * A **throw**, on `playerState`'s side of the line rather than the two
+     * empty projections'. Those two are empty because empty is the *correct*
+     * description of a double with no candidates and no colleges. There is no
+     * correct empty flow ledger: a ledger of all zeroes is the specific claim
+     * that a tick ran and moved nothing, and this double runs no tick at all.
+     * Returning one would turn a missing fixture into a passing assertion about
+     * nothing.
+     */
+    flowLedger: (): FlowLedger | undefined => {
+      throw new Error(
+        'fixedSession runs no world tick, so it has no flow ledger — build a session over a ' +
+          'real scenario for that',
+      );
+    },
     submit: (): SubmitResult => {
       submitted += 1;
       return {

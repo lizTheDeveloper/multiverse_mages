@@ -23,15 +23,20 @@
 import type { ContentRegistry, PrimitiveRecord, SpeciesRecord } from '@mm/content';
 import { loadContent, shippedContentSource } from '@mm/content';
 import type { EntityHandle, SimState } from '@mm/sim-core';
-import { createState, rngFromRootSeed } from '@mm/sim-core';
+import { FP_ONE, createState, rngFromRootSeed } from '@mm/sim-core';
 import type { WorldSchema } from '@mm/sim-core';
 import {
+  KNOWLEDGE_INSTANCE,
+  LIBRARY,
+  LOCATION_KIND,
   MAGE,
   MAGE_ROLE,
   MATERIAL_STOCK,
   OCCUPATION,
   POPULACE_COHORT,
+  UNIVERSITY,
   attachRecord,
+  componentOf,
   createUniverse,
 } from '@mm/state';
 import type { AcquirePolicy, ExclusionResolver, NodeCatalog, StorePolicy } from '@mm/rules-magic';
@@ -41,18 +46,19 @@ import {
   acquirePolicy,
   catalogFromRegistry,
   hookFor,
+  hooksOfTradition,
   storePolicy,
   traditionTableFrom,
 } from '@mm/rules-magic';
-import type { TargetAppealWeights } from '@mm/rules-world';
+import type { GoalAppealWeights, TargetAppealWeights } from '@mm/rules-world';
 import {
+  readGoalAppeal,
   readApplicationWeights,
   readTargetAppeal,
   resolveSpeciesAffinities,
   territoryExtent,
-  territoryYieldShares,
 } from '@mm/rules-world';
-import type { NodeFacetResolver, WorldStepDeps } from '../../src/index.js';
+import type { NodeFacetResolver, TraditionResolver, WorldStepDeps } from '../../src/index.js';
 import { nodeFacetsFrom } from '../../src/index.js';
 
 /** The shipped content, loaded once for a whole test file. */
@@ -95,6 +101,41 @@ export function shippedAcquirePolicy(traditionId: number): AcquirePolicy {
 }
 
 /**
+ * The interned id of a shipped tradition, by its authored id.
+ *
+ * Named rather than positional, for `traditionIdNamed`'s reason: content ids are
+ * interned and first is not file order, so a test that wants the Art of Memory
+ * specifically has to ask for it.
+ */
+export function traditionNamed(name: string): number {
+  for (const entry of registry().traditions) {
+    if (entry.record.id === name) return entry.contentId;
+  }
+  const shipped = registry().traditions.map((entry) => entry.record.id).join(', ');
+  throw new Error(`no shipped tradition has the id "${name}"; the set ships: ${shipped}`);
+}
+
+/**
+ * What `scenario`'s composition root supplies, built here from the same content.
+ *
+ * `coordination` may not import `@mm/scenario` — the edge runs the other way —
+ * so the resolver a test uses is assembled from `rules-magic` directly. It is
+ * the same three calls `traditionResolver` makes, which is what keeps a test's
+ * wired arm the arm a run actually takes.
+ */
+export function shippedTraditionResolver(): TraditionResolver {
+  const table = traditionTableFrom(registry());
+  return (traditionId: number) => {
+    const hooks = hooksOfTradition(traditionId, table);
+    return {
+      store: storePolicy(hooks.store),
+      acquire: acquirePolicy(hooks.acquire),
+      storeHook: hooks.store,
+    };
+  };
+}
+
+/**
  * A shipped tradition whose `store` hook keeps written copies.
  *
  * `traditions[0]` is not it — content ids are interned, so first is not the file
@@ -127,6 +168,11 @@ export function appealWeights(): TargetAppealWeights {
   return readTargetAppeal(registry());
 }
 
+/** The goal-appeal weights, read from the same file. */
+export function goalAppealWeights(): GoalAppealWeights {
+  return readGoalAppeal(registry());
+}
+
 /** The deps a world simulation is built from, over shipped content. */
 export function worldDeps(traditionId: number): WorldStepDeps {
   const { catalog, cells } = catalogAndCells();
@@ -138,20 +184,35 @@ export function worldDeps(traditionId: number): WorldStepDeps {
     facets: nodeFacets(),
     affinitiesOf: (species) => resolveSpeciesAffinities(species, registry()),
     appeal: appealWeights(),
+    goalAppeal: goalAppealWeights(),
     // Shipped, like every other magnitude here. `apply-magic` is nonetheless
     // masked for every mage in this fixture, because applicability also needs
     // `universeEffects` and that is deliberately absent — see the note below.
     application: readApplicationWeights(registry()),
     casting: { vellumPerMonth: 0 },
+    // Zero, like `casting` above: the shared fixture prices nothing, so a test
+    // that wants a sink to bind supplies its own weights. `material-economy`'s
+    // two world-loop sinks follow that convention rather than inventing a
+    // default nobody authored.
+    teaching: { insightPerMonth: 0, insightTeachBonus: 0 },
+    hiredLabour: { laborPerMonth: 0 },
+    // Zero for the same reason, and it is worth naming that this one is a
+    // **faucet** rather than a sink: at zero, a laborer's whole month goes to
+    // the land and the `labor` stock stays exactly where a test put it. That
+    // keeps every fixture-driven number in this package unchanged by
+    // `material-economy`'s populace faucet, and a test that wants the faucet to
+    // run supplies its own share — `material-ledger.test.ts` does.
+    production: { hireableShare: 0 },
     store: shippedStorePolicy(traditionId),
     acquire: shippedAcquirePolicy(traditionId),
     territory: territoryExtent(registry().territories.map((entry) => entry.record)),
-    // The same records the extent is summed from, read for their yield mix
-    // instead of their capacity — `scenario`'s composition root does the same
-    // (`content-set.ts`). Required on `WorldStepDeps` since `w29`, so a fixture
-    // that omitted it would fail to compile rather than silently step a
-    // universe whose land yields nothing.
-    yieldShares: territoryYieldShares(registry().territories.map((entry) => entry.record)),
+    territoryKinds: registry().territories.map((entry) => ({
+      kindId: entry.contentId,
+      landUnits: entry.record.landUnits,
+      capacityPerLandUnit: entry.record.capacityPerLandUnit,
+      yieldPerLandUnit: entry.record.yieldPerLandUnit,
+      libraryUpkeepMultiplier: entry.record.libraryUpkeepMultiplier,
+    })),
     primitives: {
       lifespan: primitiveNamed('lifespan'),
       resourceYield: primitiveNamed('resource-yield'),
@@ -163,6 +224,7 @@ export function worldDeps(traditionId: number): WorldStepDeps {
       researchRate: primitiveNamed('research-rate'),
       teachRate: primitiveNamed('teach-rate'),
       scribeRate: primitiveNamed('scribe-rate'),
+      practiceRate: primitiveNamed('practice-rate'),
       fertility: primitiveNamed('fertility'),
     },
     knowledgeFor: (state) => KnowledgeSubsystem.fromState(state, catalog.nodeCount),
@@ -196,11 +258,41 @@ export interface SeedOptions {
    * Art of Memory — see {@link scribingTraditionId} before assuming otherwise.
    */
   readonly traditionId?: number;
+  /**
+   * Whether to found one completed university with a library, seeded with a
+   * tier-1 book so that it has a curriculum.
+   *
+   * **Off by default, and the default is the conservative choice rather than the
+   * right one.** Since W193 enrolment requires a seat at a university that has
+   * something to teach — a universe with no university produces no new mages at
+   * all, which is the design (*"the more universities you have, the more latent
+   * magic users you can activate"*) turned into a hard edge. So a fixture with
+   * no university no longer exercises the enrolment phase.
+   *
+   * It is opt-in because most files in this package found their own
+   * institutions and a second, invisible one would change what they are
+   * measuring. `world-step.test.ts` asks for it, because its claim is that every
+   * phase reports work.
+   */
+  readonly withUniversity?: boolean;
+  /**
+   * The permitted-form bitmask, defaulting to all fourteen.
+   *
+   * Present because `material-economy` made seven more forms economically live:
+   * with every form permitted, a mage in this fixture researches whatever the
+   * frontier offers and may apply a node in a form the test is not about, so an
+   * assertion of the shape *"this run produced only `insight`"* is a statement
+   * about what the roster happened to study. Narrowing the ruleset is what
+   * makes such an assertion about the routing table instead.
+   */
+  readonly permittedForms?: number;
+  /** The permitted-technique bitmask, defaulting to all five. */
+  readonly permittedTechniques?: number;
 }
 
 /**
  * A universe with every shipped species present as laborers, students and
- * scribes, plus a handful of mages.
+ * scribes, plus a handful of mages — and, on request, one university.
  *
  * Deliberately not the group 9 reference scenario: that one is committed,
  * seeded with zero player input, and run for 200 world years. This is the
@@ -225,8 +317,8 @@ export function seededWorld(
   const universe = createUniverse(state, {
     // Three techniques × four forms is the v1 rectangle's shape; the exact bits
     // are the shipped content's business and the loop only asks `permits`.
-    permittedTechniques: 0b11111,
-    permittedForms: 0b11111111111111,
+    permittedTechniques: options.permittedTechniques ?? 0b11111,
+    permittedForms: options.permittedForms ?? 0b11111111111111,
     edictBudget: 4,
     traditionId,
     favor: 0,
@@ -247,10 +339,21 @@ export function seededWorld(
   // a test that wants one starves a specific kind itself, the way
   // `knowledge-capital.test.ts` zeroes `vellum` to force a library upkeep
   // shortfall.
+  // All seven at the working figure. The four `material-economy` added were
+  // seeded at zero while nothing produced or spent them; five god verbs are now
+  // priced in materials, and the resolver refuses one the stocks cannot pay —
+  // so a fixture holding zero of four kinds would mask a blessing and make a
+  // test about worship fail about a starting position instead. A test that
+  // wants an empty stock zeroes the kind it cares about, as
+  // `material-sinks.test.ts` does.
   attachRecord(state, MATERIAL_STOCK, universe, {
     food: 1000 * 1024,
     stone: 1000 * 1024,
     vellum: 1000 * 1024,
+    labor: 1000 * 1024,
+    essence: 1000 * 1024,
+    insight: 1000 * 1024,
+    passage: 1000 * 1024,
   });
 
   const mages: EntityHandle[] = [];
@@ -288,7 +391,82 @@ export function seededWorld(
     }
   }
 
+  if (options.withUniversity === true) {
+    const library = state.entities.create();
+    attachRecord(state, LIBRARY, library, { foundedTick: 0 });
+    const university = state.entities.create();
+    attachRecord(state, UNIVERSITY, university, {
+      libraryId: library,
+      capacity: 64,
+      buildProgress: FP_ONE,
+    });
+    // The founding mages are its faculty. Without an affiliation the university
+    // has nobody who could teach, `hasCurriculum` is false, and enrolment
+    // refuses at the door — which is correct behaviour and a useless fixture.
+    const store = componentOf(state, MAGE);
+    store.forEach((_row, handle) => {
+      store.set(handle, 'universityId', university);
+    });
+
+    // **And one book, because faculty who hold nothing teach nothing.** The
+    // seeded mages arrive holding no knowledge instances at all, so the faculty
+    // half of `hasCurriculum` is false at tick zero and would stay false until
+    // somebody finished a research project — by which time the student cohorts
+    // have aged out of nothing in particular. An endowed shelf is what an
+    // institution is founded with, and it is the cheapest honest way to give
+    // this fixture a curriculum.
+    //
+    // **And the same nodes in the founders' minds**, because a shelf is only
+    // half a curriculum and, at 0.4.0, the weaker half: the reading edge
+    // (`study.ts`, #170) is not on this branch, so a book on a shelf is research
+    // *capital* and not something anybody opens. Without a faculty who hold
+    // something, a student can be seated and can never be taught — which is a
+    // property of the fixture, not of the loop, and would make every claim about
+    // what a student learns vacuous.
+    //
+    // The `mastery: 1024` is `MASTERY_MAX`: a founder teaches what she knows
+    // completely, which is what an endowment means and what keeps
+    // `DEFAULT_TEACH_THRESHOLD` from silently deciding the fixture.
+    const { catalog } = catalogAndCells();
+    const endowment: number[] = [];
+    for (let nodeId = 1; nodeId <= catalog.nodeCount && endowment.length < 3; nodeId += 1) {
+      if (catalog.node(nodeId)?.tier !== 1) continue;
+      endowment.push(nodeId);
+    }
+    for (const nodeId of endowment) {
+      const shelved = state.entities.create();
+      attachRecord(state, KNOWLEDGE_INSTANCE, shelved, {
+        nodeId,
+        locationKind: LOCATION_KIND.library,
+        locationId: library,
+        acquiredTick: 0,
+        mastery: 1024,
+      });
+      for (const mage of mages) {
+        const known = state.entities.create();
+        attachRecord(state, KNOWLEDGE_INSTANCE, known, {
+          nodeId,
+          locationKind: LOCATION_KIND.mind,
+          locationId: mage,
+          acquiredTick: 0,
+          mastery: 1024,
+        });
+      }
+    }
+  }
+
   return { state, mages };
+}
+
+/** The permitted-form bit for one shipped form, as a mask. */
+export function formMask(...formIds: readonly string[]): number {
+  let mask = 0;
+  for (const formId of formIds) {
+    const form = registry().forms.find((entry) => entry.record.id === formId);
+    if (form === undefined) throw new Error(`form.json declares no "${formId}"`);
+    mask |= 1 << form.record.bit;
+  }
+  return mask;
 }
 
 /** A seeded `RngSource` matching a state's root seed. */

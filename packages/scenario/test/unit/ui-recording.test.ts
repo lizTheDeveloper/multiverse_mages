@@ -74,14 +74,14 @@ interface Frame {
   readonly obs: readonly number[];
   readonly sat: readonly number[];
   /**
-   * `material-stock`'s three kinds, in fp — the one quantity `obs` structurally
-   * cannot carry, because §4.1 sums them into the single `resources[39]` slot.
+   * `material-stock`'s seven kinds, which `obs` structurally cannot carry — it
+   * sums three of them into one slot and has no slot at all for the other four.
+   *
+   * Optional here on purpose: the assertion that it is *present* is one of the
+   * things this file checks, and a required field would make that check a
+   * compile-time tautology instead of a test.
    */
-  readonly stocks: {
-    readonly food: number;
-    readonly stone: number;
-    readonly vellum: number;
-  };
+  readonly stocks?: Readonly<Record<string, number>>;
   readonly mask: readonly number[];
   readonly candidates: Readonly<Record<string, readonly { readonly params: readonly number[] }[]>>;
   /**
@@ -252,43 +252,50 @@ describe('the recording `npm run ui:record` produces', () => {
     }
   });
 
-  it('splits materials into the three stocks, and they sum to the slot they are summed into', () => {
-    // The newest field this file exists to guard, and it is guarded the way the
-    // header describes: `ui/play` reads `food`, `stone` and `vellum` by name and
-    // prints the breakdown only when all three are finite numbers, falling back
-    // to the summed total otherwise. A recorder that stopped emitting `stocks`
-    // would not fail anything above — every page would quietly fall back and the
-    // breakdown would just stop appearing, which is the silent degradation the
-    // rest of these assertions exist to prevent.
-    //
-    // The sum is checked rather than only the presence, because agreement with
-    // `resources[39]` is the whole claim: the sidecar comes from the §4.4 player
-    // projection and the slot comes from the §4.1 encoder, and two paths reading
-    // one component is exactly where they can drift apart. Checked on every
-    // frame, since a divergence that begins mid-run is the kind a spot check at
-    // tick 0 misses — at tick 0 all three stocks are equal and any two of them
-    // could be swapped undetectably.
-    const materials = recording.layout.find((b) => b.name === 'resources');
-    expect(materials, 'the recording has no resources block').toBeDefined();
-    const slot = (materials?.offset ?? 0) + 3;
+  it('carries every material stock on every frame, exactly agreeing with the summed slot', () => {
+    // `material-economy` task 5.4. The observation sums three of the seven kinds
+    // into `resources[39]` and has no slot at all for the other four, so a page
+    // that wants to tell a famine from a parchment shortage — or to draw
+    // `insight` and `passage` at all — reads this sidecar. A frame that lost it
+    // draws an empty box that reads as "nothing to report".
+    const resources = recording.layout.find((block) => block.name === 'resources');
+    expect(resources).toBeDefined();
+    const kinds = ['food', 'stone', 'vellum', 'labor', 'essence', 'insight', 'passage'];
 
+    let anyStocked = false;
     for (const [i, frame] of recording.frames.entries()) {
-      const { food, stone, vellum } = frame.stocks;
-      for (const [kind, value] of Object.entries({ food, stone, vellum })) {
-        expect(Number.isFinite(value), `frame ${String(i)} has a non-finite ${kind}`).toBe(true);
-        expect(value, `frame ${String(i)} has a negative ${kind}`).toBeGreaterThanOrEqual(0);
+      const stocks = frame.stocks;
+      expect(stocks, `frame ${String(i)} has no stocks sidecar`).toBeDefined();
+      for (const kind of kinds) {
+        expect(typeof stocks?.[kind], `frame ${String(i)} is missing ${kind}`).toBe('number');
       }
-      // Exact, not approximate. Both sides are fp integers and the slot's
-      // normalization is a `ratio` over a power of two, so the recorder's
-      // round-trip through the divisor is lossless below saturation — and no
-      // frame of this run saturates that slot. An epsilon here would hide a
-      // real one-kind drift behind a tolerance nobody chose.
-      expect(frame.sat, `frame ${String(i)} saturated the materials slot`).not.toContain(slot);
-      expect(food + stone + vellum, `frame ${String(i)}'s stocks do not sum to resources[39]`).toBe(
-        frame.obs[slot],
-      );
+      // Exact, not within an epsilon. Both sides are fp integers over a
+      // power-of-two divisor, so a tolerance would hide a real one-kind drift.
+      // `materials` is `food + stone + vellum` and stays so — the four kinds
+      // `material-economy` added are deliberately outside the sum, because the
+      // observation's one slot must keep carrying the quantity it documents.
+      const summed = (stocks?.food ?? 0) + (stocks?.stone ?? 0) + (stocks?.vellum ?? 0);
+      expect(frame.obs[(resources?.offset ?? 0) + 3], `frame ${String(i)} disagrees`).toBe(summed);
+      if (summed > 0) anyStocked = true;
     }
+
+    // The positive control. Every assertion above is satisfied by a recording in
+    // which all seven kinds are zero on every frame — `0 === 0 + 0 + 0` — which
+    // is exactly the "confident zero from a broken instrument" this campaign has
+    // shipped five times. The reference universe holds materials, so at least
+    // one frame must be non-zero for the agreement above to have compared
+    // anything.
+    expect(anyStocked).toBe(true);
   });
+
+  // `material-economy`'s seven-kind assertion above **supersedes** the
+  // three-kind one this branch carried, which read the same slot and summed the
+  // same three numbers into it. Only the field list differs, and the wider one
+  // is a superset of the narrower: it checks all seven are present and numeric,
+  // sums exactly `food + stone + vellum` against `resources[39]`, and carries a
+  // positive control the narrower version did not have. Keeping both would have
+  // been two tests of one claim, one of which would fail the day an eighth kind
+  // arrived and the other of which would not notice.
 
   it('describes every candidate slot, in the slot order the parameter is submitted in', () => {
     // The alignment invariant, on a real run rather than on a fixture. It is
@@ -403,6 +410,32 @@ const uiSession = (await import(
   ) => Frontier;
 };
 
+/**
+ * Hands the event loop back so the vitest worker can answer its runner.
+ *
+ * The convention `packages/scenario/src/annihilation.ts` states — *"every long
+ * arm in this repository yields to the vitest runner once a world year"*. The
+ * frontier cross-check below is a single unbroken synchronous sweep over every
+ * frame, every college and every node: 23 s on this box under load 20-50 and
+ * 48 s on GitHub Actions, and birpc's timeout is a hardcoded 60 s. A worker that
+ * has not touched its event loop inside that window fails the whole run with
+ * `[vitest-worker]: Timeout calling "onTaskUpdate"` and under-reports what else
+ * happened. It changes no assertion.
+ */
+async function yieldToRunner(): Promise<void> {
+  await new Promise<void>((resolve) => {
+    setImmediate(resolve);
+  });
+}
+
+/**
+ * 23 s on this box under load 20-50; cut at the 30 s suite default on GitHub
+ * Actions job 95387839967 on 2026-08-17, having actually taken 48 s. Seven
+ * times the local cost, rounded up — `vitest.config.ts` carries the factor. The
+ * global default stays at 30 s so a *new* slow test still has to say so.
+ */
+const FRONTIER_TIMEOUT_MS = 240_000;
+
 describe("the recording's research graph, against the grid that owns it", () => {
   /**
    * The runtime grid, built from the same content the recorder published from.
@@ -466,10 +499,14 @@ describe("the recording's research graph, against the grid that owns it", () => 
    * that mage's own holdings, and the converse is checked too: a node the rules
    * would admit and the page dropped is the failure nobody would ever notice.
    */
-  it('calls reachable exactly what `prerequisiteStatus` calls satisfied', () => {
+  it('calls reachable exactly what `prerequisiteStatus` calls satisfied', async () => {
     const depthOf = new Map(recording.content.species.map((x) => [x.speciesId, x.depthCeiling]));
     let checkedRows = 0;
     for (const [i, frame] of recording.frames.entries()) {
+      // Once a frame. Every other long arm in this repository hands the event
+      // loop back once a world year; a frame is this file's world year. See
+      // `yieldToRunner`.
+      if (i > 0) await yieldToRunner();
       const academy = {
         mage: (handle: number) => frame.academy.mages[String(handle)],
         permittedCells: new Set(frame.academy.permittedCells),
@@ -526,7 +563,7 @@ describe("the recording's research graph, against the grid that owns it", () => 
     // A positive control on the loop itself: a run whose colleges were empty
     // would satisfy every assertion above without checking anything.
     expect(checkedRows, 'no reachable row was ever checked').toBeGreaterThan(0);
-  });
+  }, FRONTIER_TIMEOUT_MS);
 });
 
 describe("the recording's academy projection", () => {

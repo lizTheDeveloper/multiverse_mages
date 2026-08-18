@@ -44,17 +44,74 @@ export type ContentNamespace =
   | 'god-cost'
   | 'god-constant'
   | 'raid-constant'
-  | 'autonomy-weight';
+  | 'autonomy-weight'
+  | 'grade-edge';
+
+/**
+ * `sound-design.md` §4.1's envelope, as content.
+ *
+ * The shape a technique imposes on the effort an acquisition takes, indexed on
+ * `progress / required` in eight equal slots. The arithmetic that reads it is
+ * `@mm/primitives`' `envelopeMultiplier`, and the invariant the loader enforces
+ * — that the slot reciprocals sum to the flat curve's — is that module's
+ * `envelopeHarmonicSum`. Declared here because content declares shapes;
+ * computed there because `@mm/content` is dependency-free by mechanical check
+ * and so cannot reach `sim-core`'s single shared `floorDiv`.
+ */
+export interface EnvelopeRecord {
+  readonly id: string;
+  readonly gloss: string;
+  /** Exactly eight fp multipliers on effort, in order. */
+  readonly slots: readonly Fp[];
+  readonly tuningStatus: TuningStatus;
+}
 
 export interface TechniqueRecord {
   readonly id: string;
   readonly name: string;
   readonly gloss: string;
   readonly bit: number;
+  /**
+   * `sound-design.md` §4.1: *"Techniques are envelopes."* Required, because a
+   * technique without one is a technique the shape rule silently skips, and the
+   * five shapes are the whole of what distinguishes the techniques mechanically
+   * — before this field, nothing in the tree branched on technique identity at
+   * all.
+   */
+  readonly envelope: EnvelopeRecord;
 }
 
 /**
- * ## There is deliberately no named `{ food, stone, vellum }` type in this file
+ * The seven material kinds, in a fixed order.
+ *
+ * A literal tuple rather than the keys of an object, so that "exactly seven
+ * kinds, these seven, in this order" is something a test counts rather than
+ * something prose asserts. `rules-world`'s `MATERIAL_KINDS` is the same list at
+ * the other end of the pipe and cannot be shared: `contracts.md` §5 makes
+ * `content` a leaf, so an edge from here to the rules packages would invert the
+ * dependency graph. The two are held in agreement by assertion instead.
+ *
+ * Three of the seven — `food`, `stone`, `vellum` — are `city-and-supply-chain`'s
+ * and predate this list. The other four exist because seven of the fourteen
+ * forms yielded nothing at all, two of them (`mentem`, `limen`) inside the v1
+ * opening square, so a god who opened on mind-magic and thresholds generated no
+ * economy and the interface offered no way to find out why.
+ */
+export const MATERIAL_KIND_IDS = [
+  'food',
+  'stone',
+  'vellum',
+  'labor',
+  'essence',
+  'insight',
+  'passage',
+] as const;
+
+/** One of the seven. */
+export type MaterialKindId = (typeof MATERIAL_KIND_IDS)[number];
+
+/**
+ * ## There is deliberately no named per-kind record type in this file
  *
  * Both `yieldWeights` and `yieldPerLandUnit` below are written out inline, which
  * looks like a missed abstraction and is not. A named triple here would be a
@@ -75,6 +132,11 @@ export interface TechniqueRecord {
  * a fixed-point share of a magnitude, bounded `0..1024`, while
  * {@link TerritoryRecord.yieldPerLandUnit} is a fixed-point rate with no such
  * ceiling. The schema enforces each bound separately.
+ *
+ * They are no longer even the same *arity*, which settles the question: a form's
+ * weights name all seven kinds ({@link MATERIAL_KIND_IDS}), while a territory's
+ * yield names the three that come out of land. A shared type would have had to
+ * choose, and either choice would have been wrong somewhere.
  */
 
 export interface FormRecord {
@@ -100,21 +162,38 @@ export interface FormRecord {
    * collapsing Animal or Herbam to one kind would be inventing a constraint
    * §4.2 never states.
    *
-   * **All-zero weights are not a placeholder; they are the correct value for a
-   * form whose magic is not a material at all.** §4.2 says so by name for
-   * three of these: Mentem "has no reverb… it is not in the world" — mind
-   * magic touches no substance a granary or a shelf could hold. Vim "is the
-   * carrier itself, unfiltered" — the medium magic runs on, not a stuff
-   * conjured or moved. Umbra "is only tail… you never hear the thing, only the
-   * room's response to it" — shadow is what magic does to a space, not
-   * something taken out of one. Corpus, Imaginem, Fatum and Limen are zero for
-   * the same shape of reason: body, image, fate and threshold are things
-   * magic *does*, not things a mage stores on a shelf or eats. A schema that
-   * required a nonzero weight somewhere would be asserting every one of these
-   * forms secretly yields a material, which is false, so the floor here is
-   * `0`, not `1`.
+   * **An all-zero row is now refused, and the argument that used to sit here is
+   * the record of why.** It read, in part: *"All-zero weights are not a
+   * placeholder; they are the correct value for a form whose magic is not a
+   * material at all… A schema that required a nonzero weight somewhere would be
+   * asserting every one of these forms secretly yields a material, which is
+   * false."* That was a sound argument about **three kinds**, and it is the
+   * wrong conclusion drawn from it. §4.2 says Mentem *"has no reverb… it is not
+   * in the world"* — true, and the reading that follows is not that mind-magic
+   * produces nothing, but that what it produces is not food. It produces
+   * `insight`. Vim *"is the carrier itself, unfiltered"* is `essence`; Umbra
+   * *"is only tail… the room's response"* is `passage`, which is what a
+   * threshold yields. Corpus is `labor` — a body is what work is made of.
+   *
+   * So the floor is still `0` **per kind** — a form is not required to yield
+   * every kind, and most yield exactly one — while the loader refuses a row
+   * that is zero in all seven. `material-economy`'s spec states the reason:
+   * *"A form that yields nothing is a part of the grid that magic can act on
+   * and the economy cannot see."*
    */
-  readonly yieldWeights: { readonly food: Fp; readonly stone: Fp; readonly vellum: Fp };
+  readonly yieldWeights: {
+    readonly food: Fp;
+    readonly stone: Fp;
+    readonly vellum: Fp;
+    /** Corpus. Person-months of work, spent raising what stone alone cannot. */
+    readonly labor: Fp;
+    /** Vim. Raw magic held as stuff, spent enchanting and on dispensations. */
+    readonly essence: Fp;
+    /** Mentem and Imaginem. What a faculty teaches out of. */
+    readonly insight: Fp;
+    /** Limen, Fatum, Umbra. Spent opening a threshold and holding it open. */
+    readonly passage: Fp;
+  };
   readonly tuningStatus: TuningStatus;
 }
 
@@ -164,6 +243,76 @@ export interface EffectRecord {
   readonly magnitude: Fp;
   readonly target: EffectTarget;
   readonly durationTicks: number;
+  /**
+   * Refined material this one effect needs in order to contribute at all.
+   *
+   * **Absent means unconditional**, which is what all 301 nodes meant before
+   * grades existed and must go on meaning — the same absent-value reading
+   * `grant-budget` took for an unbounded budget, and the reason adding grades
+   * changes no behaviour in a universe that never refines anything.
+   *
+   * Per **effect** and not per node, because `cig-the-standing-furnace` both
+   * *"runs the great foundries"* and *"denies a field to anyone who would
+   * rather not walk through a foundry"*. The first wants ore; gating the second
+   * on a quarry would be a raid effect switched off by an economy.
+   */
+  readonly requires?: GradeRequirement;
+}
+
+/**
+ * What one effect must be holding to run, and eats while it runs.
+ *
+ * `economy-flow-models.md` §1.1's **gate**, not its drain: *"A drain destroys
+ * unconditionally and accumulates nothing. A gate accumulates nothing either
+ * but destroys only as a side effect."* An unpaid effect contributes nothing
+ * that tick; nothing is destroyed and nothing already spent is refunded.
+ */
+export interface GradeRequirement {
+  /** Which of the seven kinds. Only `stone` carries a ladder today. */
+  readonly kind: 'stone';
+  /** 1 worked, 2 fine. Never 0 — grade 0 is the ungraded stock every effect already sees. */
+  readonly grade: number;
+  /** What it eats per world tick while it is running, `fp`. */
+  readonly amountPerTick: Fp;
+}
+
+/**
+ * One rung of a material grade ladder.
+ *
+ * The anchor is `mt-turn-the-poor-ore` — *"Change worthless rock into ore that
+ * is merely bad. Never into good ore: the working improves a thing by one step
+ * and has never once been made to take two."* Four mechanics in two sentences:
+ * a graded material, an ordinal on it, a converter that moves one step, and a
+ * cap on how far one working can move. The cap is the loader's, not the
+ * runtime's — see `checkGradeEdges` — because a rung that skipped a grade would
+ * otherwise be authorable and would read as content rather than as a defect.
+ *
+ * In `economy-flow-models.md` §1.1's vocabulary a rung is a **converter**, not
+ * a trader: nothing changes owner and the total does not survive the
+ * conversion. `mh-the-second-harvest` states the ratio out loud — *"Nothing is
+ * created; a field of straw becomes a smaller field of grain"* — and it is the
+ * reason {@link GradeEdgeRecord.ratio} is authored per rung rather than being
+ * one constant in the rules path.
+ */
+export interface GradeEdgeRecord {
+  readonly id: string;
+  /** The `node.json` id whose knowledge performs this working. */
+  readonly node: string;
+  /** Which of the seven material kinds this ladder is on. */
+  readonly kind: 'stone';
+  /** The grade consumed. */
+  readonly fromGrade: number;
+  /** The grade produced. Always `fromGrade + 1`. */
+  readonly toGrade: number;
+  /**
+   * What one unit in becomes out, `fp`. `fp(1024)` is a rung whose gloss states
+   * no loss; below it is `mh-the-second-harvest`'s smaller field.
+   */
+  readonly ratio: Fp;
+  /** What the rung draws from the grade below, per world tick, `fp`. */
+  readonly inputPerTick: Fp;
+  readonly gloss: string;
+  readonly tuningStatus: TuningStatus;
 }
 
 export type TuningStatus = 'untuned' | 'tuned';
@@ -212,6 +361,23 @@ export interface SpeciesRecord {
   readonly scribeAffinity: Fp;
   readonly rediscoveryAffinity: Fp;
   readonly mageAptitude: Fp;
+  /**
+   * The fraction of this species born able to do magic at all
+   * (`docs/design/magical-prevalence.md`), in fixed point, at most `FP_ONE`.
+   *
+   * **Optional, and the absence is the point.** The author gave four of the
+   * six — *"all dragons learn magic, all elves learn magic, few orcs learn
+   * magic, one in ten humans"* — and left dwarf and gnome unstated on the
+   * grounds that inventing them *"would put an author's number and a machine's
+   * number in the same table with nothing to tell them apart"*. So they are
+   * absent rather than guessed, and `@mm/rules-world`'s
+   * `PREVALENCE_WHEN_UNAUTHORED` is the one greppable place a stand-in lives.
+   *
+   * Distinct from {@link mageAptitude}, which is the *next* stage of the same
+   * pipeline: prevalence is who is born able, aptitude is who is strong enough
+   * to be found. See `mages/enrolment.ts`.
+   */
+  readonly prevalence?: Fp;
   readonly laborAffinity: Fp;
   readonly affinities: Readonly<Record<string, Fp>>;
   readonly personality?: {
@@ -270,17 +436,33 @@ export interface PrimitiveRecord {
  * process can grow it, which is not true of the materials stock that used to
  * carry that job alone.
  *
- * The two numbers answer different questions and are deliberately not folded
- * into one: `capacityPerLandUnit` is what this *kind* of country is like, and
- * `landUnits` is how much of it this universe holds. When universes stop being
- * singletons — a raid that takes ground, a scenario that seeds a smaller world —
- * `landUnits` becomes state and this record keeps the habitability.
+ * The numbers answer different questions and are deliberately not folded into
+ * one: `capacityPerLandUnit` and `libraryUpkeepMultiplier` are what this *kind*
+ * of country is like, and `landUnits` is how much of it this universe holds.
+ *
+ * **`landUnits` is now the founding endowment, not the live figure.** §2.7 said
+ * this would happen — *"when universes stop being singletons […] `landUnits`
+ * becomes state and this record keeps the habitability"* — and
+ * `university-siting` is where it happened. The universe's actual holding lives
+ * in the `territory-holding` component (`contracts.md` §1.1); this field is what
+ * the first world tick materializes those rows from, and what a scenario that
+ * seeds no rows of its own starts with.
+ *
+ * `libraryUpkeepMultiplier` is the second habitability number and it is authored
+ * **against** the first on purpose. A country that feeds many people is not a
+ * country that keeps parchment: the delta floods, the forest is damp, and the
+ * highland waste is cold, dry and empty. Without an anti-correlated term, siting
+ * a university would be a ranking rather than a decision, and the richest kind
+ * would strictly dominate.
  */
 export interface TerritoryRecord {
   readonly id: string;
   readonly name: string;
   readonly gloss: string;
-  /** How much of this region the universe holds. A count, not `fp`. */
+  /**
+   * How much of this kind of country the universe is **founded** holding. A
+   * count, not `fp`. The live figure is the `territory-holding` component.
+   */
   readonly landUnits: number;
   /** People one land unit of this region carries, `fp`. */
   readonly capacityPerLandUnit: Fp;
@@ -298,6 +480,12 @@ export interface TerritoryRecord {
    * fourteen forms a mage happened to cast.
    */
   readonly yieldPerLandUnit: { readonly food: Fp; readonly stone: Fp; readonly vellum: Fp };
+  /**
+   * What a library standing in this kind of country pays to stay standing, `fp`
+   * as a multiplier on the per-instance upkeep. `fp(1024)` is neutral; above it
+   * the country eats books, below it the country keeps them.
+   */
+  readonly libraryUpkeepMultiplier: Fp;
   readonly tuningStatus: TuningStatus;
 }
 
@@ -316,6 +504,25 @@ export interface GodCostRecord {
   readonly actionId: number;
   /** Base favor price, `fp`. Hysteresis and node tier scale it at resolution. */
   readonly favorCost: Fp;
+  /**
+   * What the action costs in **materials**, per kind, `fp`. Absent for most.
+   *
+   * `material-economy`'s second half. Until it, the game held two economies
+   * that never met — worship made favor and favor bought the seventeen verbs,
+   * while magic made materials the god could never spend — so a player asking
+   * *"what is my economy doing"* was asking about a system their verbs could
+   * not reach.
+   *
+   * The systemic rule the table satisfies: **a verb that makes a thing in the
+   * world spends the material that thing is made of.** Favor stays the pacing
+   * currency and does not go away; the material cost is what makes a verb also
+   * a claim on the economy the populace and the academy are running.
+   *
+   * Optional, and the loader accepts a table where some actions name one and
+   * others do not — an unpriced verb is one that makes nothing out of anything.
+   * A kind outside {@link MATERIAL_KIND_IDS} fails the load, named.
+   */
+  readonly materialCost?: Readonly<Partial<Record<MaterialKindId, Fp>>>;
   readonly gloss: string;
   readonly tuningStatus: TuningStatus;
 }
@@ -404,6 +611,7 @@ export interface ContentCounts {
   readonly godConstants: number;
   readonly raidConstants: number;
   readonly autonomyWeights: number;
+  readonly gradeEdges: number;
 }
 
 /**
@@ -429,6 +637,7 @@ export interface ContentRegistry {
   readonly godConstants: readonly Interned<GodConstantRecord>[];
   readonly raidConstants: readonly Interned<RaidConstantRecord>[];
   readonly autonomyWeights: readonly Interned<AutonomyWeightRecord>[];
+  readonly gradeEdges: readonly Interned<GradeEdgeRecord>[];
 
   /** String id to interned integer, per namespace. */
   intern(namespace: ContentNamespace, id: string): ContentId;

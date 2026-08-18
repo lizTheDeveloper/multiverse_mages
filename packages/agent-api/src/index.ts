@@ -58,7 +58,12 @@
  * and the signature it satisfies is the contract.
  */
 
-export type { ActionCostTable, CatalogueNode, ContentCatalogue } from './catalogue.js';
+export type {
+  ActionCostTable,
+  ActionMaterialCost,
+  CatalogueNode,
+  ContentCatalogue,
+} from './catalogue.js';
 export { EMPTY_CATALOGUE, buildCatalogue } from './catalogue.js';
 
 export type { GodActionId } from './actions.js';
@@ -154,8 +159,8 @@ export {
 export type { Candidate, CandidateInput, CandidateLists } from './candidates.js';
 export { buildCandidates, candidateAt } from './candidates.js';
 
-export type { MaskInput } from './mask.js';
-export { isLegal, legalityMask } from './mask.js';
+export type { EngagementStance, MaskInput } from './mask.js';
+export { ENGAGEMENT_ACTIONS, isLegal, legalityMask, unaffordableReason } from './mask.js';
 
 export type { AdmissionResult, GateInput, RejectedAction, RejectionReason } from './gate.js';
 export { admit } from './gate.js';
@@ -263,6 +268,23 @@ export type {
   UniversityDossier,
 } from './academy.js';
 export { describeAcademy } from './academy.js';
+
+/**
+ * §4.4's fifth projection: where a tick's material came from and where it went.
+ *
+ * The first one that is not a reading of state. `./flow.ts` argues it, and
+ * `economy-flow-models.md` §5.2 is the finding behind it — *"every metric in the
+ * registry measures a level, a rate, or a distribution at a checkpoint. None
+ * reconciles flows."*
+ */
+export type {
+  FlowAmounts,
+  FlowBreach,
+  FlowClaimant,
+  FlowLedger,
+  FlowReportSource,
+} from './flow.js';
+export { FLOW_KINDS, describeFlow } from './flow.js';
 
 export type { AgentRng, AgentRngInput } from './agent-rng.js';
 export { agentRng } from './agent-rng.js';

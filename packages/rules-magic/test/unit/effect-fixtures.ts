@@ -47,6 +47,10 @@ import { EDICT_KIND, LOCATION_KIND } from '@mm/state';
 
 import type { EffectSourceInstance } from '../../src/effects/index.js';
 import { MASTERY_ACTIVATION_THRESHOLD, gatherEffects } from '../../src/effects/index.js';
+import { NO_WORKINGS_STAND } from '../../src/workings/index.js';
+
+// Re-exported so every gather fixture in the package names the same view.
+export { NO_WORKINGS_STAND };
 
 let cached: ContentRegistry | undefined;
 
@@ -155,12 +159,27 @@ export function twoNodesDeclaring(
   return [first.contentId, second.contentId];
 }
 
+/**
+ * The one mage every fixture instance is filed against.
+ *
+ * A named constant rather than a literal `1`, so that a test which cares about
+ * *whose* working stands has an obvious second value to reach for, and so that
+ * `holder: TEST_HOLDER` reads as a deliberate choice rather than as a handle
+ * somebody typed. Not `0` — `@mm/state` reserves that as the null handle, and a
+ * fixture built on the null handle would pass every liveness test by accident.
+ */
+export const TEST_HOLDER = 1;
+
+/** A second holder, for the tests that need two mages to differ. */
+export const OTHER_HOLDER = 2;
+
 /** A mind instance of `nodeId`, at the activation threshold unless told otherwise. */
 export function mindInstance(
   nodeId: ContentId,
   mastery: number = MASTERY_ACTIVATION_THRESHOLD,
+  holder: number = TEST_HOLDER,
 ): EffectSourceInstance {
-  return { nodeId, locationKind: LOCATION_KIND.mind, mastery };
+  return { nodeId, holder, locationKind: LOCATION_KIND.mind, mastery };
 }
 
 /**
@@ -184,6 +203,7 @@ export function worldActiveNodesInDistinctCells(
       ruleset: permissiveRuleset(),
       mode: TIME_MODE.world,
       cellOf: countingCellOf(registry),
+      standing: NO_WORKINGS_STAND,
     });
     if (contributions.length === 0) continue;
     seenCells.add(cellId);

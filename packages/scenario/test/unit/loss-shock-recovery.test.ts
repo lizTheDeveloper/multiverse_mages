@@ -53,7 +53,11 @@ beforeAll(async () => {
     shock: { atTick: SHOCK_TICK, everyKth: EVERY_KTH },
   });
   control = await runLongReference({ content, ticks: TICKS });
-}, 300_000);
+  // Two two-hundred-year runs. 300 s was cut on GitHub Actions job 95387839967
+  // on 2026-08-17 *and* on this box at load 48, both times as a file-level
+  // failure with no named test — the shape that reads as a broken suite rather
+  // than a slow one. See `vitest.config.ts` for the x7 factor.
+}, 1_800_000);
 
 function samplesOf(run: LongRunResult): RosterSample[] {
   const out: RosterSample[] = [];
@@ -123,7 +127,8 @@ describe('the cull itself', () => {
       shock: { atTick: SHOCK_TICK, everyKth: EVERY_KTH },
     });
     expect(again.shock?.culled).toEqual(shocked.shock?.culled);
-  }, 300_000);
+    // One run to the shock tick, on the same x7 factor as the hook above.
+  }, 1_200_000);
 
   it('leaves the control untouched, so the pairing means something', () => {
     expect(control.shock).toBeUndefined();
@@ -155,6 +160,38 @@ describe('recovery, per species', () => {
    * the shipped universe holds only one species, the claim is untestable here
    * and this says so rather than passing vacuously.
    */
+  /**
+   * ## Failing on `w80/research-cost-variation`, and left failing on purpose
+   *
+   * At `LONG_RUN_SEED` the priced content surface leaves **orc with no living
+   * mages at the cull tick**, where the flat one left three, so orc reports no
+   * shock and this assertion sees five species instead of six. Making it pass
+   * would be a one-word edit and would hide a species going to zero.
+   *
+   * **But the entanglement runs the other way and this test cannot tell the
+   * difference.** Orc's roster is small enough that whether it is alive at tick
+   * 1200 is close to a coin flip *before* any content changes.
+   * `tools/w80/orc-seeds.mjs` takes the same shocked run at five seeds:
+   *
+   * ```
+   * orc pre-shock roster, by seed 589825..589829
+   * flat    3  1  0  1  4     mean 1.8   zero on 1 of 5
+   * priced  0  0  0  2  3     mean 1.0   zero on 3 of 5
+   * ```
+   *
+   * The paired difference is −0.8 mages with a standard error of 0.66 (t = −1.2
+   * on 4 degrees of freedom), and an independent reading of plain `main` over
+   * thirty-two seeds puts orc at a mean of **1.22** living mages and zero on
+   * **11 of 32**. Both arms bracket that. **So this is one seed of a species
+   * that is barely alive at any seed**, and the assertion is really asserting
+   * that a coin came up heads.
+   *
+   * Every species magnitude carries `tuningStatus: "untuned"`. The right fix is
+   * the species-tuning pass — either orc gets a roster that survives a century,
+   * or this test stops reading a single seed of the most marginal species as an
+   * invariant. Until one of those happens it stays red rather than being edited
+   * to agree with whichever content set ran last.
+   */
   it('is asserted per species, not assumed from fertility', () => {
     const entry = collectLossShockRecovery(telemetryOf(shocked));
     const detail = (entry as unknown as { detail: { species: Record<string, unknown>[] } }).detail;
@@ -184,6 +221,22 @@ describe('recovery, per species', () => {
     // species in the game into an invariant, and every branch that perturbed
     // the simulation at all tripped it — which is a test reporting its own
     // fragility, not a regression.
+    // **And the replacement assertion was wrong too, one layer deeper.** It read
+    // "every species that *had* a roster lost mages", and the cull does not
+    // promise that: it takes every `EVERY_KTH`th mage from one **global**
+    // ordering, so what a species loses depends on where its handles fall in
+    // that ordering and not on how many it has. On `w190/scribing-fidelity`
+    // orc reaches the shock tick with `preShock: 2` and `killed: 0` — two mages,
+    // both on the wrong parity. That is not a smaller roster than before; it is
+    // the same accident of ordering the previous author diagnosed, expressed at
+    // `preShock: 2` instead of at `preShock: 0`.
+    //
+    // So this asserts what an every-kth global cull actually guarantees — that
+    // it took about the fraction it claims to take, across the universe — and
+    // *names* any species that had a roster and lost nobody, which is the
+    // finding the length check was accidentally carrying. A per-species
+    // guarantee would need a per-species cull, and that is a different
+    // instrument.
     const withRoster = detail.species.filter((row) => (row['preShock'] as number) > 0);
     // Every species the cull *reached* is one that had a roster — the direction
     // that says the cull is not inventing losses. The converse does not hold and
@@ -207,7 +260,7 @@ describe('recovery, per species', () => {
       .filter((row) => (row['killed'] as number) === 0)
       .map((row) => String(row['speciesId']));
     if (spared.length > 0) {
-      console.log(`species with a roster the cull did not reach: ${spared.join(', ')}`);
+      console.log(`species with a roster the cull happened to spare: ${spared.join(', ')}`);
     }
 
     // And the fact the old assertion was accidentally carrying: name any
@@ -259,6 +312,12 @@ describe('recovery, per species', () => {
    * That distinction matters for tuning. Retuning `fertility` to fix a brittle
    * species would move a number that is not the binding constraint.
    */
+  /**
+   * **Also failing on `w80/research-cost-variation`, and for the same reason:**
+   * orc cannot be censored for failing to recover when it had no roster to lose.
+   * See the note on the first assertion in this block for the five-seed
+   * distribution and why editing either of them would be recording a coin flip.
+   */
   it('refutes the fertility mechanism — human and orc do not recover either', () => {
     const entry = collectLossShockRecovery(telemetryOf(shocked));
     const detail = (entry as unknown as { detail: Record<string, unknown> }).detail;
@@ -273,6 +332,17 @@ describe('recovery, per species', () => {
     // argument the `preShock: 0` comment below already makes for absent species,
     // applied to the case the cull's parity skipped. See the note in the first
     // test for why orc keeps arriving at this boundary.
+    // **`killed > 0`, not `preShock > 0`.** The guard below was written for
+    // species that were *absent*; W116 produced a species that was present and
+    // lost nobody — orc, with a roster of two at the cull tick — and that is the
+    // same hole from the other side. A species that lost nothing has nothing to
+    // recover from: it scores `recoveryTicks: 12`, which reads in `recoverers`
+    // as precisely the outcome this test exists to refute, and is not one.
+    //
+    // The claim being defended is unchanged and is about species the cull
+    // actually hit: **the two shortest-lived species that lost mages do not get
+    // them back.** Narrowing the set to those species is what makes the sentence
+    // true of what is measured rather than of what was assumed.
     const present = new Set(
       (detail['species'] as Record<string, unknown>[])
         .filter((row) => (row['killed'] as number) > 0)

@@ -25,8 +25,16 @@
 import { describe, expect, it } from 'vitest';
 
 import { FP_ONE } from '@mm/sim-core';
-import { EDICT_KIND, MAGE_ROLE } from '@mm/state';
-import { CastArbiter, deployRaid, openPortal, portalGate, runRaid } from '@mm/rules-raid';
+import { EDICT_KIND, MAGE_ROLE, RAID_SIDE } from '@mm/state';
+import {
+  CastArbiter,
+  DEFENDING_ROLES,
+  RAIDING_ROLES,
+  deployRaid,
+  openPortal,
+  portalGate,
+  runRaid,
+} from '@mm/rules-raid';
 
 import {
   ALL_FORMS,
@@ -185,6 +193,52 @@ describe('a host cannot make itself unraidable (task 2.8)', () => {
 
     expect(outcome.resolutionTick).toBeGreaterThan(0);
     expect(outcome.forbiddenCastsBlocked).toBe(0);
+  });
+});
+
+describe('the populace mage defends (W197)', () => {
+  it('is deployed with the wardens, and never with the attackers', () => {
+    // **The side effect this test exists to forbid.** W197 sorts roughly half of
+    // every graduating class into `populace` where it would previously have been
+    // `researcher` — and `researcher` is a defending role. Leaving the new role
+    // out of `DEFENDING_ROLES` would have cut a universe's defender pool by
+    // about half as a *by-product* of a change about careers, which is exactly
+    // the shape of regression that gets found months later and attributed to
+    // something else.
+    //
+    // It is also the reading `magical-prevalence.md` gives: *"people who are
+    // able to defend at any given random time"* is one of its named end states,
+    // and a populace mage is a graduate with a job rather than a child.
+    expect(DEFENDING_ROLES.has(MAGE_ROLE.populace)).toBe(true);
+    expect(RAIDING_ROLES.has(MAGE_ROLE.populace)).toBe(false);
+    // `student` stays out, per W193's recorded choice. The two appended roles
+    // are deliberately on opposite sides of this line.
+    expect(DEFENDING_ROLES.has(MAGE_ROLE.student)).toBe(false);
+
+    // And the set is not merely a list: a defence made only of populace mages
+    // fields somebody.
+    const attackerWorld = emptyWorld();
+    const attackerKnowledge = knowledgeFor(attackerWorld);
+    addMage(attackerWorld, attackerKnowledge, {
+      role: MAGE_ROLE.raider,
+      nodes: [PORTAL_NODE, FIRE],
+    });
+    const hostWorld = emptyWorld();
+    const hostKnowledge = knowledgeFor(hostWorld);
+    addMage(hostWorld, hostKnowledge, { role: MAGE_ROLE.populace, nodes: [FIRE] });
+
+    const snapshot = ruleset({});
+    const raid = openPortal({
+      attacker: participant(attackerWorld, attackerKnowledge, snapshot, snapshot.traditionId),
+      host: participant(hostWorld, hostKnowledge, snapshot, snapshot.traditionId),
+      registry,
+      grid,
+      combat,
+      tuning,
+      raidSeed: 0x9701,
+    });
+    deployRaid(raid);
+    expect(raid.rosters[RAID_SIDE.defender]?.briefs.length).toBeGreaterThan(0);
   });
 });
 

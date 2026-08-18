@@ -40,9 +40,14 @@ function bySpecies(id: string) {
 }
 
 describe('the grid the measurement is taken against', () => {
-  it('is the full seventy, of which the v1 ruleset permits twelve', () => {
+  it('is the full seventy, all of which the v1 ruleset now permits', () => {
+    // Was `enabledCells: 12`. `material-economy` flags every cell `"v1": true`
+    // in `cell.json`, and `v1RulesetAxes` derives the mask from the flag rather
+    // than from a literal — which is exactly why that function was written as a
+    // derivation. Re-pinned because this restates a **content decision**: the
+    // number is `cell.json`'s and is recomputable from it, not a run outcome.
     expect(sample.gridCells).toBe(70);
-    expect(sample.enabledCells).toBe(12);
+    expect(sample.enabledCells).toBe(70);
   });
 
   it('covers every species content declares', () => {
@@ -67,12 +72,17 @@ describe('breadth: every species can staff the whole grid', () => {
    * distinguishes the shipped species — it is universal, which is a different
    * and more serious problem than one species having it.
    */
-  it('gives all six species 70/70 and 12/12', () => {
+  it('gives all six species 70/70 twice over', () => {
+    // The second pair was `12` while twelve cells were enabled. Every cell is
+    // enabled now, so the enabled figure and the grid figure coincide — and the
+    // finding **strengthens**: it was "every species can staff every cell the
+    // god opened" over a twelfth of the grid, and it is now the same statement
+    // over all of it.
     for (const entry of sample.species) {
       expect([entry.speciesId, entry.staffableCells, entry.staffableEnabledCells]).toEqual([
         entry.speciesId,
         70,
-        12,
+        70,
       ]);
     }
   });
@@ -126,10 +136,15 @@ describe('depth: the contrast vector, which does separate them', () => {
 
 describe('the teachable window, which is where the separation actually lives', () => {
   /**
-   * Nothing in the rules path raises mastery — `setMastery`'s only non-test
-   * caller is the decay pass, and it lowers. So a species is not limited by what
-   * it can learn; it is limited by how long it can still teach what it was
-   * granted before the instance falls back below the threshold.
+   * Written when nothing in the rules path raised mastery — `setMastery`'s only
+   * non-test caller was the decay pass, and it lowers — so a species was not
+   * limited by what it could learn but by how long it could still teach what it
+   * was granted.
+   *
+   * `rules-magic`'s `practice` (`w196/mastery-rises`) added the climb, so this
+   * window is now the *decay* half of the separation rather than all of it. The
+   * numbers below are unchanged and still assert what they always did: how long
+   * a fully-mastered instance stays transmissible in each species' hands.
    */
   it('runs from 32 ticks to 102 across the six', () => {
     expect(bySpecies('gnome').teachableWindowTicks).toBe(32);
@@ -154,20 +169,47 @@ describe('the teachable window, which is where the separation actually lives', (
 
 describe('affinity liveness against the permitted cells', () => {
   /**
-   * Seven of the eleven authored affinity entries name a form no permitted cell
-   * uses, and two species have no live entry at all. That does not bias them —
-   * `affinityTerm` defaults a missing key to `FP_ONE` and subtracts it, so an
-   * undeclared species scores exactly zero rather than badly — but it does mean
-   * seven authored numbers cannot influence anything in this ruleset.
+   * **All thirteen authored affinity entries are live, and none is inert.** This
+   * read `[4, 7]` while twelve cells were enabled: seven of the eleven then
+   * authored named a form no permitted cell used, and human and gnome had no
+   * live entry at all. It did not bias them — `affinityTerm` defaults a missing
+   * key to `FP_ONE` and subtracts it, so an undeclared species scores exactly
+   * zero rather than badly — but seven authored numbers could not influence
+   * anything.
+   *
+   * `material-economy` flags every cell `"v1": true`, so every form is in a
+   * permitted cell and every authored entry now bites. Re-pinned as a
+   * **content decision**: the numbers are a function of `cell.json` and
+   * `species.json` and are recomputable from them without running anything.
+   *
+   * Eleven became **thirteen** on `w/exp-yields`, 2026-08-16: human gained
+   * `animal: 1152` and `herbam: 1280`. Two reasons, and both are deliberate.
+   * The economic one is that `species.affinities` now also derives a species'
+   * **land aptitude** (`rules-world`'s `aptitude.ts`), and a human with no
+   * authored entry derives exactly neutral — so the author's *"humans are a
+   * little bit better at agrarian stuff"* had no expression at all. The
+   * research one is the side the entries always had: humans now also *study*
+   * beasts and plants a little more readily, which is the same sentence read
+   * the other way and is accepted rather than hidden.
+   *
+   * This is the shape the campaign is looking for — authored content that the
+   * ruleset made unreachable, becoming reachable.
    */
-  it('finds four live entries and seven inert ones', () => {
+  it('finds all thirteen entries live and none inert', () => {
     const live = sample.species.reduce((sum, entry) => sum + entry.liveAffinityEntries, 0);
     const inert = sample.species.reduce((sum, entry) => sum + entry.inertAffinityEntries, 0);
-    expect([live, inert]).toEqual([4, 7]);
+    expect([live, inert]).toEqual([13, 0]);
   });
 
-  it('leaves human and gnome with no live entry', () => {
-    expect(bySpecies('human').liveAffinityEntries).toBe(0);
-    expect(bySpecies('gnome').liveAffinityEntries).toBe(0);
+  it('gives human the two agrarian entries it did not have, and gnome its two', () => {
+    // Human's zero used to be one of two different zeroes and the reason this
+    // assertion carried an inert count beside a live one: gnome had **two
+    // authored entries and neither was live**, while human declared none at all.
+    // Human now declares two and both are live, so the inert count is still
+    // zero — and it is still asserted, because "no entries" and "no live
+    // entries" must never collapse into one reading again.
+    expect(bySpecies('human').liveAffinityEntries).toBe(2);
+    expect(bySpecies('human').inertAffinityEntries).toBe(0);
+    expect(bySpecies('gnome').liveAffinityEntries).toBe(2);
   });
 });

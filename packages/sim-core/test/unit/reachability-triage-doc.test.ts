@@ -31,11 +31,11 @@
  * silently:
  *
  * 1. §1's package rows each sum across the categories to their own total.
- * 2. §1's totals row is the sum of the package rows, and equals 129.
+ * 2. §1's totals row is the sum of the package rows, and equals its pinned total.
  * 3. §2's per-mechanism counts sum to the number its closing sentence claims.
  * 4. That claim is not larger than §1's integration-debt total.
- * 5. The 129 matches `scripts/reachability-baseline.json` — the document and the
- *    gate describe the same tree.
+ * 5. That total matches `scripts/reachability-baseline.json` — the document and
+ *    the gate describe the same tree.
  *
  * What it deliberately does **not** check is the *classification*: whether
  * `applyWard` is integration debt rather than superseded is a judgement, and a
@@ -105,7 +105,7 @@ describe('the reachability triage document', () => {
     }
   });
 
-  it('has a totals row equal to the sum of the package rows, and to 129', () => {
+  it('has a totals row equal to the sum of the package rows, and to 113', () => {
     expect(totalsRow).toHaveLength(1);
     const totals = totalsRow[0]!.slice(1);
 
@@ -115,7 +115,47 @@ describe('the reachability triage document', () => {
         `column ${String(column)}: ${String(stated)}`,
       );
     }
-    expect(totals.at(-1)).toBe(129);
+    // 129 until `w204/affiliate-writer` gave `completeAffiliation` a production
+    // caller and `changeAffiliation` a reached one; 127 until the ascension
+    // legacy got a run boundary — `scenario/src/legacy.ts` — which closed twelve
+    // findings, and a re-pin banked three more that merges had already repaired;
+    // 112 until the five wiring merges landed together, of which `w/wire-magic`
+    // is most of the movement: spell preparation, the tradition store policy and
+    // `changeTradition` are three whole §2 rows that went to zero. **The document
+    // this checks changed shape at the same time** — §1's five-way judgement
+    // split is retired there, and this assertion is now over a two-column table
+    // whose debt column is §2 re-checked symbol by symbol against the pin.
+    // 108 until `w247/material-economy-build` and `ui/legible-and-linked` merged
+    // into `integration/all-branches`: **110**, and the first time this literal
+    // has moved upward. Three `REQUIRED_*_WEIGHTS` constants arrived with the
+    // material economy — each documenting a requirement its reader restates as a
+    // string literal, accepted as debt for the reason §1's sixth-round note
+    // gives — and `NO_YIELD_BONUSES` was repaired by the composition itself.
+    // 110 until seven merges landed on `integration/all-branches` — the two
+    // flow branches, the three experiment branches, the invention docs and
+    // `origin/main` itself: **111**, and the whole of the move is one symbol.
+    // `territoryYieldShares` is the residue of `w/exp-yields`' repair: the
+    // production path now asks `heldTerritoryYieldShares` about a universe's own
+    // land, and the content-side question this function answers has no caller
+    // left. **A mechanism became more wired and the count went up**, which is
+    // the clearest available statement of what this number does and does not
+    // measure. Six merges bringing two world-schema revisions, a nineteenth
+    // metric, a new content namespace and a per-tick flow ledger added no
+    // finding at all.
+    // 111 until the yield that closed `[vitest-worker]: Timeout calling
+    // "onTaskUpdate"` landed on `integration/all-branches`: **113**, and both
+    // arrivals are `scenario`'s `executeReferenceRunAsync` and
+    // `makeReferenceExecutorAsync`. Tooling-only in §4's sense rather than
+    // integration debt — the synchronous entry points must stay synchronous
+    // because `RunExecutor` and every sweep worker depend on them, so the async
+    // drains can only ever be called by a test arm inside a vitest worker, which
+    // is the only place birpc's window bites. **A second measurement where the
+    // count went up because the suite got more honest, not less wired.**
+    // The literal is deliberate — a total derived from the document could not
+    // catch a document that had drifted from the tree — so it moves only with a
+    // change that says why, and `describes the same tree the ratchet baseline
+    // pins` below is the other half of the tie.
+    expect(totals.at(-1)).toBe(113);
   });
 
   it('has a §2 table whose counts sum to the total its closing sentence claims', () => {

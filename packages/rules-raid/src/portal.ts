@@ -47,13 +47,14 @@
 
 import type { ContentId, ContentRegistry } from '@mm/content';
 import type { Fixed, SimState } from '@mm/sim-core';
-import { NULL_ENTITY } from '@mm/sim-core';
+import { NULL_ENTITY, RNG_STREAM, nextBounded } from '@mm/sim-core';
 import type { Handle, RaidSideValue, Ruleset } from '@mm/state';
 import { COMBATANT_SOURCE_KIND, MAGE, RAID_SIDE, collectRecords, permits } from '@mm/state';
 import type { MagicGrid } from '@mm/rules-magic';
+import { costSplit, prepare } from '@mm/rules-magic';
 
 import { COMBAT_PRIMITIVES } from './arbitration.js';
-import type { EligibleMage } from './combatants.js';
+import type { EligibleMage, SideRoster } from './combatants.js';
 import {
   DEFENDING_ROLES,
   RAIDING_ROLES,
@@ -218,24 +219,83 @@ function deploySide(
 
   for (const cohort of eligibleCohorts(participant.world)) {
     let remaining = cohort.record.count;
+    let fieldPartial = false;
+    if (tuning.detachmentStrength > 0) {
+      // Exactly one draw per eligible cohort, taken **before** any detachment is
+      // spawned and taken whether or not the remainder is zero. Both halves of
+      // that matter: a draw count that depended on the data — on how many whole
+      // detachments came first, or on whether the roster filled — would make the
+      // populace shift this cohort's own later draws, and this is the one place
+      // the count is read.
+      //
+      // `actorStream` keyed on the cohort handle, so each cohort has its own
+      // cursor and its result does not depend on which cohorts were visited
+      // first. The side is the tick argument because deployment happens outside
+      // any world tick and the two participants are two separate worlds whose
+      // entity handles are numbered independently: without it, attacker cohort 7
+      // and defender cohort 7 would draw the same value.
+      const draw = nextBounded(
+        raid.rng.actorStream(RNG_STREAM.detachment, side, cohort.handle),
+        tuning.detachmentStrength,
+      );
+      fieldPartial = draw < remaining % tuning.detachmentStrength;
+    }
+
     while (remaining >= tuning.detachmentStrength && sideHasRoom(roster, tuning)) {
-      spawnCombatant(raid.engagement.entities, roster, {
-        side,
-        // §1.3: a cohort is never promoted to individuals. It lends a counted
-        // portion of itself and gets the survivors back.
-        sourceKind: COMBATANT_SOURCE_KIND.soldierDetachment,
-        sourceId: cohort.handle,
-        position: deploymentPosition(raid, side, roster.nextSpawnOrdinal),
-        hp: tuning.detachmentMaxHp,
-        vigor: 0,
-        concealment: 0,
-        intrinsicDamage: tuning.detachmentDamage,
-        intrinsicRange: tuning.detachmentRange,
-        detachmentStrength: tuning.detachmentStrength,
-      });
+      spawnDetachment(raid, side, roster, cohort.handle, tuning.detachmentStrength);
       remaining -= tuning.detachmentStrength;
     }
+
+    // The remainder, resolved by the draw above rather than truncated away.
+    //
+    // ## Why truncation is not a rounding error here
+    //
+    // `detachment-strength` is an authored **100**, and cohorts are keyed on
+    // species × occupation × birth decade (`contracts.md` §1.3), so a populace of
+    // a few thousand soldiers is already scattered across dozens of cohorts far
+    // below a hundred. `N` cohorts of `c` people each fielded
+    // `N × floor(c / 100)` detachments — **zero** for every `c < 100`, for every
+    // seed, forever — where the design asks for `floor(N × c / 100)`. The error
+    // is per cohort and always downward, so it grows with fragmentation and
+    // never cancels. It is the same defect `promotion.ts` argues at length about
+    // and the same fix: *"a species can be rare by design; it may not be rare
+    // because of a floor."*
+    //
+    // The detachment fields at full combat statistics — a detachment is a unit
+    // of force, not a fraction of one — but records `remaining` as its strength
+    // rather than the authored hundred, so the cohort is never billed for people
+    // it does not have. `consequences.ts` clamps a cohort's count at zero and
+    // calls over-lending *"a bug in derivation"*; this is the derivation, and it
+    // does not commit that bug.
+    if (fieldPartial && remaining > 0 && sideHasRoom(roster, tuning)) {
+      spawnDetachment(raid, side, roster, cohort.handle, remaining);
+    }
   }
+}
+
+/** One soldier detachment, standing for `strength` of its cohort's people. */
+function spawnDetachment(
+  raid: Raid,
+  side: RaidSideValue,
+  roster: SideRoster,
+  cohort: Handle,
+  strength: number,
+): void {
+  const tuning: RaidTuning = raid.tuning;
+  spawnCombatant(raid.engagement.entities, roster, {
+    side,
+    // §1.3: a cohort is never promoted to individuals. It lends a counted
+    // portion of itself and gets the survivors back.
+    sourceKind: COMBATANT_SOURCE_KIND.soldierDetachment,
+    sourceId: cohort,
+    position: deploymentPosition(raid, side, roster.nextSpawnOrdinal),
+    hp: tuning.detachmentMaxHp,
+    vigor: 0,
+    concealment: 0,
+    intrinsicDamage: tuning.detachmentDamage,
+    intrinsicRange: tuning.detachmentRange,
+    detachmentStrength: strength,
+  });
 }
 
 /**
@@ -276,10 +336,28 @@ function spawnMage(
     .filter((nodeId) => legalNodes.has(nodeId))
     .sort((a, b) => a - b);
 
-  const slots = participant.hooks.hostCast.preparationRequired
-    ? participant.hooks.hostCast.slotsPerMage
-    : 0;
-  const preparedSpells = slots > 0 ? reachable.slice(0, slots) : reachable;
+  // `prepare`, one node at a time, rather than a slice. It is the same list
+  // under both v1 cast kinds — the loop stops at the first refusal, and a slot
+  // bound refuses in exactly the position `slice` would have cut — and it is the
+  // hook's own rule rather than this module's reading of it. `prepare` had no
+  // production caller anywhere; a third cast kind with a rule about *what* may
+  // be readied, not only how many, would have been authored and ignored here.
+  //
+  // `usable` and `dormant` are settled rather than re-asked: `reachable` is
+  // already filtered to instances her home `store` hook holds, above
+  // `CASTABLE_MASTERY`, in cells the host permits — `legalNodes` is that mask,
+  // and the module note says it is applied *before* preparation on purpose.
+  const hostCast = participant.hooks.hostCast;
+  let preparedSpells: readonly number[] = reachable;
+  if (hostCast.preparationRequired) {
+    let readied: readonly number[] = [];
+    for (const nodeId of reachable) {
+      const outcome = prepare(hostCast, readied, { nodeId, usable: true, dormant: false });
+      if (!outcome.prepared) break;
+      readied = outcome.preparedSpells;
+    }
+    preparedSpells = readied;
+  }
 
   const wardSources: Fixed[] = defences.ward > 0 ? [defences.ward] : [];
 
@@ -289,11 +367,50 @@ function spawnMage(
     sourceId: mage.handle,
     position: deploymentPosition(raid, side, roster.nextSpawnOrdinal),
     hp: mageMaxHp(raid.tuning, participant.speciesOf(mage.record.speciesId), mage.deepestTier),
-    vigor: mage.record.maxVigor,
+    vigor: Math.max(0, mage.record.maxVigor - readyingCost(raid, preparedSpells)),
     concealment: defences.concealment,
     legalNodes,
     knownNodes: new Set(held.map((instance) => instance.nodeId)),
     preparedSpells,
     wardSources,
   });
+}
+
+/**
+ * What readying this list cost, before a single spell is released.
+ *
+ * The half of the `cost` hook the game never charged. `castCost` was live in
+ * `arbitration.resolveCast` and `costSplit` — the function whose entire purpose
+ * is that the two halves sum to the base price under every kind — had no caller,
+ * so a `prepaid` tradition was not a tradition that charges early. It was a
+ * tradition that **charges nothing**: `resolveCast` returned `castCost(prepaid,
+ * price) === 0`, and `firstCastableNode` skips the affordability test outright
+ * when `paidAtPreparation`. Vancian memorisation, the reference universe's own
+ * tradition, cast for free and without limit.
+ *
+ * `costSplit` rather than `preparationCost` alone, deliberately: the invariant
+ * worth honouring is that the two halves sum to the base cost, and reading the
+ * pair from the function that states it is what keeps the release side from
+ * being charged twice when a kind changes.
+ *
+ * **The host's `cost` hook, not the raider's.** Her preparations are readied at
+ * portal entry, which is the moment this runs, and the host is who prices
+ * everything from that moment on — `firstCastableNode` already reads
+ * `hostCost.paidAtPreparation` for the same decision, so one hook answers the
+ * whole question. §1.6's split gives `preparedSpells` a *home* origin and no
+ * home price; that a `prepaid` raider entering a `standard` sky therefore pays
+ * at release and not at readying is the split working, not a gap in it.
+ *
+ * Untuned, like every magnitude it reads.
+ */
+function readyingCost(raid: Raid, preparedSpells: readonly number[]): Fixed {
+  const hostCost = raid.host.hooks.hostCost;
+  let total = 0;
+  for (const nodeId of preparedSpells) {
+    const node = raid.registry.node(nodeId);
+    if (node === undefined) continue;
+    const price = raid.tuning.castVigorBase + raid.tuning.castVigorPerTier * node.tier;
+    total += costSplit(hostCost, price).atPreparation;
+  }
+  return total;
 }

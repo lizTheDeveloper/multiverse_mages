@@ -52,6 +52,12 @@ const describeFixture = (world = firstUniverse(), portalTargets: readonly number
     state: world.state,
     catalogue: FIXTURE_CATALOGUE,
     portalTargets: [...portalTargets],
+    // Action 14 is masked on `holdsPortalMagic` as of 2026-08-17, the same
+    // predicate action 16 has always been masked on. This file is about the
+    // *descriptors*, so the gate is held open rather than measured here — mage
+    // 0 holds node 1 in mind and the fixture permits its cell. The gate itself
+    // is asserted in `action-space.test.ts`.
+    portalNodes: [1],
   });
   return { world, lists, detail: describeCandidates({ state: world.state, catalogue: FIXTURE_CATALOGUE, lists }) };
 };

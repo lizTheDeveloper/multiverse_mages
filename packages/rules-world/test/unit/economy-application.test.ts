@@ -31,6 +31,7 @@ import { describe, expect, it } from 'vitest';
 import type { Fixed } from '@mm/sim-core';
 import { FP_ONE } from '@mm/sim-core';
 import type { FormRecord } from '@mm/content';
+import { MATERIAL_KIND_IDS } from '@mm/content';
 import { ClampCounters, neutralizing } from '@mm/primitives';
 
 import {
@@ -42,21 +43,32 @@ import {
   appliedYield,
   applicationRations,
   formRoutesToMaterials,
+  MATERIAL_KINDS,
   readApplicationWeights,
   totalAmount,
+  zeroAmounts,
 } from '../../src/index.js';
-import type { ApplicationWeights } from '../../src/index.js';
+import type { ApplicationWeights, MaterialKind } from '../../src/index.js';
 
 import { primitiveNamed, shippedRegistry } from './universities-fixtures.js';
 
 /** A form record with everything but `yieldWeights` held neutral. */
-function form(yieldWeights: Partial<Record<'food' | 'stone' | 'vellum', number>>): FormRecord {
+function form(yieldWeights: Partial<Record<MaterialKind, number>>): FormRecord {
   return {
     id: 'fixture-form',
     name: 'Fixture Form',
     gloss: 'A synthetic form for the applied-work arithmetic.',
     bit: 0,
-    yieldWeights: { food: 0, stone: 0, vellum: 0, ...yieldWeights },
+    yieldWeights: {
+      food: 0,
+      stone: 0,
+      vellum: 0,
+      labor: 0,
+      essence: 0,
+      insight: 0,
+      passage: 0,
+      ...yieldWeights,
+    },
     tuningStatus: 'untuned',
   };
 }
@@ -67,7 +79,7 @@ const WEIGHTS: ApplicationWeights = { outputPerMonth: 64, rationPerMonth: 4 };
 const resourceYield = primitiveNamed('resource-yield');
 
 function yieldOf(
-  yieldWeights: Partial<Record<'food' | 'stone' | 'vellum', number>>,
+  yieldWeights: Partial<Record<MaterialKind, number>>,
   magnitudes: readonly Fixed[],
   extra: { months?: Fixed; weights?: ApplicationWeights; counters?: ClampCounters } = {},
 ) {
@@ -132,11 +144,11 @@ describe('a month of applied magic makes materials in the kinds of its form', ()
   it('routes the whole output to one kind when the form is made of one thing', () => {
     // Terram's shipped weights: all 1024 to stone. At the identity multiplier
     // the mage makes exactly the base scalar, and she makes it in stone.
-    expect(yieldOf({ stone: FP_ONE }, [])).toEqual({ food: 0, stone: 64, vellum: 0 });
+    expect(yieldOf({ stone: FP_ONE }, [])).toEqual({ ...zeroAmounts(), food: 0, stone: 64, vellum: 0 });
   });
 
   it('splits it when the form is made of two, as Herbam and Animal are', () => {
-    expect(yieldOf({ food: 512, vellum: 512 }, [])).toEqual({ food: 32, stone: 0, vellum: 32 });
+    expect(yieldOf({ food: 512, vellum: 512 }, [])).toEqual({ ...zeroAmounts(), food: 32, stone: 0, vellum: 32 });
   });
 
   it('makes nothing at all for a form whose material is not a material', () => {
@@ -164,11 +176,12 @@ describe('the node magnitude is a multiplier, not a quantity', () => {
     // `(1 + Σ)`. A magnitude equal to `FP_ONE` is "+100%", so the output is
     // twice the scalar — not the scalar plus one, which is what reading the
     // magnitude as a quantity of stone would give.
-    expect(yieldOf({ stone: FP_ONE }, [FP_ONE])).toEqual({ food: 0, stone: 128, vellum: 0 });
+    expect(yieldOf({ stone: FP_ONE }, [FP_ONE])).toEqual({ ...zeroAmounts(), food: 0, stone: 128, vellum: 0 });
   });
 
   it('folds several magnitudes on one node into one multiplier', () => {
     expect(yieldOf({ stone: FP_ONE }, [FP_ONE / 2, FP_ONE / 2])).toEqual({
+      ...zeroAmounts(),
       food: 0,
       stone: 128,
       vellum: 0,
@@ -199,7 +212,7 @@ describe('the node magnitude is a multiplier, not a quantity', () => {
       magnitudes: [FP_ONE * 3],
       ablation: neutralizing(resourceYield.id),
     });
-    expect(ablated).toEqual({ food: 0, stone: 64, vellum: 0 });
+    expect(ablated).toEqual({ ...zeroAmounts(), food: 0, stone: 64, vellum: 0 });
   });
 });
 
@@ -220,13 +233,85 @@ describe('a form routes somewhere, or a mage should not be offered it', () => {
     const routing = shippedRegistry()
       .forms.filter((entry) => formRoutesToMaterials(entry.record))
       .map((entry) => entry.record.id);
-    // The seven forms `kinds.ts` names as carrying all-zero weights are exactly
-    // the ones missing, and the assertion is written as the positive list so a
-    // content edit that silently zeroed a form's weights fails here.
-    expect(routing.sort()).toEqual(['animal', 'aquam', 'auram', 'herbam', 'ignem', 'nomen', 'terram']);
+    // **Every shipped form, and the list used to be half this length.** It read
+    // `['animal', 'aquam', 'auram', 'herbam', 'ignem', 'nomen', 'terram']` —
+    // the seven forms that yielded one of the three land kinds — and the seven
+    // missing from it were `corpus`, `imaginem`, `mentem`, `vim`, `umbra`,
+    // `fatum` and `limen`. Two of those, `mentem` and `limen`, are in the v1
+    // opening square, so half the shipped opening could not be applied at all.
+    //
+    // Written as the positive list, so a content edit that silently zeroed a
+    // form's weights fails here rather than shrinking a negative.
+    expect(routing.sort()).toEqual([
+      'animal',
+      'aquam',
+      'auram',
+      'corpus',
+      'fatum',
+      'herbam',
+      'ignem',
+      'imaginem',
+      'limen',
+      'mentem',
+      'nomen',
+      'terram',
+      'umbra',
+      'vim',
+    ]);
   });
 
   it('is false for a form with nothing behind it', () => {
+    expect(formRoutesToMaterials(form({}))).toBe(false);
+  });
+});
+
+describe('every kind a form can be made of reaches its own stock', () => {
+  /**
+   * The four `material-economy` added, and the three that predate them, walked
+   * from **`@mm/content`'s** list rather than from `rules-world`'s own.
+   *
+   * That is the whole discrimination. `kinds.ts` says the two lists "are held in
+   * agreement by assertion instead" of by a shared import, because `contracts.md`
+   * §5 makes `content` a leaf — so a test walking `MATERIAL_KINDS` would agree
+   * with itself for as long as the routing table stayed three wide, and would
+   * report nothing about the four kinds nothing yet routes to. Walking the
+   * content list is what makes the disagreement visible.
+   *
+   * `food`, `stone` and `vellum` are the **positive control**: those three rows
+   * pass on the three-kind routing table, so a run in which only the other four
+   * fail is evidence that the assertion discriminates rather than that it is
+   * broken.
+   */
+  it.each([...MATERIAL_KIND_IDS])('routes a month of %s magic to %s and to nothing else', (kind) => {
+    const produced = yieldOf({ [kind]: FP_ONE }, []) as Record<string, number>;
+    expect(produced[kind]).toBe(64);
+    for (const other of MATERIAL_KIND_IDS) {
+      if (other === kind) continue;
+      expect(produced[other] ?? 0).toBe(0);
+    }
+  });
+
+  it('agrees with content about which kinds exist, in the same order', () => {
+    // The assertion `kinds.ts` promises in prose. Order too, not just
+    // membership: `MATERIAL_STOCK`'s columns are appended in this order and
+    // never reordered, and a component field table that disagrees with the
+    // routing table is a stock credited to the wrong kind.
+    expect([...MATERIAL_KINDS]).toEqual([...MATERIAL_KIND_IDS]);
+  });
+
+  it('says a form made only of insight routes somewhere', () => {
+    // `formRoutesToMaterials` is the fourth gate on an applicable node — a
+    // mage may not choose `GOAL.applyMagic` on a node whose form routes
+    // nowhere. Left at three kinds it answers `false` for every Mentem node in
+    // the v1 opening square, so the faucet for `insight` would exist in the
+    // arithmetic and never be reachable from a run.
+    expect(formRoutesToMaterials(form({ insight: FP_ONE }))).toBe(true);
+    expect(formRoutesToMaterials(form({ passage: FP_ONE }))).toBe(true);
+    expect(formRoutesToMaterials(form({ labor: FP_ONE }))).toBe(true);
+    expect(formRoutesToMaterials(form({ essence: FP_ONE }))).toBe(true);
+    // The positive control on the other side: a form made of nothing still
+    // routes nowhere. The loader now refuses to author one, but the predicate
+    // is what a hand-built test world can still produce.
     expect(formRoutesToMaterials(form({}))).toBe(false);
   });
 });

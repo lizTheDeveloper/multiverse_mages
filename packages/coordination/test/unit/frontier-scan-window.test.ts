@@ -90,6 +90,38 @@ import { catalogAndCells, nodeFacets, registry, shippedAcquirePolicy, shippedSto
 const HISTORIC_SCAN_WINDOW = 256;
 
 /**
+ * The twelve cells that carried `"v1": true` when the window was diagnosed.
+ *
+ * Pinned here for exactly the reason {@link HISTORIC_SCAN_WINDOW} is pinned here:
+ * the production fact it names no longer exists. All seventy cells are enabled
+ * now, so `registry().cells.filter(v1)` returns the whole grid — and a test that
+ * derived the rectangle from the flag would have quietly become two things at
+ * once. The narrowing control below would stop narrowing anything, passing
+ * vacuously; and *"eighteen of the fifty-one v1 nodes"* would silently restate
+ * itself as forty-four of three hundred, which is a different and much less
+ * interesting claim about a defect that was fixed against the smaller subset.
+ *
+ * So the historical claims below are asserted against these twelve, and the
+ * currently-enabled subset is read from the flag where that is what is meant.
+ * `{intellego, perdo, rego} × {limen, mentem, nomen, terram}` — a rectangle, so a
+ * ruleset built by OR-ing its axes permits exactly these and no thirteenth.
+ */
+const HISTORIC_V1_CELLS: readonly string[] = [
+  'intellego-limen',
+  'intellego-mentem',
+  'intellego-nomen',
+  'intellego-terram',
+  'perdo-limen',
+  'perdo-mentem',
+  'perdo-nomen',
+  'perdo-terram',
+  'rego-limen',
+  'rego-mentem',
+  'rego-nomen',
+  'rego-terram',
+];
+
+/**
  * A universe permitting every cell, holding one mage of the deepest-reaching
  * species, and knowing nothing.
  *
@@ -111,20 +143,30 @@ function universeSeeingEverything(): {
 }
 
 /**
- * The same universe, narrowed to the three techniques and four forms the v1
- * rectangle covers.
+ * The same universe, narrowed to the three techniques and four forms the historic
+ * v1 rectangle covered.
  *
  * The control the all-permitting universe cannot be: with every cell open, a
  * frontier that ignored the ruleset entirely would pass every assertion above.
  * Here the ruleset is the only thing that could exclude a node, which is what
  * the scan is now bounded by.
+ *
+ * Built from {@link HISTORIC_V1_CELLS} rather than from the `v1` flag, because
+ * the flag now covers the whole grid and a ruleset derived from it would permit
+ * everything — making this function a copy of `universeSeeingEverything` and the
+ * control no control at all. Any proper rectangle would do; this one is the one
+ * whose numbers the tests below quote.
  */
-function universeOnTheV1Rectangle(): {
+function universeOnTheHistoricV1Rectangle(): {
   gateway: CoordinatingKnowledgeGateway;
   mage: number;
   nodeCount: number;
 } {
-  const v1Cells = registry().cells.filter((entry) => entry.record.v1 === true);
+  const historic = new Set(HISTORIC_V1_CELLS);
+  const v1Cells = registry().cells.filter((entry) => historic.has(entry.record.id));
+  if (v1Cells.length !== HISTORIC_V1_CELLS.length) {
+    throw new Error('HISTORIC_V1_CELLS names a cell the shipped registry does not declare');
+  }
   const techniques = new Set(v1Cells.map((entry) => entry.record.technique));
   const forms = new Set(v1Cells.map((entry) => entry.record.form));
 
@@ -214,7 +256,7 @@ function universePermitting(
         learnRate: species.learnRate,
         rediscoveryAffinity: species.rediscoveryAffinity,
         depthCeiling: species.depthCeiling,
-        scribeAffinity: species.scribeAffinity,
+        scribeAffinity: species.scribeAffinity, curiosity: 1024,
       }),
       store: shippedStorePolicy(traditionId),
       acquire: shippedAcquirePolicy(traditionId),
@@ -239,6 +281,15 @@ function v1NodeIds(): number[] {
   );
   return registry()
     .nodes.filter((entry) => v1Cells.has(entry.record.cell))
+    .map((entry) => entry.contentId)
+    .sort((a, b) => a - b);
+}
+
+/** Interned ids of every node in one of {@link HISTORIC_V1_CELLS}, ascending. */
+function historicV1NodeIds(): number[] {
+  const historic = new Set(HISTORIC_V1_CELLS);
+  return registry()
+    .nodes.filter((entry) => historic.has(entry.record.cell))
     .map((entry) => entry.contentId)
     .sort((a, b) => a - b);
 }
@@ -284,19 +335,27 @@ describe('the frontier scan is bounded by legality, not by a range of node ids',
     expect([...offered].sort((a, b) => a - b)).toEqual([...free].sort((a, b) => a - b));
   });
 
-  it('offers only what the ruleset permits, and every v1 root inside it', () => {
-    // The legality half of the bound, on the rectangle a v1 universe actually
-    // runs. Every offered node is in the twelve permitted cells — a scan that
+  it('offers only what the ruleset permits, and every root inside it', () => {
+    // The legality half of the bound, on the rectangle the diagnosis was taken
+    // against. Every offered node is in the twelve permitted cells — a scan that
     // walked the index and skipped `permits` would fail here — and every one of
     // the rectangle's twelve roots is offered, including the four `rego` roots
     // the window used to hide.
-    const { gateway, mage, nodeCount } = universeOnTheV1Rectangle();
+    //
+    // The rectangle is now a *narrower* thing than the content set rather than
+    // equal to it, which is what makes this a control at all. Enabling all
+    // seventy cells is what separated the two: `permits()` is the god's gate and
+    // `"v1": true` is content's, and this test only ever needed the first.
+    const { gateway, mage, nodeCount } = universeOnTheHistoricV1Rectangle();
     const offered = gateway.researchFrontier(mage, nodeCount).map((t) => t.nodeId);
-    const v1 = new Set(v1NodeIds());
-    const roots = prerequisiteFreeNodeIds().filter((nodeId) => v1.has(nodeId));
+    const rectangle = new Set(historicV1NodeIds());
+    const roots = prerequisiteFreeNodeIds().filter((nodeId) => rectangle.has(nodeId));
 
     expect(offered.length).toBeGreaterThan(0);
-    for (const nodeId of offered) expect(v1.has(nodeId)).toBe(true);
+    // The control the derived version lost: the ruleset really does exclude most
+    // of the catalog, so "everything offered is permitted" is not vacuous.
+    expect(rectangle.size).toBeLessThan(nodeCount);
+    for (const nodeId of offered) expect(rectangle.has(nodeId)).toBe(true);
     expect([...offered].sort((a, b) => a - b)).toEqual(roots);
     expect(roots.filter((nodeId) => nodeId > HISTORIC_SCAN_WINDOW)).toHaveLength(4);
   });
@@ -318,8 +377,19 @@ describe('the frontier scan is bounded by legality, not by a range of node ids',
 });
 
 describe('what the window cost the shipped v1 subset', () => {
-  it('put eighteen of the fifty-one v1 nodes permanently out of reach', () => {
-    const v1 = v1NodeIds();
+  it('put eighteen of the fifty-two historic v1 nodes permanently out of reach', () => {
+    // Against {@link HISTORIC_V1_CELLS} and not against the flag. These figures
+    // are a measurement of the twelve-cell subset that was enabled when the
+    // plateau was found; recomputing them over the seventy cells enabled since
+    // `material-economy` is a true statement about a different subset and not
+    // this diagnosis. The current subset is asserted separately below, so the
+    // file still notices a content reshuffle that moved ids around.
+    //
+    // **Fifty-two, not the fifty-one either branch carried.** `main` added a
+    // node inside the historic rectangle while `material-economy` was out, and
+    // that branch counted 51 over a grid that did not have it. Counted from
+    // `node.json`, not carried over from a comment.
+    const v1 = historicV1NodeIds();
     const beyond = v1.filter((nodeId) => nodeId > HISTORIC_SCAN_WINDOW);
 
     // The exact figures the plateau was made of. Written as numbers rather than
@@ -327,7 +397,14 @@ describe('what the window cost the shipped v1 subset', () => {
     // moving a v1 cell across id 256 used to be a silent balance change — and
     // the `check:content` assertion in `@mm/content`'s loader now refuses the
     // class of reshuffle that would make an id range matter again.
-    expect(v1).toHaveLength(51);
+    // 52, not the 51 this was written against: `w190/scribing-fidelity` added
+    // `pn-the-wrong-true-name` to `perdo-nomen`. The count of *unreachable*
+    // nodes is unchanged at eighteen, and that is the load-bearing half — the
+    // new node interns at 227, inside the historic window, so it neither joins
+    // the lost block nor rescues anything from it. A content addition that moved
+    // that second number would be the silent balance change this test exists to
+    // catch.
+    expect(v1).toHaveLength(52);
     expect(beyond).toHaveLength(18);
 
     // And they were one contiguous block — the four `rego` cells of the v1
@@ -346,7 +423,7 @@ describe('what the window cost the shipped v1 subset', () => {
     // reachability, the unreachable set would be closed under prerequisites and
     // would contain no roots. It contains four — one per `rego` cell — each with
     // an empty prerequisite list and a tier of 1.
-    const v1 = new Set(v1NodeIds());
+    const v1 = new Set(historicV1NodeIds());
     const roots = registry().nodes.filter(
       (entry) =>
         v1.has(entry.contentId) &&
@@ -364,7 +441,7 @@ describe('what the window cost the shipped v1 subset', () => {
     // just been created can now begin any of them.
     const { gateway, mage, nodeCount } = universeSeeingEverything();
     const offered = new Set(gateway.researchFrontier(mage, nodeCount).map((t) => t.nodeId));
-    const v1 = new Set(v1NodeIds());
+    const v1 = new Set(historicV1NodeIds());
     const roots = registry()
       .nodes.filter(
         (entry) =>
@@ -376,5 +453,33 @@ describe('what the window cost the shipped v1 subset', () => {
 
     expect(roots).toHaveLength(4);
     for (const nodeId of roots) expect(offered.has(nodeId)).toBe(true);
+  });
+
+  it('would cost the whole grid forty-four nodes and ten roots today', () => {
+    // The same window against the subset that is enabled *now*, so the file keeps
+    // noticing content movement rather than freezing into a museum piece. These
+    // are not a diagnosis of anything — the window is gone — they are the figures
+    // that say how much larger the hazard would have been had it survived
+    // enabling all seventy cells, and they are the ones a reader should expect to
+    // change when content moves.
+    const enabled = v1NodeIds();
+    // 301, not the 300 this was written against: `main` added
+    // `pn-the-wrong-true-name` to `perdo-nomen` while `material-economy` was
+    // out. A node count is a content decision and is recomputed here rather
+    // than reasoned about, exactly as the historic count above it is.
+    expect(enabled).toHaveLength(301);
+    // 45, not 44, and by the same one node: `pn-the-wrong-true-name` interns
+    // above the historic window, so it joins the block the window would have
+    // lost. That it moved *this* count and not the historic one above is the
+    // whole point of keeping the two separate — the historic figure is a
+    // diagnosis of a subset that no longer exists and must not drift, and this
+    // one is a live reading of the subset enabled now and is expected to.
+    expect(enabled.filter((nodeId) => nodeId > HISTORIC_SCAN_WINDOW)).toHaveLength(45);
+
+    const enabledSet = new Set(enabled);
+    const roots = prerequisiteFreeNodeIds().filter(
+      (nodeId) => enabledSet.has(nodeId) && nodeId > HISTORIC_SCAN_WINDOW,
+    );
+    expect(roots).toHaveLength(10);
   });
 });

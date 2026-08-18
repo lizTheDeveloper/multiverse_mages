@@ -80,6 +80,8 @@ import type { AcademyProjection } from './academy.js';
 import { describeAcademy } from './academy.js';
 import type { CandidateDetailProjection } from './candidate-detail.js';
 import { describeCandidates } from './candidate-detail.js';
+import type { FlowLedger, FlowReportSource } from './flow.js';
+import { describeFlow } from './flow.js';
 import type { PlayerState } from './player-state.js';
 import { project } from './player-state.js';
 import type { AgentView } from './view.js';
@@ -154,6 +156,30 @@ export interface Scenario {
    * {@link invitableSpecies}. Absent holds the action closed.
    */
   readonly portalNodes?: readonly number[];
+  /**
+   * The world loop's last per-tick report, if the builder installed one.
+   *
+   * The same §1.1/§5 shape as {@link portalTargets} and for a related reason:
+   * the ledger is not in state — `world-step.ts` keeps it out deliberately, so
+   * that *"two peers could not 'desync' over a number no rule reads"* — and
+   * `agent-api` may not import `@mm/coordination`, which owns it. So whoever
+   * installed the loop is the only party that can hand it over, exactly as
+   * whoever built the world is the only party that knows what else is in the
+   * sky.
+   *
+   * Absent means {@link AgentSession.flowLedger} reports absent, which is the
+   * correct answer for a scenario that built a world without the coordinating
+   * loop, and is what every scenario built before this field keeps reporting.
+   *
+   * Typed as `./flow.ts`'s structural {@link FlowReportSource} rather than as
+   * `WorldStepReport`, which this package cannot name. The compiler holds the
+   * two equivalent at the assignment in `reference-universe.ts`.
+   *
+   * **Must be a plain read.** It is called from a projection, on a client's
+   * request, and a function that stepped anything here would advance a universe
+   * because somebody opened a screen.
+   */
+  readonly flowReport?: (() => FlowReportSource | undefined) | undefined;
   /**
    * Builds the initial state.
    *
@@ -271,11 +297,11 @@ export interface AgentSession {
   /**
    * The §4.4 player projection of the current state — what a *client* may see.
    *
-   * Distinct from {@link observe}, which returns the §4.1 vector a *policy* is
-   * trained on, and it exists because those two are not the same entitlement.
-   * The vector is fixed at {@link OBSERVATION_SIZE} slots and widening it
+   * Distinct from {@link AgentSession.observe}, which returns the §4.1 vector a
+   * *policy* is trained on, and it exists because those two are not the same
+   * entitlement. The vector is fixed at `OBSERVATION_SIZE` slots and widening it
    * invalidates every trained agent, so a quantity the world holds but the
-   * vector aggregates — `material-stock`'s three kinds into one `materials`
+   * vector aggregates — `material-stock`'s seven kinds into one `materials`
    * slot — was unreachable by a client for no reason except that the agent's
    * budget is tight. `project()` was already the named home for the player's
    * view; nothing exposed it from a running session, so every consumer that had
@@ -315,6 +341,26 @@ export interface AgentSession {
    * `./academy.ts` argues the placement and the refusals.
    */
   academy(): AcademyProjection;
+  /**
+   * §4.4's flow ledger for the tick just stepped, or `undefined`.
+   *
+   * The fourth projection off this session that the observation cannot carry,
+   * and the first that is not a reading of state at all. `./flow.ts` argues the
+   * placement at length; the short version is that every other projection here
+   * reports a **level**, and a level cannot tell material that was spent from
+   * material that was lost.
+   *
+   * `undefined` when nothing has been stepped, and — deliberately the same
+   * answer — when the report on hand is of a different tick than this state.
+   * The world loop's `last` closure survives a `reset`, so a session that did
+   * not guard would serve the previous episode's final tick as this one's
+   * opening position.
+   *
+   * Absent unless the scenario supplies {@link Scenario.flowReport}. A scenario
+   * that builds a world without installing `coordination`'s loop has no ledger
+   * to give, and that is an honest absence rather than a gap.
+   */
+  flowLedger(): FlowLedger | undefined;
 }
 
 /** Builds a session. The episode does not exist until {@link AgentSession.reset}. */
@@ -570,6 +616,23 @@ export function createSession(options: SessionOptions): AgentSession {
       // `submit()` is a second thing that can be forgotten there and serve a
       // tick-old universe as the current one.
       return describeAcademy({ state: live(), catalogue: scenario.catalogue });
+    },
+
+    flowLedger(): FlowLedger | undefined {
+      if (scenario.flowReport === undefined) return undefined;
+      // **`worldTick - 1`, and the off-by-one is the whole guard.**
+      //
+      // `sim-core`'s `step` runs its systems on the tick the state *arrived*
+      // with and calls `advanceClock` afterwards, so the report the world loop
+      // just emitted is stamped with the clock's value *before* the step. A
+      // guard written against `state.clock.worldTick` would therefore never
+      // match, and a permanently-absent ledger is indistinguishable from
+      // absence-handling that works — which is why `session.test.ts` pins the
+      // convention against a real step rather than this comment asserting it.
+      //
+      // At tick 0 this asks for a report of tick -1, which nothing can be, so a
+      // freshly reset episode reports absent without a special case.
+      return describeFlow(scenario.flowReport(), live().clock.worldTick - 1);
     },
   };
 }

@@ -79,7 +79,7 @@ import {
   endEngagement,
 } from '@mm/state';
 import type { KnowledgeSubsystem, MagicGrid, PortalHooks } from '@mm/rules-magic';
-import { MASTERY_ACTIVATION_THRESHOLD } from '@mm/rules-magic';
+import { CORRUPTION, MASTERY_ACTIVATION_THRESHOLD, fidelityOf, isCastable } from '@mm/rules-magic';
 
 import type { TargetSettlement } from './action-economy.js';
 import { ActionEconomyLedger, COMBAT_SOURCE } from './action-economy.js';
@@ -100,7 +100,16 @@ import {
   takenObjectiveValue,
   totalObjectiveValue,
 } from './objectives.js';
+import type { RuleChange } from '@mm/state';
+
+import { ExposureRegister, exposedNodes, exposureMovements } from './exposure.js';
+import type { MaskSubject, RuleChangeResult } from './lock.js';
+import { RaidLock, applyRuleChange } from './lock.js';
+import type { EngagementPhaseValue } from './phases.js';
+import { phaseOf } from './phases.js';
 import { buildSpatialIndex } from './spatial.js';
+import type { RaidPurse } from './verbs.js';
+import { openPurse } from './verbs.js';
 import { generateTerrain } from './terrain.js';
 import type { TerrainGrid } from './terrain.js';
 import type { RaidTuning } from './tuning.js';
@@ -165,10 +174,45 @@ export interface Raid {
   /** Observation only. Draws nothing, decides nothing. See `action-economy.ts`. */
   readonly economy: ActionEconomyLedger;
   readonly counters: ClampCounters;
+  /**
+   * Which ruleset knobs this raid has already turned.
+   *
+   * `raid-engagement.md` §1's lock, and it lives here rather than in world state
+   * for a reason that is a fact rather than a preference: a raid runs inside a
+   * single world tick, so it can never be serialized mid-engagement and a lock
+   * has nothing to survive. What *does* outlive the raid is the mark the lock
+   * leaves — see `MID_RAID_CHANGE` in `@mm/state`.
+   */
+  readonly lock: RaidLock;
+  /**
+   * The two stocks the raid is played out of (`raid-engagement.md` §3).
+   *
+   * Raid-scoped, seeded at portal open, settled through `RaidOutcome`. Nothing
+   * here debits a world: a verb that moved favor directly would be the one write
+   * in the engine that could half-happen on a crashed worker.
+   */
+  readonly purse: RaidPurse;
+  /**
+   * Nodes the attacker has been seen to cast, once each.
+   *
+   * §3's exposure. Filled by `resolveOneCast`; read at resolution. See
+   * `exposure.ts` for why the mechanic teaches outright rather than weighting a
+   * discovery, and for why it therefore draws no randomness.
+   */
+  readonly exposure: ExposureRegister;
   /** Where the attacker came in, and the only way out. */
   readonly portal: Point;
   /** Computable before the first tick, from `RaidState` alone. */
   readonly maxTicks: number;
+  /**
+   * The engagement tick contact was first observed on, or `-1` for never.
+   *
+   * The muster phase's boundary (`raid-engagement.md` §2), and the only thing
+   * this change adds to the tick loop. Written once, by the first ledgered
+   * damage or the first resolved cast — see `phases.ts` for why a detachment's
+   * intrinsic attack has to count.
+   */
+  contactTick: number;
   readonly faults: RaidFaults;
   outcome: RaidOutcome | undefined;
 }
@@ -187,7 +231,7 @@ export interface RaidFaults extends ArbitrationFaults {
 
 /** What a combatant decided to do this tick, scored against tick-start state. */
 interface Intent {
-  readonly kind: 'cast' | 'steal' | 'move' | 'objective' | 'withdraw' | 'guard';
+  readonly kind: 'cast' | 'steal' | 'corrupt' | 'move' | 'objective' | 'withdraw' | 'guard';
   readonly nodeId?: ContentId;
   readonly goal?: Point;
   readonly objective?: ObjectiveBrief;
@@ -271,7 +315,10 @@ export function openPortal(options: OpenPortalOptions): Raid {
     faults: options.faults ?? {},
   });
 
-  const terrain = generateTerrain(tuning, rng);
+  // Computed before the terrain, because the terrain generator has to know
+  // where the exit is in order to guarantee there is one. See `terrain.ts`.
+  const portal: Point = { x: floorDiv(tuning.battlefieldExtent, 2), y: 0 };
+  const terrain = generateTerrain(tuning, rng, portal);
 
   const raid: Raid = {
     attacker,
@@ -290,8 +337,12 @@ export function openPortal(options: OpenPortalOptions): Raid {
     ledger: new OutcomeLedger(),
     economy: new ActionEconomyLedger(),
     counters,
-    portal: { x: floorDiv(tuning.battlefieldExtent, 2), y: 0 },
+    lock: new RaidLock(),
+    purse: openPurse(host.world, tuning.attackerVisStock),
+    exposure: new ExposureRegister(),
+    portal,
     maxTicks: maxEngagementTicks(engagement.raid),
+    contactTick: -1,
     faults: options.faults ?? {},
     outcome: undefined,
   };
@@ -426,6 +477,9 @@ export function stepEngagement(raid: Raid): ReturnType<typeof terminationOf> {
   ): void => {
     ledger.set(target, (ledger.get(target) ?? 0) + amount);
     raid.economy.damage(target, source, amount, attempt);
+    // Contact, observed at the one place every point of damage in the tick
+    // passes through — casts, denial fields, detachments and summons alike.
+    if (raid.contactTick < 0) raid.contactTick = tick;
   };
 
   // ---- Phase 3: area denial. Additive across fields; bypasses concealment. ----
@@ -481,6 +535,17 @@ export function stepEngagement(raid: Raid): ReturnType<typeof terminationOf> {
     const intent = intents.get(brief.handle);
     if (intent?.kind !== 'steal' || intent.nodeId === undefined) continue;
     resolveTheft(raid, brief, intent.nodeId, combatants, tick, ledger);
+  }
+
+  // ---- Phase 5b: corruption, beside theft and for the same reason. ----
+  //
+  // After damage, so that a saboteur who dies this tick has still done it —
+  // which is where corruption and theft part company. See `CombatantBrief`.
+  for (const brief of combatants) {
+    const intent = intents.get(brief.handle);
+    if (intent?.kind !== 'corrupt' || intent.nodeId === undefined) continue;
+    if (intent.objective === undefined) continue;
+    resolveCorruption(raid, brief, intent.nodeId, intent.objective, tick);
   }
 
   // ---- Phase 6: objective interaction. ----
@@ -559,9 +624,48 @@ export function stepEngagement(raid: Raid): ReturnType<typeof terminationOf> {
     engagementTick: nextTick,
     maxTicks: raid.maxTicks,
     allObjectivesResolved: allObjectivesResolved(raid.objectives),
-    livingAttackers: alive.filter((brief) => brief.side === RAID_SIDE.attacker).length,
+    livingAttackers: alive.filter(
+      (brief) => brief.side === RAID_SIDE.attacker && !isMarchingAtAWall(raid, brief, nextTick),
+    ).length,
     livingDefenders: alive.filter((brief) => brief.side === RAID_SIDE.defender).length,
+    // `livingCombatants` excludes the withdrawn, so they have to be counted off
+    // the roster rather than off `alive`.
+    withdrawnAttackers: withdrawnAttackerCount(raid),
   });
+}
+
+/** Attackers who left through the portal alive. */
+function withdrawnAttackerCount(raid: Raid): number {
+  let count = 0;
+  for (const brief of raid.rosters[RAID_SIDE.attacker].briefs) {
+    if (brief.withdrawn && isAlive(raid, brief)) count += 1;
+  }
+  return count;
+}
+
+/**
+ * An attacker who is trying to leave and can never arrive.
+ *
+ * Not a third kind of death and not a shortcut: she is still alive, still on
+ * the field, and `resolveRaid` will take her under the stranded-raider rule
+ * exactly as it would have. What this excludes her from is the **termination
+ * count**, because a raid whose every remaining attacker is walking at a wall
+ * has nothing left to decide, and without it it runs to portal collapse —
+ * measured at 3,199 engagement ticks against a p50 of 65.
+ *
+ * Two conditions, and both are needed. Past the withdrawal tick, because before
+ * it she is still fighting and a raid is not over merely because one exit is
+ * blocked. Unreachable, because `stepTowardGoal` degrades to a direct step for
+ * an unreachable goal rather than refusing, so she keeps moving and no other
+ * signal distinguishes her from a raider who is simply far away.
+ *
+ * The portal cell itself is guaranteed passable by `generateTerrain`; what is
+ * left after that is the walled-off pocket a raider can deploy into, which
+ * terrain generation can produce and nothing prevents.
+ */
+function isMarchingAtAWall(raid: Raid, brief: CombatantBrief, tick: number): boolean {
+  if (tick < raid.tuning.withdrawAfterTicks) return false;
+  return !raid.navigator.canReach(positionOf(raid, brief), raid.portal);
 }
 
 /**
@@ -621,10 +725,16 @@ function chooseIntent(
 
   // 1. Leave, while leaving is still possible. The stranded-raider rule makes
   //    this the difference between a live mage and a dead one.
-  if (
-    isAttacker &&
-    raid.engagement.raid.portalStability <= raid.tuning.withdrawStabilityMargin
-  ) {
+  //
+  // Keyed on **how long she has been here**, not on what is left of the portal.
+  // The stability form was measured dead: a portal opens with 2,411–3,577
+  // engagement ticks of life and the longest raid observed is 148, so the
+  // window opened thousands of ticks after every raid had ended. Over 97 raids
+  // on four seeds, 169 raiders went out, **0 came back and 169 were stranded**.
+  // Retuning the old threshold could not have fixed it — `portalStabilityJitter`
+  // is ±600 ticks, so any absolute remaining-stability figure fires at a tick
+  // that varies by twelve hundred, which is longer than any raid runs.
+  if (isAttacker && tick >= raid.tuning.withdrawAfterTicks) {
     return { kind: 'withdraw', goal: raid.portal };
   }
 
@@ -640,6 +750,31 @@ function chooseIntent(
     const victim = acquireTarget(raid, brief, combatants, raid.tuning.theftRange);
     if (victim !== undefined && stealableFrom(raid, brief, victim) !== 0) {
       return { kind: 'steal', nodeId: theftNode };
+    }
+  }
+
+  // 2b. Corrupt, if she came to do that and is standing in the stacks.
+  //
+  // Above casting and below theft, because it is what she came for and a
+  // corrupting raider who spent the tick throwing bolts has wasted the trip.
+  // Below `objective` for the opposite reason: taking a library *resolves* it,
+  // so a raider who looted first would have nothing left to poison.
+  //
+  // **Priced, and that is the bound.** The design asks for a move that is
+  // griefable on purpose and expensive on purpose — *"all spells cost something
+  // that the raiders are using up, and so it should cost something"* — so the
+  // damage is capped by the vigor pool and not by a rule about how many books a
+  // raid may ruin. A warband that empties itself into a library ruins a great
+  // many books and does nothing else, which is exactly the trade the design
+  // wants available and wants to hurt.
+  const corruptNode = firstNodeWith(raid, brief, COMBAT_PRIMITIVES.knowledgeCorrupt);
+  if (isAttacker && corruptNode !== undefined) {
+    const price = corruptionPrice(raid, corruptNode);
+    if (price !== undefined && field(raid, brief.handle, 'vigor') >= price) {
+      const library = nearestLibraryInReach(raid, here, tick, brief);
+      if (library !== undefined && corruptibleIn(raid, library) !== 0) {
+        return { kind: 'corrupt', nodeId: corruptNode, objective: library };
+      }
     }
   }
 
@@ -708,11 +843,28 @@ function firstCastableNode(raid: Raid, brief: CombatantBrief): ContentId | undef
   const hostCast = raid.host.hooks.hostCast;
   const vigor = field(raid, brief.handle, 'vigor');
 
-  const pool = raid.arbiter.selectionMaskDisabled
+  // Two filters, one each from the two authorities, and they are not the same
+  // question. `legalNodes` is the *mask*: what she holds, above
+  // `CASTABLE_MASTERY`, in a cell this sky permits. `isCastable` is the
+  // *tradition*: under `standard` that is exactly "does she usably hold it", and
+  // under `prepared` it is "is it in the readied list" — she may hold it and
+  // still not be able to cast it, which is the whole point of the kind.
+  //
+  // The two were folded into one hand-rolled conditional here and `isCastable`
+  // had no caller at all. Same answer today, from the function that owns half of
+  // it, so a third cast kind lands in one place rather than in this expression.
+  const candidates = raid.arbiter.selectionMaskDisabled
     ? [...brief.preparedSpells]
     : hostCast.preparationRequired
-      ? brief.preparedSpells.filter((nodeId) => brief.legalNodes.has(nodeId))
+      ? [...brief.preparedSpells]
       : [...brief.legalNodes];
+  const pool = raid.arbiter.selectionMaskDisabled
+    ? candidates
+    : candidates.filter(
+        (nodeId) =>
+          brief.legalNodes.has(nodeId) &&
+          isCastable(hostCast, brief.preparedSpells, { nodeId, usable: true, dormant: false }),
+      );
 
   const roster = raid.rosters[brief.side] as SideRoster;
 
@@ -871,6 +1023,16 @@ function resolveOneCast(
   });
   if (!resolution.resolved) return;
 
+  // A cast that lands no damage — a ward, a summon, a blink — is still the
+  // moment the two sides are in the same fight.
+  if (raid.contactTick < 0) raid.contactTick = tick;
+
+  // Exposure (§3). Observed here, at the single point a node becomes effects on
+  // the host's ground, so there is no second definition of "cast in front of
+  // the host's academics" to drift from this one. Attacker casts only: a
+  // defender casting at home is not performing for anybody.
+  if (caster.side === RAID_SIDE.attacker) raid.exposure.observe(nodeId);
+
   caster.preparedSpells = resolution.preparedSpells;
   setField(raid, caster.handle, 'vigor', field(raid, caster.handle, 'vigor') - resolution.cost);
 
@@ -1011,6 +1173,131 @@ function resolveTheft(
 }
 
 /**
+ * One corruption attempt, on stream 13, gated by the host's ruleset.
+ *
+ * **One instance, never a shelf.** *"It targets a spell, because then a scribe
+ * can mess up one spell but not others for that grimoire."* Corrupting the
+ * container was the tempting shortcut and it is the wrong mechanic: a raid that
+ * poisoned a whole library in one action would make the cost bound meaningless
+ * and would make the diagnosis — one reader, one failure, one book — impossible
+ * to play out.
+ *
+ * The vigor is spent on the **attempt**, not on the success. A spell costs what
+ * it costs whether or not it lands, which is the rule casting already follows,
+ * and it is what makes a low-magnitude corruption node a bad way to spend a
+ * warband rather than a free lottery ticket.
+ */
+function resolveCorruption(
+  raid: Raid,
+  saboteur: CombatantBrief,
+  nodeId: ContentId,
+  objective: ObjectiveBrief,
+  tick: number,
+): void {
+  const price = corruptionPrice(raid, nodeId);
+  if (price === undefined) return;
+  const vigor = field(raid, saboteur.handle, 'vigor');
+  if (vigor < price) return;
+  setField(raid, saboteur.handle, 'vigor', vigor - price);
+
+  const magnitudes = raid.arbiter.corruptionMagnitudes(nodeId);
+  const stream = raid.rng.actorStream(RNG_STREAM.corruption, tick, packCombatantKey(saboteur.key));
+  if (!raid.arbiter.attemptCorruption(nodeId, magnitudes, stream)) return;
+
+  const target = corruptibleIn(raid, objective);
+  if (target === 0) return;
+
+  saboteur.corrupted.push(target);
+  raid.ledger.applied(COMBAT_PRIMITIVES.knowledgeCorrupt, saboteur.side, magnitudes[0] ?? 0);
+}
+
+/**
+ * What one corruption costs the raider, or `undefined` for a node off the grid.
+ *
+ * The **cast** price, deliberately reused rather than given a schedule of its
+ * own. A spell costs what a spell of that depth costs; a second price table
+ * would be a second place the raid says what magic is worth, and the two would
+ * drift the first time either was tuned.
+ */
+function corruptionPrice(raid: Raid, nodeId: ContentId): Fixed | undefined {
+  if (!raid.grid.hasNode(nodeId)) return undefined;
+  return raid.tuning.castVigorBase + raid.tuning.castVigorPerTier * raid.grid.tierOf(nodeId);
+}
+
+/**
+ * The instance the *next* corruption in this raid would ruin, or `0`.
+ *
+ * Deliberately not a function of which saboteur is asking. Phase 1 computes
+ * every intent against tick-start state, so two saboteurs in one tick both probe
+ * the same shelf and both see the same top book; phase 5b then runs them in
+ * order and the second finds it already taken and moves down. If the shelf is
+ * exhausted between them, the second **has paid her vigor and got nothing** —
+ * which is the rule casting already follows, stated here so it is a decision
+ * rather than an accident of ordering: a spell costs what it costs whether or
+ * not it lands, and a probe that could reserve a target would make corruption
+ * the one action in the raid that cannot be wasted.
+ *
+ * Deepest tier first, ties on the instance handle — the same ranking theft
+ * uses, and here it is not only about taking something worth having. The design
+ * observes that *"your deepest, rarest knowledge is the most likely to be
+ * silently gone"*, because only a reader near that tier can diagnose it. A
+ * raider who goes for the bottom of the shelf is going for the books that will
+ * stay broken longest, and she should be, so the ranking is the attack rather
+ * than a tidy tie-break.
+ *
+ * Already-corrupted instances are excluded, for the reason phase 2's second
+ * clause exists: without it a saboteur would ruin the same book every tick for
+ * the whole raid and the mechanic would be 455 identical nothings.
+ *
+ * **The exclusion is the raid's, not the saboteur's**, and that is a correction
+ * a test caught rather than a design. Read off `brief.corrupted` alone, two
+ * saboteurs in one warband both went for the deepest book and both counted it —
+ * seven corruptions against a four-book shelf, a number that describes one book
+ * ruined twice and reads as one ruined seven times. The world write happens at
+ * consequence time, so the state's own `corruption` field still says `sound`
+ * during the engagement and cannot be the exclusion either.
+ */
+function corruptibleIn(raid: Raid, objective: ObjectiveBrief): Handle {
+  if (objective.kind !== OBJECTIVE_KIND.library) return 0;
+  const already = new Set<Handle>();
+  for (const roster of raid.rosters) {
+    for (const brief of roster.briefs) for (const instance of brief.corrupted) already.add(instance);
+  }
+  const ranked = raid.host.knowledge
+    .instancesAt(LOCATION_KIND.library, objective.targetId)
+    .filter((instance) => !already.has(instance))
+    .filter((instance) => fidelityOf(raid.host.world, instance).corruption === CORRUPTION.sound)
+    .map((instance) => ({ instance, nodeId: raid.host.knowledge.read(instance).nodeId }))
+    .sort(
+      (a, b) => raid.grid.tierOf(b.nodeId) - raid.grid.tierOf(a.nodeId) || a.instance - b.instance,
+    );
+  return ranked[0]?.instance ?? 0;
+}
+
+/**
+ * The nearest library objective this attacker is already standing in, or
+ * `undefined`.
+ *
+ * Reuses the objective scan rather than a second one: a saboteur is a raider who
+ * reached the stacks, and *"in reach"* has to mean exactly what it means for
+ * looting or the two verbs would disagree about where the library is.
+ */
+function nearestLibraryInReach(
+  raid: Raid,
+  here: Point,
+  tick: number,
+  brief: CombatantBrief,
+): ObjectiveBrief | undefined {
+  const objective = nearestUnresolvedObjective(raid, here, tick, brief);
+  if (objective === undefined) return undefined;
+  if (objective.kind !== OBJECTIVE_KIND.library) return undefined;
+  if (!withinRange(here, objective.position, raid.tuning.objectiveInteractionRadius)) {
+    return undefined;
+  }
+  return objective;
+}
+
+/**
  * The node a thief would take from this victim, or `0`.
  *
  * Deepest first, so a successful theft takes something worth having, and ties
@@ -1099,10 +1386,29 @@ export function resolveRaid(raid: Raid, reason: RaidOutcome['reason']): RaidOutc
   const casualties: RaidOutcome['casualties'] = [];
   const cohortLosses: RaidOutcome['cohortLosses'] = [];
   const movements = [...raid.ledger.knowledgeMovements];
+  // Exposure, resolved against the host as it stands *now*: a mage who died in
+  // the last tick did not go home with a lesson.
+  const exposures = exposedNodes(raid.host, raid.exposure);
+  movements.push(...exposureMovements(exposures));
+
+  // The three counts `RaidOutcome` documents. Summed in the walk below rather
+  // than in a second pass, so they cannot describe a different roster than the
+  // casualties do.
+  let raidersFielded = 0;
+  let raidersWithdrawn = 0;
+  let raidersStranded = 0;
 
   for (const roster of raid.rosters) {
     for (const brief of roster.briefs) {
       const dead = !isAlive(raid, brief);
+      if (
+        brief.side === RAID_SIDE.attacker &&
+        brief.sourceKind === COMBATANT_SOURCE_KIND.mage
+      ) {
+        raidersFielded += 1;
+        if (brief.withdrawn && !dead) raidersWithdrawn += 1;
+        else if (!dead) raidersStranded += 1;
+      }
       // The stranded-raider rule. An attacker still on the field when the
       // portal collapses is lost with it, and takes everything she was carrying.
       //
@@ -1137,6 +1443,15 @@ export function resolveRaid(raid: Raid, reason: RaidOutcome['reason']): RaidOutc
     }
   }
 
+  // Every corruption, from every saboteur, alive or dead, withdrawn or stranded.
+  // Ascending by instance handle so two peers write them in one order. See
+  // `CombatantBrief.corrupted` for why survival is not a condition here.
+  const corruptedInstances: Handle[] = [];
+  for (const roster of raid.rosters) {
+    for (const brief of roster.briefs) corruptedInstances.push(...brief.corrupted);
+  }
+  corruptedInstances.sort((left, right) => left - right);
+
   const outcome: RaidOutcome = {
     victor: victorOf({
       takenValue: taken,
@@ -1148,6 +1463,7 @@ export function resolveRaid(raid: Raid, reason: RaidOutcome['reason']): RaidOutc
     maxTicks: raid.maxTicks,
     casualties,
     cohortLosses,
+    corruptedInstances,
     objectives: raid.objectives.map((objective) => ({
       kind: objective.kind,
       targetId: objective.targetId,
@@ -1162,6 +1478,32 @@ export function resolveRaid(raid: Raid, reason: RaidOutcome['reason']): RaidOutc
     primitiveApplication: raid.ledger.primitiveApplication(),
     actionEconomy: raid.economy.report(engagementTickOf(raid)),
     peakCombatants: raid.ledger.peakCombatants,
+    raidersFielded,
+    raidersWithdrawn,
+    raidersStranded,
+    favorSpentByDefender: raid.purse.defenderSpent,
+    visSpentByAttacker: raid.purse.attackerSpent,
+    // Unspent Vis is captured when the raiders do not come home with it, and
+    // carried otherwise. §3 calls Vis lootable and this is the whole of that:
+    // there is nowhere at world scale to put captured Vis yet, so it is
+    // recorded and not inserted — see the economy spec amendment.
+    visCapturedByDefender:
+      victorOf({
+        takenValue: taken,
+        totalValue: total,
+        victoryThresholdFraction: raid.tuning.victoryThresholdFraction,
+      }) === RAID_SIDE.defender
+        ? raid.purse.attackerVis
+        : 0,
+    exposures,
+    // §1's second half: the lock dies with the raid, the mark does not.
+    constitutionalMarks: raid.lock.changes().map((locked) => ({
+      scope: locked.scope,
+      targetId: locked.targetId,
+      changeKind: locked.kind,
+      paidCost: locked.paidCost,
+      atTick: locked.atTick,
+    })),
   };
 
   raid.outcome = outcome;
@@ -1185,6 +1527,62 @@ export function closePortal(raid: Raid): void {
  */
 export function engagementTickOf(raid: Raid): number {
   return raid.host.world.clock.engagementTick;
+}
+
+/**
+ * Which of `raid-engagement.md` §2's three phases this engagement is in.
+ *
+ * Derived on every call and stored nowhere — see `phases.ts`. It gates the
+ * player's verbs and nothing in the tick loop reads it, which is what lets the
+ * whole phase structure be added to a finished engine without moving a number.
+ */
+/**
+ * Changes the ruleset this raid is fought under, under the lock.
+ *
+ * The thin wrapper `lock.ts` deliberately does not have: everything below is
+ * reading a `Raid` apart, and the module that owns the rule is written against
+ * the four things it actually needs so that it can be tested without one.
+ *
+ * Only mage combatants are subjects. A detachment and a summon hold no
+ * knowledge, so their masks are empty and recomputing one is a no-op with a
+ * component write in it.
+ */
+export function changeRuleMidRaid(
+  raid: Raid,
+  change: RuleChange,
+  paidCost: Fixed,
+): RuleChangeResult {
+  const subjects: MaskSubject[] = [];
+  for (const roster of raid.rosters) {
+    for (const brief of roster.briefs) {
+      if (brief.sourceKind !== COMBATANT_SOURCE_KIND.mage) continue;
+      const participant = brief.side === RAID_SIDE.attacker ? raid.attacker : raid.host;
+      subjects.push({ brief, held: heldInstancesOf(participant, brief.sourceId) });
+    }
+  }
+
+  return applyRuleChange({
+    arbiter: raid.arbiter,
+    lock: raid.lock,
+    change,
+    paidCost,
+    atTick: engagementTickOf(raid),
+    subjects,
+    baseConcealment: raid.tuning.combatantBaseConcealment,
+    setConcealment: (brief, value) => {
+      componentOf(raid.engagement.entities, COMBATANT).set(brief.handle, 'concealment', value);
+    },
+  });
+}
+
+export function currentPhase(raid: Raid): EngagementPhaseValue {
+  return phaseOf({
+    engagementTick: engagementTickOf(raid),
+    contactTick: raid.contactTick,
+    allObjectivesResolved: allObjectivesResolved(raid.objectives),
+    musterCeilingTicks: raid.tuning.musterCeilingTicks,
+    resolutionOnsetTicks: raid.tuning.resolutionOnsetTicks,
+  });
 }
 
 /** Every instance a mage holds, in the shape arbitration reads. */

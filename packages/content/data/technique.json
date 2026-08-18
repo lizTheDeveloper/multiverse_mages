@@ -3,30 +3,60 @@
     "id": "creo",
     "name": "Creo",
     "gloss": "make, create, heal",
-    "bit": 0
+    "bit": 0,
+    "envelope": {
+      "id": "swell",
+      "gloss": "sound-design.md §4.1: 'the only technique whose energy increases across its duration.' Creo work starts cheap and lands late — the first eighth of a project takes 37% of its months, the last eighth 5%. A creation looks hopeless right up until it blooms.",
+      "slots": [347, 697, 1044, 1392, 1739, 2087, 2435, 2783],
+      "tuningStatus": "untuned"
+    }
   },
   {
     "id": "intellego",
     "name": "Intellego",
     "gloss": "perceive, know, scry",
-    "bit": 1
+    "bit": 1,
+    "envelope": {
+      "id": "open",
+      "gloss": "sound-design.md §4.1: 'No impact at all; a filter opens... nothing is struck.' A long hesitation — 46% of the months buy the first eighth — and then the filter opens and the rest runs at 1.6x. The only curve whose attack slot is near the floor.",
+      "slots": [277, 1665, 1665, 1665, 1664, 1664, 1664, 1664],
+      "tuningStatus": "untuned"
+    }
   },
   {
     "id": "muto",
     "name": "Muto",
     "gloss": "transform",
-    "bit": 2
+    "bit": 2,
+    "envelope": {
+      "id": "bend",
+      "gloss": "sound-design.md §4.1: 'begins as one material and ends as another. The listener hears the change, not the endpoints.' Slow at both ends and fast across the transition, so the value is in the middle. The only symmetric curve that is not flat.",
+      "slots": [429, 1286, 2146, 3004, 3004, 2146, 1286, 429],
+      "tuningStatus": "untuned"
+    }
   },
   {
     "id": "perdo",
     "name": "Perdo",
     "gloss": "unmake, destroy, wither",
-    "bit": 3
+    "bit": 3,
+    "envelope": {
+      "id": "hole",
+      "gloss": "sound-design.md §4.1: 'Subtractive... Perdo's signature is a hole.' The exact time-reverse of Creo's swell, which is the right relationship between make and unmake: the hole is taken out at once and the tail is absence. An unmaking looks nearly finished and then drags.",
+      "slots": [2783, 2435, 2087, 1739, 1392, 1044, 697, 347],
+      "tuningStatus": "untuned"
+    }
   },
   {
     "id": "rego",
     "name": "Rego",
     "gloss": "control, bind, compel",
-    "bit": 4
+    "bit": 4,
+    "envelope": {
+      "id": "rigid",
+      "gloss": "sound-design.md §4.1: 'Zero attack, gated release, rhythmically rigid.' Flat is not a placeholder here, it is Rego's shape — full rate from the first month and no curvature — and it doubles as the control the other four are measured against.",
+      "slots": [1024, 1024, 1024, 1024, 1024, 1024, 1024, 1024],
+      "tuningStatus": "untuned"
+    }
   }
 ]

@@ -44,7 +44,7 @@
 
 import { describe, expect, it } from 'vitest';
 
-import { BOT_POOL_REGISTRY, adaptAgentSession, policyFor, runEpisode } from '@mm/mc-harness';
+import { BOT_POOL_REGISTRY, adaptAgentSession, policyFor, runEpisodeAsync } from '@mm/mc-harness';
 import { agentRng, createSession } from '@mm/agent-api';
 
 import {
@@ -65,25 +65,70 @@ import {
  * check fails on a stale one.
  */
 const KNOWN_SHADOWED: Readonly<Record<string, string>> = Object.freeze({
-  'portal-rush/1':
-    'permitTechnique is portal-rush\'s tempo move and sits fourth, behind openPortal, assignRole ' +
-    'and encourageResearch. assignRole is legal on all but one tick of a run, so the tempo line ' +
-    'is never reached and the technique the strategy names is never permitted by it. Its own ' +
-    'version-4 note predicted this for the version-3 build and it is still true at version 4: ' +
-    '"it sits third, behind openPortal and encourageResearch". Not a signature action, which is ' +
-    'why degeneracyOf reports the strategy healthy.',
-  'portal-rush/12':
-    'encourageResearch sits third, behind assignRole, which is legal on 599 of 600 ticks. The ' +
-    'comment above it calls it "tempo while the portal is unreachable" — the portal is reachable ' +
-    'on 384 of 600 ticks now, and on the other 216 assignRole takes the slot instead. So the ' +
-    'strategy has no tempo behaviour at all, and the cell it claims to push is pushed by nobody.',
-  'worship-maximizer/11':
-    'fundUniversity is a signature action and is never submitted. Both of its entries sit behind ' +
-    'blessMage: the first inside the `worship < favor` branch and the second after it, and ' +
-    'blessMage is legal on 598 of 600 ticks. So the strategy whose thesis is that worship is ' +
-    'bought with "blessings and buildings" buys only blessings, and the buildings half of its ' +
-    'hypothesis has never been measured. This is exactly permissive-breadth\'s incident ' +
-    '(w73/pool-build-order, PR #70) in a second strategy.',
+  // `portal-rush/1` was here and is **gone on `integration/all-branches`**,
+  // 2026-08-17, deleted rather than left for the reason the next comment gives:
+  // a stale entry says a defect is known and accepted when it is in fact gone.
+  //
+  // What it said: *"permitTechnique is portal-rush's tempo move and sits
+  // fourth, behind openPortal, assignRole and encourageResearch. assignRole is
+  // legal on all but one tick of a run, so the tempo line is never reached."*
+  //
+  // **It is not shadowed now because it is not legal now.** `auditPool` on this
+  // tree reports action 1 at `ticksLegal 0 / unreachable` for every strategy
+  // that lists it: the campaign's opening square is the whole grid, so a
+  // universe founded on it already permits all five techniques and
+  // `permitTechnique` is `not-a-change` on every tick of every run. A verb the
+  // mask never offers cannot be shadowed by the verb in front of it.
+  //
+  // So this is **not** the shadow lifting and not a fix. The tempo move is
+  // still never played; the reason moved one layer down, from "something ahead
+  // of it is always legal" to "there is nothing left to permit". Worth saying
+  // plainly, because a reader who sees only the deletion would read it as
+  // progress: opening the whole grid did not make `portal-rush`'s ruleset move
+  // reachable, it made it meaningless.
+  // `portal-rush/12` was here and is **gone on `w190/scribing-fidelity`**, so it
+  // is deleted rather than left: this file's own rule is that a stale entry is
+  // worse than a missing one, because it says a defect is known and accepted
+  // when it is in fact gone and the next reader trusts it.
+  //
+  // What it said: *"encourageResearch sits third, behind assignRole, which is
+  // legal on 599 of 600 ticks… the portal is reachable on 384 of 600 ticks now,
+  // and on the other 216 assignRole takes the slot instead."* Nothing on that
+  // branch touched `portal-rush`, the mask or the preference order. What moved
+  // is the tick arithmetic underneath it — a renumbered node graph and a
+  // `seek-teaching` that the shelf can now satisfy — so `encourageResearch`
+  // reaches the slot and is submitted.
+  //
+  // **This is a shadow lifting by accident, not a fix**, and it can come back
+  // the same way. The durable reading is the one the entry above it still
+  // carries: portal-rush's preference order puts its tempo move behind a verb
+  // that is legal almost every tick, and whether that shadows anything depends
+  // on numbers no one is holding still.
+  //
+  // `worship-maximizer/11` was here too, and is **gone on
+  // `w247/material-economy-build`** — the second entry this list has lost, on
+  // the merge that brought the two removals together. Its finding read:
+  // *"fundUniversity is a signature action and is never submitted. Both of its
+  // entries sit behind blessMage… and blessMage is legal on 598 of 600 ticks.
+  // So the strategy whose thesis is that worship is bought with 'blessings and
+  // buildings' buys only blessings, and the buildings half of its hypothesis
+  // has never been measured."*
+  //
+  // `material-economy` prices `blessMage` in `insight`, and the reference
+  // universe's founding endowment is eight blessings' worth. So `blessMage`
+  // stops being legal on 598 of 600 ticks, the entry behind it is finally
+  // reached, and the buildings half of the hypothesis gets measured for the
+  // first time.
+  //
+  // Worth naming because it is a general property rather than luck. A verb that
+  // shadows another is one that is *always* legal, and a second currency is the
+  // cheapest thing there is for making a verb sometimes illegal.
+  //
+  // **Both removals are unmeasured on this tree**, and that is stated rather
+  // than hidden: each was measured on its own branch, against a build the other
+  // branch's change was not in. This file's own check is the instrument — it
+  // fails on a shadowed verb that is not listed *and* on a listed verb that is
+  // no longer shadowed — so a wrong guess here is loud rather than silent.
   // The alliance pair, and the four entries below are one finding written four
   // times because `allianceGroundwork` is one list shared by both arms.
   //
@@ -103,6 +148,50 @@ const KNOWN_SHADOWED: Readonly<Record<string, string>> = Object.freeze({
   // would invalidate every number already taken against it. Neither strategy is
   // in a gate pool, so nothing baselined moves either way. The fix belongs with
   // the re-measurement, not with this merge.
+  // ---- Three findings recorded on `integration/all-branches`, 2026-08-17. ----
+  //
+  // These were left unlisted on `integration/group-e` with the argument that
+  // *"adding the entries to KNOWN_SHADOWED would convert exactly that report
+  // into silence."* **That argument is withdrawn here, and the reason is this
+  // file's own header.** An entry is not silence: the list is checked in *both*
+  // directions, so a listed verb that stops being shadowed fails
+  // `holds the known-shadowed list to its own findings`, and an unlisted one
+  // fails the check above. What an unlisted finding buys over a listed one is a
+  // red build; what it costs is the ability of the next shadow — the fourth,
+  // the one nobody has seen — to be distinguished from these three. The header
+  // decided this before any of us: *"Fixing them here is forbidden ... So each
+  // is named, with the finding, and the check fails on anything that is not
+  // named."*
+  //
+  // None is fixed here, for the header's reason: a preference-order change
+  // measures the edit rather than the rule, and moves every balance baseline.
+  // Every number below is from `auditPool` on this tree, printed by the first
+  // test in this file.
+  'narrow-depth/8':
+    'grantFoundingKnowledge is fourth in a four-entry list, behind forbidTechnique (legal on ' +
+    '515/600 ticks, submitted on all 515), forbidForm (541/600, submitted 26) and ' +
+    'encourageResearch (599/600, submitted 58) — 599 submissions over 600 rounds, so the tail of ' +
+    'the list is reached on one round in six hundred and the mask offers action 8 on 11. This is ' +
+    "the `narrow-depth` half of the incident that made this file: it is the strategy whose " +
+    'preference list was read by hand, months apart, and found never to ask for this verb. It ' +
+    'asks now and still never gets it.',
+  'denial-warden/2':
+    'forbidTechnique is second, behind issueInterdiction, which is legal on 490 of 592 ticks and ' +
+    'submitted on every one of them — a superset of the 483 on which forbidTechnique is legal. ' +
+    'The warden is a signature-action strategy and this is one of its four: its hypothesis is ' +
+    'that it "forbids and interdicts as hard as the edict budget allows", and on this tree it ' +
+    'only interdicts. forbidForm still reaches the wire (39/592 legal, 24 submitted), so the ' +
+    'strategy is not degenerate — it is narrower than its hypothesis by one axis.',
+  'portal-rush/12':
+    'encourageResearch is third, behind openPortal (unreachable, 0 legal ticks) and assignRole, ' +
+    'which is legal on 599 of 600 ticks and submitted on all 599. Listed here for the second ' +
+    'time: it was deleted on `w190/scribing-fidelity` when the shadow lifted, with a note saying ' +
+    'it *"can come back the same way"*, and it came back. Both of this strategy\'s tempo moves ' +
+    'are now dead — action 1 is `unreachable` because the campaign opened all seventy cells and ' +
+    'there is nothing left to permit, and action 12 is shadowed by assignRole. The durable ' +
+    'reading is the one the deleted `portal-rush/1` note carried: this preference order puts the ' +
+    'tempo moves behind a verb that is legal almost every tick, and whether that shadows anything ' +
+    'depends on numbers no one is holding still.',
   'alliance-seeker/11':
     'fundUniversity is listed on every tick and submitted on none. Its front-of-list entry is ' +
     'gated on `universities === 0`, which the reference universe never satisfies, and its rotated ' +
@@ -123,7 +212,7 @@ const KNOWN_SHADOWED: Readonly<Record<string, string>> = Object.freeze({
 const audits = auditPool();
 
 describe('the pool audit does not disturb the pool', () => {
-  it('produces the same run policyFor produces, hash for hash', () => {
+  it('produces the same run policyFor produces, hash for hash', async () => {
     // One strategy is enough and it has to be this one: uniform-random-legal is
     // the only member of the pool that draws randomness on every round, so it is
     // the only one where a duplicated `preferences` call would show up as a
@@ -136,7 +225,10 @@ describe('the pool audit does not disturb the pool', () => {
 
     const { scenario } = referenceScenario(referenceContent());
     const control = createSession({ scenario, agentSlotIndex: 0, strategyId });
-    runEpisode({
+    // `…Async`: a 600-tick control run is a 10.1 s unbroken block, measured
+    // across the whole suite on 2026-08-18, and the snapshot-hash assertion
+    // below is what proves the yield moved nothing.
+    await runEpisodeAsync({
       session: adaptAgentSession(control),
       runSeed: AUDIT_RUN_SEED,
       scenarioConfig: { worldTickCap: AUDIT_WORLD_TICK_CAP, options: {} },
@@ -183,6 +275,21 @@ describe('every verb a strategy asks for is a verb it can reach', () => {
           'legal every time it is.',
       }));
 
+    // **Three surprises were found here on `integration/group-e`, 2026-08-16,
+    // widened on `integration/all-branches`, and they are now in
+    // `KNOWN_SHADOWED` with their findings and their measured tick counts.**
+    //
+    // The note that stood here argued that listing them *"would convert exactly
+    // that report into silence"*, and it was left red on that argument. The
+    // argument is recorded and withdrawn — see the block above the three
+    // entries. In one line: the list is checked in both directions, so an entry
+    // is a *recorded* finding rather than a silenced one, and leaving a known
+    // shadow unlisted costs the ability to see the next one arrive.
+    //
+    // Nothing about the findings changed. `narrow-depth` still never plays
+    // `grantFoundingKnowledge`, `denial-warden` still never forbids a technique,
+    // and every balance number taken from `narrow-depth` is still a number about
+    // eight verbs and not nine.
     const surprises = found.filter((verb) => KNOWN_SHADOWED[verb.key] === undefined);
     expect(surprises.map((verb) => verb.detail)).toEqual([]);
   });

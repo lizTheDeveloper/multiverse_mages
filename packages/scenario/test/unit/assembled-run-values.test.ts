@@ -51,7 +51,7 @@
  * the unit level for every mask the defect wears.
  */
 
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it } from 'vitest';
 
 import type { ComponentValueViolation } from '@mm/sim-core';
 import {
@@ -67,7 +67,7 @@ import {
   LONG_RUN_OPTIONS,
   LONG_RUN_SEED,
   buildReferenceState,
-  executeReferenceRun,
+  executeReferenceRunAsync,
   referenceContent,
 } from '../../src/index.js';
 
@@ -96,8 +96,38 @@ const TICKS = 240;
  * verbs this arm exists to exercise are played from the first tick — the edict
  * budget is available immediately — so the coverage that matters survives the
  * cut intact.
+ *
+ * **The pool is no longer eight.** `BOT_POOL` holds **18** strategies as of
+ * 2026-08-17 — the three sect bots and the alliance pair among them — and the
+ * paragraph above is left as written because its arithmetic is the reason the
+ * number below is 60 and not 240. Timed on this tree, per arm under the
+ * sentinel at 60 ticks: 6.3–9.4 s, **136 s for all eighteen**, zero violations.
+ * That is over the 120 s this case declared and is the whole of why it was
+ * red; see {@link SENTINEL_SWEEP_MS}.
  */
 const ARM_TICKS = 60;
+
+/**
+ * The budget for the eighteen-arm sweep.
+ *
+ * Measured at 136 s (above), so this is roughly a 2x margin — the same shape as
+ * `balance-telemetry.test.ts`'s `SLOW_TEST_MS`, and chosen for the same reason:
+ * the cost is real rather than accidental, and the alternative is making the
+ * invariant cover less. The per-arm `await yieldToRunner()` is what keeps the
+ * worker answering the runner's RPC across a sweep this long, so the failure
+ * mode the note above describes does not come back with the budget.
+ *
+ * If this needs raising again, check the size of `BOT_POOL` first: this number
+ * is linear in it, and a pool that has grown is the expected cause.
+ *
+ * It did need raising again, and `BOT_POOL` was not the cause. The sweep costs
+ * 167 s inside a full `npm run verify` on this box, and GitHub Actions is
+ * 1.4x-2.1x slower than it on every long file that completes on both — so 300 s
+ * was one loaded runner away from a timeout that would have read as a defect in
+ * the sentinel. Seven times 167 s, rounded up; see `vitest.config.ts` for the
+ * factor and the 2026-08-17 pair it was measured from.
+ */
+const SENTINEL_SWEEP_MS = 1_200_000;
 
 /** Renders a violation the way a reader needs it: which value, where, which door. */
 function describeViolation(violation: ComponentValueViolation): string {
@@ -133,6 +163,32 @@ async function yieldToRunner(): Promise<void> {
   });
 }
 
+/**
+ * Removes any sentinel a previous test left behind.
+ *
+ * **`installValueSentinel` sets module-global state, and a `finally` does not
+ * run when vitest times a test out** — it abandons the promise and starts the
+ * next test with the sentinel still installed. The two long tests below each
+ * take up to 120 s of real simulation, so under load they are exactly the ones
+ * that time out, and the next test to run is
+ * `is genuinely off when nobody installs it`, whose entire subject is that no
+ * sentinel is installed.
+ *
+ * That is how it presented: `expect(valueSentinelInstalled()).toBe(false)`
+ * failing in a full-suite run and passing alone, which reads as a defect in the
+ * instrument and is a defect in the *cleanup* — one test's timeout reported as
+ * another test's failure, three files away from anything either of them is
+ * about.
+ *
+ * `afterEach` runs even for a timed-out test, so this is the hook that can
+ * actually hold the invariant. Unconditional rather than guarded: restoring
+ * "nothing installed" is the correct state for every test in this file, since
+ * each one installs its own.
+ */
+afterEach(() => {
+  installValueSentinel(undefined);
+});
+
 describe('an assembled universe writes no non-finite value into state', () => {
   it(
     'runs the reference universe with zero non-integer writes at either door',
@@ -160,7 +216,9 @@ describe('an assembled universe writes no non-finite value into state', () => {
 
       expect(violations.map(describeViolation)).toEqual([]);
     },
-    120_000,
+    // 92 s here under load 20-50, x7. 120 s was cut on GitHub Actions job
+    // 95387839967, 2026-08-17. See `vitest.config.ts` for the factor.
+    900_000,
   );
 
   it(
@@ -178,7 +236,12 @@ describe('an assembled universe writes no non-finite value into state', () => {
 
       try {
         for (const [index, strategyId] of strategyIds.entries()) {
-          executeReferenceRun({
+          // `…Async` and not the synchronous entry point: one arm at
+          // `ARM_TICKS` is a 13.0 s unbroken block, measured across the whole
+          // suite on 2026-08-18, and the yield between arms could not reach
+          // inside one. The sentinel is module-global and survives an await, so
+          // pausing mid-arm watches exactly the same writes.
+          await executeReferenceRunAsync({
             coordinates: {
               rootSeed: LONG_RUN_SEED,
               sweepId: 'assembled-run-values',
@@ -200,7 +263,7 @@ describe('an assembled universe writes no non-finite value into state', () => {
 
       expect(violations.map(describeViolation)).toEqual([]);
     },
-    120_000,
+    SENTINEL_SWEEP_MS,
   );
 });
 

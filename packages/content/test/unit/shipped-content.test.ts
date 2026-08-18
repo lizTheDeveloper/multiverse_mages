@@ -21,33 +21,123 @@
 import { describe, expect, it } from 'vitest';
 
 import {
+  CONTENT_FILES,
+  MATERIAL_KIND_IDS,
   MAX_CONTENT_NODES,
   REQUIRED_V1_CELL,
   V1_CELL_COUNT,
   V1_REDISCOVERY_AUTHORING_FLOOR,
   WORST_REDISCOVERY_AFFINITY,
   loadContent,
+  memorySource,
   shippedContentSource,
+  validateContent,
 } from '@mm/content';
 import type { ContentRegistry } from '@mm/content';
 
 const registry: ContentRegistry = loadContent(shippedContentSource());
 
-/** The v1 subset `knowledge-model` chose, spelled out so a silent swap fails. */
+/**
+ * The enabled subset, spelled out so a silent swap fails.
+ *
+ * It was the twelve `knowledge-model` chose — `{intellego, perdo, rego} ×
+ * {limen, mentem, nomen, terram}` — and is now all seventy. Still spelled out
+ * rather than derived from `registry.cells`: a list read back out of the object
+ * under test cannot fail, and the thing worth catching here is a cell quietly
+ * losing its flag, which a derived list would agree with.
+ */
 const V1_CELLS = [
+  'creo-animal',
+  'creo-aquam',
+  'creo-auram',
+  'creo-corpus',
+  'creo-fatum',
+  'creo-herbam',
+  'creo-ignem',
+  'creo-imaginem',
+  'creo-limen',
+  'creo-mentem',
+  'creo-nomen',
+  'creo-terram',
+  'creo-umbra',
+  'creo-vim',
+  'intellego-animal',
+  'intellego-aquam',
+  'intellego-auram',
+  'intellego-corpus',
+  'intellego-fatum',
+  'intellego-herbam',
+  'intellego-ignem',
+  'intellego-imaginem',
   'intellego-limen',
   'intellego-mentem',
   'intellego-nomen',
   'intellego-terram',
+  'intellego-umbra',
+  'intellego-vim',
+  'muto-animal',
+  'muto-aquam',
+  'muto-auram',
+  'muto-corpus',
+  'muto-fatum',
+  'muto-herbam',
+  'muto-ignem',
+  'muto-imaginem',
+  'muto-limen',
+  'muto-mentem',
+  'muto-nomen',
+  'muto-terram',
+  'muto-umbra',
+  'muto-vim',
+  'perdo-animal',
+  'perdo-aquam',
+  'perdo-auram',
+  'perdo-corpus',
+  'perdo-fatum',
+  'perdo-herbam',
+  'perdo-ignem',
+  'perdo-imaginem',
   'perdo-limen',
   'perdo-mentem',
   'perdo-nomen',
   'perdo-terram',
+  'perdo-umbra',
+  'perdo-vim',
+  'rego-animal',
+  'rego-aquam',
+  'rego-auram',
+  'rego-corpus',
+  'rego-fatum',
+  'rego-herbam',
+  'rego-ignem',
+  'rego-imaginem',
   'rego-limen',
   'rego-mentem',
   'rego-nomen',
   'rego-terram',
+  'rego-umbra',
+  'rego-vim',
 ];
+
+/**
+ * The seven material kinds, spelled out so a silent swap fails — the same
+ * convention {@link V1_CELLS} above follows, and for the same reason.
+ *
+ * `material-economy`'s spec fixes this list: *"The material kinds SHALL be
+ * `food`, `stone`, `vellum`, `labor`, `essence`, `insight` and `passage`, and a
+ * form declaring a kind outside that set MUST fail the load."* Transcribed here
+ * rather than imported so that a test asserting the shipped set covers all seven
+ * cannot be made to pass by shrinking the exported list.
+ */
+const MATERIAL_KINDS = [
+  'food',
+  'stone',
+  'vellum',
+  'labor',
+  'essence',
+  'insight',
+  'passage',
+] as const;
 
 describe('shipped content', () => {
   it('loads and reports its counts', () => {
@@ -55,31 +145,73 @@ describe('shipped content', () => {
       techniques: 5,
       forms: 14,
       cells: 70,
-      v1Cells: 12,
-      nodes: 300,
+      // Was 12. `material-economy` flags every cell `"v1": true`; see the
+      // comment on V1_CELLS.
+      v1Cells: 70,
+      // 301, not the 300 `material-economy` counted: `main` added a node while
+      // that branch was out, and the branch added none. Counted from
+      // `node.json` on the merged tree.
+      nodes: 301,
       species: 6,
       traditions: 3,
       territories: 5,
-      primitives: 16,
+      // Eighteen: `main`'s sixteen, this side's `practice-rate` and
+      // `integration/group-e`'s `knowledge-corrupt`. Neither branch's literal
+      // counted the union — COUNTED on the merged data file.
+      primitives: 18,
       // One per action id in contracts.md §4.2, and one per magnitude the
       // god-agency rules read by name. Both coverings are checked by the
       // loader; these are the counts they come out at.
       godCosts: 17,
-      godConstants: 72,
+      // 77 = main's 72, plus W21's `unease-bars` and `unease-step`,
+      // raid-engagement's `mid-raid-revert-multiplier`, and the two this
+      // integration's other side brought. Four separate branches added
+      // constants and no side's literal was a count of the union: HEAD reached
+      // this merge asserting 74 and `integration/group-e` 75. COUNTED on the
+      // merged data file rather than chosen between them.
+      godConstants: 77,
       // One per magnitude the raid rules read by name, checked in both
       // directions by the loader for the reason the god constants are. Five of
       // them are the composition root's rather than the engine's — how many
       // rivals hang in the sky, how they are armed, how often one arrives, and
       // how long after a raid the next may not — because §1.1 keeps the
       // multiverse out of state and something has to say who is on the other
-      // end of the portal.
-      raidConstants: 46,
+      // end of the portal. Fifty-nine is `main`'s 46 plus the thirteen
+      // `raid-engagement` authored: §2's two phase boundaries, what each of §3's
+      // six verbs costs and does, the concealment ceiling, and the Vis a
+      // raiding party carries.
+      raidConstants: 59,
       // Thirty-eight since `apply-magic` added `apply-output-per-month` and
       // `apply-ration-per-month`. Both are scalars rather than role-appeal rows
       // — they price what applied work makes and eats, not what a role wants —
       // and both are in `REQUIRED_AUTONOMY_WEIGHTS`, so the loader checks the
       // set in both directions exactly as it does for the target weights.
-      autonomyWeights: 39,
+      // **Forty-seven, and no branch predicted it.** Recounted on the merge of
+      // `w247/material-economy-build` into `integration/all-branches`,
+      // 2026-08-16, straight from `packages/content/data/autonomy-weight.json`
+      // rather than added up from comments. The two histories that met here:
+      //
+      // - `main`'s side reached **43** — 38 after `apply-magic`'s
+      //   `apply-output-per-month` and `apply-ration-per-month`, 41 recounted on
+      //   the Group F merge, then 43 after W116's two `goal-affiliate-*`
+      //   opportunities.
+      // - `material-economy` reached **43** on its own tree by a different
+      //   route: its two world-loop sinks `teaching-insight-per-month` and
+      //   `teaching-insight-bonus`, `construction-labor-per-month` for the labor
+      //   that hires extra person-months onto a building site, and
+      //   `labor-share-of-month`, the populace **faucet** those sinks were
+      //   missing — the share of a laborer's month that is hands for hire rather
+      //   than work on the land, read by name from `materials.ts`'s
+      //   `REQUIRED_PRODUCTION_WEIGHTS`.
+      //
+      // Two 43s that are not the same 43, and the union is 47. Every literal in
+      // the history of this line was a prediction and every one of them was
+      // wrong once the tree held all the branches; the count read off the data
+      // file is the only thing here that is evidence. The discipline is
+      // unchanged either way — every weight is read by name, so one nothing
+      // reads fails the load.
+      autonomyWeights: 47,
+      gradeEdges: 2,
     });
   });
 
@@ -124,17 +256,23 @@ describe('shipped content', () => {
     expect(seen.size).toBe(70);
   });
 
-  // A non-v1 cell is addressable and populated, but not enabled. That separation is
-  // the whole point of pre-authoring: the world is deeper than the playable slice,
-  // and enabling a cell later is a flag change rather than a content project.
-  it('resolves a non-v1 cell as addressable and authored, but unflagged', () => {
+  // This test used to read the other way round: `creo-ignem` was addressable and
+  // populated but *unflagged*, and the separation was called the whole point of
+  // pre-authoring — the world is deeper than the playable slice, and enabling a
+  // cell later is a flag change rather than a content project. That claim has now
+  // been cashed: the flag change happened and there is no unflagged cell left to
+  // assert against. `creo-ignem` is kept as the witness rather than swapped for
+  // some other cell, because it is the one the old assertion named, and because
+  // it is where dwarf `ignem 1152` and draconic `ignem 1792` finally have
+  // somewhere to act.
+  it('resolves a formerly non-v1 cell as addressable, authored and now flagged', () => {
     const cellId = registry.intern('cell', 'creo-ignem');
     const cell = registry.cell(cellId);
     expect(cell?.nodes.length).toBeGreaterThan(0);
-    expect(cell?.v1).toBeUndefined();
+    expect(cell?.v1).toBe(true);
   });
 
-  it('flags exactly the twelve v1 cells, including rego-limen', () => {
+  it('flags every cell of the grid, including rego-limen', () => {
     const flagged = registry.cells
       .filter((entry) => entry.record.v1 === true)
       .map((entry) => entry.record.id)
@@ -193,10 +331,12 @@ describe('shipped content', () => {
    * that no field is out of range. A content set where every form authored
    * `vellum: 0` by mistake would still load clean.
    */
-  it('routes a resource-yield magnitude to food, stone, and vellum without leaving any unreachable', () => {
+  it('routes a resource-yield magnitude to every kind without leaving any unreachable', () => {
+    expect(MATERIAL_KIND_IDS).toEqual(MATERIAL_KINDS);
+
     for (const entry of registry.forms) {
       const weights = entry.record.yieldWeights;
-      for (const kind of ['food', 'stone', 'vellum'] as const) {
+      for (const kind of MATERIAL_KINDS) {
         expect(weights[kind], `${entry.record.id}.yieldWeights.${kind}`).toBeGreaterThanOrEqual(0);
         expect(weights[kind], `${entry.record.id}.yieldWeights.${kind}`).toBeLessThanOrEqual(1024);
       }
@@ -206,12 +346,288 @@ describe('shipped content', () => {
       expect(entry.record.yieldPerLandUnit, `${entry.record.id} carries yieldPerLandUnit`).toBeDefined();
     }
 
-    for (const kind of ['food', 'stone', 'vellum'] as const) {
+    for (const kind of MATERIAL_KINDS) {
       expect(
         registry.forms.some((entry) => entry.record.yieldWeights[kind] > 0),
         `no form routes any weight to "${kind}" — that material kind is unproducible`,
       ).toBe(true);
     }
+  });
+
+  /**
+   * The inverse of the assertion above, and the half that was missing.
+   *
+   * That one asks *"is every kind produced by some form"* — it catches a typo
+   * that makes a material unreachable. This asks *"does every form produce some
+   * kind"*, and it catches the other thing entirely: a **part of the grid that
+   * magic can act on and the economy cannot see.**
+   *
+   * Seven of the fourteen shipped forms are `{0, 0, 0}`: `corpus`, `imaginem`,
+   * `mentem`, `vim`, `umbra`, `fatum`, `limen`. Two of those — `mentem` and
+   * `limen` — are in the **v1 opening square**, so a god who opens on
+   * mind-magic and thresholds generates no economy at all and the interface
+   * offers no way to find out why.
+   *
+   * `openspec/changes/material-economy` is the change that makes this pass, by
+   * giving those forms kinds of their own rather than squeezing them into the
+   * three that exist. **This assertion is written before that content, and it
+   * fails until the content is authored** — which is the point of writing it
+   * first: a test added afterwards proves only that somebody wrote a test.
+   */
+  it('leaves no form producing nothing at all', () => {
+    for (const entry of registry.forms) {
+      expect(
+        Object.keys(entry.record.yieldWeights).sort(),
+        `form "${entry.record.id}" does not declare every material kind`,
+      ).toEqual([...MATERIAL_KINDS].sort());
+    }
+
+    // Phrased as "no kind carries a positive weight" rather than "every kind is
+    // exactly zero", and the difference is the whole point. While the four new
+    // kinds were still unauthored, `weights.labor` was `undefined`, and
+    // `undefined === 0` is false — so the strict-equality form went **green the
+    // moment the kinds list widened and before a single weight was written**.
+    // A checker that answers about the wrong input is worse than no checker.
+    const inert = registry.forms
+      .filter((entry) => !MATERIAL_KINDS.some((kind) => entry.record.yieldWeights[kind] > 0))
+      .map((entry) => entry.record.id);
+
+    expect(
+      inert,
+      `these forms yield nothing, so magic acting on them moves no economy: ${inert.join(', ')}`,
+    ).toEqual([]);
+  });
+
+  /**
+   * ## A weight with no node behind it is a faucet with no tap
+   *
+   * The assertion above says every kind is *routed to* by some form. This says
+   * the stronger thing the economy actually needs: for every kind, some node
+   * carries a `resource-yield` effect at `target: "universe"` **in a cell of a
+   * form that routes to it**. Those are the only nodes `universeEffectIndex`
+   * makes applicable, and applied magic is the only channel the four new kinds
+   * have — territory yields three kinds and no arrangement of acreage yields
+   * `insight`.
+   *
+   * Measured on this branch before the content was authored: `resource-yield`
+   * at `target: "universe"` appears on 59 nodes across **seven** forms —
+   * `animal`, `aquam`, `auram`, `herbam`, `ignem`, `terram`, `nomen` — which is
+   * exactly the set that yielded one of the three land kinds. Widening
+   * `routeYieldByForm` to seven kinds therefore changed nothing a run could
+   * see: `labor`, `essence`, `insight` and `passage` had a column in
+   * `MATERIAL_STOCK`, a weight in `form.json`, and **no producer anywhere in
+   * the grid**.
+   *
+   * Written before that content, and it fails until the content is authored.
+   */
+  it('gives every material kind a node that can actually produce it', () => {
+    const formOfCell = new Map(
+      registry.cells.map((entry) => [entry.record.id, entry.record.form] as const),
+    );
+    const weightsOfForm = new Map(
+      registry.forms.map((entry) => [entry.record.id, entry.record.yieldWeights] as const),
+    );
+
+    const producers = new Map<string, string[]>();
+    for (const entry of registry.nodes) {
+      const carries = entry.record.effects.some(
+        (effect) => effect.target === 'universe' && effect.primitive === 'resource-yield',
+      );
+      if (!carries) continue;
+      const formId = formOfCell.get(entry.record.cell);
+      const weights = formId === undefined ? undefined : weightsOfForm.get(formId);
+      if (weights === undefined) continue;
+      for (const kind of MATERIAL_KINDS) {
+        if (weights[kind] <= 0) continue;
+        producers.set(kind, [...(producers.get(kind) ?? []), entry.record.id]);
+      }
+    }
+
+    const unproducible = MATERIAL_KINDS.filter((kind) => (producers.get(kind) ?? []).length === 0);
+    expect(
+      unproducible,
+      `no node carries resource-yield at universe scale in a cell that routes to: ` +
+        `${unproducible.join(', ')}`,
+    ).toEqual([]);
+  });
+
+  /**
+   * ## And the two that matter most must be producible *inside the v1 square*
+   *
+   * `mentem` and `limen` are in the shipped opening. A producer for `insight`
+   * sitting in a cell no v1 universe can permit is a faucet behind a locked
+   * door: the god who opened on mind-magic still generates no economy, which is
+   * the sentence `proposal.md` opens with.
+   */
+  it('puts an insight and a passage producer inside the v1 opening square', () => {
+    const v1Cells = new Set(
+      registry.cells.filter((entry) => entry.record.v1 === true).map((entry) => entry.record.id),
+    );
+    const formOfCell = new Map(
+      registry.cells.map((entry) => [entry.record.id, entry.record.form] as const),
+    );
+    const weightsOfForm = new Map(
+      registry.forms.map((entry) => [entry.record.id, entry.record.yieldWeights] as const),
+    );
+
+    for (const kind of ['insight', 'passage'] as const) {
+      const found = registry.nodes.some((entry) => {
+        if (!v1Cells.has(entry.record.cell)) return false;
+        if (
+          !entry.record.effects.some(
+            (effect) => effect.target === 'universe' && effect.primitive === 'resource-yield',
+          )
+        ) {
+          return false;
+        }
+        const formId = formOfCell.get(entry.record.cell);
+        const weights = formId === undefined ? undefined : weightsOfForm.get(formId);
+        return weights !== undefined && weights[kind] > 0;
+      });
+      expect(found, `no v1 cell can produce "${kind}"`).toBe(true);
+    }
+  });
+
+  /**
+   * ## The yield table, pinned row by row — and it moved on purpose
+   *
+   * This test used to be called *"leaves the seven pre-existing yield rows
+   * exactly where they were"*, and it existed to catch Task 1.4's trap: a
+   * "tidy up so the weights sum to fp(1024)" pass over the whole file would be
+   * a silent balance change wearing the clothes of a schema migration. That
+   * guard is still what this test is for. What changed is the table it guards.
+   *
+   * **Measured on `integration/all-branches` @ `4621db1a`, 2026-08-16:**
+   * fourteen forms carried **nine distinct baskets**. `animal == herbam`,
+   * `ignem == terram`, `imaginem == mentem`, and `umbra == fatum == limen`. A
+   * god permitting only *Creo Animal* and a god permitting only *Creo Herbam*
+   * got numerically identical economies out of the routing —
+   * `tools/w-yields/form-routing.mjs` hands one identical magnitude to all
+   * fourteen and printed exactly that. The herder and the farmhand were erased
+   * by the yield table, and §6a's *"different universes aren't really
+   * different"* had one of its causes here.
+   *
+   * The table below is the re-author. Each row means what the form's name
+   * means:
+   *
+   * - **`animal`** — the herd is meat *and hide*, and hide is the archive's own
+   *   material: vellum **is** calfskin. So it leans vellum, and carries no
+   *   timber.
+   * - **`herbam`** — the field is grain first, then fibre, then the beam. Food
+   *   dominant, a little vellum for paper, a little `stone` because the
+   *   construction stock is what a building is made of and a beam is a
+   *   building.
+   * - **`aquam`** — the river irrigates, carries gravel down, and soaks the
+   *   skins; parchment-making is a wet trade.
+   * - **`auram`** — the bellows for the kiln, and the drying wind that turns a
+   *   skin into a page.
+   * - **`ignem`** — the kiln and the forge, and the hearth: fire is what makes
+   *   food keep through a winter.
+   * - **`terram`**, **`mentem`**, **`vim`**, **`limen`**, **`corpus`**,
+   *   **`nomen`** — left as pure archetypes. Each is *the* form of its kind and
+   *   splitting it would blur the thing every other row is measured against.
+   * - **`imaginem`** — what is noticed becomes a drawn copy, so it yields a
+   *   little vellum beside its insight.
+   * - **`umbra`** — shadow is the room's response to a thing: information about
+   *   a place you cannot see, so a little insight beside its passage.
+   * - **`fatum`** — a fate reaches the carrier itself without a working, so a
+   *   little essence beside its passage.
+   *
+   * **Every row sums to exactly 1024, and that is asserted separately below**,
+   * because `routeYieldByForm` makes total routed output
+   * `magnitude x (sum / 1024)`: a row summing to 1100 is a hidden magnitude buff
+   * wearing the clothes of a mix. The re-author moves the **mix** and moves no
+   * magnitude at all.
+   *
+   * Every magnitude here is untuned, like everything else in the file.
+   */
+  it('pins every yield row, so a mix change can never arrive by accident', () => {
+    const expected: Record<string, Record<(typeof MATERIAL_KINDS)[number], number>> = {
+      animal: { food: 448, stone: 0, vellum: 576, labor: 0, essence: 0, insight: 0, passage: 0 },
+      aquam: { food: 704, stone: 192, vellum: 128, labor: 0, essence: 0, insight: 0, passage: 0 },
+      auram: { food: 256, stone: 512, vellum: 256, labor: 0, essence: 0, insight: 0, passage: 0 },
+      corpus: { food: 0, stone: 0, vellum: 0, labor: 1024, essence: 0, insight: 0, passage: 0 },
+      herbam: { food: 640, stone: 128, vellum: 256, labor: 0, essence: 0, insight: 0, passage: 0 },
+      ignem: { food: 256, stone: 768, vellum: 0, labor: 0, essence: 0, insight: 0, passage: 0 },
+      imaginem: { food: 0, stone: 0, vellum: 256, labor: 0, essence: 0, insight: 768, passage: 0 },
+      mentem: { food: 0, stone: 0, vellum: 0, labor: 0, essence: 0, insight: 1024, passage: 0 },
+      terram: { food: 0, stone: 1024, vellum: 0, labor: 0, essence: 0, insight: 0, passage: 0 },
+      vim: { food: 0, stone: 0, vellum: 0, labor: 0, essence: 1024, insight: 0, passage: 0 },
+      umbra: { food: 0, stone: 0, vellum: 0, labor: 0, essence: 0, insight: 256, passage: 768 },
+      fatum: { food: 0, stone: 0, vellum: 0, labor: 0, essence: 256, insight: 0, passage: 768 },
+      limen: { food: 0, stone: 0, vellum: 0, labor: 0, essence: 0, insight: 0, passage: 1024 },
+      nomen: { food: 0, stone: 0, vellum: 1024, labor: 0, essence: 0, insight: 0, passage: 0 },
+    };
+
+    // Every shipped form is named, so a form added later cannot slip past this
+    // by simply not appearing in the table above.
+    expect(registry.forms.map((entry) => entry.record.id).sort()).toEqual(
+      Object.keys(expected).sort(),
+    );
+
+    for (const [id, weights] of Object.entries(expected)) {
+      const record = registry.forms.find((entry) => entry.record.id === id)?.record;
+      expect(record, `form "${id}" is missing from the shipped set`).toBeDefined();
+      expect(
+        Object.fromEntries(MATERIAL_KINDS.map((kind) => [kind, record?.yieldWeights[kind]])),
+        `form "${id}" had its weights rewritten`,
+      ).toEqual(weights);
+    }
+  });
+
+  /**
+   * The magnitude half of the same guard, stated as arithmetic rather than as a
+   * transcription.
+   *
+   * `routeYieldByForm` computes `magnitude x weight / 1024` per kind, so a
+   * form's routed **total** is `magnitude x (Σ weights / 1024)`. Every shipped
+   * row sums to exactly `1024`, which is what makes the table a statement about
+   * *mix* alone: two forms differ in what they make and never in how much. A
+   * row summing to 1200 would be a seventeen-per-cent yield buff that no
+   * reviewer reading a diff of seven integers would see.
+   *
+   * Separate from the transcription above because it survives a deliberate
+   * retune: somebody who moves a weight on purpose updates one test and is
+   * still caught by the other.
+   */
+  it('keeps every form a statement about mix, never about magnitude', () => {
+    for (const entry of registry.forms) {
+      const sum = MATERIAL_KINDS.reduce((total, kind) => total + entry.record.yieldWeights[kind], 0);
+      expect(sum, `form "${entry.record.id}" routes ${String(sum)}/1024 of a magnitude`).toBe(1024);
+    }
+  });
+
+  /**
+   * ## No two forms may be the same basket, and this is the assertion the
+   * campaign was missing
+   *
+   * Two forms carrying identical weights are two forms the **economy cannot
+   * tell apart**. A god permitting one and a god permitting the other get
+   * numerically identical baskets out of `routeYieldByForm`, whatever the two
+   * cells' nodes say, so the choice between them is not an economic choice at
+   * all. §6a's whole claim — *"Rego Terram and its neighbours move this number,
+   * which is how 'earth magic builds universities faster' becomes a number
+   * rather than a special case"* — needs the neighbours to differ.
+   *
+   * On `4621db1a` this found four collapses across five duplicate rows and
+   * would have gone green on nine of the fourteen. It is written as a count of
+   * distinct baskets rather than as a list of known-good pairs, so a fifteenth
+   * form authored as a copy of an existing one fails here rather than in a
+   * balance sweep six months later.
+   */
+  it('gives every form a basket no other form has', () => {
+    const byBasket = new Map<string, string[]>();
+    for (const entry of registry.forms) {
+      const key = MATERIAL_KINDS.map((kind) => entry.record.yieldWeights[kind]).join('/');
+      byBasket.set(key, [...(byBasket.get(key) ?? []), entry.record.id]);
+    }
+    const collapsed = [...byBasket.values()].filter((ids) => ids.length > 1);
+    expect(
+      collapsed,
+      `these forms carry identical yield weights, so the economy cannot tell them apart: ` +
+        `${collapsed.map((ids) => ids.join(' = ')).join('; ')}`,
+    ).toEqual([]);
+    expect(byBasket.size).toBe(registry.forms.length);
   });
 
   it('never authors a mētis node cheaper to rediscover than an episteme peer', () => {
@@ -438,5 +854,58 @@ describe('shipped content', () => {
     expect(
       registry.cells.find((entry) => entry.record.id === 'rego-mentem')?.record.classicalLabels,
     ).toEqual(['enchantment']);
+  });
+});
+
+// ---------------------------------------------------------------------------
+
+describe('the grade ladder refuses the two mistakes JSON Schema cannot see', () => {
+  /**
+   * Both checks answer about a *relation*, which no schema keyword expresses,
+   * so both would be silently absent if they were written wrong. `CLAUDE.md`
+   * records five checkers in one night that reported confidently about the
+   * wrong input; these are the positive controls that say these two look at
+   * theirs.
+   */
+  function withEdges(edges: readonly unknown[]): ReturnType<typeof validateContent> {
+    const files: Record<string, string> = {};
+    for (const name of CONTENT_FILES) {
+      files[name] =
+        name === 'grade-edge.json'
+          ? JSON.stringify(edges)
+          : (shippedContentSource().read(name) as string);
+    }
+    return validateContent(memorySource(files));
+  }
+
+  const shippedEdges = (): Record<string, unknown>[] =>
+    JSON.parse(shippedContentSource().read('grade-edge.json') as string) as Record<
+      string,
+      unknown
+    >[];
+
+  it('NEGATIVE CONTROL: the shipped ladder loads clean, so a rejection below is the mutation', () => {
+    expect(withEdges(shippedEdges()).diagnostics).toEqual([]);
+  });
+
+  it('refuses a rung authored to skip a grade', () => {
+    // "the working improves a thing by one step and has never once been made to
+    // take two" — 0 -> 2 satisfies every keyword in the schema and ships the
+    // working the gloss says has never been made.
+    const skipping = shippedEdges();
+    (skipping[0] as Record<string, unknown>)['toGrade'] = 2;
+
+    const codes = withEdges(skipping).diagnostics.map((entry) => entry.code);
+    expect(codes).toContain('grade-ladder');
+  });
+
+  it('refuses a demand no rung can ever produce', () => {
+    // A gate that can only ever be shut reports as "this mechanic changes
+    // nothing" rather than as "this content is unfinished".
+    const withoutTop = shippedEdges().filter((edge) => edge['toGrade'] !== 2);
+
+    const problems = withEdges(withoutTop).diagnostics;
+    expect(problems.map((entry) => entry.code)).toContain('grade-ladder');
+    expect(problems.some((entry) => entry.file === 'node.json')).toBe(true);
   });
 });

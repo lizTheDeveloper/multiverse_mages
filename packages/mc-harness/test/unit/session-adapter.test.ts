@@ -32,6 +32,7 @@ import type {
   AgentSession as ApiSession,
   CandidateDetailProjection,
   CandidateLists,
+  FlowLedger,
   PlayerState,
   EpisodeAccounting,
   EpisodeStatus,
@@ -162,13 +163,16 @@ class ApiSessionDouble implements ApiSession {
   }
 
   /*
-   * The three §4.4 client projections. **This double was silently out of date
-   * for three commits** — `playerState` landed with `04dbce79` and
-   * `candidateDetails` with `0aaf0cdb`, and neither surfaced here because
-   * `tsc --build` is incremental and nothing in this package had changed since.
-   * A clean checkout would have failed the very first typecheck. That is the
-   * reason `implements ApiSession` is on the class at all, so the three are
-   * added rather than the annotation loosened.
+   * The four §4.4 client projections. **This double has now been silently out
+   * of date three separate times** — `playerState` landed with `04dbce79`,
+   * `candidateDetails` with `0aaf0cdb`, and `flowLedger` with the per-tick flow
+   * ledger — and not one of them surfaced here, because `tsc --build` is
+   * incremental and nothing in this package had changed since. A clean checkout
+   * would have failed the very first typecheck each time. **`tsc --build
+   * --force` is the command that sees it**, and that is the standing lesson:
+   * three occurrences of one defect is a property of the tooling, not
+   * inattention. That is the reason `implements ApiSession` is on the class at
+   * all, so a projection is added rather than the annotation loosened.
    *
    * `playerState` throws for `gym-bridge`'s stated reason: the interface
    * promises a projection of a world, this double has no world, and a double
@@ -194,6 +198,24 @@ class ApiSessionDouble implements ApiSession {
       permittedCells: Object.freeze([]),
       unaffiliated: 0,
     });
+  }
+
+  /*
+   * A **throw**, on `playerState`'s side of the line rather than the two empty
+   * projections'. The distinction is the one those two record: an empty
+   * candidate table is the *correct* description of a double whose
+   * `candidates()` is an empty map, and an empty academy of a universe with no
+   * colleges — but there is no such thing as a correct empty *flow ledger*. A
+   * ledger of all zeroes is a specific and false claim: that a tick ran and
+   * moved nothing. This double runs no world tick at all, and handing back
+   * zeroes would turn a missing fixture into a passing assertion about nothing
+   * — the metric-that-can-only-read-zero this repository has now found six of.
+   */
+  flowLedger(): FlowLedger | undefined {
+    throw new Error(
+      'ApiSessionDouble runs no world tick, so it has no flow ledger; a zero-filled one would ' +
+        'claim a tick ran and moved nothing. Build a session over a real scenario for that.',
+    );
   }
 }
 

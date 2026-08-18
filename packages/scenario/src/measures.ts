@@ -46,6 +46,21 @@ import type { CensusSample } from './census.js';
 
 /** What a finished run offers a collector. Census samples, in tick order. */
 export interface RunMeasurement {
+  /**
+   * World ticks on which the material ledger did **not** balance.
+   *
+   * `economy-flow-models.md` §3.4 asks for the conservation check to be
+   * *reported*, not only asserted, and this is that half. A check that can only
+   * throw gives no evidence while it is passing: a run that reconciled every
+   * tick and a run where nobody looked produce the same silence. As a series it
+   * says the question was asked and answered on every tick of every run in a
+   * sweep.
+   *
+   * **Always zero on a correct build.** It is a tripwire rather than a dial —
+   * `referenceConservationBreaches` reports it, and a non-zero mean is not a
+   * balance finding but a defect.
+   */
+  readonly conservationBreachTicks: number;
   /** The reading taken before the first tick. */
   readonly first: CensusSample;
   /** The reading taken after the last tick. */
@@ -116,6 +131,24 @@ const measure = (
  * sum of forty-eight universes' populations is not a population of anything.
  */
 export const REFERENCE_MEASURES: readonly ReferenceMeasure[] = Object.freeze([
+  /**
+   * World ticks whose material ledger did not balance. **Always zero.**
+   *
+   * The reported half of `material-economy` group 6, and the only metric in this
+   * list whose interesting value is a constant. `economy-flow-models.md` §5.2
+   * names the gap it fills: every other measure here is a level at a checkpoint,
+   * and a level cannot tell material that was spent from material that was lost.
+   *
+   * `sum` rather than `mean`, deliberately: one breaching tick in one run of a
+   * two-hundred-run sweep is a defect, and a mean would report it as 0.005 and
+   * round out of sight in a summary.
+   */
+  measure(
+    'referenceConservationBreaches',
+    'ticks',
+    'sum',
+    (run) => run.conservationBreachTicks,
+  ),
   measure('referencePopulation', 'people', 'mean', (run) => run.last.population),
   measure('referenceLivingMages', 'mages', 'mean', (run) => run.last.livingMages),
   measure('referenceNodesKnown', 'nodes', 'mean', (run) => run.last.nodesKnown),

@@ -25,7 +25,7 @@
  * itself would show up here as a magnitude that never arrived.
  */
 
-import { TIME_MODE } from '@mm/sim-core';
+import { TIME_MODE, fromInt } from '@mm/sim-core';
 import type { Fixed } from '@mm/sim-core';
 import type { PrimitiveRecord } from '@mm/content';
 import { ClampCounters, stackMagnitudes } from '@mm/primitives';
@@ -45,6 +45,7 @@ import {
   shippedRegistry,
   twoNodesDeclaring,
   worldActiveNodesInDistinctCells,
+  NO_WORKINGS_STAND,
 } from './effect-fixtures.js';
 
 /** Calls that reached the shared implementation. */
@@ -75,7 +76,7 @@ beforeEach(() => {
 });
 
 function contribution(primitiveId: string, magnitude: Fixed): EffectContribution {
-  return { nodeId: 1, primitiveId, magnitude, target: 'self', durationTicks: 0 };
+  return { nodeId: 1, primitiveId, magnitude, target: 'self', durationTicks: 0, effectIndex: 0 };
 }
 
 describe('every combination goes through the shared implementation', () => {
@@ -169,6 +170,7 @@ describe('an illegal contribution never reaches stacking', () => {
       ruleset: rulesetInterdicting(cellIdOfNode(registry, third)),
       mode: TIME_MODE.world,
       cellOf: countingCellOf(registry),
+      standing: NO_WORKINGS_STAND,
     });
 
     calls.length = 0;
@@ -204,10 +206,27 @@ describe('the pipeline end to end delegates too', () => {
         ruleset: permissiveRuleset(),
         mode: TIME_MODE.world,
         cellOf: countingCellOf(registry),
+        standing: NO_WORKINGS_STAND,
       },
     );
     calls.length = 0;
-    const stacked = stackContributions(gathered, { registry });
+    // `speciesBase` is required here and was not before, and the reason is a
+    // finding rather than a fixture detail. `stackContributions` stacks *every*
+    // primitive it was handed, and enabling all seventy cells means the first two
+    // nodes declaring `research-rate` also declare other primitives — among them
+    // `lifespan`, whose cap is `fraction-of-species-base` and which therefore
+    // throws `RangeError` unless the caller says which cohort's base it is a
+    // fraction of. No v1 node declared `lifespan` before, so the branch had never
+    // been reached from shipped content; seventeen do now.
+    //
+    // The value is a plausible base lifespan in months and nothing here reads it
+    // for magnitude — the assertions below are about `research-rate` — but it must
+    // be present, and it is the same thing `rules-world`'s `mages/lifespan.ts`
+    // passes from the species record. Worth knowing while reading this:
+    // `stackContributions` has no production caller. `coordination`'s
+    // `universe-effects.ts` uses `gatherEffects` and routes magnitudes itself, so
+    // this throw was reachable from tests and from nowhere else.
+    const stacked = stackContributions(gathered, { registry, speciesBase: fromInt(600) });
 
     const magnitudes = gathered
       .filter((entry) => entry.primitiveId === 'research-rate')
@@ -218,5 +237,8 @@ describe('the pipeline end to end delegates too', () => {
     expect(stacked.get('research-rate')?.value).toBe(
       stackMagnitudes(primitiveRecord(registry, 'research-rate'), magnitudes).value,
     );
+    // And the primitive that forced `speciesBase` really did arrive, so the
+    // comment above is asserted rather than narrated.
+    expect(calls.some((call) => call.primitiveId === 'lifespan')).toBe(true);
   });
 });

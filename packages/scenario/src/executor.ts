@@ -29,7 +29,7 @@ import { OBSERVATION_LAYOUT_DIGEST, OBSERVATION_SCHEMA_VERSION, createSession } 
 import type { ScenarioConfig } from '@mm/agent-api';
 import { RNG_STREAM } from '@mm/sim-core';
 import { ablationMaskFor } from '@mm/coordination';
-import type { AblationMask, GodTickReport } from '@mm/coordination';
+import type { AblationMask, GodTickReport, WorldStepReport } from '@mm/coordination';
 import type {
   AgentSession,
   ArmContribution,
@@ -52,12 +52,15 @@ import {
   BALANCE_METRIC_REGISTRY,
   BOT_POOL_REGISTRY,
   SNOWBALL_CHECKPOINT_TICKS,
+  YIELD_EVERY_ROUNDS,
   adaptAgentSession,
   canonicalHash,
   collectRunMetrics,
+  drainSteps,
+  drainStepsYielding,
   metricDefinitionVersions,
   policiesForRun,
-  runEpisode,
+  runEpisodeSteps,
 } from '@mm/mc-harness';
 
 import type { ActionEconomyReport } from '@mm/rules-raid';
@@ -67,6 +70,8 @@ import { censusOf } from './census.js';
 import type { RunMeasurement } from './measures.js';
 import { REFERENCE_METRIC_VERSIONS, collectReferenceMetrics } from './measures.js';
 import type { RaidRecord } from './raids.js';
+import type { SandboxSpec } from './sandbox.js';
+import { sandboxProvenance } from './sandbox.js';
 import type { ReferenceContent } from './reference-universe.js';
 import {
   AXIS_PRICE_FACTOR_ID,
@@ -159,6 +164,14 @@ interface CensusRecorder<TConfig> {
   readonly godSpendByAction: Readonly<Record<string, number>>;
   /** Takes a reading now, whatever the interval says. */
   takeNow(): CensusSample;
+  /**
+   * World ticks whose material ledger did not balance. **Always zero.**
+   *
+   * A function rather than a field because it is a running count and a frozen
+   * number read at the wrong moment would report the wrong run — the same reason
+   * `samples` is drained after the episode rather than during it.
+   */
+  conservationBreachTicks(): number;
 }
 
 /**
@@ -187,6 +200,7 @@ function recordingSession<TConfig>(
   inner: AgentSession<TConfig>,
   intervalTicks: number,
   godReport: () => GodTickReport | undefined,
+  worldReport: () => WorldStepReport | undefined,
 ): CensusRecorder<TConfig> {
   const samples: CensusSample[] = [];
   const checkpoints: CheckpointSample[] = [];
@@ -198,6 +212,27 @@ function recordingSession<TConfig>(
   const godSpendByAction: Record<string, number> = {};
   let lastLedgerTick = -1;
   let lastRecordedTick = -1;
+  let lastConservationTick = -1;
+  let breachTicks = 0;
+
+  /**
+   * Counts a tick whose material ledger did not balance.
+   *
+   * Deduplicated on the world report's own tick, for the reason
+   * {@link accumulateSpend} is: the report lags the observation by one tick and
+   * `observe()` may be called more than once per tick when a run has several
+   * agent slots. Keying on the quantity's own timestamp makes both correct.
+   *
+   * This can only ever count on a build whose in-`step` assertion has been
+   * disabled — the loop throws on a breach — and that is the point: the series
+   * is evidence the check ran, where a silent assertion is evidence of nothing.
+   */
+  const accumulateConservation = (): void => {
+    const report = worldReport();
+    if (report === undefined || report.worldTick <= lastConservationTick) return;
+    lastConservationTick = report.worldTick;
+    if (report.conservationBreaches.length > 0) breachTicks += 1;
+  };
 
   /**
    * Folds one completed tick's applied spend into the run total.
@@ -281,6 +316,7 @@ function recordingSession<TConfig>(
     checkpoint(sample);
     traceOf(sample);
     accumulateSpend();
+    accumulateConservation();
     return sample;
   };
 
@@ -290,6 +326,7 @@ function recordingSession<TConfig>(
     trace,
     godSpendByAction,
     takeNow,
+    conservationBreachTicks: () => breachTicks,
     session: {
       reset(runSeed: number, scenarioConfig: TConfig): void {
         inner.reset(runSeed, scenarioConfig);
@@ -301,6 +338,8 @@ function recordingSession<TConfig>(
         for (const key of Object.keys(godSpendByAction)) delete godSpendByAction[key];
         lastLedgerTick = -1;
         lastRecordedTick = -1;
+        lastConservationTick = -1;
+        breachTicks = 0;
         takeNow();
       },
       observe(): Float64Array {
@@ -310,6 +349,7 @@ function recordingSession<TConfig>(
         checkpoint(sample);
         traceOf(sample);
         accumulateSpend();
+        accumulateConservation();
         return observation;
       },
       legalActions: () => inner.legalActions(),
@@ -392,6 +432,19 @@ function configFor(task: RunTask): ScenarioConfig {
 export interface ReferenceExecutorOptions {
   /** Resolved content. Defaults to the shipped set, resolved once per process. */
   readonly content?: ReferenceContent;
+  /**
+   * The sandbox cheat sheet, or absent — which is the default and the only
+   * setting anything shipped uses.
+   *
+   * It is here at all so the refusal one level up has a **positive control**.
+   * `provenanceProblems` rejecting a cheated record is worth nothing unless a
+   * cheated record can actually be produced by the ordinary executor and seen
+   * to be rejected; a gate that has never fired is not known to work, and this
+   * repository has found five checkers that answered about the wrong input. So
+   * this path exists precisely to be refused, and `sandbox.test.ts` runs it end
+   * to end.
+   */
+  readonly sandbox?: SandboxSpec;
   /** Ticks between census readings. Defaults to {@link CENSUS_INTERVAL_TICKS}. */
   readonly censusIntervalTicks?: number;
   /**
@@ -613,6 +666,46 @@ export function executeReferenceRun(
   task: RunTask,
   options: ReferenceExecutorOptions = {},
 ): ReferenceRunResult {
+  return drainSteps(referenceRunSteps(task, options));
+}
+
+/**
+ * {@link executeReferenceRun}, pausing every `yieldEveryRounds` world ticks so a
+ * vitest worker can answer its runner.
+ *
+ * **This is the yield `raid-engagement.test.ts` asked for and could not make.**
+ * Its comment read: *"`executeReferenceRun` is `mc-harness`'s shipped entry
+ * point rather than a loop this file owns, so it cannot be given the
+ * once-a-world-year yield … the fix for that would be a yield inside
+ * `executeReferenceRun`, which is src."* A 400-tick arm through the synchronous
+ * entry point was the longest unbroken block in the whole suite — 65 s on a
+ * loaded developer box, measured, against birpc's hardcoded 60 s window — and it
+ * was the one file above that window on the run that produced the error.
+ *
+ * It changes no number: `mc-harness`'s `pacing.ts` explains why there is one
+ * copy of the loop body and what a pause costs. `reference-universe.test.ts`
+ * asserts the equivalence over a real run rather than reasoning about it.
+ */
+export async function executeReferenceRunAsync(
+  task: RunTask,
+  options: ReferenceExecutorOptions = {},
+  yieldEveryRounds: number = YIELD_EVERY_ROUNDS,
+): Promise<ReferenceRunResult> {
+  return drainStepsYielding(referenceRunSteps(task, options), yieldEveryRounds);
+}
+
+/**
+ * One reference run, as a generator that yields once per completed world tick.
+ *
+ * The prologue and the epilogue are one-off costs measured in milliseconds; the
+ * loop between them is the whole horizon, and it is delegated with `yield*` to
+ * `mc-harness`'s own episode generator so that neither package keeps a second
+ * copy of the round.
+ */
+function* referenceRunSteps(
+  task: RunTask,
+  options: ReferenceExecutorOptions,
+): Generator<void, ReferenceRunResult, void> {
   // The tradition is a *content* fact, so it is resolved before the scenario is
   // built rather than read out of the options inside it, and it is memoized for
   // the reason `referenceContent` is resolved once per process: a worker runs
@@ -623,9 +716,11 @@ export function executeReferenceRun(
 
   const raiding = options.raids ?? true;
   const ablation = ablationFor(task);
-  const { scenario, lastGodReport, raids, balanceTelemetry } = referenceScenario(content, {
+  const { scenario, lastGodReport, lastReport, raids, balanceTelemetry, sandbox } =
+    referenceScenario(content, {
     raids: raiding,
     ...(ablation === undefined ? {} : { ablation }),
+    ...(options.sandbox === undefined ? {} : { sandbox: options.sandbox }),
   });
   const strategyId = task.strategies[0];
   if (strategyId === undefined) {
@@ -639,9 +734,10 @@ export function executeReferenceRun(
     adaptAgentSession(createSession({ scenario, agentSlotIndex: 0, strategyId })),
     interval,
     lastGodReport,
+    lastReport,
   );
 
-  const episode = runEpisode({
+  const episode = yield* runEpisodeSteps({
     session: recorder.session,
     runSeed: task.runSeed,
     scenarioConfig: configFor(task),
@@ -660,6 +756,12 @@ export function executeReferenceRun(
     last,
     samples: recorder.samples,
     ticksRun: episode.ticksRun,
+    // Counted from the world loop's own per-tick report rather than recomputed
+    // here. The loop already asserts conservation inside `step`, so a non-zero
+    // figure means the assertion was disabled rather than that it was missed —
+    // and the metric exists so that a passing sweep is *evidence* the check ran,
+    // which a silent assertion cannot be.
+    conservationBreachTicks: recorder.conservationBreachTicks(),
   };
 
   const mechanics = raiding ? REFERENCE_MECHANICS : RAIDLESS_MECHANICS;
@@ -699,7 +801,13 @@ export function executeReferenceRun(
       ticksRun: episode.ticksRun,
       metrics: collectDeclaredMetrics(task.metrics, measurement, runTelemetry),
       accounting: episode.accounting,
-      provenance: referenceProvenance(content),
+      // Stamped here rather than by the caller, so that a cheated run cannot be
+      // recorded honestly by somebody forgetting a step. The stamp is what
+      // `provenanceProblems` refuses on.
+      provenance:
+        sandbox === undefined
+          ? referenceProvenance(content)
+          : sandboxProvenance(referenceProvenance(content), sandbox.digest),
       armContribution: armContributionOf(recorder.checkpoints, content, mechanics),
       godSpendByAction: { ...recorder.godSpendByAction },
       censusTrace: [...recorder.trace],
@@ -742,6 +850,15 @@ function raidObservationOf(record: RaidRecord, god: GodTickReport | undefined): 
     defenderFrozenWorldTicks: 0,
     attackerTempoCostWorldTicks:
       regenerated <= 0 ? 0 : Math.floor(record.attackerFavorCost / regenerated),
+
+    raidersFielded: record.raidersFielded,
+    raidersWithdrawn: record.raidersWithdrawn,
+    raidersStranded: record.raidersStranded,
+    nodesTakenByAttacker: record.nodesTakenByAttacker,
+    directivesApplied: record.directivesApplied,
+    directiveFavorSpent: record.directiveFavorSpent,
+    victor: record.victor,
+    reason: record.reason,
 
     // The action-economy fields, now measured rather than declared absent.
     //
@@ -878,4 +995,39 @@ export function makeReferenceExecutor(options: ReferenceExecutorOptions = {}): R
     ...(options.raids === undefined ? {} : { raids: options.raids }),
   };
   return (task: RunTask): RunOutcome => executeReferenceRun(task, resolved).outcome;
+}
+
+/**
+ * The option resolution {@link makeReferenceExecutor} does, shared with
+ * {@link makeReferenceExecutorAsync} so the two factories cannot drift.
+ */
+function resolvedExecutorOptions(options: ReferenceExecutorOptions): ReferenceExecutorOptions {
+  return {
+    ...(options.content === undefined ? {} : { content: options.content }),
+    ...(options.censusIntervalTicks === undefined
+      ? {}
+      : { censusIntervalTicks: options.censusIntervalTicks }),
+    ...(options.raids === undefined ? {} : { raids: options.raids }),
+  };
+}
+
+/**
+ * {@link makeReferenceExecutor}, but every run hands the event loop back once a
+ * world year.
+ *
+ * `RunExecutor` has always permitted a promise, and `runTasksInline` has always
+ * awaited one, so this is not a widening of the harness's contract — it is the
+ * inline mode finally using the half of its own type that existed for the
+ * reproduction path. It exists for the same reason
+ * {@link executeReferenceRunAsync} does: a sweep run inline inside a vitest
+ * worker is an unbroken synchronous block, and `metric-completeness.test.ts`'s
+ * was 21.1 s of one, measured on 2026-08-18.
+ *
+ * **Not** for the worker pool, which has no runner to answer and would only pay
+ * the scheduler for it.
+ */
+export function makeReferenceExecutorAsync(options: ReferenceExecutorOptions = {}): RunExecutor {
+  const resolved = resolvedExecutorOptions(options);
+  return async (task: RunTask): Promise<RunOutcome> =>
+    (await executeReferenceRunAsync(task, resolved)).outcome;
 }

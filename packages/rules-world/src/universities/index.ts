@@ -52,12 +52,21 @@ export {
 export type { AdmissionOutcome } from './capacity.js';
 export { AdmissionRefusals, admitStudents } from './capacity.js';
 
-export type { ConstructionInput, ConstructionOutcome } from './construction.js';
+export type {
+  ConstructionInput,
+  ConstructionOutcome,
+  HiredLabourWeightSource,
+  HiredLabourWeights,
+} from './construction.js';
 export {
   BUILD_COMPLETE,
   BUILD_PROGRESS_PER_LABOR_MONTH,
   MATERIALS_PER_LABOR_MONTH,
+  REQUIRED_CONSTRUCTION_WEIGHTS,
   advanceConstruction,
+  hireableMonths,
+  readHiredLabourWeights,
+  spendableLabor,
   buildRateMultiplier,
   createUniversity,
   effectiveCapacity,
@@ -75,6 +84,17 @@ export {
   libraryUpkeep,
   relevantDepth,
 } from './library.js';
+
+export {
+  SITE_CAPACITY_MAX,
+  SITE_CAPACITY_MIN,
+  SITE_REFERENCE_CAPACITY_PER_LAND_UNIT,
+  siteCapacityMultiplier,
+  siteKindOf,
+  siteUniversity,
+  sitedCapacity,
+  territoryKindIndex,
+} from './siting.js';
 
 export type { CellLookup, ProfileEntry, UniversityProfile } from './profile.js';
 export { dominantCell, universityProfile } from './profile.js';

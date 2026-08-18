@@ -1,79 +1,15 @@
 {
   "note": "Pinned reachability findings. Generated — do not hand-edit. Regenerate with `npm run reachability:pin` and explain the diff in the commit message: an entry removed is a repair, an entry added is a debt someone accepted.",
   "scan": {
-    "examinedSymbolCount": 882,
-    "productionFileCount": 329
+    "examinedSymbolCount": 1100,
+    "productionFileCount": 376
   },
   "scanFloor": {
-    "examinedSymbolCount": 705,
-    "productionFileCount": 263
+    "examinedSymbolCount": 880,
+    "productionFileCount": 300
   },
-  "findingCount": 129,
+  "findingCount": 113,
   "findings": [
-    {
-      "key": "constant:packages/coordination/src/god/constants.ts:legacyArchiveMaxTier",
-      "group": "constant",
-      "category": "constantsBehindDeadCode",
-      "file": "packages/coordination/src/god/constants.ts",
-      "name": "legacyArchiveMaxTier",
-      "id": "legacy-archive-max-tier"
-    },
-    {
-      "key": "constant:packages/coordination/src/god/constants.ts:legacyArchiveNodes",
-      "group": "constant",
-      "category": "constantsBehindDeadCode",
-      "file": "packages/coordination/src/god/constants.ts",
-      "name": "legacyArchiveNodes",
-      "id": "legacy-archive-nodes"
-    },
-    {
-      "key": "constant:packages/coordination/src/god/constants.ts:legacyBaselineFavor",
-      "group": "constant",
-      "category": "constantsBehindDeadCode",
-      "file": "packages/coordination/src/god/constants.ts",
-      "name": "legacyBaselineFavor",
-      "id": "legacy-baseline-favor"
-    },
-    {
-      "key": "constant:packages/coordination/src/god/constants.ts:legacyBaselineMaterials",
-      "group": "constant",
-      "category": "constantsBehindDeadCode",
-      "file": "packages/coordination/src/god/constants.ts",
-      "name": "legacyBaselineMaterials",
-      "id": "legacy-baseline-materials"
-    },
-    {
-      "key": "constant:packages/coordination/src/god/constants.ts:legacyBaselinePopulace",
-      "group": "constant",
-      "category": "constantsBehindDeadCode",
-      "file": "packages/coordination/src/god/constants.ts",
-      "name": "legacyBaselinePopulace",
-      "id": "legacy-baseline-populace"
-    },
-    {
-      "key": "constant:packages/coordination/src/god/constants.ts:legacyHeadstartFraction",
-      "group": "constant",
-      "category": "constantsBehindDeadCode",
-      "file": "packages/coordination/src/god/constants.ts",
-      "name": "legacyHeadstartFraction",
-      "id": "legacy-headstart-fraction"
-    },
-    {
-      "key": "constant:packages/coordination/src/god/constants.ts:legacyReferenceTick",
-      "group": "constant",
-      "category": "unconsumedConstants",
-      "file": "packages/coordination/src/god/constants.ts",
-      "name": "legacyReferenceTick",
-      "id": "legacy-reference-tick"
-    },
-    {
-      "key": "constant:packages/coordination/src/god/constants.ts:prestigeRetention",
-      "group": "constant",
-      "category": "constantsBehindDeadCode",
-      "file": "packages/coordination/src/god/constants.ts",
-      "name": "prestigeRetention",
-      "id": "prestige-retention"
-    },
     {
       "key": "symbol:packages/content/src/audio-selection-merge.ts:assetIdOf",
       "group": "symbol",
@@ -130,37 +66,6 @@
       "kind": "const"
     },
     {
-      "key": "symbol:packages/coordination/src/god/ascension.ts:LEGACY_CHANNELS",
-      "group": "symbol",
-      "category": "unreached",
-      "file": "packages/coordination/src/god/ascension.ts",
-      "name": "LEGACY_CHANNELS",
-      "kind": "const"
-    },
-    {
-      "key": "symbol:packages/coordination/src/god/ascension.ts:carriedPrestige",
-      "group": "symbol",
-      "category": "unreached",
-      "file": "packages/coordination/src/god/ascension.ts",
-      "name": "carriedPrestige",
-      "kind": "function"
-    },
-    {
-      "key": "symbol:packages/coordination/src/god/ascension.ts:legacyBudget",
-      "group": "symbol",
-      "category": "reachedOnlyByUnreached",
-      "file": "packages/coordination/src/god/ascension.ts",
-      "name": "legacyBudget"
-    },
-    {
-      "key": "symbol:packages/coordination/src/god/ascension.ts:legacyGrant",
-      "group": "symbol",
-      "category": "unreached",
-      "file": "packages/coordination/src/god/ascension.ts",
-      "name": "legacyGrant",
-      "kind": "function"
-    },
-    {
       "key": "symbol:packages/coordination/src/god/favor.ts:worshipShareOfRegeneration",
       "group": "symbol",
       "category": "unreached",
@@ -198,6 +103,50 @@
       "category": "unreached",
       "file": "packages/primitives/src/conformance.ts",
       "name": "ablationConformance",
+      "kind": "function"
+    },
+    {
+      "key": "symbol:packages/primitives/src/envelope.ts:ENVELOPE_HARMONIC_TARGET",
+      "group": "symbol",
+      "category": "reachedOnlyByUnreached",
+      "file": "packages/primitives/src/envelope.ts",
+      "name": "ENVELOPE_HARMONIC_TARGET"
+    },
+    {
+      "key": "symbol:packages/primitives/src/envelope.ts:ENVELOPE_SLOT_CEILING",
+      "group": "symbol",
+      "category": "reachedOnlyByUnreached",
+      "file": "packages/primitives/src/envelope.ts",
+      "name": "ENVELOPE_SLOT_CEILING"
+    },
+    {
+      "key": "symbol:packages/primitives/src/envelope.ts:ENVELOPE_SLOT_FLOOR",
+      "group": "symbol",
+      "category": "reachedOnlyByUnreached",
+      "file": "packages/primitives/src/envelope.ts",
+      "name": "ENVELOPE_SLOT_FLOOR"
+    },
+    {
+      "key": "symbol:packages/primitives/src/envelope.ts:RIGID_ENVELOPE",
+      "group": "symbol",
+      "category": "unreached",
+      "file": "packages/primitives/src/envelope.ts",
+      "name": "RIGID_ENVELOPE",
+      "kind": "const"
+    },
+    {
+      "key": "symbol:packages/primitives/src/envelope.ts:envelopeHarmonicSum",
+      "group": "symbol",
+      "category": "reachedOnlyByUnreached",
+      "file": "packages/primitives/src/envelope.ts",
+      "name": "envelopeHarmonicSum"
+    },
+    {
+      "key": "symbol:packages/primitives/src/envelope.ts:envelopeProblems",
+      "group": "symbol",
+      "category": "unreached",
+      "file": "packages/primitives/src/envelope.ts",
+      "name": "envelopeProblems",
       "kind": "function"
     },
     {
@@ -264,14 +213,6 @@
       "kind": "function"
     },
     {
-      "key": "symbol:packages/rules-magic/src/grid.ts:heldNodes",
-      "group": "symbol",
-      "category": "unreached",
-      "file": "packages/rules-magic/src/grid.ts",
-      "name": "heldNodes",
-      "kind": "function"
-    },
-    {
       "key": "symbol:packages/rules-magic/src/instances/location.ts:destroyLibrary",
       "group": "symbol",
       "category": "unreached",
@@ -304,22 +245,6 @@
       "kind": "function"
     },
     {
-      "key": "symbol:packages/rules-magic/src/instances/scribing.ts:PALACE_STORE",
-      "group": "symbol",
-      "category": "unreached",
-      "file": "packages/rules-magic/src/instances/scribing.ts",
-      "name": "PALACE_STORE",
-      "kind": "const"
-    },
-    {
-      "key": "symbol:packages/rules-magic/src/instances/scribing.ts:STANDARD_STORE",
-      "group": "symbol",
-      "category": "unreached",
-      "file": "packages/rules-magic/src/instances/scribing.ts",
-      "name": "STANDARD_STORE",
-      "kind": "const"
-    },
-    {
       "key": "symbol:packages/rules-magic/src/traditions/acquire.ts:UNCHANGED_MULTIPLIER",
       "group": "symbol",
       "category": "unreached",
@@ -328,65 +253,11 @@
       "kind": "const"
     },
     {
-      "key": "symbol:packages/rules-magic/src/traditions/cast.ts:isCastable",
-      "group": "symbol",
-      "category": "unreached",
-      "file": "packages/rules-magic/src/traditions/cast.ts",
-      "name": "isCastable",
-      "kind": "function"
-    },
-    {
-      "key": "symbol:packages/rules-magic/src/traditions/cast.ts:prepare",
-      "group": "symbol",
-      "category": "unreached",
-      "file": "packages/rules-magic/src/traditions/cast.ts",
-      "name": "prepare",
-      "kind": "function"
-    },
-    {
-      "key": "symbol:packages/rules-magic/src/traditions/change.ts:RESOLUTION",
-      "group": "symbol",
-      "category": "reachedOnlyByUnreached",
-      "file": "packages/rules-magic/src/traditions/change.ts",
-      "name": "RESOLUTION"
-    },
-    {
-      "key": "symbol:packages/rules-magic/src/traditions/change.ts:changeTradition",
-      "group": "symbol",
-      "category": "unreached",
-      "file": "packages/rules-magic/src/traditions/change.ts",
-      "name": "changeTradition",
-      "kind": "function"
-    },
-    {
       "key": "symbol:packages/rules-magic/src/traditions/cost.ts:assertCostHook",
       "group": "symbol",
       "category": "unreached",
       "file": "packages/rules-magic/src/traditions/cost.ts",
       "name": "assertCostHook",
-      "kind": "function"
-    },
-    {
-      "key": "symbol:packages/rules-magic/src/traditions/cost.ts:costSplit",
-      "group": "symbol",
-      "category": "unreached",
-      "file": "packages/rules-magic/src/traditions/cost.ts",
-      "name": "costSplit",
-      "kind": "function"
-    },
-    {
-      "key": "symbol:packages/rules-magic/src/traditions/cost.ts:preparationCost",
-      "group": "symbol",
-      "category": "reachedOnlyByUnreached",
-      "file": "packages/rules-magic/src/traditions/cost.ts",
-      "name": "preparationCost"
-    },
-    {
-      "key": "symbol:packages/rules-magic/src/traditions/hook-for.ts:hooksOfTradition",
-      "group": "symbol",
-      "category": "unreached",
-      "file": "packages/rules-magic/src/traditions/hook-for.ts",
-      "name": "hooksOfTradition",
       "kind": "function"
     },
     {
@@ -403,30 +274,6 @@
       "category": "unreached",
       "file": "packages/rules-magic/src/traditions/portal.ts",
       "name": "releaseAbroad",
-      "kind": "function"
-    },
-    {
-      "key": "symbol:packages/rules-magic/src/traditions/store.ts:palaceLibraryDepth",
-      "group": "symbol",
-      "category": "unreached",
-      "file": "packages/rules-magic/src/traditions/store.ts",
-      "name": "palaceLibraryDepth",
-      "kind": "function"
-    },
-    {
-      "key": "symbol:packages/rules-magic/src/traditions/store.ts:perishesWithHolder",
-      "group": "symbol",
-      "category": "unreached",
-      "file": "packages/rules-magic/src/traditions/store.ts",
-      "name": "perishesWithHolder",
-      "kind": "function"
-    },
-    {
-      "key": "symbol:packages/rules-magic/src/traditions/store.ts:scribeAvailability",
-      "group": "symbol",
-      "category": "unreached",
-      "file": "packages/rules-magic/src/traditions/store.ts",
-      "name": "scribeAvailability",
       "kind": "function"
     },
     {
@@ -478,6 +325,14 @@
       "kind": "function"
     },
     {
+      "key": "symbol:packages/rules-raid/src/phases.ts:ENGAGEMENT_PHASE_NAMES",
+      "group": "symbol",
+      "category": "unreached",
+      "file": "packages/rules-raid/src/phases.ts",
+      "name": "ENGAGEMENT_PHASE_NAMES",
+      "kind": "const"
+    },
+    {
       "key": "symbol:packages/rules-raid/src/raid.ts:BURNABLE_LOCATION_KINDS",
       "group": "symbol",
       "category": "unreached",
@@ -486,12 +341,27 @@
       "kind": "const"
     },
     {
-      "key": "symbol:packages/rules-world/src/autonomy/affiliation.ts:completeAffiliation",
+      "key": "symbol:packages/rules-raid/src/verbs.ts:legalVerbs",
       "group": "symbol",
       "category": "unreached",
-      "file": "packages/rules-world/src/autonomy/affiliation.ts",
-      "name": "completeAffiliation",
+      "file": "packages/rules-raid/src/verbs.ts",
+      "name": "legalVerbs",
       "kind": "function"
+    },
+    {
+      "key": "symbol:packages/rules-raid/src/verbs.ts:runPlanFor",
+      "group": "symbol",
+      "category": "unreached",
+      "file": "packages/rules-raid/src/verbs.ts",
+      "name": "runPlanFor",
+      "kind": "function"
+    },
+    {
+      "key": "symbol:packages/rules-raid/src/verbs.ts:verbSide",
+      "group": "symbol",
+      "category": "reachedOnlyByUnreached",
+      "file": "packages/rules-raid/src/verbs.ts",
+      "name": "verbSide"
     },
     {
       "key": "symbol:packages/rules-world/src/autonomy/age-bands.ts:AGE_BANDS_IN_ORDER",
@@ -566,14 +436,6 @@
       "kind": "const"
     },
     {
-      "key": "symbol:packages/rules-world/src/economy/carrying-capacity.ts:NO_TERRITORY",
-      "group": "symbol",
-      "category": "unreached",
-      "file": "packages/rules-world/src/economy/carrying-capacity.ts",
-      "name": "NO_TERRITORY",
-      "kind": "const"
-    },
-    {
       "key": "symbol:packages/rules-world/src/economy/counts.ts:ECONOMIC_INPUTS",
       "group": "symbol",
       "category": "unreached",
@@ -598,11 +460,27 @@
       "kind": "function"
     },
     {
-      "key": "symbol:packages/rules-world/src/economy/materials.ts:NO_YIELD_BONUSES",
+      "key": "symbol:packages/rules-world/src/economy/kinds.ts:territoryYieldShares",
+      "group": "symbol",
+      "category": "unreached",
+      "file": "packages/rules-world/src/economy/kinds.ts",
+      "name": "territoryYieldShares",
+      "kind": "function"
+    },
+    {
+      "key": "symbol:packages/rules-world/src/economy/materials.ts:REQUIRED_PRODUCTION_WEIGHTS",
       "group": "symbol",
       "category": "unreached",
       "file": "packages/rules-world/src/economy/materials.ts",
-      "name": "NO_YIELD_BONUSES",
+      "name": "REQUIRED_PRODUCTION_WEIGHTS",
+      "kind": "const"
+    },
+    {
+      "key": "symbol:packages/rules-world/src/economy/teaching.ts:REQUIRED_TEACHING_WEIGHTS",
+      "group": "symbol",
+      "category": "unreached",
+      "file": "packages/rules-world/src/economy/teaching.ts",
+      "name": "REQUIRED_TEACHING_WEIGHTS",
       "kind": "const"
     },
     {
@@ -630,11 +508,12 @@
       "kind": "function"
     },
     {
-      "key": "symbol:packages/rules-world/src/mages/roles.ts:changeAffiliation",
+      "key": "symbol:packages/rules-world/src/mages/roles.ts:ASSIGNABLE_MAGE_ROLES",
       "group": "symbol",
-      "category": "reachedOnlyByUnreached",
+      "category": "unreached",
       "file": "packages/rules-world/src/mages/roles.ts",
-      "name": "changeAffiliation"
+      "name": "ASSIGNABLE_MAGE_ROLES",
+      "kind": "const"
     },
     {
       "key": "symbol:packages/rules-world/src/populace/buckets.ts:BIRTH_BUCKET_TAIL_ALLOWANCE",
@@ -732,59 +611,12 @@
       "kind": "function"
     },
     {
-      "key": "symbol:packages/rules-world/src/universities/capacity.ts:AdmissionRefusals",
-      "group": "symbol",
-      "category": "unreached",
-      "file": "packages/rules-world/src/universities/capacity.ts",
-      "name": "AdmissionRefusals",
-      "kind": "class"
-    },
-    {
-      "key": "symbol:packages/rules-world/src/universities/capacity.ts:admitStudents",
-      "group": "symbol",
-      "category": "unreached",
-      "file": "packages/rules-world/src/universities/capacity.ts",
-      "name": "admitStudents",
-      "kind": "function"
-    },
-    {
-      "key": "symbol:packages/rules-world/src/universities/construction.ts:createUniversity",
+      "key": "symbol:packages/rules-world/src/universities/construction.ts:REQUIRED_CONSTRUCTION_WEIGHTS",
       "group": "symbol",
       "category": "unreached",
       "file": "packages/rules-world/src/universities/construction.ts",
-      "name": "createUniversity",
-      "kind": "function"
-    },
-    {
-      "key": "symbol:packages/rules-world/src/universities/construction.ts:effectiveCapacity",
-      "group": "symbol",
-      "category": "reachedOnlyByUnreached",
-      "file": "packages/rules-world/src/universities/construction.ts",
-      "name": "effectiveCapacity"
-    },
-    {
-      "key": "symbol:packages/rules-world/src/universities/construction.ts:readUniversity",
-      "group": "symbol",
-      "category": "unreached",
-      "file": "packages/rules-world/src/universities/construction.ts",
-      "name": "readUniversity",
-      "kind": "function"
-    },
-    {
-      "key": "symbol:packages/rules-world/src/universities/profile.ts:dominantCell",
-      "group": "symbol",
-      "category": "unreached",
-      "file": "packages/rules-world/src/universities/profile.ts",
-      "name": "dominantCell",
-      "kind": "function"
-    },
-    {
-      "key": "symbol:packages/rules-world/src/universities/profile.ts:universityProfile",
-      "group": "symbol",
-      "category": "unreached",
-      "file": "packages/rules-world/src/universities/profile.ts",
-      "name": "universityProfile",
-      "kind": "function"
+      "name": "REQUIRED_CONSTRUCTION_WEIGHTS",
+      "kind": "const"
     },
     {
       "key": "symbol:packages/rules-world/src/universities/staff.ts:staffCohortsOf",
@@ -819,6 +651,21 @@
       "kind": "function"
     },
     {
+      "key": "symbol:packages/scenario/src/executor.ts:executeReferenceRunAsync",
+      "group": "symbol",
+      "category": "reachedOnlyByUnreached",
+      "file": "packages/scenario/src/executor.ts",
+      "name": "executeReferenceRunAsync"
+    },
+    {
+      "key": "symbol:packages/scenario/src/executor.ts:makeReferenceExecutorAsync",
+      "group": "symbol",
+      "category": "unreached",
+      "file": "packages/scenario/src/executor.ts",
+      "name": "makeReferenceExecutorAsync",
+      "kind": "function"
+    },
+    {
       "key": "symbol:packages/scenario/src/long-run.ts:longRunLines",
       "group": "symbol",
       "category": "unreached",
@@ -832,6 +679,37 @@
       "category": "unreached",
       "file": "packages/scenario/src/long-run.ts",
       "name": "longestOccupationAlternation",
+      "kind": "function"
+    },
+    {
+      "key": "symbol:packages/scenario/src/reference-universe.ts:academySiteKindOf",
+      "group": "symbol",
+      "category": "unreached",
+      "file": "packages/scenario/src/reference-universe.ts",
+      "name": "academySiteKindOf",
+      "kind": "function"
+    },
+    {
+      "key": "symbol:packages/scenario/src/sandbox.ts:isSandboxSchema",
+      "group": "symbol",
+      "category": "reachedOnlyByUnreached",
+      "file": "packages/scenario/src/sandbox.ts",
+      "name": "isSandboxSchema"
+    },
+    {
+      "key": "symbol:packages/scenario/src/sandbox.ts:sandboxBrandOf",
+      "group": "symbol",
+      "category": "unreached",
+      "file": "packages/scenario/src/sandbox.ts",
+      "name": "sandboxBrandOf",
+      "kind": "function"
+    },
+    {
+      "key": "symbol:packages/scenario/src/sandbox.ts:sandboxDigest",
+      "group": "symbol",
+      "category": "unreached",
+      "file": "packages/scenario/src/sandbox.ts",
+      "name": "sandboxDigest",
       "kind": "function"
     },
     {
@@ -1021,14 +899,6 @@
       "category": "reachedOnlyByUnreached",
       "file": "packages/state/src/migrations.ts",
       "name": "migrateWorldEnvelope"
-    },
-    {
-      "key": "symbol:packages/state/src/universe.ts:currentEra",
-      "group": "symbol",
-      "category": "unreached",
-      "file": "packages/state/src/universe.ts",
-      "name": "currentEra",
-      "kind": "function"
     }
   ]
 }

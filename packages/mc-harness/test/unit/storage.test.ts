@@ -18,6 +18,7 @@ import { describe, expect, it } from 'vitest';
 
 import {
   FIXTURE_PROVENANCE,
+  TOY_FIXED_POOL,
   TOY_REGISTRIES,
   syntheticRecord,
   toySweep,
@@ -103,7 +104,7 @@ describe('records are never rewritten', () => {
 describe('a sweep writes its records and its summary', () => {
   it('writes one record per run plus one summary, and reads them back identically', async () => {
     await withTempDirectoryAsync(async (directory) => {
-      const spec = toySweep({ replicates: 3 });
+      const spec = toySweep({ replicates: 3, agentPool: TOY_FIXED_POOL });
       const result = await runSweep({
         spec,
         registries: TOY_REGISTRIES,

@@ -86,11 +86,31 @@ imports it — and that is what makes its unusually wide edge list safe. Two fur
 `goal-commitment` component and the `effort-progress` component, neither of which
 `mages-and-species` expected to need. A third, from **§1.1**, is the `grant-budget` component: god
 action 8 is no longer unlimited, and an absent row means unbounded so that every older save and
-every hand-built test world keeps the behaviour it was written against. Each cost a world-schema
-revision — `WORLD_SCHEMA_VERSION` is now 6, after `material-stock` took revision 5 — and none of
-them moved `sim-core`'s
-`SNAPSHOT_VERSION`, which is inside the hashed header and would break every golden fixture with a
-version error instead of a behaviour diff.
+every hand-built test world keeps the behaviour it was written against. Two more, from **§1.1 and
+§1.4**, arrived with `university-siting`: the `territory-holding` component (`landUnits` moving out
+of content, exactly as §2.7 said it would) and the `university-site` component (a university stands
+in a *kind of country* — a relationship, which vision §7a permits, and not a coordinate, which it
+forbids).
+
+Each addition cost a world-schema revision — `WORLD_SCHEMA_VERSION` is now **11**: revision 2
+`goal-commitment`, 3 `effort-progress`, 4 `god-agency`'s four rows, 5 `material-stock`, 6
+`grant-budget`, **7 `material-economy` widening `material-stock` from three kinds to seven**, 8
+`bar-phase`, 9 `mid-raid-change`, 10 the siting pair, 11 `knowledge-fidelity` — and **none of them
+moved `sim-core`'s `SNAPSHOT_VERSION`**, which is inside the hashed header and would break every
+golden fixture with a version error instead of a behaviour diff.
+`packages/state/src/migrations.ts` carries the argument for each one, including why revision 10 must
+*not* synthesize the territory rows it would be so convenient to synthesize.
+
+**Revision 7 is the only one whose marker is a field rather than a component**, and it is worth
+knowing before touching `worldSchemaVersionOf`: `material-stock` gained four columns rather than a
+new section, so the test for it is "does the stock carry a `labor` column" and it must sit below the
+four section tests above it and above `grant-budget`'s. While `material-economy` was unmerged the
+number was held open by a `{ from: 6, to: 8 }` bridge in `addBarPhase`; that bridge is gone and the
+walk is dense 1 → 11.
+
+Four steps in this walk have been renumbered at least once — `bar-phase` three times, the siting
+pair three times — because four branches each authored their step as revision 7 against a `main`
+that was at 6. A migration's number is its position in a walk, not a name.
 
 Two commands worth knowing before touching the core:
 

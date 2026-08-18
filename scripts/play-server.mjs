@@ -77,7 +77,16 @@ import {
   createSession,
 } from '../packages/agent-api/dist/index.js';
 import { GOAL_NAMES } from '../packages/rules-world/dist/index.js';
-import { referenceContent, referenceScenario } from '../packages/scenario/dist/index.js';
+import {
+  SANDBOX_CHEAT,
+  SANDBOX_CLAIMANTS,
+  SANDBOX_CLAIMANT_KIND,
+  SANDBOX_MATERIAL_KINDS,
+  SANDBOX_SATISFY_FLOOR,
+  normalizeSandbox,
+  referenceContent,
+  referenceScenario,
+} from '../packages/scenario/dist/index.js';
 import { MAGE_ROLE } from '../packages/state/dist/index.js';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
@@ -107,6 +116,22 @@ const DEFAULT_CAP = Number(arg('ticks', '4000'));
  * skipped or fabricated to make the opening screen look better.
  */
 const WARM = Math.max(0, Math.min(2000, Number(arg('warm', '40'))));
+
+/**
+ * Whether the cheat routes exist at all. `npm run play -- --sandbox`.
+ *
+ * **Off by default, and off means the route is a 403, not a no-op.** A cheat
+ * endpoint that quietly did nothing would be the worst of both: an operator
+ * would believe a grant landed, and the run would be honest while the screen
+ * said otherwise. So the flag gates the write route and `GET /live/sandbox`
+ * reports `enabled: false` so the console can say why the panel is inert.
+ *
+ * It is a flag rather than always-on because a person can leave this server
+ * running for hours and the whole value of the layer depends on nobody being
+ * able to cheat a run they later quote. Turning it on is a deliberate act with
+ * a visible consequence — the banner, the scenario id, the brand in the bytes.
+ */
+const SANDBOX = process.argv.includes('--sandbox');
 
 /* ------------------------------------------------------------------ the run */
 
@@ -178,11 +203,67 @@ if (nonInvertible.length > 0) {
  */
 let run = null;
 
-function newRun(seed, cap) {
-  const { scenario } = referenceScenario(content, { raids: true });
+/**
+ * A run, optionally cheated.
+ *
+ * The cheat sheet belongs to **the run**, not to a moment in it, and that is a
+ * deliberate restriction rather than a shortcut. Two reasons, and the second is
+ * the one that would have bitten:
+ *
+ * 1. Every founding cheat is a *starting position*, which is the only place a
+ *    scenario is allowed to write one. Applying a grant to a running episode
+ *    would mean reaching past `AgentSession` into the state it owns.
+ * 2. {@link controlExperiment} answers *"and what if you had not?"* by replaying
+ *    this run's action log into fresh sessions. A cheat applied mid-run is not
+ *    in that log, so both control arms would silently diverge from the run they
+ *    claim to be about — a checker answering about the wrong input, which is a
+ *    shape this repository has found five of. Rebuilding the run instead keeps
+ *    the control exact: `fresh()` builds the scenario from the same sheet.
+ *
+ * So `POST /live/sandbox` starts a new universe. It says so, and the response
+ * carries the new provenance.
+ */
+function newRun(seed, cap, sandbox = null) {
+  const { scenario, sandbox: sheet } = referenceScenario(content, {
+    raids: true,
+    ...(sandbox === null ? {} : { sandbox }),
+  });
   const session = createSession({ scenario, strategyId: 'play-server' });
   session.reset(seed, { worldTickCap: cap });
-  return { seed, cap, session, frames: [], log: [], startedAt: Date.now() };
+  return {
+    seed,
+    cap,
+    session,
+    sandbox,
+    sheet: sheet ?? null,
+    frames: [],
+    log: [],
+    startedAt: Date.now(),
+  };
+}
+
+/** Which cheat names a sheet declares, for the banner and the log line. */
+function declaredCheats(spec) {
+  if (spec === null || spec === undefined) return [];
+  const named = [];
+  const has = (key) => spec[key] !== undefined && spec[key] !== null;
+  if (has('setMaterials')) named.push('setMaterial');
+  if (has('grantMaterials')) named.push('grantMaterial');
+  if (has('materialFloor') || (spec.satisfy ?? []).length > 0) named.push('materialFloor');
+  if (has('materialCeiling')) named.push('materialCeiling');
+  if (has('favor')) named.push('favor');
+  if (has('favorCap')) named.push('favorCap');
+  if (has('prestige')) named.push('prestige');
+  if (has('worship') || has('worshipTier')) named.push('worship');
+  if (has('armTechniques') || has('armForms') || spec.armEverything === true) named.push('armAxes');
+  if (has('edictBudget')) named.push('edictBudget');
+  if (has('grantBudget')) named.push('grantBudget');
+  if (spec.completeConstruction === true) named.push('completeConstruction');
+  if ((spec.foundUniversities ?? 0) > 0) named.push('foundUniversity');
+  if (has('studentSeats')) named.push('studentSeats');
+  if ((spec.grantKnowledge ?? []).length > 0) named.push('grantKnowledge');
+  if ((spec.shelveKnowledge ?? []).length > 0) named.push('shelveKnowledge');
+  return named;
 }
 
 /** One tick, encoded the way `record-session.mjs` encodes one. */
@@ -201,11 +282,11 @@ function encodeFrame(session) {
   return {
     obs,
     sat,
-    // `material-stock`'s three kinds, which §4.1 sums into `resources[39]`.
-    // Same field, same source and same reasoning as `record-session.mjs`: the
-    // §4.4 player projection, three fields only, nothing that is already in
-    // `obs`. A live server that served a different frame shape than the
-    // recorder would make every page work against one and not the other.
+    // `material-stock`'s seven kinds, which §4.1 sums three of into
+    // `resources[39]` and has no slot at all for the other four. Same field,
+    // same source and same reasoning as `record-session.mjs`: the §4.4 player
+    // projection, the stocks only, nothing that is already in `obs`. Held
+    // equivalent to the recorder **by hand** — see the longer note there.
     stocks: { ...session.playerState().resources.stocks },
     /**
      * §4.4's candidate descriptors — what each slot *is*, beside what it
@@ -226,6 +307,35 @@ function encodeFrame(session) {
      * the distinction `GOAL_COMMITMENT` makes load-bearing between "has not
      * chosen" and "chose idle".
      */
+    /**
+     * §4.4's flow ledger for the tick just stepped — where this tick's material
+     * came from and where it went.
+     *
+     * The fourth sidecar off the same §4.4 projection surface as `stocks`,
+     * `candidateDetail` and `academy`, and the first that is not a reading of
+     * state at all: `economy-flow-models.md` §5.2 is the finding — *"every metric
+     * in the registry measures a level, a rate, or a distribution at a
+     * checkpoint. None reconciles flows."* `obs` carries seven closing levels and
+     * nothing about how they got there, so a universe that spent its vellum and
+     * one that leaked it are the same two numbers.
+     *
+     * **Absent rather than null on the opening frame**, and absent again on any
+     * frame whose report is of a different tick — `JSON.stringify` drops an
+     * undefined field, which is the distinction a client must be able to make.
+     * `session.flowLedger()` returns `undefined` in both cases and `ui/shared/
+     * session.js` renders that as absent rather than as zero, because an empty
+     * granary is a crisis and an unknown granary is not.
+     *
+     * Emitted as the projection returns it: it is already a fresh structure of
+     * plain objects, arrays and integers, so nothing is reshaped here. A field
+     * renamed on the way through would be a second vocabulary for one projection.
+     *
+     * **Kept in step with the sibling script by hand.** A comment in this
+     * repository refers to `scripts/play-control.mjs --shape` as the thing that
+     * holds the recorder and the live server equivalent; that script does not
+     * exist, so nothing automated checks it.
+     */
+    flow: session.flowLedger(),
     candidateDetail: encodeCandidateDetail(session.candidateDetails()),
     /**
      * §4.4's academy projection — every college, its roster, its shelf, the
@@ -330,6 +440,25 @@ function header(r) {
       recordedBy: 'scripts/play-server.mjs',
       /** The one field a recording does not have. Views use it to say LIVE. */
       live: true,
+      /**
+       * Present **only** on a cheated run, and the key every surface keys its
+       * banner off. Additive: `ui/shared/session.js` reads with `??`, and an
+       * honest run's provenance is byte-identical to what it always was.
+       *
+       * The authoritative mark is not this — it is the `sandbox-brand`
+       * component inside the snapshot, which survives a save, refuses to load
+       * into an honest build, and cannot be cleared by playing on. This is the
+       * copy a browser can see.
+       */
+      ...(r.sheet === null
+        ? {}
+        : {
+            sandbox: {
+              digest: r.sheet.digest,
+              cheats: declaredCheats(r.sandbox),
+              spec: r.sandbox,
+            },
+          }),
     },
     layout: OBSERVATION_BLOCKS.map((b) => ({ name: b.name, offset: b.offset, size: b.size })),
     actions: Object.fromEntries(Object.entries(GOD_ACTION).map(([k, v]) => [v, k])),
@@ -468,7 +597,13 @@ function tick(r, action) {
  */
 function controlExperiment(r, action, settle = 30) {
   const fresh = () => {
-    const { scenario } = referenceScenario(content, { raids: true });
+    // The same sheet, deliberately. A control built without it would compare
+    // the player's cheated universe against an honest one and report the whole
+    // difference as the action's doing.
+    const { scenario } = referenceScenario(content, {
+      raids: true,
+      ...(r.sandbox === null ? {} : { sandbox: r.sandbox }),
+    });
     const s = createSession({ scenario, strategyId: 'play-control' });
     s.reset(r.seed, { worldTickCap: r.cap });
     for (const a of r.log) s.submit(a);
@@ -644,11 +779,85 @@ async function handle(req, res) {
     return;
   }
 
+  if (route === '/live/sandbox' && req.method === 'GET') {
+    json(res, 200, {
+      enabled: SANDBOX,
+      // Derived from the component's field list, never listed here: three kinds
+      // today, seven on the material-economy branch, and a console that spelled
+      // them out would offer three of seven with no error anywhere.
+      materialKinds: SANDBOX_MATERIAL_KINDS,
+      claimants: SANDBOX_CLAIMANTS,
+      claimantKind: SANDBOX_CLAIMANT_KIND,
+      cheatBits: SANDBOX_CHEAT,
+      satisfyFloor: SANDBOX_SATISFY_FLOOR,
+      active: run.sandbox,
+      digest: run.sheet?.digest ?? null,
+      cheats: declaredCheats(run.sandbox),
+      ...(SANDBOX
+        ? {}
+        : {
+            why: 'Start the server with --sandbox to enable the cheat routes. Off is not a no-op: this route refuses rather than pretending.',
+          }),
+    });
+    return;
+  }
+
+  if (route === '/live/sandbox' && req.method === 'POST') {
+    if (!SANDBOX) {
+      json(res, 403, {
+        error:
+          'The sandbox is off. Restart with `npm run play -- --sandbox`. This refuses rather than ' +
+          'silently doing nothing, because an operator who believed a grant landed on an honest ' +
+          'run is the failure the whole layer exists to prevent.',
+      });
+      return;
+    }
+    const body = await readBody(req);
+    if (body === null || typeof body !== 'object') {
+      json(res, 400, { error: 'body must be JSON' });
+      return;
+    }
+    const spec = body.spec ?? {};
+    let sheet;
+    try {
+      // Validated before anything is rebuilt, so a typo'd material kind is a 400
+      // naming the kinds that exist rather than a universe that quietly ignored
+      // half the request.
+      sheet = normalizeSandbox(spec);
+    } catch (err) {
+      json(res, 400, { error: String(err?.message ?? err) });
+      return;
+    }
+    const seed = Number.isInteger(Number(body.seed)) ? Number(body.seed) : run.seed;
+    const cap = Math.max(1, Math.min(100000, Number(body.ticks ?? run.cap)));
+    const warm = Math.max(0, Math.min(2000, Number(body.warm ?? WARM)));
+    run = newRun(seed, cap, spec);
+    observeInto(run);
+    for (let i = 0; i < warm; i += 1) tick(run, { kind: GOD_ACTION.noop });
+    process.stderr.write(
+      `  SANDBOX: a new universe, seed ${seed}, cheats [${declaredCheats(spec).join(', ')}], ` +
+        `digest ${sheet.digest}. Every run from here is branded.\n`,
+    );
+    json(res, 200, {
+      restarted: true,
+      note: 'A cheat sheet is a starting position, so this is a NEW universe at the same seed — the previous run is gone, not converted.',
+      ...header(run),
+      frames: run.frames,
+    });
+    return;
+  }
+
   if (route === '/live/reset' && req.method === 'POST') {
     const body = await readBody(req);
     const seed = Number.isInteger(Number(body?.seed)) ? Number(body.seed) : DEFAULT_SEED;
     const cap = Math.max(1, Math.min(100000, Number(body?.ticks ?? DEFAULT_CAP)));
-    run = newRun(seed, cap);
+    // A reset **keeps the cheat sheet** unless the caller clears it explicitly.
+    // The alternative — a reset that quietly returns to an honest universe —
+    // would let a person cheat, reset, and take a measurement believing the two
+    // runs were comparable. `{"sandbox": null}` is how you leave the sandbox,
+    // and it is a new universe when you do.
+    const sheet = body?.sandbox === null ? null : run.sandbox;
+    run = newRun(seed, cap, sheet);
     observeInto(run);
     // A restart that dropped the player back on the unplayable tick 0 would be a
     // worse button than no button.
@@ -707,6 +916,10 @@ server.listen(PORT, () => {
       // by one and can never say more than "16 of 16".
       `  ${legal} of ${run.session.actionSpaceSize} actions legal right now. ` +
       'Advance time and more open up.\n' +
+      (SANDBOX
+        ? '  SANDBOX ROUTES ARE ON. Any run you cheat is branded in its snapshot, refuses to\n' +
+          '  load into an honest build, and is refused by the balance harness. Do not quote it.\n'
+        : '') +
       '  Ctrl-C to end the universe.\n\n',
   );
 });

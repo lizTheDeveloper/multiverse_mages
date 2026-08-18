@@ -43,7 +43,7 @@ import { nextBounded } from '@mm/sim-core';
 import type { Ruleset } from '@mm/state';
 import { permits } from '@mm/state';
 import type { CatalogueNode, ContentCatalogue } from '@mm/agent-api';
-import { buildCatalogue } from '@mm/agent-api';
+import { GOD_ACTION, buildCatalogue } from '@mm/agent-api';
 import type {
   AcquirePolicy,
   ExclusionResolver,
@@ -58,29 +58,38 @@ import {
   catalogFromRegistry,
   createConsumptionRecorder,
   hookFor,
+  hooksOfTradition,
   nodeEffectMagnitudes,
   registerNonNodeConsumer,
   storePolicy,
   traditionTableFrom,
 } from '@mm/rules-magic';
+import type { TraditionResolver } from '@mm/coordination';
 import type { SpeciesAffinities } from '@mm/rules-world';
 import {
+  NEUTRAL_LAND_APTITUDE,
+  landAptitudeTable,
+  readGoalAppeal,
   readApplicationWeights,
   readCastingWeights,
+  readHiredLabourWeights,
+  readTeachingWeights,
+  readProductionWeights,
   readTargetAppeal,
   resolveSpeciesAffinities,
   territoryExtent,
-  territoryYieldShares,
 } from '@mm/rules-world';
 import type { CombatEffectIndex } from '@mm/rules-raid';
 import { combatEffectIndex } from '@mm/rules-raid';
 import type { WorldStepDeps } from '@mm/coordination';
 import {
+  academicEffectIndex,
+  envelopeResolver,
   godEffectHooks,
   nodeFacetsFrom,
   resolveGodContent,
-  academicEffectIndex,
   universeEffectIndex,
+  buildWorkingDurations,
   vitalityIndex,
 } from '@mm/coordination';
 
@@ -141,12 +150,17 @@ export function primitiveNamed(registry: ContentRegistry, id: string): Primitive
  * The ruleset the **v1 rectangle** implies: every technique and every form that
  * a `v1` cell occupies.
  *
- * `contracts.md` §2.2 makes the v1 subset exactly twelve cells forming a
- * 3-technique × 4-form rectangle, and the loader refuses content where it is
- * anything else. So OR-ing the axes of the flagged cells re-derives precisely
- * those twelve and permits no thirteenth — the rectangle property is what makes
- * an axis mask able to express the subset at all, and it is content's to keep,
- * not this file's to assume.
+ * `contracts.md` §2.2 makes the v1 subset a rectangle and the loader refuses
+ * content where it is anything else, so OR-ing the axes of the flagged cells
+ * re-derives precisely the flagged set and permits nothing outside it. The
+ * rectangle property is what makes an axis mask able to express the subset at
+ * all, and it is content's to keep, not this file's to assume.
+ *
+ * Since `material-economy` the rectangle is the whole grid — 5 techniques × 14
+ * forms — so this returns both masks full. It is still written as a derivation
+ * rather than as two literals, because the narrowing is a *rule* and not a
+ * fact: a god who forbids an axis shrinks the permitted set at once, and the
+ * day content flags a proper subset again the reference universe moves with it.
  *
  * Written this way rather than as two literals so that the day content moves the
  * rectangle, the reference universe moves with it instead of quietly permitting
@@ -177,7 +191,7 @@ export function v1RulesetAxes(registry: ContentRegistry): RulesetAxes {
   if (cells === 0) {
     throw new Error(
       'No shipped cell is flagged "v1": true, so the reference universe would permit nothing and ' +
-        'every mage in it would be idle forever. The loader enforces exactly twelve.',
+        'every mage in it would be idle forever. The loader enforces the full rectangle.',
     );
   }
   return { permittedTechniques, permittedForms };
@@ -549,6 +563,57 @@ export function storeHookOf(registry: ContentRegistry, traditionId: ContentId): 
 }
 
 /**
+ * Every tradition the content set ships, resolved once, keyed by interned id.
+ *
+ * This is what makes god action 13 a *rule* rather than a label. Before it, the
+ * `store` and `acquire` policies were resolved once from the id the universe
+ * started with and carried on the world-step deps for the length of a run, so
+ * an action that rewrote `UNIVERSE.traditionId` changed a number nothing read:
+ * the mask offered the move, the god paid 64 favor and the upheaval landed, and
+ * the hooks in force were the ones the scenario was constructed with. The
+ * reachability instrument saw it exactly — `changeTradition` and
+ * `hooksOfTradition` had no production caller on any of 153 branches while the
+ * action *id* was reachable from three.
+ *
+ * Resolved eagerly, for every loaded tradition, because that keeps the answer a
+ * pure function of content: the map is built at the composition root, is never
+ * written to, and cannot acquire a dependency on which traditions a run happened
+ * to visit. A lazy cache would be a per-run memo whose contents differed between
+ * two runs of the same seed — the one thing `Scenario.create`'s purity rule
+ * names.
+ *
+ * {@link hooksOfTradition} rather than four {@link hookFor} calls: at home the
+ * home and host ids are the same, and asking for all four at once is the shape
+ * `rules-magic` publishes for exactly this case. `storeHook` is carried beside
+ * the two policies because a tradition change resolves **both sides** from the
+ * raw hook — `changeTradition` takes `ResolvedHook`s and derives the policies
+ * itself, so handing it a policy would mean re-deriving one from the other.
+ */
+export function traditionResolver(registry: ContentRegistry): TraditionResolver {
+  const table = traditionTableFrom(registry);
+  const resolved = new Map<number, ReturnType<TraditionResolver>>();
+  for (const entry of registry.traditions) {
+    const hooks = hooksOfTradition(entry.contentId, table);
+    resolved.set(entry.contentId, {
+      store: storePolicy(hooks.store),
+      acquire: acquirePolicy(hooks.acquire),
+      storeHook: hooks.store,
+    });
+  }
+  return (traditionId: number) => {
+    const hooks = resolved.get(traditionId);
+    if (hooks === undefined) {
+      throw new RangeError(
+        `No shipped tradition has interned id ${String(traditionId)}. A universe holding one is ` +
+          'reading a different content set than the one this scenario was built from, and ' +
+          'contracts.md §0 forbids two universes interacting across a contentRevision.',
+      );
+    }
+    return hooks;
+  };
+}
+
+/**
  * A tradition's resolved `acquire` hook — what learning costs, and what a fresh
  * instance is worth.
  *
@@ -585,8 +650,16 @@ export function contentCatalogue(registry: ContentRegistry): ContentCatalogue {
   const god = resolveGodContent(registry);
   return buildCatalogue(nodes, registry.traditions.map((entry) => entry.contentId), {
     byAction: god.costs.byAction,
+    materialByAction: god.costs.materialByAction,
     foundUniversity: god.costs.foundUniversity,
     hysteresisStep: god.constants.hysteresisStep,
+    // `sound-design.md` §5.2's eight bars. The mask reprices every action
+    // itself, so these travel with the prices — an action the mask calls
+    // affordable and the resolver refuses is not a cost, it is an
+    // illegal-action counter.
+    uneaseBars: god.constants.uneaseBars,
+    uneaseStep: god.constants.uneaseStep,
+    midRaidRevertMultiplier: god.constants.midRaidRevertMultiplier,
   });
 }
 
@@ -660,6 +733,15 @@ export function worldDeps(
   // a pure function of the species record and the registry.
   const affinityCache = new Map<string, SpeciesAffinities>();
 
+  // The same six records read for the other half of the trait: what each species
+  // is good at *producing*, derived from those affinities through `form.json`'s
+  // yield weights. Built eagerly because it is six species against fourteen
+  // forms and constant for the run — see `aptitude.ts`.
+  const landAptitude = landAptitudeTable(
+    registry.species.map((entry) => entry.record),
+    registry.forms.map((entry) => entry.record),
+  );
+
   // The god hooks stack blessing and encouragement *constants*, never a node's
   // authored magnitude — a blessed mage researches faster because the god blessed
   // her, not because anyone discovered anything. Recorded so a reader of the
@@ -667,15 +749,21 @@ export function worldDeps(
   // beside it. A non-node registration never counts toward consumption; it only
   // explains, which is why these three stay here now that two of the primitives
   // they name have a node-driven consumer as well.
+  //
+  // **An encouragement is no longer among them.** It used to be a second source
+  // of `research-rate` here; it is now the emphasis term in `target-appeal.ts`,
+  // which consumes no primitive at all because what it changes is *which node a
+  // mage picks*, not how fast any rate runs. So `research-rate`'s god-side
+  // consumer is the blessing and nothing else.
   registerNonNodeConsumer(
     recorder,
     'research-rate',
-    'coordination/god/effects.researchMultiplierFor (blessing + encouragement constants)',
+    'coordination/god/effects.researchBonusesFor (blessing constants)',
   );
   registerNonNodeConsumer(
     recorder,
     'teach-rate',
-    'coordination/god/effects.teachMultiplierFor (blessing constants)',
+    'coordination/god/effects.teachBonusesFor (blessing constants)',
   );
   registerNonNodeConsumer(
     recorder,
@@ -729,6 +817,11 @@ export function worldDeps(
     // import. `raids.ts` reads it off `content.deps`, which is
     // `ReturnType<typeof worldDeps>` and so picks the widening up for free.
     combat: combatEffectIndex(registry, recorder),
+    // `sound-design.md` §4.1's shape, per technique. Built here because this is
+    // where a registry is in hand; the arithmetic that reads it is
+    // `@mm/primitives`' and the resolution is `@mm/coordination`'s. This file
+    // wires; it does not compute.
+    envelopes: envelopeResolver(registry, cells),
     facets: nodeFacetsFrom(registry),
     affinitiesOf: (species) => {
       const cached = affinityCache.get(species.id);
@@ -737,15 +830,63 @@ export function worldDeps(
       affinityCache.set(species.id, resolved);
       return resolved;
     },
+    // The **economy** half of the same trait, and the half that did not exist.
+    // Every consumer of `species.affinities` was in the research-targeting path
+    // — a dwarf's `terram: 1536` biased what she studied and moved nothing she
+    // dug up. `aptitude.ts` derives the tilt from those same authored entries
+    // through `form.json`'s weights, so nothing here is a second number an
+    // author has to keep in step with the first.
+    //
+    // Resolved once against the whole content set rather than per species on
+    // demand: it is `O(species × forms)` and constant for the run, and the map
+    // is the same shape `affinityCache` above is.
+    landAptitudeOf: (species) => landAptitude.get(species.id) ?? NEUTRAL_LAND_APTITUDE,
     appeal: readTargetAppeal(registry),
+    goalAppeal: readGoalAppeal(registry),
     application: readApplicationWeights(registry),
     casting: readCastingWeights(registry),
+    teaching: readTeachingWeights(registry),
+    // The **faucet** for `labor`, beside the three drains. Read from the same
+    // table for the same reason, and required here rather than defaulted so
+    // that a composition root which forgot it would fail to compile instead of
+    // running a universe whose only source of hireable hands is its founding
+    // endowment. That state has been measured — `fund-university` legal on 13
+    // ticks of 600 — and it is what this row ends.
+    production: readProductionWeights(registry),
+    // The hire's rate from `autonomy-weight.json`, and its **reserve** from
+    // `god-cost.json` — `fund-university`'s own declared `labor` price, read
+    // rather than restated. The automatic per-tick hire may not draw the stock
+    // below what the discretionary verb costs, so the two claims on `labor`
+    // stop being a race the sink always wins. See
+    // `HiredLabourWeights.reserve` for the measurement (action 11 legal on 8
+    // ticks of 585 without it) and for why the floor sits on the drain rather
+    // than as a gate on the verb.
+    //
+    // Reading the price here rather than authoring a second constant is what
+    // keeps the two in step: a retune of the verb moves the floor with it, and
+    // there is no second number that can quietly disagree with the first.
+    hiredLabour: readHiredLabourWeights(
+      registry,
+      god.costs.materialByAction[GOD_ACTION.fundUniversity]?.labor ?? 0,
+    ),
     store: storeHookOf(registry, traditionId),
     acquire: acquireHookOf(registry, traditionId),
+    // …and the same two, for whichever tradition the universe holds *now*.
+    // `store`/`acquire` above stay as the tick-zero answer and as the fallback
+    // for a world built without a registry; `traditions` is what makes god
+    // action 13 move the hooks. See `traditionResolver`.
+    traditions: traditionResolver(registry),
     territory: territoryExtent(registry.territories.map((entry) => entry.record)),
-    // The same records the extent is summed from, read for their yield mix
-    // instead of their capacity. Both are fixed for the length of a run.
-    yieldShares: territoryYieldShares(registry.territories.map((entry) => entry.record)),
+    // The content half of `contracts.md` §2.7's split, in interned order — a
+    // code-unit sort of the ids (`intern.ts`), so the handles the world step
+    // allocates for holdings are a function of content and of nothing else.
+    territoryKinds: registry.territories.map((entry) => ({
+      kindId: entry.contentId,
+      landUnits: entry.record.landUnits,
+      capacityPerLandUnit: entry.record.capacityPerLandUnit,
+      yieldPerLandUnit: entry.record.yieldPerLandUnit,
+      libraryUpkeepMultiplier: entry.record.libraryUpkeepMultiplier,
+    })),
     // The wire from knowledge to the economy. Built here, at the composition
     // root, because it is a pure projection of the content set — see
     // `universe-effects.ts`, which explains at length what was not connected
@@ -772,6 +913,18 @@ export function worldDeps(
     // two under *"consumed, but never from node effects"*, which is the line
     // this campaign exists to shorten.
     vitality: vitalityIndex(registry, recorder),
+    // Every node's authored working duration, read once. This is the wire that
+    // makes `durationTicks` mean something: without it no working is ever lit,
+    // `sustain-working` is masked for every mage, and the field goes on being
+    // what it was for three releases — authored on 419 effect entries and read
+    // by nothing.
+    //
+    // No `recorder`, unlike its four neighbours, and that is not an oversight.
+    // The consumption check asks *"can what the academics know move this
+    // primitive"*, which is a question about magnitudes; a duration is not one.
+    // Registering this walk would put every durable node on the coverage report
+    // for a primitive nothing here spends.
+    workingDurations: buildWorkingDurations(registry),
     primitives: {
       lifespan,
       resourceYield: primitiveNamed(registry, 'resource-yield'),
@@ -779,6 +932,7 @@ export function worldDeps(
       researchRate: primitiveNamed(registry, 'research-rate'),
       teachRate: primitiveNamed(registry, 'teach-rate'),
       scribeRate: primitiveNamed(registry, 'scribe-rate'),
+      practiceRate: primitiveNamed(registry, 'practice-rate'),
       fertility: primitiveNamed(registry, 'fertility'),
     },
     knowledgeFor,

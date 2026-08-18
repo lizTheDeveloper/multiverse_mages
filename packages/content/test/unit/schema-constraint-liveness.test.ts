@@ -126,6 +126,7 @@ const SHADOWED: readonly { readonly constraint: string; readonly why: string }[]
     'god-constant',
     'raid-constant',
     'autonomy-weight',
+    'grade-edge',
   ] as const).map(
     (name) => ({
       constraint: `${name}.schema.json#/$defs/contentId minLength`,
@@ -165,6 +166,7 @@ const SHADOWED: readonly { readonly constraint: string; readonly why: string }[]
     'primitive.schema.json#/$defs/primitive/properties/scale',
     'primitive.schema.json#/$defs/primitive/properties/stacking',
     'primitive.schema.json#/$defs/cap/properties/kind',
+    'technique.schema.json#/$defs/envelope/properties/tuningStatus',
     'god-cost.schema.json#/$defs/godCost/properties/tuningStatus',
     'god-constant.schema.json#/$defs/godConstant/properties/unit',
     'god-constant.schema.json#/$defs/godConstant/properties/tuningStatus',
@@ -173,6 +175,9 @@ const SHADOWED: readonly { readonly constraint: string; readonly why: string }[]
     'autonomy-weight.schema.json#/$defs/autonomyWeight/properties/unit',
     'autonomy-weight.schema.json#/$defs/autonomyWeight/properties/role',
     'autonomy-weight.schema.json#/$defs/autonomyWeight/properties/tuningStatus',
+    'node.schema.json#/$defs/gradeRequirement/properties/kind',
+    'grade-edge.schema.json#/$defs/gradeEdge/properties/tuningStatus',
+    'grade-edge.schema.json#/$defs/gradedKind',
   ].map((pointer) => ({
     constraint: `${pointer} type`,
     why:

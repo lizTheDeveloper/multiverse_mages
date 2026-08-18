@@ -286,6 +286,19 @@ A node **exists in your universe** while at least one instance does. Operations:
 - **Theft** — the `knowledge-steal` primitive, concentrated in *Intellego Mentem* and *Rego
   Nomen*. Reading it from a mind mid-raid, or looting the grimoire that holds it. A True Naming
   universe makes this far more dangerous in both directions.
+- **Practice** — a mage spends a month keeping a node she already holds sharp, and its mastery
+  goes back up. The only operation that raises mastery: forgetting is otherwise monotone, which
+  is why for three releases 93.4% of held instances sat below the threshold at which their holder
+  can teach them (`ages-of-magic.md` §2c). It costs the month, so it competes with research and
+  teaching; it is refused in a forbidden cell, so an interdiction cannot be practised away; and
+  it is what the economy's `resource-yield` reads, so a universe's harvest reflects the magic its
+  mages are *casting* rather than the magic they happen to know.
+
+This list was **six** operations for three releases, and practice was the missing seventh. It was
+missing in the strong sense: `decay.ts` named it in its own prose — *"nothing in this subsystem
+restores mastery; practice does, and practice is an operation somebody has to perform"* — and
+nobody performed it, so the game shipped the perish half of publish-or-perish and none of the
+publish half.
 
 This is what makes losing hurt in a way that losing units never does.
 
@@ -548,7 +561,7 @@ agreement — that agreement is how "did the vision get built?" is answerable.
 | 0.9.0 | `raid-engagement` | `portals`, `host-ruleset-arbitration`, `raid-space`, `raid-objectives`, `raid-consequences` | 67/92; raids fire on the campaign branches, not yet on `main` |
 | 0.11.0 | `gym-bridge` | `rl-bridge` | 76/76 — tasks complete, unreleased |
 | 0.13.0 | `electron-client` | `client-shell`, `world-presentation` | proposal only — no tasks, no package |
-| 0.15.0 | `pvp-server` | `authoritative-lockstep`, `direct-challenge`, `universe-persistence`, `hetzner-deployment` | proposal only — no tasks, no package on `main` |
+| 0.15.0 | `pvp-server` | `authoritative-lockstep`, `direct-challenge`, `universe-persistence`, `hetzner-deployment` | 33/41; `packages/server` exists — re-measured 2026-08-16 on `origin/main@57bcbc44`. The 2026-08-12 amendment read *"proposal only — no tasks, no package on `main`"*; see the note below |
 | — | `metis-knowledge` | `metis-knowledge` | proposal only — 1/51 |
 | 1.0.0 | — | contracts freeze; public release | — |
 
@@ -561,9 +574,31 @@ they name was between two-thirds and entirely built, and one of the three now ex
 the campaign integration branches; on `main` `REFERENCE_MECHANICS.raidEngagement` is still `false`
 and nothing opens a portal, so that row says what it says. Four cells moved between the two checks:
 `mages-and-species` is 100/107 rather than 102 because tasks 8.1 and 8.2 were deliberately
-unchecked, `pvp-server` has neither tasks nor a package on `main`, and `v0.3.0` is now tagged.
+unchecked, ~~`pvp-server` has neither tasks nor a package on `main`~~ (**that clause is false at
+`origin/main@57bcbc44`, re-measured 2026-08-16 — see the note below**), and `v0.3.0` is now tagged.
 Anyone reading the old column would still have materially underestimated how far the project has
 gone, which is the failure mode this table exists to prevent.
+
+> **Reconciled with `w25/spec-refresh` on 2026-08-16, and three cells above were re-measured rather
+> than arbitrated.** The amendment on `origin/w25/spec-refresh@dc9b9ecf` (written 2026-08-12) carried
+> a different Status column, and the difference is not a disagreement about facts but about *which
+> tree* — it was written on the round-3 integration tree, this copy against `main`. Both readings are
+> kept here, each named for its ref:
+>
+> - **`mages-and-species`** — this copy: `100/107`. `w25`: `102/107`. Counted on the Group A
+>   integration tree at 2026-08-16: **100 of 107**, so `100/107` is current and `102/107` is the
+>   pre-unchecking figure. `openspec/changes/mages-and-species/tasks.md` 8.1 and 8.2 are deliberately
+>   unchecked; a lower number here is not a regression.
+> - **`raid-engagement`** — this copy: *"raids fire on the campaign branches, not yet on `main`"*.
+>   `w25`: *"raids now fire"*. Both true of their own trees. On the Group A tree at 2026-08-16
+>   `packages/mc-harness/src/metrics-telemetry.ts` still declares `raidEngagement: false`, so `main`'s
+>   reading holds here and `w25`'s holds on the integration tree it was written against.
+> - **`pvp-server`** — this copy said *"proposal only — no tasks, no package on `main`"*. `w25` said
+>   *"33/41; `packages/server` exists"*. **`w25` is the one that survives re-measurement.** At
+>   `origin/main@57bcbc44`, `git ls-tree origin/main packages/` lists `packages/server`, and
+>   `openspec/changes/pvp-server/tasks.md` counts **33 of 41**. The cell above has been corrected and
+>   both claims left standing, because the failure mode this table exists to prevent is a stale cell
+>   read in the present tense.
 
 The distinction the old column lost is the one worth keeping: **a finished task list is not a
 shipped version.** `agent-interface` and `gym-bridge` are complete and unreleased, which under the

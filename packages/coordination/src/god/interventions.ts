@@ -59,13 +59,14 @@
  */
 
 import type { Action, EntityHandle, SimState } from '@mm/sim-core';
-import type { AxisChangeCounterRecord } from '@mm/state';
+import type { AxisChangeCounterRecord, LocationKindValue, MidRaidMark } from '@mm/state';
 import { FP_ONE, NULL_ENTITY, TIME_MODE, floorDiv } from '@mm/sim-core';
 import type { Fixed } from '@mm/sim-core';
-import type { CellResolver, KnowledgeSubsystem, NodeCatalog } from '@mm/rules-magic';
+import type { CellResolver, InstanceView, KnowledgeSubsystem, NodeCatalog } from '@mm/rules-magic';
+import { changeTradition } from '@mm/rules-magic';
 import type { SpeciesRecord } from '@mm/content';
-import type { StepRng } from '@mm/rules-world';
-import { createMage } from '@mm/rules-world';
+import type { MaterialKind, StepRng } from '@mm/rules-world';
+import { MATERIAL_KINDS, createMage, createUniversity, zeroAmounts } from '@mm/rules-world';
 import {
   AXIS_CHANGE_COUNTER,
   AXIS_KIND,
@@ -80,50 +81,50 @@ import {
   LIBRARY,
   LOCATION_KIND,
   MAGE,
-  MAGE_ROLE,
+  MATERIAL_STOCK,
+  RULE_CHANGE_KIND,
+  RULE_SCOPE,
   TERMINAL_REASON,
   UNIVERSE,
   UNIVERSITY,
   UPHEAVAL,
   GRANT_BUDGET,
+  isGodAssignableRole,
   activeBlessings,
   activeEncouragements,
   attachRecord,
   canGrantFoundingKnowledge,
   collectRecords,
   componentOf,
+  findMidRaidMark,
   isCellId,
+  revertSurcharge,
   permits,
   readEdicts,
   readRulesetForObservation,
   readUniverse,
 } from '@mm/state';
+import type { TerritoryKind } from '@mm/rules-world';
+import { defaultSiteKind, siteUniversity, territoryHoldings } from '@mm/rules-world';
 
-import type { GodContent } from './constants.js';
+import { ACTION } from './actions.js';
+import type { TraditionResolver } from '../traditions.js';
+import type { ActionMaterialCost, GodContent } from './constants.js';
 import { hysteresisMultiplier, inertFraction, interventionCost, upheavalShock } from './favor.js';
 import { edictBudgetFor, favorCapFor } from './worship.js';
+import { interventionPhase, isConstitutional, markConstitutionalAct, timedCost } from './timing.js';
 import { godState, writeGodState } from './god-state.js';
 
-/** `contracts.md` §4.2's action ids, as this dispatch names them. */
-export const ACTION = {
-  noop: 0,
-  permitTechnique: 1,
-  forbidTechnique: 2,
-  permitForm: 3,
-  forbidForm: 4,
-  issueDispensation: 5,
-  issueInterdiction: 6,
-  revokeEdict: 7,
-  grantFoundingKnowledge: 8,
-  blessMage: 9,
-  assignRole: 10,
-  fundUniversity: 11,
-  encourageResearch: 12,
-  changeTradition: 13,
-  openPortal: 14,
-  declareAscension: 15,
-  inviteScholar: 16,
-} as const;
+// `ACTION` moved to `./actions.js` on `w21/timing-and-envelopes`, to break an
+// import cycle with `timing.ts` — see that file's header. Re-exported here so
+// nothing importing it from this module has to change.
+//
+// **The extracted table was one action short and this merge added it back.**
+// W21 cut `actions.ts` before `w109` appended action 16 (`invite-scholar`), so
+// taking its side verbatim would have deleted an action id that `main` has —
+// silently, with no conflict in any consumer, because a missing key on a
+// `const` object is a type error only where it is read by name.
+export { ACTION } from './actions.js';
 
 /** Everything the dispatch needs that is content or a subsystem rather than state. */
 export interface InterventionDeps {
@@ -167,6 +168,47 @@ export interface InterventionDeps {
   readonly rng: StepRng;
   /** Asks the clock to enter engagement. Supplied by the step context. */
   readonly requestEngagement: () => void;
+  /**
+   * What each kind of country is like, and what it endows (`contracts.md` §2.7).
+   *
+   * Read for one thing here: **where a newly founded university stands.** §4.2
+   * gives `fundUniversity` a single parameter — the university handle — and §4.1
+   * fixes the institution observation block at four slots, so there is nowhere
+   * in the current action space for the god to *name* a site. Adding one is
+   * §4.4's parameterized channel and a reshape of the action space, which this
+   * capability does not make. Until it is made, founding uses the documented
+   * deterministic default in `defaultSiteKind`.
+   *
+   * Optional, and empty means the god founds unsited universities — neutral
+   * ground, and the only honest answer for a world that declares no country.
+   */
+  readonly territoryKinds?: readonly TerritoryKind[] | undefined;
+  /**
+   * The hooks a tradition puts in force, by interned id.
+   *
+   * Action 13's other half. Rewriting `UNIVERSE.traditionId` is the cheap part;
+   * what `magic-traditions` actually requires is that the operation be *total* —
+   * no knowledge instance left sitting at a location the incoming `store` kind
+   * does not define. `changeTradition` computes that, and until this dep existed
+   * it had no caller anywhere in the repository, on `main` or on any of 153
+   * branches, while the action id it belongs to was reachable from three.
+   *
+   * Optional, and absent means the action does what it always did: move the id
+   * and touch no instance. That keeps every hand-built test world and every
+   * older save behaving exactly as written, which is the same shape
+   * `grantBudget` uses — an absent dep is a decision, not a shortage.
+   */
+  readonly traditions?: TraditionResolver | undefined;
+  /**
+   * Nodes this dispatch destroyed the last instance of, reported to the loop.
+   *
+   * Only a tradition change can produce one today. Absent means nobody is
+   * counting, which is honest for a caller driving the god systems alone — but
+   * `defineWorldSimulation` supplies one, because a knowledge-loss channel the
+   * `nodesLost` series cannot see is a channel `knowledgeHalfLife` will report
+   * as if it never fired.
+   */
+  readonly onKnowledgeLost?: ((nodes: number) => void) | undefined;
 }
 
 /** What one tick's interventions did. Reporting only; never an input to a rule. */
@@ -179,6 +221,28 @@ export interface InterventionReport {
   readonly rolledBack: number;
   /** Actions that resolved. */
   readonly applied: number;
+  /**
+   * Material the god's verbs took out of the stocks this tick, per kind, `fp`.
+   *
+   * **The one flow the world tick's ledger structurally cannot see.** This
+   * system runs *before* `worldSystem` in the same step, so what
+   * `deductMaterials` writes is what the world tick opens with — its `opening`
+   * is already net of the god. A reader with only the world ledger therefore
+   * finds a kind whose sole sink is a god verb reading *"no claimant"*, and can
+   * recover the spend only by differencing `opening[t]` against `closing[t-1]`,
+   * which is an inference rather than a measurement.
+   *
+   * Measured as the stock's own **movement across this system** — the row read
+   * before the action loop against the row read after — rather than by summing
+   * prices. That is immune to the two ways a price-sum goes wrong: a plan that
+   * is rolled back has `restoreMaterials` put the stocks back, and an action
+   * refused before `deductMaterials` never charged. What is reported is what
+   * left, whatever the reason.
+   *
+   * Positive is spent. Nothing here can make material, so a negative entry
+   * would be a defect rather than a gift.
+   */
+  readonly materialsSpentByKind: Readonly<Record<MaterialKind, Fixed>>;
 }
 
 /** A mutable tally the resolver folds into, turned into a report at the end. */
@@ -187,6 +251,7 @@ interface Tally {
   refused: number;
   rolledBack: number;
   applied: number;
+  materialsSpentByKind: Record<MaterialKind, Fixed>;
 }
 
 /**
@@ -205,7 +270,13 @@ export function resolveInterventions(
   mode: number,
   deps: InterventionDeps,
 ): InterventionReport {
-  const tally: Tally = { spentByAction: {}, refused: 0, rolledBack: 0, applied: 0 };
+  const tally: Tally = {
+    spentByAction: {},
+    refused: 0,
+    rolledBack: 0,
+    applied: 0,
+    materialsSpentByKind: zeroAmounts(),
+  };
 
   const universe = findTheUniverse(state);
   if (universe === 0) return report(tally);
@@ -231,10 +302,17 @@ export function resolveInterventions(
     return report(tally);
   }
 
+  // The stocks as this system found them, against the stocks it leaves behind.
+  // Read around the whole loop rather than summed per action, for the reason
+  // `InterventionReport.materialsSpentByKind` gives: a rollback restores the
+  // row, and a price-sum would bill for a purchase that did not happen.
+  const before = readStock(state, universe);
   for (const action of actions) {
     if (!isGodIntervention(action.kind)) continue;
     resolveOne(state, universe, action, worldTick, deps, tally);
   }
+  const after = readStock(state, universe);
+  for (const kind of MATERIAL_KINDS) tally.materialsSpentByKind[kind] = before[kind] - after[kind];
   return report(tally);
 }
 
@@ -244,6 +322,7 @@ function report(tally: Tally): InterventionReport {
     refused: tally.refused,
     rolledBack: tally.rolledBack,
     applied: tally.applied,
+    materialsSpentByKind: Object.freeze({ ...tally.materialsSpentByKind }),
   };
 }
 
@@ -288,9 +367,17 @@ function resolveOne(
     return;
   }
 
+  // `sound-design.md` §5.2's eight-bar unease, applied to the plan's price
+  // before affordability is judged, so the surcharge is a *cost* rather than a
+  // refusal after the fact. One place, every action, no call site to forget:
+  // threading a `timing` option through ten `*Plan` functions would have put the
+  // rule in ten places and left the eleventh silently free of it.
+  const phase = interventionPhase(state, universe, action.kind, worldTick, deps.god.constants);
+  const cost = timedCost(plan.cost, phase);
+
   const universeStore = componentOf(state, UNIVERSE);
   const opening = universeStore.get(universe, 'favor');
-  if (plan.cost > opening) {
+  if (cost > opening) {
     // Affordability is a mask condition, not a failure — but a caller driving
     // `step` directly, or a mask that priced an action before a same-tick spend
     // emptied the pool, both land here. The remedy is §4.2's: a no-op and a
@@ -299,9 +386,34 @@ function resolveOne(
     return;
   }
 
-  universeStore.set(universe, 'favor', opening - plan.cost);
+  // The second currency, refused the same way and for the same reason.
+  // `material-economy`'s spec puts an unpayable material cost on the **mask**;
+  // this is the authoritative half, exactly as the favor check above is the
+  // authoritative half of a price the mask also knows. Belt and braces, and the
+  // module note says why the two cannot be one function: `agent-api` may not
+  // import `@mm/content`, and the rules packages may not import `agent-api`.
+  //
+  // The material price is **not** surcharged by `timedCost`. §5.2's eight-bar
+  // unease is a favor surcharge — it is what the god's own upheaval costs the
+  // god — and applying it to stone and vellum would charge a *universe* for a
+  // constitutional act its people did not commit.
+  const materialCost = materialPriceOf(action.kind, deps);
+  const openingStock = readStock(state, universe);
+  if (!canPay(openingStock, materialCost)) {
+    refuse(state, tally);
+    return;
+  }
+
+  universeStore.set(universe, 'favor', opening - cost);
+  deductMaterials(state, universe, openingStock, materialCost);
   try {
     plan.apply();
+    // §5.2's eight bars start ringing only once the law has actually changed.
+    // An act refused for want of favor changed nothing, and charging the *next*
+    // one for it would make an unaffordable action cost something after all.
+    if (isConstitutional(action.kind)) {
+      markConstitutionalAct(state, universe, worldTick, deps.god.constants);
+    }
   } catch {
     // The rollback the favor-economy spec asks for. Every apply below is a
     // small number of component writes and none of them is expected to throw;
@@ -310,13 +422,96 @@ function resolveOne(
     // that a resolver that started throwing would be visible rather than
     // merely correct.
     universeStore.set(universe, 'favor', opening);
+    // Both currencies restored, or the rollback would be a partial refund — the
+    // shape that leaves a god poorer for an effect that never happened, and the
+    // one a reader of "effects never outrun payment" would not think to check.
+    restoreMaterials(state, universe, openingStock);
     tally.rolledBack += 1;
     refuse(state, tally);
     return;
   }
 
-  tally.spentByAction[action.kind] = (tally.spentByAction[action.kind] ?? 0) + plan.cost;
+  tally.spentByAction[action.kind] = (tally.spentByAction[action.kind] ?? 0) + cost;
   tally.applied += 1;
+}
+
+/**
+ * What an action costs in materials, or `undefined` where the table names none.
+ *
+ * Read off the cost table by action id rather than carried on the {@link Plan},
+ * and that is deliberate: a material price is **flat**. Unlike favor, nothing
+ * scales it by hysteresis or by node tier, so there is no per-parameter
+ * arithmetic for a plan to do and therefore no way for a plan and the mask to
+ * arrive at different prices for the same verb.
+ */
+function materialPriceOf(actionId: number, deps: InterventionDeps): ActionMaterialCost | undefined {
+  return deps.god.costs.materialByAction[actionId];
+}
+
+/** The universe's seven stocks, or zeros where no row has been written. */
+function readStock(state: SimState, universe: EntityHandle): Record<MaterialKind, Fixed> {
+  const store = componentOf(state, MATERIAL_STOCK);
+  const stock = zeroAmounts();
+  if (!store.has(universe)) return stock;
+  for (const kind of MATERIAL_KINDS) stock[kind] = store.get(universe, kind);
+  return stock;
+}
+
+/**
+ * Whether the stocks cover a price.
+ *
+ * Per kind, never against a total: a `passage` price is not payable out of a
+ * heap of stone. `kinds.ts` refuses cross-kind substitution by name — it would
+ * be a market, and a market dissolves the differentiation the seven kinds exist
+ * to create.
+ */
+function canPay(
+  stock: Readonly<Record<MaterialKind, Fixed>>,
+  price: ActionMaterialCost | undefined,
+): boolean {
+  if (price === undefined) return true;
+  for (const kind of MATERIAL_KINDS) {
+    const owed = price[kind] ?? 0;
+    if (owed > 0 && stock[kind] < owed) return false;
+  }
+  return true;
+}
+
+/**
+ * Spends the price, creating the row if the universe has never held one.
+ *
+ * The god's intervention system runs **before** the world system in the same
+ * step, so what this writes is what `readMaterialStock` opens the world tick
+ * with. Sequential, not concurrent: there is still exactly one writer per
+ * phase, which is the property `world-step.ts`'s `writeMaterialStock` note
+ * depends on.
+ */
+function deductMaterials(
+  state: SimState,
+  universe: EntityHandle,
+  opening: Readonly<Record<MaterialKind, Fixed>>,
+  price: ActionMaterialCost | undefined,
+): void {
+  if (price === undefined) return;
+  const store = componentOf(state, MATERIAL_STOCK);
+  const closing = zeroAmounts();
+  for (const kind of MATERIAL_KINDS) closing[kind] = opening[kind] - (price[kind] ?? 0);
+  if (!store.has(universe)) {
+    attachRecord(state, MATERIAL_STOCK, universe, closing);
+    return;
+  }
+  for (const kind of MATERIAL_KINDS) store.set(universe, kind, closing[kind]);
+}
+
+/** Puts every kind back as it was. The materials half of the rollback. */
+function restoreMaterials(
+  state: SimState,
+  universe: EntityHandle,
+  opening: Readonly<Record<MaterialKind, Fixed>>,
+): void {
+  const store = componentOf(state, MATERIAL_STOCK);
+  if (!store.has(universe)) return;
+  for (const kind of MATERIAL_KINDS) store.set(universe, kind, opening[kind]);
 }
 
 /** A validated action: what it costs, and the writes it will make. */
@@ -412,9 +607,18 @@ function axisPlan(
   if (isSet === permitting) return undefined;
 
   const counter = counterFor(state, axisKind, bit);
-  const cost = interventionCost(actionId, deps.god.costs, {
+  const ordinary = interventionCost(actionId, deps.god.costs, {
     hysteresis: hysteresisMultiplier(counter.record.changeCount, deps.god.constants),
   });
+
+  // `raid-engagement.md` §1's revert surcharge. A change made under fire is
+  // marked; walking it back afterwards is priced against what it cost then.
+  const scope = technique ? RULE_SCOPE.technique : RULE_SCOPE.form;
+  const mark = reverts(state, scope, bit, permitting);
+  const cost =
+    mark === undefined
+      ? ordinary
+      : revertSurcharge(ordinary, mark.paidCost, deps.god.constants.midRaidRevertMultiplier);
 
   // Computed before the write, because the fraction is "how much of what the
   // universe knows is about to go inert" and after the flip it is zero.
@@ -427,6 +631,10 @@ function axisPlan(
     apply: () => {
       store.set(universe, field, permitting ? mask | (1 << bit) : mask & ~(1 << bit));
       bumpCounter(state, counter);
+      // The mark is discharged by being paid for, not by expiring. A surcharge
+      // that could be paid twice for one raid would price a second, ordinary
+      // change at the raid's rate months later.
+      if (mark !== undefined) state.entities.destroy(mark.handle);
       if (!permitting && stranded.inert > 0) {
         applyShock(
           state,
@@ -494,6 +702,28 @@ function strandedByAxis(
 interface AxisCounter {
   readonly handle: EntityHandle;
   readonly record: AxisChangeCounterRecord;
+}
+
+/**
+ * The mid-raid mark this axis toggle would walk back, or `undefined`.
+ *
+ * A toggle reverts a mark when it moves legality the *opposite* way: permitting
+ * discharges a mid-raid forbid, forbidding discharges a mid-raid permit. A
+ * toggle in the same direction as the mark cannot happen — the axis is already
+ * in that state and `axisPlan` has refused it as a no-op before reaching here —
+ * so the check is a direction comparison rather than a search.
+ */
+function reverts(
+  state: SimState,
+  scope: number,
+  bit: number,
+  permitting: boolean,
+): MidRaidMark | undefined {
+  const mark = findMidRaidMark(state, scope, bit);
+  if (mark === undefined) return undefined;
+  const undoes =
+    mark.changeKind === (permitting ? RULE_CHANGE_KIND.forbid : RULE_CHANGE_KIND.permit);
+  return undoes ? mark : undefined;
 }
 
 function counterFor(state: SimState, axisKind: number, axisBit: number): AxisCounter {
@@ -584,10 +814,30 @@ function revokePlan(
   const rows = collectRecords(state, EDICT).sort((a, b) => a.handle - b.handle);
   const target = rows[index];
   if (target === undefined) return undefined;
+
+  const ordinary = interventionCost(ACTION.revokeEdict, deps.god.costs);
+  // Revoking is the *only* route back from a cell-scoped mid-raid change:
+  // `edictPlan` refuses a second edict on a cell that already carries one, so
+  // the opposite edict cannot be issued over the top. The surcharge therefore
+  // belongs here and nowhere else for the cell scope.
+  //
+  // "Reverts" means the standing edict is the one the raid left. Its direction
+  // is read from the edict rather than from the mark, so revoking a *peacetime*
+  // edict that happens to sit on a marked cell is priced ordinarily.
+  const wasForbid = target.row.kind === EDICT_KIND.interdiction;
+  const mark = findMidRaidMark(state, RULE_SCOPE.cell, target.row.cellId);
+  const discharges =
+    mark !== undefined &&
+    mark.changeKind === (wasForbid ? RULE_CHANGE_KIND.forbid : RULE_CHANGE_KIND.permit);
+
   return {
-    cost: interventionCost(ACTION.revokeEdict, deps.god.costs),
+    cost:
+      discharges && mark !== undefined
+        ? revertSurcharge(ordinary, mark.paidCost, deps.god.constants.midRaidRevertMultiplier)
+        : ordinary,
     apply: () => {
       state.entities.destroy(target.handle);
+      if (discharges && mark !== undefined) state.entities.destroy(mark.handle);
     },
   };
 }
@@ -616,16 +866,24 @@ function revokePlan(
  * `permits` must return true for the node's cell.
  *
  * Granted at full mastery, because a grant at the research default would sit
- * below the teach threshold and could never leave the founder's head — which
- * would make founding knowledge a gift to one mage rather than to a universe.
+ * below the teach threshold — which, before `rules-magic`'s `practice` existed,
+ * meant it could never leave the founder's head at all, making founding
+ * knowledge a gift to one mage rather than to a universe. Practice gives a
+ * below-threshold instance an exit now, so the grant is no longer the *only*
+ * route above the threshold; it stays at full mastery anyway, because a
+ * founding gift that the founder had to spend a year drilling before she could
+ * pass it on is a delay rather than a gift.
  *
  * ## The fifth precondition: the budget
  *
  * Grants are **scarce, not weak**. The shape above is untouched — a full
- * instance at `grantMastery` — because `setMastery`'s only non-test caller is
- * the decay pass and it lowers, so a granted instance is the one source of
- * knowledge above the teach threshold this universe has. What is limited is the
- * count, through `canGrantFoundingKnowledge`, and a universe carrying no
+ * instance at `grantMastery`. When the budget was written, that shape was
+ * load-bearing for a second reason that has since gone: `setMastery`'s only
+ * non-test caller was the decay pass and it lowers, so a granted instance was
+ * the *one* source of knowledge above the teach threshold a universe had.
+ * `practice` is a second source now, and the argument for keeping grants strong
+ * is the one above rather than that scarcity. What is limited is the count,
+ * through `canGrantFoundingKnowledge`, and a universe carrying no
  * `grant-budget` row is unbounded exactly as it was before the row existed.
  *
  * The refusal is here **and** in `agent-api`'s candidate list, which is the same
@@ -765,7 +1023,11 @@ function rolePlan(
   deps: InterventionDeps,
 ): Plan | undefined {
   if (mageId === undefined || roleId === undefined) return undefined;
-  if (!Object.values(MAGE_ROLE).includes(roleId as never)) return undefined;
+  // `isGodAssignableRole`, not `Object.values(MAGE_ROLE)`. W193 appended
+  // `student` to the enumeration, and a membership test derived from the whole
+  // enum would have handed the god an un-graduate action nobody designed —
+  // silently, because it reads as validation rather than as a policy.
+  if (!isGodAssignableRole(roleId)) return undefined;
   if (!isLivingMage(state, mageId)) return undefined;
 
   const store = componentOf(state, MAGE);
@@ -808,12 +1070,39 @@ function fundPlan(
       apply: () => {
         const library = state.entities.create();
         attachRecord(state, LIBRARY, library, { foundedTick: worldTick });
-        const university = state.entities.create();
-        attachRecord(state, UNIVERSITY, university, {
+        // `createUniversity` rather than a second `attachRecord`: it is the
+        // constructor `construction.ts` exports for exactly this, it starts the
+        // site at zero progress — which is the paragraph above, expressed once
+        // instead of twice — and it rejects a capacity that is not a
+        // non-negative integer. That last cannot fire from here, because
+        // `god-constant.schema.json` types every `value` as
+        // `integer, minimum 0`; it is worth having anyway, because the
+        // alternative to a `RangeError` is a `u16` silently truncating a
+        // magnitude somebody authored.
+        // The handle is **bound**, not discarded: `w/wire-academy` replaced a
+        // hand-rolled `entities.create()` + `attachRecord` pair with this
+        // constructor, and the merge with the siting branch dropped the binding
+        // while keeping the `siteUniversity` call below that needs it.
+        const university = createUniversity(state, {
           libraryId: library,
           capacity: deps.god.constants.foundUniversityCapacity,
-          buildProgress: 0,
         });
+        // Where the most people already are, ties to the lower content id —
+        // `defaultSiteKind`'s documented order. A god who has no way to say
+        // where should not get a random answer, and should not get *no* answer
+        // either: an unsited university is neutral ground, which would make
+        // founding the one way to escape terrain entirely.
+        // Holdings first, endowment second. The god's intervention system runs
+        // *before* the world system, so a university founded on the very first
+        // tick of a fresh universe is founded before the holdings materialize —
+        // and `defaultSiteKind` given an empty list answers 0, which would leave
+        // that one university unsited and neutral forever while every later one
+        // stood somewhere. The endowment says the same thing about the same
+        // country, which is why the function takes rows rather than a state.
+        const holdings = territoryHoldings(state);
+        const kinds = deps.territoryKinds ?? [];
+        const site = defaultSiteKind(holdings.length > 0 ? holdings : kinds, kinds);
+        if (site !== 0) siteUniversity(state, university, site);
       },
     };
   }
@@ -931,11 +1220,43 @@ export function emphasisAt(
  * pool is zeroed on top of the price, and the tradition shock runs five times
  * longer than a forbidding's.
  *
- * Existing instances are not touched here. Migration between a memory-palace
- * `store` hook and a standard one is `knowledge-model`'s, through the tradition
- * hooks; an intervention that destroyed or duplicated instances on its own
- * would be a second entry point into the loss machinery with different
- * semantics.
+ * ## What used to happen here, and why it was the worst kind of dead
+ *
+ * This wrote `traditionId`, zeroed favor, ran the shock, and stopped. It said so
+ * in its own header: *"Existing instances are not touched here. Migration
+ * between a memory-palace `store` hook and a standard one is `knowledge-model`'s,
+ * through the tradition hooks."* `knowledge-model` had duly built the migration —
+ * `changeTradition`, in `rules-magic/src/traditions/change.ts` — and **nothing
+ * anywhere called it**, on `main` or on any of 153 branches. Meanwhile the id
+ * this function wrote reached nothing either: `store` and `acquire` were
+ * resolved once at the composition root and carried on the world-step deps for
+ * the length of the run.
+ *
+ * So a published action, admitted by the mask and priced at 64 favor, cost a
+ * god everything he had and changed nothing but a number and a five-tick
+ * unrest. Not a missing feature — a lie in the action space.
+ *
+ * ## The migration is still not this function's rule
+ *
+ * The header's argument was right and is kept: an intervention that decided for
+ * itself which instances survive would be a second entry point into the loss
+ * machinery with different semantics. So the decision is `changeTradition`'s —
+ * pure, total, and computed **before** anything is written — and this function
+ * applies the result whole, through the one operation `change.ts` names as the
+ * way to apply it (`destroyAll(plan.destroyed)`, which takes each instance's
+ * grimoire with it).
+ *
+ * **A refusal is a no plan, not a half-applied one.** `changeTradition` refuses
+ * when the universe already holds an instance the *outgoing* store kind cannot
+ * describe — evidence of an earlier partial change or of a writer that invented
+ * a location. Returning `undefined` here means the action is refused and counted
+ * before a single favor is deducted, which is the same treatment every other
+ * failed precondition gets.
+ *
+ * With no {@link InterventionDeps.traditions} resolver the action does exactly
+ * what it did before: moves the id and touches no instance. That is what every
+ * hand-built test world describes, and it is the arm a two-arm measurement
+ * compares against.
  */
 function traditionPlan(
   state: SimState,
@@ -946,11 +1267,38 @@ function traditionPlan(
 ): Plan | undefined {
   if (traditionId === undefined || traditionId <= 0) return undefined;
   const store = componentOf(state, UNIVERSE);
-  if (store.get(universe, 'traditionId') === traditionId) return undefined;
+  const outgoingId = store.get(universe, 'traditionId');
+  if (outgoingId === traditionId) return undefined;
+
+  const resolve = deps.traditions;
+  const migration =
+    resolve === undefined
+      ? undefined
+      : changeTradition({
+          outgoingStore: resolve(outgoingId).storeHook,
+          incomingStore: resolve(traditionId).storeHook,
+          instances: everyInstance(state),
+          worldTick,
+        });
+  if (migration !== undefined && !migration.applied) return undefined;
 
   return {
     cost: interventionCost(ACTION.changeTradition, deps.god.costs),
     apply: () => {
+      if (migration !== undefined && migration.destroyed.length > 0) {
+        // `destroyAll`, because that is the single operation `change.ts` says
+        // the plan is meant to be applied through: it destroys the instance and
+        // the grimoire behind it as a pair, so a switch into the Art of Memory
+        // leaves no book whose contents are gone.
+        deps.knowledge.destroyAll(migration.destroyed, worldTick);
+        // The nodes that left the universe entirely. Reported to the loop so
+        // they land in the same `nodesLost` a death and a rotted shelf land in
+        // — `change.ts` requires a tradition change's losses to be
+        // *indistinguishable* from any other, and a channel the metric cannot
+        // see is exactly the accounting that hides what the god's own switch
+        // cost.
+        if (migration.losses.length > 0) deps.onKnowledgeLost?.(migration.losses.length);
+      }
       store.set(universe, 'traditionId', traditionId);
       // Zeroed *after* the price is paid, which is why the two are not one
       // number: the cost is what the mask judges affordability against, and the
@@ -963,6 +1311,29 @@ function traditionPlan(
       );
     },
   };
+}
+
+/**
+ * Every knowledge instance in the universe, in ascending handle order.
+ *
+ * Read straight off the component rather than through the subsystem, because
+ * `KnowledgeSubsystem` publishes "held by", "at", and "of node" and no "all" —
+ * and a union of the four location kinds would be three scans and a rule about
+ * which of them is exhaustive. Ascending handle is a total order that depends on
+ * nothing but the state, which is what `changeTradition`'s "in a stable order"
+ * requires: two peers must destroy the same instances in the same sequence.
+ */
+function everyInstance(state: SimState): readonly InstanceView[] {
+  const views: InstanceView[] = [];
+  for (const { handle, row } of collectRecords(state, KNOWLEDGE_INSTANCE)) {
+    views.push({
+      instanceId: handle,
+      nodeId: row.nodeId,
+      locationKind: row.locationKind as LocationKindValue,
+      locationId: row.locationId,
+    });
+  }
+  return views;
 }
 
 // ---------------------------------------------------------------------------

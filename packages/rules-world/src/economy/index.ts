@@ -75,30 +75,90 @@ export {
   territoryExtent,
 } from './carrying-capacity.js';
 
+export type { TerritoryKind } from './territory-holdings.js';
+export {
+  defaultSiteKind,
+  hasTerritoryHoldings,
+  heldTerritoryExtent,
+  heldTerritoryYieldShares,
+  materializeTerritoryHoldings,
+  territoryHoldings,
+} from './territory-holdings.js';
+
+export type { LandAptitude } from './aptitude.js';
+export {
+  NEUTRAL_LAND_APTITUDE,
+  landAptitudeTable,
+  speciesLandAptitude,
+} from './aptitude.js';
+
 export type { EconomicInput, WorshipInputs } from './counts.js';
 export { ECONOMIC_INPUTS, worshipInputs } from './counts.js';
 
-export type { MaterialAmounts, MaterialKind } from './kinds.js';
+export type { LandMaterialKind, LandYield, MaterialAmounts, MaterialKind } from './kinds.js';
 export {
+  LAND_MATERIAL_KINDS,
   MATERIAL_KINDS,
   NO_MATERIALS,
   addAmounts,
+  landTotal,
+  landYieldShares,
   routeYieldByForm,
   territoryYieldShares,
   totalAmount,
   zeroAmounts,
 } from './kinds.js';
 
-export type { ConsumptionDemand, ConsumptionKind, ConsumptionOutcome, ProductionInput } from './materials.js';
+export type {
+  ActiveDemand,
+  DemandOutcome,
+  GradeSettlement,
+  GradedStock,
+} from './grades.js';
+export {
+  NO_GRADED_STOCK,
+  demandKey,
+  gradedColumn,
+  metDemands,
+  rawRefiningDemand,
+  settleGrades,
+} from './grades.js';
+
+export type { TeachingWeightSource, TeachingWeights } from './teaching.js';
+export {
+  REQUIRED_TEACHING_WEIGHTS,
+  fundedTeachingShare,
+  insightTeachingBonus,
+  readTeachingWeights,
+  teachingInsightDemand,
+} from './teaching.js';
+
+export type {
+  CeilingOutcome,
+  ConservationBreach,
+  MaterialLedger,
+  ConsumptionDemand,
+  ConsumptionKind,
+  ConsumptionOutcome,
+  ProductionInput,
+  ProductionWeightSource,
+  ProductionWeights,
+} from './materials.js';
 export {
   CLAIMANT_KIND,
   CONSUMPTION_ORDER,
+  MATERIAL_STOCK_CEILING,
   MATERIALS_PER_LABORER,
+  REQUIRED_PRODUCTION_WEIGHTS,
+  applyStockCeiling,
+  assertMaterialsConserved,
+  conservationBreaches,
   NO_YIELD_BONUSES,
   SUBSISTENCE_PER_PERSON,
   assertMaterialsNonNegative,
   consumeMaterials,
   materialsProduced,
+  readProductionWeights,
   resourceYieldMultiplier,
   subsistenceDemand,
 } from './materials.js';

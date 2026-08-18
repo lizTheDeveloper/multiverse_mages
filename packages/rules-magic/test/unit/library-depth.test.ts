@@ -42,6 +42,7 @@ function tieredCatalog(rootTier: number, childTier: number) {
     teachCost: 1024,
     scribeCost: 2048,
     rediscoveryMultiplier: 4096,
+    knowledgeKind: 'episteme' as const,
   };
   return catalogOf([
     { ...base, nodeId: ROOT_NODE, tier: rootTier },

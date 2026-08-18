@@ -30,6 +30,7 @@ import { scoreGoal, scoreGoals } from './scoring.js';
 import type { TargetAppealWeights } from './target-appeal.js';
 import type { TargetScore } from './target-appeal.js';
 import { compareAppeal, targetAppeal } from './target-appeal.js';
+import type { GoalAppealWeights } from './terms.js';
 
 /**
  * ## Determinism has two halves and only one of them is the RNG
@@ -101,6 +102,12 @@ export interface SelectionInput {
    * authored while every test that supplied one went on passing.
    */
   readonly appeal: TargetAppealWeights;
+  /**
+   * Every magnitude goal scoring is made of that is content rather than a table
+   * in `terms.ts`, read once from the same file `appeal` comes from. Required
+   * for the same reason, and the reason is the same sentence.
+   */
+  readonly goalAppeal: GoalAppealWeights;
   readonly scoring?: ScoringOptions | undefined;
   readonly schedule?: ScheduleOptions | undefined;
 }
@@ -120,6 +127,10 @@ function targetsFor(goal: GoalId, outlook: MageOutlook): readonly KnowledgeTarge
       return outlook.scribableTargets;
     case GOAL.applyMagic:
       return outlook.applicableTargets;
+    case GOAL.practice:
+      return outlook.practiceTargets;
+    case GOAL.sustainWorking:
+      return outlook.sustainableTargets;
     default:
       return [];
   }
@@ -289,7 +300,7 @@ export function selectGoal(input: SelectionInput): Selection {
   }
 
   const mask: FeasibilityOutcome = maskGoals(outlook);
-  const scores = scoreGoals(mask.feasible, outlook, input.scoring ?? {});
+  const scores = scoreGoals(mask.feasible, outlook, input.goalAppeal, input.scoring ?? {});
   const { winner, tiedAtTop } = argmaxWithTieBreak(scores, rng, outlook.mage);
 
   const margin = input.schedule?.hysteresisMargin ?? HYSTERESIS_MARGIN;
@@ -298,7 +309,11 @@ export function selectGoal(input: SelectionInput): Selection {
     incumbentFeasible &&
     !incumbentComplete &&
     winner.goal !== incumbent.goalId &&
-    !displaces(winner.score, scoreGoal(incumbent.goalId, outlook, input.scoring ?? {}).score, margin);
+    !displaces(
+      winner.score,
+      scoreGoal(incumbent.goalId, outlook, input.goalAppeal, input.scoring ?? {}).score,
+      margin,
+    );
 
   if (keepsIncumbent && incumbent !== undefined) {
     return {

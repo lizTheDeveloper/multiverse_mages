@@ -62,6 +62,7 @@ import {
   collectInboundRaidTempoLoss,
   collectKnowledgeHalfLife,
   collectLibraryDependence,
+  collectMaterialGradeProfile,
   collectPrestigeAdvantage,
   collectRaidInitiationCost,
   collectCombatActionEconomy,
@@ -237,6 +238,33 @@ const DEFINITIONS: readonly BalanceMetricDefinition[] = Object.freeze([
     disprovedBy:
       'The fraction sitting at exactly 0 across every census of a run that demonstrably holds ' +
       'single-instance nodes. It has done exactly this, which is why the sentence is here.',
+  },
+  {
+    id: 'materialGradeProfile',
+    definition:
+      'Fraction of sampled world ticks on which the universe held any grade-2 material, reported ' +
+      'per run, with the fraction holding grade 1, the peak of each grade and the final level of ' +
+      'each alongside. Sampled on the knowledge-census lattice. A build with no grade ladder is ' +
+      'unavailable with mechanic-absent, which is not the same answer as a run that never left ' +
+      'grade 0 and scores zero.',
+    scope: METRIC_SCOPE.perRun,
+    collectRun: collectMaterialGradeProfile,
+    aggregation: 'mean',
+    unit: 'fraction of sampled ticks',
+    definitionVersion: 1,
+    pinnedConstants: {
+      sampleIntervalTicks: KNOWLEDGE_CENSUS_INTERVAL_TICKS,
+      topGrade: 2,
+      gradedKinds: 'stone',
+      mechanicAbsentIsNotZero: true,
+    },
+    thresholdOwner: 'mages-and-species',
+    disprovedBy:
+      'The fraction reading zero across every run of a sweep whose world reports show a nonzero ' +
+      'stoneFine — which would mean the sampler and the ladder are looking at different ' +
+      'universes. It is the first metric in this registry to read a material stock at all, so ' +
+      'until it has reported a nonzero on a run known to refine, "the ladder does nothing" and ' +
+      '"this metric is wired to nothing" are the same output.',
   },
   {
     id: 'worshipSnowball',

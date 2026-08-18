@@ -122,7 +122,8 @@
 
 import type { ContentId, Fp } from '@mm/content';
 import type { EntityHandle, Fixed, SimState } from '@mm/sim-core';
-import type { EffortKindValue, Handle, Ruleset } from '@mm/state';
+import { floorDiv } from '@mm/sim-core';
+import type { EffortKindValue, Handle, LocationKindValue, Ruleset } from '@mm/state';
 import {
   EFFORT_KIND,
   GRIMOIRE,
@@ -131,9 +132,11 @@ import {
   LIBRARY,
   LOCATION_KIND,
   MAGE,
+  MAGE_ROLE,
   UNIVERSITY,
   componentOf,
   permits,
+  readRecord,
 } from '@mm/state';
 import type {
   AcquirePolicy,
@@ -141,6 +144,7 @@ import type {
   KnowledgeRng,
   KnowledgeSubsystem,
   NodeCatalog,
+  PracticeOutcome,
   StoreHook,
   StorePolicy,
 } from '@mm/rules-magic';
@@ -148,23 +152,31 @@ import {
   DEFAULT_TEACH_THRESHOLD,
   MASTERY_ACTIVATION_THRESHOLD,
   disownGrimoire,
+  fidelityOf,
   isRediscovery,
+  perishesWithHolder,
+  practice,
+  practiceCeiling,
   research,
   researchRequirement,
   scribe,
+  scribeAvailability,
   scribeCapacityCost,
   shelveGrimoire,
+  study,
   teach,
 } from '@mm/rules-magic';
-import type { RediscoveryClampCounter } from '@mm/primitives';
+import type { EffortEnvelope, RediscoveryClampCounter } from '@mm/primitives';
 import { createRediscoveryClampCounter } from '@mm/primitives';
+
+import type { EnvelopeResolver } from './envelopes.js';
 import type {
   KnowledgeGateway,
   KnowledgeTarget,
   MageHandle,
   UniversityHandle,
 } from '@mm/rules-world';
-import { compareTargets } from '@mm/rules-world';
+import { DEGRADATION_PER_SHORTFALL, compareTargets } from '@mm/rules-world';
 import { NO_INHERITOR } from '@mm/rules-world';
 
 import type { EffortKey, EffortLedger } from './effort-store.js';
@@ -182,6 +194,14 @@ export interface MageRates {
   readonly depthCeiling: number;
   /** Species `scribeAffinity`. Raises a finished book's durability. */
   readonly scribeAffinity: Fp;
+  /**
+   * Species `curiosity`. The defence against a corrupted text.
+   *
+   * The one trait that decides whether a mage can read through a book that is
+   * silently wrong, and it is why the species best at *writing* books is second
+   * worst at *recovering* them — see `rules-magic`'s `fidelity.ts`.
+   */
+  readonly curiosity: Fp;
 }
 
 /**
@@ -217,6 +237,16 @@ export interface GatewayDeps {
   readonly knowledge: KnowledgeSubsystem;
   readonly catalog: NodeCatalog;
   readonly cells: CellResolver;
+  /**
+   * A node's technique envelope — `sound-design.md` §4.1's shape over the
+   * duration an acquisition takes.
+   *
+   * Optional, and absent means the flat curve, which is both Rego's shape and
+   * the behaviour every acquisition path had before envelopes existed. That is
+   * what lets a caller with no content registry — a fixture, a probe — drive
+   * this gateway unchanged.
+   */
+  readonly envelopes?: EnvelopeResolver;
   /**
    * A node's cell, form and effect primitives, for the utility score that
    * decides which target a mage takes.
@@ -305,15 +335,33 @@ export interface GatewayDeps {
 }
 
 /**
- * The mages a teachability scan will consider as counterparties.
+ * The mages a teachability scan will consider as counterparties, **per
+ * institution**.
  *
  * Teaching is a pair, so the natural question — "who could teach me anything?"
  * — is quadratic in the mage population. Bounded here, in ascending slot order,
  * for the reason the frontier scan is bounded: a per-tick cost that grows with
  * a number the design does not control is a performance regression discovered
  * in a 200-year run rather than in review. **Untuned.**
+ *
+ * ## Why the bound is per-institution and not per-universe
+ *
+ * It used to bound one universe-wide list, and that was worse than no bound for
+ * the purpose the boundary now serves: *the teaching pool was the 32 lowest
+ * handles in the universe*, an arbitrary set with no institutional meaning.
+ * Filtering that list by affiliation afterwards would have been worse still — a
+ * university whose mages all sit above slot 32 would have an empty faculty for
+ * reasons no rule states, and the emptiness would look like a knowledge result.
+ *
+ * So {@link CoordinatingKnowledgeGateway.teachingRosterFor} builds one bounded
+ * list *per university*, from the same single pass. The cost a single mage pays
+ * is unchanged — at most this many counterparties — and the bound now truncates
+ * a set that means something.
  */
 export const MAX_TEACHING_COUNTERPARTIES = 32;
+
+/** The empty roster, shared, so a lookup miss allocates nothing. */
+const NO_COUNTERPARTIES: readonly MageHandle[] = Object.freeze([]);
 
 /**
  * Satisfies `@mm/rules-world`'s port out of `@mm/rules-magic`.
@@ -325,7 +373,7 @@ export class CoordinatingKnowledgeGateway implements KnowledgeGateway {
   readonly #deps: GatewayDeps;
 
   /** Memoized for this phase. See the module note on staleness. */
-  #roster: readonly MageHandle[] | undefined;
+  #rosters: Map<Handle, MageHandle[]> | undefined;
   readonly #rates = new Map<MageHandle, MageRates | undefined>();
   /** Every mage's held nodes and mastery, from one pass. See {@link #holdings}. */
   #heldByMage: Map<MageHandle, Map<ContentId, Fp>> | undefined;
@@ -346,11 +394,15 @@ export class CoordinatingKnowledgeGateway implements KnowledgeGateway {
    * rule `capital.ts` states for the depth reading.
    */
   readonly #shelfContents = new Map<Handle, ReadonlySet<ContentId>>();
+  /** Non-student mages per university, built once per phase. See {@link #facultyOf}. */
+  #faculty: Map<UniversityHandle, MageHandle[]> | undefined;
   /** Books in mages' hands, from one pass. See {@link #grimoiresHeldBy}. */
   #grimoiresByHolder: Map<MageHandle, Handle[]> | undefined;
 
   /** Projects finished while this gateway was alive. Reporting only. */
   readonly #completed: CompletedEffort[] = [];
+  /** Practice months that moved a mastery. See {@link practised}. */
+  #practised = 0;
   readonly #clampCounter: RediscoveryClampCounter;
 
   constructor(deps: GatewayDeps) {
@@ -496,7 +548,22 @@ export class CoordinatingKnowledgeGateway implements KnowledgeGateway {
     return found.length > limit ? found.slice(0, limit) : found;
   }
 
+  /**
+   * Whether this mage holds `nodeId` well enough to pass it on.
+   *
+   * **A student never does, however well she holds it.** Since W193 a student is
+   * a `MAGE` row like any other, so without this line every enrolled student
+   * would join the teaching roster the month she learned her first node — wrong
+   * on the fiction, and worse as a measurement: `lessonsTaught` would rise for a
+   * reason that is not teaching, and the before/after comparison that diagnosed
+   * `teach-rate` as inert would stop being a comparison of like with like.
+   *
+   * Asked here rather than in each of the three callers, because
+   * {@link teachableTo}, {@link teacherFor} and {@link studentFor} all mean *the
+   * teacher's half* by it and the fourth caller is the one that would forget.
+   */
   canTeach(teacher: MageHandle, nodeId: ContentId): boolean {
+    if (this.#isStudent(teacher)) return false;
     const mastery = this.#holdings(teacher).get(nodeId);
     return mastery !== undefined && mastery >= DEFAULT_TEACH_THRESHOLD;
   }
@@ -507,9 +574,16 @@ export class CoordinatingKnowledgeGateway implements KnowledgeGateway {
    * The lowest such node id, which is a total order over the teacher's holdings
    * and depends on nothing but the content set. Ascending slot order over her
    * instances would depend on the destroy history instead.
+   *
+   * **Lowest, not most valuable**, and that is deliberately left alone here: a
+   * value-blind acquirer and a boundary-free teaching pool are two separate
+   * causes of the campaign's one-queue result, and this change fixes the second
+   * only. The ordering is `w17`'s.
    */
   teachableTo(teacher: MageHandle, student: MageHandle): ContentId | undefined {
     if (teacher === student) return undefined;
+    if (!this.#sharesInstitution(teacher, student)) return undefined;
+    if (this.#isStudent(teacher)) return undefined;
     const rates = this.#ratesOf(student);
     if (rates === undefined) return undefined;
 
@@ -527,12 +601,118 @@ export class CoordinatingKnowledgeGateway implements KnowledgeGateway {
     return best;
   }
 
+  /**
+   * Every node this mage could spend a month **improving**, ascending by id.
+   *
+   * Three gates, and the third is the one that is particular to practice:
+   *
+   * 1. she holds it in mind or palace (`#holdings` walks exactly those),
+   * 2. the cell is permitted **now** — practice is a use of magic and an
+   *    interdicted art cannot be used, which is the same gate `castableNodes`
+   *    applies,
+   * 3. her mastery is **below** `practiceCeiling(tier, depthCeiling)`.
+   *
+   * The third gate is why `practice` is never a month thrown away, and it is
+   * the population-level rule as well: a mage's list empties as she perfects
+   * what is well inside her reach, and what is left at the top of it she cannot
+   * improve at all.
+   *
+   * ## The depth filter is this method's, not `practice()`'s
+   *
+   * `node.tier > depthCeiling` is checked **here** and nowhere else, matching
+   * `teachableTo`'s use of the same trait so that the list a mage is offered
+   * cannot disagree with the frontier about what she may work on.
+   *
+   * `practice()` itself does **not** refuse an over-deep node, and that is a
+   * decision rather than an oversight. Two paths put a node above a mage's
+   * ceiling into her mind without consulting the frontier — a god's founding
+   * grant and raid theft — and for those `practiceCeiling` clamps headroom at
+   * zero, so she can drill something beyond her only as far as
+   * `PRACTICE_CEILING_BASE` and no further: barely held, teachable for a tick,
+   * gone by the next sweep unless she stays at it. That is the right shape for
+   * knowledge somebody handed her that she was never equipped for, and
+   * `practice.test.ts` pins it. What it is *not* is an implication of the
+   * ceiling arithmetic, which is what this comment used to claim.
+   */
+  practicableNodes(mage: MageHandle): readonly ContentId[] {
+    const rates = this.#ratesOf(mage);
+    if (rates === undefined) return [];
+    const found: ContentId[] = [];
+    for (const [nodeId, mastery] of this.#holdings(mage)) {
+      const node = this.#deps.catalog.node(nodeId);
+      if (node === undefined || node.tier > rates.depthCeiling) continue;
+      if (!permits(this.#deps.ruleset, this.#deps.cells.cellOf(nodeId))) continue;
+      if (mastery >= practiceCeiling(node.tier, rates.depthCeiling)) continue;
+      found.push(nodeId);
+    }
+    return found.sort((a, b) => a - b);
+  }
+
+  /**
+   * Spends mage-months drilling a node she already holds.
+   *
+   * **No effort ledger, and that is the difference from every other
+   * contribution on this class.** Research, teaching and scribing are projects:
+   * they bank progress against an authored requirement and produce an instance
+   * on the tick the requirement is met, so the running total has to live
+   * somewhere between two calls. Practice has no completion — there is nothing
+   * to finish, only a mastery that is higher this month than it was last month
+   * — so the month is spent immediately and the state it moves is the
+   * instance's own `mastery` field. That is one fewer `EFFORT_PROGRESS` row per
+   * practising mage per node, and one fewer thing a save has to carry.
+   *
+   * A refusal — an interdicted cell, a node she has since lost — writes
+   * nothing, exactly as `contributeResearch`'s does.
+   */
+  contributePractice(mage: MageHandle, nodeId: ContentId, mageMonths: Fixed): PracticeOutcome | undefined {
+    const rates = this.#ratesOf(mage);
+    if (rates === undefined) return undefined;
+    const outcome = practice({
+      knowledge: this.#deps.knowledge,
+      catalog: this.#deps.catalog,
+      cells: this.#deps.cells,
+      ruleset: this.#deps.ruleset,
+      subject: mage,
+      nodeId,
+      effort: mageMonths,
+      learnRate: rates.learnRate,
+      depthCeiling: rates.depthCeiling,
+    });
+    // `gained > 0`, not merely "not refused": a mage already at her ceiling is
+    // not a refusal — `practice.ts` says so in as many words — and counting her
+    // month here would make the report's `practiceCompleted` a count of
+    // *attempts*, which is a different number wearing the same name.
+    if (outcome.refusal === undefined && outcome.gained > 0) this.#practised += 1;
+    return outcome;
+  }
+
+  /**
+   * Months of practice that actually moved a mastery, while this gateway lived.
+   *
+   * **Counted here rather than pushed onto {@link completions}, and the
+   * distinction is the merge.** Two branches built practice: one as a project
+   * with an effort ledger, which completed and so could be counted off
+   * `completions()` like research and scribing; this one as a month that is
+   * spent and gone. The world report's `practiceCompleted` came from the first
+   * and the rule kept is the second, so the counter has to come from somewhere
+   * — and it may not come from `#completed`, because `completions()` feeds
+   * `isComplete` and a practice that "completed" every month would release the
+   * mage's commitment every month. That would be a behaviour change wearing a
+   * counter's clothes.
+   */
+  practised(): number {
+    return this.#practised;
+  }
+
   scribableBy(mage: MageHandle, nodeId: ContentId): KnowledgeTarget | undefined {
     // A tradition whose `store` hook keeps no written copies cannot scribe at
     // all — the Art of Memory's whole cost. Asking the hook rather than
     // checking a tradition id keeps the four extension points the only place a
-    // tradition changes anything.
-    if (!this.#deps.store.scribingAvailable) return undefined;
+    // tradition changes anything, and asking it through `scribeAvailability`
+    // rather than by reading `scribingAvailable` here keeps the *refusal* — the
+    // sentence naming the hook that refused — a thing `rules-magic` writes once
+    // rather than a boolean each caller re-explains.
+    if (!scribeAvailability(this.#deps.store).available) return undefined;
     const node = this.#deps.catalog.node(nodeId);
     if (node === undefined) return undefined;
     if (!permits(this.#deps.ruleset, this.#deps.cells.cellOf(nodeId))) return undefined;
@@ -557,16 +737,7 @@ export class CoordinatingKnowledgeGateway implements KnowledgeGateway {
   #shelfHolds(mage: MageHandle, nodeId: ContentId): boolean {
     const shelf = this.#shelfFor(mage);
     if (shelf === 0) return false;
-    let held = this.#shelfContents.get(shelf);
-    if (held === undefined) {
-      held = new Set(
-        this.#deps.knowledge
-          .instancesAt(LOCATION_KIND.library, shelf)
-          .map((instance) => this.#deps.knowledge.read(instance).nodeId),
-      );
-      this.#shelfContents.set(shelf, held);
-    }
-    return held.has(nodeId);
+    return this.#shelfNodes(shelf).has(nodeId);
   }
 
   /**
@@ -582,24 +753,180 @@ export class CoordinatingKnowledgeGateway implements KnowledgeGateway {
    * Lowest handle rather than any other order, because a handle is a total order
    * that depends on nothing but the state, and the roster it walks is already
    * bounded by {@link MAX_TEACHING_COUNTERPARTIES}.
+   *
+   * **Her own institution's roster**, which is the boundary — see
+   * {@link teachingRosterFor}. Decision and accrual walk the same list on
+   * purpose: the outlook builder scores `teach` off this same roster, and a mage
+   * who committed six months to teaching and then found no student would be
+   * paying for a counterparty the two scans disagreed about.
    */
   studentFor(teacher: MageHandle, nodeId: ContentId): MageHandle | undefined {
     if (!this.canTeach(teacher, nodeId)) return undefined;
-    for (const student of this.livingMages()) {
+    for (const student of this.teachingRosterFor(teacher)) {
       if (student === teacher) continue;
       if (this.#admitsLesson(student, nodeId)) return student;
     }
     return undefined;
   }
 
-  /** The lowest-handle living mage who could teach this student `nodeId`. */
+  /** The lowest-handle co-affiliate who could teach this student `nodeId`. */
   teacherFor(student: MageHandle, nodeId: ContentId): MageHandle | undefined {
     if (!this.#admitsLesson(student, nodeId)) return undefined;
-    for (const teacher of this.livingMages()) {
+    for (const teacher of this.teachingRosterFor(student)) {
       if (teacher === student) continue;
       if (this.canTeach(teacher, nodeId)) return teacher;
     }
     return undefined;
+  }
+
+  /**
+   * Whether the university this student is enrolled at still has **anything**
+   * to teach her — from a colleague's mind or from its own shelf.
+   *
+   * ## This is the graduation condition, and it replaces an age
+   *
+   * *"They're students until they learn everything that the university they
+   * enrolled in can teach them."* The old rule was
+   * `worldTick - birthTickBucket >= maturityMonths`: promotion was gated on
+   * **age since birth**, so nothing a university did could move the date a mage
+   * arrived, and `teach-rate` was consequently inert — measured at `+0.1%` on
+   * lessons and flat on living mages while research completions moved `+28.8%`.
+   * A date that is *when she has learned it all* responds to every rate that
+   * makes learning faster, which is the point.
+   *
+   * ## Scoped to her own institution, deliberately
+   *
+   * Not `teacherFor`, which scans the whole universe. A curriculum that meant
+   * *"every node any living mage anywhere holds"* would make graduation a
+   * property of the world rather than of the school, and would delete the two
+   * consequences the design wants: that **university depth is what matters**,
+   * and that a graduate of a shallow school has somewhere to transfer *to*.
+   *
+   * Faculty are her university's non-student mages. Her shelf is her
+   * university's library, which is exactly {@link #shelfFor} — so an
+   * unaffiliated student has no curriculum at all, and by construction there is
+   * no such thing: enrolment refuses to seat anyone without a university.
+   *
+   * **Both halves ask {@link #admitsLesson}**, the same admission test a lesson
+   * gets, so a node beyond her depth ceiling, in a forbidden cell, or missing a
+   * prerequisite is not part of any curriculum. Her ceiling is hers: two
+   * students of different species at the same university graduate at different
+   * times, and the deeper one stays longer.
+   */
+  hasCurriculumFor(student: MageHandle): boolean {
+    const university = this.#universityOf(student);
+    if (university === 0) return false;
+
+    for (const teacher of this.#facultyOf(university)) {
+      if (teacher === student) continue;
+      for (const [nodeId, mastery] of this.#holdings(teacher)) {
+        if (mastery < DEFAULT_TEACH_THRESHOLD) continue;
+        if (this.#admitsLesson(student, nodeId)) return true;
+      }
+    }
+
+    const shelf = this.#shelfFor(student);
+    if (shelf === 0) return false;
+    for (const nodeId of this.#shelfNodes(shelf)) {
+      if (this.#admitsLesson(student, nodeId)) return true;
+    }
+    return false;
+  }
+
+  /**
+   * Whether this university can teach **anybody** anything.
+   *
+   * The door-side counterpart to {@link hasCurriculumFor}, and deliberately not
+   * the same question. That one is asked of a named student, so it can check her
+   * depth ceiling and her prerequisites; this one is asked before a student
+   * exists, so it can only ask whether the institution holds *any* legal,
+   * teachable knowledge — a faculty member at or above the teaching threshold,
+   * or a book on the shelf, in a cell this universe's ruleset permits.
+   *
+   * A `false` here is what stops a bare founding from being a mage factory. It
+   * is a weaker test than the per-student one on purpose: a university that
+   * passes it may still have nothing for a *particular* student, and she simply
+   * graduates immediately — which is correct, and is why the graduation path
+   * keeps its own floor.
+   */
+  hasCurriculum(university: UniversityHandle): boolean {
+    for (const teacher of this.#facultyOf(university)) {
+      for (const [nodeId, mastery] of this.#holdings(teacher)) {
+        if (mastery < DEFAULT_TEACH_THRESHOLD) continue;
+        if (permits(this.#deps.ruleset, this.#deps.cells.cellOf(nodeId))) return true;
+      }
+    }
+    const shelf = this.#libraryOf(university);
+    if (shelf === 0) return false;
+    for (const nodeId of this.#shelfNodes(shelf)) {
+      if (permits(this.#deps.ruleset, this.#deps.cells.cellOf(nodeId))) return true;
+    }
+    return false;
+  }
+
+  /**
+   * The non-student living mages affiliated to one university, ascending.
+   *
+   * One pass over the roster for the whole phase rather than one per student,
+   * because the graduation walk asks once per student. Built on
+   * {@link #byUniversity}'s single grouping pass rather than on a second walk of
+   * `MAGE`: this branch's `livingMages()` — a globally bounded flat roster — was
+   * replaced by that per-affiliation index on the teaching-boundary change, and
+   * a faculty index is the same grouping with the students filtered out. Without
+   * it the phase would be `students × mages`, which is the cost shape
+   * `#holdings` exists to collapse and which would arrive on the same commit
+   * that made students numerous.
+   */
+  #facultyOf(university: UniversityHandle): readonly MageHandle[] {
+    if (this.#faculty === undefined) {
+      const index = new Map<UniversityHandle, MageHandle[]>();
+      for (const [at, roster] of this.#byUniversity()) {
+        if (at === 0) continue;
+        const staff: MageHandle[] = [];
+        for (const mage of roster) {
+          if (this.#isStudent(mage)) continue;
+          staff.push(mage);
+        }
+        index.set(at as UniversityHandle, staff);
+      }
+      this.#faculty = index;
+    }
+    return this.#faculty.get(university) ?? EMPTY_FACULTY;
+  }
+
+  /** Distinct node ids on one library's shelf, memoised for the phase. */
+  #shelfNodes(shelf: Handle): ReadonlySet<ContentId> {
+    let held = this.#shelfContents.get(shelf);
+    if (held === undefined) {
+      held = new Set(
+        this.#deps.knowledge
+          .instancesAt(LOCATION_KIND.library, shelf)
+          .map((instance) => this.#deps.knowledge.read(instance).nodeId),
+      );
+      this.#shelfContents.set(shelf, held);
+    }
+    return held;
+  }
+
+  /** This mage's university handle, or `0`. */
+  #universityOf(mage: MageHandle): UniversityHandle {
+    const mages = componentOf(this.#deps.state, MAGE);
+    if (!mages.has(mage as EntityHandle)) return 0;
+    return mages.get(mage as EntityHandle, 'universityId') as UniversityHandle;
+  }
+
+  /**
+   * Whether this handle names an enrolled student.
+   *
+   * A field read per call rather than a memo: the answer changes **inside** the
+   * phase that reads it — graduation writes `roleId` while the same gateway is
+   * alive — and a cached `true` would let a mage who graduated this tick keep
+   * being refused as a teacher until the next one.
+   */
+  #isStudent(mage: MageHandle): boolean {
+    const mages = componentOf(this.#deps.state, MAGE);
+    if (!mages.has(mage as EntityHandle)) return false;
+    return mages.get(mage as EntityHandle, 'roleId') === MAGE_ROLE.student;
   }
 
   /**
@@ -681,6 +1008,11 @@ export class CoordinatingKnowledgeGateway implements KnowledgeGateway {
       // at. `initialMastery` is deliberately not passed alongside it — one
       // route, so the two cannot be wired half-way.
       acquire: this.#deps.acquire,
+      // §4.1's shape. `research` applies it to the effort *inside* the call,
+      // because that is where `required` is computed and the curve is indexed on
+      // `progress / required` — resolving it out here would mean pricing the
+      // node twice and betting the two agreed.
+      ...envelopeInput(this.#deps.envelopes, nodeId),
     });
 
     if (outcome.refusal !== undefined) return;
@@ -727,6 +1059,23 @@ export class CoordinatingKnowledgeGateway implements KnowledgeGateway {
     // below and the clamp further down cannot come to different conclusions.
     const required = this.#deps.acquire.teachCost(node.teachCost);
     const key = effortKey(EFFORT_KIND.teaching, teacher, nodeId, student);
+    // **No envelope here, and the reason is structural.** §4.1's shape is
+    // applied to *research* — a mage deriving a node over months against a
+    // requirement the rates divide, where `progress / required` is a true
+    // position within the acquisition's own duration. Teaching is different
+    // arithmetic: the requirement is flat authored content and the rate scales
+    // the *numerator* (`mageMonths`), so a lesson has no comparable interior for
+    // a curve to be a curve over.
+    //
+    // A measurement agrees, and is stated carefully because the effect is real
+    // and is not the whole cause. On the reference seed's 200-year run, lessons
+    // in the last two 20-year windows went `19 / 0` with the research envelope
+    // alone and `5 / 0` with teaching curved as well — so curving teaching
+    // *deepened* the thinning without being what produced it. §3.1 calls
+    // teaching *"the healthiest process in the game… the thing that keeps
+    // knowledge alive against mortality"*, and a curve that makes an
+    // interrupted lesson bank less is pushing directly against that for no
+    // reason the design gives.
     const progress = ledger.accrue(key, mageMonths);
     if (progress < required) return;
 
@@ -791,6 +1140,9 @@ export class CoordinatingKnowledgeGateway implements KnowledgeGateway {
 
     const key = effortKey(EFFORT_KIND.scribing, mage, nodeId, 0);
     const required = scribeCapacityCost(node.tier);
+    // No envelope here either, for the reason `contributeTeaching` gives: the
+    // requirement is a flat function of tier, not a rate-scaled cost, so there
+    // is no acquisition interior for a curve to shape.
     const progress = ledger.accrue(key, scribeMonths);
     if (progress < required) return;
 
@@ -827,6 +1179,164 @@ export class CoordinatingKnowledgeGateway implements KnowledgeGateway {
   }
 
   /**
+   * Spends mage-months reading a book, and creates the instance when the node's
+   * `teachCost` is met.
+   *
+   * **The book on the shelf is the teacher.** `teachCost` is the price rather
+   * than a new content field because §2.3 already prices "one person acquiring
+   * this node with help", and a text is help. What differs from a lesson is
+   * everything on the other side: no second mage is committed, no `teach-rate`
+   * bonus applies, and what arrives is bounded by the *book's* fidelity rather
+   * than by a teacher's mastery.
+   *
+   * **The source is chosen, and the choice is the freshest copy on the shelf.**
+   * Ties break on the instance handle, so the pick is a function of state and
+   * not of iteration order. A library holding a pristine copy and a spent one
+   * teaches from the pristine one, which is the behaviour that makes refreshing
+   * a scriptorium from minds worth doing.
+   *
+   * **A corrupted source consumes the month and clamps.** That is deliberate and
+   * is the design's deferred cost: the reader spent the time, got nothing, and —
+   * unless she was deep enough to diagnose it — does not know why. The clamp
+   * stops her re-reading it forever at no cost, and the mark, when she can make
+   * one, is the only signal a player ever receives that a raid happened.
+   */
+  contributeStudy(mage: MageHandle, nodeId: ContentId, mageMonths: Fixed): void {
+    const ledger = this.#ledger('study');
+    const node = this.#deps.catalog.node(nodeId);
+    const rates = this.#ratesOf(mage);
+    if (node === undefined || rates === undefined) return;
+
+    const source = this.readableSourceFor(mage, nodeId);
+    if (source === undefined) return;
+
+    const required = this.#deps.acquire.teachCost(node.teachCost);
+    const key = effortKey(EFFORT_KIND.study, mage, nodeId, 0);
+    const progress = ledger.accrue(key, mageMonths);
+    if (progress < required) return;
+
+    const outcome = study({
+      knowledge: this.#deps.knowledge,
+      catalog: this.#deps.catalog,
+      cells: this.#deps.cells,
+      ruleset: this.#deps.ruleset,
+      reader: mage,
+      source,
+      worldTick: this.#deps.state.clock.worldTick,
+      curiosity: rates.curiosity,
+      readerDeepestTier: this.deepestTierHeld(mage),
+      store: this.#deps.store,
+    });
+
+    if (outcome.refusal !== undefined) {
+      ledger.clampTo(key, required);
+      return;
+    }
+    ledger.clear(key);
+    this.#completed.push({
+      kind: EFFORT_KIND.study,
+      subject: mage,
+      counterparty: source,
+      nodeId,
+    });
+  }
+
+  /**
+   * The freshest written instance of `nodeId` this mage could open, or
+   * `undefined`.
+   *
+   * Her own shelf first, then books in her own hands. Nothing else: a library
+   * she is not affiliated with is somebody else's, and reaching into it here
+   * would make affiliation decorative.
+   *
+   * "Freshest" is lowest copy distance, ties on the instance handle. **A
+   * corrupted book is not skipped** — it is invisible until read, which is the
+   * whole mechanic, and a chooser that avoided corrupted texts would be the
+   * omniscience the design is built to deny.
+   */
+  readableSourceFor(mage: MageHandle, nodeId: ContentId): Handle | undefined {
+    const candidates: Handle[] = [];
+    const shelf = this.#shelfFor(mage);
+    if (shelf !== 0) {
+      candidates.push(...this.#deps.knowledge.instancesAt(LOCATION_KIND.library, shelf));
+    }
+    for (const grimoire of this.#grimoiresHeldBy(mage)) {
+      const instance = this.#deps.knowledge.instanceForGrimoire(grimoire);
+      if (instance !== 0) candidates.push(instance);
+    }
+
+    let best: Handle | undefined;
+    let bestGeneration = 0;
+    for (const instance of candidates) {
+      if (this.#deps.knowledge.read(instance).nodeId !== nodeId) continue;
+      const { copyGeneration } = fidelityOf(this.#deps.state, instance);
+      if (best === undefined) {
+        best = instance;
+        bestGeneration = copyGeneration;
+        continue;
+      }
+      // The handle tie-break is not decoration. `candidates` arrives in
+      // `instancesAt`'s slot order followed by the mage's own books, and slots
+      // move under swap-removal — so a strict `<` alone would break ties on the
+      // *destruction history* of the universe rather than on its values, and two
+      // peers agreeing on every number could open different books.
+      if (copyGeneration < bestGeneration || (copyGeneration === bestGeneration && instance < best)) {
+        best = instance;
+        bestGeneration = copyGeneration;
+      }
+    }
+    return best;
+  }
+
+  /**
+   * Nodes this mage could learn by opening a book she can reach.
+   *
+   * The archive's half of `seek-teaching`. Same admission test a lesson gets —
+   * permitted cell, not already held, prerequisites in hand — asked of the
+   * shelf instead of of a colleague.
+   *
+   * **Corrupted texts are included.** A mage cannot tell a sound book from a
+   * silently wrong one by looking at the spine, so neither may this list; the
+   * month is spent and lost, which is the design's deferred cost and not an
+   * oversight in the candidate scan.
+   */
+  readableToMe(mage: MageHandle): ContentId[] {
+    const found = new Set<ContentId>();
+    const shelf = this.#shelfFor(mage);
+    const candidates: Handle[] = [];
+    if (shelf !== 0) {
+      candidates.push(...this.#deps.knowledge.instancesAt(LOCATION_KIND.library, shelf));
+    }
+    for (const grimoire of this.#grimoiresHeldBy(mage)) {
+      const instance = this.#deps.knowledge.instanceForGrimoire(grimoire);
+      if (instance !== 0) candidates.push(instance);
+    }
+    for (const instance of candidates) {
+      const nodeId = this.#deps.knowledge.read(instance).nodeId;
+      if (found.has(nodeId)) continue;
+      if (!this.#admitsLesson(mage, nodeId)) continue;
+      found.add(nodeId);
+    }
+    return [...found].sort((left, right) => left - right);
+  }
+
+  /**
+   * The deepest tier this mage already holds — the corruption discovery gate.
+   *
+   * Zero for a mage holding nothing, which is correct and is the design's point:
+   * *"the newest students can't discover corruption"*, and a mage who knows
+   * nothing at all cannot diagnose anything.
+   */
+  deepestTierHeld(mage: MageHandle): number {
+    let deepest = 0;
+    for (const instance of this.#deps.knowledge.instancesHeldBy(mage)) {
+      const node = this.#deps.catalog.node(this.#deps.knowledge.read(instance).nodeId);
+      if (node !== undefined && node.tier > deepest) deepest = node.tier;
+    }
+    return deepest;
+  }
+
+  /**
    * Every project that reached its requirement while this gateway was alive.
    *
    * A projection, never an input to a rule: `contracts.md` §4.4 keeps the
@@ -855,7 +1365,24 @@ export class CoordinatingKnowledgeGateway implements KnowledgeGateway {
    * and a caller that omitted it no longer silently leaves books on a corpse.
    */
   onMageDied(mage: MageHandle, inheritor: UniversityHandle): void {
-    this.#deps.knowledge.destroyInstancesHeldBy(mage, this.#deps.state.clock.worldTick);
+    const knowledge = this.#deps.knowledge;
+    // **Which locations a death takes is the `store` hook's answer, not this
+    // method's.** It used to be `destroyInstancesHeldBy`, which destroys mind
+    // *and* palace unconditionally — the right answer under both v1 store kinds,
+    // and right by coincidence rather than by rule: `perishesWithHolder` is the
+    // declaration that says so, and it had no production caller anywhere. A
+    // fourth store kind that let a palace outlive its holder would have been
+    // written, loaded, and silently ignored here.
+    //
+    // A book is untouched either way: a grimoire's instance sits at `grimoire`
+    // or `library`, and no store kind in the enumeration lists either as
+    // perishing. Burning one takes a fire.
+    const perishing = knowledge
+      .instancesHeldBy(mage)
+      .filter((instance) =>
+        perishesWithHolder(this.#deps.store, knowledge.read(instance).locationKind as LocationKindValue),
+      );
+    knowledge.destroyAll(perishing, this.#deps.state.clock.worldTick);
     this.#settleEstate(mage, inheritor);
     this.#deps.onGrimoiresInherited?.(mage, inheritor);
   }
@@ -866,21 +1393,58 @@ export class CoordinatingKnowledgeGateway implements KnowledgeGateway {
    * The `universities` requirement *Libraries impose upkeep proportional to
    * depth* ends with the clause this method exists for: *"the shortfall MUST
    * degrade libraries deterministically rather than driving materials
-   * negative."* `applyLibraryUpkeep` decides **how many** — that is an economy
-   * question and `rules-world` owns it — and says in as many words that
-   * *"which instance is destroyed is the knowledge subsystem's decision"*,
-   * because `contracts.md` §5 rule 3 keeps the two packages out of each other.
-   * This is the port between them.
+   * negative."* `applyLibraryUpkeep` decides **what is owed and what went
+   * unpaid** — that is an economy question and `rules-world` owns it — and this
+   * is the port that spends the unpaid part against actual books, because
+   * `contracts.md` §5 rule 3 keeps `rules-world` out of `rules-magic` and it
+   * therefore may not know that a shelf holds books at all.
+   *
+   * ## A shortfall budget, not an instance count — and why that is the fix
+   *
+   * This used to take a count, computed upstream as `floorDiv(shortfall, 32)`.
+   * Every book on the shelf then cost the same 32 of unpaid upkeep, which made
+   * a grimoire's `durability` — the one structural difference between the
+   * species, dwarf `scribeAffinity` 1792 against orc 384 — a number written once
+   * at scribing and read only by a raid consequence that has never run.
+   *
+   * It now takes the shortfall itself and spends it: a book costs
+   * `max(1, floorDiv(durability, DEGRADATION_PER_SHORTFALL))`, so neglect
+   * destroys a dwarven library about four and a half times more slowly than an
+   * orcish one holding the same number of books. At the reference affinity of
+   * `fp(1024)` the price is exactly 32 — the flat number it replaces — so
+   * nothing is switched off and nothing is made cheaper by default. Vision §5's
+   * written record persists *and can still be lost*, which is the whole point:
+   * this is the only non-raid destruction channel in the game.
+   *
+   * A book with no `GRIMOIRE` record behind it — an instance shelved by some
+   * path that did not scribe it — is priced at `DEGRADATION_PER_SHORTFALL`, the
+   * reference cost, rather than free. Free would make an unrecorded book
+   * immortal-adjacent in reverse: infinitely cheap to destroy.
    *
    * **Duplicates first, then ascending instance handle.** A library that must
-   * shed ten books sheds ten it holds twice before it sheds anything it holds
+   * shed books sheds ones it holds twice before it sheds anything it holds
    * once, which is what a librarian does and what makes the brake a cost on
    * *hoarding* rather than a randomised loss of the archive. `libraryDependence`
    * is the metric that would otherwise be moved by a brake meant to charge for
    * shelf space. Ascending handle is the tie-break, for `applyLibraryUpkeep`'s
    * own reason: handles are stable identities and iteration order is a function
-   * of the destroy history.
+   * of the destroy history. Durability does **not** reorder the shelf — it
+   * prices it. Sorting by durability would quietly turn the brake into "the
+   * worst books go first", which is a different mechanic nobody asked for and
+   * would hide the hoarding cost behind a quality cull.
    *
+   * For the same reason the walk **stops** at the first book it cannot afford
+   * rather than skipping past it to a cheaper one further down. Skipping is
+   * cheapest-first wearing a disguise: it would take the flimsiest books on a
+   * mixed shelf whatever order the librarian was supposed to use, and a
+   * well-made book at the head of the queue would stop protecting the shelf
+   * behind it. Stopping means one sturdy duplicate can shield a tick's worth of
+   * neglect, which is what a sturdy book *is*.
+   *
+   * No RNG is drawn here, so no stream is re-rolled and no committed baseline
+   * rots for a draw that moved.
+   *
+   * @param shortfall - Unpaid upkeep for this library this tick, `fp`.
    * @returns how many instances were actually destroyed, and how many of them
    * were the last copy in the universe of their node — which the world loop adds
    * to `nodesLost`, because a node whose last copy rotted off a shelf has left
@@ -888,10 +1452,10 @@ export class CoordinatingKnowledgeGateway implements KnowledgeGateway {
    */
   degradeLibrary(
     library: Handle,
-    instances: number,
+    shortfall: Fixed,
     worldTick: number,
   ): { destroyed: number; nodesLost: number } {
-    if (instances <= 0) return { destroyed: 0, nodesLost: 0 };
+    if (shortfall <= 0) return { destroyed: 0, nodesLost: 0 };
     const knowledge = this.#deps.knowledge;
 
     const shelved = [...knowledge.instancesAt(LOCATION_KIND.library, library)].sort(
@@ -912,15 +1476,33 @@ export class CoordinatingKnowledgeGateway implements KnowledgeGateway {
       }
     }
 
+    let budget = shortfall;
     let destroyed = 0;
     let nodesLost = 0;
     for (const instance of [...duplicates, ...singles]) {
-      if (destroyed >= instances) break;
+      const price = this.#neglectPriceOf(instance);
+      if (price > budget) break;
+      budget -= price;
       const loss = knowledge.destroyInstance(instance, worldTick);
       destroyed += 1;
       if (loss !== undefined) nodesLost += 1;
     }
     return { destroyed, nodesLost };
+  }
+
+  /**
+   * Unpaid upkeep it takes to destroy one shelved instance.
+   *
+   * Floors at 1 so that no book, however flimsily made, is free to lose — a
+   * price of zero would let a single tick of shortfall empty an entire shelf.
+   */
+  #neglectPriceOf(instance: Handle): Fixed {
+    const grimoire = this.#deps.knowledge.grimoireHolding(instance);
+    if (grimoire === 0) return DEGRADATION_PER_SHORTFALL;
+    const store = componentOf(this.#deps.state, GRIMOIRE);
+    if (!store.has(grimoire as EntityHandle)) return DEGRADATION_PER_SHORTFALL;
+    const durability = readRecord(this.#deps.state, GRIMOIRE, grimoire as EntityHandle).durability;
+    return Math.max(1, floorDiv(durability, DEGRADATION_PER_SHORTFALL));
   }
 
   /** Every node this mage holds in mind or palace, ascending by node id. */
@@ -958,25 +1540,98 @@ export class CoordinatingKnowledgeGateway implements KnowledgeGateway {
   }
 
   /**
-   * The living mages a teachability scan may consider, ascending by slot and
-   * bounded by {@link MAX_TEACHING_COUNTERPARTIES}.
+   * The living mages a teachability scan may consider **for this mage**:
+   * everyone sharing her affiliation, ascending by slot, bounded by
+   * {@link MAX_TEACHING_COUNTERPARTIES}.
    *
-   * Here rather than in `rules-world` because the bound is a property of this
-   * scan, and because the roster read is a state read the autonomy layer is
-   * deliberately kept away from.
+   * ## The institutional boundary, and it lives here
+   *
+   * This is the one hole in a container that otherwise works. `universityId`
+   * already decides which library a mage's books are shelved into
+   * ({@link #shelfFor}), how many scribe-months she can draw on, and whether she
+   * would rather be somewhere else — and it decided nothing at all about who
+   * could teach her. Knowledge was therefore universally available inside the
+   * arbitrary lowest-32, which is why W24 could site two universities with
+   * genuinely different capabilities and watch their knowledge refuse to
+   * diverge: *siting can only matter if what a site holds can differ.*
+   *
+   * Cross-institution transfer is not forbidden, it is **routed**: a mage who
+   * wants what another university knows adopts `affiliate`, which already exists
+   * (`rules-world/src/autonomy/affiliation.ts`) and completes in one tick with
+   * no travel state, so no position model is smuggled in behind a teaching rule.
+   *
+   * ## `universityId === 0` is a container too — the commons
+   *
+   * The rule is uniform: *same id teaches same id*, and `0` is an id. So the
+   * unaffiliated form one open pool rather than a crowd of hermits. Two reasons,
+   * and the second is the one that decides it.
+   *
+   * The design reason: episode 38's travelling educator is a diffusion mechanism
+   * *in tension with* institutional concentration, and it needs somewhere to
+   * live. The commons is that somewhere — knowledge moves freely in it, and does
+   * not cross into a university without someone joining one.
+   *
+   * The mechanical reason: a special case here would be an asymmetry no rule
+   * states, and asymmetries in a predicate that gates a whole mechanic are how
+   * a boundary becomes a bug. `#sharesInstitution` is one comparison, and it is
+   * the only place affiliation gates teaching.
+   *
+   * **What the strict alternative would have cost, measured rather than
+   * argued:** every mage promoted after founding is created unaffiliated
+   * (`world-step.ts`'s promotion phase passes no university), so a strict rule
+   * would put 87 of 89 living mages at world year 200 in a pool of one. That is
+   * not a boundary, it is an off switch, and it would have made the divergence
+   * measurement a measurement of the affiliation pipeline instead.
    */
-  livingMages(): readonly MageHandle[] {
-    if (this.#roster !== undefined) return this.#roster;
+  teachingRosterFor(mage: MageHandle): readonly MageHandle[] {
+    return this.#rosterOf(this.#universityOf(mage));
+  }
+
+  /** The bounded roster of one institution, `0` included. */
+  #rosterOf(university: Handle): readonly MageHandle[] {
+    return this.#byUniversity().get(university) ?? NO_COUNTERPARTIES;
+  }
+
+  /**
+   * Living mages grouped by affiliation, from one pass, each group bounded.
+   *
+   * One pass rather than one per mage, for the reason every other index on this
+   * class is memoized: the outlook phase asks per mage, and re-walking `MAGE`
+   * per question would put back the `mages × mages` scan the bound exists to
+   * avoid. A gateway is a view of one phase, so the grouping cannot go stale
+   * inside one — see the module note.
+   */
+  #byUniversity(): Map<Handle, MageHandle[]> {
+    if (this.#rosters !== undefined) return this.#rosters;
     const store = componentOf(this.#deps.state, MAGE);
     const alive = store.field('alive');
-    const found: MageHandle[] = [];
+    const universities = store.field('universityId');
+    const found = new Map<Handle, MageHandle[]>();
     store.forEach((row, handle) => {
-      if (found.length >= MAX_TEACHING_COUNTERPARTIES) return;
       if ((alive[row] as number) === 0) return;
-      found.push(handle as Handle);
+      const university = universities[row] as Handle;
+      let roster = found.get(university);
+      if (roster === undefined) {
+        roster = [];
+        found.set(university, roster);
+      }
+      if (roster.length >= MAX_TEACHING_COUNTERPARTIES) return;
+      roster.push(handle as Handle);
     });
-    this.#roster = found;
+    this.#rosters = found;
     return found;
+  }
+
+  /**
+   * Whether a pair share an institution, which is the whole boundary.
+   *
+   * Asked at the pair rather than trusted to the roster walk, because
+   * {@link teachableTo} is on the `rules-world` port and a caller with two
+   * handles must not be able to reach past the rule by not having gone through
+   * {@link teachingRosterFor}.
+   */
+  #sharesInstitution(a: MageHandle, b: MageHandle): boolean {
+    return this.#universityOf(a) === this.#universityOf(b);
   }
 
   /**
@@ -1034,8 +1689,11 @@ export class CoordinatingKnowledgeGateway implements KnowledgeGateway {
    * One `permits()` call per populated cell for the whole phase, rather than one
    * per node per mage: the ruleset is fixed for a gateway's life — that is what
    * makes a gateway a view of one phase — so the answer cannot change underneath
-   * this. A universe running the v1 rectangle turns 300 nodes into 51 here, once,
-   * and every mage's frontier walks the 51.
+   * this. A universe running the historic twelve-cell v1 rectangle turned 300
+   * nodes into 51 here, once, and every mage's frontier walked the 51. All
+   * seventy cells are enabled now, so a universe that has forbidden nothing walks
+   * all 300 — which is the cost this method was always designed to bound and is
+   * now actually paying. A god who forbids cells still shrinks it.
    *
    * Ascending id rather than cell-major, which is the order the cell index hands
    * them over in. Both are total orders over the content set and neither is
@@ -1230,8 +1888,25 @@ export function effortKey(
  * not because this module knows its name — the four extension points stay the
  * only place a tradition changes anything.
  */
+/**
+ * The `envelope` field for a `research` call, or no field at all.
+ *
+ * Spread rather than passed as `envelope: … | undefined` because
+ * `exactOptionalPropertyTypes` is on: *"no envelope resolved"* and *"an
+ * envelope whose value is undefined"* are the same behaviour and must not be
+ * two spellings, or a caller reading the type would have to decide which one
+ * means the flat curve.
+ */
+function envelopeInput(
+  envelopes: EnvelopeResolver | undefined,
+  nodeId: ContentId,
+): { envelope?: EffortEnvelope } {
+  const envelope = envelopes?.envelopeOf(nodeId);
+  return envelope === undefined ? {} : { envelope };
+}
+
 function storeHookOf(policy: StorePolicy): StoreHook {
-  return { kind: policy.kind, keepsWrittenCopies: policy.scribingAvailable };
+  return { kind: policy.kind, keepsWrittenCopies: scribeAvailability(policy).available };
 }
 
 /** `fp(1.0)` — an unmodified rate (`contracts.md` §2.4's convention). */
@@ -1242,6 +1917,9 @@ const EMPTY_HOLDINGS: ReadonlyMap<ContentId, Fp> = new Map<ContentId, Fp>();
 
 /** A mage with no books. Shared, and never written to. */
 const EMPTY_BOOKS: readonly Handle[] = Object.freeze([]);
+
+/** Shared so a university with no faculty allocates nothing per student. */
+const EMPTY_FACULTY: readonly Handle[] = Object.freeze([]);
 
 /** Whether a location kind is one a mage carries in her own head. */
 export function isHeldAtMind(locationKind: number): boolean {

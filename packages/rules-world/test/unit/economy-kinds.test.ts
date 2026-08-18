@@ -26,11 +26,13 @@ import { describe, expect, it } from 'vitest';
 
 import { FP_ONE } from '@mm/sim-core';
 import type { FormRecord, TerritoryRecord } from '@mm/content';
+import { MATERIAL_KIND_IDS } from '@mm/content';
 
 import {
   CLAIMANT_KIND,
   CONSUMPTION_ORDER,
   MATERIAL_KINDS,
+  NO_YIELD_BONUSES,
   materialsProduced,
   routeYieldByForm,
   territoryYieldShares,
@@ -48,7 +50,10 @@ function territory(overrides: Partial<TerritoryRecord> = {}): TerritoryRecord {
     gloss: 'A synthetic region for the yield-share arithmetic.',
     landUnits: 100,
     capacityPerLandUnit: 1024,
-    yieldPerLandUnit: { food: 0, stone: 0, vellum: 0 },
+    yieldPerLandUnit: { ...zeroAmounts(), food: 0, stone: 0, vellum: 0 },
+    // Neutral, so nothing here reads as a library-upkeep result. Required since
+    // `w24/university-siting` put a per-country upkeep multiplier on the record.
+    libraryUpkeepMultiplier: 1024,
     tuningStatus: 'untuned',
     ...overrides,
   };
@@ -61,20 +66,38 @@ function form(yieldWeights: Partial<Record<'food' | 'stone' | 'vellum', number>>
     name: 'Fixture Form',
     gloss: 'A synthetic form for the routing arithmetic.',
     bit: 0,
-    yieldWeights: { food: 0, stone: 0, vellum: 0, ...yieldWeights },
+    yieldWeights: {
+      food: 0,
+      stone: 0,
+      vellum: 0,
+      labor: 0,
+      essence: 0,
+      insight: 0,
+      passage: 0,
+      ...yieldWeights,
+    },
     tuningStatus: 'untuned',
   };
 }
 
-describe('the three kinds, and the total claimant map', () => {
-  it('names exactly three kinds', () => {
-    // The countable half of "three, not fourteen" — `kinds.ts`'s own argument
-    // for why the grid's fourteen materials collapse to three economic ones.
-    // A fourth kind added without updating this assertion is a change this
+describe('the seven kinds, and the total claimant map', () => {
+  it('names exactly seven kinds, and the same seven content names', () => {
+    // The countable half of "seven, not fourteen" — `kinds.ts`'s own argument
+    // for why the grid's fourteen materials collapse to seven economic ones.
+    // An eighth kind added without updating this assertion is a change this
     // test exists to catch, in a way a type error would not: `MATERIAL_KINDS`
     // is a runtime value, and nothing else has to import it wrong to notice.
-    expect(MATERIAL_KINDS).toHaveLength(3);
-    expect([...MATERIAL_KINDS].sort()).toEqual(['food', 'stone', 'vellum']);
+    //
+    // It was `toHaveLength(3)` until `material-economy`, and the count moved
+    // for the reason the change exists: three kinds left seven of the fourteen
+    // forms producing nothing, two of them inside the v1 opening square.
+    //
+    // The second assertion is the one `kinds.ts` promises in prose —
+    // *"`rules-world`'s `MATERIAL_KINDS` is the same list at the other end of
+    // the pipe and cannot be shared… held in agreement by assertion instead"*.
+    // Order included, because `MATERIAL_STOCK`'s columns are in this order.
+    expect(MATERIAL_KINDS).toHaveLength(7);
+    expect([...MATERIAL_KINDS]).toEqual([...MATERIAL_KIND_IDS]);
   });
 
   it('gives every claimant in CONSUMPTION_ORDER a kind, and only vellum is shared', () => {
@@ -88,12 +111,20 @@ describe('the three kinds, and the total claimant map', () => {
       expect(MATERIAL_KINDS).toContain(CLAIMANT_KIND[claimant]);
     }
     const kindsClaimed = CONSUMPTION_ORDER.map((claimant) => CLAIMANT_KIND[claimant]);
-    // Vellum has two claimants (libraryUpkeep, scribing); food and stone have
-    // exactly one each. That is the whole of "only the vellum pair still
-    // competes", stated as a count rather than as prose.
+    // Vellum has three claimants (casting, libraryUpkeep, scribing) and food
+    // has one. **Stone now has two**, and that is the sentence this assertion
+    // exists to keep honest: "only the vellum pair still competes" stopped
+    // being true when `refining` arrived. `CONSUMPTION_ORDER` ranks only
+    // claimants that share a kind, so `construction`'s position was inert until
+    // this tick and is now a decision that binds — a half-built university is
+    // paid before rock is improved.
     expect(kindsClaimed.filter((kind) => kind === 'vellum')).toHaveLength(3);
     expect(kindsClaimed.filter((kind) => kind === 'food')).toHaveLength(1);
-    expect(kindsClaimed.filter((kind) => kind === 'stone')).toHaveLength(1);
+    expect(kindsClaimed.filter((kind) => kind === 'stone')).toHaveLength(2);
+    // And the order within stone, since it is now load-bearing.
+    expect(CONSUMPTION_ORDER.indexOf('construction')).toBeLessThan(
+      CONSUMPTION_ORDER.indexOf('refining'),
+    );
   });
 });
 
@@ -114,7 +145,7 @@ describe('territoryYieldShares always sums to exactly FP_ONE', () => {
     // The documented edge case: no land at all still returns a valid share
     // triple rather than dividing by zero, and it favours food deliberately
     // so a populace with no economy starves visibly at the subsistence line.
-    expect(territoryYieldShares([])).toEqual({ food: FP_ONE, stone: 0, vellum: 0 });
+    expect(territoryYieldShares([])).toEqual({ ...zeroAmounts(), food: FP_ONE, stone: 0, vellum: 0 });
   });
 
   it('sums to FP_ONE when the land yields nothing at all, the same as no land', () => {
@@ -122,12 +153,12 @@ describe('territoryYieldShares always sums to exactly FP_ONE', () => {
     // arithmetically indistinguishable from no land at all -- both are "zero
     // weighted total" -- and kinds.ts documents that they should read the same
     // way rather than divide zero by zero.
-    const barren = territory({ landUnits: 500, yieldPerLandUnit: { food: 0, stone: 0, vellum: 0 } });
-    expect(territoryYieldShares([barren])).toEqual({ food: FP_ONE, stone: 0, vellum: 0 });
+    const barren = territory({ landUnits: 500, yieldPerLandUnit: { ...zeroAmounts(), food: 0, stone: 0, vellum: 0 } });
+    expect(territoryYieldShares([barren])).toEqual({ ...zeroAmounts(), food: FP_ONE, stone: 0, vellum: 0 });
   });
 
   it('sums to FP_ONE for a single region of any mix', () => {
-    const single = territory({ yieldPerLandUnit: { food: 1, stone: 1, vellum: 0 } });
+    const single = territory({ yieldPerLandUnit: { ...zeroAmounts(), food: 1, stone: 1, vellum: 0 } });
     const shares = territoryYieldShares([single]);
     expect(totalAmount(shares)).toBe(FP_ONE);
     expect(shares.vellum).toBe(0);
@@ -138,16 +169,16 @@ describe('territoryYieldShares always sums to exactly FP_ONE', () => {
     // FP_ONE (1024), so the remainder-to-food rounding in territoryYieldShares
     // is actually exercised rather than landing on an exact division by luck.
     const regions = [
-      territory({ landUnits: 7, yieldPerLandUnit: { food: 3, stone: 1, vellum: 0 } }),
-      territory({ landUnits: 11, yieldPerLandUnit: { food: 0, stone: 5, vellum: 2 } }),
-      territory({ landUnits: 13, yieldPerLandUnit: { food: 1, stone: 1, vellum: 1 } }),
+      territory({ landUnits: 7, yieldPerLandUnit: { ...zeroAmounts(), food: 3, stone: 1, vellum: 0 } }),
+      territory({ landUnits: 11, yieldPerLandUnit: { ...zeroAmounts(), food: 0, stone: 5, vellum: 2 } }),
+      territory({ landUnits: 13, yieldPerLandUnit: { ...zeroAmounts(), food: 1, stone: 1, vellum: 1 } }),
     ];
     expect(totalAmount(territoryYieldShares(regions))).toBe(FP_ONE);
   });
 
   it('ignores negative land units and negative yields rather than subtracting', () => {
-    const negative = territory({ landUnits: -5, yieldPerLandUnit: { food: -10, stone: 0, vellum: 0 } });
-    const positive = territory({ landUnits: 100, yieldPerLandUnit: { food: 0, stone: 1, vellum: 0 } });
+    const negative = territory({ landUnits: -5, yieldPerLandUnit: { ...zeroAmounts(), food: -10, stone: 0, vellum: 0 } });
+    const positive = territory({ landUnits: 100, yieldPerLandUnit: { ...zeroAmounts(), food: 0, stone: 1, vellum: 0 } });
     const shares = territoryYieldShares([negative, positive]);
     expect(totalAmount(shares)).toBe(FP_ONE);
     expect(shares.stone).toBe(FP_ONE);
@@ -212,6 +243,7 @@ describe('routeYieldByForm splits a resource-yield magnitude by content weights'
     // no bonus 1600, −50% cost 800, −100% cost 0, −300% cost 0. The cost bites
     // proportionally and stops at zero by arithmetic, not by a sign test.
     expect(routeYieldByForm(form({ food: 512 }), -100)).toEqual({
+      ...zeroAmounts(),
       food: -50,
       stone: 0,
       vellum: 0,
@@ -222,6 +254,7 @@ describe('routeYieldByForm splits a resource-yield magnitude by content weights'
     // statement about the material taxonomy, not about one working. The sign
     // comes from the node; the mix stays a property of the form.
     expect(routeYieldByForm(form({ food: -512, stone: 256 }), 1024)).toEqual({
+      ...zeroAmounts(),
       food: 0,
       stone: 256,
       vellum: 0,
@@ -230,6 +263,7 @@ describe('routeYieldByForm splits a resource-yield magnitude by content weights'
     // And the two compose: a cost routes proportionally negative amounts to
     // exactly the kinds a gain would have fed, and to no others.
     expect(routeYieldByForm(form({ food: -512, stone: 256 }), -1024)).toEqual({
+      ...zeroAmounts(),
       food: 0,
       stone: -256,
       vellum: 0,
@@ -249,9 +283,13 @@ describe('routeYieldByForm splits a resource-yield magnitude by content weights'
       materialsProduced({
         laborerCount: 100,
         laborAffinity: FP_ONE,
-        shares: { food: FP_ONE, stone: 0, vellum: 0 },
+        shares: { ...zeroAmounts(), food: FP_ONE, stone: 0, vellum: 0 },
         resourceYield,
-        resourceYieldBonuses: { food: bonuses, stone: [], vellum: [] },
+        resourceYieldBonuses: { ...NO_YIELD_BONUSES, food: bonuses, stone: [], vellum: [] },
+        // No hireable share: this asserts the `resource-yield` stacking joints,
+        // and an allocation off the top would move every expectation below
+        // without saying anything about stacking.
+        production: { hireableShare: 0 },
       }).food;
 
     expect(produced([])).toBe(1600);

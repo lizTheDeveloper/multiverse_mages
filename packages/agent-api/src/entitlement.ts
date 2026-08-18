@@ -204,6 +204,54 @@ export const TRAIT_CLASSIFICATION: Readonly<
     // a fully mastered one.
     mastery: undecided(),
   },
+  // The telephone problem, and it is invisible for the same reason `mastery`
+  // above is. No channel carries either field, so an agent sees a library's
+  // *count* of instances and can learn nothing about whether they are worth
+  // reading: a shelf of pristine first copies and a shelf of exhausted
+  // fifth-generation ones are the same number in `institutions[331]`.
+  //
+  // `corruption` is the sharper case and is deliberately left `undecided()`
+  // rather than argued either way. Hiddenness is the mechanic — a corrupted
+  // book is indistinguishable from a sound one until a reader fails against it
+  // — so an observation channel carrying it would delete the design, while an
+  // observation channel carrying *whether a reader has marked it* would be
+  // legitimate and does not exist. Those are two different entitlement
+  // questions wearing one field, and `docs/design/scribing-fidelity.md` decides
+  // neither. See {@link CORRUPTION} in `@mm/rules-magic` for the three states.
+  'knowledge-fidelity': { copyGeneration: undecided(), corruption: undecided() },
+  // `w24/university-siting`'s two sections, classified on the
+  // `integration/group-e` merge because that branch predates this classifier and
+  // therefore never had a row here — `assertAllTraitsClassified` caught the gap,
+  // which is the mechanism working.
+  //
+  // Both `undecided()`. A holding is how much of what kind of country the
+  // universe works, and a site is which kind its academy stands in; §4.1's
+  // observation has no channel for either, and a PvP opponent learning where a
+  // rival's academy stands is a disclosure question nobody has ruled on yet.
+  // `working-duration`'s section, world-schema revision 12. All five
+  // `undecided()`, and the reason is sharper than the rows above it.
+  //
+  // A standing working is the first piece of world state that a rival's *timing*
+  // depends on. Knowing when a wall's upkeep runs out is knowing when to raid,
+  // and §4.1's observation has no channel that could carry it — nor is there any
+  // ruling on whether it should. **`expiresTick` is the field to think hardest
+  // about before anybody classifies it.** The effect a working holds up is
+  // already partly visible through the economy an agent can measure; the *date*
+  // is not, and publishing it would turn upkeep from a rota into a countdown a
+  // besieger reads off the observation.
+  //
+  // `renewals` is the tempting one to disclose — it is history rather than
+  // schedule — and it is left undecided too, because a renewal count and an
+  // authored duration together reconstruct `expiresTick` exactly.
+  'standing-working': {
+    holder: undecided(),
+    nodeId: undecided(),
+    litTick: undecided(),
+    expiresTick: undecided(),
+    renewals: undecided(),
+  },
+  'territory-holding': { kindId: undecided(), landUnits: undecided() },
+  'university-site': { kindId: undecided() },
   // The entire rediscovery signal. An agent cannot distinguish a node never
   // discovered from one discovered and lost, which are the two states with the
   // most different expected value in the knowledge model.
@@ -251,12 +299,57 @@ export const TRAIT_CLASSIFICATION: Readonly<
     nodesLost: undecided(),
     passed: undecided(),
   },
-  // Summed across the three fields of one row — a sum, not a histogram over
-  // entities. An agent cannot tell a food shortage from a vellum one.
+  // **All seven are `observable` since `material-economy` task 5.1**, and the
+  // change is the one the previous row here predicted in as many words: *"That
+  // is task 5.1's to change, by adding a named per-kind block to `PlayerState`,
+  // which is not the vector and carries no digest; until then
+  // `not-yet-decided` is the honest reading."* The block exists now —
+  // `PlayerResources.stocks`, a `MaterialStockRecord` — so every kind reaches
+  // the player under its own name and the reading has changed with it.
+  //
+  // The criterion is this scheme's own, from `observation-entitlement.md`'s
+  // reducer: **OBSERVABLE means projected into `PlayerState`**, and whether the
+  // projection then reaches a slot is the *second* stage of that diagram, not
+  // this one.
+  //
+  // **`food`, `stone` and `vellum` moved too, from `aggregated`, and that is
+  // more than task 5.3 asked for.** It is required by consistency rather than
+  // chosen: `aggregated` is defined as *"reaches the player **only** inside an
+  // aggregate"*, and once all seven sit in `resources.stocks` under their own
+  // names, that word is false for the three exactly as it is for the four.
+  // Leaving them `aggregated` would say the projection carries `labor` by name
+  // and not `food`, which no reader of this file could act on.
+  //
+  // **What has *not* changed is what an agent sees, and that is the point worth
+  // not blurring.** `resources[39]` still carries `food + stone + vellum` and
+  // nothing else; `OBSERVATION_SIZE` is 400 and `OBSERVATION_LAYOUT_DIGEST` is
+  // unchanged. A *policy* still cannot tell a food shortage from a vellum one
+  // and cannot see the other four at all. A *client* now can. The `via` below
+  // names the projection path rather than a slot for that reason, and says so.
   'material-stock': {
-    food: aggregated('resources[39]'),
-    stone: aggregated('resources[39]'),
-    vellum: aggregated('resources[39]'),
+    food: observable('resources.stocks.food (projection; summed into resources[39])'),
+    stone: observable('resources.stocks.stone (projection; summed into resources[39])'),
+    vellum: observable('resources.stocks.vellum (projection; summed into resources[39])'),
+    labor: observable('resources.stocks.labor (projection; reaches no slot)'),
+    essence: observable('resources.stocks.essence (projection; reaches no slot)'),
+    insight: observable('resources.stocks.insight (projection; reaches no slot)'),
+    passage: observable('resources.stocks.passage (projection; reaches no slot)'),
+  },
+  // The grade ladder's two columns. **Withheld, and undecided rather than
+  // justified**, which is the honest classification for a mechanic whose
+  // observability nobody has argued about yet.
+  //
+  // The argument a future change has to make is not "should a policy see a
+  // stock" — `material-stock` already answers that — but a narrower one: a
+  // refined holding is what gates `cig-the-standing-furnace`, so a policy that
+  // cannot see it cannot tell *"my foundries are idle for want of ore"* from
+  // *"my foundries are not worth anything"*. That is a real entitlement
+  // question and it needs a slot decision, not a projection line added quietly
+  // here. Adding one would move `OBSERVATION_LAYOUT_DIGEST`, which is exactly
+  // the friction that should make it a decision.
+  'material-grade': {
+    stoneWorked: undecided(),
+    stoneFine: undecided(),
   },
   // God action 8's budget: a second bound in exactly the shape of action cost,
   // one the agent is subject to and cannot see.
@@ -266,6 +359,39 @@ export const TRAIT_CLASSIFICATION: Readonly<
     cap: undecided(),
     grantsUsed: undecided(),
     seededNodes: undecided(),
+  },
+  // §5.2's eight-bar unease. Both fields are ticks on a universe row, and both
+  // are `undecided()` for the same reason `grant-budget`'s are: they price the
+  // god's next constitutional act and the agent is subject to them without
+  // seeing them. Classified here rather than left absent because
+  // `assertAllTraitsClassified` refuses a component with no classification at
+  // all — which is the check working, on the `w21/timing-and-envelopes` merge
+  // that introduced the component.
+  'bar-phase': {
+    uneaseUntilTick: undecided(),
+    lastConstitutionalTick: undecided(),
+  },
+  // `raid-engagement.md` §1's mark on a ruleset change made during a raid. All
+  // five `undecided()`, on `grant-budget`'s and `bar-phase`'s argument: the mark
+  // sets what unmaking the change will cost, and the agent is subject to that
+  // price without being shown the mark. Classified on the
+  // `design/raid-engagement` merge because `assertAllTraitsClassified` refuses a
+  // component with no classification at all.
+  //
+  // W182 arrived at the identical classification independently, and its
+  // argument is kept because it is the better statement of why: *"the whole
+  // point of the row is that it survives the raid to price a later revert, so
+  // it is state the god is subject to and cannot see. §4.1's observation has no
+  // channel for it."* Two branches, one conclusion.
+  'mid-raid-change': {
+    scope: undecided(),
+    targetId: undecided(),
+    changeKind: undecided(),
+    // The surcharge base. An agent that could read it could price its own
+    // walk-back exactly; one that cannot is guessing, and `revertSurcharge`
+    // being deterministic means that guess is recoverable from the action log.
+    paidCost: undecided(),
+    markedTick: undecided(),
   },
   combatant: {
     sourceKind: undecided(),

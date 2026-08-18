@@ -104,7 +104,12 @@
 import { referenceContent, runLongReference, timeToTierBySpecies } from '@mm/scenario';
 import { beforeAll, describe, expect, it } from 'vitest';
 
-const TIMEOUT_MS = 300_000;
+/**
+ * 233 s measured here (16 cores, load 20-50) x7. `vitest.config.ts` carries the
+ * factor; 300 s was cut on GitHub Actions job 95387839967, 2026-08-17, and the
+ * file failed with no named test.
+ */
+const TIMEOUT_MS = 1_800_000;
 
 /** Sixty world years. See the module note. */
 const HORIZON_TICKS = 720;
@@ -247,7 +252,7 @@ describe('time to tier, by species', () => {
     // | claim | held in | kept? |
     // |---|---:|---|
     // | `gnome.high < elf.low`      | **12/12** | kept |
-    // | `dwarf.high < elf.low`      | **12/12** | kept |
+    // | `dwarf.high < elf.low`      | 12/12, **6/12 on w185** | **retired** |
     // | `gnome.high < human.low`    | **12/12** | kept |
     // | `draconic.high > elf.high`  | **12/12** | kept |
     // | `orc.high < elf.low`        | 11/12 | **retired** |
@@ -303,13 +308,38 @@ describe('time to tier, by species', () => {
     // slowest seed, which is `depthCeiling: 7` and `curiosity: 512` pulling
     // against each other under the new score.
     //
+    // **Rewritten a fourth time by `w80/research-cost-variation`**, which gave
+    // every node a price inside its tier's octave instead of one flat price per
+    // tier, so "cheapest first" stopped meaning "lowest node id first". The two
+    // columns below were both measured on this branch, on the same six seeds,
+    // with only `node.json` differing — the w17 column in the table above is
+    // from the build that wrote it and has since drifted, which is why it is not
+    // the comparison used here.
+    //
+    // | species | flat cost | priced |
+    // |---|---|---|
+    // | gnome    | [23, 25]  | **[22, 24]** |
+    // | dwarf    | [24, 29]  | **[23, 25]** |
+    // | orc      | [24, 31]  | **[23, 58]** |
+    // | human    | [30, 31]  | **[29, 30]** |
+    // | elf      | [47, 57]  | **[41, 44]** |
+    // | draconic | [26, 298] | **[24, 168]** |
+    //
+    // Four of the six **tightened** — elf's spread falls from eleven ticks to
+    // three and draconic's from 272 to 144 — and the one that widened is orc,
+    // which leaves the fast trio and becomes a second spanner. So the assertion
+    // that moved is `orc.high < elf.low`, and it moved because orc's
+    // `depthCeiling` is 3: tier 3 is orc's ceiling, and a priced surface makes
+    // *which* of the ceiling nodes is nearest a much stronger function of the
+    // seed than a flat one did.
+    //
     // **Task 9.9 wants four species separated by more than the cross-seed
-    // spread. This build separates three groups and not four species**, because
-    // gnome, dwarf and orc still overlap. Recorded rather than repaired: every
-    // species magnitude carries `tuningStatus: "untuned"`, no release before
-    // 0.5.0 may claim any of them is balanced, and inventing a species number to
-    // make a test go green is what `release-plan.md`'s measurement pivot exists
-    // to prevent.
+    // spread. This build separates two bands and leaves two spanners, so it is
+    // still not four species**, because gnome and dwarf overlap. Recorded rather
+    // than repaired: every species magnitude carries `tuningStatus: "untuned"`,
+    // no release before 0.5.0 may claim any of them is balanced, and inventing a
+    // species number to make a test go green is what `release-plan.md`'s
+    // measurement pivot exists to prevent.
     const interval = (name: string): { low: number; high: number } => {
       const column = tierThree.find((entry) => entry.name === name);
       if (column === undefined || column.observed.length === 0) {
@@ -319,34 +349,149 @@ describe('time to tier, by species', () => {
     };
 
     const gnome = interval('gnome');
-    const dwarf = interval('dwarf');
     const human = interval('human');
-    const elf = interval('elf');
     const draconic = interval('draconic');
+    // `elf` is deliberately not bound, for the reason the notes below give about
+    // `orc` and `dwarf` before it: leaving the binding invites the next author to
+    // reach for it, and every claim that read elf is retired next door.
+    //
+    // **W21's side of this conflict is not merged.** It re-asserts `orc.high >=
+    // elf.low`, `orc.low < elf.low`, `draconic.low <= human.low` and three
+    // pairwise-overlap claims — every one of which `main` retired after
+    // re-rolling twelve independent seed sets (`species-separation-spread`).
+    // W21 predates that sweep. Merging its hunk would restore four separations
+    // measured to be seed artifacts, which is the precise failure the sweep was
+    // built to prevent.
     // `orc` is deliberately not bound. Both claims that read it — `orc.high <
     // elf.low` at 11/12 and `human.high < orc.low` at 0/12 — are retired, and
     // leaving the binding would invite the next author to reach for it.
-    const beforeElf = [gnome, dwarf];
-
-    // What separates strictly in **every one of twelve** independent seed sets:
-    // gnome and dwarf arrive before elf, and gnome arrives before human. Both
-    // are real statements about `curiosity` — gnome 1792, human 1152, elf 896 —
-    // now that curiosity is an input to *which* node a mage reaches for and not
-    // only to how fast she works on whichever one was cheapest.
+    // **`dwarf` was dropped from this list on `w185/cohort-source`,
+    // 2026-08-14.** `dwarf.high < elf.low` was 12/12 across seed sets when it
+    // was written and is 6/12 now: W185 opened the occupation transfer valve
+    // and filled university seats from `idle` only, which changes who becomes a
+    // student and therefore who is promoted, and dwarf's between-set spread
+    // widened enough that its interval reaches into elf's in half the sets. The
+    // paired gap is still 24.6 SE in dwarf's favour — the effect is real, and
+    // an interval over one seed set is not the instrument that can say so. The
+    // row next door records the retirement and its rate.
+    // **`dwarf` left this list on W116 and `orc` did not join it.** Dwarf was
+    // established before elf in 12 of 12 seed sets and is now *refuted* in 12 of
+    // 12 — elf arrives first, by 8.6 paired standard errors — because dwarf's
+    // mean time to tier 3 went from among the fastest to 234.9 ± 23.5 ticks
+    // against gnome's 23.8. `species-separation-spread.test.ts` carries the row
+    // and the reasoning; the short version is that dwarf has the highest
+    // `scribeAffinity` in the content, `completeAffiliation` gained a caller,
+    // and a month spent writing is a month not spent reaching the next tier.
+    // `species-occupancy` reads the same species falling furthest over the same
+    // change, which is two independent instruments agreeing on the mechanism.
     //
-    // Orc is no longer in this group. It is faster than elf on average by 26.7
-    // standard errors and its interval still overlaps elf's in one set of
-    // twelve, which is a fact this file has no way to write down.
-    for (const entry of beforeElf) expect(entry.high).toBeLessThan(elf.low);
-    expect(gnome.high).toBeLessThan(human.low);
+    // `gnome < elf` takes its place: 12/12 sets at 13.3 SE, true before this
+    // branch and unmoved by it.
+    //
+    // **And it left again, for a second reason, on
+    // `w247/material-economy-build`.** Both branches removed `dwarf`
+    // independently and the reasons compose rather than compete, so both are
+    // kept above and below.
+    // `dwarf` left this list on 2026-08-16, on `w247/material-economy-build`.
+    // `dwarf.high < elf.low` was `established` in the spread file and is now
+    // `inconclusive` — strict in 1 of 4 sets, gap 1.1 SE. Measured over the six
+    // seeds here, tier 3, in ticks, against the reading immediately before
+    // `material-economy`:
+    //
+    // | species | before | now |
+    // |---|---|---|
+    // | gnome    | [24, 25] | [20, 21] |
+    // | dwarf    | [25, 30] | **[22, 66]** |   (no longer bound, see below)
+    // | human    | [28, 37] | [24, 26] |
+    // | elf      | [35, 58] | [37, 42] |
+    // | orc      | [32, 51] | **[57, 177]** |
+    // | draconic | [26, 380] | [22, 119] |
+    //
+    // Two species moved and both moved for the same reason: the shipped opening
+    // square's Mentem and Limen forms carry a `resource-yield` node for the
+    // first time, so `GOAL.applyMagic` is a live choice inside the v1
+    // rectangle and a month spent casting is a month not spent reaching tier 3.
+    // Orc pays most — it is now strictly *after* elf, which retires that claim
+    // in the other direction — and dwarf's upper endpoint widens on one seed of
+    // six, which is precisely the shape this file cannot state a rate about.
+    //
+    // Nothing was tuned to make this pass. Every species magnitude still
+    // carries `tuningStatus: "untuned"`.
+    //
+    // `dwarf` is no longer bound at all, for the reason the header already gives
+    // about `orc`: leaving the binding in place invites the next author to reach
+    // for it, and the interval it would name is one this file cannot state a
+    // rate about.
+    const dwarf = interval('dwarf');
+    const orc = interval('orc');
 
-    // Draconic ends long after elf, in every set of twelve. That it *starts*
-    // before human — the other half of the old "draconic is the bridge" claim —
-    // held in five sets of twelve and is retired: draconic's arrival is wide
-    // enough to straddle the horizon, its `min` endpoint travels 114 ticks
-    // between seed sets, and it is censored in 17 of 72 runs. Nothing about
-    // where draconic *starts* is measurable at 720 ticks.
-    expect(draconic.high).toBeGreaterThan(elf.high);
+    // ## Rewritten a fifth time on `integration/all-branches`, 2026-08-17, and
+    // ## every binding in the list changed
+    //
+    // Re-measured as this file's own instruction says, with
+    // `node packages/scenario/bin/species-separation.mjs --sets 12 --tier 3`,
+    // 72 runs at 720 ticks. **Elf is no longer bound and dwarf is**, which is a
+    // reversal of the arrangement every version of this test since W7 has had.
+    //
+    //     draconic  mean 441.1 ± 30.9 SE   censored 58/72
+    //     dwarf     mean 638.3 ±  7.1 SE   censored 66/72
+    //     elf       mean 603.9 ± 62.0 SE   censored 64/72
+    //     gnome     mean 377.8 ±  4.8 SE   censored  2/72
+    //     human     mean 444.4 ± 14.3 SE   censored 49/72
+    //     orc       mean 397.3 ± 13.5 SE   censored 66/72
+    //
+    // **Everything that survives a re-roll is now a claim about dwarf**, and all
+    // four of these are `established` at twelve sets:
+    //
+    // | claim | sets | paired gap |
+    // |---|---|---|
+    // | `gnome < dwarf`    | 4/4 | 277.0 ± 7.6 = **36.3 SE** |
+    // | `draconic < dwarf` | 3/3 | 259.8 ± 8.1 = **32.1 SE** |
+    // | `human < dwarf`    | 4/4 | 202.4 ± 24.5 = **8.3 SE** |
+    // | `orc < dwarf`      | 2/2 | 253.0 ± 36.0 = **7.0 SE** |
+    //
+    // ### The two bindings that left, and why neither is a re-pin
+    //
+    // - **`gnome < elf` is retired.** Twelve sets: `inconclusive`, strict in 4
+    //   of 5 comparable sets, 232.4 ± 63.4 = 3.7 SE. It still holds on the six
+    //   seeds here (386 against 648) and that is exactly the problem the file
+    //   exists to state — elf is censored in 64 of 72 runs, so the sets where it
+    //   arrives at all are the sets where it arrived early.
+    // - **`gnome < human` is refuted on this seed set and unreproducible off
+    //   it.** Here it reads **386 against 370**: gnome's slowest seed is now
+    //   slower than human's only observed one. Twelve sets: `inconclusive`,
+    //   strict in 5 of 11, 66.6 ± 15.8 = 4.2 SE. Human is censored in 49 of 72.
+    //   The claim went 12/12 -> 3/11 -> 5/11 across three measurements and the
+    //   sign has never reversed; what it has never had since is sets to be
+    //   measured in.
+    //
+    // `draconic.high > elf.high` — *"draconic ends long after elf, in every set
+    // of twelve"* — is **refuted** and is gone with them. Draconic's mean is
+    // 441.1 against elf's 603.9 and its interval here is [353, 358] against elf's
+    // [648, 648]; draconic now ends *before* elf, not long after it.
+    //
+    // ### What actually happened, and it is one thing
+    //
+    // Five of six species are censored at the 720-tick horizon on most seeds,
+    // where the readings this file was built on had almost none. That is not a
+    // separation moving — it is the whole population reaching tier 3 later, and
+    // the slow species not reaching it at all. `species-separation-spread`
+    // carries the cause: `form.json`'s fourteen yield rows were re-authored so
+    // no two forms share a basket, and the weight routed to `stone` fell from
+    // 3072 to 2624. Stone builds universities, universities teach, and teaching
+    // is most of how a mage reaches tier 3.
+    //
+    // So dwarf is not "separated" in the sense 9.9 wants. It is the species that
+    // is *slowest*, by 200+ ticks, against a horizon that censors everybody
+    // else's tail. Four species arriving before the slowest one is one band and a
+    // laggard, not four separated species. **Task 9.9 is unmet and this
+    // measurement moved it further away, for the third time.** Recorded rather
+    // than repaired: every species magnitude still carries
+    // `tuningStatus: "untuned"`, no `balance/` baseline moved, and no content
+    // file was edited to produce it.
+    const beforeDwarf = [gnome, draconic, human, orc];
+
+    for (const entry of beforeDwarf) expect(entry.high).toBeLessThan(dwarf.low);
 
     // **The trio is a pair now, and `apply-magic` is what broke it up.**
     //
@@ -381,13 +526,21 @@ describe('time to tier, by species', () => {
     // that two species are indistinguishable is exactly as seed-dependent as a
     // claim that they can be told apart.** It held in 7 sets of 12.
     //
-    // What is left is four assertions, each of which survived twelve re-rolls.
-    // Task 9.9 wants four *species* separated by more than the cross-seed
-    // spread; what reproduces is `gnome < human < elf` with `dwarf < elf`
-    // alongside — three species in a chain, not four — so **9.9 is unmet, and
-    // measuring it properly moved it further away rather than closer.** Recorded
-    // rather than repaired: every species magnitude carries
-    // `tuningStatus: "untuned"`, and inventing one to make a test go green is
-    // what `release-plan.md`'s measurement pivot exists to prevent.
+    // **The paragraph that closed this block is historical as of 2026-08-17 and
+    // is kept as history.** It read: *"What is left is four assertions, each of
+    // which survived twelve re-rolls. Task 9.9 wants four species separated by
+    // more than the cross-seed spread; what reproduces is `gnome < human < elf`
+    // with `dwarf < elf` alongside — three species in a chain, not four."* Every
+    // claim it names is retired; see the block above `beforeDwarf` for what
+    // replaced them and at what rates.
+    //
+    // Its conclusion is the one part that did not move, and it has moved further
+    // in the same direction: **9.9 is unmet, and measuring it properly has now
+    // moved it further away three times running.** What reproduces on this tree
+    // is four species arriving before the slowest one, which is one band and a
+    // laggard rather than four separated species. Recorded rather than repaired:
+    // every species magnitude carries `tuningStatus: "untuned"`, and inventing
+    // one to make a test go green is what `release-plan.md`'s measurement pivot
+    // exists to prevent.
   });
 });

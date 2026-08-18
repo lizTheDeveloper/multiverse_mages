@@ -288,6 +288,47 @@ describe('the constant table checks catch what a schema cannot', () => {
     expect(() => loadContent(sourceOf(documents, 'broken-constants'))).toThrow(/analytic limit/u);
   });
 
+  /**
+   * `material-economy` task 4.1. The cost table may now name a **material**
+   * price beside the favor one, and the invariant that matters is the one a
+   * schema alone cannot give a useful message for: *which action* named a kind
+   * that does not exist.
+   *
+   * `additionalProperties: false` on `materialCost` already refuses the
+   * document, and its message names a JSON pointer. This check names the action
+   * and the key, because a table of seventeen rows and a pointer of `/8` is the
+   * failure that makes a reader count records.
+   */
+  it('fails a material cost naming a kind the economy does not have', () => {
+    const table = costs().map((record) =>
+      record.actionId === 14
+        ? { ...record, materialCost: { passage: 1024, gold: 512 } as Record<string, number> }
+        : record,
+    );
+    const messages = checkGodCosts(table as GodCostRecord[]).map((entry) => entry.message);
+    expect(messages.join('\n')).toContain('open-portal');
+    expect(messages.join('\n')).toContain('gold');
+  });
+
+  it('accepts a table where some actions name a material cost and others do not', () => {
+    // The positive control for the check above. Seventeen rows, two of them
+    // priced in materials: an unpriced verb is one that makes nothing out of
+    // anything, and refusing the mixed table would be refusing the shipped one.
+    const table = costs().map((record) =>
+      record.actionId === 14 ? { ...record, materialCost: { passage: 1024 } } : record,
+    );
+    expect(checkGodCosts(table as GodCostRecord[])).toEqual([]);
+  });
+
+  it('fails a material cost that is empty, which is a price nobody wrote', () => {
+    const table = costs().map((record) =>
+      record.actionId === 14 ? { ...record, materialCost: {} } : record,
+    );
+    expect(checkGodCosts(table as GodCostRecord[]).map((entry) => entry.message).join('\n')).toContain(
+      'open-portal',
+    );
+  });
+
   it('rejects a negative cost at the schema, before any of this runs', () => {
     const documents = shippedDocuments();
     const table = documents['god-cost.json'] as Record<string, unknown>[];

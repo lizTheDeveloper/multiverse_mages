@@ -25,7 +25,7 @@
 import { describe, expect, it } from 'vitest';
 
 import type { ComponentFields, ComponentSpec } from '@mm/sim-core';
-import { ENGAGEMENT_COMPONENTS, WORLD_COMPONENTS } from '@mm/state';
+import { ENGAGEMENT_COMPONENTS, MATERIAL_STOCK, WORLD_COMPONENTS } from '@mm/state';
 
 import type { TraitClassification } from '@mm/agent-api';
 import {
@@ -42,7 +42,7 @@ import {
 } from '@mm/agent-api';
 import { RAID_SIDE } from '@mm/state';
 
-import { FIXTURE_CATALOGUE, engageWorld, firstUniverse } from './fixtures.js';
+import { FIXTURE_CATALOGUE, FP, engageWorld, firstUniverse } from './fixtures.js';
 
 /** A projection taken during a raid, so the engagement fields are present. */
 function engagedProjection() {
@@ -138,13 +138,38 @@ describe('unclassifiedTraits (step 2)', () => {
    * The inventory's headline number, asserted rather than described. If this
    * moves, `docs/design/observable-trait-inventory.md` is stale and its date and
    * ref line are lying about the tree.
+   *
+   * **108 at `be446a6` → 113 on `w182/raid-seam`.** The five are
+   * `mid-raid-change`'s, which arrived with `w37/raid-playable` on a branch this
+   * inventory had never seen; the merged tree is the first on which the
+   * component and the classifier coexist. All five are `not-yet-decided`, so the
+   * undecided count below moves by the same five and no existing row was
+   * reclassified to absorb them.
    */
-  it('covers the 108 traits the inventory counted at be446a6', () => {
+  it('covers the 131 traits: 108 at be446a6, plus nine merged changes', () => {
     let traits = 0;
     for (const spec of [...WORLD_COMPONENTS, ...ENGAGEMENT_COMPONENTS]) {
       traits += Object.keys(spec.fields).length;
     }
-    expect(traits).toBe(108);
+    // 108 at `be446a6`, plus every component Group E merged — `bar-phase`'s two
+    // (W21), `mid-raid-change`'s five (raid-engagement), `territory-holding`'s
+    // two and `university-site`'s one (W24), and `knowledge-fidelity`'s two
+    // (W190) — plus `material-economy`'s four new `material-stock` *fields*,
+    // which add traits without adding a component. 108 + 2 + 5 + 3 + 2 + 4 =
+    // **124** — then `material-grade`'s two, for the grade ladder at world
+    // revision 12, making **126**; then `standing-working`'s five, for
+    // `working-duration` at revision 13, making **131**. Two branches took
+    // revision 12 off one base and both are in this tree, so both addends
+    // count. The count is the point of the test, so it moves with the field
+    // set rather than being loosened to `>=`;
+    // `docs/design/observable-trait-inventory.md` is the document this is
+    // keeping honest.
+    //
+    // Every literal any single branch carried here was wrong for the union.
+    // W182 reached 113 on its own tree, Group E reached 120, and
+    // `material-economy` reached 112; the merged tree is none of those, because
+    // each branch counted its own additions over a base missing the others'.
+    expect(traits).toBe(131);
 
     let classified = 0;
     for (const rows of Object.values(TRAIT_CLASSIFICATION)) {
@@ -168,7 +193,38 @@ describe('unclassifiedTraits (step 2)', () => {
         byReason.set(reason, (byReason.get(reason) ?? 0) + 1);
       }
     }
-    expect(byReason.get('not-yet-decided')).toBe(70);
+    // 70 at `be446a6`, and 82 here: the twelve Group E fields are all
+    // `undecided()` for `grant-budget`'s reason — they price the god's next
+    // constitutional act, or the unmaking of one, and the agent is subject to
+    // them without seeing them. `material-stock`'s four new kinds contribute
+    // **nothing** to this bucket, because `material-economy` task 5.1's
+    // per-kind block on `PlayerState` classifies all seven as `observable`.
+    //
+    // Nothing about the *vector* moved for that: `resources[39]` still carries
+    // `food + stone + vellum` and `OBSERVATION_LAYOUT_DIGEST` is unchanged.
+    // OBSERVABLE in this scheme means *projected into `PlayerState`*, which is
+    // the first stage of `observation-entitlement.md`'s reducer; reaching a slot
+    // is the second, and `DECLARED_UNENCODED` is where that half is recorded.
+    //
+    // 82 + `material-grade`'s two = **84**. Both are `not-yet-decided` rather
+    // than justified, and deliberately so: a refined holding is what gates
+    // `cig-the-standing-furnace`, so a policy that cannot see it cannot tell
+    // *"my foundries are idle for want of ore"* from *"my foundries are worth
+    // nothing"*. That is a real entitlement question with a slot decision
+    // behind it — and a slot moves `OBSERVATION_LAYOUT_DIGEST`, which is the
+    // friction that should keep it a decision rather than a projection line
+    // added quietly.
+    //
+    // And 84 + `standing-working`'s five = **89** since `working-duration`.
+    // Those five are undecided for a sharper reason than the two above:
+    // `expiresTick` is the first piece of world state a rival's **timing**
+    // depends on, and publishing it turns upkeep from a rota into a countdown a
+    // besieger reads off the observation.
+    //
+    // Both additions move this bucket by exactly the amount they moved the
+    // trait count by — 2 and 5, against 126 and 131 — so no existing row was
+    // reclassified to absorb them, which is what the paired assertion is for.
+    expect(byReason.get('not-yet-decided')).toBe(89);
     expect(byReason.get('internal-bookkeeping')).toBe(6);
     // Unused until there is an opponent-facing projection to hide anything
     // from. Asserted at zero so that the day it stops being zero is a diff.
@@ -283,6 +339,53 @@ describe('steps 1 to 3 move no baseline', () => {
    * update both and say why in the same diff.
    */
   it('leaves OBSERVATION_LAYOUT_DIGEST at its pre-change value', () => {
+    expect(OBSERVATION_LAYOUT_DIGEST).toBe('46182c35d829b205');
+    expect(OBSERVATION_SIZE).toBe(400);
+  });
+});
+
+/**
+ * `material-economy` task 5.1–5.2: the player may read every stock by name, and
+ * the vector does not move for it.
+ *
+ * These are two halves of one claim and both are needed. The projection carrying
+ * seven kinds is worth nothing if it cost a resize, and an unmoved digest is
+ * worth nothing if the kinds did not actually arrive.
+ */
+describe('the player projection names every material kind', () => {
+  const world = firstUniverse();
+  const player = project({ state: world.state, catalogue: FIXTURE_CATALOGUE });
+
+  it('exposes each of the seven kinds under its own name', () => {
+    // Against `MATERIAL_STOCK.fields` rather than a transcribed list, so an
+    // eighth kind added to the schema and forgotten here fails rather than
+    // being silently dropped from every client.
+    expect(Object.keys(player.resources.stocks).sort()).toEqual(
+      Object.keys(MATERIAL_STOCK.fields).sort(),
+    );
+  });
+
+  it('reads the stock the fixture actually seeded, not a zero-shaped placeholder', () => {
+    // The positive control on the block. A projection that returned the right
+    // *shape* full of zeros would satisfy the assertion above and tell a client
+    // that a stocked universe is empty — `undefined === 0` is false, and so is
+    // `0 === 500 * FP`, so this is the arm that discriminates.
+    expect(player.resources.stocks.food).toBe(500 * FP);
+    expect(player.resources.stocks.stone).toBe(0);
+    expect(player.resources.stocks.insight).toBe(0);
+  });
+
+  it('keeps `materials` the documented food + stone + vellum sum', () => {
+    // Not the sum of all seven. The observation's one slot carries this exact
+    // quantity and a widened meaning here would make one field mean two things
+    // depending on which side of the encoder read it.
+    const { food, stone, vellum } = player.resources.stocks;
+    expect(player.resources.materials).toBe(food + stone + vellum);
+  });
+
+  it('costs no observation slot, which is what makes the block cheap', () => {
+    // Restated at the site that added the fields, rather than trusted from the
+    // block above: this is the property `PlayerState` is allowed to grow under.
     expect(OBSERVATION_LAYOUT_DIGEST).toBe('46182c35d829b205');
     expect(OBSERVATION_SIZE).toBe(400);
   });

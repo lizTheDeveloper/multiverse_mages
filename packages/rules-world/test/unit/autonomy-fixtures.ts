@@ -31,12 +31,18 @@ import { MAGE_ROLE } from '@mm/state';
 import type { MageRoleValue } from '@mm/state';
 
 import type {
+  GoalAppealWeights,
   KnowledgeTarget,
   MageOutlook,
   SpeciesAffinities,
   TargetAppealWeights,
 } from '../../src/index.js';
-import { readTargetAppeal, resolveSpeciesAffinities } from '../../src/index.js';
+import {
+  NO_EMPHASIS,
+  readGoalAppeal,
+  readTargetAppeal,
+  resolveSpeciesAffinities,
+} from '../../src/index.js';
 
 import { shippedRegistry } from './mage-fixtures.js';
 
@@ -69,6 +75,9 @@ export function speciesNamed(id: string): SpeciesRecord {
  * whether the shipped content differentiates anything.
  */
 export const appealWeights: TargetAppealWeights = readTargetAppeal(registry);
+
+/** The goal-appeal weights, read from the same file for the same reason. */
+export const goalAppealWeights: GoalAppealWeights = readGoalAppeal(registry);
 
 const affinityCache = new Map<string, SpeciesAffinities>();
 
@@ -127,6 +136,7 @@ export function outlook(overrides: Partial<MageOutlook> = {}): MageOutlook {
     mage: 1,
     species: speciesNamed('human'),
     affinities: affinitiesOf('human'),
+    emphasis: NO_EMPHASIS,
     personality: { curiosity: 1024, ambition: 1024, caution: 1024 },
     roleId: MAGE_ROLE.researcher as MageRoleValue,
     // fp(512) — the middle of the prime band for every species, and the
@@ -139,6 +149,9 @@ export function outlook(overrides: Partial<MageOutlook> = {}): MageOutlook {
     teachableByMe: [],
     scribableTargets: [],
     applicableTargets: [],
+    practiceTargets: [],
+    sustainableTargets: [],
+    workingUrgency: 0,
     materials: 0,
     scribeThroughput: 0,
     betterAffiliationAvailable: false,
@@ -167,6 +180,21 @@ export function richOutlook(overrides: Partial<MageOutlook> = {}): MageOutlook {
     // `remainingCost` zero, because an applicable node is one she already knows
     // — there is no project left to pay for.
     applicableTargets: [target(61, 1, 0)],
+    // `remainingCost` zero for the same reason: practice has no project, only a
+    // mastery that is higher this month than last.
+    practiceTargets: [target(71, 1, 0)],
+    // `remainingCost` is ticks-before-lapse for this goal rather than a project
+    // cost — the full authored duration for a working not yet lit, which is what
+    // `24` is here. See `outlook.ts`.
+    sustainableTargets: [target(81, 1, 24)],
+    // **Deliberately not a shape the coordinating layer can produce.** An unlit
+    // candidate saturates `workingUrgency` at `fp(1024)` — `outlook.ts` says
+    // why — so a real outlook carrying a sustainable target never carries zero
+    // pressure. The pair is held apart here because the rich outlook's job is
+    // "every goal is feasible", and giving it maximal upkeep pressure would make
+    // every mask test in the file quietly a test about a rota. Nothing in this
+    // file asserts the two fields agree, and nothing should.
+    workingUrgency: 0,
     materials: 4096,
     scribeThroughput: 1024,
     betterAffiliationAvailable: true,

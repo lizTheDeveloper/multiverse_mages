@@ -13,10 +13,10 @@
  */
 
 /**
- * Before this file, nothing terminated a universe: every harness run ended
- * `truncated` and `ascensionRate` was 0 over a denominator of 0. A metric
- * cannot be a fraction of an undefined population, so "what ends a run" had to
- * be answered before the release's own claim could be measured.
+ * Before this file nothing terminated a universe: every harness run ended
+ * `truncated` and `ascensionRate` was 0 over a denominator of 0. A metric cannot
+ * be a fraction of an undefined population, so "what ends a run" had to be
+ * answered before the release's claim could be measured.
  *
  * ## Two paths, deliberately different in kind
  *
@@ -31,25 +31,25 @@
  * the ending available to a civilization that never produced a prodigy.
  *
  * A single condition would make one species archetype the only route to the
- * meta-game. `ascensionRateByPath` is reported separately for exactly this
- * reason: an aggregate inside the 5–20% band can conceal one path being dead.
+ * meta-game. `ascensionRateByPath` is reported separately for that reason: an
+ * aggregate inside the 5–20% band can conceal a dead path.
  *
  * ## Depth is relative to content, and there is no literal tier check anywhere
  *
- * Per-species depth ceilings mean tier 7 may be reachable by one species or by
- * none, and the v1 node graphs may contain no tier-7 node at all. A literal
- * condition would be unreachable in v1 content and would need rewriting every
- * time content changed. *"The deepest node present in this cell"* survives
- * retuning, and {@link deepestNodesByCell} is the whole of it.
+ * Per-species depth ceilings mean tier 7 may be reachable by one species or
+ * none, and the v1 node graphs may hold no tier-7 node at all. A literal
+ * condition would be unreachable in v1 content and would need rewriting on every
+ * content change. *"The deepest node present in this cell"* survives retuning,
+ * and {@link deepestNodesByCell} is the whole of it.
  *
  * ## Stagnation's third trigger is conjunctive, and that is the sharp part
  *
- * A perfect custodian — zero losses, every learnable node already learned —
- * acquires no new nodes either, because zero losses means there is nothing to
- * rediscover. A bare "no new node for 480 ticks" trigger would therefore
- * terminate as *ruin* the exact civilization Enduring Canon exists to reward,
- * and would do it at tick 480 when the path qualifies at tick 960. Stagnation
- * must mean decline, not completion, and only worship separates the two.
+ * A perfect custodian — zero losses, every learnable node learned — acquires no
+ * new nodes either, because zero losses leaves nothing to rediscover. A bare "no
+ * new node for 480 ticks" trigger would terminate as *ruin* the exact
+ * civilization Enduring Canon rewards, at tick 480, when the path qualifies at
+ * 960. Stagnation must mean decline, not completion, and only worship separates
+ * the two.
  */
 
 import type { Fixed } from '@mm/sim-core';
@@ -67,9 +67,9 @@ export type DeepestByCell = ReadonlyMap<number, number>;
  * The deepest node in each cell, by node tier, ties broken by ascending node id.
  *
  * Ties are broken rather than left ambiguous because the answer decides an
- * ascension condition, and two peers that disagreed about which of two tier-5
- * nodes counted would disagree about whether a run had ended. Node id is a
- * stable identity; the order a catalog happens to enumerate in is not.
+ * ascension condition: two peers disagreeing about which tier-5 node counted
+ * would disagree about whether a run ended. Node id is a stable identity; a
+ * catalog's enumeration order is not.
  */
 export function deepestNodesByCell(
   catalog: NodeCatalog,
@@ -106,6 +106,8 @@ export interface ApotheosisFacts {
   readonly cellOf: (nodeId: number) => number;
   readonly deepest: DeepestByCell;
   readonly worshipTier: number;
+  /** Universities standing at `buildProgress >= 1` right now. */
+  readonly completedUniversities: number;
 }
 
 /**
@@ -113,17 +115,18 @@ export interface ApotheosisFacts {
  * mage, and surviving in at least `copies` instances.
  *
  * A count rather than a boolean, and that is the whole of Path A's fix. The
- * shipped v1 rectangle is twelve cells holding fifty-one nodes, and a universe
- * the god never touches learns **all fifty-one of them** — so "some cell is at
- * its floor" is not an achievement, it is what a starting position converges to
- * on its own. Counting instead of testing turns the same predicate into a
+ * shipped v1 rectangle was twelve cells holding fifty-one nodes when this was
+ * written, and is all seventy holding 300 since `material-economy`; a universe
+ * the god never touches learns **every node the rectangle contains** — so "some
+ * cell is at its floor" is not an achievement, it is what a starting position
+ * converges to on its own. Counting instead of testing turns the same predicate into a
  * question about how much of the grid the god *opened*, because the thirteenth
  * mastered cell can only exist if a technique or a form was permitted that the
  * universe did not begin with.
  *
- * Iterating the deepest-by-cell map rather than the held set is deliberate: the
- * quantity is "cells at their floor", and a mage holding two summits would
- * otherwise be counted twice while a cell held by two mages counted once.
+ * Iterating the deepest-by-cell map rather than the held set is deliberate. The
+ * quantity is "cells at their floor"; over the held set a mage holding two
+ * summits would count twice and a cell held by two mages once.
  */
 export function masteredCellCount(facts: ApotheosisFacts, copies: number): number {
   let mastered = 0;
@@ -139,37 +142,58 @@ export function masteredCellCount(facts: ApotheosisFacts, copies: number): numbe
 /**
  * Whether the Apotheosis path is satisfied right now.
  *
- * Five conjuncts, and each is independently unlikely: a species with the depth
+ * Six conjuncts, and each is independently unlikely: a species with the depth
  * ceiling to reach a cell's deepest tier, a mage who lived long enough to climb
  * the whole prerequisite chain, the cell still permitted at the moment of
  * declaration, `ascension-summit-copies` surviving instances of a node that by
  * construction only one mage has ever held — that last one is why teaching or
- * scribing is a necessary step and not a nicety — and now
- * `ascension-summit-cells` cells in that state at once.
+ * scribing is a necessary step and not a nicety — `ascension-summit-cells`
+ * cells in that state at once, and `ascension-institutions` completed
+ * universities standing while all of that is true.
  *
- * **The cell count is the conjunct that reads play.** Worship tier does not:
- * it accrues from mages, universities and populace whether or not the god acts,
- * and a 2-D scan over the two authored knobs found the idle probe winning every
- * cell of the grid because of it. Raising the tier gate could not fix that —
- * `worship-tier-count` is 5, so the knob was already one step from its ceiling.
+ * **The cell count was supposed to be the conjunct that read play, and it is
+ * not.** Worship tier never was: it accrues from mages, universities and
+ * populace whether or not the god acts. But the cell count turned out to read
+ * the *ruleset* rather than the universe, because a permitted cell is driven to
+ * its floor autonomously — measured at n=400 in `integration-round-2-results.md`,
+ * `permit-then-idle` presses `permitTechnique` and `permitForm` for 140 of 2400
+ * ticks, submits an empty preference list for the remaining 2260, and wins
+ * **40 of 40**, beating `permissive-breadth`'s 38 of 40 which does the same
+ * *and* funds, dispenses and encourages. (W63's own paired arm, on different
+ * seeds, has `permissive-breadth` at 40 of 40 rather than 38; the two agree on
+ * the finding and disagree on one strategy's rate, and the committed figure is
+ * quoted here rather than restated as this branch's.)
+ * Every threshold over knowledge has that property, because the
+ * universe exhausts whatever it is permitted; raising one moves the tick the
+ * clock strikes and nothing else.
  *
- * At `ascension-summit-cells = 1` and `ascension-summit-copies = 2` this is
- * exactly the predicate that shipped before, which is what makes the change
- * bisectable against a moved balance number.
+ * **The university count is the conjunct that cannot be edited into existence.**
+ * It is an anchor to a cause rather than a calibrated number: the reference
+ * scenario seeds exactly one completed academy, the world loop founds no site,
+ * and `foundUniversity` is the only thing in the build that creates one — so
+ * the second is a fact about what the god bought. Construction finishing on its
+ * own since W29 does not weaken that, it is the shape of it: the god buys the
+ * site, the universe raises it, and the count lapses if the buildings do.
+ *
+ * At `ascension-summit-cells = 1`, `ascension-summit-copies = 2` and
+ * `ascension-institutions = 0` this is exactly the predicate that shipped
+ * originally, which is what keeps the change bisectable against a moved balance
+ * number.
  */
 export function apotheosisSatisfied(facts: ApotheosisFacts, constants: GodConstants): boolean {
   if (facts.worshipTier < constants.ascensionTierGate) return false;
+  if (facts.completedUniversities < constants.ascensionInstitutions) return false;
   return masteredCellCount(facts, constants.ascensionSummitCopies) >= constants.ascensionSummitCells;
 }
 
 /**
  * Whether the Enduring Canon path is satisfied.
  *
- * A run of consecutive passing era boundaries, not a count of good ones: the
- * spec's own scenario says that failing the fourth boundary means *"the
- * earliest era boundary that can still support it moves forward"*, which is a
- * run, and a tally of good-boundaries-ever would let a universe bank three good
- * eras, collapse, and coast to the ending on history.
+ * A run of consecutive passing boundaries, not a count of good ones: the spec's
+ * scenario says failing the fourth means *"the earliest era boundary that can
+ * still support it moves forward"*, which is a run. A tally of
+ * good-boundaries-ever would let a universe bank three good eras, collapse, and
+ * coast to the ending on history.
  */
 export function canonSatisfied(god: GodStateRecord, constants: GodConstants): boolean {
   return god.goodEraRun >= constants.ascensionEraCount;
@@ -182,10 +206,10 @@ export function qualifyingPath(
   worldTick: number,
   constants: GodConstants,
 ): number {
-  // The minimum tick gates *qualification*, not merely declaration, so that
-  // `ascensionFirstMetTick` records a moment the god could actually have acted
-  // on. A universe that satisfied Path A at tick 400 has not "first met" the
-  // condition at 400 in any sense the harness can use.
+  // The minimum tick gates *qualification*, not just declaration, so
+  // `ascensionFirstMetTick` records a moment the god could have acted on. A
+  // universe satisfying Path A at tick 400 has not "first met" the condition at
+  // 400 in any sense the harness can use.
   if (worldTick < constants.ascensionMinTick) return ASCENSION_PATH.none;
   if (apotheosisSatisfied(facts, constants)) return ASCENSION_PATH.apotheosis;
   if (canonSatisfied(god, constants)) return ASCENSION_PATH.canon;
@@ -202,6 +226,8 @@ export interface EraBoundaryFacts {
   readonly dependence: Fixed;
   /** Nodes that left the universe during the era now ending. */
   readonly eraNodesLost: number;
+  /** Universities standing at `buildProgress >= 1` at the boundary. */
+  readonly completedUniversities: number;
 }
 
 /**
@@ -209,20 +235,21 @@ export interface EraBoundaryFacts {
  * whichever is larger.
  *
  * **A flat cap over a quantity that scales measures scale, not custodianship.**
- * Measured on this build: a universe the god never touches holds 51 nodes and
- * loses zero per era, while one that permitted most of the grid holds 220 and
- * loses seven — so an absolute allowance of two disqualified the civilization
+ * Measured when the enabled subset was twelve cells: a universe the god never
+ * touches held 51 nodes and lost zero per era, while one that permitted most of
+ * the grid held 220 and lost seven — so an absolute allowance of two
+ * disqualified the civilization
  * that was actually doing something and waved through the one in stasis. That
  * is the inverted sign this change exists to correct, and no setting of the
  * authored constant corrects it, because the number that should move with the
  * canon's size was not a function of it.
  *
- * `ascension-loss-max` is retained as the floor so that a small canon is not
- * handed a free loss by the fraction rounding to zero, and so the authored
- * constant keeps meaning what it meant.
+ * `ascension-loss-max` stays as the floor, so a small canon is not handed a free
+ * loss by the fraction rounding to zero and the authored constant keeps meaning
+ * what it meant.
  *
  * Integer arithmetic throughout: `floorDiv` over fixed point at 1/1024, never a
- * float and never a rounding mode that depends on the platform.
+ * float and never a platform-dependent rounding mode.
  */
 export function lossAllowance(nodesKnown: number, constants: GodConstants): number {
   const scaled = floorDiv(Math.max(nodesKnown, 0) * constants.ascensionLossFraction, FP_ONE);
@@ -232,17 +259,16 @@ export function lossAllowance(nodesKnown: number, constants: GodConstants): numb
 /**
  * Whether one era boundary passes — the conjunction Path B counts runs of.
  *
- * Four conjuncts, and the first two are the fix. As shipped, the test asked only
- * that dependence was low and losses few, both of which are *absences*: a
- * universe nobody touches has no single-copy nodes and loses nothing, so **doing
- * nothing was perfect custodianship** and Path B opened passively around tick
- * 1080. Vision §8a's second summit is *"a civilization that has held its
- * knowledge intact across enough eras"*, and holding fifty-one nodes that nobody
- * reads is not what that sentence is about.
+ * Four conjuncts; the first two are the fix. As shipped, the test asked only for
+ * low dependence and few losses, both *absences*: a universe nobody touches has
+ * no single-copy nodes and loses nothing, so **doing nothing was perfect
+ * custodianship** and Path B opened passively around tick 1080. Vision §8a's
+ * second summit is *"a civilization that has held its knowledge intact across
+ * enough eras"*, and holding fifty-one nodes nobody reads is not that.
  *
  * So a passing boundary now also requires a canon of a stated size, spread over
  * a stated number of cells. Both are anchored to the *passive baseline* rather
- * than to any strategy's score — the starting rectangle is twelve cells holding
+ * than to any strategy's score — the starting rectangle was twelve cells holding
  * fifty-one nodes and an unattended universe learns every one of them, so those
  * two numbers are the game's own autonomous ceiling and the constants are
  * multiples of them.
@@ -254,11 +280,27 @@ export function lossAllowance(nodesKnown: number, constants: GodConstants): numb
  * the number of single-copy nodes and pushes back on the dependence ceiling.
  * Three axes that cannot all be maximised at once is the difference between a
  * summit and a counter.
+ *
+ * **The three axes turned out to be one, and the fourth conjunct is the
+ * repair.** All three read knowledge, and a universe drives knowledge to the
+ * ceiling of whatever the ruleset permits without the god doing anything after
+ * the permitting: measured at n=400, `permit-then-idle` ends a run holding 258
+ * nodes across 70 cells with `libraryDependence` at zero and nothing lost, on a
+ * policy of two buttons for 140 ticks and silence for 2260. Anchoring higher
+ * would have moved the tick it passed, not whether it passed. So a passing
+ * boundary now also requires `ascension-institutions` completed universities
+ * standing *at that boundary* — the one quantity in either path that no edit to
+ * the ruleset produces, because the world loop founds no site and
+ * `foundUniversity` is the only thing that does. Path B counts a **run** of
+ * boundaries, so this is a standing requirement across eras rather than a
+ * purchase made once: §8a's *"held its knowledge intact"* now needs somewhere
+ * that holds it.
  */
 export function eraBoundaryPassed(facts: EraBoundaryFacts, constants: GodConstants): boolean {
   return (
     facts.nodesKnown >= constants.ascensionCanonBreadth &&
     facts.cellsKnown >= constants.ascensionCanonCells &&
+    facts.completedUniversities >= constants.ascensionInstitutions &&
     facts.dependence <= constants.ascensionDependenceMax &&
     facts.eraNodesLost <= lossAllowance(facts.nodesKnown, constants)
   );
@@ -290,9 +332,9 @@ export interface StagnationOutcome {
  * Advances the three stagnation clocks and reports whether any has run out.
  *
  * Each counter resets to zero the moment its condition stops holding, because
- * every trigger is about a *consecutive* run: a universe that spends alternate
- * decades mageless and thriving is not dying, and a counter that only ever
- * increased would eventually terminate every long run regardless of health.
+ * every trigger is a *consecutive* run: a universe alternating decades between
+ * mageless and thriving is not dying, and a counter that only increased would
+ * eventually terminate every long run regardless of health.
  */
 export function stepStagnation(
   god: GodStateRecord,
@@ -303,7 +345,7 @@ export function stepStagnation(
   const lowWorshipTicks =
     inputs.worship < constants.stagnationWorshipFloor ? god.lowWorshipTicks + 1 : 0;
   // The conjunctive one. The clock runs only while the universe is *both*
-  // acquiring nothing and unworshipped; a healthy custodian with a completed
+  // acquiring nothing and unworshipped, so a healthy custodian with a completed
   // graph resets it every tick and is never terminated as ruin.
   const stasisTicks =
     !inputs.nodeEntered && inputs.worship < constants.stagnationHealthFloor
@@ -331,14 +373,14 @@ export interface PrestigeInputs {
  *
  * A base per outcome plus three saturating achievement terms, clamped to
  * `PRESTIGE_EARN_MAX`. **Every outcome earns something non-zero**, including a
- * universe that stagnated at tier 1 in era 1 — a zero floor makes a losing
- * streak spiral toward zero carried prestige, which is the runaway-leader
- * failure wearing the opposite sign.
+ * universe that stagnated at tier 1 in era 1 — a zero floor spirals a losing
+ * streak toward zero carried prestige, the runaway-leader failure with the sign
+ * flipped.
  *
- * Written at termination and applied to the *next* universe's `prestige`, never
- * to the terminating one: §1.1 makes `prestige` read-only during a run, and a
- * run that could raise its own carried prestige mid-flight would be the
- * meta-game feeding the loop it is supposed to sit outside.
+ * Written at termination, applied to the *next* universe's `prestige`, never the
+ * terminating one: §1.1 makes `prestige` read-only during a run, and a run that
+ * could raise its own carried prestige mid-flight would be the meta-game feeding
+ * the loop it sits outside.
  */
 export function prestigeEarned(inputs: PrestigeInputs, constants: GodConstants): Fixed {
   const base =
@@ -362,39 +404,36 @@ export function prestigeEarned(inputs: PrestigeInputs, constants: GodConstants):
  * The carry-over recurrence: `prestige' = min(cap, prestige × retention +
  * earned)`.
  *
- * The clamp is retained as a defence against a content bug that raises the
- * earning ceiling, and is otherwise unreachable: the content loader asserts
- * `cap × (fp(1024) − retention) == earnMax × fp(1024)`, which makes `cap` the
+ * The clamp defends against a content bug raising the earning ceiling, and is
+ * otherwise unreachable: the loader asserts
+ * `cap × (fp(1024) − retention) == earnMax × fp(1024)`, making `cap` the
  * analytic limit of the recurrence at maximum earning. An infinite streak of
- * perfect runs approaches it asymptotically and never exceeds it, and the tenth
+ * perfect runs approaches it asymptotically and never exceeds it; the tenth
  * consecutive ascension adds a few percent over the fifth.
  *
- * ## Staged ahead of its consumer, and the consumer is a run boundary
+ * ## Its consumer is a run boundary, and the run boundary now exists
  *
- * **Nothing in this repository calls this function, and that is a statement
- * about what the simulation does not yet have rather than about this file.**
- * `check:reachability` reports it, and the report is correct.
+ * This function was staged ahead of its caller for months and the header here
+ * used to say so — *"nothing in this repository calls this function"*, plus the
+ * design of the layer that would. **That layer is built:**
+ * `scenario/src/legacy.ts`'s `legacyRecordOf` reads the ending off the universe
+ * row, calls this to close the recurrence, converts the result through
+ * {@link legacyGrant}, and emits a serialisable `LegacyRecord`; `seedLegacy`
+ * spends that record into the next universe's tick-zero state, and
+ * `buildReferenceState` writes the carried figure into `UNIVERSE.prestige`.
  *
- * The recurrence needs two runs to relate. Half of the seam exists: `system.ts`
- * writes `prestigeEarned` onto the universe row once, at termination, exactly
- * as the gloss above describes. The other half does not. Nothing reads that
- * field back, because **nothing starts a successor universe** — `scenario`'s
- * `buildReferenceState` composes one universe with `prestige: 0` and `step()`s
- * it to a tick cap, and `agent-api`'s session has no successor lifecycle. A
- * grep for a write of a non-zero `prestige` anywhere in `packages/` returns
- * nothing.
+ * It lives **above `step()`**, exactly as the old header specified it should:
+ * §1.1 makes `prestige` read-only for a run's length, so a universe raising its
+ * own carried prestige mid-flight would be the meta-game feeding the loop it
+ * sits outside. It is a *run-to-run artifact* rather than a within-run loop,
+ * because §1.1 also puts one universe in one simulation instance — there is no
+ * second universe for a tick to write into.
  *
- * So the missing thing is a **succession layer above the world step**: something
- * that, on `terminalReason !== none`, reads `prestigeEarned`, calls this, and
- * builds the next universe's tick-zero state through {@link legacyGrant}. It
- * belongs above `step()` because §1.1 makes `prestige` read-only for the length
- * of a run — a universe that could raise its own carried prestige mid-flight
- * would be the meta-game feeding the loop it exists to sit outside.
- *
- * **That layer is a change of its own, with its own spec.** It is deliberately
- * not invented here: a succession seam built as a side effect of silencing a
- * reachability finding would be a mechanic nobody designed, and unwinding one
- * later costs more than the finding does now.
+ * The half of the seam that was always here is unchanged: `system.ts` writes
+ * `prestigeEarned` onto the row once, at termination, and that write is what
+ * the succession layer reads. The one thing it cannot write is the **cutoff**
+ * ending, because no tick knows it is the last one; `legacyRecordOf` takes that
+ * from its caller.
  */
 export function carriedPrestige(
   prestige: Fixed,
@@ -410,12 +449,11 @@ export function carriedPrestige(
 /**
  * The legacy budget carried prestige converts into: `sat(prestige, cap, half)`.
  *
- * Concave on top of a convergent accumulation — two damping stages in series is
- * what makes the meta-game's ceiling a property rather than a tuning accident.
- * At the prestige cap the budget reaches about `fp(819)` of a possible
- * `fp(1024)`, and at half the cap about `fp(682)`, so the back half of the
- * prestige range is nearly worthless and a long winning streak buys very little
- * over a short one.
+ * Concave on top of a convergent accumulation — two damping stages in series
+ * make the meta-game's ceiling a property rather than a tuning accident. At the
+ * prestige cap the budget reaches about `fp(819)` of a possible `fp(1024)`, at
+ * half the cap about `fp(682)`, so the back half of the prestige range is nearly
+ * worthless and a long winning streak buys little over a short one.
  */
 export function legacyBudget(prestige: Fixed, constants: GodConstants): Fixed {
   const x = Math.max(prestige, 0);
@@ -438,18 +476,16 @@ export interface LegacyGrant {
   /**
    * The deepest node tier a seeded instance may be — `legacy-archive-max-tier`.
    *
-   * Carried in the grant rather than left for the seeder to look up, because the
-   * count above is meaningless without it and the two were separated once
-   * already: `archiveNodes` shipped with a gloss promising *"at or below the
-   * authored tier"* while the tier itself was resolved into `GodConstants` and
-   * read by nothing, so the promise was made in a comment and kept nowhere. A
-   * seeder handed only a count would have to re-derive the bound, and a seeder
-   * that forgot would let a legacy seed the summit — which the constant's own
-   * gloss names as the failure it exists to prevent: *"prestige buying the
-   * ascension condition."*
+   * Carried in the grant rather than left for the seeder to look up: the count
+   * above is meaningless without it, and the two were separated once already —
+   * `archiveNodes` shipped promising *"at or below the authored tier"* while the
+   * tier resolved into `GodConstants` and was read by nothing, a promise made in
+   * a comment and kept nowhere. A seeder handed only a count re-derives the
+   * bound, and one that forgot would let a legacy seed the summit — the failure
+   * the constant's own gloss names: *"prestige buying the ascension condition."*
    *
-   * Not a magnitude this function computes. It is passed through unchanged, so
-   * that the one place a retune has to happen stays `god-constant.json`.
+   * Not computed here. Passed through unchanged, so the one place a retune
+   * happens stays `god-constant.json`.
    */
   readonly archiveMaxTier: number;
 }
@@ -458,56 +494,48 @@ export interface LegacyGrant {
  * Converts carried prestige into starting stocks.
  *
  * **Stocks, never rates, and the distinction is the whole model.** In a game
- * with two compounding loops a rate bonus is fed through both for the entire
- * run and its advantage *grows* with run length — which is exactly the
- * meta-game deciding matches before they start. A stock is spent, consumed,
- * aged out, or looted, so its advantage *decays*. Putting the seeded archive in
- * an ordinary library is the sharpest version of that: the head start is not
- * merely perishable, it is a target.
+ * with two compounding loops a rate bonus feeds through both for the whole run
+ * and its advantage *grows* with run length — the meta-game deciding matches
+ * before they start. A stock is spent, consumed, aged out or looted, so its
+ * advantage *decays*. The seeded archive in an ordinary library is the sharpest
+ * version: the head start is not merely perishable, it is a target.
  *
- * Each channel is `channelMax × budget / fp(1024)`, where `channelMax` is
+ * Each channel is `channelMax × budget / fp(1024)`, `channelMax` being
  * `LEGACY_HEADSTART_FRACTION` of the median unaided universe's value for that
- * channel at the reference tick. That single fraction is the only knob
- * `prestigeAdvantage` turns, and if it reaches zero and the metric still fails,
- * the model is wrong and gets redesigned rather than retuned.
+ * channel at the reference tick. That fraction is the only knob
+ * `prestigeAdvantage` turns; if it reaches zero and the metric still fails, the
+ * model is wrong and gets redesigned rather than retuned.
  *
- * ## Staged ahead of its consumer, for the same reason {@link carriedPrestige} is
+ * ## Its caller, and where the three open decisions were made
  *
- * Nothing calls this, and `check:reachability` reports it together with the five
- * constants only it reads — `legacy-archive-nodes`, `legacy-headstart-fraction`,
- * and the three `legacy-baseline-*`. They inherit this function's answer rather
- * than having one of their own.
+ * `scenario/src/legacy.ts`'s `legacyRecordOf` calls this, for the same reason
+ * it calls {@link carriedPrestige}: a grant is a **tick-zero starting position
+ * for a universe that does not exist yet**, so its caller has to be the thing
+ * that ends one run and founds the next.
  *
- * A grant is a **tick-zero starting position for a universe that does not exist
- * yet**, so its caller is the succession layer described on
- * {@link carriedPrestige}: the thing that ends one run and founds the next.
+ * This header used to list three seeding decisions as deliberately unmade, on
+ * the argument that inventing them to manufacture a call site would be
+ * inventing the mechanic. They are made now, in the layer a starting position
+ * belongs to, and each is argued where it is made rather than here:
  *
- * Note what that caller still has to decide, none of which is settled here and
- * none of which is mechanical:
+ * - **`materials` is one figure and `MATERIAL_STOCK` has more than one field.**
+ *   Split evenly, driven off `Object.keys(MATERIAL_STOCK.fields)` so the split
+ *   is a property of the component rather than a list somebody typed —
+ *   `splitLegacyMaterials`.
+ * - **`populace` is a headcount and a cohort is keyed by `(speciesId,
+ *   occupation, birthTickBucket)`.** The heads join the cohorts the scenario
+ *   already founded, round-robin by ascending handle, so §1.3's one-entity-per-key
+ *   rule holds and no birth bucket is invented — `seedLegacy`.
+ * - **`archiveNodes` cannot be placed as bare instances.** They are shelved as
+ *   written copies with a paired `GRIMOIRE`, at `SCRIBE_DURABILITY_BASE` — what
+ *   the live scribing path produces at unit affinity before its roll, so no new
+ *   magnitude enters the game — `shelveArchive`.
  *
- * - **`materials` is one figure and `MATERIAL_STOCK` has three fields** — food,
- *   stone and vellum. Splitting it three ways, weighting it, or giving each
- *   field the whole figure are three different starting positions.
- * - **`populace` is a headcount, and a cohort is keyed by `(speciesId,
- *   occupation, birthTickBucket)`** with `contracts.md` §1.3 requiring exactly
- *   one entity per key. So the heads either join existing cohorts — changing the
- *   species and occupation mix — or found new ones, which needs a birth bucket
- *   nobody has chosen.
- * - **`archiveNodes` cannot be placed as bare instances.** A written copy at
- *   `LOCATION_KIND.library` requires a paired `GRIMOIRE` row whose `holderKind`
- *   and `holderId` agree with it — `KnowledgeSubsystem.createInstance` throws
- *   otherwise — so seeding an archive means authoring book durability, which is
- *   a magnitude no constant here supplies.
- *
- * Those are seeding decisions with balance consequences, and inventing them to
- * give this function a call site would be inventing the mechanic.
- *
- * The three `legacy-baseline-*` values are additionally **placeholders their own
- * glosses disown** — *"a measurement that has not been taken"* — pinned to
- * `legacy-reference-tick`. Until a `prestigeAdvantage` sweep replaces them, this
- * function is correct arithmetic over numbers nobody has measured, which is a
- * second and independent reason not to wire it to anything that reports a
- * balance figure.
+ * The three `legacy-baseline-*` values remain **placeholders their own glosses
+ * disown** — *"a measurement that has not been taken"* — pinned to
+ * `legacy-reference-tick`. Wiring the mechanic does not make them measurements,
+ * and a `LegacyRecord` therefore carries `baselineReferenceTick` as provenance
+ * so that a head start taken from them can be located in time and disproved.
  */
 export function legacyGrant(prestige: Fixed, constants: GodConstants): LegacyGrant {
   const budget = legacyBudget(prestige, constants);

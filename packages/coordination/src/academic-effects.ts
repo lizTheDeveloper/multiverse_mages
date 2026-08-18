@@ -35,8 +35,11 @@
  * Because the content does not say `universe`. Across the shipped grid these
  * three primitives are authored at **personal** targets and almost nowhere else:
  * `research-rate` 45× at `self`, `scribe-rate` 19× at `self`, `teach-rate` 19×
- * at `single`. Inside the twelve v1 cells the split is total — every one of the
- * sixteen is `self` or `single`.
+ * at `single`. Inside the twelve cells that were enabled when this was written
+ * the split was total — every one of the sixteen `self` or `single`. All seventy
+ * are enabled since `material-economy`, so the count above is now the whole of
+ * what a mage can reach; the routing argument below is unchanged, because it is
+ * about what a *target* means and not about how many cells are open.
  *
  * A personal target is a per-mage question, and the economy's is a per-universe
  * one. Routing these through `universeEconomyBonuses` would have made one
@@ -122,6 +125,7 @@ import type { Fixed, SimState } from '@mm/sim-core';
 import { TIME_MODE } from '@mm/sim-core';
 import type { CellResolver, ConsumptionRecorder, EffectSourceInstance } from '@mm/rules-magic';
 import { gatherEffects } from '@mm/rules-magic';
+import { standingWorkingsOf } from './standing-workings.js';
 import type { Handle, Ruleset } from '@mm/state';
 import { KNOWLEDGE_INSTANCE, LOCATION_KIND, collectRecords } from '@mm/state';
 
@@ -304,6 +308,7 @@ export function academicRateBonuses(
     const held = byMage.get(row.locationId);
     const instance: EffectSourceInstance = {
       nodeId: row.nodeId,
+      holder: row.locationId,
       locationKind: row.locationKind,
       mastery: row.mastery,
     };
@@ -320,6 +325,9 @@ export function academicRateBonuses(
       ruleset: deps.ruleset,
       mode: TIME_MODE.world,
       cellOf: (nodeId: ContentId) => deps.cells.cellOf(nodeId),
+      // See `universe-effects.ts`: a duration-bearing effect reaches a mage's
+      // own rates only while she is keeping the working up.
+      standing: standingWorkingsOf(state),
     });
 
     let held: MageMagnitudes | undefined;
@@ -331,14 +339,20 @@ export function academicRateBonuses(
       // loader refuses to author one at all, so this is a guard against a
       // hand-built registry rather than against the shipped grid.
       //
-      // **A negative one is a cost and belongs here.** This filter read
-      // `<= 0` for as long as `node.schema.json` said `"minimum": 1` — under
-      // which the two conditions were indistinguishable, so the wider one was
-      // free. It is not free now: dropping a negative here would let a node
-      // author a teaching cost that validates, ships, reads correctly in its
-      // gloss and moves no number, which is the same defect this module was
-      // written to end, one sign over. `stackMagnitudes` floors the `(1 + Σ)`
-      // at zero, so what arrives downstream is bounded whatever the sum is.
+      // **Zero, not non-positive — a negative one is a cost, and it belongs
+      // here.** This filter read `<= 0` for as long as `node.schema.json` said
+      // `"minimum": 1`, under which the two conditions were indistinguishable
+      // and the wider one was free. It is not free now: a negative magnitude is
+      // a node expressing a *cost*, which is the whole point of signed
+      // magnitudes, and dropping it here would let a node author a teaching
+      // cost that validates, ships, reads correctly in its gloss and moves no
+      // number — the exact "reads as a rule and behaves as a comment" failure
+      // `check:consumption` exists to catch, reintroduced one layer up.
+      //
+      // The floor that keeps a stacked rate sane belongs in `@mm/primitives`,
+      // where every consumer shares one, rather than in each consumer inventing
+      // its own: `stackMagnitudes` floors the `(1 + Σ)` at zero, so what arrives
+      // downstream is bounded whatever the sum is.
       if (contribution.magnitude === 0) continue;
       contributingNodes += 1;
       if (held === undefined) {

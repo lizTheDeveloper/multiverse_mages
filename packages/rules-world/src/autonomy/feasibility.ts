@@ -24,33 +24,31 @@ import type { MageOutlook } from './outlook.js';
  * 'chooses' it, nothing happens, and a whole career quietly evaporates into a
  * goal that could never complete."*
  *
- * The masked form has the property the penalty form lacks — infeasibility
- * becomes a *state you can count* rather than a behaviour you have to infer
- * from an output that looks like idleness. {@link maskGoals} therefore returns
- * the count alongside the set, and the count is not optional: the
- * `mage-autonomy` spec makes "the number of goals masked as infeasible is
- * recorded for that evaluation and is reportable in aggregate" a requirement,
- * and a counter nobody is forced to take is a counter nobody takes.
+ * Masking gives what the penalty lacks: infeasibility becomes a *state you can
+ * count*, not a behaviour inferred from output that looks like idleness. So
+ * {@link maskGoals} returns the count beside the set, and not optionally — the
+ * `mage-autonomy` spec requires it *"recorded for that evaluation and
+ * reportable in aggregate"*, and a counter nobody is forced to take is a
+ * counter nobody takes.
  *
- * This mirrors `contracts.md` §4.2's legality mask deliberately, so that the
- * agent-facing action space and the mage-facing goal space fail the same way.
+ * Mirrors `contracts.md` §4.2's legality mask deliberately, so the agent-facing
+ * action space and the mage-facing goal space fail the same way.
  *
  * ## `idle` is never masked
  *
- * It is the reason there is no "no goal selected" branch anywhere. The argmax
- * over a set that always contains `idle` is total, and a mage with nothing to
- * do is a mage doing `idle` rather than a mage in an undefined state. Asserted
- * rather than assumed — {@link maskGoals} refuses to return a set without it.
+ * Why there is no "no goal selected" branch anywhere: an argmax over a set that
+ * always contains `idle` is total, and a mage with nothing to do is doing
+ * `idle`, not in an undefined state. Asserted, not assumed — {@link maskGoals}
+ * refuses to return a set without it.
  *
  * ## Depth gating happens before this module, not in it
  *
- * The `species-traits` spec requires a node above a species' `depthCeiling` to
- * be infeasible "at any rate", and the `mage-autonomy` spec repeats it for
- * `research-node` and `seek-teaching`. It is enforced in `candidates.ts`, where
- * the frontier is filtered as it is gathered, so an over-deep node never
- * reaches an outlook at all. Filtering here instead would leave the tempting
- * shape — a scoring path that can see a target it must not select — one edit
- * away from being wrong.
+ * `species-traits` requires a node above a species' `depthCeiling` infeasible
+ * *"at any rate"*; `mage-autonomy` repeats it for `research-node` and
+ * `seek-teaching`. Enforced in `candidates.ts`, filtering the frontier as it is
+ * gathered, so an over-deep node never reaches an outlook. Filtering here would
+ * leave the tempting shape — a scoring path that can see a target it must not
+ * select — one edit from being wrong.
  */
 
 /** The feasible goals for one mage, and what masking removed to get there. */
@@ -71,10 +69,10 @@ function anyOf(targets: readonly KnowledgeTarget[]): boolean {
 /**
  * The cheapest thing in a candidate list, or `undefined` for an empty one.
  *
- * Cheapest rather than first because affordability is what `scribe`'s mask
- * turns on — the `mage-autonomy` spec says `scribe` is masked when materials
- * are "below the cost of the cheapest available scribing", so a mage with one
- * affordable option and twenty expensive ones is not masked.
+ * Cheapest, not first: `scribe`'s mask turns on affordability — `mage-autonomy`
+ * masks it when materials are *"below the cost of the cheapest available
+ * scribing"* — so one affordable option among twenty expensive ones is not
+ * masked.
  */
 function cheapest(targets: readonly KnowledgeTarget[]): KnowledgeTarget | undefined {
   let best: KnowledgeTarget | undefined;
@@ -87,9 +85,9 @@ function cheapest(targets: readonly KnowledgeTarget[]): KnowledgeTarget | undefi
 /**
  * Whether one goal is feasible for one mage right now.
  *
- * Exported so a test can ask about a single goal without reconstructing the
- * whole outcome, and so `select.ts` can re-ask about the incumbent alone when
- * deciding whether commitment has been interrupted.
+ * Exported so a test can ask about one goal without rebuilding the whole
+ * outcome, and so `select.ts` can re-ask about the incumbent alone when
+ * deciding whether commitment was interrupted.
  */
 export function isFeasible(goal: GoalId, outlook: MageOutlook): boolean {
   switch (goal) {
@@ -123,13 +121,33 @@ export function isFeasible(goal: GoalId, outlook: MageOutlook): boolean {
     case GOAL.raidReadiness:
       return true;
     case GOAL.applyMagic:
-      // A mage with nothing castable that the world can feel has nothing to
-      // apply. The list is already filtered — held at mind or palace, at or
-      // above the activation threshold, in a permitted cell, carrying a
-      // `resource-yield` effect whose form routes to a material — because every
-      // one of those is a question this package may not ask (`contracts.md` §5
-      // rule 3) and the coordinating layer answers them all in one pass.
+      // Nothing castable the world can feel, nothing to apply. The list is
+      // already filtered — mind or palace, at or above the activation
+      // threshold, permitted cell, `resource-yield` effect whose form routes to
+      // a material — because each is a question this package may not ask
+      // (`contracts.md` §5 rule 3), answered by the coordinating layer in one
+      // pass.
       return anyOf(outlook.applicableTargets);
+    case GOAL.practice:
+      // A mage with nothing left to perfect has nothing to practise. The list
+      // is already filtered by the coordinating layer to nodes she holds, in
+      // cells permitted now, whose mastery is **below** what `practiceCeiling`
+      // allows her — so a month of practice is never a month spent on a node
+      // that cannot improve. Every one of those is again a question this
+      // package may not ask (`contracts.md` §5 rule 3).
+      return anyOf(outlook.practiceTargets);
+    case GOAL.sustainWorking:
+      // A mage with no duration-bearing node she can cast has no working to
+      // light and none to renew. The list is already filtered by the
+      // coordinating layer — held, permitted now, at or above the activation
+      // threshold, and authored with a non-zero `durationTicks` — every one of
+      // which is a question this package may not ask (`contracts.md` §5 rule 3).
+      //
+      // **Feasibility here is deliberately *not* "a working stands".** Requiring
+      // one would make lighting the first working impossible: nobody could ever
+      // sustain what nobody had ever lit, and the goal would be masked in every
+      // universe forever while looking perfectly well wired.
+      return anyOf(outlook.sustainableTargets);
     default:
       throw new RangeError(
         `${String(goal)} is not a goal id; the registry in goals.ts is append-only and this ` +
@@ -141,10 +159,9 @@ export function isFeasible(goal: GoalId, outlook: MageOutlook): boolean {
 /**
  * Masks every goal the mage cannot currently pursue.
  *
- * @throws Error if `idle` came out infeasible, which cannot happen through
- * {@link isFeasible} and would mean somebody has given the argmax an empty set
- * to work over. Thrown rather than repaired: a silently repaired invariant is
- * one that stops being an invariant.
+ * @throws Error if `idle` came out infeasible — impossible through
+ * {@link isFeasible}, and it would mean the argmax was handed a possibly empty
+ * set. Thrown, not repaired: a silently repaired invariant stops being one.
  */
 export function maskGoals(outlook: MageOutlook): FeasibilityOutcome {
   const feasible: GoalId[] = [];

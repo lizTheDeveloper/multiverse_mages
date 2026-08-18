@@ -54,7 +54,7 @@
  */
 
 import type { EntityHandle, Fixed, SimState } from '@mm/sim-core';
-import { FP_ONE } from '@mm/sim-core';
+import { FP_ONE, floorDiv } from '@mm/sim-core';
 import type { ContentId, PrimitiveRecord } from '@mm/content';
 import type { OccupationValue, UniversityRecord } from '@mm/state';
 import {
@@ -73,6 +73,7 @@ import { ClampCounters } from '@mm/primitives';
 import { CohortStore } from '../../src/populace/cohort-store.js';
 import {
   advanceConstruction,
+  DEGRADATION_PER_SHORTFALL,
   applyLibraryUpkeep,
   createUniversity,
   admitStudents,
@@ -360,7 +361,14 @@ export function runUniversity(options: UniversityRunOptions): Institution {
     const upkeep = applyLibraryUpkeep([{ handle: library, depth }], materials);
     materials = upkeep.materialsRemaining;
     const shortfall = upkeep.outcomes[0]?.shortfall ?? 0;
-    const degraded = upkeep.outcomes[0]?.degradedInstances ?? 0;
+    // `UpkeepOutcome` stopped reporting an instance count when `w23` made
+    // degradation depend on each book's `durability` — the pricing moved to
+    // `gateway.degradeLibrary`, which needs the grimoire rows this harness does
+    // not build. At the reference affinity a book costs exactly
+    // `DEGRADATION_PER_SHORTFALL`, which is the flat price the old field
+    // charged, so this reproduces the number the harness has always reported
+    // and is labelled as a reference-durability figure rather than a general one.
+    const degraded = floorDiv(shortfall, DEGRADATION_PER_SHORTFALL);
     upkeepShortfallTotal += shortfall;
     degradedInstancesTotal += degraded;
 

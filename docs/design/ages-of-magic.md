@@ -191,8 +191,109 @@ same hours competing. That makes the allocation in §2b sharper still: a mage se
 researching, not on the wall, **and not maintaining her own frontier**. Publish or perish is what the
 clock is doing to her while she does any of the other three.
 
-**Open, and it is the first thing to build from this document:** whether *publish* is its own
-operation, or a side effect of research and teaching. Making it a side effect is cheaper and means a
+### RULED: a new spell is the publication, and teaching is what makes it possible
+
+The author, closing the open question below:
+
+> *"I learn a lot by teaching. I learn new stuff and it keeps the fundamentals fresh — **it's what
+> informs my research into new spells.** Research into new spells is publish. **New spell =
+> publish.**"*
+
+So the loop, and every arrow in it already exists in the game except the last:
+
+    teach the fundamentals  ->  the fundamentals stay fresh
+                            ->  fresh fundamentals inform research at the frontier
+                            ->  research yields a new spell
+                            ->  THE NEW SPELL IS THE PUBLICATION
+                            ->  standing maintained
+                            ->  and standing is what lets you teach
+
+**Publish or perish, exactly: the publication is a new node, and a scholar who has not produced one
+in long enough loses the standing to supervise.** That is what a mastery below the teach threshold
+*means*. The 93.4% are not people who forgot things — they are **faculty who have not had a new
+result in twenty years**, which is both funnier and more accurate.
+
+Two consequences, and the second reverses something this document said an hour ago:
+
+**Mastery is maintained by use, and there are two uses.** Teaching what you know keeps *those* nodes
+fresh — it is the prerequisites, the low tiers, the fundamentals, which is exactly the mass that
+marooning eats. Discovering what you do not know is the other, and it is the one that counts for
+standing. A scholar who only teaches still perishes; a scholar who tries to research on stale
+fundamentals cannot reach the frontier. **You need both, which is the academic life stated as a
+resource loop.**
+
+**Teaching is an input to research, not a subtraction from it.** §2b calls the stationed set the
+tightest coupling in the design, because a mage set to teach is not researching and not on the wall.
+The first half of that is now wrong: **teaching feeds research.** The wall still competes. So the
+real tension is not three-way — it is *teach-and-research* against *defend*, and defending is the
+only thing that is purely a cost.
+
+### Which finally says what a college is *for*, mechanically
+
+§2 argued a college compresses a novice's passage through the known. True, and secondary. The real
+function:
+
+> **The faculty need the students.** Teaching the first age is what keeps a scholar's fundamentals
+> live enough to research the third.
+
+Students are not the product. **They are the mechanism.** That is a far better argument for §2a than
+throughput ever was — a lone genius in a tower cannot reach the third age not because she is slow,
+but because she has nobody to teach and her fundamentals go stale underneath her.
+
+And it preserves §3b's amendment rather than undoing it: the requirement is **teaching**, not an
+institution. A master with one apprentice satisfies the loop. That is precisely the *"slow, fragile,
+attrition-based"* alternative road — one death ends it — while a college is the industrial form of the
+same mechanism.
+
+### It also puts a joke inside paced teaching
+
+Under §2e a mismatched student repeats a class several times. Every repetition is another pass over
+the fundamentals **for the teacher**. So a dragon sitting a human's brisk class four times is a mild
+inconvenience to the dragon and **four reinforcements for the human** — mismatched pairs are lossy for
+the student and *good* for the teacher, which is a tension worth having and is also how it actually
+works.
+
+### RULED: discovery refreshes only the new node — the frontier is detached from the base
+
+> *"I think it's detached. ML doesn't make you better at git or programming necessarily."*
+
+**Research refreshes what you researched and nothing underneath it.** A scholar working at the
+frontier keeps her standing *there* and lets everything she climbed through go stale.
+
+That is true to life and it is the harsher of the two readings, and taking it produces the trap the
+whole design needed:
+
+    publish at the frontier   ->  standing at the frontier maintained
+    stop teaching             ->  the fundamentals maroon underneath you
+                              ->  you can no longer teach them
+                              ->  and new research needs fresh fundamentals
+                              ->  so you can no longer extend your own specialty
+
+**A specialist who stops teaching eventually cannot advance her own subject.** Not through
+punishment, and not through a decay number someone tuned — through the same mechanism that produced
+the measured 93.4%, pointed at the person who is doing the most impressive work in the building.
+
+Three things fall out, and each one closes something that was open:
+
+**Knowledge does not decay uniformly. It decays by disuse**, and there are exactly two uses — teaching
+the fundamentals and researching the frontier. So a deep specialist has a sharp peak on a rotting
+base, and that shape is legible, drawable, and a genuinely alarming thing to watch happen to your best
+mage.
+
+**It is why a compound needs a university** rather than a prodigy, and it completes §3b's ruling.
+A compound is a pattern of overlapping *teachable* knowledge across a faculty; teachable means fresh;
+fresh means recently taught. **Only people who teach broadly keep enough cells live at once to hold up
+a third-age spell.** The specialist cannot be part of the overlap, however deep she goes — which is
+why the roster is the unit and the genius is not.
+
+**And it is why the college is the fast road** (§2a as amended). Not efficiency. A college is the only
+arrangement where enough people are teaching enough of the base, often enough, that somebody's
+fundamentals are always live. The master-and-apprentice road still works and is still fragile — one
+student, one subject, one death.
+
+The cost of specializing is now a mechanic rather than a flavour note, and it is charged in the
+currency the game is about: **you can be the best in the world at one thing and unable to teach
+anyone how to get there.** Making it a side effect is cheaper and means a
 working scholar is automatically a maintained one. Making it separate creates a fourth demand on a
 roster that already has three, which is either the best tension in the game or one too many.
 

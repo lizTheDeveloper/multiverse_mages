@@ -120,16 +120,59 @@
  *
  * ## What this is worth today, stated plainly
  *
- * **Zero, in any v1 universe**, and the check this wire satisfies has never
- * claimed otherwise. All twenty-two authored nodes sit outside the twelve
- * enabled cells, so `permits()` refuses every one of them and `gatherEffects`
- * returns nothing. The green this produces is exactly as strong as `portal`'s:
+ * It was **zero in any v1 universe**, and the check this wire satisfies never
+ * claimed otherwise: all twenty-two authored nodes sat outside the twelve
+ * enabled cells, so `permits()` refused every one of them and `gatherEffects`
+ * returned nothing. The green that produced was exactly as strong as `portal`'s:
  * *the assembled simulation fetched these node magnitudes and holds them*.
- * Making it worth something in play is a content decision — an authored
- * `lifespan` or `fertility` effect on a v1 node, or a v1 rectangle that
- * includes *Corpus* — and `checkPrimitiveCoverage` is the check that will say
- * so, because both primitives stay on its list until a **v1** node declares
- * one.
+ *
+ * **That condition is now met.** This paragraph named its own remedy — *"a
+ * content decision: an authored `lifespan` or `fertility` effect on a v1 node,
+ * or a v1 rectangle that includes Corpus"* — and `material-economy` opened all
+ * seventy cells, so the second of the two is what happened. `permits()` accepts
+ * the Corpus and Animal cells the twenty-two are authored in, and this wire
+ * carries real magnitudes for the first time. `checkPrimitiveCoverage` is the
+ * check that says so, and it agrees: `PRIMITIVE_COVERAGE_EXCLUSIONS` held
+ * `['fertility', 'lifespan']` for exactly this reason and is now **empty**,
+ * because an exclusion that becomes covered is a failure in that file too.
+ *
+ * ## The scope of that paragraph is load-bearing, and it moved twice in one day
+ *
+ * *"Zero in any v1 universe"* is scoped to the twelve enabled cells, and that
+ * scope is doing more work than it looks like it is. **The reference harness
+ * does not play the v1 rectangle.** `scenario`'s reference run under
+ * `permissive-breadth` opens far more of the grid, and every node above becomes
+ * reachable there. Measured on the base this wire was written against
+ * (`e2b89d8`, seed `0x12345678`, 240 world ticks): **2,592 contributions**, and
+ * a final population of **494 against 325** with the wire absent — carried
+ * entirely by the `fertility` channel, since zeroing `lifespanUniverse` alone
+ * changes nothing measurable at that horizon.
+ *
+ * **And then it went back to zero, for a reason that is not this module's.** On
+ * the tree that merges `#161`'s anti-requisites with the academic rate wire,
+ * `vitalityBonuses` gathers **zero contributions at all six seeds measured**
+ * whenever the rate wire is installed — and 650 to 739 at three of those six
+ * when it is not, worth 60 to 80 people. `creo-ignem ⊥ creo-umbra` resolves
+ * `destructive`; a faster research rate reaches the far half of an excluded
+ * pair sooner; and the school that burns is the one carrying these primitives,
+ * because they are authored in *Corpus*, *Animal* and *Fatum* rather than
+ * anywhere the v1 rectangle can see. The agency gate records the same mechanism
+ * where it is not seed anecdote: `referenceNodesKnown@permissive-breadth`
+ * 42.5 → 36.625 — read off a baseline re-record that was **reverted**, so it is
+ * a measurement taken once rather than a committed number, and re-deriving it
+ * means running a gate, which is deferred. Treat it as a lead. The 68.63 → 42.50
+ * half of that comparison *is* committed, in `docs/design/anti-requisites.md`.
+ *
+ * The lesson to carry is not about any of the three changes. **A zero here has
+ * meant three different things in one day** — never reachable, reachable and
+ * lively, reachable and then destroyed — and none of them is *"the wire is
+ * broken"*.
+ * {@link import('./world-step.js').WorldStepReport.vitalityContributions} is
+ * the counter that separates them, and it is the reason to emit a counter for a
+ * quantity everybody expects to be zero.
+ *
+ * Measured 2026-08-14 on `w187/effects-union` merged with `origin/main`
+ * `1e2651a`, and on `e2b89d8` for the middle figure. Re-measure before quoting.
  */
 
 import type { ContentId, ContentRegistry } from '@mm/content';
@@ -137,6 +180,7 @@ import type { Fixed, SimState } from '@mm/sim-core';
 import { TIME_MODE } from '@mm/sim-core';
 import type { CellResolver, ConsumptionRecorder, EffectSourceInstance } from '@mm/rules-magic';
 import { gatherEffects, nodeEffectRecords } from '@mm/rules-magic';
+import { standingWorkingsOf } from './standing-workings.js';
 import type { Ruleset } from '@mm/state';
 import { KNOWLEDGE_INSTANCE, collectRecords } from '@mm/state';
 
@@ -290,6 +334,7 @@ export function vitalityBonuses(state: SimState, deps: VitalityDeps): VitalityBo
     if (!lifespanNodes.has(row.nodeId) && !fertilityNodes.has(row.nodeId)) continue;
     const instance: EffectSourceInstance = {
       nodeId: row.nodeId,
+      holder: row.locationId,
       locationKind: row.locationKind,
       mastery: row.mastery,
     };
@@ -309,6 +354,10 @@ export function vitalityBonuses(state: SimState, deps: VitalityDeps): VitalityBo
       ruleset: deps.ruleset,
       mode: TIME_MODE.world,
       cellOf: (nodeId) => deps.cells.cellOf(nodeId),
+      // See `universe-effects.ts`. A lifespan or fertility working that lapses
+      // stops lengthening lives on the tick it lapses, not on the tick somebody
+      // notices.
+      standing: standingWorkingsOf(state),
     });
 
     for (const contribution of contributions) {

@@ -93,6 +93,7 @@ export type {
   ArmTelemetry,
   CensusSample,
   CheckpointSample,
+  MaterialGradeSample,
   MechanicAvailability,
   MirroredPlay,
   RaidCombatSource,
@@ -167,6 +168,7 @@ export {
   collectInboundRaidTempoLoss,
   collectKnowledgeHalfLife,
   collectLibraryDependence,
+  collectMaterialGradeProfile,
   collectPrestigeAdvantage,
   collectRaidInitiationCost,
   collectRaidLengthDistribution,
@@ -226,6 +228,7 @@ export {
   SWEEP_KIND,
   assignStrategies,
   expandSweep,
+  roundRobinCoverageProblem,
   sweepConfigurationHash,
   validateSweep,
 } from './sweep-spec.js';
@@ -246,8 +249,25 @@ export {
   adaptAgentSession,
   normalizeSubmission,
   runEpisode,
+  runEpisodeAsync,
+  runEpisodeSteps,
   terminalReasonName,
 } from './session.js';
+
+/**
+ * The two ways to drain a long run, and the convention behind them.
+ *
+ * Exported because `scenario`'s executor writes its own generator over the top
+ * of {@link runEpisodeSteps} and needs the same pair to drain it, and because a
+ * test arm that owns its own loop should reach for `yieldToRunner` here rather
+ * than hand-rolling a thirteenth copy of it.
+ */
+export {
+  YIELD_EVERY_ROUNDS,
+  drainSteps,
+  drainStepsYielding,
+  yieldToRunner,
+} from './pacing.js';
 
 /**
  * §1.1's endings, passed through from `agent-api` (which passes them through
@@ -358,6 +378,30 @@ export {
   wilsonInterval,
 } from './ablation.js';
 
+export type {
+  MetricReachability,
+  PairedDifference,
+  ReachabilityInput,
+  ReachabilityPair,
+  ReachabilityReason,
+  ReachabilityVerdict,
+  SeededArm,
+  SeededCoordinates,
+} from './reachability.js';
+export {
+  REACHABILITY_REASON,
+  REACHABILITY_VERDICT,
+  REACHABILITY_Z_95,
+  classifyPaired,
+  leverReached,
+  mergeReachability,
+  pairedDifference,
+  pairedRunSeedProblems,
+  quantile975,
+  quarantineList,
+  reachabilityReportProblems,
+} from './reachability.js';
+
 export type { ReproduceOptions, ReproductionResult, RunSelector } from './reproduce.js';
 export { compareToRecord, reproduceRun, taskFor } from './reproduce.js';
 
@@ -426,6 +470,8 @@ export {
   BOT_POOL,
   BOT_POOL_REGISTRY,
   POOL_BUILD_LIMITS,
+  SECT_RULESETS,
+  SECT_STRATEGIES,
   botStrategyRegistry,
   degeneracyOf,
   effectivePreferences,
@@ -462,11 +508,17 @@ export type {
   TuningAxis,
 } from './tuner.js';
 export {
+  CORRELATION_MIN_SUPPORT,
   DOMINANCE_LIMIT,
+  EXPLOIT_MARGIN_MIN,
   EXPLOIT_PROBE,
+  EXPLOIT_PROBES,
   candidatesForAxis,
   correlationOf,
+  coverageProblem,
+  describeScore,
   scoreBalance,
+  spearmanOf,
   varietyOf,
 } from './tuner.js';
 
@@ -503,3 +555,18 @@ export {
   foldArchive,
   nullBarOf,
 } from './quality-diversity.js';
+export type { BetterWhen, ScoringControl, ScoringTerm, Separation } from './scoring-controls.js';
+export {
+  BETTER_WHEN,
+  CONTROL_POOL,
+  CONTROL_RUNS,
+  MEASURED_NODES,
+  SCORING_TERMS,
+  TERMS_WITHOUT_CONTROLS,
+  constructedPool,
+  controlCorpus,
+  controlPool,
+  falseFriendReading,
+  isAffineRestatement,
+  separationOf,
+} from './scoring-controls.js';

@@ -20,11 +20,20 @@
  * ## One choke point, enforced twice, and the second one is the measurement
  *
  * **Layer 1 — the legal-node mask.** At portal open, each combatant's held
- * nodes are intersected with the nodes whose cells the host's *frozen* ruleset
- * snapshot permits. Because the ruleset is frozen for the raid's duration, this
- * is computed once and never recomputed. An illegal spell is therefore not
- * merely refused — it is never a candidate, so a combatant's intent scoring
- * cannot see it and no tick is spent on a guaranteed refusal.
+ * nodes are intersected with the nodes whose cells the host's captured ruleset
+ * snapshot permits. An illegal spell is therefore not merely refused — it is
+ * never a candidate, so a combatant's intent scoring cannot see it and no tick
+ * is spent on a guaranteed refusal.
+ *
+ * The mask used to be computed once and never recomputed, because the ruleset
+ * was frozen for the raid's duration. **`raid-engagement.md` §1 repealed that
+ * rule**: the host's god may now change the ruleset mid-raid, and every change
+ * locks until the raid ends. So the mask is recomputed whenever — and only
+ * when — {@link CastArbiter.adoptRuleset} replaces the snapshot, atomically with
+ * the replacement, by `lock.ts`. A mask left behind a changed snapshot would not
+ * merely be stale: it would make the defender's own combatants declare refused
+ * casts every tick and stand still, which is the failure `raid.ts` records
+ * observing.
  *
  * **Layer 2 — the resolution assertion.** {@link resolveCast} re-evaluates
  * `permits()` before applying anything, and on `false` applies nothing, charges
@@ -44,11 +53,18 @@
  * ## The snapshot, never a live universe
  *
  * Every legality question here is asked of a {@link RulesetSnapshot} captured at
- * portal open. `contracts.md` §1.1 requires it: `rules-raid` may not depend on
- * `agent-api` (§5), so there is no action mask to lean on, and a raid that read
- * live universe state would have *no* mechanism at all preventing a mid-raid
- * rule change. Making the snapshot the parameter type is what turns the
- * vision's frozen-policy rule from a procedure into a structure.
+ * portal open, and amended afterwards only through {@link
+ * CastArbiter.adoptRuleset}. `contracts.md` §1.1 requires the snapshot:
+ * `rules-raid` may not depend on `agent-api` (§5), so there is no action mask to
+ * lean on, and a raid that read live universe state would take a rule change the
+ * *world* made in the middle of a fight — including one the raid's own player
+ * never decided.
+ *
+ * That is still forbidden and still structural. What §1 permits is a change made
+ * **to the raid, inside the raid, under the lock**, and it arrives as a new
+ * frozen snapshot through one method rather than as a live read. The difference
+ * is the whole of why the amendment is safe: there is no path from world state
+ * into a running engagement, only a path from the engagement's own verbs.
  *
  * ## What legality does *not* gate
  *
@@ -77,6 +93,15 @@ export const COMBAT_PRIMITIVES = Object.freeze({
   summon: 'summon',
   concealment: 'concealment',
   knowledgeSteal: 'knowledge-steal',
+  /**
+   * Corrupting a text rather than taking it — *"enter, corrupt, leave
+   * undetected"* (`docs/design/scribing-fidelity.md`).
+   *
+   * The one attack that is neither theft nor damage. It leaves the book on the
+   * shelf, leaves the shelf in the library, and leaves nothing the victim can
+   * observe until a reader fails against the page.
+   */
+  knowledgeCorrupt: 'knowledge-corrupt',
   /**
    * The presence gate on raiding itself (`contracts.md` §3, *"boolean gate;
    * enables raid initiation"*). It has no magnitude that means anything and is
@@ -200,6 +225,7 @@ const COMBAT_CONSUMERS: readonly (readonly [string, string])[] = Object.freeze([
   [COMBAT_PRIMITIVES.ward, 'rules-raid/arbitration.CastArbiter.passiveDefences'],
   [COMBAT_PRIMITIVES.concealment, 'rules-raid/arbitration.CastArbiter.passiveDefences'],
   [COMBAT_PRIMITIVES.knowledgeSteal, 'rules-raid/arbitration.CastArbiter.theftMagnitudes'],
+  [COMBAT_PRIMITIVES.knowledgeCorrupt, 'rules-raid/arbitration.CastArbiter.corruptionMagnitudes'],
 ]);
 
 /** No authored effects, for a node the index has never heard of. */
@@ -307,7 +333,7 @@ export interface ArbitrationFaults {
  * about the raid rather than about a call site.
  */
 export class CastArbiter {
-  readonly #hostRuleset: RulesetSnapshot;
+  #hostRuleset: RulesetSnapshot;
   readonly #grid: MagicGrid;
   readonly #registry: ContentRegistry;
   readonly #combat: CombatEffectIndex;
@@ -370,9 +396,11 @@ export class CastArbiter {
    * what she usably holds, intersected with what the host's frozen snapshot
    * permits.
    *
-   * Computed once per combatant at portal open. Recomputing it per tick would
-   * be wasted work *and* a lie about the design — the ruleset is frozen, so
-   * there is nothing that could have changed.
+   * Computed once per combatant at portal open, and again — for every combatant
+   * at once — each time a mid-raid rule change replaces the snapshot. It is
+   * still never recomputed *per tick*: nothing changes between changes, and a
+   * per-tick recompute would be wasted work over a snapshot that is constant
+   * almost everywhere.
    *
    * A held instance in a book contributes nothing: `contracts.md` §1.5 and
    * `rules-magic`'s effect pipeline both say a written copy is exactly as
@@ -554,6 +582,26 @@ export class CastArbiter {
   }
 
   /**
+   * A corruption attempt, on stream 13, gated by the **host's** ruleset.
+   *
+   * The host's for the same reason theft is: it is magic worked inside the
+   * host's sky, and a raider whose home forbids `perdo-nomen` may still unmake a
+   * name in a universe that permits it.
+   */
+  attemptCorruption(nodeId: ContentId, magnitudes: readonly Fixed[], stream: RngStream): boolean {
+    if (!this.#permitsNode(nodeId)) {
+      this.#forbiddenCastsBlocked += 1;
+      return false;
+    }
+    return rollStackedProbability(
+      this.#primitive(COMBAT_PRIMITIVES.knowledgeCorrupt),
+      magnitudes,
+      stream,
+      this.#stackOptions(),
+    ).succeeded;
+  }
+
+  /**
    * The `knowledge-steal` magnitudes a node carries.
    *
    * Here rather than at the theft call site so that `effect.magnitude` is read
@@ -564,6 +612,13 @@ export class CastArbiter {
    */
   theftMagnitudes(nodeId: ContentId): readonly Fixed[] {
     return this.#authored(COMBAT_PRIMITIVES.knowledgeSteal, nodeId).map((effect) => effect.magnitude);
+  }
+
+  /** The `knowledge-corrupt` magnitudes a node authors. The one read site. */
+  corruptionMagnitudes(nodeId: ContentId): readonly Fixed[] {
+    return this.#authored(COMBAT_PRIMITIVES.knowledgeCorrupt, nodeId).map(
+      (effect) => effect.magnitude,
+    );
   }
 
   /** The summed damage a target takes, after exactly one ward application. */
@@ -627,6 +682,32 @@ export class CastArbiter {
         'and primitive.json must match it, so a miss here is the wrong content set rather than a ' +
         'primitive this package should invent a default for.',
     );
+  }
+
+  /**
+   * The ruleset this raid is currently arbitrated under.
+   *
+   * The *current* one, which is the opening one until a mid-raid change replaces
+   * it. `RaidState.hostRuleset` keeps the opening one untouched, so "what did we
+   * open under" and "what are we fighting under" are separately answerable
+   * rather than one value pretending to be both.
+   */
+  get hostRuleset(): RulesetSnapshot {
+    return this.#hostRuleset;
+  }
+
+  /**
+   * Replaces the snapshot this raid is arbitrated under.
+   *
+   * **Callers must recompute every combatant's mask in the same operation.**
+   * `lock.ts` is the only caller and does exactly that; the method is not
+   * private only because the lock is a separate module for length reasons. A
+   * snapshot swapped without a mask recompute leaves layer 1 behind layer 2,
+   * and the symptom is not an illegal cast — it is the defender's own
+   * combatants declaring refused casts forever and never moving again.
+   */
+  adoptRuleset(next: RulesetSnapshot): void {
+    this.#hostRuleset = next;
   }
 
   /**

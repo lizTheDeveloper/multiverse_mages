@@ -53,15 +53,98 @@ export type EdictKindValue = (typeof EDICT_KIND)[keyof typeof EDICT_KIND];
  */
 export const EDICT_BUDGET_MAX = 8;
 
-/** `contracts.md` §1.2: a mage's role. */
+/**
+ * `contracts.md` §1.2: a mage's role.
+ *
+ * ## `populace` is the sixth, and it is the base of the pyramid
+ *
+ * *"Not all mages are the same or should be created equal. You need low-level
+ * spellcasters to stay in the population to continuously cast — identify
+ * objects, so they can keep the economy running"* —
+ * `docs/design/magical-prevalence.md`, which names **populace mage** as one of
+ * the taxonomy's end states and warns that whoever implements it must
+ * *"reconcile the two lists deliberately rather than appending"*.
+ *
+ * The reconciliation, W197: the four standing roles are all *institutional* —
+ * they describe what a mage does inside a university, and every one of them is
+ * a career academic in the sense the author drew. `populace` is the other half,
+ * the graduate who leaves and casts for a living, and there was no role that
+ * meant it. `researcher` was doing the job by default, which is why *"my mages
+ * are all very advanced"* was not a state the simulation could reach or report.
+ *
+ * **This is not a failure state.** A universe with no populace mages has nobody
+ * doing the small continuous work; the design wants the *shape of the pyramid*
+ * managed, not maximised.
+ *
+ * Like `student` it is **absent from {@link GOD_ASSIGNABLE_MAGE_ROLES}**, and
+ * the asymmetry is the design rather than an oversight: graduation sorts mages
+ * down into the populace, and the god's action 10 is how he pulls one back out
+ * — *"the interesting question becomes who gets to keep going, which is a
+ * decision a god makes with limited seats"*. A one-way valve the god opens, at
+ * no cost to action 10's candidate space, which every trained policy is sized
+ * against.
+ *
+ * ## `student` is the fifth, and it is not the god's to assign
+ *
+ * *"Students are immediately mages. They're just student mages until they
+ * become battle mages, populace mages"* — `docs/design/magical-prevalence.md`.
+ * A student is therefore **a mage in an early role, not a new entity kind**,
+ * which is the whole of why she can hold knowledge instances, be taught, read a
+ * shelf and be affiliated: she has a handle, and everything that takes a mage
+ * handle already works.
+ *
+ * It is appended rather than inserted, because the numbering is §1.2's listing
+ * order and it is read out of a `uint8` in every save.
+ *
+ * **`student` is deliberately absent from {@link GOD_ASSIGNABLE_MAGE_ROLES}.**
+ * The god's assign-role action moves a mage between the four *standing* roles;
+ * un-graduating somebody is not one of the levers §7 gives him, and admitting it
+ * would also have widened the action-10 candidate space that every trained
+ * policy is sized against. Enrolment writes this role and graduation clears it,
+ * and those are the only two writers.
+ */
 export const MAGE_ROLE = {
   researcher: 0,
   warden: 1,
   professor: 2,
   raider: 3,
+  /** Enrolled at a university and not yet graduated. Written by enrolment only. */
+  student: 4,
+  /**
+   * Graduated, and casting for a living rather than for an institution. Written
+   * by graduation's career sort only; cleared by the god's action 10.
+   */
+  populace: 5,
 } as const;
 
 export type MageRoleValue = (typeof MAGE_ROLE)[keyof typeof MAGE_ROLE];
+
+/**
+ * The four roles the god's action 10 may assign, ascending.
+ *
+ * Exported from `@mm/state` rather than from a rules package because **two
+ * independent call sites need the same answer** — `@mm/agent-api`'s candidate
+ * enumeration and `@mm/coordination`'s intervention validator — and before the
+ * student role existed both wrote `Object.values(MAGE_ROLE)`, which was correct
+ * only for as long as every role was assignable. A list that has to be derived
+ * the same way in two places is a list that eventually is not.
+ *
+ * **Still four after W197 added `populace`.** The god may assign a populace mage
+ * *into* any of these — that is the "who gets to keep going" lever — but he may
+ * not assign `populace` itself, so action 10's candidate space is exactly the
+ * width it was before either role was appended.
+ */
+export const GOD_ASSIGNABLE_MAGE_ROLES: readonly MageRoleValue[] = [
+  MAGE_ROLE.researcher,
+  MAGE_ROLE.warden,
+  MAGE_ROLE.professor,
+  MAGE_ROLE.raider,
+];
+
+/** Whether the god's assign-role action may write this role. */
+export function isGodAssignableRole(value: number): value is MageRoleValue {
+  return GOD_ASSIGNABLE_MAGE_ROLES.includes(value as MageRoleValue);
+}
 
 /** `contracts.md` §1.3: what a populace cohort spends its months doing. */
 export const OCCUPATION = {
@@ -143,25 +226,81 @@ export const AXIS_KIND = {
 export type AxisKindValue = (typeof AXIS_KIND)[keyof typeof AXIS_KIND];
 
 /**
+ * What a ruleset change was made *to* (`docs/design/raid-engagement.md` §1).
+ *
+ * The three scopes a god can change legality at, which are exactly the three
+ * §4.2 already has actions for: a technique's row, a form's column, and one
+ * cell through an edict. `0` is unassigned, per §0's null convention — a zeroed
+ * row is a malformed record rather than a change to nothing.
+ */
+export const RULE_SCOPE = {
+  technique: 1,
+  form: 2,
+  cell: 3,
+} as const;
+
+export type RuleScopeValue = (typeof RULE_SCOPE)[keyof typeof RULE_SCOPE];
+
+/**
+ * Which direction a ruleset change moved legality.
+ *
+ * Named by what it did rather than by which action did it, because the same
+ * direction is reached by two different §4.2 actions depending on scope —
+ * forbidding a cell is an interdiction, forbidding a technique is action 2 —
+ * and the lock, and the revert surcharge after it, care only about the
+ * direction.
+ */
+export const RULE_CHANGE_KIND = {
+  /** Made something illegal that was legal. */
+  forbid: 1,
+  /** Made something legal that was illegal. */
+  permit: 2,
+} as const;
+
+export type RuleChangeKindValue = (typeof RULE_CHANGE_KIND)[keyof typeof RULE_CHANGE_KIND];
+
+/**
  * What kind of unfinished work a `effort-progress` row is accumulating
  * (`contracts.md` §1.2, "Effort progress").
  *
  * `0` is left unassigned, per §0's null convention: a zeroed row is a malformed
- * record rather than a research project nobody started. The three members are
- * the three operations `rules-magic` takes accumulated progress for, and there
- * is no fourth because there is no fourth such operation — a goal that needs no
- * accrual (`idle`, `affiliate`, `ward-duty`, `raid-readiness`) has no row.
+ * record rather than a research project nobody started. The members are the
+ * operations `rules-magic` takes accumulated progress for — a goal that needs
+ * no accrual (`idle`, `affiliate`, `ward-duty`, `raid-readiness`) has no row.
  *
  * **A discriminator is required and not decorative.** A mage who holds a node
  * can be part-way through teaching it *and* part-way through writing it down at
  * the same moment, and those two projects have different costs — `teachCost`
  * against `scribeCost`. Keying an effort on `(subject, nodeId)` alone would let
  * a month at the writing desk finish a student's education.
+ *
+ * ## `practice` was the fourth operation this comment said did not exist
+ *
+ * It said *"there is no fourth because there is no fourth such operation"*, and
+ * that was true of the code and false of the design. `decay.ts` had already
+ * written down what was missing, about itself: *"Nothing in this subsystem
+ * restores mastery; practice does, and practice is an operation somebody has to
+ * perform."* Nobody performed it, so mastery fell monotonically for every
+ * instance in the game and 93.4% of held instances sat below the teach
+ * threshold (`ages-of-magic.md` §2c). `practice` is that operation, and it is a
+ * project with a cost like the other three rather than a free per-tick top-up,
+ * because the whole point is that it **competes for the month**.
+ *
+ * Appended, never renumbered: the value is stored in a `uint8` column of a
+ * versioned component and every committed snapshot carries the old numbering.
  */
 export const EFFORT_KIND = {
   research: 1,
   teaching: 2,
   scribing: 3,
+  /**
+   * Reading a written instance back into a mind.
+   *
+   * Appended, and the id matters for the same reason the others' do: an
+   * `effort-progress` row carries this value, so a save written before study
+   * existed must keep reading `3` as scribing. Nothing renumbers.
+   */
+  study: 4,
 } as const;
 
 export type EffortKindValue = (typeof EFFORT_KIND)[keyof typeof EFFORT_KIND];

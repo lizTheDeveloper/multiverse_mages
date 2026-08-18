@@ -60,10 +60,11 @@
  */
 
 import type { ContentId, ContentRegistry } from '@mm/content';
-import type { EntityHandle, SimState, StepContext, WorldSchema } from '@mm/sim-core';
+import type { EntityHandle, SimState, StepContext, System, WorldSchema } from '@mm/sim-core';
 import { RNG_STREAM, createState, rngFromRootSeed } from '@mm/sim-core';
 import type { Scenario, ScenarioConfig } from '@mm/agent-api';
 import {
+  EVER_KNOWN,
   GRANT_BUDGET,
   LIBRARY,
   MATERIAL_STOCK,
@@ -73,13 +74,17 @@ import {
   POPULACE_COHORT,
   UNIVERSITY,
   attachRecord,
+  componentOf,
   createUniverse,
   defineWorldStateSchema,
   findUniverse,
 } from '@mm/state';
 import { KnowledgeSubsystem, MASTERY_MAX, MagicGrid } from '@mm/rules-magic';
 import { readRaidTuning } from '@mm/rules-raid';
-import { createMage } from '@mm/rules-world';
+
+import type { EngagementPolicy } from './raid-directives.js';
+import type { MaterialKind } from '@mm/rules-world';
+import { createMage, defaultSiteKind, siteUniversity } from '@mm/rules-world';
 import type {
   AblationMask,
   GodConstants,
@@ -102,6 +107,16 @@ import {
   worldDeps,
 } from './content-set.js';
 import { withAxisPriceScale } from './axis-price.js';
+import type { LegacyRecord } from './legacy.js';
+import { seedLegacy } from './legacy.js';
+import type { NormalizedSandbox, SandboxSpec } from './sandbox.js';
+import {
+  applyFoundingCheats,
+  defineSandboxWorldSchema,
+  normalizeSandbox,
+  sandboxScenarioId,
+  sandboxSystem,
+} from './sandbox.js';
 import { BalanceTelemetryRecorder, balanceTelemetrySystem } from './balance-telemetry.js';
 import type { BalanceRunTelemetry } from './balance-telemetry.js';
 import type { RaidRecord } from './raids.js';
@@ -128,6 +143,45 @@ const FP_ONE = 1024;
  * 3,000, which keeps the opening comparable across this change.
  */
 const STARTING_MATERIALS = 1000 * FP_ONE;
+
+/**
+ * The founding endowment of the four kinds `material-economy` added, `fp`.
+ *
+ * Three of them are **a multiple of what the verb they unblock costs in
+ * `god-cost.json`**, not a round number: `issue-dispensation` costs `essence`
+ * 4,096, so eight dispensations is 32,768. Written as the multiplication so
+ * that a retune of the price makes the arithmetic here visibly stale rather
+ * than quietly wrong. Eight uses for the two kinds the v1 opening square cannot
+ * produce at all, and two portals for `passage`, which it can.
+ *
+ * **`FOUNDING_LABOR` is sized against two claimants, not one.** `labor` is
+ * spent both by the construction hire, every tick and automatically, and by
+ * `fund-university`, which the god chooses. Pricing the verb naively made those
+ * two race and the sink won: action 11 came back legal on 8 ticks of 585. The
+ * fix is a reserve floor under the hire — `HiredLabourWeights.reserve`, equal to
+ * the verb's own declared price — so the automatic drain stops at what the
+ * discretionary verb costs instead of at zero.
+ *
+ * 32,768 at 256 per hired month is about 128 person-months, a few ticks of a
+ * doubled crew, of which the last 4,096 is reserved for one funding. Large
+ * enough to be visible, small enough that the `build-rate` causal chain stays
+ * measurable under it.
+ *
+ * **And it is a runway with no faucet, which the floor cannot change.** Measured
+ * 2026-08-16 on this branch: `labor` production over 600 reference ticks is
+ * exactly **zero**, because Corpus is the only form that yields it and Corpus is
+ * outside the v1 opening square (`intellego · perdo · rego` × `mentem · terram ·
+ * limen · nomen`). A floor redistributes a finite endowment between two
+ * claimants; it cannot manufacture income. Opening the body-magic column is what
+ * makes `labor` a renewable resource, and until a run does that, action 11's
+ * availability is bounded by this constant and not by the floor.
+ *
+ * **Untuned**, and a starting position rather than a rule.
+ */
+const FOUNDING_LABOR = 8 * 4096;
+const FOUNDING_ESSENCE = 8 * 4096;
+const FOUNDING_INSIGHT = 8 * 2048;
+const FOUNDING_PASSAGE = 2 * 16384;
 
 /**
  * Student seats in the founding academy.
@@ -165,6 +219,17 @@ const DEFAULT_FOUNDING_NODES = 1;
 const DEFAULT_FOUNDING_SPECIES_MASK = 0;
 
 /**
+ * One academy, which is what this scenario has always founded.
+ *
+ * The default builds the identical state to an absent option, byte for byte —
+ * the same promise `DEFAULT_FOUNDING_SPECIES_MASK` makes, and for the same
+ * reason: every committed baseline was measured against a one-university
+ * universe, and a scenario knob whose default moves them is not an instrument,
+ * it is a behaviour change wearing one.
+ */
+const DEFAULT_FOUNDING_UNIVERSITIES = 1;
+
+/**
  * The opening square a universe takes when a sweep names none.
  *
  * Zero, meaning **the v1 rectangle** — `contracts.md` §2.2's twelve cells,
@@ -184,6 +249,23 @@ const DEFAULT_OPENING_AXIS_COUNT = 0;
  * square is still one flag away, and W82's arms take it.
  */
 const DEFAULT_OPENING_SQUARE_SEEDED = 0;
+
+/**
+ * The founding academy stands wherever the endowment carries the most people.
+ *
+ * Zero, and zero means *the documented default* rather than *nowhere* — the same
+ * encoding, and for the same reason, as {@link DEFAULT_FOUNDING_SPECIES_MASK}
+ * above: a literal id here would hardcode a content id into a default, and
+ * `CLAUDE.md` puts territory in validated content data. `defaultSiteKind`
+ * resolves it against whatever the content set declares.
+ *
+ * Over the shipped content that is `arable-lowland`, whose site multiplier is
+ * `fp(1024)` by construction (it is the reference kind) and whose
+ * `libraryUpkeepMultiplier` is also `fp(1024)`. **So the reference universe's
+ * default site is exactly neutral in both mechanisms**, and the divergence this
+ * change measures is entirely attributable to a site deliberately named.
+ */
+const DEFAULT_ACADEMY_SITE_KIND = 0;
 
 /**
  * The occupations a founding population is seeded into.
@@ -284,6 +366,29 @@ export interface ReferenceOptions {
    */
   readonly foundingPortalMagic: number;
   /**
+   * Academies founded at tick zero, each with its own library, with the founding
+   * mages dealt round-robin between them.
+   *
+   * **An instrument, not a magnitude**, in exactly the sense
+   * {@link ReferenceOptions.foundingSpeciesMask} is one: it turns no constant
+   * and changes no rule. It exists because *"two universities on the same seed
+   * hold different dominant cells"* is the falsifying measurement for the
+   * teaching boundary, and there was no starting position in which two
+   * universities existed at all — W24 compared two *runs* with one university
+   * each, which cannot see a boundary between institutions.
+   *
+   * Founders are dealt round-robin and the founding grants are dealt round-robin
+   * over the same list, so at six founders and six grants each academy begins
+   * holding a *different* three nodes. That is the whole point: a boundary with
+   * nothing different on either side of it measures nothing.
+   *
+   * `1` is the default and rebuilds today's universe byte for byte. `0` is
+   * refused, for the reason a species mask selecting nothing is refused — a
+   * universe with no academy can never teach or scribe, and two centuries of
+   * that would be recorded as an ordinary observation.
+   */
+  readonly foundingUniversities: number;
+  /**
    * Techniques the universe is founded holding, or `0` for the v1 rectangle.
    *
    * The **opening square** (`campaign-plan.md`, "The 2×2 opening"). Non-zero
@@ -336,6 +441,31 @@ export interface ReferenceOptions {
   readonly grantAccrualNodes?: number | undefined;
   /** Ceiling on grants ever authorized. */
   readonly grantBudgetCap?: number | undefined;
+  /**
+   * The kind of country the founding academy stands in, as an interned
+   * `territory` content id — or **`0` for the documented default**, which is
+   * `defaultSiteKind`'s: the kind whose endowment carries the most people.
+   *
+   * `vision.md` §7a permits this because a site is a *relationship*, not a
+   * coordinate: it says which kind of country the academy is in, and it says
+   * nothing about where that country is, because at world scale there is no
+   * where. What it changes is in `rules-world`'s `universities/siting.ts` — the
+   * seats the surrounding land can keep filled, and what the library pays to
+   * survive the weather.
+   *
+   * An interned integer rather than a string id for the reason
+   * {@link ReferenceOptions.foundingSpeciesMask} is a bitmask:
+   * `ScenarioConfig.options` is restricted to scalars so a sweep can hash a
+   * config without inventing a serialization. Over the shipped content set the
+   * ids are a code-unit sort of the file — `arable-lowland` 1, `deep-forest` 2,
+   * `highland-waste` 3, `river-delta` 4, `upland-pasture` 5 — and
+   * `academySiteKindOf` resolves a name to one rather than making a caller count.
+   *
+   * Like `foundingSpeciesMask` this is an **instrument**: it turns no constant
+   * and changes no rule. It exists because *"does where a university stands
+   * change anything"* is not measurable without it.
+   */
+  readonly academySiteKind: number;
 }
 
 /**
@@ -354,11 +484,13 @@ export interface ReferenceOptions {
  */
 
 export const REFERENCE_FACTOR_IDS: readonly string[] = Object.freeze([
+  'academySiteKind',
   'cohortSize',
   'foundingMages',
   'foundingNodes',
   'foundingSpeciesMask',
   'foundingPortalMagic',
+  'foundingUniversities',
   'openingTechniqueCount',
   'openingFormCount',
   'openingSquareSeeded',
@@ -469,13 +601,32 @@ export function referenceOptions(config: ScenarioConfig): ReferenceOptions {
     foundingNodes: readCount(config, 'foundingNodes', DEFAULT_FOUNDING_NODES),
     foundingSpeciesMask: readCount(config, 'foundingSpeciesMask', DEFAULT_FOUNDING_SPECIES_MASK),
     foundingPortalMagic: readCount(config, 'foundingPortalMagic', 0),
+    foundingUniversities: readCount(
+      config,
+      'foundingUniversities',
+      DEFAULT_FOUNDING_UNIVERSITIES,
+    ),
     openingTechniqueCount: readCount(config, 'openingTechniqueCount', DEFAULT_OPENING_AXIS_COUNT),
     openingFormCount: readCount(config, 'openingFormCount', DEFAULT_OPENING_AXIS_COUNT),
     openingSquareSeeded: readCount(config, 'openingSquareSeeded', DEFAULT_OPENING_SQUARE_SEEDED),
     grantBudgetStart: readOptionalCount(config, 'grantBudgetStart'),
     grantAccrualNodes: readOptionalCount(config, 'grantAccrualNodes'),
     grantBudgetCap: readOptionalCount(config, 'grantBudgetCap'),
+    academySiteKind: readCount(config, 'academySiteKind', DEFAULT_ACADEMY_SITE_KIND),
   };
+}
+
+/**
+ * The interned `territory` content id a name resolves to, or `0`.
+ *
+ * A convenience for tests and sweep authors, so that *"site the academy in the
+ * river delta"* is written as a name and turned into the scalar a
+ * {@link ReferenceOptions} field has to be. Returns `0` — the documented default
+ * — for a name the content set does not declare, which is what an unrecognised
+ * kind should do rather than silently siting somewhere else.
+ */
+export function academySiteKindOf(content: ReferenceContent, territoryId: string): number {
+  return content.registry.intern('territory', territoryId);
 }
 
 /**
@@ -624,6 +775,17 @@ export function buildReferenceState(input: {
   readonly options: ReferenceOptions;
   readonly content: ReferenceContent;
   readonly schema: WorldSchema;
+  /**
+   * What a previous universe left this one, or absent for a first universe.
+   *
+   * **Absent builds the byte-identical state it always did** — the same promise
+   * `foundingSpeciesMask` and `foundingUniversities` make, and it is asserted
+   * with a snapshot hash in `test/unit/legacy-carry.test.ts` rather than
+   * described here. Every committed baseline was measured on an unaided
+   * universe, and a succession seam whose absent case moved one would be a
+   * behaviour change wearing an option's clothes.
+   */
+  readonly legacy?: LegacyRecord;
 }): SimState {
   const { content, options } = input;
   const state = createState({
@@ -649,47 +811,115 @@ export function buildReferenceState(input: {
     traditionId: content.traditionId,
     // Zero player input: favor, worship and prestige are `god-agency`'s to move,
     // and a scenario that pre-loaded them would be measuring a god's opening.
+    //
+    // `prestige` is the one exception, and it is not player input: it is what a
+    // *previous* universe earned and this one inherits. §1.1 makes it read-only
+    // for the length of a run, so tick zero is the only moment it may be set,
+    // and this is the only place that sets it. Absent legacy is `0`, which is
+    // the value this line has always written.
     favor: 0,
     worship: 0,
     worshipTier: 0,
-    prestige: 0,
+    prestige: input.legacy?.carriedPrestige ?? 0,
     prestigeEarned: 0,
     terminalReason: 0,
     favorCap: 0,
     ascended: 0,
   });
 
-  // The three stocks, on their own component since revision 5. Written here
-  // rather than left for the loop to materialize, because a founding endowment
-  // is a starting position and a starting position should be visible in the
-  // scenario that declares it, not inferred from the absence of a row.
+  // The stocks, on their own component since revision 5. Written here rather
+  // than left for the loop to materialize, because a founding endowment is a
+  // starting position and a starting position should be visible in the scenario
+  // that declares it, not inferred from the absence of a row.
+  //
+  // ## The four new kinds start endowed, and this reverses the previous answer
+  //
+  // They started at **zero**, on an argument that was correct at the time and
+  // is now false in its second half: *"this universe has never cast, so nothing
+  // has yielded it `labor`, `essence`, `insight` or `passage`… zero is also the
+  // behaviour-preserving choice while the sinks are unbuilt."* That comment
+  // ends by asking whoever builds the sinks to revisit it. This is that.
+  //
+  // **Measured, 2026-08-16, on `w247/material-economy-build`, 240 ticks of this
+  // universe at `LONG_RUN_SEED`.** With the four kinds at zero and
+  // `god-cost.json` pricing five verbs in materials:
+  //
+  // | kind | reached in the reference run | verb it gates |
+  // | --- | --- | --- |
+  // | `passage` | yes — positive at tick 2, 61,344 by tick 240 | `open-portal` |
+  // | `insight` | **no** — 0 for all 240 ticks | `bless-mage` |
+  // | `labor` | **no**, and structurally | the construction hire |
+  // | `essence` | **no**, and structurally | `issue-dispensation` |
+  //
+  // `insight` is producible inside the opening square — Mentem is one of its
+  // four forms — and simply was not produced: no mage in this roster chose the
+  // Mentem node over the Limen one in twenty world years. `labor` and `essence`
+  // are worse than unlucky. Corpus and Vim are **outside** the twelve v1 cells,
+  // so producing either takes a `permit-form` first, and until then
+  // `issue-dispensation` is correctly masked and permanently unavailable and
+  // no site can hire a single extra month. That is *"a mask that is correct and
+  // a game that is stuck"* — the game cannot start, rather than the god cannot
+  // afford.
+  //
+  // So the founding endowment. Sized in multiples of what the verbs it unblocks
+  // actually cost, at **eight uses** for the three that v1 cannot replenish and
+  // **two portals** for the one it can — a runway, not an income. It runs out,
+  // and when it does the god must open the body-magic or spirit-magic column to
+  // keep funding universities and issuing dispensations. That is a real
+  // decision arriving on a schedule rather than a resource nobody can reach.
+  //
+  // Every figure is **untuned** and the whole endowment is a starting-position
+  // decision, not a rule: `docs/design/release-plan.md` forbids any balance
+  // claim about it before 0.5.0.
   attachRecord(state, MATERIAL_STOCK, universe, {
     food: STARTING_MATERIALS,
     stone: STARTING_MATERIALS,
     vellum: STARTING_MATERIALS,
+    labor: FOUNDING_LABOR,
+    essence: FOUNDING_ESSENCE,
+    insight: FOUNDING_INSIGHT,
+    passage: FOUNDING_PASSAGE,
   });
 
-  const library = state.entities.create();
-  attachRecord(state, LIBRARY, library, { foundedTick: 0 });
-  const university = state.entities.create();
-  attachRecord(state, UNIVERSITY, university, {
-    libraryId: library,
-    capacity: ACADEMY_CAPACITY,
-    // Complete at tick zero, and still the right call now that construction is
-    // built. The sentence that used to be here — *the construction mechanic that
-    // would finish it is not built* — was true when it was written and is not
-    // any more: laborers raise buildings from the world loop as of W29. What
-    // stands is the other half of the argument. An academy still under
-    // construction would carry no students and no scriptorium, so a universe
-    // founded on one would spend its first years unable to teach or write, and
-    // every knowledge measurement in the reference run would be measuring the
-    // opening delay instead of the mechanism.
-    //
-    // A universe therefore builds nothing at all unless the god funds a site.
-    // That is not a gap: it is what gives `fundUniversity` a marginal value it
-    // did not have when nothing could finish what it founded.
-    buildProgress: FP_ONE,
-  });
+  // At least one, always. A universe with no academy can neither teach nor
+  // scribe, and two hundred years of that is not a starting position — the same
+  // refusal `foundingSpeciesMask` makes below, for the same reason.
+  if (options.foundingUniversities < 1) {
+    throw new Error(
+      `foundingUniversities is ${String(options.foundingUniversities)}. A universe with no ` +
+        'academy can never teach and never scribe, so a run taken from one would record two ' +
+        'centuries of silence as an ordinary observation.',
+    );
+  }
+  // Each academy owns its own library, created immediately before it, so a
+  // one-university run creates the same two entities in the same order it always
+  // has and every committed baseline still describes the state it was taken on.
+  const universities: EntityHandle[] = [];
+  for (let index = 0; index < options.foundingUniversities; index += 1) {
+    universities.push(foundAcademy(state));
+  }
+
+  // The academy stands in a *kind of country* — a relationship, which is what
+  // `vision.md` §7a says world scale is made of, and not a coordinate, which is
+  // what it forbids. Sited here rather than left to the first tick because a
+  // starting position is exactly the thing a scenario owns, and because
+  // `academySiteKind` has to be able to differ between two otherwise identical
+  // universes for the divergence this change claims to be measurable at all.
+  //
+  // `defaultSiteKind` is handed the *endowment* rather than the holdings: the
+  // first world tick has not run, so no `territory-holding` row exists yet, and
+  // the endowment is what those rows will be materialized from.
+  const siteKind =
+    options.academySiteKind !== 0
+      ? options.academySiteKind
+      : defaultSiteKind(content.deps.territoryKinds, content.deps.territoryKinds);
+  // Every founded academy, not just the first: `academySiteKind` is a property
+  // of the starting position, and two academies standing in different country
+  // would confound siting with institutional structure — the same reason
+  // `rival-universe.ts` pins both options together.
+  if (siteKind !== 0) {
+    for (const university of universities) siteUniversity(state, university, siteKind);
+  }
 
   const { speciesOf, ids } = speciesTable(content.registry);
   // Zero means every species; see DEFAULT_FOUNDING_SPECIES_MASK. Refused rather
@@ -724,11 +954,17 @@ export function buildReferenceState(input: {
 
     for (let index = 0; index < options.foundingMages; index += 1) {
       const mage = state.entities.create();
+      // Round-robin over the academies, by position in the founder list — the
+      // same dealing `grantFoundingKnowledge` uses over the same list, so with
+      // one grant each the two deals interleave and each academy opens holding
+      // different nodes. At one academy this is `universities[0]` every time,
+      // which is what it has always been.
+      const academy = universities[founders.length % universities.length] as EntityHandle;
       attachRecord(
         state,
         MAGE,
         mage,
-        createMage(rng, mage, species, speciesId, -species.maturityMonths, university),
+        createMage(rng, mage, species, speciesId, -species.maturityMonths, academy),
       );
       founders.push(mage);
     }
@@ -761,6 +997,35 @@ export function buildReferenceState(input: {
     nodeCount: content.deps.catalog.nodeCount,
   });
 
+  // Last, and after every founding entity exists. A legacy adds to a starting
+  // position rather than replacing one, and placing it here means the founding
+  // path creates the identical entities in the identical order it always has —
+  // which is what makes the absent case byte-identical rather than merely
+  // arithmetically equal.
+  const everKnownBefore = componentOf(state, EVER_KNOWN).size;
+  if (input.legacy !== undefined) {
+    seedLegacy(state, {
+      record: input.legacy,
+      registry: content.registry,
+      axes: opening.axes,
+      universe,
+      nodeCount: content.deps.catalog.nodeCount,
+      foundingNodeIds: new Set(seeded),
+    });
+  }
+  // Nodes the archive brought into the universe for the first time.
+  //
+  // Counted into `seededNodes` for the same reason the founding grants are, and
+  // the arithmetic is the point: the grant budget accrues on
+  // `everKnown − seededNodes`. An archived node raises `everKnown`, so leaving
+  // it out would credit a seeded universe with discoveries it did not make, and
+  // the legacy arm of any comparison would carry a larger grant budget than its
+  // control — a fifth difference between two arms that must differ by four.
+  //
+  // Measured as a delta rather than taken from the archive list, because the
+  // portal-magic seed above can name the same node and a count would double it.
+  const legacyEverKnown = componentOf(state, EVER_KNOWN).size - everKnownBefore;
+
   attachGrantBudget(state, {
     universe: findUniverse(state),
     // `worldDeps` always supplies the god block; the optionality on `WorldStepDeps`
@@ -769,11 +1034,41 @@ export function buildReferenceState(input: {
     constants: content.deps.god?.content.constants,
     options,
     // Distinct node ids, every one of them newly ever-known: the universe was
-    // created three statements ago and has never held anything.
-    seededNodes: new Set(seeded).size,
+    // created three statements ago and has never held anything. Plus whatever a
+    // legacy archive newly brought in — see the delta above.
+    seededNodes: new Set(seeded).size + legacyEverKnown,
   });
 
   return state;
+}
+
+/**
+ * One completed academy and the library it owns, in that entity order.
+ *
+ * Complete at tick zero, and still the right call now that construction is
+ * built. The sentence that used to be here — *the construction mechanic that
+ * would finish it is not built* — was true when it was written and is not any
+ * more: laborers raise buildings from the world loop as of W29. What stands is
+ * the other half of the argument. An academy still under construction would
+ * carry no students and no scriptorium, so a universe founded on one would spend
+ * its first years unable to teach or write, and every knowledge measurement in
+ * the reference run would be measuring the opening delay instead of the
+ * mechanism.
+ *
+ * A universe therefore builds nothing at all unless the god funds a site. That
+ * is not a gap: it is what gives `fundUniversity` a marginal value it did not
+ * have when nothing could finish what it founded.
+ */
+function foundAcademy(state: SimState): EntityHandle {
+  const library = state.entities.create();
+  attachRecord(state, LIBRARY, library, { foundedTick: 0 });
+  const university = state.entities.create();
+  attachRecord(state, UNIVERSITY, university, {
+    libraryId: library,
+    capacity: ACADEMY_CAPACITY,
+    buildProgress: FP_ONE,
+  });
+  return university;
 }
 
 /**
@@ -933,6 +1228,16 @@ export interface ReferenceRun {
    * sample, which is the one a system cannot take. See `balance-telemetry.ts`.
    */
   balanceTelemetry: () => BalanceRunTelemetry;
+  /**
+   * The cheat sheet this run was built with, canonicalized, or `undefined` on
+   * an honest run.
+   *
+   * Reported rather than inferred: a caller that wants to stamp a harness
+   * provenance block, print a banner, or refuse to record a result needs the
+   * digest, and re-normalizing the spec at each of those sites would be a
+   * second answer to which cheats are in force.
+   */
+  readonly sandbox?: NormalizedSandbox;
 }
 
 /** The scenario id every reference run records. Stable; a baseline is keyed on it. */
@@ -987,6 +1292,79 @@ export interface ReferenceScenarioOptions {
    * path with baselines attached.
    */
   readonly ablation?: AblationMask;
+  /**
+   * An unrecorded drain on one stock, or absent. **The positive control on the
+   * conservation ledger, and nothing else may set it.**
+   *
+   * `WorldStepDeps.leak` lives on the shipped path on purpose — a checker that
+   * has never failed is not known to work, and a control that re-implements the
+   * tick can agree with itself while both have drifted from the real loop. What
+   * was missing was a way to reach it *through the composition root*, so that
+   * the thing exercised is the loop a client is really fed by rather than a
+   * hand-built world beside it.
+   *
+   * **A run built with this is a run that dies.** The tick reports its breach
+   * and then `assertMaterialsConserved` throws, which is the whole point: a flow
+   * that changes a stock without recording itself is the defect it asserts
+   * against. Nothing in `src/` sets this, and `material-ledger.test.ts` holds
+   * the deps to `leak === undefined` so a composition root cannot acquire one by
+   * accident.
+   */
+  readonly leak?: { readonly kind: MaterialKind; readonly perTick: number };
+  /**
+   * A policy asked on every engagement tick of every raid, or absent.
+   *
+   * Absent is the build before the raid seam existed, byte for byte: the raid
+   * loop steps, resolves and throws exactly as `runRaid` did, so every
+   * committed baseline takes the branch it was recorded on. Installing one is
+   * what makes `raid-engagement.md` §3's verbs reachable at all — the god's
+   * world-tick submission cannot serve, because `coordination`'s world-scale
+   * resolver has already consumed it by the time a portal opens.
+   *
+   * Per **scenario** rather than per `ReferenceContent`, for the reason
+   * {@link ReferenceScenarioOptions.ablation} gives at length: a content set is
+   * memoized for the life of a worker and a policy folded into one would be
+   * shared by every run the worker executed afterwards.
+   */
+  readonly engagementPolicy?: EngagementPolicy;
+
+  /**
+   * What a previous universe left this one, or absent for a first universe.
+   *
+   * Per **scenario**, not per {@link ReferenceOptions}, and the placement is the
+   * same one `ablation` argues for one field up. `ReferenceOptions` is a bag of
+   * numeric sweep levels read out of a `ScenarioConfig` by name; a legacy is a
+   * structured artifact produced by a *different run*, and there is no level of
+   * a factor that means "the record run 41 left". A `ReferenceContent` would be
+   * worse still: it is memoized for the life of a worker process, so a legacy
+   * folded into one would be inherited by every subsequent run that worker
+   * executed — one universe's descendants seeded into unrelated experiments.
+   *
+   * Absent is the first universe, and it is byte-identical to the build before
+   * this field existed.
+   */
+  readonly legacy?: LegacyRecord;
+
+  /**
+   * The sandbox cheat sheet, or absent for an honest universe. **Absent is the
+   * default and absent is every shipped build.**
+   *
+   * The whole of the sandbox's contact with this file is this one optional
+   * field and the four places below that read it. With it absent, every line of
+   * this function is the line it ran before `sandbox.ts` existed — the same
+   * `defineWorldStateSchema`, the same system list, the same
+   * {@link REFERENCE_SCENARIO_ID}, the same state out of the builder — which is
+   * what makes "off by default" a property with a snapshot-hash test rather
+   * than an assurance. The precedent is
+   * {@link ReferenceScenarioOptions.telemetry} and it is the same argument: an
+   * inertness claim is worth nothing unless the other arm can be built and
+   * compared.
+   *
+   * Present, the universe is built on a schema carrying `sandbox-brand`, is
+   * branded before anybody sees it, and records a scenario id that is not the
+   * reference one. See `sandbox.ts` for why none of that can be laundered off.
+   */
+  readonly sandbox?: SandboxSpec;
 }
 
 /**
@@ -1003,10 +1381,59 @@ export function referenceScenario(
   content: ReferenceContent = referenceContent(),
   options: ReferenceScenarioOptions = {},
 ): ReferenceRun {
-  const simulation = defineWorldSimulation(
-    options.ablation === undefined ? content.deps : { ...content.deps, ablation: options.ablation },
-  );
+  const simulation = defineWorldSimulation({
+    ...content.deps,
+    ...(options.ablation === undefined ? {} : { ablation: options.ablation }),
+    // Spread conditionally rather than assigned, so an absent option leaves the
+    // key off entirely and every control run takes the byte-identical
+    // `deps.leak === undefined` branch — the same reasoning `ablation` carries
+    // one field up.
+    ...(options.leak === undefined ? {} : { leak: options.leak }),
+  });
   const raiding = options.raids ?? true;
+
+  // The sandbox, resolved once. Four reads follow — the schema builder, the
+  // system list, the scenario id, the founding cheats — and every one of them
+  // is a ternary whose absent branch is the expression that was there before.
+  // Nothing further down this function, and nothing at all in `coordination` or
+  // `rules-*`, knows the layer exists.
+  const sandbox = options.sandbox === undefined ? undefined : normalizeSandbox(options.sandbox);
+  const buildSchema = (systems: readonly System[]): WorldSchema =>
+    sandbox === undefined ? defineWorldStateSchema(systems) : defineSandboxWorldSchema(systems);
+  const sandboxSystems: readonly System[] = sandbox === undefined ? [] : [sandboxSystem(sandbox)];
+  const scenarioId =
+    sandbox === undefined
+      ? REFERENCE_SCENARIO_ID
+      : sandboxScenarioId(REFERENCE_SCENARIO_ID, sandbox.digest);
+  const sandboxReport = sandbox === undefined ? {} : { sandbox };
+  /**
+   * Applies the founding cheats to a state the builder just produced.
+   *
+   * Inside `create`, deliberately: `Scenario.create` must be a pure function of
+   * `(runSeed, config)` and this is one — the cheat sheet is fixed for the life
+   * of the scenario, so two sessions reset with the same coordinates build the
+   * same cheated universe. Doing it outside would mean handing out a state that
+   * was honest for a moment and became cheated later, which is exactly the
+   * window the brand exists to close.
+   */
+  const cheat = (state: SimState): SimState => {
+    if (sandbox === undefined) return state;
+    applyFoundingCheats(state, sandbox, {
+      // `record.bit` is the axis's **index**, not its mask — `creo` is 0, not 1
+      // — and `permittedTechniques` is a bitmask over those indices. ORing the
+      // indices together instead of shifting them produced `0|1|2|3|4 = 7`,
+      // which is a legitimate-looking mask naming three techniques that are not
+      // the five the content declares. Caught by asserting the armed mask
+      // against the registry rather than against itself.
+      allTechniques: content.registry.techniques.reduce(
+        (bits, { record }) => bits | (1 << record.bit),
+        0,
+      ),
+      allForms: content.registry.forms.reduce((bits, { record }) => bits | (1 << record.bit), 0),
+      nodeCount: content.deps.catalog.nodeCount,
+    });
+    return state;
+  };
 
   // Per run, like the report closures and the raid log, and installed **first**
   // so that the tick it labels a sample with is the tick the state arrived at.
@@ -1020,21 +1447,31 @@ export function referenceScenario(
   };
 
   if (!raiding) {
-    const raidlessSchema = defineWorldStateSchema([
+    const raidlessSchema = buildSchema([
+      ...sandboxSystems,
       ...telemetrySystems,
       ...simulation.schema.systems,
     ]);
     return {
       scenario: {
-        scenarioId: REFERENCE_SCENARIO_ID,
+        scenarioId,
         catalogue: content.catalogue,
+        // The per-tick flow ledger, handed to `agent-api` here because this is
+        // the only package that has both in scope. `Scenario.flowReport` says
+        // why the edge cannot run the other way; the assignment is what holds
+        // `FlowReportSource` structurally equal to `WorldStepReport`, so a field
+        // renamed in `coordination` fails to build on this line.
+        flowReport: simulation.lastReport,
         create: (runSeed: number, config: ScenarioConfig): SimState => {
-          const state = buildReferenceState({
-            runSeed,
-            options: referenceOptions(config),
-            content,
-            schema: raidlessSchema,
-          });
+          const state = cheat(
+            buildReferenceState({
+              runSeed,
+              options: referenceOptions(config),
+              content,
+              schema: raidlessSchema,
+              ...(options.legacy === undefined ? {} : { legacy: options.legacy }),
+            }),
+          );
           recorder.begin(state);
           return state;
         },
@@ -1043,6 +1480,7 @@ export function referenceScenario(
       lastGodReport: simulation.lastGodReport,
       raids: () => [],
       balanceTelemetry,
+      ...sandboxReport,
     };
   }
 
@@ -1058,7 +1496,8 @@ export function referenceScenario(
   //
   // Last in the list, so the god's action 14 has already been resolved and paid
   // for by the time this reads it.
-  const schema = defineWorldStateSchema([
+  const schema = buildSchema([
+    ...sandboxSystems,
     ...telemetrySystems,
     ...simulation.schema.systems,
     raidSystem({
@@ -1079,12 +1518,17 @@ export function referenceScenario(
       // arm neutralizing a combat primitive would neutralize nothing and report
       // a null result for a wire that was live the whole time.
       ...(options.ablation === undefined ? {} : { ablation: options.ablation }),
+      // Same placement and the same reason as the mask above: per run, so a
+      // policy cannot leak into the arms scheduled after it.
+      ...(options.engagementPolicy === undefined
+        ? {}
+        : { engagementPolicy: options.engagementPolicy, maskCatalogue: content.catalogue }),
     }),
   ]);
 
   return {
     scenario: {
-      scenarioId: REFERENCE_SCENARIO_ID,
+      scenarioId,
       catalogue: content.catalogue,
       portalTargets: portalTargetIds(constants),
       // The roster the god may invite from, and it is every species the content
@@ -1097,17 +1541,25 @@ export function referenceScenario(
       // first would burn every round on a refusal — measured, and documented on
       // `inviteScholarCandidates`.
       portalNodes: [...(content.deps.god?.portalNodes ?? [])],
+      // The raiding half of the same wire. Both literals carry it or a run that
+      // raids draws no ledger while a run that does not draws one — which reads
+      // as "the economy stopped" rather than as two scenario objects that were
+      // edited one at a time.
+      flowReport: simulation.lastReport,
       create: (runSeed: number, config: ScenarioConfig): SimState => {
         // A new episode is a new run: the raid log belongs to one, and a
         // scenario reused across two would report the first one's raids in the
         // second one's record.
         records.length = 0;
-        const state = buildReferenceState({
-          runSeed,
-          options: referenceOptions(config),
-          content,
-          schema,
-        });
+        const state = cheat(
+          buildReferenceState({
+            runSeed,
+            options: referenceOptions(config),
+            content,
+            schema,
+            ...(options.legacy === undefined ? {} : { legacy: options.legacy }),
+          }),
+        );
         // The census belongs to one episode too, and for the identical reason.
         recorder.begin(state);
         return state;
@@ -1117,5 +1569,6 @@ export function referenceScenario(
     lastGodReport: simulation.lastGodReport,
     raids: () => records,
     balanceTelemetry,
+    ...sandboxReport,
   };
 }

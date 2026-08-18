@@ -83,8 +83,15 @@ import {
 import type { LongRunResult } from '@mm/scenario';
 import { beforeAll, describe, expect, it } from 'vitest';
 
-/** Long enough for two hundred world years on a busy machine. */
-const LONG_RUN_TIMEOUT_MS = 300_000;
+/**
+ * Long enough for two hundred world years on a busy machine.
+ *
+ * One such run costs 86 s here (the 9.6 case runs two, at 171.5 s, under load
+ * 20-50); the same hook was cut at 300 s on GitHub Actions job 95387839967 on
+ * 2026-08-17, which is the >3.5x ratio `vitest.config.ts` derives its factor
+ * from. Seven times the two-run case, rounded up.
+ */
+const LONG_RUN_TIMEOUT_MS = 1_200_000;
 
 /**
  * The bound `maxCarryingCapacity` gives the shipped `territory.json`.
@@ -249,6 +256,14 @@ describe('two hundred world years of the reference universe', () => {
     console.log(`9.5 lessons taught per 20-year window: ${taught.join(' / ')}`);
     console.log(`9.5 books scribed per 20-year window:  ${scribed.join(' / ')}`);
 
+    //
+    // **W21's side of this conflict is not merged, and the reason is on the
+    // record above.** It restores the per-window form — `for (const [index,
+    // lessons] of taught.slice(0, 8))`, every window must teach — which is
+    // exactly the assertion `main` retired after measuring five run seeds and
+    // finding three with an empty window. W21 predates that measurement; taking
+    // its hunk would re-assert a claim about one seed as a claim about the
+    // build.
     // **The per-window form of this assertion has been retired, and not
     // because this branch could not satisfy it.** It read "a lesson is taught
     // in every one of the ten windows" and it was never a property of the
@@ -373,11 +388,16 @@ describe('two hundred world years of the reference universe', () => {
     // competes with subsistence's `food`. Measured over this run: the fall is
     // **gone**. `libraryDepth` and `capitalContribution` are non-decreasing
     // across every one of the 2,400 ticks — the run's peak *is* its final
-    // value on both series, exactly (peak `fp(384)`, depth 48 nodes) — even
-    // though `food` still collapses `K` and the population from world year
-    // seventy on. Brake 4 (`applyLibraryUpkeep`) has not net-degraded the
-    // shelf even once in two centuries, because `vellum` never actually runs
-    // out here.
+    // value on both series, exactly — even though `food` still collapses `K`
+    // and the population from world year seventy on. Brake 4
+    // (`applyLibraryUpkeep`) has not net-degraded the shelf even once in two
+    // centuries, because `vellum` never actually runs out here.
+    //
+    // *Re-measured 2026-08-17 on `integration/all-branches`: peak `fp(404)` at
+    // depth 53, where this paragraph was written at `fp(384)` and depth 48. The
+    // shape held and the magnitudes moved with the open grid; the assertions
+    // below are all taken against the run's own series rather than against
+    // either pair of literals.*
     //
     // This is the honest replacement for the old "rises, peaks and falls
     // back" claim, not a loosened version of it: that claim is now false, and
@@ -398,53 +418,338 @@ describe('two hundred world years of the reference universe', () => {
         `${String(last?.grimoires ?? 0)} books standing at the end.`,
     );
 
-    // It is a curve rather than a constant. That half of the original claim
-    // still holds.
+    // It is a curve rather than a constant. That is the claim the box asked for
+    // and could not make.
     expect(distinct.length).toBeGreaterThan(2);
     expect(peak).toBeGreaterThan(0);
 
-    // The books-to-depth ratio, restated at its new measured value. It used
-    // to run close to one book per distinct node under the single-stock
-    // economy, where a scribe's `vellum` competed with the populace's food and
-    // upkeep for the same pool. Decoupled from food, scribing now has more
-    // headroom and duplicates accumulate faster before upkeep's per-instance
-    // cost catches them — measured at 157 books against 48 distinct nodes,
-    // roughly 3.3 books per node.
+    // ## The tripwire fired, and W23 is the somebody it was set to bring back
     //
-    // `apply-magic` moved it again, to **186 books against 43 nodes — 4.33** —
-    // and the direction is the goal doing what it is for rather than a
-    // regression. A month spent casting at the world is a month not spent
-    // researching, so the universe reaches five fewer distinct nodes; the
-    // scribes are unaffected (applied Terram work makes stone, and a scribe is
-    // paid in vellum), so the same scribing capacity now has a smaller distinct
-    // set to write and copies it more often. Fewer nodes and the same books is
-    // exactly a higher ratio.
+    // It read `grimoires < 2 * libraryDepth` and on this tree it reads **2,746
+    // books against 51 nodes**. **Its stated reason does not survive the
+    // measurement.**
     //
-    // Widened to 5 to fit the new measurement with headroom, not doubled
-    // reflexively — still well under the "ten would mean it is gone" ceiling the
-    // original comment named.
-    expect(last?.grimoires ?? 0).toBeLessThan(5 * (last?.libraryDepth ?? 1));
-
-    // The replacement for "it falls": it does not, anywhere in the run.
-    // Walked tick by tick rather than compared as peak-vs-last, for the same
-    // reason 9.3 walks every tick instead of every checkpoint — a series that
-    // dipped and recovered between the 20-year windows this file prints would
-    // still read as "never fell" from the endpoints alone.
-    let sawADecrease = false;
-    let previousDepth = 0;
-    let previousCapital = 0;
-    for (const tick of run.ticks) {
-      if (tick.libraryDepth < previousDepth || tick.capitalContribution < previousCapital) {
-        sawADecrease = true;
+    // *Re-measured on the merged tree (W23 + `main`), 2026-08-14, at
+    // `LONG_RUN_SEED`.* W23 recorded 3,350 books here against the same 51
+    // nodes, on its own branch and before `apply-magic` and the differentiated
+    // economy. The numerator moved and the claim below did not, which is the
+    // point of asserting an equality against the run's own `nodesKnown` rather
+    // than a ratio against a literal: the ratio would have had to be rewritten
+    // for a third time and this did not move at all.
+    // The comment argued the ratio would stay near one because *"a scribe
+    // prefers something the library lacks and upkeep charges her for every
+    // duplicate"* — so a ratio of 65 would mean the preference had stopped
+    // biting. Ablating W23's laborer materials-coverage term and rerunning at
+    // these coordinates says otherwise:
+    //
+    //     books standing at the end   before 15      after 3,350
+    //     library depth reached       before 36      after 51 — every node known
+    //     books scribed, last window  before  0      after 480
+    //
+    // That ablation is W23's, on W23's tree, and is left as it was recorded.
+    // The merged tree reaches the same place by the same route: 51 of 51 nodes
+    // shelved, 2,746 books standing, 480 scribed in the last 20-year window,
+    // and 597 instances degraded off unpaid shelves over the run — so
+    // destruction is live here too, which the assertion below this one checks.
+    //
+    // The preference was not biting *harder* before. It had nothing to bite
+    // with: the stock emptied around world year seventy, scribing became
+    // infeasible, and the fifteen books standing at the end were the residue of
+    // a shelf that had been degraded to nothing. The old bound was satisfied by
+    // **a library that had stopped existing**, which is the same trap the
+    // campaign's D5 was rewritten to escape.
+    //
+    // What replaces it is the claim the old bound was reaching for and could
+    // not make: the shelf holds **everything the universe knows**. That is the
+    // preference biting all the way to full coverage, and it is strictly
+    // stronger than a ratio — a ratio near one is also what an empty library
+    // reports. Compared against the run's own `nodesKnown` rather than a
+    // literal, so that widening the ruleset does not silently weaken it.
+    //
+    // ## Re-authored 2026-08-17, `integration/all-branches`: the coverage
+    // equality is withdrawn and the curve itself is asserted
+    //
+    // **What it measured before.** `libraryDepth === nodesKnown` — the shelf
+    // holds *everything* the universe knows. W23 wrote that when the two
+    // coincided at 51, because the twelve enabled v1 cells were all there was to
+    // know, and it is a strong claim only while that is true.
+    //
+    // **Which decision voided it.** This campaign flagged all seventy grid cells
+    // `v1`. At the end of this run `nodesKnown` is **227** where W23 measured 51,
+    // and `libraryDepth` is **53** where W23 measured 51. The shelf did not
+    // shrink — it grew, and so did the pile, 2,746 books -> **3,530**. The
+    // equality broke because its right-hand side went up 4.5x, and a claim about
+    // a universe with 51 things in it is not a claim about one with 227.
+    //
+    // **What it measures now.** The property task 9.8 actually asked for: that
+    // total effective capital contribution is *a curve*, and that under the
+    // differentiated economy it does not fall back — measured across the whole
+    // run rather than at its end, which is the only form in which "does not fall
+    // back" is checkable at all.
+    //
+    // **Measured on this tree at `LONG_RUN_SEED` over 2,400 ticks:**
+    //
+    // | | founding | final | peak |
+    // |---|--:|--:|--:|
+    // | `capitalContribution` | 0 | **404 fp** | 404 fp |
+    // | `libraryDepth` | 0 | **53** | 53 |
+    // | `nodesKnown` | 6 | 227 | **230** |
+    //
+    // Neither of the first two falls at **any** of the 2,399 tick boundaries, so
+    // peak and final coincide by construction rather than by luck. `nodesKnown`
+    // is the control that keeps that from being vacuous: it *does* fall back,
+    // 230 -> 227, so the run being reported is not one in which nothing is ever
+    // lost. What the pair says is that **minds forget and shelves do not** —
+    // which is exactly `degradeLibrary`'s authored order, and the destruction
+    // assertion at the bottom of this case argues the same point from the other
+    // side. Depth is the *last* thing that brake touches, so its non-decrease is
+    // a claim that the shelf was never degraded past its last copy of a title in
+    // two centuries, and not a claim that nothing was destroyed: **733**
+    // instances were, measured on this tree by the same case's brake-4 line
+    // below. (The 597 an earlier revision of this comment carried was taken
+    // before the grid opened.)
+    //
+    // ## And the shelf stops growing, which is what the equality was hiding
+    //
+    // Depth reaches 40 by tick **91** and 53 by tick **1,705** — thirteen further
+    // titles across the intervening twenty-three centuries of month-ticks. Growth
+    // over the last fifth of the run is **0** against **40** over the first
+    // fifth. The curve is monotone and flattening, and the gap to `nodesKnown`
+    // widens for the rest of the run.
+    //
+    // What bounds it is `CONSUMPTION_ORDER`, working exactly as authored:
+    // `libraryUpkeep` is paid at position 4 and `scribing` at 5, and the upkeep
+    // bill scales with the pile. Measured per twenty-year window rather than
+    // inferred from the depth series:
+    //
+    // | window (ticks) | 1-240 | 481-720 | 961-1200 | 1441-1680 | 2161-2400 |
+    // |---|--:|--:|--:|--:|--:|
+    // | `libraryUpkeep` owed, fp | 215,690 | 114,234 | 186,798 | 589,850 | **1,579,364** |
+    // | vellum faucet, fp | 163,049 | 138,907 | 390,576 | 1,278,583 | 2,117,968 |
+    // | owed as % of faucet | 132% | 82% | 48% | 46% | **75%** |
+    // | `libraryDepth` at window end | 40 | 51 | 51 | 52 | 53 |
+    //
+    // At the final tick upkeep owes **7,056 fp of an 8,931 fp faucet — 79%** —
+    // leaving under two grimoires a month. That is a negative feedback loop
+    // between shelf size and shelf growth, and it is asserted below as its own
+    // measured figure rather than left as an inference from a flat series.
+    //
+    // ### The `scribing` shortfall is zero, and that zero has a positive control
+    //
+    // Scribing is throttled by affordability *before* the priority walk, so it
+    // never asks for what is not there and its claimant row cannot show the
+    // pressure: `scribing` owed == paid == 4,365,312 fp, shortfall **0** summed
+    // over all 2,400 ticks. The same reader on the same field reports
+    // `libraryUpkeep` short by **42,643 fp** and `shortKinds.vellum` true on
+    // **389 of 2,400 ticks**, so the probe works and the zero is a fact about
+    // scribing rather than a dead field.
+    //
+    // ### What would bring the coverage claim back
+    //
+    // Either the vellum faucet scales with what there is to know, or upkeep stops
+    // scaling linearly with the pile. Both are content or rules decisions and
+    // neither is a test edit. Until one is taken, the honest statement is the one
+    // asserted here: the shelf covers *part* of what the universe knows, that
+    // part is shrinking as a fraction, and the capital curve built on it still
+    // does not fall back.
+    const fallsIn = (series: readonly number[]): number => {
+      let falls = 0;
+      for (let index = 1; index < series.length; index += 1) {
+        if ((series[index] ?? 0) < (series[index - 1] ?? 0)) falls += 1;
       }
-      previousDepth = tick.libraryDepth;
-      previousCapital = tick.capitalContribution;
-    }
-    expect(
-      sawADecrease,
-      'library depth or capital contribution fell at some tick — brake 4 is shedding the shelf ' +
-        'again, and the fall-back claim this test replaced may be true once more',
-    ).toBe(false);
+      return falls;
+    };
+    const capitalSeries = run.ticks.map((tick) => tick.capitalContribution);
+    const depthSeries = run.ticks.map((tick) => tick.libraryDepth);
+    const knownSeries = run.ticks.map((tick) => tick.nodesKnown);
+    const fifth = Math.floor(run.ticks.length / 5);
+    const depthAt = (index: number): number => run.ticks[index]?.libraryDepth ?? 0;
+    const firstFifthGrowth = depthAt(fifth - 1) - run.founding.libraryDepth;
+    const lastFifthGrowth = depthAt(run.ticks.length - 1) - depthAt(run.ticks.length - fifth - 1);
+    const upkeepOwedLast = last?.report.libraryUpkeepOwed ?? 0;
+    const vellumFaucetLast = last?.report.faucetByKind.vellum ?? 0;
+    console.log(
+      `9.8 the curve does not fall back: ${String(fallsIn(capitalSeries))} decreases in ` +
+        `capitalContribution and ${String(fallsIn(depthSeries))} in libraryDepth over ` +
+        `${String(run.ticks.length)} ticks, against ${String(fallsIn(knownSeries))} in nodesKnown. ` +
+        `Depth grew ${String(firstFifthGrowth)} over the first fifth and ` +
+        `${String(lastFifthGrowth)} over the last, ending at ${String(last?.libraryDepth ?? 0)} ` +
+        `against ${String(last?.nodesKnown ?? 0)} nodes known. Final-tick libraryUpkeep owes ` +
+        `${String(upkeepOwedLast)} fp of a ${String(vellumFaucetLast)} fp vellum faucet.`,
+    );
+
+    // The curve, over the whole run and not at its end. `nodesKnown` is the
+    // positive control for the counter: an instrument that reports "no decreases"
+    // on every series it is handed is reporting nothing.
+    expect(fallsIn(capitalSeries)).toBe(0);
+    expect(fallsIn(depthSeries)).toBe(0);
+    expect(fallsIn(knownSeries)).toBeGreaterThan(0);
+
+    // It grew, and it stopped growing. Both halves, because either alone is
+    // satisfied by a shelf that never existed.
+    expect(last?.libraryDepth ?? 0).toBeGreaterThan(run.founding.libraryDepth);
+    expect(lastFifthGrowth).toBeLessThan(firstFifthGrowth);
+
+    // The coverage gap, asserted in the direction it was measured, as the mirror
+    // of the tripwire the equality used to be: if a later change funds the shelf
+    // well enough to catch up with what the universe knows, this fails, and that
+    // is the signal to restore W23's equality rather than to widen this.
+    expect(last?.libraryDepth ?? 0).toBeLessThan(last?.nodesKnown ?? 0);
+
+    // The upkeep pressure that explains the flattening, as its own figure. A
+    // majority of every sheet of vellum the universe makes goes to keeping the
+    // books it already has; 79% at the final tick, asserted as "more than half"
+    // so that a tuning pass has room to move it without silently repealing the
+    // mechanism.
+    expect(upkeepOwedLast * 2).toBeGreaterThan(vellumFaucetLast);
+    //
+    // ## The books-to-depth ratio is withdrawn — and so, now, is the equality
+    //
+    // *Heading corrected 2026-08-17: this section was written as "the coverage
+    // equality stays", and the block above withdraws it. The ruling below about
+    // the **ratio** is unaffected — it was never an argument for the equality,
+    // only against a bound over duplication — so it is left standing as it was
+    // decided.*
+    //
+    // Three branches reached this line with three different answers and the
+    // Group F merge, 2026-08-16, had to rule between them. `main` replaced the
+    // ratio with the coverage equality above, on the ground that *a ratio near
+    // one is also what an empty library reports*. `w78/teaching-boundary`
+    // widened the ratio to `6 x`, then this group re-measured it to `8 x` on the
+    // w78 tree. `w53/practice` withdrew it outright, and gave the strongest
+    // reason of the three: books-per-node averages **10.9 across 32 seeds** with
+    // depth running 3 to 45, so the ratio is not a trend and no bound over it is
+    // a claim anybody has established. Two of the three sides therefore agree
+    // the ratio is a bad instrument, and the `8 x` this group measured two rows
+    // ago is a fourth number for a quantity that should not have a bound at all.
+    //
+    // So: the ratio is withdrawn and the number is printed instead. The
+    // equality was kept at that ruling and is withdrawn in its turn by the block
+    // above, for a different reason — the open grid, not the instrument. What
+    // survives from `w78` is its finding, recorded below and no longer asserted.
+    //
+    // ### Recorded, not asserted: what `w78` measured
+    //
+    // ## Both claims are kept, because they are two claims and not one
+    //
+    // `main` replaced the duplication ratio with the coverage equality above,
+    // giving the reason: a ratio near one is also what an *empty* library
+    // reports, so the ratio alone could be satisfied by a shelf that had been
+    // degraded out of existence. `w78/teaching-boundary` did not see that
+    // decision and widened the ratio instead. Resolved on the Group F merge,
+    // 2026-08-16, by keeping both: the equality is the coverage claim and the
+    // ratio is the duplication claim, and neither implies the other. Both were
+    // re-measured on this tree rather than inherited — see below. *(The coverage
+    // half of that ruling is superseded 2026-08-17; the reasoning about why the
+    // two are distinct claims is why the block above replaces the equality with
+    // a coverage **gap** rather than dropping coverage altogether.)*
+    // **The two effects compound, and the merged tree is the first one holding
+    // both.** `w78/teaching-boundary` measured this same ratio independently and
+    // widened it to `6 ×` for its own reason: teaching stops at the institution,
+    // only six of ninety mages are ever affiliated, and they collectively know
+    // less, so the shelf holds fewer *distinct* nodes. That is the same
+    // denominator `apply-magic` cuts, by a different mechanism. Neither number
+    // below is a claim about a tree holding both:
+    //
+    // | tree | books | distinct nodes | ratio | bound it carried |
+    // |---|--:|--:|--:|---|
+    // | after `vellum` decoupled from food | 157 | 48 | 3.3 | `< 4 ×` |
+    // | `main`, after `apply-magic` | 186 | 43 | 4.33 | `< 5 ×` |
+    // | `w78`, after the teaching boundary | 154 | 36 | 4.3 | `< 6 ×` |
+    // | **both, this tree** | **164** | **25** | **6.56** | `< 8 ×` |
+    //
+    // Re-measured from the merged tree rather than taken from either side —
+    // `5 ×` and `6 ×` are both bounds this tree fails, and taking the tighter of
+    // two numbers neither side measured here is how a merge silently pins a
+    // value the build cannot hold. The numerator barely moved; the denominator
+    // fell 43 → 25 because both mechanisms take distinct nodes off the shelf.
+    //
+    // Widened to 8, which fits 6.56 with headroom and is still under the "ten
+    // would mean it is gone" ceiling the original comment named — but 6.56 is
+    // the closest this ratio has ever come to it. **If this fails again, do not
+    // widen it a fourth time without naming which mechanism moved which half.**
+    // **The books-to-depth bound is withdrawn, and this is the third time this
+    // task has withdrawn an assertion rather than loosening one.**
+    //
+    // Its history: close to one book per node under the single-stock economy;
+    // 157 books against 48 distinct nodes — roughly 3.3 — once `w29` decoupled
+    // `vellum` from `food`, with a bound of `4 x depth` written to fit that
+    // *"with headroom, not doubled reflexively"*, and a comment observing it
+    // was *"nowhere near the 'ten would mean it is gone' ceiling"*.
+    //
+    // W53 measured here: **159 books against 17 distinct nodes, roughly 9.4** —
+    // at the ceiling that comment named, from the other side. The count holds
+    // while the *breadth* collapses.
+    //
+    // **The first draft of this comment named the wrong cause, and the
+    // correction is worth more than the number.** It said the `resource-yield`
+    // practitioner gate did it: *"an economy that only pays out while somebody
+    // is casting produces less `vellum`, and less `vellum` is fewer books."*
+    // Ablating that gate — the ungated instance list to the second
+    // `gatherEffects` call, i.e. `main`'s behaviour exactly — changes `stone`
+    // and **nothing else**: food, vellum, population, carrying capacity and the
+    // per-species mage table are bit-identical over 1,200 ticks. Every
+    // `resource-yield` node in this content set routes to `stone`, so the gate
+    // never fed vellum and cannot have starved it.
+    //
+    // What did it is the **practice goal taking the month** from research and
+    // rediscovery, the only two operations that add a *distinct* node. Against a
+    // practice-free control on 32 paired seeds: depth −6.31 (t = −2.96) at an
+    // unchanged book count. Both halves of the fix are in
+    // `docs/design/practice-results.md`.
+    //
+    // And 3.3 was itself one seed: main-equivalent books-per-node averages 10.9
+    // across 32 seeds at this horizon, with depth running 3 to 45. This ratio is
+    // not a trend and this bound is not coming back on one run's evidence.
+    //
+    // Widening the bound to `10 x depth` would make it pass and would assert
+    // that 9.4 is fine, which is exactly the claim nobody has established. So
+    // the number is printed and the bound is gone, in the same spirit the
+    // module note applies to 9.5 and 9.9: *"a checked box that is false is
+    // worse than an unmet promise recorded."* What is asserted instead is
+    // non-vacuity — the library has *some* breadth and *some* books — and the
+    // ratio is left to the writeup, where W53 records it as the cost of the
+    // gate rather than as a passing test.
+    console.log(
+      `9.8 books-to-depth: ${String(last?.grimoires ?? 0)} books against ` +
+        `${String(last?.libraryDepth ?? 0)} distinct nodes — ` +
+        `${((last?.grimoires ?? 0) / Math.max(last?.libraryDepth ?? 1, 1)).toFixed(1)} per node. ` +
+        'Was 3.3 before the practice gate. NOT ASSERTED; see the comment.',
+    );
+    expect(last?.libraryDepth ?? 0).toBeGreaterThan(0);
+    expect(last?.grimoires ?? 0).toBeGreaterThan(0);
+
+    // ## Destruction is still live, which is the other half and the harder one
+    //
+    // W23's brief was explicit that a written record which *cannot be lost* is
+    // as broken as one that cannot persist — `degradeLibrary` is the only
+    // non-raid destruction channel in the build. So brake 4 must still bind,
+    // and `mages-and-species/design.md`'s *"beyond some depth the marginal
+    // shelf costs more than it returns"* must still be true.
+    //
+    // The old assertion said so by requiring the curve to end **below** its
+    // peak — but that encoded the collapse itself, and a library that recovers
+    // is indistinguishable from one that never grew under it.
+    //
+    // Asserted off the loop's own count of what it destroyed rather than off a
+    // dip in a series. `libraryDepth` **cannot** fall while duplicates exist:
+    // `degradeLibrary` sheds every second copy before it touches a last one, so
+    // depth is the last thing to move and a depth series would report a
+    // perfectly healthy shelf right up until the archive was gone. Reading the
+    // brake's own emission is both stronger and honest about what it measures.
+    const degraded = run.ticks.reduce(
+      (sum, tick) => sum + tick.report.libraryInstancesDegraded,
+      0,
+    );
+    const owed = run.ticks.reduce((sum, tick) => sum + tick.report.libraryUpkeepOwed, 0);
+    const paid = run.ticks.reduce((sum, tick) => sum + tick.report.libraryUpkeepPaid, 0);
+    console.log(
+      `9.8 brake 4 over the run: ${String(owed)} fp upkeep owed, ${String(paid)} paid, ` +
+        `${String(degraded)} instances degraded off unpaid shelves.`,
+    );
+    expect(owed).toBeGreaterThan(0);
+    expect(paid).toBeLessThan(owed);
+    expect(degraded, 'brake 4 destroyed nothing in two hundred years').toBeGreaterThan(0);
   });
 
   it('9.10 — records the mature-universe mage population vision §13 asked for', () => {

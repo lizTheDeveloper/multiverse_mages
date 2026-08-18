@@ -176,7 +176,15 @@ interface NodeFacts {
   readonly primitives: ReadonlySet<string>;
 }
 
-/** Every v1 node, with the facts the arms are matched on. Content, not fixture. */
+/**
+ * Every enabled node, with the facts the arms are matched on. Content, not fixture.
+ *
+ * **This used to mean "the twelve-cell v1 rectangle" and now means the whole
+ * grid**, without a line of it changing: this campaign flagged all seventy cells
+ * `"v1": true`, so the filter that once selected 52 nodes now selects 301. That
+ * is the decision this file's arms are downstream of and it is named here rather
+ * than left to be inferred from a treatment set that grew eight-fold.
+ */
 function v1Nodes(): readonly NodeFacts[] {
   const content = registry();
   const v1 = new Set(
@@ -193,17 +201,69 @@ function v1Nodes(): readonly NodeFacts[] {
     .sort((left, right) => left.contentId - right.contentId);
 }
 
+/** Nodes whose every effect is inert, ascending — the pool a control is drawn from. */
+function inertPool(): readonly NodeFacts[] {
+  return v1Nodes().filter(
+    (node) =>
+      node.primitives.size > 0 && [...node.primitives].every((id) => INERT_PRIMITIVES.has(id)),
+  );
+}
+
 /** Every v1 node carrying `primitive`. The treatment set. */
 function treatmentSet(primitive: AcademicPrimitive): readonly NodeFacts[] {
-  const found = v1Nodes().filter((node) => node.primitives.has(primitive));
-  if (found.length === 0) {
+  const carrying = v1Nodes().filter((node) => node.primitives.has(primitive));
+  if (carrying.length === 0) {
     throw new Error(
-      `No v1 node carries ${primitive}. This file's whole claim is that the shipped v1 rectangle ` +
+      `No enabled node carries ${primitive}. This file's whole claim is that the shipped content ` +
         'authors these effects, so an empty set is a content change that invalidates the test ' +
         'rather than a test that should pass vacuously.',
     );
   }
-  return found;
+
+  // ## Trimmed to what the control pool can match, 2026-08-17
+  //
+  // `controlSet` below has to hold tier for tier — its own error message says
+  // why, and the reason is the whole design of this file: *"an unmatched arm
+  // would confound the rate with the graph."* While `v1` meant twelve cells the
+  // two sets happened to be matchable and nothing had to say so. Opening all
+  // seventy made the treatment sets eight times larger **without deepening the
+  // inert pool**, which tops out at tier 5, and `research-rate` reaches tier 6.
+  //
+  // Measured on this content set: the inert pool holds 21/29/43/30/4 nodes at
+  // tiers 1-5 and none above. `research-rate` carries 55 nodes at 15/8/14/10/7/1,
+  // so **four of the fifty-five cannot be matched** — three at tier 5 and the one
+  // at tier 6, `cf-the-given-destiny`. `teach-rate` (20 nodes) and `scribe-rate`
+  // (19) are matchable entire, so this trims exactly one of the three arms and
+  // by 7% of it.
+  //
+  // The alternative was to keep the whole treatment set and let the control run
+  // short at the deep end, which is the confound the file exists to avoid, or to
+  // hardcode the old twelve-cell rectangle, which would be a fixture premise the
+  // game has abandoned. Trimming is stated rather than silent: `the control sets
+  // are inert by construction` asserts the trim below, so a content change that
+  // deepens the inert pool shows up as the arm getting larger.
+  const available = new Map<number, number>();
+  for (const node of inertPool()) available.set(node.tier, (available.get(node.tier) ?? 0) + 1);
+  const taken = new Map<number, number>();
+  const matched: NodeFacts[] = [];
+  for (const node of carrying) {
+    const used = taken.get(node.tier) ?? 0;
+    if (used >= (available.get(node.tier) ?? 0)) continue;
+    taken.set(node.tier, used + 1);
+    matched.push(node);
+  }
+  if (matched.length === 0) {
+    throw new Error(
+      `Every node carrying ${primitive} sits at a tier the inert pool cannot match, so this ` +
+        'file has no control arm at all. That is a content change rather than a test to relax.',
+    );
+  }
+  return matched;
+}
+
+/** How many nodes {@link treatmentSet} dropped for want of a tier-matched control. */
+function untrimmedTreatmentCount(primitive: AcademicPrimitive): number {
+  return v1Nodes().filter((node) => node.primitives.has(primitive)).length;
 }
 
 /**
@@ -213,10 +273,7 @@ function treatmentSet(primitive: AcademicPrimitive): readonly NodeFacts[] {
  * of iteration order — the same reason `foundingCandidates` sorts.
  */
 function controlSet(treatment: readonly NodeFacts[]): readonly NodeFacts[] {
-  const pool = v1Nodes().filter(
-    (node) =>
-      node.primitives.size > 0 && [...node.primitives].every((id) => INERT_PRIMITIVES.has(id)),
-  );
+  const pool = inertPool();
   const taken = new Set<number>();
   const chosen: NodeFacts[] = [];
   for (const node of treatment) {
@@ -250,6 +307,26 @@ interface ArmTotals {
   readonly instances: number;
   readonly grimoires: number;
   readonly nodesKnown: number;
+  /**
+   * Distinct nodes the shelf holds at least one copy of at the end of the run.
+   *
+   * The scribing subsystem's **own** objective: `scribing.ts` prefers a node the
+   * library does not already hold, so a second copy of a shelved node is what a
+   * scribe writes when she cannot find new work. Counted here because
+   * `grimoiresScribed` — a count of copies — cannot tell those two apart. See
+   * the `scribe-rate` case below for the measurement that made this necessary.
+   */
+  readonly titlesShelved: number;
+  /**
+   * Σ the authored `scribeCost` of every distinct title shelved, `fp`.
+   *
+   * Coverage weighted by what it cost to reach, so that a shelf that is wide
+   * because it is shallow does not read the same as one that is wide and deep.
+   * Read off `node.scribeCost` rather than derived from tier: the content
+   * authors 1024 doubling per tier for 300 of the 301 nodes and **6144** for one
+   * tier-4 node, and a derived weight would be silently wrong about it.
+   */
+  readonly titleWeight: number;
 }
 
 /**
@@ -321,6 +398,15 @@ async function stepped(deps: WorldStepDeps, grant: readonly NodeFacts[]): Promis
   const grimoires = componentOf(current, GRIMOIRE).size;
   const known = new Set<number>();
   for (const { row } of collectRecords(current, KNOWLEDGE_INSTANCE)) known.add(row.nodeId);
+
+  // The shelf, by title rather than by copy. `GRIMOIRE.nodeId` is one node per
+  // book, so the set of nodeIds is exactly what the library covers.
+  const cost = scribeCostByContentId();
+  const titles = new Set<number>();
+  for (const { row } of collectRecords(current, GRIMOIRE)) titles.add(row.nodeId);
+  let titleWeight = 0;
+  for (const nodeId of titles) titleWeight += cost.get(nodeId) ?? 0;
+
   return {
     researchCompleted,
     lessonsTaught,
@@ -328,7 +414,16 @@ async function stepped(deps: WorldStepDeps, grant: readonly NodeFacts[]): Promis
     instances,
     grimoires,
     nodesKnown: known.size,
+    titlesShelved: titles.size,
+    titleWeight,
   };
+}
+
+/** Every node's authored `scribeCost`, keyed by content id. Content, not fixture. */
+function scribeCostByContentId(): ReadonlyMap<number, number> {
+  const out = new Map<number, number>();
+  for (const entry of registry().nodes) out.set(entry.contentId, entry.record.scribeCost);
+  return out;
 }
 
 /**
@@ -421,6 +516,24 @@ describe('the control sets are inert by construction', () => {
       }
     }
   });
+
+  it('says how much of each treatment set the inert pool cannot reach', () => {
+    // The trim, asserted rather than left to happen quietly — see
+    // `treatmentSet`. Two of the three arms are matchable entire and the third
+    // loses four nodes of fifty-five at tiers 5 and 6, where the inert pool holds
+    // four nodes and none respectively. A content change that authors deeper
+    // inert nodes, or that moves an academic effect above tier 5, shows up here
+    // as the arm changing size — which is a review, not a silent re-weighting.
+    expect({
+      'research-rate': [treatmentSet('research-rate').length, untrimmedTreatmentCount('research-rate')],
+      'teach-rate': [treatmentSet('teach-rate').length, untrimmedTreatmentCount('teach-rate')],
+      'scribe-rate': [treatmentSet('scribe-rate').length, untrimmedTreatmentCount('scribe-rate')],
+    }).toEqual({
+      'research-rate': [51, 55],
+      'teach-rate': [20, 20],
+      'scribe-rate': [19, 19],
+    });
+  });
 });
 
 /**
@@ -444,7 +557,14 @@ describe('a universe that knows these nodes outworks one that does not', () => {
   // what they know reaches their rates. `world-step.ts` documents the optional
   // dep as *"a thing a test can assert against rather than a silent
   // degradation"*; this is that assertion, run three times.
-  it.each(ACADEMIC_PRIMITIVES)('%s: more work finished than when knowledge moves nothing', { timeout: SLOW_TEST_MS }, async (primitive) => {
+  // ## Two of the three, and the third is measured in a unit these two do not need
+  //
+  // `research-rate` and `teach-rate` are counted in completions, and a
+  // completion is a completion: `researchCompleted` and `lessonsTaught` count
+  // events whose cost does not vary with what the arm chose to work on hard
+  // enough to invert the comparison. `scribe-rate` is not, and the case below
+  // this one carries the measurement and the argument.
+  it.each(['research-rate', 'teach-rate'] as const)('%s: more work finished than when knowledge moves nothing', { timeout: SLOW_TEST_MS }, async (primitive) => {
     const grant = treatmentSet(primitive);
     const metric = METRIC[primitive];
 
@@ -453,8 +573,105 @@ describe('a universe that knows these nodes outworks one that does not', () => {
 
     console.log(lift(`${primitive} vs knowledge-moves-nothing (${metric})`, knowing[metric], inert[metric]));
 
+    // The counterfactual holds for both of these in a count, and the two counts
+    // are printed above so a reader can see the size rather than the sign.
     expect(inert[metric]).toBeGreaterThan(0);
     expect(knowing[metric]).toBeGreaterThan(inert[metric]);
+  });
+
+  it('scribe-rate: shelves more of what the universe knows, in fewer and costlier books', { timeout: SLOW_TEST_MS }, async () => {
+    // ## Re-authored 2026-08-17, `integration/all-branches`. What changed and why
+    //
+    // **What it measured before:** `grimoiresScribed` — a count of finished books
+    // — against the same universe with the academic index absent, under the same
+    // heading as `research-rate` and `teach-rate`: *"more work finished than when
+    // knowledge moves nothing"*.
+    //
+    // **Which decision invalidated that:** this campaign flagged all seventy grid
+    // cells `v1`, so both arms now run a universe with 301 nodes to learn instead
+    // of 51 (see {@link v1Nodes}). Switching the index on switches all three
+    // academic rates on at once, so the treatment's mages reach **69 distinct
+    // nodes against the control's 47** and then scribe what they know. Books are
+    // priced by `node.scribeCost` — 1024 at tier 1, doubling per tier — so a
+    // *count* of books is only a measure of work when both arms are writing the
+    // same book. They are not: the treatment writes 126 books at tier 3 or 4 out
+    // of 274, the control 33 out of 823. **Books-as-count stopped being a unit of
+    // work when the arms stopped scribing the same catalogue.**
+    //
+    // **What it measures now:** the shelf's **coverage** — distinct titles the
+    // library holds at the end of the run, and the summed `scribeCost` of those
+    // titles. That is the scribing subsystem's own objective function:
+    // `scribing.ts` prefers a node the library does not already hold, so a
+    // duplicate is what a scribe writes when she has run out of new work. A count
+    // of copies therefore counts *failures* to find new work as if they were
+    // successes, and the control's number is mostly that — 668 of its 823 books
+    // are tier-1 copies, bought by emptying the granary of vellum.
+    //
+    // **The numbers, measured on this tree at seed `0x00041000` over 60 ticks:**
+    //
+    // | | treatment (index on) | control (knowledge moves nothing) |
+    // | distinct titles shelved | **40** | 25 |
+    // | Σ `scribeCost` of those titles | **107,520 fp** | 92,160 fp |
+    // | books scribed (copies) | 274 | 823 |
+    // | vellum spent scribing | 809,984 fp | 1,134,592 fp |
+    // | distinct nodes known | 69 | 47 |
+    // | vellum left at tick 59 | 372,366 | 148 |
+    //
+    // ### Why not fp of scribing settled, which was the other candidate
+    //
+    // Because it is the same number as tier-weighted books and it favours the
+    // control: 809,984 fp against 1,134,592. Both units that count *output*
+    // rather than *coverage* say the control did more, and both are measuring a
+    // universe that spent its whole vellum stock printing the cheapest book in
+    // the game until the stock ran out. Recorded here rather than quietly
+    // discarded, because "the treatment is behind on fp" is a true sentence about
+    // this arm and a reader is owed it.
+    //
+    // ### Vellum starvation is ruled out, and the negative has a positive control
+    //
+    // The hypothesis on file was that the differentiated economy starves the
+    // scribes. It does not starve *these* ones: in the treatment arm the
+    // `scribing` claimant's `owed` equals its `paid` with **0 shortfall at every
+    // tick**, and the arm finishes holding 372,366 fp of vellum. It is the
+    // **control** that goes broke, ending on 148 fp. The same reader on the same
+    // field reports a live shortfall elsewhere — `libraryUpkeep` in
+    // `reference-long-run`, 42,643 fp over its run — so a zero here is a zero and
+    // not a dead probe.
+    //
+    // ### This case does not attribute anything to `scribe-rate` alone
+    //
+    // It cannot: the index is one dependency and switching it on moves all three
+    // rates, so the coverage gain below is the **compound** effect of a universe
+    // whose knowledge reaches its rates. Attribution is the mask's job, and the
+    // mask does it two describes down — *"attributes a grimoire gain to
+    // `scribe-rate` alone"*, which holds identical content in both arms and is
+    // green on this tree at **136 books -> 274, +101.5%**. That is the direct
+    // answer to *"does a higher scribe rate print more books"* — yes, it doubles
+    // them — and it is why the inversion here cannot be read as the rate failing.
+    // The claim here is the loop's: a universe that knows these nodes ends with a
+    // better library, and "better" is titles, not copies.
+    const grant = treatmentSet('scribe-rate');
+    const knowing = await armTotals({ grant });
+    const inert = await stepped(worldDeps(scribingTraditionId()), grant);
+
+    console.log(lift('scribe-rate vs knowledge-moves-nothing (titles shelved)', knowing.titlesShelved, inert.titlesShelved));
+    console.log(lift('scribe-rate vs knowledge-moves-nothing (title weight, fp)', knowing.titleWeight, inert.titleWeight));
+    console.log(lift('scribe-rate vs knowledge-moves-nothing (copies scribed)', knowing.grimoiresScribed, inert.grimoiresScribed));
+
+    // The control shelves something, so a treatment win is a win over a working
+    // library rather than over a dead one.
+    expect(inert.titlesShelved).toBeGreaterThan(0);
+    expect(knowing.titlesShelved).toBeGreaterThan(inert.titlesShelved);
+
+    // And the wider shelf is not wider by being shallower: weighted by what each
+    // title cost to write, the treatment is still ahead.
+    expect(knowing.titleWeight).toBeGreaterThan(inert.titleWeight);
+
+    // The inversion this case used to fail on, kept as a measurement rather than
+    // as a failure. If a later change makes the treatment out-*print* the control
+    // as well, this fails and the finding above needs rewriting — which is the
+    // right way round for a claim that was arrived at by measurement.
+    expect(knowing.grimoiresScribed).toBeLessThan(inert.grimoiresScribed);
   });
 
   it('ends holding more distinct nodes, not merely churning through more work', { timeout: SLOW_TEST_MS }, async () => {

@@ -58,6 +58,7 @@ import type {
   ContentRegistry,
   FormRecord,
   GodConstantRecord,
+  GradeEdgeRecord,
   RaidConstantRecord,
   GodCostRecord,
   Interned,
@@ -68,6 +69,7 @@ import type {
   TerritoryRecord,
   TraditionRecord,
 } from './types.js';
+import { MATERIAL_KIND_IDS } from './types.js';
 
 /**
  * The cell every v1 build must contain (`contracts.md` §8). Without it there is
@@ -75,14 +77,51 @@ import type {
  */
 export const REQUIRED_V1_CELL = 'rego-limen';
 
-/** The v1 subset is a rectangle of this many cells (`contracts.md` §2.2). */
-export const V1_CELL_COUNT = 12;
+/**
+ * The v1 subset is a rectangle of this many cells (`contracts.md` §2.2).
+ *
+ * **Seventy: the whole grid.** It was twelve — `{intellego, perdo, rego} ×
+ * {limen, mentem, nomen, terram}`, holding 51 of the 300 authored nodes.
+ *
+ * The invariant {@link checkV1Subset} defends is unchanged and it is the
+ * **rectangle**, not the number. An axis mask can only express a set of cells
+ * that is a full technique × form product, and `v1RulesetAxes` re-derives the
+ * subset by OR-ing the flagged cells' axes — which is only correct while the
+ * subset is rectangular. Seventy of seventy is trivially rectangular, so the
+ * property still holds, and the day somebody flags a proper subset again the
+ * shape check still catches a ragged one.
+ *
+ * **The reason is that ten of the fourteen forms were unreachable, and four
+ * material kinds went with them.** `material-economy` gives every form a
+ * `yieldWeights` row, and the enabled four covered `passage`, `insight`,
+ * `vellum` and `stone`. `essence` comes only from Vim and `labor` only from
+ * Corpus, both outside the square — so `issue-dispensation` and
+ * `fund-university` were priced in materials the opening position could not
+ * make. Measured over 600 reference ticks on `w247/material-economy-build`:
+ * `labor` production **exactly zero**, `essence` production **exactly zero**,
+ * and `fund-university` legal on **13 ticks of 600** against 400 with no
+ * material price.
+ *
+ * Reaching those forms in play does not close either. `permit-form` costs
+ * favor and no shipped strategy spends it on Vim; and the *surgical* opener,
+ * `issue-dispensation`, is **the verb the missing stock pays for**. A verb
+ * priced in a material that only that verb can unlock is circular by
+ * construction.
+ *
+ * A narrower answer was built first and is recorded rather than hidden: a
+ * three-technique × five-form rectangle adding the Vim column alone, with
+ * `labor` supplied by the populace instead of by Corpus. The populace faucet
+ * survives — see `materials.ts`'s `REQUIRED_PRODUCTION_WEIGHTS`, and note that
+ * it is still the only faucet whose shape matches `labor`'s automatic per-tick
+ * sink. The narrow square did not.
+ */
+export const V1_CELL_COUNT = 70;
 
-/** Techniques in the v1 rectangle. */
-export const V1_TECHNIQUE_COUNT = 3;
+/** Techniques in the v1 rectangle. Was 3; the whole technique axis now. */
+export const V1_TECHNIQUE_COUNT = 5;
 
-/** Forms in the v1 rectangle. */
-export const V1_FORM_COUNT = 4;
+/** Forms in the v1 rectangle. Was 4; the whole form axis now. */
+export const V1_FORM_COUNT = 14;
 
 /**
  * The most nodes a content set may declare, because every one of them is
@@ -257,6 +296,7 @@ interface ParsedDocuments {
   readonly godConstant: readonly GodConstantRecord[];
   readonly raidConstant: readonly RaidConstantRecord[];
   readonly autonomyWeight: readonly AutonomyWeightRecord[];
+  readonly gradeEdge: readonly GradeEdgeRecord[];
 }
 
 let cachedSchemas: ReadonlyMap<ContentFileName, CompiledSchema> | undefined;
@@ -343,6 +383,7 @@ export function validateContent(source: ContentSource): ValidationResult {
     godConstant: raw.get('god-constant.json') as readonly GodConstantRecord[],
     raidConstant: raw.get('raid-constant.json') as readonly RaidConstantRecord[],
     autonomyWeight: raw.get('autonomy-weight.json') as readonly AutonomyWeightRecord[],
+    gradeEdge: raw.get('grade-edge.json') as readonly GradeEdgeRecord[],
   };
 
   // ---- Phase 3: graph integrity. ----
@@ -413,9 +454,12 @@ function checkGraph(documents: ParsedDocuments): readonly ContentDiagnostic[] {
   indexById(documents.godConstant, 'god-constant.json', out);
   indexById(documents.raidConstant, 'raid-constant.json', out);
   indexById(documents.autonomyWeight, 'autonomy-weight.json', out);
+  indexById(documents.gradeEdge, 'grade-edge.json', out);
 
   checkBits(documents.technique, 'technique.json', TECHNIQUE_COUNT, out);
   checkBits(documents.form, 'form.json', FORM_COUNT, out);
+  checkEnvelopes(documents.technique, out);
+  checkFormYields(documents.form, out);
 
   checkCells(documents.cell, techniqueById, formById, nodeById, out);
   checkNodes(documents.node, cellById, nodeById, primitiveById, out);
@@ -431,8 +475,98 @@ function checkGraph(documents: ParsedDocuments): readonly ContentDiagnostic[] {
   // `mage-autonomy`'s target-appeal table. Its dominance check is the §7 pillar
   // rather than tuning hygiene — see `autonomy.ts`.
   out.push(...checkAutonomyWeights(documents.autonomyWeight, documents.primitive));
+  // The grade ladder. Its one-step rule is the whole mechanic `mt-turn-the-poor-ore`
+  // specifies, and JSON Schema cannot express `toGrade === fromGrade + 1` — so a
+  // rung that skipped a grade would validate and would read as content.
+  checkGradeEdges(documents.gradeEdge, nodeById, documents.node, out);
 
   return out;
+}
+
+/**
+ * The grade ladder's two invariants, neither of which JSON Schema can express.
+ *
+ * **One step, and it is the whole mechanic.** `mt-turn-the-poor-ore` states it
+ * as content rather than as code — *"Change worthless rock into ore that is
+ * merely bad. Never into good ore: the working improves a thing by one step and
+ * has never once been made to take two."* A rung authored `0 → 2` would satisfy
+ * every schema keyword in the file (both grades are in range, both are
+ * integers) and would ship a working the writing says has never once been made.
+ * So the cap is checked here, where a relation between two fields can be.
+ *
+ * **A demand must have a producer.** An effect requiring grade 2 of a kind no
+ * rung ever reaches is a gate that can only ever be shut, and it would report
+ * as *"machines change nothing"* rather than as *"this content is unfinished"*.
+ * `CLAUDE.md` records five checkers that answered confidently about the wrong
+ * input in one night; a metric that could only ever read zero is the same
+ * defect one layer down, and this is the cheapest place to refuse it.
+ */
+function checkGradeEdges(
+  edges: readonly GradeEdgeRecord[],
+  nodeById: ReadonlyMap<string, NodeRecord>,
+  nodes: readonly NodeRecord[],
+  out: ContentDiagnostic[],
+): void {
+  const file = 'grade-edge.json';
+  const reachable = new Set<string>();
+
+  for (let position = 0; position < edges.length; position += 1) {
+    const edge = edges[position];
+    if (edge === undefined) continue;
+    const at = pointerAppend('', position);
+
+    if (!nodeById.has(edge.node)) {
+      out.push(
+        diagnostic(
+          file,
+          `${at}/node`,
+          'unknown-reference',
+          `grade edge "${edge.id}" names node "${edge.node}", which node.json does not define. A ` +
+            'rung is performed by a working, and a rung with no working is a conversion nothing ' +
+            'in the tech tree can ever reach.',
+        ),
+      );
+    }
+
+    if (edge.toGrade !== edge.fromGrade + 1) {
+      out.push(
+        diagnostic(
+          file,
+          `${at}/toGrade`,
+          'grade-ladder',
+          `grade edge "${edge.id}" moves ${edge.kind} from grade ${String(edge.fromGrade)} to ` +
+            `grade ${String(edge.toGrade)}. A working improves a thing by exactly one step: ` +
+            `toGrade must be ${String(edge.fromGrade + 1)}. mt-turn-the-poor-ore states the rule ` +
+            'in its own gloss — "the working improves a thing by one step and has never once been ' +
+            'made to take two" — and a rung that skipped would ship that working anyway.',
+        ),
+      );
+      continue;
+    }
+
+    reachable.add(`${edge.kind}:${String(edge.toGrade)}`);
+  }
+
+  for (let position = 0; position < nodes.length; position += 1) {
+    const node = nodes[position];
+    if (node === undefined) continue;
+    for (let index = 0; index < node.effects.length; index += 1) {
+      const requirement = node.effects[index]?.requires;
+      if (requirement === undefined) continue;
+      if (reachable.has(`${requirement.kind}:${String(requirement.grade)}`)) continue;
+      out.push(
+        diagnostic(
+          'node.json',
+          `${pointerAppend('', position)}/effects/${String(index)}/requires`,
+          'grade-ladder',
+          `node "${node.id}" declares an effect requiring ${requirement.kind} at grade ` +
+            `${String(requirement.grade)}, which no grade-edge.json rung produces. A demand with ` +
+            'no producer is a gate that can only ever be shut, and it reports as a mechanic that ' +
+            'changes nothing rather than as content that is unfinished.',
+        ),
+      );
+    }
+  }
 }
 
 /** Builds an id index, reporting duplicates rather than silently overwriting. */
@@ -503,6 +637,108 @@ function checkBits(
         ),
       );
     }
+  }
+}
+
+/**
+ * Fixed-point scale, restated here because this package may not reach `sim-core`.
+ *
+ * `@mm/content` is dependency-free by mechanical check (`check:purity`), so the
+ * one shared `FP_ONE` in `sim-core/fixed-point` is out of reach. The value is
+ * `contracts.md` §0's and is not a choice this file gets to make.
+ */
+const ENVELOPE_FP = 1024;
+
+/** `@mm/primitives`' `ENVELOPE_SLOTS`, restated for the same reason. */
+const ENVELOPE_SLOT_COUNT = 8;
+
+/**
+ * Asserts each technique's envelope redistributes work rather than discounting it.
+ *
+ * `sound-design.md` §4.1 makes each technique a *shape* over an acquisition's
+ * own duration, and a shape that made a technique cheaper would be a balance
+ * change wearing a design change's clothes. The invariant is that the slot
+ * reciprocals sum to the flat curve's — a slot with multiplier `m` is crossed
+ * at rate `m` and so consumes months proportional to `1/m`, which makes
+ * `Σ 1/mᵢ` the total cost and holding it fixed the definition of *same cost,
+ * different shape*.
+ *
+ * **This is the second implementation of that sum and it is deliberate.**
+ * `@mm/primitives`' `envelopeHarmonicSum` is the arithmetic of record; the
+ * loader cannot call it, because `primitives` depends on this package and the
+ * edge may not run the other way. The two are bound instead by a conformance
+ * test in `rules-magic`, which can see both — the same remedy, for the same
+ * reason, as the rediscovery multiplier's. `Math.floor` over non-negative
+ * integers is `floorDiv` exactly, which is what makes the two agree rather than
+ * merely resemble each other.
+ *
+ * A schema-invalid `slots` array is left alone here: phase 2 has already
+ * reported it, and a second diagnostic about the same field would make one
+ * mistake look like two.
+ */
+function checkEnvelopes(
+  techniques: readonly TechniqueRecord[],
+  out: ContentDiagnostic[],
+): void {
+  const file = 'technique.json';
+  for (let position = 0; position < techniques.length; position += 1) {
+    const technique = techniques[position];
+    const slots = technique?.envelope?.slots;
+    if (slots === undefined || slots.length !== ENVELOPE_SLOT_COUNT) continue;
+    if (slots.some((slot) => !Number.isInteger(slot) || slot <= 0)) continue;
+
+    let harmonic = 0;
+    for (const slot of slots) harmonic += Math.floor((ENVELOPE_FP * ENVELOPE_FP) / slot);
+    const target = ENVELOPE_SLOT_COUNT * ENVELOPE_FP;
+    if (harmonic !== target) {
+      out.push(
+        diagnostic(
+          file,
+          `${pointerAppend('', position)}/envelope/slots`,
+          'envelope-imbalance',
+          `technique "${technique?.id ?? '?'}" carries envelope "${technique?.envelope?.id ?? '?'}" ` +
+            `whose slot reciprocals sum to ${String(harmonic)}, not ${String(target)} — an envelope ` +
+            'redistributes an acquisition\'s work across its duration and may not discount it, so a ' +
+            'curve costs exactly what the flat curve costs',
+        ),
+      );
+    }
+  }
+}
+
+/**
+ * Every form yields at least one material.
+ *
+ * `material-economy`: *"A form that yields nothing is a part of the grid that
+ * magic can act on and the economy cannot see, and the loader MUST reject it
+ * rather than accept a silent zero."*
+ *
+ * Here rather than in `form.schema.json` because JSON Schema bounds one property
+ * at a time. `{"food": 0, "stone": 0, …}` satisfies every per-field rule and is
+ * exactly the row being refused; expressing "not all seven of these are zero"
+ * per-property is not something the vocabulary has. The schema still does the
+ * half it can — all seven keys required, nothing else admitted, each `0..1024` —
+ * so an unlisted kind fails there and never reaches this.
+ *
+ * The floor stays `0` **per kind**, and that is not a softening. Most forms yield
+ * exactly one kind at full weight; what is refused is the *row*, not the field.
+ */
+function checkFormYields(forms: readonly FormRecord[], out: ContentDiagnostic[]): void {
+  for (let position = 0; position < forms.length; position += 1) {
+    const form = forms[position];
+    if (form === undefined) continue;
+    if (MATERIAL_KIND_IDS.some((kind) => form.yieldWeights[kind] > 0)) continue;
+    out.push(
+      diagnostic(
+        'form.json',
+        `${pointerAppend('', position)}/yieldWeights`,
+        'content-invariant',
+        `form "${form.id}" yields nothing: every one of the ${String(MATERIAL_KIND_IDS.length)} ` +
+          `material kinds (${MATERIAL_KIND_IDS.join(', ')}) is zero, so magic acting on this ` +
+          'form moves no economy at all and no interface can say why. Give it a weight in the ' +
+          'kind its magic actually is.',
+      ),
+    );
   }
 }
 
@@ -775,10 +1011,15 @@ function checkExclusions(cells: readonly CellRecord[], out: ContentDiagnostic[])
 }
 
 /**
- * The v1 subset must be exactly twelve cells forming a 3-technique × 4-form
+ * The v1 subset must be exactly seventy cells forming a 5-technique × 14-form
  * rectangle, and must include `rego-limen` (`contracts.md` §2.2 and §8;
- * `knowledge-model` owns which twelve, and chose
- * `{intellego, perdo, rego} × {limen, mentem, nomen, terram}`).
+ * `knowledge-model` chose twelve and `material-economy` opened the grid — see
+ * {@link V1_CELL_COUNT}).
+ *
+ * The shape is checked rather than the membership. A rectangle is what makes
+ * the subset expressible as a pair of axis masks at all, which is what
+ * `permits()` reads and what `v1RulesetAxes` re-derives; a subset that was not
+ * one could not be permitted without permitting cells outside it.
  */
 function checkV1Subset(v1Cells: readonly CellRecord[], out: ContentDiagnostic[]): void {
   const file = 'cell.json';
@@ -1114,6 +1355,48 @@ function checkNodes(
         );
       }
     }
+
+    // ---- One node, one working ------------------------------------------
+    //
+    // A node's non-zero `durationTicks` must all be the same number.
+    //
+    // `standing-working` is one row per **(holder, node)**, carrying one
+    // `expiresTick`. A node authoring a two-year effect beside a ten-year one
+    // would need two workings to be expressible, and what the rules would
+    // actually do is keep one — silently giving the two-year effect ten years,
+    // or the ten-year effect two. Neither throws, both look like the mechanism
+    // functioning, and the only symptom is a magnitude that persists for the
+    // wrong span.
+    //
+    // **Zero beside a non-zero is fine and is common** — 21 of the 38 shipped
+    // durable nodes do it. Zero is not a short duration: it means
+    // *instantaneous or permanent*, an effect that needs no working at all, so
+    // it composes with a working rather than competing with one.
+    //
+    // Zero content churn at the time of writing: no shipped node carries two
+    // distinct non-zero durations, measured over all 301.
+    const authoredDurations = new Set<number>();
+    for (const effect of node.effects) {
+      if (effect !== undefined && effect.durationTicks !== 0) {
+        authoredDurations.add(effect.durationTicks);
+      }
+    }
+    if (authoredDurations.size > 1) {
+      const listed = [...authoredDurations].sort((a, b) => a - b).join(', ');
+      out.push(
+        diagnostic(
+          file,
+          `${at}/effects`,
+          'content-invariant',
+          `node "${node.id}" authors more than one non-zero durationTicks (${listed}). A working ` +
+            'stands over a node, not over an effect, and carries one expiry — so two durations on ' +
+            'one node cannot both be kept, and whichever the rules pick silently gives the other ' +
+            'effect the wrong span. Author one duration for the node, or split it into two nodes. ' +
+            '(A zero beside a non-zero is fine: zero means instantaneous or permanent, which needs ' +
+            'no working.)',
+        ),
+      );
+    }
   }
 
   out.push(...findPrerequisiteCycles(nodes, nodeById));
@@ -1333,6 +1616,7 @@ function buildRegistry(documents: ParsedDocuments): ContentRegistry {
   const godConstants = internNamespace(documents.godConstant);
   const raidConstants = internNamespace(documents.raidConstant);
   const autonomyWeights = internNamespace(documents.autonomyWeight);
+  const gradeEdges = internNamespace(documents.gradeEdge);
 
   const tables = new Map<ContentNamespace, ReadonlyMap<string, ContentId>>([
     ['technique', tableOf(techniques)],
@@ -1347,6 +1631,7 @@ function buildRegistry(documents: ParsedDocuments): ContentRegistry {
     ['god-constant', tableOf(godConstants)],
     ['raid-constant', tableOf(raidConstants)],
     ['autonomy-weight', tableOf(autonomyWeights)],
+    ['grade-edge', tableOf(gradeEdges)],
   ]);
   const reverse = new Map<ContentNamespace, ReadonlyMap<ContentId, string>>();
   for (const [namespace, table] of tables) {
@@ -1399,6 +1684,10 @@ function buildRegistry(documents: ParsedDocuments): ContentRegistry {
   append('god-constant', godConstants);
   append('raid-constant', raidConstants);
   append('autonomy-weight', autonomyWeights);
+  // Appended last. `append` order is the revision preimage's line order, so a
+  // namespace inserted anywhere but the end would move every `contentRevision`
+  // this project has ever recorded for a reason that is not a content change.
+  append('grade-edge', gradeEdges);
 
   const counts: ContentCounts = {
     techniques: techniques.length,
@@ -1414,6 +1703,7 @@ function buildRegistry(documents: ParsedDocuments): ContentRegistry {
     godConstants: godConstants.length,
     raidConstants: raidConstants.length,
     autonomyWeights: autonomyWeights.length,
+    gradeEdges: gradeEdges.length,
   };
 
   return {
@@ -1431,6 +1721,7 @@ function buildRegistry(documents: ParsedDocuments): ContentRegistry {
     godConstants,
     raidConstants,
     autonomyWeights,
+    gradeEdges,
     intern(namespace, id) {
       return tables.get(namespace)?.get(id) ?? 0;
     },

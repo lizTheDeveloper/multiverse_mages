@@ -442,7 +442,7 @@ describe('breaker: determinism of stacking results', () => {
 // Verify the exclusion list has not been expanded.
 // ---------------------------------------------------------------------------
 describe('breaker: consumption check exclusion list integrity', () => {
-  it('the exclusion list in coverage.ts has not been expanded beyond fertility and lifespan', () => {
+  it('the exclusion list in coverage.ts has never been expanded, and is now empty', () => {
     // Read the actual source file to verify no builder added to the exclusion
     // list to make check:consumption pass. This is "the exact failure the check
     // exists to catch" per .github/workflows/ci.yml.
@@ -465,14 +465,30 @@ describe('breaker: consumption check exclusion list integrity', () => {
     // `match![1]` is `string | undefined` under `noUncheckedIndexedAccess`, which
     // this repo enables — the non-null assertion covers the match, not the group.
     const captured = match?.[1] ?? '';
-    expect(captured).not.toBe('');
     const exclusions = captured
       .split(',')
       .map((s) => s.trim().replace(/'/g, ''))
       .filter(Boolean);
 
-    // Must be exactly ['fertility', 'lifespan'] — no more, no less
-    expect(exclusions.sort()).toEqual(['fertility', 'lifespan']);
+    // **Empty, and the direction of travel is what this breaker is about.**
+    //
+    // It asserted `['fertility', 'lifespan']` exactly, and `captured !== ''`
+    // beside it. Both were written against the *expansion* it exists to catch —
+    // "adding a primitive to the exclusion list to make the check green is the
+    // exact failure the check exists to catch". `material-economy` enabled all
+    // seventy cells, which gave both primitives real v1 nodes (17 carry
+    // `lifespan`, 5 carry `fertility`), and `coverage.ts` emptied the list in
+    // response. That is a *contraction*, and a contraction is the check
+    // succeeding.
+    //
+    // So the non-empty assertion is dropped — it would now forbid the strongest
+    // state the list can be in — and the exactness is kept in the form that
+    // still catches the attack: the list may hold nothing outside the two the
+    // design ever accepted, and today it holds neither.
+    expect(exclusions).toEqual([]);
+    for (const entry of exclusions) {
+      expect(['fertility', 'lifespan']).toContain(entry);
+    }
 
     // Specifically, research-rate, teach-rate, scribe-rate must NOT be excluded
     expect(exclusions).not.toContain('research-rate');

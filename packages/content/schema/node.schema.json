@@ -59,7 +59,19 @@
         "primitive": { "$ref": "#/$defs/contentId" },
         "magnitude": { "type": "integer", "minimum": -1073741823, "maximum": 1073741823 },
         "target": { "type": "string", "enum": ["self", "single", "area", "side", "universe"] },
-        "durationTicks": { "type": "integer", "minimum": 0, "maximum": 1073741823 }
+        "durationTicks": { "type": "integer", "minimum": 0, "maximum": 1073741823 },
+        "requires": { "$ref": "#/$defs/gradeRequirement" }
+      }
+    },
+    "gradeRequirement": {
+      "type": "object",
+      "description": "This one effect contributes only while the universe holds refined material, and consumes that material while it does. Absent means unconditional, which is what every effect authored before grades existed means and must go on meaning. It is per **effect** rather than per node on purpose: `cig-the-standing-furnace` runs the great foundries on ore and also denies a field to anyone walking through one, and gating the second on a quarry would be a raid effect switched off by an economy. Semantics are `economy-flow-models.md` §1.1's **gate**, not its drain: short, and the effect contributes nothing that tick and nothing is destroyed.",
+      "additionalProperties": false,
+      "required": ["kind", "grade", "amountPerTick"],
+      "properties": {
+        "kind": { "type": "string", "enum": ["stone"] },
+        "grade": { "type": "integer", "minimum": 1, "maximum": 2 },
+        "amountPerTick": { "type": "integer", "minimum": 1, "maximum": 1073741823 }
       }
     },
     "contentId": {

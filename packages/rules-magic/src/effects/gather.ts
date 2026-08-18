@@ -46,6 +46,8 @@ import type { EffectContribution, EffectSourceInstance } from './contribution.js
 import { CONTRIBUTING_LOCATION_KINDS, MASTERY_ACTIVATION_THRESHOLD } from './contribution.js';
 import { requireNode, requirePrimitive } from './registry-lookup.js';
 import { primitiveAppliesInMode } from './scale.js';
+import type { StandingWorkings } from '../workings/standing.js';
+import { requiresWorking } from '../workings/standing.js';
 
 /**
  * Everything gathering needs that is not the instances themselves.
@@ -66,6 +68,22 @@ export interface EffectGatherContext {
   readonly cellOf: (nodeId: ContentId) => number;
   /** Defaults to {@link MASTERY_ACTIVATION_THRESHOLD}. */
   readonly activationThreshold?: Fixed;
+  /**
+   * The workings standing in this universe right now — the fourth gate.
+   *
+   * **Required, and it has no default.** `NO_WORKINGS_STAND` exists for a
+   * caller who means *"nothing stands here"* and it has to be named. A default
+   * would let an unwired consumer look wired: with a permissive default the
+   * whole duration mechanism is decorative for anyone who forgot the field, and
+   * with a refusing one a real contribution vanishes. Both are silent, and a
+   * compile error is neither.
+   *
+   * It is consulted **only** for effects whose `durationTicks` is non-zero. A
+   * zero-duration effect never asks, which is what makes the shipped grid —
+   * where every world-scale effect is authored `0` — byte-identical under any
+   * view whatsoever.
+   */
+  readonly standing: StandingWorkings;
 }
 
 /**
@@ -97,7 +115,7 @@ export function gatherEffects(
   instances: Iterable<EffectSourceInstance>,
   context: EffectGatherContext,
 ): readonly EffectContribution[] {
-  const { registry, ruleset, mode, cellOf } = context;
+  const { registry, ruleset, mode, cellOf, standing } = context;
   const threshold = context.activationThreshold ?? MASTERY_ACTIVATION_THRESHOLD;
 
   const contributions: EffectContribution[] = [];
@@ -110,9 +128,34 @@ export function gatherEffects(
     if (!permits(ruleset, cellOf(instance.nodeId))) continue;
 
     const node = requireNode(registry, instance.nodeId);
-    for (const effect of node.effects) {
+    for (let effectIndex = 0; effectIndex < node.effects.length; effectIndex += 1) {
+      const effect = node.effects[effectIndex];
+      if (effect === undefined) continue;
       const primitive = requirePrimitive(registry, effect.primitive);
       if (!primitiveAppliesInMode(primitive, mode)) continue;
+
+      // ---- The fourth gate: is the working still standing? ----------------
+      //
+      // Asked only of an effect that declares a duration. `durationTicks: 0`
+      // means instantaneous or permanent — the effect this game has always had
+      // — and it never reaches this line, which is why a content set whose
+      // world-scale effects are all authored `0` produces byte-identical
+      // contributions under `NO_WORKINGS_STAND` and under a full universe of
+      // live workings. `workings/standing.ts` argues that reading at length,
+      // because the other reading silently switches off 381 of 419 authored
+      // effects and looks like a balance change from every series the harness
+      // records.
+      //
+      // `standsAt` answers `false` for a working that was never lit and for one
+      // that has lapsed alike. Nothing here can tell those apart and nothing
+      // here should: a lapse is an event with a revert and a report line, and
+      // the world step owns it.
+      if (
+        requiresWorking(effect.durationTicks) &&
+        !standing.standsAt(instance.holder, instance.nodeId)
+      ) {
+        continue;
+      }
 
       contributions.push({
         nodeId: instance.nodeId,
@@ -120,6 +163,12 @@ export function gatherEffects(
         magnitude: effect.magnitude,
         target: effect.target,
         durationTicks: effect.durationTicks,
+        effectIndex,
+        // Passed through, never judged here. A material requirement is a
+        // question about a stock, and this module has no stock and must not
+        // acquire one — `contracts.md` §5 keeps `rules-magic` out of the
+        // economy, and the gate lives with whoever holds the material.
+        ...(effect.requires === undefined ? {} : { requires: effect.requires }),
       });
     }
   }

@@ -1,9 +1,95 @@
-# The 129 reachability findings, triaged
+# The 113 reachability findings, triaged
 
-**Measured at `e2b89d8` on 2026-08-14**, by `npm run check:reachability` plus the capability
+**Measured at `d7af4468` on 2026-08-17**, by `npm run check:reachability` plus the capability
 analysis described in §5. This is an **inventory, not a fix**: the point is to convert the single
-number "129 findings" into a count of things somebody would act on, because that number is what
+number "113 findings" into a count of things somebody would act on, because that number is what
 nobody currently knows.
+
+> **Eighth round — 2026-08-18, re-derived at `14affa55` on
+> `integration/all-branches`: 111 → 113, and both arrivals are one commit's.**
+>
+> `executeReferenceRunAsync` and `makeReferenceExecutorAsync` —
+> `packages/scenario/src/executor.ts` — are the async drains added to close the
+> suite's `[vitest-worker]: Timeout calling "onTaskUpdate"`. Neither has a
+> production caller and **neither can have one**: the synchronous entry points
+> must stay synchronous because `RunExecutor` and every sweep worker depend on
+> them, and the async pair exists for test arms running inside a vitest worker,
+> which is the only place birpc's hardcoded 60 s window bites. A sweep worker has
+> no runner to answer.
+>
+> So they are tooling-only in §4's sense rather than integration debt: not a
+> mechanism the game ships and never runs, but infrastructure that had to live in
+> `src` because the loop it paces lives in `src`. Same shape as
+> `FOUNDING_PROBE`, `auditFounding` and `formatFounding` three rows below.
+>
+> **Seventh round — 2026-08-17, re-derived at `d7af4468` after seven merges onto
+> `integration/all-branches`: `docs/invention-and-machines`, `w/flow-ledger`, `w/flow-map`,
+> `w/exp-yields`, `w/exp-grades`, `w/exp-duration` and `origin/main` itself. 110 → 111, and the
+> whole of the move is one symbol.**
+>
+> `territoryYieldShares` — `packages/rules-world/src/economy/kinds.ts` — is new debt, and it is
+> the *residue of a wiring*, which is the shape worth naming. `w/exp-yields` found that this
+> function was a `WorldStepDeps` field computed once per run, so every universe in a run produced
+> one basket mix however much ground it actually held. The repair extracted the arithmetic into
+> `landYieldShares` and routed the world step through
+> `territory-holdings.ts`' `heldTerritoryYieldShares`, which reads a universe's own
+> `territory-holding` rows. What is left is the **content-side** question — what all the land an
+> author wrote down would yield — which a founding endowment and a documented bound are still
+> stated in terms of, and which no production path now asks. So a mechanism became *more* wired
+> and the count went *up*: the number counts symbols with no caller, not mechanisms that do not
+> run, and the two part company exactly here.
+>
+> Six merges brought two new world-schema revisions, a nineteenth metric, a new content namespace
+> and a per-tick flow ledger, and **not one of them added a finding.** That is the fact this round
+> reports; the single arrival above is the exception it is worth having a document for.
+
+> **Sixth round — 2026-08-16, re-derived at `bf96bdfb` after `w247/material-economy-build` and
+> `ui/legible-and-linked` merged into `integration/all-branches`: 108 → 110.** This was the first
+> round in which the number went **up**, and saying so plainly is the point of keeping the
+> document. It moved by four findings, not two:
+>
+> - **Three arrived**, all the same shape and all `material-economy`'s: `REQUIRED_PRODUCTION_WEIGHTS`
+>   (`rules-world/src/economy/materials.ts`), `REQUIRED_TEACHING_WEIGHTS`
+>   (`rules-world/src/economy/teaching.ts`) and `REQUIRED_CONSTRUCTION_WEIGHTS`
+>   (`rules-world/src/universities/construction.ts`). Each names the `autonomy-weight.json` ids its
+>   reader requires, and each reader then passes the id as a **string literal** instead of reading
+>   the list — so the constant documents a requirement it does not enforce, and only a test uses it.
+>   **Accepted as debt rather than wired**, and the reason is consistency rather than laziness:
+>   `REQUIRED_APPLICATION_WEIGHTS` is the identical shape, has been pinned since before this merge,
+>   and wiring three of the four inside a merge commit would be feature work smuggled in beside a
+>   conflict resolution. The repair is one change: have each `read*Weights` iterate its own list.
+> - **One was repaired by composition.** `NO_YIELD_BONUSES` (`rules-world/src/economy/materials.ts`)
+>   had no production caller on either parent and has one on the merge —
+>   `coordination/src/universe-effects.ts` imports it now that the economy routes seven kinds. It
+>   left the pin without anybody working on it, which is the case the ratchet's "disappearance is
+>   also a failure" rule exists to make visible.
+>
+> `rules-world` is the only package whose total moved: 31 → 33. §2's debt column was re-checked
+> symbol by symbol against the new pin and is **unchanged at 19** — none of the four is a §2
+> mechanism.
+
+> **Fourth correction round — 2026-08-16, re-derived at `072cf70` against a re-pinned
+> `scripts/reachability-baseline.json` (127 → 112).** The pin was stale by two before any of this:
+> it held 127 while the checker reported 125, because three findings had been repaired by merges on
+> `integration/all-branches` and one — `isPractisable` — had arrived, and nobody re-pinned. The
+> counts below are re-derived, not adjusted:
+>
+> - **Ascension legacy is wired** (§2, row 2). `scenario/src/legacy.ts` is the succession layer
+>   `god/ascension.ts` specified and declined to build: `legacyRecordOf` closes the recurrence at a
+>   run boundary and `seedLegacy` spends the four channels into the next universe's tick zero. All
+>   twelve findings in that row are gone — `legacyGrant`, `legacyBudget`, `carriedPrestige`,
+>   `LEGACY_CHANNELS` and the eight god constants that only they read. `coordination` drops from 16
+>   to 4. `currentEra` (`state`) went with them: `legacyRecordOf` needs the era a run survived, and
+>   that derivation existed precisely so nobody would add an `era` field back to `UNIVERSE`.
+> - **`dominantCell` and `universityProfile`** left the University-staffing row through merges that
+>   landed before this measurement, not through anything in it. That row's count falls 7 → 5, and
+>   its stated *reason* is separately known to be stale — the audit of 2026-08-16 found universities
+>   **are** staffed every tick by `world-step.ts`'s `assignStaff`. The row keeps its corrected count
+>   rather than being rewritten on a judgement this round did not make; the capability that is
+>   genuinely absent is student admission against capacity.
+> - **`heldNodes`** (dead/duplicates) is repaired; **`isPractisable`** arrives, classified
+>   *superseded* on its own doc comment — `coordination`'s `practisableBy` is the live, deliberately
+>   narrower gate, and this is the wider mirror kept beside `practice`.
 
 Re-derive before acting on it. A measurement is a statement about the tree it was taken on, and §6
 is what happens when you skip that step.
@@ -19,44 +105,101 @@ is what happens when you skip that step.
 > debt **61 → 59**, superseded **14 → 16**. The 125 and the per-package totals are unchanged — this
 > is a re-judgement, not a re-measurement, and the per-package split was re-derived from the
 > committed baseline as a control (content 6, coordination 16, primitives 3, rules-magic 27,
-> rules-raid 7, rules-world 40, scenario 15, sim-core 6, state 8 = 129).
+> rules-raid 7, rules-world 38, scenario 15, sim-core 6, state 8 = 127).
+
+> **Corrected 2026-08-15, `w204/affiliate-writer`.** Two findings left the baseline because they
+> were repaired rather than re-judged: `completeAffiliation` (`unreached`) and `changeAffiliation`
+> (`reachedOnlyByUnreached`) both now have a production caller in `settleAffiliations`. The
+> `rules-world` row drops 40 → 38 and its integration debt 19 → 17; the total drops 129 → 127 and
+> the integration-debt total 60 → 58; the **University staffing** mechanism row in §2 drops 9 → 7.
+> Nothing else in this document was re-judged. `staffCohortsOf`, `unstaffUniversity`,
+> `admitStudents`, `AdmissionRefusals`, `effectiveCapacity`, `universityProfile` and `dominantCell`
+> remain in that row — `admitStudents` and `effectiveCapacity` are now reached through
+> `universityPreference`'s seat filter, but the ratchet is the authority on that and it still
+> reports them, so they stay until it does not.
+
+> **Fourth correction round — 2026-08-16, measured at `w/wire-academy` off
+> `integration/all-branches` @ `8b454d5c`.** 127 → **120**, and the seven are of three different
+> kinds, which is the part worth reading.
+>
+> **Five were repaired.** `admitStudents`, `AdmissionRefusals` and `effectiveCapacity` gained a
+> production caller in `coordination/src/admissions.ts` — the world loop now asks each completed
+> university to admit this tick's applicants instead of passing the raw seat count in as
+> `demand[student]`, which was the silent truncation the `universities` spec forbids.
+> `createUniversity` and `readUniversity` gained callers in `god/interventions.ts` and
+> `world-step.ts`, replacing an inline component write and an inline component read.
+>
+> **Two were already stale on the base and are not a repair.** `universityProfile` and
+> `dominantCell` are reported *reached* by `npm run check:reachability` at `8b454d5c` and were
+> pinned anyway — `scripts/w78-university-divergence.mjs` imports them and the stock checker counts
+> `scripts/` as production. The strict pass in `unreached-audit.md` §0.2 still calls them dead, and
+> **it is right about the game**: nothing in `packages/*/src` calls either. They leave this
+> document's inventory because the ratchet is its authority, not because a university's
+> specialization reached anything.
+>
+> **One arrived, and it arrived before this branch touched anything:**
+> `isPractisable` (`rules-magic/src/instances/practice.ts`) is reported at `8b454d5c` and was
+> **missing from the pin at that ref** — an inherited ratchet violation, banked here rather than
+> discovered here. It is **superseded**: `coordination/src/gateway.ts:916` says outright that its
+> own predicate is *"narrower than `isPractisable`"* and that `isPractisable` *"mirrors `practice`'s
+> refusals exactly"*, which is a live capability under another name.
+>
+> **And §2's flagship row is retired.** *University staffing* has been wrong since `08ca5368`:
+> universities **are** staffed, every tick — `world-step.ts` calls `assignStaff` in phase 2a,
+> `staff.ts` writes `UNIVERSITY_STAFF` through `attachRecord`, and `staffingIndex` reads it back.
+> The comment this document quoted as evidence now reads *"`UNIVERSITY_STAFF` shipped in
+> `WORLD_COMPONENTS` with no writer, **and this is the writer**"* — the row quoted the first half of
+> a sentence whose second half refutes it. `staffCohortsOf` and `unstaffUniversity` are therefore
+> **superseded, not disabled**, and move to §3. What is genuinely absent under that heading was
+> never staffing; it was admission against capacity, and that is what the five repairs above fix.
+>
+> Column arithmetic: integration debt **58 → 51** (−5 repaired, −2 moved to §3), superseded
+> **16 → 17** (−2 repaired, +2 from §2, +1 `isPractisable`), dead **23 → 22** (`heldNodes` left the
+> baseline with the same staleness as the profile pair), tooling-only unchanged at 30.
+> `rules-world` **38 → 31**, `rules-magic` holds at 27 with one finding swapped between columns.
 
 ---
 
 ## 1. The counts
 
-| Package | Integration debt | Superseded | Tooling-only | Dead | False positive | Total |
-| --- | ---: | ---: | ---: | ---: | ---: | ---: |
-| `content` | 1 | 0 | 5 | 1 | 0 | 7 |
-| `coordination` | 13 | 2 | 0 | 1 | 0 | 16 |
-| `primitives` | 1 | 1 | 1 | 0 | 0 | 3 |
-| `rules-magic` | 16 | 6 | 1 | 4 | 0 | 27 |
-| `rules-raid` | 5 | 0 | 0 | 2 | 0 | 7 |
-| `rules-world` | 19 | 6 | 3 | 12 | 0 | 40 |
-| `scenario` | 0 | 0 | 15 | 0 | 0 | 15 |
-| `sim-core` | 0 | 1 | 5 | 0 | 0 | 6 |
-| `state` | 5 | 0 | 0 | 3 | 0 | 8 |
-| **Total** | **60** | **16** | **30** | **23** | **0** | **129** |
+> **Fifth round — 2026-08-16, re-derived at `4ffb2dd2` after the five wiring merges
+> (`integration/group-e`, `w/wire-academy`, `w/wire-legacy`, `w/wire-magic`, `w/sandbox-cheats`)
+> took the pin 112 → 108.** The five-way judgement split that stood here through four rounds is
+> **retired at this measurement rather than adjusted**, and the reason is the honest one: it was a
+> per-package aggregate whose per-symbol basis was never written down, and the wiring merges did
+> not shave findings off the edges — they repaired whole §2 rows and added new symbols in
+> `primitives`, `rules-raid` and `scenario`. Carrying the old percentages onto a different
+> population would have produced a table that summed correctly and described nothing, which is the
+> exact failure `CLAUDE.md` records this repository paying for twice.
+>
+> What replaces it is what can be **derived rather than judged**: the per-package totals come
+> straight from `scripts/reachability-baseline.json`, and the debt column is the count of symbols
+> §2 names *and the pin still holds*. Every §2 row below was re-checked symbol by symbol against
+> the new pin, which is a mechanical test and is recorded as one. The other 92 are unclassified at
+> this measurement and are owed a re-judgement — that is a debt this document is now explicit
+> about instead of implying it had already been paid.
 
-The headline: **60 of the 129 are integration debt** — mechanics that are built, mostly tested,
-exported, and that nothing in a running universe calls. That is the number the raw count was hiding.
-The other 66 are noise of three different kinds.
+| Package | Named in §2, still pinned | Unclassified at this measurement | Total |
+| --- | ---: | ---: | ---: |
+| `content` | 0 | 7 | 7 |
+| `coordination` | 0 | 4 | 4 |
+| `primitives` | 6 | 3 | 9 |
+| `rules-magic` | 4 | 10 | 14 |
+| `rules-raid` | 5 | 6 | 11 |
+| `rules-world` | 2 | 32 | 34 |
+| `scenario` | 0 | 21 | 21 |
+| `sim-core` | 0 | 6 | 6 |
+| `state` | 2 | 5 | 7 |
+| **Total** | **19** | **94** | **113** |
 
-### The five categories
-
-- **Integration debt.** A simulation mechanic whose *capability* is absent: nothing else in the
-  rules path does the job under another name. The `completeAffiliation` class.
-- **Superseded.** The symbol is unreached and the capability is **live under another name** — a
-  private method, a differently-named function in another package, or direct component access.
-  Deleting the symbol changes nothing; wiring it would duplicate a live path. §5 is about why this
-  category exists and why it is the dangerous one.
-- **Tooling-only.** Formatters, report builders, metric definitions, lab helpers, in-memory content
-  sources, debug-sentinel predicates. Consumers are tests, `bin/` labs and analysis scripts by
-  design. The world step should never call them. Debt: nil.
-- **Dead.** Empty sentinels nothing defaults to, one-line arithmetic aliases. Delete.
-- **False positive.** The checker is wrong: a production consumer it cannot see.
-
----
+The headline is no longer a proportion, because a proportion needs a denominator somebody judged.
+It is a direction, and for the first time the last step of it is upward: **129 at `origin/main`,
+125 on the combined base, 108 after the five wiring merges, 110 at `bf96bdfb`, 111 at `d7af4468`,
+113 here.** The nineteen that closed
+between `origin/main` and the wiring round are not spread thinly, and the two that re-opened are
+three arrivals against one repair — see the sixth-round note above for all four by name. Four whole §2 rows went to zero — spell preparation and its cost
+half, the tradition store policy, `changeTradition` and its two companions, and three of the seven
+university-staffing symbols — and each of those was a mechanism the game shipped and never ran.
 
 ## 2. The load-bearing ones
 
@@ -67,30 +210,49 @@ were moved to §3 and are not here.
 
 | Mechanism | Findings | Verified how |
 | --- | ---: | --- |
-| **University staffing** — `completeAffiliation`, `changeAffiliation`, `staffCohortsOf`, `unstaffUniversity`, `admitStudents`, `AdmissionRefusals`, `effectiveCapacity`, `universityProfile`, `dominantCell` | 9 | The only writer of the `UNIVERSITY_STAFF` component in the tree is `staffCohortsOf` itself, which is unreached; `world-step.ts:532` says in a comment that the component "shipped in `WORLD_COMPONENTS` with no writer". `scripts/w117-gate-check.sh` independently reports affiliation **shut** at `e2b89d8`. Universities are created (by `god/interventions.ts:781`) and never staffed. |
-| **Ascension legacy** — `legacyGrant`, `legacyBudget`, `carriedPrestige`, `LEGACY_CHANNELS`, and eight god constants (`legacy-*`, `prestige-retention`, `legacy-reference-tick`) | 12 | The largest single dead mechanism, and the clearest case for the check's one-hop transitivity: eight authored constants look like knobs to a content author and turn nothing, because their only reader is `legacyGrant` and `legacyGrant` has no caller. |
-| **Spell preparation and its cost half** — `prepare`, `isCastable`, `preparationCost`, `costSplit` | 4 | `castPolicy`, `expendOnCast`, `costPolicy` and `castCost` *are* reached, so casting works. The **preparation** half does not: nothing splits a cost across preparation and cast, and nothing asks whether a spell is castable before it is cast. |
+| **University staffing** — `completeAffiliation`, `changeAffiliation`, `staffCohortsOf`, `unstaffUniversity`, `admitStudents`, `AdmissionRefusals`, `effectiveCapacity` (`universityProfile` and `dominantCell` reached by merge, 2026-08-16) | 2 | The only writer of the `UNIVERSITY_STAFF` component in the tree is `staffCohortsOf` itself, which is unreached; `world-step.ts:532` says in a comment that the component "shipped in `WORLD_COMPONENTS` with no writer". `scripts/w117-gate-check.sh` independently reports affiliation **shut** at `e2b89d8`. Universities are created (by `god/interventions.ts:781`) and never staffed. |
+| ~~**Ascension legacy**~~ — **wired 2026-08-16, row retired** | 0 | Was 12, and was the largest single dead mechanism: eight authored constants looked like knobs to a content author and turned nothing, because their only reader was `legacyGrant` and `legacyGrant` had no caller. `scenario/src/legacy.ts` is the run boundary they were staged ahead of — `legacyRecordOf` at the end of a run, `seedLegacy` at the tick zero of the next — so all twelve now have production callers, and `packages/scenario/test/unit/legacy-carry.test.ts` measures the head start on both arms. Kept as a row rather than deleted: a mechanism that was dead for a release and is now live is the most useful entry a reader of this table can find. |
+| **Spell preparation and its cost half** — `prepare`, `isCastable`, `preparationCost`, `costSplit` | 0 | `castPolicy`, `expendOnCast`, `costPolicy` and `castCost` *are* reached, so casting works. The **preparation** half does not: nothing splits a cost across preparation and cast, and nothing asks whether a spell is castable before it is cast. |
 | **Portal spell transfer** — `populatePreparedSpells`, `releaseAbroad` | 2 | `resolvePortalHooks` is reached and the two functions that would use the resolved hooks are not. Prepared spells do not cross a portal. |
-| **Tradition store policy** — `palaceLibraryDepth`, `perishesWithHolder`, `scribeAvailability`, `PALACE_STORE`, `STANDARD_STORE` | 5 | `storePolicy`, `canHoldAt` and `admitToStore` are reached, so storage admits. The *consequences* of a store kind — palace depth, perishing with the holder, scribe availability — are computed by nothing. |
-| **`changeTradition`** and `RESOLUTION`, `hooksOfTradition` | 3 | `agent-api` publishes a change-tradition action and `mc-harness`'s strategies name it, while the rules function that would execute it has no caller. The action space advertises a move the rules never make. |
+| **Tradition store policy** — `palaceLibraryDepth`, `perishesWithHolder`, `scribeAvailability`, `PALACE_STORE` | 0 | `storePolicy`, `canHoldAt` and `admitToStore` are reached, so storage admits. The *consequences* of a store kind — palace depth, perishing with the holder, scribe availability — are computed by nothing. **`STANDARD_STORE` was the fifth member and is repaired** (see the amendment at the head of this file): `study.ts` passes the store hook, so the constant has a production consumer. The other four are unchanged. |
+| **`changeTradition`** and `RESOLUTION`, `hooksOfTradition` | 0 | `agent-api` publishes a change-tradition action and `mc-harness`'s strategies name it, while the rules function that would execute it has no caller. The action space advertises a move the rules never make. |
 | **Library-level destruction** — `destroyLibrary`, `grimoiresIn` | 2 | Narrower than it looks, and corrected once. `destroyGrimoire` **is** live: `rules-raid/src/consequences.ts:241` and `:265` loot and burn books one at a time, and that file's own comment claiming it was the fix for both is out of date about the library half. What has no caller is destruction of a library *as a unit* — and `instances/subsystem.ts:116` already records the consequence, that an unshelved book is one `grimoiresIn` cannot see and `destroyLibrary` leaves standing. |
 | **`rules-raid` consequences and objectives** — `returnedWithKnowledge`, `strandedAttackers`, `objectiveHoldsKnowledge`, `OBJECTIVE_LOCATION_KIND`, `BURNABLE_LOCATION_KINDS` | 5 | ~~Consistent with CLAUDE.md: `raid-engagement` is 67/92 and nothing in `scenario` opens a portal.~~ **Reason corrected 2026-08-15 at `08ca5368`: `scenario` does open a portal** — `packages/scenario/src/raids.ts:423` calls `openPortal` and `reference-universe.ts:1007` supplies `portalTargets`. All five names are nevertheless still `unreached` in `scripts/reachability-baseline.json` at this ref, so the row keeps its count and its category: portals open and raids terminate, and the *consequences* of a raid — knowledge carried home, attackers stranded, an objective that holds knowledge, a burnable location — are what nothing reaches. |
 | **World-snapshot loading** — `loadWorldSnapshot`, `migrateWorldEnvelope` | 2 | Weaker than it looks and stated precisely for that reason: `sim-core`'s `envelopeToState` *is* reached, so snapshots decode. What has no caller is the **world-schema-aware** wrapper in `@mm/state`. Nothing in the rules path loads a world snapshot back. |
+| **Envelope shaping** — `RIGID_ENVELOPE`, `envelopeProblems`, `envelopeHarmonicSum`, `ENVELOPE_HARMONIC_TARGET`, `ENVELOPE_SLOT_CEILING`, `ENVELOPE_SLOT_FLOOR` | 6 | Added on `integration/group-e`, 2026-08-16. `w21/timing-and-envelopes` ships `sound-design.md` §4.1's curve as content and as arithmetic, and `research.ts` calls `shapedEffort` — so the shaping itself is live. What has no caller outside a test is the **validation and diagnostic** half: what a malformed envelope is, and what its harmonics sum to. Staged ahead of the authoring tool that would report a bad curve. |
 | — | — | **`ENGAGEMENT_TICK_MS` was here and has been removed.** Its own doc comment settles it: the constant documents *"how much simulated time a combat tick represents, not how much wall clock a caller should spend on one"*, and real-time pacing *"is a client and server concern and never enters the core"*. Its consumers are the Electron client and the PvP server, both outside this repository. Reclassified tooling-only. |
 
 One more was dropped from this table on inspection: **`withdrawGrimoire`** is declared deliberately unused by `gateway.ts:107` — *"`withdrawGrimoire` is unused and stays unused"* — which is an accepted design decision rather than debt.
 
-That is 44 of the 60. (It was 46 of 61 until `applyWard` and `replay` moved to §3 in the third
-correction round, and 44 of 59 until `characterFor` arrived with #201 — see §5.) The remaining 16
-are integration debt of the ordinary kind — an economy input list, a commitment predicate, a
-monoculture threshold, `speciesRediscoveryMultiplier`, `worshipShareOfRegeneration`,
-`characterFor` — worth wiring, not worth a row.
+That is 19 of the 19. The two numbers are equal by construction at this measurement and the
+tautology is deliberate: §1's debt column *is* this table, re-checked symbol by symbol against
+`scripts/reachability-baseline.json`, because a judged denominator that nobody re-judged is worth
+less than an honest one that is small. (It was 28 of 43 at `072cf70`, 42 of 58 before the ascension
+legacy was wired, 46 of 61 before `applyWard` and `replay` moved to §3, and 44 of 59 before
+`characterFor` arrived with #201 — see §5. Those denominators were the five-way judgement §1
+retires; the numerators are comparable and the denominators are not.)
+
+The 91 findings §1 leaves unclassified certainly contain integration debt of the ordinary kind —
+an economy input list, a commitment predicate, a monoculture threshold,
+`speciesRediscoveryMultiplier`, `worshipShareOfRegeneration`, `characterFor` — and equally
+certainly contain the `scenario` tooling that has never been anything else. Re-judging them is the
+work this document now owes; asserting a split it has not done is the work it must not do.
+
+**Eight of those 23 arrived on 2026-08-14**, when `w182/raid-seam` merged `main`: 125 → 133, and the
+split is worth stating because only half is this branch's. Four — `characterFor`, `FOUNDING_PROBE`,
+`auditFounding`, `formatFounding` — were **already slipped on `main`** before that branch existed,
+confirmed by running the ratchet on a pristine `origin/main` worktree at `9b4b242d`, which reports
+the same four. The other four are `rules-raid`'s verb surface from `w37/raid-playable`:
+`legalVerbs`, `verbSide`, `runPlanFor` and `ENGAGEMENT_PHASE_NAMES` — a phase/side verb table for a
+client and a mask, and the scripted-plan entry point for a headless run. They are staged ahead of
+their consumer rather than dead. `applyDirective` is deliberately **not** among them: the raid seam
+wired it, which was the point of that branch.
 
 ---
 
-## 3. Superseded: 16 findings, and the trap they are
+## 3. Superseded: 17 findings, and the trap they are
 
-**This is the most useful thing in this document.** Sixteen findings look exactly like §2 — an
+**This is the most useful thing in this document.** Seventeen findings look exactly like §2 — an
 unreached mechanic in a rules package, well tested, obviously important — and are not, because the
 capability is live under a different name. A triage that read the symbol instead of the capability
 would have filed every one of them as a disabled subsystem, and each would have cost somebody an
@@ -102,10 +264,13 @@ investigation ending in "it already works".
 | `usableHolding`, `prerequisiteStatusFor`, `dormancyRefusal`, `KNOWLEDGE_USE` | Prerequisites *are* gated: `gateway.ts:450` and `:524` call a private `#prerequisitesHeld(mage, node.prerequisites)` on both the research and teaching paths. The `dormancy` module is a second implementation nothing switched to. |
 | `stackContributions` | `primitives`' `stackMagnitudes` is reached and is the live stacker; `universe-effects.ts` gathers contributions and stacks them per primitive itself. |
 | `worshipTierOf`, `tierDerivedValues` | `god/system.ts:380` computes the tier with `tierOf(worship, constants)`, and `interventions.ts:1052` derives the budget and cap with `edictBudgetFor` and `favorCapFor` directly. |
-| `createUniversity`, `readUniversity` | Universities are created with `attachRecord(state, UNIVERSITY, …)` in `god/interventions.ts:781` and read with `collectRecords(state, UNIVERSITY)` in `capital.ts`, `gateway.ts` and `agent-api`. |
+| ~~`createUniversity`, `readUniversity`~~ **(repaired 2026-08-16, no longer findings)** | They *were* superseded by an inline `attachRecord(state, UNIVERSITY, …)` in `god/interventions.ts` and an inline `readRecord` in `world-step.ts`. Both inline copies are gone: the intervention now calls `createUniversity` and `scribeThroughputFor` now calls `readUniversity`, so the duplicate was deleted rather than the symbol. `collectRecords(state, UNIVERSITY)` in `capital.ts`, `gateway.ts` and `agent-api` is a different question — a bulk walk, not a row read — and is untouched. |
+| `staffCohortsOf`, `unstaffUniversity` **(moved from §2, 2026-08-16)** | University staffing is **live**: `world-step.ts` phase 2a calls `assignStaff` over every live scribe cohort, `staff.ts` writes `UNIVERSITY_STAFF` with `attachRecord`, `staffingIndex` reads the links back and `pruneStaffLinks` drops the dead ones. §2 quoted `world-step.ts`'s comment as evidence of no writer; that sentence now finishes *"**and this is the writer**"*. The exact §5 trap this document is otherwise the best account of. |
+| `isPractisable` **(inherited, pinned 2026-08-16)** | `coordination/src/gateway.ts:916` states it: its own practice predicate is *"narrower than `isPractisable`"*, deliberately, and `isPractisable` *"mirrors `practice`'s refusals exactly"*. The live gate is the gateway's; this is the unused mirror. It was reported at `8b454d5c` and **not pinned there** — an inherited ratchet violation, banked rather than found here. |
 | `withdrawGrimoire` | Declared deliberately unused by `gateway.ts:107` — *"`withdrawGrimoire` is unused and stays unused"*. An accepted design decision. |
 | `POPULACE_STREAM` | A re-export of `RNG_STREAM.populace`, which is used directly at `economy/carrying-capacity.ts:488` and `populace/mortality.ts:229`. Constraint 3 is **not** at risk here. |
 | `applyWard` **(moved from §2, 2026-08-15)** | `CastArbiter#applyWardOnce` — `packages/rules-raid/src/arbitration.ts:570`, live at `raid.ts:514` and `:995`. It **reimplements** the multiply, `floorDiv(rawDamage * (FP_ONE - ward), FP_ONE)`, rather than delegating to `primitives`. §2's stated reason searched `primitives/` for a capability that lives in `rules-raid` — **the exact §5 trap this document is otherwise the best account of.** The pin is right and its old reason was wrong. Wards still never prevent anything, because no combat attempt occurs; that is §8's defect, not this one. |
+| `isPractisable` **(arrived by merge, 2026-08-16)** | `coordination`'s `CastGateway#practisableBy` — `gateway.ts:916` names the relationship in its own header: the live autonomy gate is *deliberately narrower*, stopping at `DEFAULT_TEACH_THRESHOLD` rather than `MASTERY_MAX`, because decay puts every held instance below full mastery within a month. This is the wider mirror kept beside `practice` so the rule and its predicate cannot drift. Wiring it would replace the narrow gate with the wide one — a behaviour change, not an integration. |
 | `replay` **(moved from §2, 2026-08-15)** | `replayAndLocate` — imported at `scripts/regen-goldens.mjs:107` and **called at `:142`**, over `recordingOf(fixture)`. §2's reason grepped for the literal string `replay(`, which the named export does not match. Constraint 4 is enforced by a replayer with a production caller; it is `replay` itself that has none. |
 
 Every one of these is safe to delete, and each deletion is also a decision about which of two
@@ -113,17 +278,17 @@ implementations is the real one — which makes them worth more attention than �
 
 ---
 
-## 4. Dead: 23, and tooling-only: 27
+## 4. Dead: 22, and tooling-only: 27
 
 **Dead** splits three ways. *Empty sentinels nothing defaults to* (9): `NO_AFFINITIES`,
 `NO_TERRITORY`, `NO_DEMAND`, `NO_YIELD_BONUSES`, `TRAIT_NEUTRAL`, `NULL_CONTENT_ID`, `NULL_CELL_ID`,
 `OBJECTIVE_KIND_UNSPECIFIED`, `BIRTH_BUCKET_TAIL_ALLOWANCE` — each names a zero the code writes as a
 literal. *One-line aliases* (8): `drawBelow` (a rename of `nextBounded`), `fractionOf`, `addAmounts`,
-`narrowToFixed`, `isWorkingMage`, `isProductive`, `summedYield`, `assertCostHook`. *Duplicates* (6):
+`narrowToFixed`, `isWorkingMage`, `isProductive`, `summedYield`, `assertCostHook`. *Duplicates* (5):
 `cellAxes` (`rules-magic`) and `cellAxesOf` (`state`) are the same function in two packages and
-**both** are unreached, which is worth a look before deleting either; `heldNodes` is shadowed by the
-live `gateway.heldNodes` method; plus `AGE_BANDS_IN_ORDER`, `UNCHANGED_MULTIPLIER`,
-`PRODUCTIVE_OCCUPATIONS`.
+**both** are unreached, which is worth a look before deleting either; plus `AGE_BANDS_IN_ORDER`,
+`UNCHANGED_MULTIPLIER`, `PRODUCTIVE_OCCUPATIONS`. (`heldNodes` was a sixth, shadowed by the live
+`gateway.heldNodes` method; a merge reached it before the 2026-08-16 re-pin.)
 
 **Tooling-only** (27) is dominated by `scenario`, whose entire contribution of twelve is report and metric
 builders: `censusLine`, `longRunLines`, `longestOccupationAlternation`, `claimRate`,
@@ -238,6 +403,8 @@ delete it, or accept the debt and say so. This is the third, with the argument f
 | `FOUNDING_PROBE` | `scenario` | tooling-only | The probe's declaration. `reachedOnlyByUnreached`, which is the ratchet correctly refusing to count a symbol as live because the only thing reaching it is itself unreached. |
 | `auditFounding` | `scenario` | tooling-only | Drives a scripted god at the reference universe and reports what it founded. Called by `founding-instrument.test.ts` and by nothing in a running universe, which is what an instrument is. |
 | `formatFounding` | `scenario` | tooling-only | Renders that audit for a human. Same argument. |
+| `executeReferenceRunAsync` | `scenario` | tooling-only | Added 2026-08-18. The run executor drained with a pause between world years, so a vitest worker can answer the runner inside birpc's hardcoded 60 s. `reachedOnlyByUnreached` for the same reason `FOUNDING_PROBE` is. A running universe must never call it: pausing costs a sweep worker scheduler round trips and buys it nothing. |
+| `makeReferenceExecutorAsync` | `scenario` | tooling-only | Added 2026-08-18. The same, for an inline sweep. `RunExecutor` has always permitted a promise and `runTasksInline` has always awaited one, so nothing widened to admit it. |
 
 **The distinction the table draws is the one worth keeping.** `characterFor` is *integration debt*:
 something a running universe should eventually call and does not. The three `scenario` symbols are

@@ -270,7 +270,6 @@ describe('upkeep is charged deterministically and never overdraws', () => {
     for (const outcome of outcomes) {
       expect(outcome.paid).toBe(4 * LIBRARY_UPKEEP_PER_INSTANCE);
       expect(outcome.shortfall).toBe(0);
-      expect(outcome.degradedInstances).toBe(0);
     }
     expect(materialsRemaining).toBe(1000 - 3 * 4 * LIBRARY_UPKEEP_PER_INSTANCE);
   });
@@ -293,15 +292,20 @@ describe('upkeep is charged deterministically and never overdraws', () => {
     expect(outcomes[2]?.shortfall).toBe(4 * LIBRARY_UPKEEP_PER_INSTANCE);
   });
 
-  it('degrades a library it could not pay for, bounded by what it holds', () => {
+  it('reports the whole shortfall of a library it could not pay for, and converts nothing', () => {
+    // W23 moved the conversion out of here. This side owns *what is owed and
+    // what went unpaid*; turning unpaid upkeep into destroyed books is
+    // `coordination`'s job, because the price of a book is its `durability` and
+    // `contracts.md` §5 rule 3 keeps this package out of `rules-magic`.
     const big = [{ handle: 1, depth: depthOf(200, 200) }];
     const { outcomes } = applyLibraryUpkeep(big, 0);
     const outcome = outcomes[0];
+    expect(outcome?.paid).toBe(0);
     expect(outcome?.shortfall).toBe(200 * LIBRARY_UPKEEP_PER_INSTANCE);
-    expect(outcome?.degradedInstances).toBe(
-      Math.min(200, Math.floor((200 * LIBRARY_UPKEEP_PER_INSTANCE) / DEGRADATION_PER_SHORTFALL)),
-    );
-    expect(outcome?.degradedInstances).toBeLessThanOrEqual(200);
+    // The magnitude survives the move -- it is the divisor turning a book's
+    // durability into the unpaid upkeep it takes to destroy it, and at the
+    // reference `scribeAffinity` of fp(1024) it still prices a book at 32.
+    expect(DEGRADATION_PER_SHORTFALL).toBe(32);
   });
 
   it('makes hoarding cost the hoarder', () => {

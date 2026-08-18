@@ -37,9 +37,15 @@ import { snapshotHash, step } from '@mm/sim-core';
 import {
   BLESSING,
   ERA_EVALUATION,
+  GRIMOIRE,
+  HOLDER_KIND,
+  KNOWLEDGE_INSTANCE,
+  LIBRARY,
+  LOCATION_KIND,
   MAGE,
   TERMINAL_REASON,
   UNIVERSE,
+  attachRecord,
   collectRecords,
   componentOf,
   findUniverse,
@@ -47,10 +53,19 @@ import {
   readUniverse,
 } from '@mm/state';
 
+import { KnowledgeSubsystem } from '@mm/rules-magic';
+
 import type { WorldSimulation } from '../../src/index.js';
 import { ACTION, defineWorldSimulation, ledgerBalances } from '../../src/index.js';
 
-import { registry, seededWorld, sourceFor } from './world-fixtures.js';
+import {
+  catalogAndCells,
+  registry,
+  seededWorld,
+  shippedTraditionResolver,
+  sourceFor,
+  traditionNamed,
+} from './world-fixtures.js';
 import { constants, costs, godlyWorldDeps, worshipMax } from './god-fixtures.js';
 
 const C = constants();
@@ -192,6 +207,96 @@ describe('a god action submitted to step reaches the rules', () => {
   });
 });
 
+describe("an encouragement reaches what a mage decides to study", () => {
+  /** Which nodes this universe holds, and how many copies of each. */
+  function heldByCell(state: SimState, cellOf: (nodeId: number) => number): Map<number, number> {
+    const byCell = new Map<number, number>();
+    for (const { row } of collectRecords(state, KNOWLEDGE_INSTANCE)) {
+      const cellId = cellOf(row.nodeId);
+      byCell.set(cellId, (byCell.get(cellId) ?? 0) + 1);
+    }
+    return byCell;
+  }
+
+  it('is a preference and not a rate, so an encouraged cell fills faster than the god paid for', () => {
+    // The whole of W52 in one assertion. `encourageResearch` used to feed
+    // `research-rate` for its cell, which made an encouraged cell arrive sooner
+    // and never made it arrive *first*; the emphasis term in `target-appeal.ts`
+    // is what makes it a choice. Two universes on one seed, one of which is told
+    // where to look.
+    //
+    // ## The cadence changed on 2026-08-17, and the reason is the open grid
+    //
+    // The god used to speak **once every forty months** and that was enough to
+    // move the least-populated cell of a twelve-cell grid. This campaign flagged
+    // all seventy cells `"v1": true`, so the same universe's mages spread across
+    // 17 occupied cells instead, and four pulses over 160 months no longer reach
+    // the bottom of that distribution: measured on this tree at `tick % 40`, the
+    // least-populated cell holds **1** instance in the silent universe and
+    // **1** in the instructed one. The wire is not out — the two snapshots still
+    // differ, which is asserted below and was the only half of this test that
+    // stayed green — the signal is diluted.
+    //
+    // So the god speaks every month here. That is a change to the *instrument*
+    // and not to the claim, and the claim is now asserted more strictly than it
+    // was to make sure the extra input is not what is being measured: the total
+    // knowledge in the two universes must be **equal**. Measured at 160 ticks,
+    // `tick % 1`: 95 instances in both, and the encouraged cell goes from 1 to
+    // **7**. An encouragement that raised a *rate* would have moved the total;
+    // this moves only where the same months were spent, which is exactly what
+    // "a preference and not a rate" means and what W52 was about.
+    const { cells } = catalogAndCells();
+    const cellOf = (nodeId: number): number => cells.cellOf(nodeId);
+    const TICKS = 160;
+
+    const run = (encouraged: number): SimState => {
+      const { state, source } = world(0x0006_0052);
+      let current = state;
+      for (let tick = 0; tick < TICKS; tick += 1) {
+        current = step(
+          current,
+          encouraged !== 0 ? [{ kind: ACTION.encourageResearch, params: [encouraged] }] : [],
+          source,
+        );
+      }
+      return current;
+    };
+
+    /** Every knowledge instance in the universe, however it is distributed. */
+    const totalHeld = (byCell: Map<number, number>): number =>
+      [...byCell.values()].reduce((sum, count) => sum + count, 0);
+
+    // The cell the god names is chosen from what the *silent* universe reached
+    // on its own — the least-populated cell it holds anything in. Choosing a
+    // cell it never reaches would test whether the grid is connected; choosing
+    // its busiest would ask the emphasis to push on an open door.
+    const silent = run(0);
+    const baseline = heldByCell(silent, cellOf);
+    let encouraged = 0;
+    let fewest = Number.POSITIVE_INFINITY;
+    for (const [cellId, count] of [...baseline.entries()].sort((a, b) => a[0] - b[0])) {
+      if (count < fewest) {
+        fewest = count;
+        encouraged = cellId;
+      }
+    }
+    expect(encouraged).not.toBe(0);
+
+    const instructed = run(encouraged);
+
+    // Two universes that ran the same seed and disagree about what they know.
+    expect(snapshotHash(instructed)).not.toBe(snapshotHash(silent));
+    const after = heldByCell(instructed, cellOf);
+    expect(after.get(encouraged) ?? 0).toBeGreaterThan(fewest);
+    // A preference, not a rate. The same universe spent the same months and
+    // learned the same number of things; the god changed *which* things. If
+    // `encourageResearch` ever starts feeding a rate again — which is the
+    // regression W52 fixed — this is the line that fails, and the assertion
+    // above would not have noticed.
+    expect(totalHeld(after)).toBe(totalHeld(baseline));
+  });
+});
+
 describe('the capability adds no RNG stream, and a run replays exactly', () => {
   it('produces byte-identical snapshots from one seed and one action log', () => {
     const log = (tick: number): Action[] =>
@@ -288,5 +393,68 @@ describe('the god-state row appears on the first god tick and never disappears',
     const god = godStateOrEmpty(after, findUniverse(after));
     expect(god.lastEraRecorded).toBeGreaterThanOrEqual(0);
     expect(god.favorWasted).toBeGreaterThanOrEqual(0);
+  });
+});
+
+describe('a tradition change is a knowledge-loss channel the report can see', () => {
+  it('folds the nodes it emptied into this tick’s nodesLost', () => {
+    // The joint between the two halves that were already tested apart:
+    // `god-interventions.test.ts` proves the callback fires, and the 480-tick
+    // reference probe proves a zero there is a *true* zero. Neither has ever
+    // watched a non-zero value travel the closure in `defineWorldSimulation`
+    // into `lastReport().nodesLost`, and an unobserved joint is where this
+    // campaign has repeatedly found the wire cut.
+    const simulation = defineWorldSimulation({
+      ...godlyWorldDeps(traditionNamed('vancian-memorization')),
+      traditions: shippedTraditionResolver(),
+    });
+    const { state } = seededWorld(simulation.schema, { rootSeed: ROOT_SEED });
+    const universes = componentOf(state, UNIVERSE);
+    const universe = findUniverse(state);
+    universes.set(universe, 'traditionId', traditionNamed('vancian-memorization'));
+
+    // A node whose only copy in the universe is a shelved one. Nobody researches
+    // the deepest node in the catalogue by tick one, and `changeTradition` walks
+    // every instance regardless of cell, so a node this obscure is exactly the
+    // case: the switch destroys the only copy and the node leaves the universe.
+    const { catalog } = catalogAndCells();
+    const shelf = state.entities.create();
+    attachRecord(state, LIBRARY, shelf, { foundedTick: 0 });
+    const knowledge = KnowledgeSubsystem.fromState(state, catalog.nodeCount);
+    const orphan = catalog.nodeCount;
+    expect(knowledge.instanceCount(orphan)).toBe(0);
+    // §1.5 keeps exactly one instance per written copy and requires the pairing
+    // at creation, so the book comes first and the instance names it.
+    const book = state.entities.create();
+    attachRecord(state, GRIMOIRE, book, {
+      nodeId: orphan,
+      durability: 1024,
+      holderKind: HOLDER_KIND.library,
+      holderId: shelf,
+    });
+    knowledge.createInstance({
+      nodeId: orphan,
+      locationKind: LOCATION_KIND.library,
+      locationId: shelf,
+      acquiredTick: 0,
+      mastery: 1024,
+      grimoire: book,
+    });
+
+    universes.set(universe, 'favor', costs().byAction[ACTION.changeTradition] ?? 0);
+    const action: Action = {
+      kind: ACTION.changeTradition,
+      params: [traditionNamed('art-of-memory')],
+    };
+    const after = step(state, [action], sourceFor(ROOT_SEED));
+
+    expect(readUniverse(after, findUniverse(after)).traditionId).toBe(
+      traditionNamed('art-of-memory'),
+    );
+    // The one that matters. A `standard` -> `palace` switch has nowhere to put a
+    // shelved copy, so the node is gone — and `change.ts` requires that loss to
+    // be indistinguishable from a mage's death or a burned library, which means
+    // arriving in this counter and not in one of its own.
+    expect(simulation.lastReport()?.nodesLost).toBe(1);
   });
 });

@@ -34,6 +34,35 @@
 #
 # This must stay equivalent to the `verify` gate in package.json. If they drift,
 # a commit can pass locally and fail on the runner, or worse, the reverse.
+#
+# 2026-08-17, measured on PR #218 — and read the second number before acting on
+# the first. An honest run costs **2532 s** of vitest wall on a 4-vCPU GitHub
+# Actions runner, against the 2400 s ceiling named above. **On a developer
+# machine the identical script and commit ran in 675 s.**
+#
+# So "verify no longer fits the window" is a claim about *a slow box*, not about
+# this suite, and I wrote the broader version here first. Whether it fits
+# `multiverse-games-hel1` depends on that box's cores and nobody has measured it
+# there — the runner was not reachable when this was written. **Measure before
+# raising anything.**
+#
+# It is honest for the first time, which is why it grew. Twelve per-test budgets
+# landed on that PR after the Actions job was found reporting **ten timeouts as
+# failures**: a file-level FAIL with no named test is a hook expiring, not a
+# result. Before, this suite "fit" by giving up early — and a synchronous test
+# whose budget expires keeps running, so the truncated durations were measuring
+# the pile-up rather than the work.
+#
+# The single long pole is `species-separation-spread`, ~23 minutes of one worker.
+# Twenty-five two-hundred-year runs is what buys the separation claim, so
+# shortening it trades a real measurement for a fast one. Moving it out of the
+# gate would take the separation verdicts out of the merge path entirely, and
+# nothing would then stop a commit turning a `strict` separation into
+# `overlapping`.
+#
+# So the choice is the runner's window, not the suite's honesty. Raise the
+# ceiling on the box, or split the gate — and if `ci/hetzner-lint` starts
+# reporting nothing at all rather than failing, suspect this first.
 
 set -euo pipefail
 
@@ -115,7 +144,7 @@ if [ "$docs_only" -eq 1 ]; then
   echo
 fi
 
-echo "=== verify (typecheck, lint, purity, content, audio, primitive coverage, tests) ==="
+echo "=== verify (typecheck, lint, purity, content, audio, primitive coverage, generated, refs, tests) ==="
 echo "The three balance gates are NOT here. They run per-commit in the"
 echo "non-blocking \`balance\` Actions job, and are required at release —"
 echo "\`npm run verify:balance\` runs them, \`verify:full\` runs everything."

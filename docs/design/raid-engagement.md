@@ -586,6 +586,106 @@ sharpest possible version of §1's *"commitment made under uncertainty"*.
   The player should see *"the world said no"*, never *"the world said no, recently"*.
 - **What a scout learns must carry a timestamp**, not a guarantee.
 
+## 11c. A raid is where mētis comes from
+
+> *"Battle should give you a lot of mētis."*
+
+`openspec/changes/metis-knowledge` already defines the kind: **mētis** is the practitioner's knowledge
+that codification destroys — Scott's helmsman reading a sea he cannot chart. Nodes carry a
+`knowledgeKind`; mētis refuses scribing, may exist only at `mind` and `palace`, transmits **only by
+teaching from a living holder**, and *"leaves the universe when its last holder dies without having
+taught it — which can happen with no raid, no fire, and no enemy."*
+
+What the proposal lacks is a **source**. Battle is it, and it is the right one: practitioner knowledge
+comes from doing the thing under conditions a text cannot reproduce.
+
+### It gives a raid a knowledge payoff that is not loot
+
+Everything a raid currently produces is transferable — grimoires you carry out, nodes the defender
+witnesses and learns. Mētis is the opposite: **you cannot take it and they cannot copy it.** Both
+sides come home with something the other cannot have, which is a much better model of what a fight
+teaches than a book with legs.
+
+It also completes the exposure loop asymmetrically, which is what makes it interesting. The
+attacker's *spells* leak to the defender as episteme — witnessed, writable, permanent. The **mētis**
+both sides accumulate leaks nowhere. **You teach your enemy your magic and keep what you learned about
+fighting them.**
+
+### It is what makes "only if they make it home" bite
+
+The author's line from the very start of this project — *"they teach when they come home from battle…
+**but only if they make it home to teach**"* — has never had teeth, because everything a mage knew was
+also in a book.
+
+Battle mētis has **no backup**. No grimoire, no shelf, no library copy, no rediscovery from a text
+because no text exists. A mage who dies on the far side of a portal takes all of it, and the only
+recovery is to send someone else to learn it the same way. That is the loss channel the game has been
+describing since its first page and has never actually had.
+
+### Two things it connects that were separate
+
+**It sharpens the detached-frontier ruling** (`ages-of-magic.md` §2c). Battle mētis is a veteran's
+*fundamentals*, and fundamentals stay fresh only by teaching. So a veteran who stops teaching loses
+her battle knowledge outright — and unlike an episteme node, there is nothing to read to get it back.
+**The retired soldier who never trained anyone is a total loss.**
+
+**It gives necromancy a reason that is not "more mages."** Corpus lets you keep a scholar past death.
+For an episteme specialist that is a convenience — her results are in the library. For a **veteran it
+is the only way her mētis survives at all.** `rego-corpus`'s *The Unclaimed Body* and `creo-corpus`'s
+*The Unfinished Death* stop being ghoulish luxuries and become the answer to a real, mechanical
+problem: **you raise the dead for what they never wrote down.**
+
+### And the economy is the larger source, which is the part that matters
+
+> *"The economy should provide mētis. Like… because we're using magic to grow crops and whatever."*
+
+**Mētis comes from applied use, not from study.** Battle is the vivid source; the working economy is
+the *bigger* one, because it runs every tick of peacetime. A mage who has irrigated the same delta
+for forty seasons knows things about Aquam that are in no book, and could not be put in one.
+
+This changes four things.
+
+**The economy produces knowledge, not only materials.** `w29`'s wire made knowledge an input to
+production — *what the academics know changes the harvest*. This closes the loop the other way:
+**production is an input to knowledge.** §6a says *"knowledge is an input to producing more
+knowledge"*; with this, so is the work itself.
+
+**It is a mechanical answer to `permit-then-idle`, and the first one that attacks the strategy rather
+than its price.** Every attempt so far has tried to make permitting *cost* more — and measured that
+the idle bot simply pays it, because permitting is all it does. But an idle universe **uses** almost
+nothing. It permits the grid, its academics learn the subset, and its magic sits in minds and books
+doing no work.
+
+> **If applied use generates mētis, the bot that permits everything and does nothing accumulates
+> none.** Not because it was penalised, but because mētis is a record of practice and it did not
+> practise.
+
+That is a reason for the god's verbs to matter that does not route through favor at all: funding a
+university, blessing a mage, granting knowledge and building sites all produce *use*, and use is the
+only thing that produces this kind of knowledge. It should be measured before it is believed — but it
+is the first proposal in this campaign that makes idling *structurally* worse rather than merely
+poorer.
+
+**It is another differentiation axis, and it comes from what a universe actually does.** A realm that
+irrigates accumulates Aquam mētis; one that quarries accumulates Terram. Two universes with identical
+rulesets and different territory end up with different practitioner knowledge — which is exactly the
+divergence W24's siting produced in materials, now reaching the knowledge layer.
+
+**And it puts the same trap under a working mage as under a specialist.** Economic mētis is a
+working mage's *fundamentals*, and by `ages-of-magic.md` §2c fundamentals stay fresh only through
+use and teaching. **Stop doing the work and you lose the knack**, with no text to recover it from.
+The universe that mechanises its irrigation and reassigns those mages to research loses something it
+cannot buy back.
+
+### Open
+
+1. **How much, and to whom?** Everyone who fought, the survivors only, or weighted by what they
+   actually did? Survivors-only is the harshest and matches the fiction.
+2. **Is battle mētis its own node, or a mastery term on nodes already held?** Its own node is
+   legible and authorable; a mastery term is subtler and reaches the teach threshold directly.
+3. **Does the losing side learn more?** There is a real argument that it does, and it would be the
+   first mechanic in this game that pays for defeat.
+
 ## 12. Open
 
 1. **Do supply-chain sites exist yet?** Universities do. The supply chain is W29's work and is not

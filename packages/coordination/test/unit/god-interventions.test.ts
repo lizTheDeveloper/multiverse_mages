@@ -35,9 +35,11 @@ import {
   EDICT_KIND,
   ENCOURAGED_CELL,
   KNOWLEDGE_INSTANCE,
+  LOCATION_KIND,
   MAGE,
   MAGE_ROLE,
   TERMINAL_REASON,
+  MATERIAL_STOCK,
   UNIVERSE,
   UNIVERSITY,
   UPHEAVAL,
@@ -55,11 +57,18 @@ import { KnowledgeSubsystem } from '@mm/rules-magic';
 import type { InterventionDeps } from '../../src/index.js';
 import { ACTION, emphasisAt, interventionCost, resolveInterventions } from '../../src/index.js';
 
-import { catalogAndCells, registry } from './world-fixtures.js';
+import {
+  catalogAndCells,
+  registry,
+  shippedTraditionResolver,
+  traditionNamed,
+} from './world-fixtures.js';
 import { constants, costs, godWorld, nodesCarrying } from './god-fixtures.js';
 
 const C = constants();
 const COSTS = costs();
+/** `sound-design.md` §5.2's eight bars, read from content rather than assumed. */
+const UNEASE_BARS = C.uneaseBars;
 const SCHEMA = defineWorldStateSchema([]);
 
 /** A universe with enough favor to buy anything, and the deps to act on it. */
@@ -312,10 +321,16 @@ describe('technique and form toggles are symmetric and immediate', () => {
 
   it('escalates the price of a second flip of the same axis', () => {
     const b = bench();
+    // Eight bars apart, which is `sound-design.md` §5.2's unease window. This
+    // test is about hysteresis — the price of flipping *one axis* back and
+    // forth — and letting the two acts land in the same phrase would measure
+    // the product of two rules and attribute it to one.
     const first = favorOf(b.state, b.universe);
-    expect(resolve(b, [{ kind: ACTION.forbidTechnique, params: [1] }]).applied).toBe(1);
+    expect(resolve(b, [{ kind: ACTION.forbidTechnique, params: [1] }], 0).applied).toBe(1);
     const afterFirst = favorOf(b.state, b.universe);
-    expect(resolve(b, [{ kind: ACTION.permitTechnique, params: [1] }]).applied).toBe(1);
+    expect(
+      resolve(b, [{ kind: ACTION.permitTechnique, params: [1] }], UNEASE_BARS).applied,
+    ).toBe(1);
     const afterSecond = favorOf(b.state, b.universe);
     expect(first - afterFirst).toBeGreaterThan(0);
     expect(afterFirst - afterSecond).toBe((first - afterFirst) * 2);
@@ -324,15 +339,19 @@ describe('technique and form toggles are symmetric and immediate', () => {
   it('keeps escalation per axis rather than global', () => {
     const b = bench();
     const base = COSTS.byAction[ACTION.forbidTechnique] ?? 0;
-    const churn = resolve(b, [
-      { kind: ACTION.forbidTechnique, params: [1] },
-      { kind: ACTION.permitTechnique, params: [1] },
-      { kind: ACTION.forbidTechnique, params: [1] },
-    ]);
-    expect(churn.applied).toBe(3);
+    // One act per phrase, for the reason above.
+    for (const [tick, kind] of [
+      [0, ACTION.forbidTechnique],
+      [UNEASE_BARS, ACTION.permitTechnique],
+      [2 * UNEASE_BARS, ACTION.forbidTechnique],
+    ] as const) {
+      expect(resolve(b, [{ kind, params: [1] }], tick).applied).toBe(1);
+    }
     const before = favorOf(b.state, b.universe);
     // A different technique, never touched, pays the base price.
-    expect(resolve(b, [{ kind: ACTION.forbidTechnique, params: [2] }]).applied).toBe(1);
+    expect(
+      resolve(b, [{ kind: ACTION.forbidTechnique, params: [2] }], 3 * UNEASE_BARS).applied,
+    ).toBe(1);
     expect(before - favorOf(b.state, b.universe)).toBe(base);
   });
 
@@ -708,6 +727,90 @@ describe('changing tradition is a single ruinous act', () => {
     expect(resolve(b, [{ kind: ACTION.changeTradition, params: [held] }]).refused).toBe(1);
   });
 
+  it('with the hooks resolved, burns what the incoming store kind cannot hold', () => {
+    // The wired arm. The sibling above — "destroys and duplicates no knowledge
+    // instance of its own accord" — is the *control*, and it stays true: a bench
+    // with no `traditions` resolver is a world where action 13 moves an id and
+    // nothing else, which is what every caller written before this saw.
+    const b = bench({ mages: 1 });
+    // The bench's universe holds whichever tradition interned first, and that is
+    // the Art of Memory — so say which one is being *left*, or the change is a
+    // no-op against the tradition already held.
+    componentOf(b.state, UNIVERSE).set(
+      b.universe,
+      'traditionId',
+      traditionNamed('vancian-memorization'),
+    );
+    const { nodeId } = grantableNode(b.state, b.universe);
+    resolve(b, [{ kind: ACTION.grantFoundingKnowledge, params: [mage(b, 0), nodeId] }]);
+
+    // Put the granted instance somewhere `store: palace` cannot hold it. A
+    // grant lands in `mind`, which every store kind holds — so a change that
+    // touched only minds would be indistinguishable from one that touched
+    // nothing, and this test would pass on the control arm too.
+    const instances = componentOf(b.state, KNOWLEDGE_INSTANCE);
+    const written = collectRecords(b.state, KNOWLEDGE_INSTANCE)[0]?.handle;
+    if (written === undefined) throw new Error('the grant created no instance');
+    instances.set(written, 'locationKind', LOCATION_KIND.library);
+    instances.set(written, 'locationId', 1);
+    b.deps.knowledge.rebuild();
+
+    const palace = traditionNamed('art-of-memory');
+    const wired: InterventionDeps = { ...b.deps, traditions: shippedTraditionResolver() };
+    const report = resolveInterventions(
+      b.state,
+      [{ kind: ACTION.changeTradition, params: [palace] }],
+      0,
+      TIME_MODE.world,
+      wired,
+    );
+
+    expect(report.applied).toBe(1);
+    expect(readUniverse(b.state, b.universe).traditionId).toBe(palace);
+    // Gone. `store: palace` holds `mind` and `palace` and nothing else, so a
+    // shelved copy has nowhere legal to live and vision §5's "knowledge is
+    // physical" says what happens to it.
+    expect(collectRecords(b.state, KNOWLEDGE_INSTANCE)).toHaveLength(0);
+  });
+
+  it('reports the nodes it emptied, so a tradition change reaches nodesLost', () => {
+    // The positive control for the loss channel. The 480-tick reference probe
+    // destroys 292 shelved instances and loses *zero* nodes, because its mages
+    // collectively know everything on the shelves — a true zero that looks
+    // exactly like a dead wire. Here the only copy in the universe is the
+    // shelved one, so the count must be 1.
+    const b = bench({ mages: 1 });
+    componentOf(b.state, UNIVERSE).set(
+      b.universe,
+      'traditionId',
+      traditionNamed('vancian-memorization'),
+    );
+    const { nodeId } = grantableNode(b.state, b.universe);
+    resolve(b, [{ kind: ACTION.grantFoundingKnowledge, params: [mage(b, 0), nodeId] }]);
+    const instances = componentOf(b.state, KNOWLEDGE_INSTANCE);
+    const only = collectRecords(b.state, KNOWLEDGE_INSTANCE)[0]?.handle;
+    if (only === undefined) throw new Error('the grant created no instance');
+    instances.set(only, 'locationKind', LOCATION_KIND.library);
+    instances.set(only, 'locationId', 1);
+    b.deps.knowledge.rebuild();
+
+    let lost = 0;
+    resolveInterventions(
+      b.state,
+      [{ kind: ACTION.changeTradition, params: [traditionNamed('art-of-memory')] }],
+      0,
+      TIME_MODE.world,
+      {
+        ...b.deps,
+        traditions: shippedTraditionResolver(),
+        onKnowledgeLost: (nodes) => {
+          lost += nodes;
+        },
+      },
+    );
+    expect(lost).toBe(1);
+  });
+
   it('is unaffordable to a universe at a young tier, structurally rather than by a gate', () => {
     // The favor cap at every tier below the top is lower than the price, so a
     // young universe cannot hold enough favor to pay however long it saves.
@@ -810,5 +913,82 @@ describe('edict kinds are the two contracts.md §1.1 declares', () => {
   it('numbers dispensation 0 and interdiction 1', () => {
     expect(EDICT_KIND.dispensation).toBe(0);
     expect(EDICT_KIND.interdiction).toBe(1);
+  });
+});
+
+/**
+ * `material-economy` group 4: the two economies meet.
+ *
+ * The god's verbs were priced in favor alone, so the game held two economies
+ * that never touched — worship made favor and favor bought the seventeen verbs,
+ * while magic made materials nothing the god did could ever spend. The
+ * systemic rule the shipped table now satisfies: **a verb that makes a thing in
+ * the world spends the material that thing is made of.**
+ *
+ * The shipped prices are read off `god-cost.json` rather than restated here, so
+ * a retune moves the test with the content instead of against it.
+ */
+describe('a verb that makes a thing spends the material it is made of', () => {
+  /** One stock, on a resolved bench. */
+  function stockOf(b: Bench, kind: 'stone' | 'labor' | 'essence' | 'insight' | 'passage'): number {
+    return componentOf(b.state, MATERIAL_STOCK).get(b.universe, kind);
+  }
+
+  function priceOf(actionId: number): Readonly<Record<string, number>> {
+    const price = COSTS.materialByAction[actionId];
+    if (price === undefined) throw new Error(`god-cost.json prices action ${String(actionId)} in no material`);
+    return price;
+  }
+
+  it('deducts the declared cost in the same tick the action succeeds', () => {
+    const b = bench({ mages: 1, incompleteUniversities: 1 });
+    const site = b.universities[0];
+    if (site === undefined) throw new Error('missing fixture');
+    const before = { stone: stockOf(b, 'stone'), labor: stockOf(b, 'labor') };
+    const outcome = resolve(b, [{ kind: ACTION.fundUniversity, params: [site] }]);
+    expect(outcome.applied).toBe(1);
+    const price = priceOf(ACTION.fundUniversity);
+    expect(before.stone - stockOf(b, 'stone')).toBe(price['stone']);
+    // **And `labor` too**, because raising a building takes hands as well as
+    // stone. Charging it here failed once — the world loop's construction hire
+    // drained the same stock every tick and left action 11 legal on 8 of 585
+    // ticks — and the fix is a reserve floor under *that* drain rather than the
+    // removal of this price. See `HiredLabourWeights.reserve`.
+    expect(price['labor']).toBeGreaterThan(0);
+    expect(before.labor - stockOf(b, 'labor')).toBe(price['labor']);
+  });
+
+  it('leaves every other kind exactly alone', () => {
+    // A deduction that reached for a total, or looped the wrong table, would
+    // still pass the assertion above.
+    const b = bench({ mages: 1 });
+    const before = stockOf(b, 'passage');
+    resolve(b, [{ kind: ACTION.blessMage, params: [mage(b, 0)] }]);
+    expect(stockOf(b, 'passage')).toBe(before);
+    expect(stockOf(b, 'insight')).toBeLessThan(1000 * 1024);
+  });
+
+  it('refuses the action outright when the stock cannot pay, and spends no favor', () => {
+    // The resolver is the authoritative half of a check the mask also makes —
+    // `mask.ts` clears the entry, and this refuses a submission that arrived
+    // anyway. §4.2's remedy, the same one an unaffordable favor price gets: a
+    // no-op and a count, never a negative stock.
+    const b = bench({ mages: 1, materials: 0 });
+    const favorBefore = favorOf(b.state, b.universe);
+    const outcome = resolve(b, [{ kind: ACTION.blessMage, params: [mage(b, 0)] }]);
+    expect(outcome.applied).toBe(0);
+    expect(outcome.refused).toBe(1);
+    expect(favorOf(b.state, b.universe)).toBe(favorBefore);
+    expect(stockOf(b, 'insight')).toBe(0);
+  });
+
+  it('applies a verb the table prices in no material, as it always did', () => {
+    // The positive control on the whole mechanism: sixteen of the seventeen
+    // rows name no material at all, and the loader accepts a mixed table
+    // precisely so that an unpriced verb is unaffected.
+    const b = bench({ materials: 0 });
+    expect(COSTS.materialByAction[ACTION.encourageResearch]).toBeUndefined();
+    const outcome = resolve(b, [{ kind: ACTION.encourageResearch, params: [1] }]);
+    expect(outcome.applied).toBe(1);
   });
 });
