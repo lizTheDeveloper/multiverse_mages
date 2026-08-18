@@ -49,7 +49,7 @@ import {
   BALANCE_RUN_METRIC_IDS,
   REFERENCE_METRIC_IDS,
   REFERENCE_REGISTRIES,
-  executeReferenceRun,
+  executeReferenceRunAsync,
   referenceContent,
 } from '@mm/scenario';
 
@@ -198,8 +198,8 @@ describe('the reference scenario declares the §7 raid metrics', () => {
 });
 
 describe('a run that cannot raid says so, and says which kind of cannot', () => {
-  it('reports mechanic-absent when the build has no raid mechanic', () => {
-    const result = executeReferenceRun(task(SHORT_HORIZON), { content, raids: false });
+  it('reports mechanic-absent when the build has no raid mechanic', async () => {
+    const result = await executeReferenceRunAsync(task(SHORT_HORIZON), { content, raids: false });
     // `raids: false` must flow `undefined` — never `[]` — into the measurement.
     expect(result.raids).toBeUndefined();
     for (const id of RAID_METRIC_IDS) {
@@ -209,8 +209,8 @@ describe('a run that cannot raid says so, and says which kind of cannot', () => 
     }
   });
 
-  it('reports no-observations when raids exist and this run initiated none', () => {
-    const result = executeReferenceRun(task(SHORT_HORIZON), { content });
+  it('reports no-observations when raids exist and this run initiated none', async () => {
+    const result = await executeReferenceRunAsync(task(SHORT_HORIZON), { content });
     expect(result.raids).toEqual([]);
     // The two distribution metrics need a raid; the tempo-loss fraction has a
     // denominator without one and honestly measures zero frozen ticks.
@@ -223,8 +223,8 @@ describe('a run that cannot raid says so, and says which kind of cannot', () => 
 });
 
 describe('a run that raids measures it', { timeout: 120_000 }, () => {
-  it('carries a real histogram, a real cost, and an empty overflow bin', () => {
-    const result = executeReferenceRun(raidingTask(), { content });
+  it('carries a real histogram, a real cost, and an empty overflow bin', async () => {
+    const result = await executeReferenceRunAsync(raidingTask(), { content });
 
     expect(result.raids?.length ?? 0).toBeGreaterThan(0);
 
@@ -266,11 +266,11 @@ describe('a run that raids measures it', { timeout: 120_000 }, () => {
     expect(tempo.detail?.elapsedWorldTicks).toBe(RAIDING_HORIZON);
   });
 
-  it('agrees with the unreduced raid log it was derived from', () => {
+  it('agrees with the unreduced raid log it was derived from', async () => {
     // The metric and the report must be talking about the same raids. They are
     // reduced once in the executor and used twice; a second mapping is how the
     // two would come to disagree about a number a reader compares by eye.
-    const result = executeReferenceRun(raidingTask(), { content });
+    const result = await executeReferenceRunAsync(raidingTask(), { content });
     expect(result.rawRaids).toHaveLength(result.raids?.length ?? 0);
     expect(result.raids?.map((raid) => raid.engagementTicks)).toEqual(
       result.rawRaids.map((raid) => raid.engagementTicks),
@@ -293,8 +293,8 @@ describe('a run that raids measures it', { timeout: 120_000 }, () => {
  * the last of them is a tripwire rather than a result.
  */
 describe('a raid reports what happened inside it, not only its shape', { timeout: 120_000 }, () => {
-  it('measures combatActionEconomy over a real denominator', () => {
-    const result = executeReferenceRun(raidingTask(), { content });
+  it('measures combatActionEconomy over a real denominator', async () => {
+    const result = await executeReferenceRunAsync(raidingTask(), { content });
     const economy = measured(result.outcome.metrics, 'combatActionEconomy');
 
     // The assertion that could not hold before. `collectCombatActionEconomy`
@@ -307,8 +307,8 @@ describe('a raid reports what happened inside it, not only its shape', { timeout
     expect(economy.detail?.raidCount).toBe(result.raids?.length);
   });
 
-  it('declares only the channel the engine really lacks', () => {
-    const result = executeReferenceRun(raidingTask(), { content });
+  it('declares only the channel the engine really lacks', async () => {
+    const result = await executeReferenceRunAsync(raidingTask(), { content });
     const economy = measured(result.outcome.metrics, 'combatActionEconomy');
 
     // The executor used to name `removal`, `save` and `decoy` as unimplemented
@@ -323,8 +323,8 @@ describe('a raid reports what happened inside it, not only its shape', { timeout
     expect(economy.detail?.unimplementedChannels).toEqual(pinned.unimplementedChannels);
   });
 
-  it('loses nothing crossing the boundary: the observation is the report, folded', () => {
-    const result = executeReferenceRun(raidingTask(), { content });
+  it('loses nothing crossing the boundary: the observation is the report, folded', async () => {
+    const result = await executeReferenceRunAsync(raidingTask(), { content });
     const observations = result.raids ?? [];
     expect(observations.length).toBeGreaterThan(0);
 
@@ -360,8 +360,8 @@ describe('a raid reports what happened inside it, not only its shape', { timeout
     });
   });
 
-  it('finds no combat attempt at all — and that is now a reported zero', () => {
-    const result = executeReferenceRun(raidingTask(), { content });
+  it('finds no combat attempt at all — and that is now a reported zero', async () => {
+    const result = await executeReferenceRunAsync(raidingTask(), { content });
     let attempts = 0;
     for (const observation of result.raids ?? []) {
       for (const row of observation.combatSources) {

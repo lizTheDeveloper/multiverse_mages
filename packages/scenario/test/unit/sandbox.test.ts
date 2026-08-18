@@ -80,7 +80,7 @@ import {
   SANDBOX_CHEAT,
   SANDBOX_CLAIMANT_KIND,
   SANDBOX_MATERIAL_KINDS,
-  executeReferenceRun,
+  executeReferenceRunAsync,
   isSandboxSchema,
   normalizeSandbox,
   referenceContent,
@@ -122,19 +122,35 @@ const INERT_DEFAULT_HASHES: Readonly<Record<number, string>> = {
 /** Generous, for the reason `balance-telemetry.test.ts` gives at length. */
 const SLOW_TEST_MS = 180_000;
 
-/** Ticks between yields back to the event loop. */
-const YIELD_EVERY_TICKS = 60;
+/**
+ * Ticks between yields back to the event loop.
+ *
+ * Twelve — one world year, the period `long-run.ts` set as this repository's
+ * convention — rather than the sixty this file first guessed at. Instrumented on
+ * 2026-08-18 the longest stretch this file left the event loop untouched was
+ * 15.3 s inside a full `npm run verify`, and birpc's window is a hardcoded 60 s
+ * before `vitest.config.ts`'s 1.4-3.5x CI factor is applied.
+ */
+const YIELD_EVERY_TICKS = 12;
 
 /** A small universe: nothing here is about population, and population is cost. */
 const OPTIONS = { cohortSize: 4, foundingMages: 2, foundingNodes: 4 } as const;
 
-/** Drives the default scenario through a session, exactly as the anchor script did. */
-function sessionHashAfter(ticks: number): string {
+/**
+ * Drives the default scenario through a session, exactly as the anchor script
+ * did.
+ *
+ * Async only so that it can hand the event loop back once a world year; the
+ * submissions between two yields are unchanged and entirely synchronous, and the
+ * hashes below are the proof that it moved nothing.
+ */
+async function sessionHashAfter(ticks: number): Promise<string> {
   const { scenario } = referenceScenario(content, { raids: true });
   const session = createSession({ scenario, strategyId: 'inert-control' });
   session.reset(ANCHOR_SEED, { worldTickCap: 4000 });
   for (let tick = 0; tick < ticks; tick += 1) {
     if (session.status() === 'running') session.submit({ kind: GOD_ACTION.noop });
+    if (tick % YIELD_EVERY_TICKS === YIELD_EVERY_TICKS - 1) await setImmediate();
   }
   return session.snapshotHash();
 }
@@ -181,9 +197,9 @@ describe('the sandbox is off by default, and provably so', () => {
   it(
     'reproduces the recorded inert-default snapshot hashes at every measured horizon',
     { timeout: SLOW_TEST_MS },
-    () => {
+    async () => {
       for (const [ticks, expected] of Object.entries(INERT_DEFAULT_HASHES)) {
-        expect(sessionHashAfter(Number(ticks)), `at ${ticks} ticks`).toBe(expected);
+        expect(await sessionHashAfter(Number(ticks)), `at ${ticks} ticks`).toBe(expected);
       }
     },
   );
@@ -488,8 +504,8 @@ describe('the harness will not take a cheated run as evidence', () => {
   it(
     'stamps the provenance of a cheated run and refuses the record it produced',
     { timeout: SLOW_TEST_MS },
-    () => {
-      const cheated = executeReferenceRun(taskFor(7), {
+    async () => {
+      const cheated = await executeReferenceRunAsync(taskFor(7), {
         content,
         sandbox: { grantMaterials: { food: 1024 * 1024 }, armEverything: true },
       });
@@ -499,7 +515,7 @@ describe('the harness will not take a cheated run as evidence', () => {
 
       // The positive control, and it is the whole reason the line above is worth
       // anything: the same validator, on the same executor, with no sheet.
-      const honest = executeReferenceRun(taskFor(7), { content });
+      const honest = await executeReferenceRunAsync(taskFor(7), { content });
       expect(honest.outcome.provenance.sandbox).toBeUndefined();
       expect(provenanceProblems(honest.outcome.provenance)).toStrictEqual([]);
     },

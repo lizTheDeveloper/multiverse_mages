@@ -156,7 +156,9 @@ export {
   SCENARIO_BUILD_VERSION,
   collectDeclaredMetrics,
   executeReferenceRun,
+  executeReferenceRunAsync,
   makeReferenceExecutor,
+  makeReferenceExecutorAsync,
   referenceProvenance,
 } from './executor.js';
 

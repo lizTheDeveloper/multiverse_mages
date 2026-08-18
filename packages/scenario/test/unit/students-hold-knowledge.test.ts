@@ -71,7 +71,26 @@ interface StudentKnowledgeCensus {
   readonly ticksWithAStudent: number;
 }
 
-function census(): StudentKnowledgeCensus {
+/**
+ * Hands the event loop back so the vitest worker can answer its runner, for the
+ * reason `long-run.ts` gives: birpc's 60 s timeout is hardcoded, and a worker
+ * running an unbroken synchronous tick loop cannot service the reply that would
+ * clear it. It changes no number — the simulation between yields is unchanged
+ * and entirely synchronous.
+ */
+async function yieldToRunner(): Promise<void> {
+  await new Promise<void>((resolve) => {
+    setImmediate(resolve);
+  });
+}
+
+/**
+ * Six hundred ticks with a per-tick census over every knowledge instance and
+ * every mage, which is why this needed the yield: instrumented across the whole
+ * suite on 2026-08-18 it was a **30.2 s** unbroken block, half of birpc's
+ * hardcoded window before `vitest.config.ts`'s 1.4-3.5x CI factor.
+ */
+async function census(): Promise<StudentKnowledgeCensus> {
   const content = referenceContent();
   const simulation = defineWorldSimulation(content.deps);
   let state = buildReferenceState({
@@ -88,6 +107,8 @@ function census(): StudentKnowledgeCensus {
 
   for (let tick = 0; tick < TICKS; tick += 1) {
     state = step(state, [], rngFromRootSeed(state.rootSeed));
+    // Once a world year, this repository's convention.
+    if (tick % 12 === 11) await yieldToRunner();
 
     const instances = componentOf(state, KNOWLEDGE_INSTANCE);
     const kinds = instances.field('locationKind');
@@ -119,8 +140,8 @@ function census(): StudentKnowledgeCensus {
 }
 
 describe('defect 4: a student is a handle, so knowledge can be in her head', () => {
-  it('records knowledge instances located in the minds of enrolled students', () => {
-    const seen = census();
+  it('records knowledge instances located in the minds of enrolled students', async () => {
+    const seen = await census();
 
     // The control first. A run with no students would pass the main assertion
     // vacuously for the same reason `main` would: nothing to look at. This is

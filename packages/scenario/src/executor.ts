@@ -52,12 +52,15 @@ import {
   BALANCE_METRIC_REGISTRY,
   BOT_POOL_REGISTRY,
   SNOWBALL_CHECKPOINT_TICKS,
+  YIELD_EVERY_ROUNDS,
   adaptAgentSession,
   canonicalHash,
   collectRunMetrics,
+  drainSteps,
+  drainStepsYielding,
   metricDefinitionVersions,
   policiesForRun,
-  runEpisode,
+  runEpisodeSteps,
 } from '@mm/mc-harness';
 
 import type { ActionEconomyReport } from '@mm/rules-raid';
@@ -663,6 +666,46 @@ export function executeReferenceRun(
   task: RunTask,
   options: ReferenceExecutorOptions = {},
 ): ReferenceRunResult {
+  return drainSteps(referenceRunSteps(task, options));
+}
+
+/**
+ * {@link executeReferenceRun}, pausing every `yieldEveryRounds` world ticks so a
+ * vitest worker can answer its runner.
+ *
+ * **This is the yield `raid-engagement.test.ts` asked for and could not make.**
+ * Its comment read: *"`executeReferenceRun` is `mc-harness`'s shipped entry
+ * point rather than a loop this file owns, so it cannot be given the
+ * once-a-world-year yield … the fix for that would be a yield inside
+ * `executeReferenceRun`, which is src."* A 400-tick arm through the synchronous
+ * entry point was the longest unbroken block in the whole suite — 65 s on a
+ * loaded developer box, measured, against birpc's hardcoded 60 s window — and it
+ * was the one file above that window on the run that produced the error.
+ *
+ * It changes no number: `mc-harness`'s `pacing.ts` explains why there is one
+ * copy of the loop body and what a pause costs. `reference-universe.test.ts`
+ * asserts the equivalence over a real run rather than reasoning about it.
+ */
+export async function executeReferenceRunAsync(
+  task: RunTask,
+  options: ReferenceExecutorOptions = {},
+  yieldEveryRounds: number = YIELD_EVERY_ROUNDS,
+): Promise<ReferenceRunResult> {
+  return drainStepsYielding(referenceRunSteps(task, options), yieldEveryRounds);
+}
+
+/**
+ * One reference run, as a generator that yields once per completed world tick.
+ *
+ * The prologue and the epilogue are one-off costs measured in milliseconds; the
+ * loop between them is the whole horizon, and it is delegated with `yield*` to
+ * `mc-harness`'s own episode generator so that neither package keeps a second
+ * copy of the round.
+ */
+function* referenceRunSteps(
+  task: RunTask,
+  options: ReferenceExecutorOptions,
+): Generator<void, ReferenceRunResult, void> {
   // The tradition is a *content* fact, so it is resolved before the scenario is
   // built rather than read out of the options inside it, and it is memoized for
   // the reason `referenceContent` is resolved once per process: a worker runs
@@ -694,7 +737,7 @@ export function executeReferenceRun(
     lastReport,
   );
 
-  const episode = runEpisode({
+  const episode = yield* runEpisodeSteps({
     session: recorder.session,
     runSeed: task.runSeed,
     scenarioConfig: configFor(task),
@@ -952,4 +995,39 @@ export function makeReferenceExecutor(options: ReferenceExecutorOptions = {}): R
     ...(options.raids === undefined ? {} : { raids: options.raids }),
   };
   return (task: RunTask): RunOutcome => executeReferenceRun(task, resolved).outcome;
+}
+
+/**
+ * The option resolution {@link makeReferenceExecutor} does, shared with
+ * {@link makeReferenceExecutorAsync} so the two factories cannot drift.
+ */
+function resolvedExecutorOptions(options: ReferenceExecutorOptions): ReferenceExecutorOptions {
+  return {
+    ...(options.content === undefined ? {} : { content: options.content }),
+    ...(options.censusIntervalTicks === undefined
+      ? {}
+      : { censusIntervalTicks: options.censusIntervalTicks }),
+    ...(options.raids === undefined ? {} : { raids: options.raids }),
+  };
+}
+
+/**
+ * {@link makeReferenceExecutor}, but every run hands the event loop back once a
+ * world year.
+ *
+ * `RunExecutor` has always permitted a promise, and `runTasksInline` has always
+ * awaited one, so this is not a widening of the harness's contract — it is the
+ * inline mode finally using the half of its own type that existed for the
+ * reproduction path. It exists for the same reason
+ * {@link executeReferenceRunAsync} does: a sweep run inline inside a vitest
+ * worker is an unbroken synchronous block, and `metric-completeness.test.ts`'s
+ * was 21.1 s of one, measured on 2026-08-18.
+ *
+ * **Not** for the worker pool, which has no runner to answer and would only pay
+ * the scheduler for it.
+ */
+export function makeReferenceExecutorAsync(options: ReferenceExecutorOptions = {}): RunExecutor {
+  const resolved = resolvedExecutorOptions(options);
+  return async (task: RunTask): Promise<RunOutcome> =>
+    (await executeReferenceRunAsync(task, resolved)).outcome;
 }

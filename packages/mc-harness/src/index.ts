@@ -249,8 +249,25 @@ export {
   adaptAgentSession,
   normalizeSubmission,
   runEpisode,
+  runEpisodeAsync,
+  runEpisodeSteps,
   terminalReasonName,
 } from './session.js';
+
+/**
+ * The two ways to drain a long run, and the convention behind them.
+ *
+ * Exported because `scenario`'s executor writes its own generator over the top
+ * of {@link runEpisodeSteps} and needs the same pair to drain it, and because a
+ * test arm that owns its own loop should reach for `yieldToRunner` here rather
+ * than hand-rolling a thirteenth copy of it.
+ */
+export {
+  YIELD_EVERY_ROUNDS,
+  drainSteps,
+  drainStepsYielding,
+  yieldToRunner,
+} from './pacing.js';
 
 /**
  * §1.1's endings, passed through from `agent-api` (which passes them through

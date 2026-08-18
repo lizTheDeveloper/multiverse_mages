@@ -12,7 +12,15 @@
  */
 
 import type { AgentSession, TerminalStatus } from '@mm/mc-harness';
-import { RECORDED_STATUSES, TERMINAL_STATUS, runEpisode, runSweep } from '@mm/mc-harness';
+import {
+  RECORDED_STATUSES,
+  TERMINAL_STATUS,
+  drainStepsYielding,
+  runEpisode,
+  runEpisodeAsync,
+  runEpisodeSteps,
+  runSweep,
+} from '@mm/mc-harness';
 import { describe, expect, it } from 'vitest';
 
 import { POOL_WORKER_URL, TOY_REGISTRIES, toySweep } from './fixtures.js';
@@ -218,5 +226,55 @@ describe('the episode loop and the fixture worker agree', () => {
         });
       }
     }
+  });
+});
+
+describe('pausing between rounds is the same episode', () => {
+  /**
+   * **The acceptance test for `runEpisodeAsync`.**
+   *
+   * `pacing.ts` argues that the paused drain and the unpaused one are the same
+   * run because there is exactly one copy of the loop body. This is the check
+   * that the argument holds over a session that actually counts what it was
+   * asked to do: same status, same tick count, same number of submissions, at
+   * every yield period from "every round" upwards.
+   *
+   * A period of 1 is included deliberately — it is the pathological case, and
+   * `annihilation-registry.test.ts` is a real arm that needs it.
+   */
+  it('agrees with runEpisode at every yield period', async () => {
+    const control = new NeverEndingSession();
+    const straight = runEpisode({
+      session: control,
+      runSeed: 7,
+      scenarioConfig: {},
+      policies: [() => 0],
+      worldTickCap: 25,
+    });
+
+    for (const everyRounds of [1, 2, 12, 100]) {
+      const session = new NeverEndingSession();
+      const paced = await runEpisodeAsync(
+        { session, runSeed: 7, scenarioConfig: {}, policies: [() => 0], worldTickCap: 25 },
+        everyRounds,
+      );
+      expect(paced, `every ${String(everyRounds)} rounds`).toStrictEqual(straight);
+      expect(session.submissions, `every ${String(everyRounds)} rounds`).toBe(control.submissions);
+    }
+  });
+
+  it('refuses a yield period that would never yield', async () => {
+    await expect(
+      drainStepsYielding(
+        runEpisodeSteps({
+          session: new NeverEndingSession(),
+          runSeed: 7,
+          scenarioConfig: {},
+          policies: [() => 0],
+          worldTickCap: 4,
+        }),
+        0,
+      ),
+    ).rejects.toThrow(/not a positive integer/);
   });
 });

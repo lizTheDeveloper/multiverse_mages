@@ -48,7 +48,7 @@ import {
   BALANCE_RUN_METRIC_IDS,
   REFERENCE_REGISTRIES,
   REFERENCE_SWEEP,
-  makeReferenceExecutor,
+  makeReferenceExecutorAsync,
   referenceContent,
   referenceProvenance,
   referenceScenario,
@@ -89,8 +89,18 @@ const SLOW_TEST_MS = 180_000;
  */
 const OPTIONS = { cohortSize: 4, foundingMages: 2, foundingNodes: 4 } as const;
 
-/** Ticks between yields back to the event loop. See {@link play}. */
-const YIELD_EVERY_TICKS = 60;
+/**
+ * Ticks between yields back to the event loop. See {@link play}.
+ *
+ * **Twelve, not sixty.** Sixty was a guess and it was too coarse: instrumented
+ * on `integration/all-branches` on 2026-08-18, the longest stretch this file
+ * left the event loop untouched was **31.6 s** inside a full `npm run verify` on
+ * a sixteen-core box under load — half of birpc's hardcoded 60 s window before
+ * the 1.4-3.5x CI factor `vitest.config.ts` measures is applied at all. Twelve
+ * is one world year, which is the period `long-run.ts` set as this
+ * repository's convention, and it puts the stretch at about six seconds.
+ */
+const YIELD_EVERY_TICKS = 12;
 
 interface Arm {
   readonly hash: string;
@@ -245,7 +255,10 @@ async function runSweepFor(strategy: string): Promise<readonly RunRecord[]> {
   const result = await runSweep({
     spec: specFor(strategy),
     registries: REFERENCE_REGISTRIES,
-    execution: { mode: 'inline', execute: makeReferenceExecutor({ content }) },
+    // The async executor, for the reason `YIELD_EVERY_TICKS` above gives: an
+    // inline sweep is one unbroken synchronous block per run, and the yield
+    // inside `play` cannot reach it. The records are identical either way.
+    execution: { mode: 'inline', execute: makeReferenceExecutorAsync({ content }) },
     provenance: referenceProvenance(content),
   });
   return result.records;

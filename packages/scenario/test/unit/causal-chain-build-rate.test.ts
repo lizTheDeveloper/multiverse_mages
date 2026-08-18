@@ -197,7 +197,18 @@ interface Arm {
   readonly ablation?: AblationMask;
 }
 
-function runArm(arm: Arm): ArmResult {
+/**
+ * Hands the event loop back so the vitest worker can answer its runner. The
+ * convention `long-run.ts` names; it changes no number, and `is a deterministic
+ * function of its seed` below is the assertion that says so.
+ */
+async function yieldToRunner(): Promise<void> {
+  await new Promise<void>((resolve) => {
+    setImmediate(resolve);
+  });
+}
+
+async function runArm(arm: Arm): Promise<ArmResult> {
   const deps = arm.ablation === undefined
     ? content.deps
     : { ...content.deps, ablation: arm.ablation };
@@ -233,6 +244,9 @@ function runArm(arm: Arm): ArmResult {
 
   for (let tick = 0; tick < TICKS; tick += 1) {
     state = step(state, [], rngFromRootSeed(state.rootSeed));
+    // Once a world year. A 180-tick arm here is a 10.1 s block, measured across
+    // the whole suite on 2026-08-18.
+    if (tick % 12 === 11) await yieldToRunner();
     const report: WorldStepReport | undefined = simulation.lastReport();
     if (report === undefined) continue;
     progressAdded += report.buildProgressAdded;
@@ -258,9 +272,9 @@ function runArm(arm: Arm): ArmResult {
 // The arms. Computed once: each is a 180-tick run of the full world loop.
 // ---------------------------------------------------------------------------
 
-const permitted = runArm({});
-const forbidden = runArm({ forbidTerram: true });
-const ablated = runArm({ ablation: neutralizing('build-rate') });
+const permitted = await runArm({});
+const forbidden = await runArm({ forbidTerram: true });
+const ablated = await runArm({ ablation: neutralizing('build-rate') });
 
 describe('the causal chain for build-rate, end to end at one seed', () => {
   it('link 1 — legalizing Terram increases how much Terram magic the academics hold', () => {
@@ -466,10 +480,10 @@ describe('the causal chain for build-rate, end to end at one seed', () => {
     expect(ablated.peakBuildRateSources).toBe(permitted.peakBuildRateSources);
   });
 
-  it('is a deterministic function of its seed', () => {
+  it('is a deterministic function of its seed', async () => {
     // The whole file is a claim about one seed. A claim about one seed that does
     // not reproduce is a claim about nothing.
-    const again = runArm({});
+    const again = await runArm({});
     expect(again.ticksToComplete).toBe(permitted.ticksToComplete);
     expect(again.stoneOwed).toBe(permitted.stoneOwed);
     expect(again.terramKnowledge).toBe(permitted.terramKnowledge);

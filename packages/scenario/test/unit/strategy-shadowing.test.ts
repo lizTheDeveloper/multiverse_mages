@@ -44,7 +44,7 @@
 
 import { describe, expect, it } from 'vitest';
 
-import { BOT_POOL_REGISTRY, adaptAgentSession, policyFor, runEpisode } from '@mm/mc-harness';
+import { BOT_POOL_REGISTRY, adaptAgentSession, policyFor, runEpisodeAsync } from '@mm/mc-harness';
 import { agentRng, createSession } from '@mm/agent-api';
 
 import {
@@ -212,7 +212,7 @@ const KNOWN_SHADOWED: Readonly<Record<string, string>> = Object.freeze({
 const audits = auditPool();
 
 describe('the pool audit does not disturb the pool', () => {
-  it('produces the same run policyFor produces, hash for hash', () => {
+  it('produces the same run policyFor produces, hash for hash', async () => {
     // One strategy is enough and it has to be this one: uniform-random-legal is
     // the only member of the pool that draws randomness on every round, so it is
     // the only one where a duplicated `preferences` call would show up as a
@@ -225,7 +225,10 @@ describe('the pool audit does not disturb the pool', () => {
 
     const { scenario } = referenceScenario(referenceContent());
     const control = createSession({ scenario, agentSlotIndex: 0, strategyId });
-    runEpisode({
+    // `…Async`: a 600-tick control run is a 10.1 s unbroken block, measured
+    // across the whole suite on 2026-08-18, and the snapshot-hash assertion
+    // below is what proves the yield moved nothing.
+    await runEpisodeAsync({
       session: adaptAgentSession(control),
       runSeed: AUDIT_RUN_SEED,
       scenarioConfig: { worldTickCap: AUDIT_WORLD_TICK_CAP, options: {} },

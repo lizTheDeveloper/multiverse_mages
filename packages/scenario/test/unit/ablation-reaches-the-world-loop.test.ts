@@ -117,7 +117,7 @@ import { describe, expect, it } from 'vitest';
 
 import type { RunTask } from '@mm/mc-harness';
 
-import { executeReferenceRun, referenceContent } from '../../src/index.js';
+import { executeReferenceRunAsync, referenceContent } from '../../src/index.js';
 import type { CensusSample } from '../../src/census.js';
 
 /**
@@ -167,8 +167,8 @@ function taskFor(ablatedPrimitives: readonly string[], worldTickCap: number): Ru
   };
 }
 
-function censusOf(task: RunTask, content = shared): CensusSample {
-  const result = executeReferenceRun(task, { content });
+async function censusOf(task: RunTask, content = shared): Promise<CensusSample> {
+  const result = await executeReferenceRunAsync(task, { content });
   const last = result.samples.at(-1);
   if (last === undefined) {
     throw new Error('A completed run kept no census sample; the recorder is not sampling.');
@@ -189,10 +189,10 @@ function censusOf(task: RunTask, content = shared): CensusSample {
  * inside the very number the leak test compares against.
  */
 let pair: { control: CensusSample; ablated: CensusSample } | undefined;
-function arms(): { control: CensusSample; ablated: CensusSample } {
+async function arms(): Promise<{ control: CensusSample; ablated: CensusSample }> {
   if (pair === undefined) {
-    const control = censusOf(taskFor([], HORIZON));
-    pair = { control, ablated: censusOf(taskFor([ABLATED], HORIZON)) };
+    const control = await censusOf(taskFor([], HORIZON));
+    pair = { control, ablated: await censusOf(taskFor([ABLATED], HORIZON)) };
   }
   return pair;
 }
@@ -384,16 +384,16 @@ const POPULATION_FLOOR_PERCENT = 90;
  */
 
 describe('an ablation arm is not its own control', () => {
-  it('a task naming an ablated primitive produces a different universe', () => {
-    const { control, ablated } = arms();
+  it('a task naming an ablated primitive produces a different universe', async () => {
+    const { control, ablated } = await arms();
     // Not `not.toEqual` on one field: the claim is that the *run* diverged, and
     // naming the field would let a future change satisfy this by moving a
     // different number.
     expect(ablated).not.toEqual(control);
   }, RUN_TIMEOUT_MS);
 
-  it('neutralizing resource-yield costs the universe knowledge and grimoires', () => {
-    const { control, ablated } = arms();
+  it('neutralizing resource-yield costs the universe knowledge and grimoires', async () => {
+    const { control, ablated } = await arms();
     // The direction is asserted, not only the difference. A mask that arrived
     // and made the ablated arm *better* would satisfy the test above, and would
     // mean the neutralization identity is inverted — which `ablation.ts` warns
@@ -403,8 +403,8 @@ describe('an ablation arm is not its own control', () => {
     expect(ablated.grimoires).toBeLessThan(control.grimoires);
   }, RUN_TIMEOUT_MS);
 
-  it('lost knowledge rather than people, so this is not a collapsed universe', () => {
-    const { control, ablated } = arms();
+  it('lost knowledge rather than people, so this is not a collapsed universe', async () => {
+    const { control, ablated } = await arms();
     // Integer arithmetic rather than a ratio, so the assertion has no floating
     // point in it and the failure message prints two whole populations.
     expect(ablated.population * 100).toBeGreaterThanOrEqual(
@@ -412,31 +412,32 @@ describe('an ablation arm is not its own control', () => {
     );
   }, RUN_TIMEOUT_MS);
 
-  it('the two arms ran the same length, so the difference is not a shorter run', () => {
-    const { control, ablated } = arms();
+  it('the two arms ran the same length, so the difference is not a shorter run', async () => {
+    const { control, ablated } = await arms();
     expect(ablated.worldTick).toBe(control.worldTick);
   }, RUN_TIMEOUT_MS);
 });
 
 describe('the mask belongs to one run', () => {
-  it('does not leak into the memoized content the next run reuses', () => {
+  it('does not leak into the memoized content the next run reuses', async () => {
     // Same shared `ReferenceContent` the ablated run above was executed against,
     // versus a content set that has never seen a mask. A fix that wrote the mask
     // into `content.deps` — the obvious one-line version — would make every
     // subsequent run holding that object an ablation arm, and the sweep would
     // still complete with entirely plausible numbers.
-    arms();
-    const afterAblated = censusOf(taskFor([], SHORT_HORIZON));
-    const untouched = censusOf(taskFor([], SHORT_HORIZON), referenceContent());
+    await arms();
+    const afterAblated = await censusOf(taskFor([], SHORT_HORIZON));
+    const untouched = await censusOf(taskFor([], SHORT_HORIZON), referenceContent());
     expect(afterAblated).toEqual(untouched);
   }, RUN_TIMEOUT_MS);
 });
 
 describe('a task the mask cannot represent is refused', () => {
-  it('names both primitives rather than ablating the first', () => {
+  it('names both primitives rather than ablating the first', async () => {
     // `ablationMaskFor` rather than `neutralizing(ids[0])`, so a pairwise arm
     // cannot be recorded under two names having neutralized one.
-    expect(() => executeReferenceRun(taskFor(['ward', 'blink'], SHORT_HORIZON), { content: shared }))
-      .toThrow(/single-primitive only/);
+    await expect(
+      executeReferenceRunAsync(taskFor(['ward', 'blink'], SHORT_HORIZON), { content: shared }),
+    ).rejects.toThrow(/single-primitive only/);
   });
 });

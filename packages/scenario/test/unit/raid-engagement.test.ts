@@ -35,7 +35,7 @@ import { describe, expect, it } from 'vitest';
 import { installValueSentinel, rngFromRootSeed, snapshotHash, step } from '@mm/sim-core';
 import { KNOWLEDGE_INSTANCE, collectRecords, permits } from '@mm/state';
 import {
-  executeReferenceRun,
+  executeReferenceRunAsync,
   referenceContent,
   referenceScenario,
   standardOpeningAxes,
@@ -86,7 +86,7 @@ const content = referenceContent();
  * tests ask for the same one; recomputing it would double the suite's cost to
  * re-derive a pure function of its argument.
  */
-const played = new Map<string, ReturnType<typeof executeReferenceRun>>();
+const played = new Map<string, Awaited<ReturnType<typeof executeReferenceRunAsync>>>();
 
 /**
  * The levels the looting arm plays, and **every one of the last three is load
@@ -115,24 +115,32 @@ const LOOTING_LEVELS: Readonly<Record<string, number>> = Object.freeze({
 });
 
 /**
- * **The one arm on this file that is still an unbroken synchronous block.**
+ * **This was the longest unbroken synchronous block in the whole suite, and it
+ * is not one any more.**
  *
- * `executeReferenceRun` is `mc-harness`'s shipped entry point rather than a
- * loop this file owns, so it cannot be given the once-a-world-year yield
- * `playOnce` has. These two cases cost 29 s and 33 s here under load 20-50,
- * which is 58-69 s on GitHub Actions — either side of birpc's hardcoded 60 s.
- * The budget below stops a false *timeout*; it does not remove the residual
- * chance of an `onTaskUpdate` RPC error, and the fix for that would be a yield
- * inside `executeReferenceRun`, which is src and is not this change's to make.
+ * The note this docstring replaces said: *"`executeReferenceRun` is
+ * `mc-harness`'s shipped entry point rather than a loop this file owns, so it
+ * cannot be given the once-a-world-year yield `playOnce` has … the fix for that
+ * would be a yield inside `executeReferenceRun`, which is src and is not this
+ * change's to make."* It was right about the diagnosis and right about where the
+ * fix belonged. Instrumented across all 394 test files on 2026-08-18, this file
+ * left the event loop untouched for **65.2 s** — the only file in the suite over
+ * birpc's hardcoded 60 s, on the run that produced exactly one
+ * `[vitest-worker]: Timeout calling "onTaskUpdate"`.
+ *
+ * `executeReferenceRunAsync` is that yield. It runs the same generator the
+ * synchronous entry point runs and pauses between world years;
+ * `reference-universe.test.ts` asserts the two produce an identical result over
+ * a real run.
  */
-function runOf(
+async function runOf(
   strategy: string,
   levels: Readonly<Record<string, number>> = { cohortSize: 12, foundingMages: 2, foundingNodes: 4 },
-): ReturnType<typeof executeReferenceRun> {
+): Promise<Awaited<ReturnType<typeof executeReferenceRunAsync>>> {
   const key = `${strategy}:${JSON.stringify(levels)}`;
   const cached = played.get(key);
   if (cached !== undefined) return cached;
-  const result = executeReferenceRun(
+  const result = await executeReferenceRunAsync(
     {
       coordinates: {
         sweepId: 'raid-engagement-test',
@@ -393,7 +401,7 @@ describe('raids off is the build before this one', () => {
 });
 
 describe('looting reaches what research cannot', () => {
-  it('brings home nodes from cells this universe would never have permitted', { timeout: ARM_TIMEOUT_MS }, () => {
+  it('brings home nodes from cells this universe would never have permitted', { timeout: ARM_TIMEOUT_MS }, async () => {
     // The measurement behind the content-exhaustion finding. Seventy cells are
     // authored and twelve are enabled, and those twelve hold 51 of the 300
     // nodes — so an undisturbed universe learns all 51 and stops, whatever it
@@ -437,7 +445,7 @@ describe('looting reaches what research cannot', () => {
     // this universe could not have derived. Vision §8's *"raids reach what
     // research cannot"* is a claim about a god who forbids, and the reference
     // universe as this campaign leaves it forbids nothing.
-    const rushed = runOf('portal-rush', LOOTING_LEVELS);
+    const rushed = await runOf('portal-rush', LOOTING_LEVELS);
     const outbound = rushed.rawRaids.filter((raid) => raid.outbound);
     expect(outbound.length).toBeGreaterThan(0);
     expect(outbound.reduce((sum, raid) => sum + raid.nodesGainedLocally, 0)).toBeGreaterThan(0);
@@ -461,12 +469,12 @@ describe('looting reaches what research cannot', () => {
     expect(forbiddenNodes.length).toBeGreaterThan(0);
   });
 
-  it('leaves a universe that never opened a portal with nothing it did not derive', { timeout: ARM_TIMEOUT_MS }, () => {
+  it('leaves a universe that never opened a portal with nothing it did not derive', { timeout: ARM_TIMEOUT_MS }, async () => {
     // The same god, the same forbidden Nomen cells, the same portal magic in a
     // founder's head — and a strategy that never submits action 14. It resolves
     // only inbound raids and gains nothing, which is what makes the arm above a
     // statement about *looting* rather than about the levels it plays.
-    const passive = runOf('passive-control', LOOTING_LEVELS);
+    const passive = await runOf('passive-control', LOOTING_LEVELS);
     expect(passive.rawRaids.every((raid) => !raid.outbound)).toBe(true);
     expect(passive.rawRaids.reduce((sum, raid) => sum + raid.nodesGainedLocally, 0)).toBe(0);
   });

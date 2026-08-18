@@ -412,8 +412,15 @@ describe('the set of functions that floor a live quantity to zero', () => {
       for (let tick = 0; tick < TICKS; tick += 1) {
         recorder.atTick(tick);
         state = step(state, [], rngFromRootSeed(state.rootSeed));
-        // Once a world year, as every other long arm does.
-        if (tick % 12 === 11) await yieldToRunner();
+        // **Every tick, not once a world year.** The period every other long arm
+        // uses is a period in *ticks*, and this arm's tick is not like theirs:
+        // the sentinel wraps every `floorDiv` in the rules path, so an
+        // instrumented tick here costs about 1.3 s and a world year of them cost
+        // **31.4 s**, measured across the whole suite on 2026-08-18 — over half
+        // birpc's hardcoded 60 s window before `vitest.config.ts`'s 1.4-3.5x CI
+        // factor is applied at all. The convention is "hand the loop back often
+        // enough", and on this arm that is once a tick.
+        await yieldToRunner();
       }
     });
 

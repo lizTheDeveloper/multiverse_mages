@@ -42,6 +42,7 @@ import {
   REFERENCE_SWEEP,
   censusLine,
   executeReferenceRun,
+  executeReferenceRunAsync,
   referenceContent,
   referenceScenario,
   shippedContent,
@@ -87,8 +88,8 @@ describe('the reference universe starts from shipped content', () => {
     expect(permitted).toEqual(v1CellIds);
   });
 
-  it('seeds every shipped species, a founding academy, and knowledge somebody can teach', () => {
-    const run = executeReferenceRun(task(0, 0), { content, censusIntervalTicks: 12 });
+  it('seeds every shipped species, a founding academy, and knowledge somebody can teach', async () => {
+    const run = await executeReferenceRunAsync(task(0, 0), { content, censusIntervalTicks: 12 });
     const first = run.samples[0];
     expect(first).toBeDefined();
 
@@ -155,7 +156,7 @@ describe('the founding species mask selects who founds the universe', () => {
     expect(snapshotHash(explicit)).toBe(snapshotHash(before));
   });
 
-  it('seeds only the species whose bits are set', () => {
+  it('seeds only the species whose bits are set', async () => {
     const registry = shippedContent();
     const speciesCount = registry.species.length;
     expect(speciesCount).toBeGreaterThan(1);
@@ -168,7 +169,7 @@ describe('the founding species mask selects who founds the universe', () => {
       [0b11, 2],
       [(1 << speciesCount) - 1, speciesCount],
     ] as const) {
-      const run = executeReferenceRun(
+      const run = await executeReferenceRunAsync(
         {
           ...task(0, 0),
           worldTickCap: 12,
@@ -263,8 +264,8 @@ describe('the founding university count decides how many academies open', () => 
 });
 
 describe('the universe does something when it is stepped', () => {
-  it('grows, promotes, researches, and writes it down', () => {
-    const run = executeReferenceRun(task(3, 0), { content, censusIntervalTicks: 6 });
+  it('grows, promotes, researches, and writes it down', async () => {
+    const run = await executeReferenceRunAsync(task(3, 0), { content, censusIntervalTicks: 6 });
     const first = run.samples[0];
     const last = run.samples[run.samples.length - 1];
     if (first === undefined || last === undefined) throw new Error('no census was taken');
@@ -284,12 +285,12 @@ describe('the universe does something when it is stepped', () => {
     expect(last.saturated).toEqual([]);
   });
 
-  it('keeps somebody alive at every census, in every cell of the sweep', () => {
+  it('keeps somebody alive at every census, in every cell of the sweep', async () => {
     // Across all four cells, not one: extinction is absorbing in this loop —
     // `deliverBirths` synthesises no founding population — so a cell that dies
     // out stays dead, and a test of one cell would not see it.
     for (let cellIndex = 0; cellIndex < 4; cellIndex += 1) {
-      const run = executeReferenceRun(task(cellIndex, 1), { content, censusIntervalTicks: 12 });
+      const run = await executeReferenceRunAsync(task(cellIndex, 1), { content, censusIntervalTicks: 12 });
       for (const sample of run.samples) {
         expect(sample.population).toBeGreaterThan(0);
         expect(sample.livingMages).toBeGreaterThan(0);
@@ -299,7 +300,7 @@ describe('the universe does something when it is stepped', () => {
 });
 
 describe('what this build cannot do, asserted rather than assumed', () => {
-  it('produces a different universe depending on which strategy plays it', () => {
+  it('produces a different universe depending on which strategy plays it', async () => {
     // This assertion used to run the other way, and the comment on it said the
     // day `god-agency` landed the test would fail and that failing was how
     // anyone would find out the pool had started to differentiate. It did, and
@@ -313,9 +314,10 @@ describe('what this build cannot do, asserted rather than assumed', () => {
     // entitled to agree, and a test demanding total separation would be a test
     // of the bot pool's diversity rather than of whether actions do anything.
     const base = task(1, 3);
-    const outcomes = BOT_POOL_REGISTRY.ids.map((strategyId) =>
-      executeReferenceRun({ ...base, strategies: [strategyId] }, { content }),
-    );
+    const outcomes = [];
+    for (const strategyId of BOT_POOL_REGISTRY.ids) {
+      outcomes.push(await executeReferenceRunAsync({ ...base, strategies: [strategyId] }, { content }));
+    }
 
     const first = outcomes[0];
     if (first === undefined) throw new Error('the bot pool is empty');
@@ -333,7 +335,7 @@ describe('what this build cannot do, asserted rather than assumed', () => {
     expect(submitted.size).toBeGreaterThan(1);
   });
 
-  it('shelves what it writes, so library depth tracks the books rather than reading zero', () => {
+  it('shelves what it writes, so library depth tracks the books rather than reading zero', async () => {
     // **This test used to assert the opposite**, as a tripwire: the loop wrote
     // books and never shelved one, `shelveGrimoire` sat unused in `rules-magic`,
     // and the channel §7's `capitalSnowball` is pinned to read zero for as long
@@ -341,7 +343,7 @@ describe('what this build cannot do, asserted rather than assumed', () => {
     // of the university whose scriptorium produced it, argued in `gateway.ts` —
     // so the tripwire has done its job and this is now an assertion about the
     // behaviour it was waiting for.
-    const run = executeReferenceRun(task(3, 2), { content, censusIntervalTicks: 12 });
+    const run = await executeReferenceRunAsync(task(3, 2), { content, censusIntervalTicks: 12 });
     const last = run.samples[run.samples.length - 1];
     expect(last?.grimoires).toBeGreaterThan(0);
     // The channel is *distinct nodes shelved*, so it is bounded above by the
@@ -352,7 +354,7 @@ describe('what this build cannot do, asserted rather than assumed', () => {
     expect(last?.libraryDepth).toBeLessThanOrEqual(last?.nodesKnown ?? 0);
   });
 
-  it('writes many copies of few nodes, which is what the shelf now lets anyone see', () => {
+  it('writes many copies of few nodes, which is what the shelf now lets anyone see', async () => {
     // The finding the previous test's number is worth reading for, recorded as
     // an assertion so it cannot quietly stop being true. This universe writes
     // hundreds of books and they are copies of a handful of nodes: the scribable
@@ -364,11 +366,34 @@ describe('what this build cannot do, asserted rather than assumed', () => {
     // exists to make visible. Recorded here because it was invisible while the
     // shelf was empty, and because the ratio is the thing a later tuning pass
     // will want to have watched from the beginning.
-    const run = executeReferenceRun(task(3, 2), { content, censusIntervalTicks: 12 });
+    const run = await executeReferenceRunAsync(task(3, 2), { content, censusIntervalTicks: 12 });
     const last = run.samples[run.samples.length - 1];
     if (last === undefined) throw new Error('no census was taken');
     expect(last.grimoires).toBeGreaterThan(last.libraryDepth);
   });
+});
+
+describe('the yield that lets a worker answer its runner changes no number', () => {
+  /**
+   * **The acceptance test for `executeReferenceRunAsync`.**
+   *
+   * `mc-harness`'s `pacing.ts` argues that a paused run and an unpaused one are
+   * the same run: there is one copy of the loop body, and the pause is a
+   * `setImmediate` rather than anything the rules path can observe. An argument
+   * is not evidence, and the cost of being wrong here is every committed balance
+   * baseline, so the two are run over the same task and compared whole —
+   * outcome, census samples, checkpoints, raid log and metrics together, rather
+   * than one field somebody chose.
+   *
+   * `toStrictEqual` and not `toEqual`: a paused run that returned `undefined`
+   * where the synchronous one returned an absent key would pass the loose form.
+   */
+  it('produces a result identical to the synchronous entry point', async () => {
+    const paced = await executeReferenceRunAsync(task(2, 1), { content, censusIntervalTicks: 12 });
+    const straight = executeReferenceRun(task(2, 1), { content, censusIntervalTicks: 12 });
+    expect(paced.outcome.ticksRun).toBeGreaterThan(0);
+    expect(paced).toStrictEqual(straight);
+  }, 300_000);
 });
 
 /** One task of the committed sweep, built the way the sweep itself builds it. */

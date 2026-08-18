@@ -67,7 +67,7 @@ import {
   LONG_RUN_OPTIONS,
   LONG_RUN_SEED,
   buildReferenceState,
-  executeReferenceRun,
+  executeReferenceRunAsync,
   referenceContent,
 } from '../../src/index.js';
 
@@ -236,7 +236,12 @@ describe('an assembled universe writes no non-finite value into state', () => {
 
       try {
         for (const [index, strategyId] of strategyIds.entries()) {
-          executeReferenceRun({
+          // `…Async` and not the synchronous entry point: one arm at
+          // `ARM_TICKS` is a 13.0 s unbroken block, measured across the whole
+          // suite on 2026-08-18, and the yield between arms could not reach
+          // inside one. The sentinel is module-global and survives an await, so
+          // pausing mid-arm watches exactly the same writes.
+          await executeReferenceRunAsync({
             coordinates: {
               rootSeed: LONG_RUN_SEED,
               sweepId: 'assembled-run-values',

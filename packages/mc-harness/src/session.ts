@@ -75,6 +75,8 @@
 import type { CandidateLists } from '@mm/agent-api';
 import { TERMINAL_REASON } from '@mm/agent-api';
 
+import { YIELD_EVERY_ROUNDS, drainSteps, drainStepsYielding } from './pacing.js';
+
 /** How an episode ended. `failed` is the harness's, not the session's. */
 export const TERMINAL_STATUS = {
   running: 'running',
@@ -376,6 +378,36 @@ export interface EpisodeInput<TConfig = unknown> {
  * silently coercing.
  */
 export function runEpisode<TConfig>(input: EpisodeInput<TConfig>): EpisodeOutcome {
+  return drainSteps(runEpisodeSteps(input));
+}
+
+/**
+ * {@link runEpisode}, pausing every `yieldEveryRounds` rounds so a vitest worker
+ * can answer its runner.
+ *
+ * Same loop, same order, same draws — `pacing.ts` says why there is only one
+ * copy of the body and what makes the pause free. Use this from a test arm whose
+ * horizon runs into tens of seconds; use {@link runEpisode} from anything that
+ * has to satisfy a synchronous contract, which includes every sweep worker.
+ */
+export async function runEpisodeAsync<TConfig>(
+  input: EpisodeInput<TConfig>,
+  yieldEveryRounds: number = YIELD_EVERY_ROUNDS,
+): Promise<EpisodeOutcome> {
+  return drainStepsYielding(runEpisodeSteps(input), yieldEveryRounds);
+}
+
+/**
+ * The episode loop itself, as a generator that yields once per completed round.
+ *
+ * The `yield` sits at the bottom of the round, after `ticksRun` has been
+ * incremented, so a consumer that pauses on it pauses **between** rounds and
+ * never inside one. Every early return leaves the generator without yielding,
+ * which is what makes a capped or terminated episode cost no extra scheduling.
+ */
+export function* runEpisodeSteps<TConfig>(
+  input: EpisodeInput<TConfig>,
+): Generator<void, EpisodeOutcome, void> {
   const { session, runSeed, scenarioConfig, policies, worldTickCap } = input;
   session.reset(runSeed, scenarioConfig);
 
@@ -415,6 +447,7 @@ export function runEpisode<TConfig>(input: EpisodeInput<TConfig>): EpisodeOutcom
       if (session.status() !== TERMINAL_STATUS.running) break;
     }
     ticksRun += 1;
+    yield;
   }
 
   return {
