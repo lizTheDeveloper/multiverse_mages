@@ -35,10 +35,16 @@
 # This must stay equivalent to the `verify` gate in package.json. If they drift,
 # a commit can pass locally and fail on the runner, or worse, the reverse.
 #
-# 2026-08-17, measured on PR #218: **`verify` no longer fits that window.** An
-# honest run costs **2532 s** of vitest wall against the 2400 s ceiling named
-# above — so the reasoning in the paragraph above, which moved the two-hundred-
-# year gate out because it would not fit, now applies to this script itself.
+# 2026-08-17, measured on PR #218 — and read the second number before acting on
+# the first. An honest run costs **2532 s** of vitest wall on a 4-vCPU GitHub
+# Actions runner, against the 2400 s ceiling named above. **On a developer
+# machine the identical script and commit ran in 675 s.**
+#
+# So "verify no longer fits the window" is a claim about *a slow box*, not about
+# this suite, and I wrote the broader version here first. Whether it fits
+# `multiverse-games-hel1` depends on that box's cores and nobody has measured it
+# there — the runner was not reachable when this was written. **Measure before
+# raising anything.**
 #
 # It is honest for the first time, which is why it grew. Twelve per-test budgets
 # landed on that PR after the Actions job was found reporting **ten timeouts as
