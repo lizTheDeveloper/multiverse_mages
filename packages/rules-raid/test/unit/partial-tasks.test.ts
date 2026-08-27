@@ -48,7 +48,7 @@ import {
   runRaid,
 } from '@mm/rules-raid';
 
-import { nodeId, resolveWarband } from './warband.js';
+import { resolveWarband } from './warband.js';
 import type { WarbandResult } from './warband.js';
 import {
   addMage,
@@ -217,21 +217,7 @@ describe('task 7.13: stalemate — two out-of-range sides', () => {
 
 describe('task 8.3: consequence application is atomic', () => {
   it('leaves both worlds unmodified when a consequence throws mid-apply', () => {
-    // Build a standard raid and run it to completion.
-    const result = resolveWarband({
-      attackers: [
-        { name: 'Brannoc', nodes: [FIRE, MIND_READING] },
-        { name: 'Sela', nodes: [MIND_READING] },
-      ],
-      defenders: [
-        { name: 'Warden', nodes: [FIRE] },
-        { name: 'Keeper', nodes: [FIRE] },
-      ],
-      hostShelves: [SHELVED, FIRE],
-      seed: 7,
-    });
-
-    // Build a second, identical pair of universes but corrupt the outcome's
+    // Build a pair of universes but corrupt the outcome's
     // casualties to cause a throw partway through application.
     const attackerWorld = emptyWorld();
     const hostWorld = emptyWorld();
@@ -259,10 +245,6 @@ describe('task 8.3: consequence application is atomic', () => {
     });
     addUniversity(hostWorld, hostKnowledge, [SHELVED, FIRE]);
 
-    // Snapshot both worlds before the raid.
-    const attackerBefore = attackerWorld.clone();
-    const hostBefore = hostWorld.clone();
-
     const raid = openPortal({
       attacker: participant(attackerWorld, attackerKnowledge, raiderSnapshot, hostSnapshot.traditionId),
       host: participant(hostWorld, hostKnowledge, hostSnapshot, hostSnapshot.traditionId),
@@ -282,7 +264,7 @@ describe('task 8.3: consequence application is atomic', () => {
       ...outcome,
       casualties: [
         ...outcome.casualties,
-        { side: RAID_SIDE.defender as const, mageId: 999_999, stranded: false },
+        { side: RAID_SIDE.defender, mageId: 999_999, stranded: false },
       ],
     };
 
@@ -492,7 +474,6 @@ describe('task 8.14: a raider returning with a forbidden node gets a real but in
 
     // The "inert" half: the raider's ruleset forbids ignem, so any gained node
     // in an ignem cell is inert. Check at least that the forbiddance is real.
-    const fireCell = grid.cellOf(nodeId(FIRE));
     // The raider's ruleset does not permit the fire cell.
     expect(
       raiderForbidsFire.permittedForms & (1 << (ignem - 1)),
