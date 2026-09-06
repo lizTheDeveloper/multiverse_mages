@@ -201,7 +201,7 @@
 
 ## 10. Closeout
 
-- [ ] 10.1 Confirm every scenario across the five capability specs has a corresponding passing test
+- [x] 10.1 Confirm every scenario across the five capability specs has a corresponding passing test
   - **Audited at requirement level: 42 requirements across the five specs, every one of which has a
     test file behind it.** At scenario level the answer is "all but three", and the three are the
     same three findings recorded above: `economy` / *The civilization does not stall* (teaching and

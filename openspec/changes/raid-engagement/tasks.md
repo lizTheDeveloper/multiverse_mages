@@ -34,8 +34,8 @@
 - [x] 4.1 Resolve `acquire` and `store` against each combatant's home tradition for the whole raid, on both sides
 - [x] 4.2 Resolve `cast` and `cost` against the host tradition for every combatant, on both sides
 - [x] 4.3 Populate `preparedSpells` by applying the host `cast` hook to the candidate pool produced by the home `store` hook, filtered by the legal-node mask
-- [ ] 4.4 Test the Vancian-raider-in-Art-of-Memory and Art-of-Memory-raider-in-Vancian pairs, asserting both directions of the split are observable
-- [ ] 4.5 Test that the same attacker snapshot raiding two hosts of differing tradition produces measurably different casting behaviour from the same seed
+- [x] 4.4 Test the Vancian-raider-in-Art-of-Memory and Art-of-Memory-raider-in-Vancian pairs, asserting both directions of the split are observable
+- [x] 4.5 Test that the same attacker snapshot raiding two hosts of differing tradition produces measurably different casting behaviour from the same seed
 
 ## 5. Engagement space
 
@@ -64,7 +64,7 @@
 - [x] 6.10 Implement `summon` with a per-side cap where an over-cap summon is a no-op rather than a queued request
 - [x] 6.11 Test the equivalence of many small hits and one large hit against a warded target
 - [x] 6.12 Test cap clamping for ward and concealment, asserting the clamp counters increment
-- [ ] 6.13 Test within-tick order independence by re-resolving a tick with a permuted cast-resolution walk
+- [x] 6.13 Test within-tick order independence by re-resolving a tick with a permuted cast-resolution walk
 
 ## 7. Objectives and termination
 
@@ -80,13 +80,13 @@
 - [x] 7.10 Implement the hard ceiling as an immediate resolution plus a raised invariant violation, and test it under fault injection with the decrement disabled
 - [x] 7.11 Implement victory determination as a total function and property-test that no raid resolves as a draw or as undetermined
 - [x] 7.12 Property-test that `portalStability` strictly decreases every tick across randomly generated raids
-- [ ] 7.13 Test the stalemate case, where two out-of-range sides resolve exactly at portal collapse with a defender victory
+- [x] 7.13 Test the stalemate case, where two out-of-range sides resolve exactly at portal collapse with a defender victory
 
 ## 8. Consequences and knowledge theft
 
 - [x] 8.1 Implement the raid outcome record covering victor, resolution tick, casualties, objective statuses, nodes lost, nodes stolen, blocked forbidden casts, and cap clamps
 - [x] 8.2 Implement atomic write-back in the ordered sequence: casualties, stranded raiders, instance destruction and transfer, theft insertion, existence recomputation
-- [ ] 8.3 Test that a failure partway through application leaves neither world state modified
+- [x] 8.3 Test that a failure partway through application leaves neither world state modified
 - [x] 8.4 Implement permanent mage casualties and cohort decrements, with summons writing back nothing
 - [x] 8.5 Add a conformance check that nothing in `rules-raid` sets a mage's `alive` flag to true
 - [x] 8.6 Implement the stranded-raider rule and mark it in code as the tunable most likely to need softening, naming the survival-roll relaxation
@@ -96,8 +96,8 @@
 - [x] 8.10 Implement `knowledge-steal` attempts gated by `permits` against the host snapshot, resolved on stream 9, stacking by maximum
 - [x] 8.11 Implement the three distinct verbs — mind theft copies, grimoire looting moves, burning destroys — with distinct outcome-record entries
 - [x] 8.12 Implement theft retention conditional on the thief surviving and withdrawing, inserting instances at zero mastery before existence recomputation
-- [ ] 8.13 Test theft-outruns-loss: a stolen node whose last host instance is destroyed in the same raid survives abroad and is lost at home
-- [ ] 8.14 Test that a raider returning with a node her own universe forbids gains a real but inert instance
+- [x] 8.13 Test theft-outruns-loss: a stolen node whose last host instance is destroyed in the same raid survives abroad and is lost at home
+- [x] 8.14 Test that a raider returning with a node her own universe forbids gains a real but inert instance
 
 ## 9. Observation, metrics, and balance gates
 
@@ -116,7 +116,7 @@
 - [ ] 10.2 Test cross-process reproduction of the same raid from identical snapshots and seed
 - [x] 10.3 Test that a universe simulated without ever raiding produces a snapshot hash identical to the pre-change baseline
 - [ ] 10.4 Run the 10,000-raid Monte Carlo sweep and assert zero forbidden casts resolved and zero raids exceeding portal stability
-- [ ] 10.5 Confirm every scenario across the five capability specs has a corresponding passing test
+- [x] 10.5 Confirm every scenario across the five capability specs has a corresponding passing test
 - [x] 10.6 Run the full suite, typecheck, lint, purity check, and content validation together
 - [x] 10.7 Record any deviation discovered during implementation as a proposed `contracts.md` amendment, or confirm none
 
