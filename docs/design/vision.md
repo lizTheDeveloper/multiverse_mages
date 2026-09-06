@@ -691,8 +691,15 @@ Tracked for resolution during the changes that need them, not blocking:
 - How long is a world year in real seconds, and how long should a raid run? Pacing is a tuning
   output of the balance harness, not an up-front decision; the contracts fix the *units*, not the
   values.
-- How much prestige may carry between runs before the meta-game decides matches before they
-  start? Deferred to `god-agency`; the balance harness must test it adversarially.
+- ~~How much prestige may carry between runs before the meta-game decides matches before they
+  start?~~ **Answered by `god-agency`.** The recurrence is `prestige' = prestige × retention + earned`,
+  with retention 75% and max earn 2048 per run. The analytic limit is `earn-max / (1 − retention)` =
+  8192, enforced by a loader identity rather than a post-hoc clamp. An infinite streak of perfect
+  runs approaches it and never exceeds it. Stagnation earns 128, cutoff 256, ascension 1024 before
+  achievement terms. `prestigeAdvantage` — the head-start a high-prestige universe gets — is measured
+  by the balance harness against a threshold of 60% (`contracts.md` §7). All constants are flagged
+  `tuningStatus: "untuned"` and expected to be retuned by the harness. *(Answered 2026-09-06, ref
+  `god-constant.json` and `packages/scenario/src/legacy.ts` at 77733b89.)*
 - **How asymmetric should the technique switches be, and is the Intellego trunk deliberate?**
   Surfaced while prototyping the ruleset UI, and verified against shipped content: **all eleven
   cross-cell prerequisites in the v1 subset originate in an Intellego cell**, nine of them within
@@ -714,9 +721,20 @@ Tracked for resolution during the changes that need them, not blocking:
   enabled, or that the twelve-cell start stands and the other fifty-eight are reached by
   permitting? The two are very different games and the second is the one §4's permit verb
   describes.
-- How large is the edict budget, and how does it scale with worship tier? Deferred to
-  `god-agency` and expected to be retuned repeatedly by the balance harness.
-- What is the exact worship formula? Deferred to `god-agency`, same caveat.
+- ~~How large is the edict budget, and how does it scale with worship tier?~~ **Answered by
+  `god-agency`.** `edictBudget = 1 + worshipTier`, capped by `EDICT_BUDGET_MAX = 8` in `contracts.md`
+  §0. A universe falling a worship tier keeps its edicts in force and is barred only from issuing
+  more — the invariant is "may issue while `length < edictBudget`", not "must revoke when budget
+  shrinks." Expected to be retuned by the balance harness. *(Answered 2026-09-06, ref `mask.ts:249`
+  and `god-constant.json` at 77733b89.)*
+- ~~What is the exact worship formula?~~ **Answered by `god-agency`.** Three saturating source
+  classes, each `sat(raw, cap, half)` with `sat(x, c, h) = c × x / (x + h)`: **mages** (1 fp per
+  head + 0.5 fp blessed bonus, cap 4, half ~50 mages), **universities** (2 fp per completed
+  building, cap 3, half ~10), **populace** (0.015625 fp per head, cap 2, half ~1000). Sum ceiling
+  9.0 fp. Worship lags its target through an asymmetric first-order filter with separate rise (5%)
+  and fall (2%) rates. `worshipTier` is derived from geometric thresholds. All constants are in
+  `god-constant.json` and flagged untuned. *(Answered 2026-09-06, ref `packages/rules-world/src/
+  economy/counts.ts` at 77733b89.)*
 - **Which schools exclude which, and what reason does each exclusion carry?** §4b fixes the rule
   and the test — per mage, reason-bearing, symmetric because the reason is — and names no pairs.
   The content shape is also open: an anti-requisite is the mirror of a prerequisite and
