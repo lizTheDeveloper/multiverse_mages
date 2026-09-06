@@ -108,7 +108,7 @@
 - [x] 9.5 Emit the raid contribution to `libraryDependence` and wire its band into the balance gate
 - [x] 9.6 Emit per-primitive attribution data sufficient for `winRateByPrimitive` ablation without re-simulation
 - [x] 9.7 Add the balance gate that fails on a non-zero aggregate `forbiddenCastsBlocked`
-- [ ] 9.8 Record the answer to `core-contracts`' open question by confirming the 64-slot block needs no growth at the declared caps
+- [x] 9.8 Record the answer to `core-contracts`' open question by confirming the 64-slot block needs no growth at the declared caps
 
 ## 10. Determinism and closeout
 
