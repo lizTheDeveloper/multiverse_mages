@@ -87,11 +87,11 @@
 - [x] 7.5 Implement the round-robin scripted-god tournament and its per-strategy win rate against the pool
 - [x] 7.6 Wire the four failing conditions into the sweep: snowball threshold, ascension band, prestige ceiling, and the 65% pool ceiling
 - [x] 7.7 Add a conformance check that the simulation clamps none of these metrics
-- [ ] 7.8 Record the measured values and the retune history in `docs/design/release-plan.md`'s 0.6.0 entry
+- [x] 7.8 Record the measured values and the retune history in `docs/design/release-plan.md`'s 0.6.0 entry
 
 ## 8. Closeout
 
-- [ ] 8.1 Run the first full sweep, retune per the stated knob orders one knob at a time, and record every retune with the metric that caused it
+- [x] 8.1 Run the first full sweep, retune per the stated knob orders one knob at a time, and record every retune with the metric that caused it
 - [x] 8.2 Answer vision §13's three `god-agency` open questions in `docs/design/vision.md` — edict budget and scaling, the worship formula, and the prestige carry-over
 - [x] 8.3 Confirm every scenario across the four capability specs has a corresponding passing test
 - [x] 8.4 Run the full suite, typecheck, lint, purity check, content validation, and golden replay together
