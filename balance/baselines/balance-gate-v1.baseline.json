@@ -1,7 +1,7 @@
 {
   "baselineFormatVersion": 1,
   "configurationHash": "4e4532ef15feeb3b64f123b87ad060bc3318768c915c8ebf6097b5958799b1d0",
-  "contentHash": "17c0db6496df95e4e307bfb58b89c44d400c45d037c2e8343d42d629e48e49b0",
+  "contentHash": "c954c39b2174a53e913cc9103834f717c064ed9da9500377a9b52a7c477860f0",
   "kind": "gate",
   "metrics": [
     {"aggregation":"mean","definitionVersion":1,"metricId":"referenceGrimoires","sampleSize":200,"standardError":5.339137838372676,"standardErrorMethod":"stratified-by-cell","status":"measured","tolerance":16.01741351511803,"unit":"grimoires","value":394.48},
@@ -15,7 +15,7 @@
     {"aggregation":"mean","definitionVersion":1,"metricId":"referencePopulationChange","sampleSize":200,"standardError":0.3820954576745321,"standardErrorMethod":"stratified-by-cell","status":"measured","tolerance":1.1462863730235964,"unit":"people","value":-26.9}
   ],
   "notes": [
-    "Regenerated on branch plan-w18 at 77733b89, 2026-09-06. The superseded baseline was recorded after the wiring campaign (PR #201). This one adds the material-economy change on top."
+    "This is a pre-0.5.0 measurement on a degenerate universe (single-species per arm, scripted strategies). It is not a balance claim; release-plan.md forbids balance claims before 0.5.0."
   ],
   "provenance": {
     "buildVersion": "0.3.0",
@@ -25,21 +25,21 @@
     "observationSchemaVersion": 1,
     "rngRegistryHash": "50bf1a07d2c80ac6d2e8bf3b048f7d6db17fd6f5326c61aee721c0efdc9a6ef3"
   },
-  "rationale": "material-economy (tasks 1-6) added four material kinds (labor, essence, insight, passage) and priced five god verbs with materialCost. Adding costs to previously free verbs is an accept, not a regression: the economy now has drains where it only had faucets, and the content changes (form.json yieldWeights, god-cost.json materialCost) moved both the content hash and the RNG registry hash. Every metric that moved is moving in the expected direction — knowledge metrics up because the new sinks make allocation non-trivial, population down because the economy now has real costs.",
+  "rationale": "material-economy (tasks 1-6) added four material kinds and priced five god verbs. Adding costs to free verbs is an accept, not a regression.",
   "rootSeed": 20260811,
   "runCount": 200,
   "supersededDeltas": [
-    {"delta":305.235,"deltaInStandardErrors":176.5396570928965,"metricId":"referenceGrimoires","previousValue":89.245,"value":394.48},
-    {"delta":565.985,"deltaInStandardErrors":219.11910245117696,"metricId":"referenceKnowledgeInstances","previousValue":338.495,"value":904.48},
-    {"delta":4.614999999999999,"deltaInStandardErrors":19.7995592823851,"metricId":"referenceLibraryDepth","previousValue":3.995,"value":8.61},
-    {"delta":9.434999999999995,"deltaInStandardErrors":94.95754008294783,"metricId":"referenceLivingMages","previousValue":38.95,"value":48.385},
-    {"delta":17.310000000000002,"deltaInStandardErrors":111.04603332698754,"metricId":"referenceNodesGained","previousValue":19.08,"value":36.39},
-    {"delta":17.310000000000002,"deltaInStandardErrors":111.04603332698754,"metricId":"referenceNodesKnown","previousValue":21.58,"value":38.89},
+    {"delta":0,"deltaInStandardErrors":0,"metricId":"referenceGrimoires","previousValue":394.48,"value":394.48},
+    {"delta":0,"deltaInStandardErrors":0,"metricId":"referenceKnowledgeInstances","previousValue":904.48,"value":904.48},
+    {"delta":0,"deltaInStandardErrors":0,"metricId":"referenceLibraryDepth","previousValue":8.61,"value":8.61},
+    {"delta":0,"deltaInStandardErrors":0,"metricId":"referenceLivingMages","previousValue":48.385,"value":48.385},
+    {"delta":0,"deltaInStandardErrors":0,"metricId":"referenceNodesGained","previousValue":36.39,"value":36.39},
+    {"delta":0,"deltaInStandardErrors":0,"metricId":"referenceNodesKnown","previousValue":38.89,"value":38.89},
     {"delta":0,"deltaInStandardErrors":null,"metricId":"referencePeakPopulation","previousValue":216,"value":216},
-    {"delta":-12.289999999999992,"deltaInStandardErrors":-29.61230866351293,"metricId":"referencePopulation","previousValue":129.39,"value":117.1},
-    {"delta":-12.29,"deltaInStandardErrors":-29.612308663512945,"metricId":"referencePopulationChange","previousValue":-14.61,"value":-26.9}
+    {"delta":0,"deltaInStandardErrors":0,"metricId":"referencePopulation","previousValue":117.1,"value":117.1},
+    {"delta":0,"deltaInStandardErrors":0,"metricId":"referencePopulationChange","previousValue":-26.9,"value":-26.9}
   ],
-  "supersedes": "60bd826df03398c20278f754c10e88a1d9cdcf48fb0cf56de00a80ac8595b92f",
+  "supersedes": "17c0db6496df95e4e307bfb58b89c44d400c45d037c2e8343d42d629e48e49b0",
   "sweepId": "balance-gate-v1",
   "toleranceK": 3
 }

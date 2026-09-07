@@ -1,7 +1,7 @@
 {
   "baselineFormatVersion": 1,
   "configurationHash": "aa74eef219106c40a8253e9a23c28911cd09f244ce05cd104ee3bd0c8cbea191",
-  "contentHash": "d3df12aef3cfc47e95ec511787ec0dbf19ada6f2a2041a72c08f7b0f60353d7d",
+  "contentHash": "4d9792026bd02bcc67fa3dd9df666b0a7622043155b5de3e4ec9d7736a2ccaa9",
   "kind": "gate",
   "metrics": [
     {"aggregation":"mean","definitionVersion":1,"metricId":"referenceGrimoires","sampleSize":200,"standardError":9.04397552890027,"standardErrorMethod":"stratified-by-cell","status":"measured","tolerance":27.131926586700814,"unit":"grimoires","value":353.485},
@@ -16,7 +16,7 @@
     {"aggregation":"mean","definitionVersion":1,"metricId":"referencePopulationChange","sampleSize":200,"standardError":1.14972889439739,"standardErrorMethod":"stratified-by-cell","status":"measured","tolerance":3.44918668319217,"unit":"people","value":36.59}
   ],
   "notes": [
-    "Regenerated on branch plan-w18 at 77733b89, 2026-09-06. Supersedes the wiring-campaign baseline."
+    "This is a pre-0.5.0 measurement on a degenerate universe (single-species per arm, scripted strategies). It is not a balance claim; release-plan.md forbids balance claims before 0.5.0."
   ],
   "provenance": {
     "buildVersion": "0.3.0",
@@ -26,22 +26,22 @@
     "observationSchemaVersion": 1,
     "rngRegistryHash": "50bf1a07d2c80ac6d2e8bf3b048f7d6db17fd6f5326c61aee721c0efdc9a6ef3"
   },
-  "rationale": "material-economy (tasks 1-6) added four material kinds (labor, essence, insight, passage) and priced five god verbs with materialCost. Adding costs to previously free verbs is an accept, not a regression. The horizon gate's passive-control pool sees the content change through the yields (new forms producing new kinds) even though no god verb is played.",
+  "rationale": "material-economy (tasks 1-6) added material costs. Horizon gate sees content change through yields.",
   "rootSeed": 20260811,
   "runCount": 200,
   "supersededDeltas": [
-    {"delta":32.835000000000036,"deltaInStandardErrors":4.741978771409836,"metricId":"referenceGrimoires","previousValue":320.65,"value":353.485},
-    {"delta":577.05,"deltaInStandardErrors":72.49268335530897,"metricId":"referenceKnowledgeInstances","previousValue":1057.015,"value":1634.065},
-    {"delta":5.685000000000002,"deltaInStandardErrors":6.289065015837056,"metricId":"referenceLibraryDepth","previousValue":18.88,"value":24.565},
-    {"delta":14.915,"deltaInStandardErrors":74.9159554673477,"metricId":"referenceLivingMages","previousValue":37.7,"value":52.615},
-    {"delta":49.82999999999999,"deltaInStandardErrors":363.3141846189346,"metricId":"referenceNodesGained","previousValue":41.74,"value":91.57},
-    {"delta":8.41,"deltaInStandardErrors":79.91423167608656,"metricId":"referenceNodesGainedFinalQuarter","previousValue":4.345,"value":12.755},
-    {"delta":49.82999999999999,"deltaInStandardErrors":363.3141846189346,"metricId":"referenceNodesKnown","previousValue":44.24,"value":94.07},
-    {"delta":-55,"deltaInStandardErrors":-2.4033209525890284,"metricId":"referencePeakPopulation","previousValue":381,"value":326},
-    {"delta":-31.044999999999987,"deltaInStandardErrors":-24.08164890646455,"metricId":"referencePopulation","previousValue":211.635,"value":180.59},
-    {"delta":-31.045,"deltaInStandardErrors":-24.08164890646457,"metricId":"referencePopulationChange","previousValue":67.635,"value":36.59}
+    {"delta":0,"deltaInStandardErrors":0,"metricId":"referenceGrimoires","previousValue":353.485,"value":353.485},
+    {"delta":0,"deltaInStandardErrors":0,"metricId":"referenceKnowledgeInstances","previousValue":1634.065,"value":1634.065},
+    {"delta":0,"deltaInStandardErrors":0,"metricId":"referenceLibraryDepth","previousValue":24.565,"value":24.565},
+    {"delta":0,"deltaInStandardErrors":0,"metricId":"referenceLivingMages","previousValue":52.615,"value":52.615},
+    {"delta":0,"deltaInStandardErrors":0,"metricId":"referenceNodesGained","previousValue":91.57,"value":91.57},
+    {"delta":0,"deltaInStandardErrors":0,"metricId":"referenceNodesGainedFinalQuarter","previousValue":12.755,"value":12.755},
+    {"delta":0,"deltaInStandardErrors":0,"metricId":"referenceNodesKnown","previousValue":94.07,"value":94.07},
+    {"delta":0,"deltaInStandardErrors":0,"metricId":"referencePeakPopulation","previousValue":326,"value":326},
+    {"delta":0,"deltaInStandardErrors":0,"metricId":"referencePopulation","previousValue":180.59,"value":180.59},
+    {"delta":0,"deltaInStandardErrors":0,"metricId":"referencePopulationChange","previousValue":36.59,"value":36.59}
   ],
-  "supersedes": "6fed78771be5f4f0becc9e94cd42bddb4f78ffb876c0ae00aef87b7a215e1b14",
+  "supersedes": "d3df12aef3cfc47e95ec511787ec0dbf19ada6f2a2041a72c08f7b0f60353d7d",
   "sweepId": "balance-gate-horizon-v1",
   "toleranceK": 3
 }
