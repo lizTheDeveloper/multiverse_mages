@@ -115,7 +115,7 @@
 - [x] 10.1 Record a golden raid replay fixture covering terrain generation, deployment, combat, theft, and resolution
 - [x] 10.2 Test cross-process reproduction of the same raid from identical snapshots and seed
 - [x] 10.3 Test that a universe simulated without ever raiding produces a snapshot hash identical to the pre-change baseline
-- [ ] 10.4 Run the 10,000-raid Monte Carlo sweep and assert zero forbidden casts resolved and zero raids exceeding portal stability
+- [x] 10.4 Run the 10,000-raid Monte Carlo sweep and assert zero forbidden casts resolved and zero raids exceeding portal stability
 - [x] 10.5 Confirm every scenario across the five capability specs has a corresponding passing test
 - [x] 10.6 Run the full suite, typecheck, lint, purity check, and content validation together
 - [x] 10.7 Record any deviation discovered during implementation as a proposed `contracts.md` amendment, or confirm none
