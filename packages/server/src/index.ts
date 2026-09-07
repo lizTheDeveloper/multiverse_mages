@@ -152,4 +152,12 @@ export type {
   WireAction,
 } from './protocol.js';
 
+export {
+  FsStorage,
+  MemoryStorage,
+  buildStoredUniverse,
+  type Storage,
+  type StoredUniverse,
+} from './storage.js';
+
 export { MatchServer, type ListenOptions } from './transport.js';
