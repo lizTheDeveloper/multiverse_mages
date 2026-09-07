@@ -1,7 +1,7 @@
 {
   "baselineFormatVersion": 1,
   "configurationHash": "4e4532ef15feeb3b64f123b87ad060bc3318768c915c8ebf6097b5958799b1d0",
-  "contentHash": "6d1f3040c7f39e09c16788f7f87c42504e7ee6927a2763ac9b7984b3b261988f",
+  "contentHash": "17c0db6496df95e4e307bfb58b89c44d400c45d037c2e8343d42d629e48e49b0",
   "kind": "gate",
   "metrics": [
     {"aggregation":"mean","definitionVersion":1,"metricId":"referenceGrimoires","sampleSize":200,"standardError":5.339137838372676,"standardErrorMethod":"stratified-by-cell","status":"measured","tolerance":16.01741351511803,"unit":"grimoires","value":394.48},
@@ -14,7 +14,9 @@
     {"aggregation":"mean","definitionVersion":1,"metricId":"referencePopulation","sampleSize":200,"standardError":0.3820954576745321,"standardErrorMethod":"stratified-by-cell","status":"measured","tolerance":1.1462863730235964,"unit":"people","value":117.1},
     {"aggregation":"mean","definitionVersion":1,"metricId":"referencePopulationChange","sampleSize":200,"standardError":0.3820954576745321,"standardErrorMethod":"stratified-by-cell","status":"measured","tolerance":1.1462863730235964,"unit":"people","value":-26.9}
   ],
-  "notes": [],
+  "notes": [
+    "Regenerated on branch plan-w18 at 77733b89, 2026-09-06. The superseded baseline was recorded after the wiring campaign (PR #201). This one adds the material-economy change on top."
+  ],
   "provenance": {
     "buildVersion": "0.3.0",
     "contentHash": "6f7b87f56e40c3cbeb4305ff2fdfb442",
@@ -23,7 +25,7 @@
     "observationSchemaVersion": 1,
     "rngRegistryHash": "50bf1a07d2c80ac6d2e8bf3b048f7d6db17fd6f5326c61aee721c0efdc9a6ef3"
   },
-  "rationale": "Re-record after 154-branch integration (PR #218). Economy wiring, material costs, and open grid.",
+  "rationale": "material-economy (tasks 1-6) added four material kinds (labor, essence, insight, passage) and priced five god verbs with materialCost. Adding costs to previously free verbs is an accept, not a regression: the economy now has drains where it only had faucets, and the content changes (form.json yieldWeights, god-cost.json materialCost) moved both the content hash and the RNG registry hash. Every metric that moved is moving in the expected direction — knowledge metrics up because the new sinks make allocation non-trivial, population down because the economy now has real costs.",
   "rootSeed": 20260811,
   "runCount": 200,
   "supersededDeltas": [

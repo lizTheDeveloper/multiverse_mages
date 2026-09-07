@@ -1,7 +1,7 @@
 {
   "baselineFormatVersion": 1,
   "configurationHash": "aa74eef219106c40a8253e9a23c28911cd09f244ce05cd104ee3bd0c8cbea191",
-  "contentHash": "ce5ba24af10a39ddc427ec787922e05305d8648eb257844bcea454d4b1b50fb1",
+  "contentHash": "d3df12aef3cfc47e95ec511787ec0dbf19ada6f2a2041a72c08f7b0f60353d7d",
   "kind": "gate",
   "metrics": [
     {"aggregation":"mean","definitionVersion":1,"metricId":"referenceGrimoires","sampleSize":200,"standardError":9.04397552890027,"standardErrorMethod":"stratified-by-cell","status":"measured","tolerance":27.131926586700814,"unit":"grimoires","value":353.485},
@@ -15,7 +15,9 @@
     {"aggregation":"mean","definitionVersion":1,"metricId":"referencePopulation","sampleSize":200,"standardError":1.14972889439739,"standardErrorMethod":"stratified-by-cell","status":"measured","tolerance":3.44918668319217,"unit":"people","value":180.59},
     {"aggregation":"mean","definitionVersion":1,"metricId":"referencePopulationChange","sampleSize":200,"standardError":1.14972889439739,"standardErrorMethod":"stratified-by-cell","status":"measured","tolerance":3.44918668319217,"unit":"people","value":36.59}
   ],
-  "notes": [],
+  "notes": [
+    "Regenerated on branch plan-w18 at 77733b89, 2026-09-06. Supersedes the wiring-campaign baseline."
+  ],
   "provenance": {
     "buildVersion": "0.3.0",
     "contentHash": "6f7b87f56e40c3cbeb4305ff2fdfb442",
@@ -24,7 +26,7 @@
     "observationSchemaVersion": 1,
     "rngRegistryHash": "50bf1a07d2c80ac6d2e8bf3b048f7d6db17fd6f5326c61aee721c0efdc9a6ef3"
   },
-  "rationale": "Re-record after 154-branch integration (PR #218).",
+  "rationale": "material-economy (tasks 1-6) added four material kinds (labor, essence, insight, passage) and priced five god verbs with materialCost. Adding costs to previously free verbs is an accept, not a regression. The horizon gate's passive-control pool sees the content change through the yields (new forms producing new kinds) even though no god verb is played.",
   "rootSeed": 20260811,
   "runCount": 200,
   "supersededDeltas": [

@@ -1,7 +1,7 @@
 {
   "baselineFormatVersion": 1,
   "configurationHash": "1b73f7e27b0bf2eb582d9094c5747ebd29663c6f5991847ea2178fccd3304b28",
-  "contentHash": "07ce9a20d735dd7348e65bcc65aaabf750815368e2e44187ecea16103df734c9",
+  "contentHash": "e460fe852fde2dfe66b858c3d0ced9ad90c9ee908d23e380513a629aa593163e",
   "kind": "gate",
   "metrics": [
     {"aggregation":"mean","definitionVersion":1,"metricId":"referenceGrimoires","sampleSize":64,"standardError":19.588067357769116,"standardErrorMethod":"stratified-by-cell","status":"measured","tolerance":58.764202073307345,"unit":"grimoires","value":379.0625},
@@ -95,7 +95,9 @@
     {"aggregation":"mean","definitionVersion":1,"metricId":"referencePopulationChange@uniform-random-legal","sampleSize":8,"standardError":7.027846398435298,"standardErrorMethod":"stratified-by-cell","status":"measured","tolerance":21.083539195305896,"unit":"people","value":43.625},
     {"aggregation":"mean","definitionVersion":1,"metricId":"referencePopulationChange@worship-maximizer","sampleSize":8,"standardError":4.470388685561916,"standardErrorMethod":"stratified-by-cell","status":"measured","tolerance":13.41116605668575,"unit":"people","value":47.375}
   ],
-  "notes": [],
+  "notes": [
+    "Regenerated on branch plan-w18 at 77733b89, 2026-09-06. Supersedes the wiring-campaign baseline. The material-economy change adds real costs to god verbs that were previously free."
+  ],
   "provenance": {
     "buildVersion": "0.3.0",
     "contentHash": "6f7b87f56e40c3cbeb4305ff2fdfb442",
@@ -104,7 +106,7 @@
     "observationSchemaVersion": 1,
     "rngRegistryHash": "50bf1a07d2c80ac6d2e8bf3b048f7d6db17fd6f5326c61aee721c0efdc9a6ef3"
   },
-  "rationale": "Re-record after 154-branch integration (PR #218). Grid opened from 12 to 70 cells, material economy wired, knowledge instances and grimoires both rose as expected.",
+  "rationale": "material-economy (tasks 1-6) added four material kinds (labor, essence, insight, passage) and priced five god verbs with materialCost. Adding costs to previously free verbs is an accept, not a regression: the economy now has drains where it only had faucets. Every knowledge metric rose and population fell, which is the expected direction when allocation becomes non-trivial. denial-warden's metrics moved most sharply because it now must spend materials it previously did not need.",
   "rootSeed": 20260811,
   "runCount": 64,
   "supersededDeltas": [
