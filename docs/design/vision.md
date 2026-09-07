@@ -555,8 +555,8 @@ agreement — that agreement is how "did the vision get built?" is answerable.
 | 0.1.0 | `sim-core-foundation` | `simulation-core`, `world-persistence`, `deterministic-replay` | released |
 | 0.2.0 | `core-contracts` | `state-schema`, `content-schemas`, `primitive-semantics`, `observation-action-space`, `module-boundaries` | released |
 | 0.3.0 | `knowledge-model` | `magic-grid`, `magic-primitives`, `knowledge-instances`, `magic-traditions` | released; archived |
-| 0.4.0 | `mages-and-species` | `species-traits`, `mage-lifecycle`, `mage-autonomy`, `universities`, `economy` | 100/107 — 8.1 and 8.2 deliberately unchecked |
-| 0.5.0 | `agent-interface` | `agent-api`, `mc-harness`, `balance-metrics` | 91/91 — tasks complete, unreleased |
+| 0.4.0 | `mages-and-species` | `species-traits`, `mage-lifecycle`, `mage-autonomy`, `universities`, `economy` | released |
+| 0.5.0 | `agent-interface` | `agent-api`, `mc-harness`, `balance-metrics` | released |
 | 0.7.0 | `god-agency` | `favor-economy`, `worship-loop`, `interventions`, `ascension-and-prestige` | 59/75, and it runs every world tick |
 | 0.9.0 | `raid-engagement` | `portals`, `host-ruleset-arbitration`, `raid-space`, `raid-objectives`, `raid-consequences` | 67/92; raids fire on the campaign branches, not yet on `main` |
 | 0.11.0 | `gym-bridge` | `rl-bridge` | 76/76 — tasks complete, unreleased |

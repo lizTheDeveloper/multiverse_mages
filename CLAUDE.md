@@ -57,7 +57,7 @@ table uses the real change and capability IDs so it stays in sync with `openspec
 - `openspec show <change>` / `openspec validate <change> --strict`
 - `/opsx:apply` — implement a change's tasks
 
-Current state: released through **0.3.0**. `sim-core-foundation` gave `packages/sim-core` its
+Current state: released through **0.4.0**. `sim-core-foundation` gave `packages/sim-core` its
 deterministic substrate — fixed-point arithmetic, the splittable PRNG, the entity store, the
 dual-scale clock, the pure `step` contract, versioned snapshots, replay, golden fixtures and the
 benchmark. `core-contracts` added `content` (schemas, loader, v1 data), `state` (the §1 world state
@@ -75,7 +75,7 @@ here is not a regression — `agent-interface` (91/91) and `gym-bridge` (76/76) 
 task-complete and unreleased, `god-agency` is 59/75 with its favor and worship systems installed
 into the world step, and `raid-engagement` is 67/92 with `packages/rules-raid` built but nothing in
 `scenario` opening a portal yet. `metis-knowledge` (1/51), `electron-client` and `pvp-server` are
-still proposals. The next release to cut is 0.4.0, `mages-and-species`.
+still proposals. The next release to cut is 0.7.0, `god-agency`.
 
 Four packages are **deviations from `contracts.md` §5 as originally drawn**, all recorded there with
 their reasoning: `state`, `primitives`, `coordination`, and `scenario`. §5 was written before anyone
