@@ -39,6 +39,7 @@ import {
   type TickMode,
   type UniverseRef,
 } from './protocol.js';
+import { buildStoredUniverse, type Storage } from './storage.js';
 
 /**
  * Everything above the simulation and below the socket.
@@ -175,6 +176,14 @@ export interface HostOptions {
   readonly reconnectionGraceMs?: number;
   /** Where operator-facing lines go. Never stdout, which may carry frames. */
   readonly log?: (line: string) => void;
+  /**
+   * Universe persistence. When provided, universes are saved at the end of
+   * every match and loaded when a participant announces a known universe id.
+   *
+   * Optional: a host without storage behaves exactly as before — every
+   * universe is ephemeral and prestige does not survive the process.
+   */
+  readonly storage?: Storage;
 }
 
 /** One connected peer, before or during a match. */
@@ -254,6 +263,7 @@ export class MatchHost {
   private readonly computePrestige: PrestigeComputer | undefined;
   private readonly reconnectionGraceMs: number;
   private readonly log: (line: string) => void;
+  private readonly storage: Storage | undefined;
 
   private readonly peers = new Map<string, Peer>();
   private readonly byParticipant = new Map<string, string>();
@@ -292,6 +302,7 @@ export class MatchHost {
     this.computePrestige = options.computePrestige;
     this.reconnectionGraceMs = options.reconnectionGraceMs ?? DEFAULT_RECONNECTION_GRACE_MS;
     this.log = options.log ?? ((): void => {});
+    this.storage = options.storage;
   }
 
   /** Registers a peer. It may send nothing but `hello` until it has said `hello`. */
@@ -568,6 +579,7 @@ export class MatchHost {
       contract: this.contract,
       advisory: disagreements.filter((d) => !d.fatal),
     });
+    this.resolveUniverse(peer);
   }
 
   private onChallenge(peer: Peer, frame: Record<string, unknown>): void {
@@ -937,6 +949,7 @@ export class MatchHost {
     // arrived yet, and a peer whose slot had already been cleared could not be
     // matched to the universe it is reporting on.
     this.log(`match-end match=${matchId} reason=${settled} tick=${live.lastTick}`);
+    this.persistUniverses(live);
   }
 
   // -------------------------------------------------------------------------
@@ -974,6 +987,55 @@ export class MatchHost {
       const oldest = this.settled.keys().next();
       if (oldest.done === true) break;
       this.settled.delete(oldest.value);
+    }
+  }
+
+  /**
+   * Loads the authoritative universe record, if one exists in storage.
+   *
+   * The wire-declared `UniverseRef` is advisory for prestige (see
+   * `protocol.ts`), so the server replaces it with the stored value. The
+   * update is async; a challenge that arrives before the load finishes uses
+   * the wire value, which is acceptable because prestige is advisory in the
+   * match and the authoritative value is what gets saved at match end.
+   */
+  private resolveUniverse(peer: Peer): void {
+    if (this.storage === undefined || peer.universe === undefined) return;
+    const universeId = peer.universe.universeId;
+    this.storage.loadUniverse(universeId).then(
+      (stored) => {
+        // The peer may have disconnected by the time the load finishes.
+        if (stored === undefined || !this.peers.has(peer.connection.id)) return;
+        peer.universe = {
+          universeId: stored.universeId,
+          bubbleId: stored.bubbleId,
+          prestige: stored.prestige,
+        };
+        this.log(`resolved universe=${universeId} prestige=${stored.prestige}`);
+      },
+      (err: unknown) => {
+        this.log(`storage-load-error universe=${universeId} ${String(err)}`);
+      },
+    );
+  }
+
+  /**
+   * Persists every universe that participated in a match.
+   *
+   * Fire-and-forget: a storage failure must not crash the match lifecycle.
+   * The log names the failure so an operator can see it, and the match has
+   * already ended — there is nothing to roll back.
+   */
+  private persistUniverses(live: LiveMatch): void {
+    if (this.storage === undefined) return;
+    const hashes = live.lastHashes;
+    for (const p of live.participants) {
+      const slot = live.match.slots.find((s) => s.slot === p.slot);
+      const hash = hashes[p.slot] ?? (slot !== undefined ? slot.session.snapshotHash() : '');
+      const record = buildStoredUniverse(p.universe, this.contract.scenarioId, hash);
+      this.storage.saveUniverse(record).catch((err: unknown) => {
+        this.log(`storage-error universe=${p.universe.universeId} ${String(err)}`);
+      });
     }
   }
 
