@@ -15,7 +15,7 @@
 import type { AgentSession } from '@mm/agent-api';
 
 import { ConnectionBudget, type AdmissionPolicy } from './admission.js';
-import { DEFAULT_PACING, systemClock, type Clock } from './clock.js';
+import { DEFAULT_PACING, DEFAULT_RECONNECTION_GRACE_MS, systemClock, type Clock } from './clock.js';
 import { decodeFrame, FrameDecodeError } from './codec.js';
 import { compareHash, desyncLogLine } from './desync.js';
 import { Match, type MatchSlot } from './match.js';
@@ -32,8 +32,10 @@ import {
   TICK_MODE,
   challengeEligibility,
   type MatchContract,
+  type MatchEndReason,
   type MatchPacing,
   type ServerFrame,
+  type SlotPrestige,
   type TickMode,
   type UniverseRef,
 } from './protocol.js';
@@ -113,6 +115,22 @@ export interface Connection {
   close(): void;
 }
 
+/**
+ * Computes prestige for one slot when a match ends with a terminal or
+ * truncated outcome.
+ *
+ * **Injected rather than imported.** The arithmetic lives in
+ * `@mm/coordination`, which `contracts.md` §5 puts out of this package's
+ * reach. The binary supplies a closure over the god constants and calls
+ * `prestigeEarned` and `carriedPrestige`; the server calls it and stores the
+ * result. See `packages/scenario/src/legacy.ts` for the run-boundary layer
+ * that already does this for single-process runs.
+ */
+export type PrestigeComputer = (
+  session: AgentSession,
+  matchEndReason: MatchEndReason,
+) => { readonly earned: number; readonly carried: number } | undefined;
+
 /** How the host is built. */
 export interface HostOptions {
   /** What the server publishes and refuses on. See {@link MatchContract}. */
@@ -130,6 +148,31 @@ export interface HostOptions {
   readonly clock?: Clock;
   readonly pacing?: MatchPacing;
   readonly policy?: AdmissionPolicy;
+  /**
+   * Computes prestige when a match ends terminally or truncated.
+   *
+   * When provided, prestige is computed for each slot and:
+   * - carried into each peer's `UniverseRef.prestige` for the next session
+   * - included in the `match-end` notice so a match record can name it
+   *
+   * When absent, prestige is not computed and the match-end notice omits it.
+   */
+  readonly computePrestige?: PrestigeComputer;
+  /**
+   * Wall-clock milliseconds to hold a match alive after a participant
+   * disconnects.
+   *
+   * During the window the disconnected slot receives substituted no-ops
+   * through the normal deadline path — the passive-control strategy the
+   * proposal names. If the participant reconnects before the window closes,
+   * the match resumes. If the window expires, the match ends as
+   * {@link MATCH_END.abandoned}.
+   *
+   * Defaults to {@link DEFAULT_RECONNECTION_GRACE_MS}. Set to `0` to
+   * restore the immediate-abandonment behaviour this host had before
+   * reconnection support.
+   */
+  readonly reconnectionGraceMs?: number;
   /** Where operator-facing lines go. Never stdout, which may carry frames. */
   readonly log?: (line: string) => void;
 }
@@ -158,9 +201,27 @@ interface Challenge {
   readonly stepLimit: number;
 }
 
+/**
+ * A participant disconnected during a match, held for reconnection.
+ *
+ * Keyed by participant name in {@link MatchHost.disconnected}. Held for at
+ * most {@link HostOptions.reconnectionGraceMs} wall-clock milliseconds; the
+ * match continues with substituted no-ops for this slot in the meantime.
+ */
+interface DisconnectedPeer {
+  readonly participant: string;
+  readonly matchId: string;
+  readonly slot: number;
+  readonly universe: UniverseRef;
+  readonly lastSequence: number;
+  readonly disconnectedAt: number;
+}
+
 /** A match and the wall-clock state of its open tick. */
 interface LiveMatch {
   readonly match: Match;
+  /** The seed the match was started with, needed for reconnection replays. */
+  readonly runSeed: number;
   readonly participants: readonly {
     slot: number;
     participant: string;
@@ -190,6 +251,8 @@ export class MatchHost {
   private readonly clock: Clock;
   private readonly pacing: MatchPacing;
   private readonly policy: AdmissionPolicy | undefined;
+  private readonly computePrestige: PrestigeComputer | undefined;
+  private readonly reconnectionGraceMs: number;
   private readonly log: (line: string) => void;
 
   private readonly peers = new Map<string, Peer>();
@@ -210,6 +273,14 @@ export class MatchHost {
    * Bounded, because a map that only grows is a leak with a long fuse.
    */
   private readonly settled = new Map<string, LiveMatch>();
+  /**
+   * Participants disconnected during a match and held for reconnection.
+   *
+   * Keyed by participant name. Each entry records the slot, match and the
+   * wall-clock instant the disconnection happened. {@link pump} evicts entries
+   * whose grace period has expired and ends their match.
+   */
+  private readonly disconnected = new Map<string, DisconnectedPeer>();
   private counter = 0;
 
   constructor(options: HostOptions) {
@@ -218,6 +289,8 @@ export class MatchHost {
     this.clock = options.clock ?? systemClock;
     this.pacing = options.pacing ?? DEFAULT_PACING;
     this.policy = options.policy;
+    this.computePrestige = options.computePrestige;
+    this.reconnectionGraceMs = options.reconnectionGraceMs ?? DEFAULT_RECONNECTION_GRACE_MS;
     this.log = options.log ?? ((): void => {});
   }
 
@@ -238,17 +311,15 @@ export class MatchHost {
   }
 
   /**
-   * Drops a peer, ending any match it was in.
+   * Drops a peer's connection.
    *
-   * **The consequences of abandonment are deliberately not decided here.** The
-   * proposal lists three candidate rules — play the absent side out under the
-   * raid AI, freeze for a reconnection window, or resolve at current objective
-   * state — and calls the choice *"a playtest question"*, which it is, and which
-   * no section of the vision or the contracts answers. `campaign-plan.md` is
-   * explicit that where the spec is silent on a rule the work stops and asks
-   * rather than inventing one. So v1 does the one thing that decides nothing: it
-   * ends the match as {@link MATCH_END.abandoned}, names who left, and awards
-   * nothing to anybody. See `design.md`'s open questions.
+   * If the peer is in a match and a reconnection grace window is configured,
+   * the match is held alive for that window: the disconnected slot receives
+   * substituted no-ops through the normal deadline path (passive control).
+   * If the grace window is zero or absent, the match ends immediately as
+   * {@link MATCH_END.abandoned}.
+   *
+   * See task 7.5 — reconnection within a window.
    */
   disconnect(connectionId: string): void {
     const peer = this.peers.get(connectionId);
@@ -258,11 +329,27 @@ export class MatchHost {
     if (peer.matchId !== undefined) {
       const live = this.matches.get(peer.matchId);
       if (live !== undefined && live.match.running) {
-        this.log(
-          `abandoned match=${peer.matchId} participant=${peer.participant ?? connectionId} ` +
-            `tick=${live.match.tick}`,
-        );
-        this.endMatch(peer.matchId, MATCH_END.abandoned);
+        if (this.reconnectionGraceMs > 0 && peer.participant !== undefined) {
+          // Hold the match alive for reconnection.
+          this.disconnected.set(peer.participant, {
+            participant: peer.participant,
+            matchId: peer.matchId,
+            slot: peer.slot as number,
+            universe: peer.universe as UniverseRef,
+            lastSequence: peer.lastSequence,
+            disconnectedAt: this.clock.now(),
+          });
+          this.log(
+            `disconnected match=${peer.matchId} participant=${peer.participant} ` +
+              `tick=${live.match.tick} grace=${this.reconnectionGraceMs}ms`,
+          );
+        } else {
+          this.log(
+            `abandoned match=${peer.matchId} participant=${peer.participant ?? connectionId} ` +
+              `tick=${live.match.tick}`,
+          );
+          this.endMatch(peer.matchId, MATCH_END.abandoned);
+        }
       }
     }
   }
@@ -325,13 +412,29 @@ export class MatchHost {
   }
 
   /**
-   * Advances every match whose open tick is ready.
+   * Advances every match whose open tick is ready, and expires grace windows.
    *
    * A tick is ready when every slot has answered, or when its deadline has
    * passed. Called by the transport's timer; called directly by tests, which is
    * why it takes no arguments and reads the injected clock.
    */
   pump(): void {
+    // Expire reconnection grace windows first, so the match ends before
+    // another tick advances it with a no-op.
+    for (const [participant, dc] of this.disconnected) {
+      if (this.clock.now() >= dc.disconnectedAt + this.reconnectionGraceMs) {
+        this.disconnected.delete(participant);
+        const live = this.matches.get(dc.matchId);
+        if (live !== undefined && live.match.running) {
+          this.log(
+            `grace-expired match=${dc.matchId} participant=${participant} ` +
+              `tick=${live.match.tick}`,
+          );
+          this.endMatch(dc.matchId, MATCH_END.abandoned);
+        }
+      }
+    }
+
     for (const [matchId, live] of this.matches) {
       if (!live.match.running) continue;
       const everyoneAnswered = live.answered.size >= live.match.slots.length;
@@ -410,6 +513,51 @@ export class MatchHost {
       this.fail(peer, ERROR_CODE.badRequest, `The name ${JSON.stringify(name)} is already here.`);
       return;
     }
+
+    // Reconnection: the participant was disconnected during a match and the
+    // grace window has not yet expired.
+    const dc = this.disconnected.get(name);
+    if (dc !== undefined) {
+      this.disconnected.delete(name);
+      const live = this.matches.get(dc.matchId);
+      if (live !== undefined && live.match.running) {
+        peer.participant = name;
+        peer.universe = dc.universe;
+        peer.matchId = dc.matchId;
+        peer.slot = dc.slot;
+        peer.lastSequence = dc.lastSequence;
+        this.byParticipant.set(name, peer.connection.id);
+        this.send(peer, {
+          type: NOTICE.welcome,
+          connectionId: peer.connection.id,
+          participant: name,
+          contract: this.contract,
+          advisory: disagreements.filter((d) => !d.fatal),
+        });
+        // Bring them up to speed: a match-start with the recorded batches
+        // so the client can replay to the current state.
+        this.send(peer, {
+          type: NOTICE.matchStart,
+          matchId: dc.matchId,
+          slot: dc.slot,
+          participants: live.participants,
+          runSeed: live.runSeed,
+          stepLimit: live.match.stepLimit,
+          contract: this.contract,
+          pacing: this.pacing,
+          initialHashes: live.match.hashes(),
+          batches: live.match.batches,
+        });
+        this.log(
+          `reconnected match=${dc.matchId} participant=${name} ` +
+            `tick=${live.match.tick} after=${this.clock.now() - dc.disconnectedAt}ms`,
+        );
+        return;
+      }
+      // The match ended while we were holding the grace window — possible if
+      // the other participant left too. Fall through to a normal hello.
+    }
+
     peer.participant = name;
     peer.universe = universeOf(frame['universe'], name);
     this.byParticipant.set(name, peer.connection.id);
@@ -667,6 +815,7 @@ export class MatchHost {
     const modes = match.modes();
     const live: LiveMatch = {
       match,
+      runSeed: challenge.runSeed,
       participants: seats.map((seat, slot) => ({
         slot,
         participant: seat.participant,
@@ -730,16 +879,57 @@ export class MatchHost {
     if (outcome.end !== undefined) this.endMatch(matchId, outcome.end);
   }
 
-  private endMatch(matchId: string, reason: import('./protocol.js').MatchEndReason): void {
+  private endMatch(matchId: string, reason: MatchEndReason): void {
     const live = this.matches.get(matchId);
     if (live === undefined) return;
     const settled = live.match.finish(reason);
+
+    // Prestige carry-forward: compute and store when the match ended with an
+    // outcome the prestige system prices — terminal (ascension or stagnation)
+    // or truncated (reached the tick cap). Not on abandonment, desync or
+    // shutdown, none of which are endings §8a's prestige was designed for.
+    let prestige: readonly SlotPrestige[] | undefined;
+    if (
+      this.computePrestige !== undefined &&
+      (settled === MATCH_END.terminal || settled === MATCH_END.truncated)
+    ) {
+      const results: SlotPrestige[] = [];
+      for (const slotDef of live.match.slots) {
+        const result = this.computePrestige(slotDef.session, settled);
+        if (result !== undefined) {
+          results.push({ slot: slotDef.slot, earned: result.earned, carried: result.carried });
+          // Update the peer's universe ref so the next session carries the
+          // new prestige. The peer may be disconnected (grace period) — check
+          // both connected and disconnected participants.
+          const part = live.participants.find((p) => p.slot === slotDef.slot);
+          if (part !== undefined) {
+            const peerId = this.byParticipant.get(part.participant);
+            const peer = peerId === undefined ? undefined : this.peers.get(peerId);
+            if (peer !== undefined && peer.universe !== undefined) {
+              peer.universe = {
+                universeId: peer.universe.universeId,
+                bubbleId: peer.universe.bubbleId,
+                prestige: result.carried,
+              };
+            }
+          }
+        }
+      }
+      if (results.length > 0) prestige = results;
+    }
+
+    // Clean up any disconnected entries for participants in this match.
+    for (const { participant } of live.participants) {
+      this.disconnected.delete(participant);
+    }
+
     this.broadcast(live, {
       type: NOTICE.matchEnd,
       matchId,
       reason: settled,
       tick: live.lastTick,
       finalHashes: live.lastHashes,
+      ...(prestige !== undefined ? { prestige } : {}),
     });
     this.matches.delete(matchId);
     this.retain(matchId, live);

@@ -120,3 +120,19 @@ export const DEFAULT_PACING = Object.freeze({
   engagement: Object.freeze({ tickIntervalMs: 50, actionDeadlineMs: 40 }),
   world: Object.freeze({ tickIntervalMs: 1_000, actionDeadlineMs: 900 }),
 });
+
+/**
+ * The default reconnection grace period, in wall-clock milliseconds.
+ *
+ * When a participant disconnects during a match, the host holds the session
+ * open for this window. During it, the disconnected slot receives substituted
+ * no-ops through the normal deadline mechanism — which **is** the passive-
+ * control strategy the proposal names, because the deadline path already
+ * produces the action a silent participant gets.
+ *
+ * 30 seconds. Sized for a brief network glitch or a page refresh in Electron,
+ * not for walking away. At the world layer's 1 s/tick it is thirty missed
+ * turns — enough to notice and reconnect, short enough that an opponent
+ * waiting for one is not trapped in a slideshow.
+ */
+export const DEFAULT_RECONNECTION_GRACE_MS = 30_000;

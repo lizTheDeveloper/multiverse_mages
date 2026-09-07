@@ -58,7 +58,14 @@ export {
   type AdmissionRefusal,
 } from './admission.js';
 
-export { DEFAULT_PACING, manualClock, systemClock, type Clock, type ManualClock } from './clock.js';
+export {
+  DEFAULT_PACING,
+  DEFAULT_RECONNECTION_GRACE_MS,
+  manualClock,
+  systemClock,
+  type Clock,
+  type ManualClock,
+} from './clock.js';
 
 export { inEngagement, tickModeOf } from './mode.js';
 
@@ -80,6 +87,7 @@ export {
   MatchHost,
   type Connection,
   type HostOptions,
+  type PrestigeComputer,
 } from './host.js';
 
 export { Match, screen, type MatchOptions, type MatchSlot, type TickOutcome } from './match.js';
@@ -141,6 +149,7 @@ export type {
   Notice,
   RejectionReason,
   ServerFrame,
+  SlotPrestige,
   SnapshotPayload,
   Submission,
   TickMode,

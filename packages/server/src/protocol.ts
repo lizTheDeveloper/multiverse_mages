@@ -735,6 +735,14 @@ export interface MatchStartNotice extends Frame {
   readonly pacing: MatchPacing;
   /** `snapshotHash` per slot before the first tick, so a mirror can verify its build. */
   readonly initialHashes: readonly string[];
+  /**
+   * The batches applied before this client joined, if any.
+   *
+   * Present only for a reconnecting client, whose universe is mid-match and
+   * must replay these to reach the current state. A fresh match-start carries
+   * none, because the universe is at tick zero and there is nothing to replay.
+   */
+  readonly batches?: readonly CanonicalBatch[];
 }
 
 /** Which of the game's two layers a tick belongs to. */
@@ -851,12 +859,35 @@ export interface DesyncNotice extends Frame {
   readonly corrected: false;
 }
 
+/**
+ * What a match ending produces for one slot's carry-forward.
+ *
+ * `earned` is what the run was worth; `carried` is the successor's starting
+ * prestige — the recurrence `prestige' = min(cap, prestige × retention +
+ * earned)` closed once. Both are `fp`; see `coordination/god/ascension.ts`.
+ */
+export interface SlotPrestige {
+  readonly slot: number;
+  readonly earned: number;
+  readonly carried: number;
+}
+
 export interface MatchEndNotice extends Frame {
   readonly type: typeof NOTICE.matchEnd;
   readonly matchId: string;
   readonly reason: MatchEndReason;
   readonly tick: number;
   readonly finalHashes: readonly string[];
+  /**
+   * Per-slot prestige earned and carried, when the match ended with a terminal
+   * or truncated outcome and a {@link PrestigeComputer} was provided.
+   *
+   * Absent on abandonment, desync and shutdown — none of those are endings the
+   * prestige system prices. Optional because v1 has no persistence layer and
+   * therefore no store for the result yet, and a server built without the
+   * callback omits it rather than fabricating zeros.
+   */
+  readonly prestige?: readonly SlotPrestige[];
 }
 
 export interface ErrorFrame extends Frame {
