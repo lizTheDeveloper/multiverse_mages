@@ -74,7 +74,7 @@ exist yet, named beside it.
       **This work must not fake a portal target to appear finished.**
 - [ ] 7.5 Reconnection within a window, and the disconnect rule — an open question in `design.md`,
       not a missing implementation. Do not invent the rule.
-- [ ] 7.6 The 1,000-match harness and the zero-desync measurement — the replay path exists; what
+- [x] 7.6 The 1,000-match harness and the zero-desync measurement — the replay path exists; what
       remains is running it a thousand times and counting
 - [ ] 7.7 `hcloud` provisioning, supervision, backups and the deployment document
 - [ ] 7.8 Tune the four pacing constants against a real link's observed round-trip time
