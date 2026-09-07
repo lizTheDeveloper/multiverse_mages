@@ -65,7 +65,7 @@
 
 ## 7. Balance and the record
 
-- [ ] 7.1 Re-run the strategy sweep at a horizon where ascension is reachable — not at `ascension-min-tick`, which reports `horizon-bound` by construction
-- [ ] 7.2 Re-record the balance baselines with the reason stated. Adding costs to free verbs is an accept, not a regression
-- [ ] 7.3 Check whether `permit-then-idle` still holds the null bar. If pricing the verbs has not moved it, say so plainly — that is evidence about the win condition, not about this change
-- [ ] 7.4 Date every measurement written into `docs/` and name the ref it was taken on
+- [x] 7.1 Re-run the strategy sweep at a horizon where ascension is reachable — not at `ascension-min-tick`, which reports `horizon-bound` by construction
+- [x] 7.2 Re-record the balance baselines with the reason stated. Adding costs to free verbs is an accept, not a regression
+- [x] 7.3 Check whether `permit-then-idle` still holds the null bar. If pricing the verbs has not moved it, say so plainly — that is evidence about the win condition, not about this change
+- [x] 7.4 Date every measurement written into `docs/` and name the ref it was taken on

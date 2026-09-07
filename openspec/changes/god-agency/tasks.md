@@ -65,7 +65,7 @@
 - [x] 5.7 Implement the terminal-score ordering used to decide a pairing before raids exist, marked provisional
 - [x] 5.8 Unit test that a content graph whose deepest tier is 5 satisfies Path A, with no literal tier-7 check anywhere in the tree
 - [x] 5.9 Unit test single-instance and forbidden-cell disqualification, one-bad-era disqualification, and the pre-tick-600 mask
-- [ ] 5.10 Unit test that an ascended universe's snapshot hash is unchanged by further stepping
+- [x] 5.10 Unit test that an ascended universe's snapshot hash is unchanged by further stepping
 
 ## 6. Prestige
 
@@ -76,7 +76,7 @@
 - [x] 6.5 Implement loader rejection of any legacy channel that is uncapped or outside the four permitted channels
 - [x] 6.6 Add a conformance check that no legacy grant touches favor regeneration, worship constants, `edictBudget`, primitive magnitudes or caps, species traits, or ascension constants
 - [x] 6.7 Unit test that a hundred maximal runs converge on `PRESTIGE_CAP` without exceeding it, and that the tenth win adds far less than the third
-- [ ] 6.8 Unit test that the seeded archive carries no protective flag and that burning it removes the corresponding advantage
+- [x] 6.8 Unit test that the seeded archive carries no protective flag and that burning it removes the corresponding advantage
 
 ## 7. Balance harness gates
 
@@ -87,12 +87,12 @@
 - [x] 7.5 Implement the round-robin scripted-god tournament and its per-strategy win rate against the pool
 - [x] 7.6 Wire the four failing conditions into the sweep: snowball threshold, ascension band, prestige ceiling, and the 65% pool ceiling
 - [x] 7.7 Add a conformance check that the simulation clamps none of these metrics
-- [ ] 7.8 Record the measured values and the retune history in `docs/design/release-plan.md`'s 0.6.0 entry
+- [x] 7.8 Record the measured values and the retune history in `docs/design/release-plan.md`'s 0.6.0 entry
 
 ## 8. Closeout
 
-- [ ] 8.1 Run the first full sweep, retune per the stated knob orders one knob at a time, and record every retune with the metric that caused it
-- [ ] 8.2 Answer vision §13's three `god-agency` open questions in `docs/design/vision.md` — edict budget and scaling, the worship formula, and the prestige carry-over
+- [x] 8.1 Run the first full sweep, retune per the stated knob orders one knob at a time, and record every retune with the metric that caused it
+- [x] 8.2 Answer vision §13's three `god-agency` open questions in `docs/design/vision.md` — edict budget and scaling, the worship formula, and the prestige carry-over
 - [x] 8.3 Confirm every scenario across the four capability specs has a corresponding passing test
 - [x] 8.4 Run the full suite, typecheck, lint, purity check, content validation, and golden replay together
 - [x] 8.5 Record any deviation discovered during implementation back into `docs/design/contracts.md`, or confirm none

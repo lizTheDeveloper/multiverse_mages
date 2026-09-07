@@ -175,7 +175,7 @@
 - [x] 9.7 Assert the occupation mix shows no sustained two-tick alternation
   - Longest alternating streak over 2,400 ticks: **2 ticks**, against a documented threshold of one
     world year.
-- [ ] 9.8 Assert the rolling growth rate of total effective capital contribution is non-increasing after the documented establishment phase
+- [x] 9.8 Assert the rolling growth rate of total effective capital contribution is non-increasing after the documented establishment phase
   - **True and vacuous, so not asserted.** Total effective capital contribution is `fp(32)` from
     world year one to world year two hundred, because library depth reaches two distinct nodes and
     stops: the scribable list is ordered by cost, so every scribe copies the same cheap node — 1,263
@@ -201,7 +201,7 @@
 
 ## 10. Closeout
 
-- [ ] 10.1 Confirm every scenario across the five capability specs has a corresponding passing test
+- [x] 10.1 Confirm every scenario across the five capability specs has a corresponding passing test
   - **Audited at requirement level: 42 requirements across the five specs, every one of which has a
     test file behind it.** At scenario level the answer is "all but three", and the three are the
     same three findings recorded above: `economy` / *The civilization does not stall* (teaching and
