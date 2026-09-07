@@ -80,6 +80,8 @@ export {
   MatchHost,
   type Connection,
   type HostOptions,
+  type RaidResolution,
+  type RaidResolver,
 } from './host.js';
 
 export { Match, screen, type MatchOptions, type MatchSlot, type TickOutcome } from './match.js';
@@ -123,6 +125,7 @@ export type {
   ChallengedNotice,
   CheckpointRequest,
   ClientFrame,
+  ConquestNotice,
   ContractDisagreement,
   DeclineRequest,
   DesyncNotice,
@@ -139,6 +142,7 @@ export type {
   MatchPacing,
   MatchStartNotice,
   Notice,
+  RaidResolvedNotice,
   RejectionReason,
   ServerFrame,
   SnapshotPayload,

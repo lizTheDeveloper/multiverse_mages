@@ -12,7 +12,7 @@
  * SPDX-License-Identifier: AGPL-3.0-or-later
  */
 
-import type { AgentSession } from '@mm/agent-api';
+import { GOD_ACTION, type AgentSession } from '@mm/agent-api';
 
 import { ConnectionBudget, type AdmissionPolicy } from './admission.js';
 import { DEFAULT_PACING, systemClock, type Clock } from './clock.js';
@@ -113,6 +113,58 @@ export interface Connection {
   close(): void;
 }
 
+/**
+ * What a raid produced, as the server sees it.
+ *
+ * The server knows sessions, slots and hashes. It does not know world state,
+ * and it must not: §5 gives this package one edge, to `agent-api`, and a
+ * resolution that exposed `SimState` would add a second. The resolver is
+ * responsible for pausing world time, snapshotting, running the raid,
+ * applying consequences and resuming — all through whatever private access
+ * the binary gave it when it constructed the sessions. This type is the
+ * receipt it hands back.
+ */
+export interface RaidResolution {
+  /** The slot that won the raid. */
+  readonly victorSlot: number;
+  /**
+   * Whether the defender's universe was destroyed.
+   *
+   * Vision §8b: a conquest transfers populace, materials and worship to the
+   * attacker. The defender's universe ends and respawns in a new bubble.
+   */
+  readonly conquest: boolean;
+  /** Engagement ticks the raid ran for. */
+  readonly engagementTicks: number;
+}
+
+/**
+ * Resolves a raid between two participants.
+ *
+ * Injected for the same reason `createSession` is: this package may not
+ * import `@mm/rules-raid` or anything above `@mm/agent-api` in §5's
+ * diagram. The binary provides an implementation that closes over the
+ * scenario's content, grid and tuning — see `bin/serve.mjs`.
+ *
+ * The resolver is expected to:
+ * 1. Pause world time for both universes
+ * 2. Snapshot both
+ * 3. Run the raid deterministically from `(attacker snapshot, defender
+ *    snapshot, raidSeed)`
+ * 4. Apply consequences to both universes
+ * 5. Resume world time
+ *
+ * It returns the outcome the host can act on: who won, whether it was a
+ * conquest, and how long it took.
+ */
+export interface RaidResolver {
+  resolve(
+    attacker: AgentSession,
+    defender: AgentSession,
+    raidSeed: number,
+  ): RaidResolution;
+}
+
 /** How the host is built. */
 export interface HostOptions {
   /** What the server publishes and refuses on. See {@link MatchContract}. */
@@ -127,6 +179,15 @@ export interface HostOptions {
    * `scenario` is a leaf nothing may statically import.
    */
   readonly createSession: (slot: number) => AgentSession;
+  /**
+   * Resolves a raid when a portal opens.
+   *
+   * Absent in tests that do not exercise raiding, and absent in production
+   * until a binary wires it. When absent, action 14 (open portal) is
+   * submitted to the session as-is and the session's own mask keeps it from
+   * firing — which is exactly what happened before this field existed.
+   */
+  readonly raidResolver?: RaidResolver;
   readonly clock?: Clock;
   readonly pacing?: MatchPacing;
   readonly policy?: AdmissionPolicy;
@@ -175,6 +236,17 @@ interface LiveMatch {
   /** The authoritative hashes of the last applied tick, for checkpoint comparison. */
   lastHashes: readonly string[];
   lastTick: number;
+  /**
+   * The slot that submitted action 14 (open portal) in the current tick, or
+   * `-1` if none did.
+   *
+   * Tracked here rather than read off the batch, because the probe universe
+   * (and any universe without portal knowledge) masks action 14 and the batch
+   * records a substituted no-op. The intent — *this player tried to open a
+   * portal* — is the thing the host acts on, and it is visible only before
+   * the screening happens.
+   */
+  portalPending: number;
 }
 
 /**
@@ -187,6 +259,7 @@ interface LiveMatch {
 export class MatchHost {
   private readonly contract: MatchContract;
   private readonly createSession: (slot: number) => AgentSession;
+  private readonly raidResolver: RaidResolver | undefined;
   private readonly clock: Clock;
   private readonly pacing: MatchPacing;
   private readonly policy: AdmissionPolicy | undefined;
@@ -215,6 +288,7 @@ export class MatchHost {
   constructor(options: HostOptions) {
     this.contract = options.contract;
     this.createSession = options.createSession;
+    this.raidResolver = options.raidResolver;
     this.clock = options.clock ?? systemClock;
     this.pacing = options.pacing ?? DEFAULT_PACING;
     this.policy = options.policy;
@@ -547,6 +621,14 @@ export class MatchHost {
       ? (wire.params as unknown[]).map((p) => (typeof p === 'number' ? p : Number.NaN))
       : undefined;
 
+    // Track portal-open intent before the submission reaches the match,
+    // because the session's mask may refuse it — the probe universe does, any
+    // universe without portal knowledge does — and the substituted no-op
+    // loses the information the host needs to coordinate the raid.
+    if (kind === GOD_ACTION.openPortal && this.raidResolver !== undefined) {
+      live.portalPending = slot;
+    }
+
     const refusal = live.match.submit({
       slot,
       tick: tick as number,
@@ -677,6 +759,7 @@ export class MatchHost {
       answered: new Set<number>(),
       lastHashes: match.hashes(),
       lastTick: -1,
+      portalPending: -1,
     };
     this.matches.set(matchId, live);
 
@@ -708,6 +791,16 @@ export class MatchHost {
   /** Closes the open tick, applies it, broadcasts it, and opens the next. */
   private advance(matchId: string, live: LiveMatch): void {
     const { batch } = live.match.close();
+
+    // ---- Raid interception: detect action 14 (open portal) before applying. ----
+    //
+    // When a resolver is present and one slot submitted the portal action, the
+    // host coordinates the raid between the two sessions rather than letting the
+    // action arrive at a session that has no opponent. The batch is applied
+    // first — every action including the portal's reaches its universe — and
+    // then the resolver runs the engagement. The ordering matters: the portal
+    // action sets the clock mode to engagement, which is the thing
+    // `tickModeOf` reads after application.
     const outcome = live.match.apply(batch);
 
     live.lastHashes = outcome.hashes;
@@ -727,7 +820,145 @@ export class MatchHost {
       ...(outcome.end === undefined ? {} : { end: outcome.end }),
     });
 
+    // ---- Raid transport: if a portal was requested, resolve the engagement. ----
+    //
+    // Checked after broadcasting the tick so both sides see the action that
+    // opened the portal. The resolver is called with the attacker's and
+    // defender's sessions, pauses world time for both, snapshots, runs the
+    // raid, applies consequences and resumes — all inside the injected
+    // callback. The host gets back a receipt saying who won and whether it
+    // was a conquest.
+    //
+    // `portalPending` is set in `onAction` when a peer submits action 14,
+    // before the session's mask has a chance to refuse it. The intent is what
+    // the host acts on: a player who asked to open a portal is one the
+    // resolver should evaluate, even if the session's own mask would have
+    // stopped it (which happens when `portalTargets` is empty).
+    if (live.portalPending >= 0 && outcome.end === undefined) {
+      const attackerSlot = live.portalPending;
+      live.portalPending = -1;
+      this.resolveRaidInMatch(matchId, live, attackerSlot, batch.tick);
+    } else {
+      live.portalPending = -1;
+    }
+
     if (outcome.end !== undefined) this.endMatch(matchId, outcome.end);
+  }
+
+  /**
+   * Resolves a raid between two participants.
+   *
+   * Called when action 14 is detected in a batch. The attacker is the slot
+   * that submitted the action; the defender is the other slot. v1 has exactly
+   * two slots per match, so "the other" is well-defined.
+   *
+   * The resolver handles the five steps task 7.4 names:
+   * 1. Pause world time for both universes
+   * 2. Snapshot both
+   * 3. Resolve the raid deterministically
+   * 4. Apply consequences to both universes
+   * 5. Resume world time
+   *
+   * After the resolver returns, the host updates hashes (consequences changed
+   * state) and broadcasts the result. If it was a conquest, the host also
+   * sends the conquest notice and ends the match.
+   */
+  private resolveRaidInMatch(
+    matchId: string,
+    live: LiveMatch,
+    attackerSlot: number,
+    tick: number,
+  ): void {
+    const defenderSlot = live.match.slots.find((s) => s.slot !== attackerSlot)?.slot;
+    if (defenderSlot === undefined) return;
+
+    const attackerSession = live.match.slots.find((s) => s.slot === attackerSlot)?.session;
+    const defenderSession = live.match.slots.find((s) => s.slot === defenderSlot)?.session;
+    if (attackerSession === undefined || defenderSession === undefined) return;
+
+    // The raid seed is derived from the match's tick. Two raids in one match
+    // get different seeds, and two peers get the same one.
+    const raidSeed = tick * 7 + 1;
+
+    const resolution = this.raidResolver!.resolve(
+      attackerSession,
+      defenderSession,
+      raidSeed,
+    );
+
+    // Update hashes — consequences changed both universes' state.
+    live.lastHashes = live.match.hashes();
+
+    this.broadcast(live, {
+      type: NOTICE.raidResolved,
+      matchId,
+      attackerSlot,
+      defenderSlot,
+      victorSlot: resolution.victorSlot,
+      engagementTicks: resolution.engagementTicks,
+      conquest: resolution.conquest,
+      hashesAfterRaid: live.lastHashes,
+    });
+
+    this.log(
+      `raid-resolved match=${matchId} attacker=${String(attackerSlot)} ` +
+        `defender=${String(defenderSlot)} victor=${String(resolution.victorSlot)} ` +
+        `conquest=${String(resolution.conquest)} ticks=${String(resolution.engagementTicks)}`,
+    );
+
+    if (resolution.conquest) {
+      this.applyConquest(matchId, live, resolution.victorSlot, defenderSlot);
+    }
+  }
+
+  /**
+   * Handles the aftermath of a conquest: tribute transfer notification, loser
+   * respawn, and match end.
+   *
+   * Vision §8b: the defender's populace, materials and worship transfer to the
+   * attacker. The defender respawns in a fresh bubble carrying prestige. The
+   * match ends because the defender's universe no longer exists.
+   *
+   * The actual transfer is done by the resolver (inside `applyRaidOutcome`).
+   * What the host adds is:
+   * - A conquest notice naming the defeated universe and its respawn location
+   * - A match end with reason `conquest`
+   */
+  private applyConquest(
+    matchId: string,
+    live: LiveMatch,
+    victorSlot: number,
+    defeatedSlot: number,
+  ): void {
+    const defeated = live.participants.find((p) => p.slot === defeatedSlot);
+    if (defeated === undefined) return;
+
+    // The respawn universe gets a new bubble id — the anti-farming property
+    // §8b names. The universe id stays the same (it is a persistent identity),
+    // and prestige carries (already wired in 7.2's protocol support).
+    const respawnBubbleId = `bubble-${this.nextId('respawn')}`;
+    const respawnUniverse: UniverseRef = {
+      universeId: defeated.universe.universeId,
+      bubbleId: respawnBubbleId,
+      prestige: defeated.universe.prestige ?? 0,
+    };
+
+    this.broadcast(live, {
+      type: NOTICE.conquest,
+      matchId,
+      victorSlot,
+      defeatedSlot,
+      defeatedUniverse: defeated.universe,
+      respawnUniverse,
+    });
+
+    this.log(
+      `conquest match=${matchId} victor=${String(victorSlot)} ` +
+        `defeated=${defeated.universe.universeId} ` +
+        `respawn-bubble=${respawnBubbleId}`,
+    );
+
+    this.endMatch(matchId, MATCH_END.conquest);
   }
 
   private endMatch(matchId: string, reason: import('./protocol.js').MatchEndReason): void {
