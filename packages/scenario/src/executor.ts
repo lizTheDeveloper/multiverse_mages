@@ -89,7 +89,7 @@ import {
  * `provenance.test.ts` asserts it equals the workspace version, so bumping one
  * without the other fails the suite rather than mislabelling a baseline.
  */
-export const SCENARIO_BUILD_VERSION = '0.3.0';
+export const SCENARIO_BUILD_VERSION = '0.4.0';
 
 /**
  * World ticks between census readings.
