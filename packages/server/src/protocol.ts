@@ -135,6 +135,22 @@ export const NOTICE = {
   matchEnd: 'match-end',
   /** A protocol fault. See {@link ERROR_CODE}. */
   error: 'error',
+  /**
+   * A raid resolved between two participants.
+   *
+   * Carries the victor, engagement ticks, and whether it was a conquest. The
+   * match may or may not end — a raid won by the defender is not a conquest and
+   * both sides continue.
+   */
+  raidResolved: 'raid-resolved',
+  /**
+   * A conquest: the loser's universe is destroyed and its tribute transfers.
+   *
+   * Vision §8b: populace, materials and worship pass to the winner. The loser
+   * respawns in a fresh bubble carrying prestige, which means a new
+   * {@link UniverseRef} with a different `bubbleId`.
+   */
+  conquest: 'conquest',
 } as const;
 
 export type Notice = (typeof NOTICE)[keyof typeof NOTICE];
@@ -259,6 +275,13 @@ export const MATCH_END = {
   abandoned: 'abandoned',
   /** The operator stopped the server. */
   shutdown: 'shutdown',
+  /**
+   * A raid ended in conquest: the attacker won and the defender's universe is
+   * destroyed. Vision §8b: the defender's populace, materials and worship
+   * transfer to the attacker, and the defender respawns in a fresh bubble
+   * carrying prestige.
+   */
+  conquest: 'conquest',
 } as const;
 
 export type MatchEndReason = (typeof MATCH_END)[keyof typeof MATCH_END];
@@ -908,6 +931,55 @@ export interface ErrorFrame extends Frame {
   readonly revisions?: { readonly server: string; readonly client: string };
 }
 
+/**
+ * A raid resolved between two participants.
+ *
+ * Sent to both sides after the raid concludes, before any conquest notice.
+ * Carries enough for a client to show the outcome, and for a mirror to verify
+ * the hashes after consequences were applied.
+ */
+export interface RaidResolvedNotice extends Frame {
+  readonly type: typeof NOTICE.raidResolved;
+  readonly matchId: string;
+  /** The slot that attacked (opened the portal). */
+  readonly attackerSlot: number;
+  /** The slot that defended (hosted the engagement). */
+  readonly defenderSlot: number;
+  /** Which side won: the attacker slot or the defender slot. */
+  readonly victorSlot: number;
+  /** How many engagement ticks the raid ran for. */
+  readonly engagementTicks: number;
+  /** Whether the defender's universe was destroyed. */
+  readonly conquest: boolean;
+  /** `snapshotHash` per slot after consequences were applied. */
+  readonly hashesAfterRaid: readonly string[];
+}
+
+/**
+ * A conquest: the loser's universe is destroyed and tribute transfers.
+ *
+ * Vision §8b: populace, materials and worship pass to the winner. The loser
+ * respawns in a fresh bubble with prestige carry — a new `bubbleId` so the
+ * conqueror loses the target (the anti-farming property §8b names).
+ */
+export interface ConquestNotice extends Frame {
+  readonly type: typeof NOTICE.conquest;
+  readonly matchId: string;
+  /** The slot that won. */
+  readonly victorSlot: number;
+  /** The slot that lost — whose universe was destroyed. */
+  readonly defeatedSlot: number;
+  /** The defeated universe's ref, for the record. */
+  readonly defeatedUniverse: UniverseRef;
+  /**
+   * The new universe ref the defeated player respawns into.
+   *
+   * Carries a different `bubbleId` from the one it was in, so the conqueror
+   * keeps the tribute and loses the target — §8b's anti-farming property.
+   */
+  readonly respawnUniverse: UniverseRef;
+}
+
 export type ServerFrame =
   | WelcomeNotice
   | ChallengedNotice
@@ -915,4 +987,6 @@ export type ServerFrame =
   | TickNotice
   | DesyncNotice
   | MatchEndNotice
+  | RaidResolvedNotice
+  | ConquestNotice
   | ErrorFrame;

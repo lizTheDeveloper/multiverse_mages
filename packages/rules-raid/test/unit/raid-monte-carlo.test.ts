@@ -33,7 +33,7 @@
 
 import { describe, expect, it } from 'vitest';
 
-import { MAGE_ROLE, RAID_SIDE } from '@mm/state';
+import { MAGE_ROLE } from '@mm/state';
 
 import type { RaidOutcome } from '@mm/rules-raid';
 import { deployRaid, openPortal, runRaid } from '@mm/rules-raid';
