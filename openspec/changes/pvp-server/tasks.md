@@ -64,7 +64,7 @@ the same role `core-contracts` played as change #2.
 These have requirements above and no implementation. Each is blocked on something that does not
 exist yet, named beside it.
 
-- [ ] 7.1 Persist universes at run boundaries — needs a storage layer; the wire's bootstrap is
+- [x] 7.1 Persist universes at run boundaries — needs a storage layer; the wire's bootstrap is
       already the shape a persisted universe would replay from
 - [x] 7.2 Prestige carry-forward at the ascension and stagnated bases — needs `god-agency`
 - [ ] 7.3 Transfer on conquest, and respawn into a different bubble — needs `raid-engagement` for
