@@ -74,7 +74,7 @@
  * permits its cell. Nothing in this file may be used to delete an instance.
  */
 
-import type { ContentId, ContentRegistry, EffectRecord, PrimitiveRecord } from '@mm/content';
+import type { ContentId, ContentRegistry, EffectControl, EffectRecord, PrimitiveRecord } from '@mm/content';
 import type { Fixed, RngStream } from '@mm/sim-core';
 import { FP_ONE, floorDiv, nextBounded } from '@mm/sim-core';
 import type { AblationMask, ClampCounters } from '@mm/primitives';
@@ -568,7 +568,8 @@ export class CastArbiter {
    * read a name in a universe that permits it, and a host that forbids `mentem`
    * cannot be mind-read by anybody, including its own defenders.
    */
-  attemptTheft(nodeId: ContentId, magnitudes: readonly Fixed[], stream: RngStream): boolean {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars -- w20: controls will route through rollStackedProbability
+  attemptTheft(nodeId: ContentId, magnitudes: readonly Fixed[], stream: RngStream, _controls?: readonly EffectControl[]): boolean {
     if (!this.#permitsNode(nodeId)) {
       this.#forbiddenCastsBlocked += 1;
       return false;
@@ -619,6 +620,14 @@ export class CastArbiter {
     return this.#authored(COMBAT_PRIMITIVES.knowledgeCorrupt, nodeId).map(
       (effect) => effect.magnitude,
     );
+  }
+
+  /** The `control`-mode EffectControl entries a node carries for knowledge-steal. */
+  theftControls(nodeId: ContentId): readonly EffectControl[] {
+    return this.#authored(COMBAT_PRIMITIVES.knowledgeSteal, nodeId)
+      .filter((effect): effect is EffectRecord & { control: EffectControl } =>
+        effect.mode === 'control' && effect.control !== undefined)
+      .map((effect) => effect.control);
   }
 
   /** The summed damage a target takes, after exactly one ward application. */
@@ -791,6 +800,19 @@ export function summonCount(magnitude: Fixed): number {
   // §3's unit is "count of combatants from a template", so the magnitude is a
   // count at fp scale and the whole number of combatants is the floor.
   return Math.max(0, floorDiv(magnitude, FP_ONE));
+}
+
+/** Whether an effect contributes a stacking magnitude rather than being a gate or control. */
+export function contributesMagnitude(effect: EffectRecord, primitiveId: string): boolean {
+  if (effect.primitive !== primitiveId) return false;
+  return effect.mode === undefined || effect.mode === 'create' || effect.mode === 'remove' || effect.mode === 'transform';
+}
+
+/** Whether a single effect enables a gate for the given primitive. */
+export function enablesGate(effect: EffectRecord, primitiveId: string): boolean {
+  if (effect.primitive !== primitiveId) return false;
+  if (effect.when !== undefined && effect.when.kind !== 'always') return false;
+  return effect.mode === undefined || effect.mode === 'create' || effect.mode === 'control';
 }
 
 /** A uniform draw in `[0, bound)`, so that stream use stays inside this module. */

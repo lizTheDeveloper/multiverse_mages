@@ -180,6 +180,7 @@ describe('a control effect gates a rate without joining its magnitude', () => {
       effects.researchRateBonuses,
       0,
       undefined,
+      undefined,
       effects.controlFor('research-rate'),
     ).multiplier;
     expect(clamped).toBe(2048);
@@ -223,6 +224,7 @@ describe('a control effect gates a rate without joining its magnitude', () => {
       researchRate,
       effects.researchRateBonuses,
       0,
+      undefined,
       undefined,
       effects.controlFor('research-rate'),
     ).multiplier;

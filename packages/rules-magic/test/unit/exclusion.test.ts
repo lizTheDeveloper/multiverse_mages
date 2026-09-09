@@ -438,7 +438,6 @@ describe('a commitment reopens only when she loses the blocking knowledge, never
         subject: TEACHER,
         cells: { cellOf: twoCellCells },
         ruleset: interdicting(OTHER_CELL),
-        tracks,
         progress: 4096,
         effort: 4096,
       }),

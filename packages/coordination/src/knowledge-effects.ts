@@ -115,7 +115,7 @@ import type { Fixed, SimState } from '@mm/sim-core';
 import { TIME_MODE } from '@mm/sim-core';
 import { findUniverse, readRulesetForObservation } from '@mm/state';
 import type { CellResolver, KnowledgeSubsystem } from '@mm/rules-magic';
-import { gatherEffects } from '@mm/rules-magic';
+import { gatherEffects, NO_WORKINGS_STAND } from '@mm/rules-magic';
 import type { EffectControl } from '@mm/primitives';
 import { combineControls } from '@mm/primitives';
 
@@ -217,16 +217,20 @@ export function knowledgeEffectHooks(deps: KnowledgeEffectDeps): KnowledgeEffect
     const ruleset = readRulesetForObservation(state, universe);
 
     const knowledge = deps.knowledgeFor(state);
-    const instances = knowledge.instances().map((handle) => knowledge.read(handle));
+    const sources = knowledge.instances().map((handle) => {
+      const rec = knowledge.read(handle);
+      return { nodeId: rec.nodeId, holder: rec.locationId, locationKind: rec.locationKind, mastery: rec.mastery };
+    });
 
     // The single legality point, the mastery threshold and the scale gate are
     // all `gatherEffects`' — see this file's header. Nothing below re-tests
     // any of them.
-    const contributions = gatherEffects(instances, {
+    const contributions = gatherEffects(sources, {
       registry: deps.registry,
       ruleset,
       mode: TIME_MODE.world,
       cellOf,
+      standing: NO_WORKINGS_STAND,
     });
 
     const magnitudes = new Map<string, Fixed[]>();

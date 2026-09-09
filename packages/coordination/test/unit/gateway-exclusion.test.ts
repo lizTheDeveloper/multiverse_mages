@@ -84,7 +84,8 @@ function node(overrides: Partial<KnowledgeNode> & { nodeId: number }): Knowledge
   };
 }
 
-function buildGateway(nodes: readonly KnowledgeNode[], tracks: TrackCatalog | undefined) {
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+function buildGateway(nodes: readonly KnowledgeNode[], _tracks?: TrackCatalog) {
   // `catalogFromRegistry` always closes antirequisites over both directions
   // before anything downstream sees the catalog; a hand-built fixture must do
   // the same to be a faithful stand-in for it.
@@ -101,7 +102,6 @@ function buildGateway(nodes: readonly KnowledgeNode[], tracks: TrackCatalog | un
     ratesOf: () => RATES,
     store: STORE,
     acquire: ACQUIRE,
-    tracks,
   });
   return { knowledge, gateway };
 }

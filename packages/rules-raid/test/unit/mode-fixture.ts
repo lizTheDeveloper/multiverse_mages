@@ -64,9 +64,11 @@ export type TechniqueName = keyof typeof TECHNIQUE_BIT;
 const NAMED_FORM_BIT = { limen: 0, terram: 1, nomen: 2 } as const;
 export type FormName = keyof typeof NAMED_FORM_BIT;
 
+const FLAT_ENVELOPE = { id: 'flat', gloss: 'fixture', slots: [1024, 1024, 1024, 1024, 1024, 1024, 1024, 1024], tuningStatus: 'untuned' as const };
+
 const TECHNIQUES: readonly TechniqueRecord[] = (
   Object.entries(TECHNIQUE_BIT) as [TechniqueName, number][]
-).map(([id, bit]) => ({ id, name: id, gloss: 'fixture technique', bit }));
+).map(([id, bit]) => ({ id, name: id, gloss: 'fixture technique', bit, envelope: FLAT_ENVELOPE }));
 
 const FORMS: readonly FormRecord[] = Array.from({ length: 14 }, (_, bit) => {
   const named = (Object.entries(NAMED_FORM_BIT) as [FormName, number][]).find(
@@ -78,7 +80,7 @@ const FORMS: readonly FormRecord[] = Array.from({ length: 14 }, (_, bit) => {
     name: id,
     gloss: 'fixture form',
     bit,
-    yieldWeights: { food: 341, stone: 341, vellum: 342 },
+    yieldWeights: { food: 341, stone: 341, vellum: 342, labor: 0, essence: 0, insight: 0, passage: 0 },
     tuningStatus: 'untuned',
   };
 });
@@ -189,10 +191,10 @@ export function effect(spec: {
 }): EffectRecord {
   return {
     primitive: spec.primitive,
-    mode: spec.mode,
     magnitude: spec.magnitude ?? 1024,
     target: spec.target ?? 'self',
     durationTicks: spec.durationTicks ?? 0,
+    ...(spec.mode === undefined ? {} : { mode: spec.mode }),
     ...(spec.when === undefined ? {} : { when: spec.when }),
     ...(spec.control === undefined ? {} : { control: spec.control }),
     ...(spec.transformTo === undefined ? {} : { transformTo: spec.transformTo }),
@@ -277,6 +279,7 @@ export function buildModeFixture(specs: readonly NodeSpec[]): ModeFixture {
       godConstants: 0,
       raidConstants: 0,
       autonomyWeights: 0,
+      gradeEdges: 0,
       tracks: 0,
       rituals: 0,
     },
@@ -292,6 +295,7 @@ export function buildModeFixture(specs: readonly NodeSpec[]): ModeFixture {
     godConstants: [],
     raidConstants: [],
     autonomyWeights: [],
+    gradeEdges: [],
     tracks: [],
     rituals: [],
     intern: unimplemented('intern'),
@@ -304,7 +308,6 @@ export function buildModeFixture(specs: readonly NodeSpec[]): ModeFixture {
     raidConstant: unimplemented('raidConstant'),
     autonomyWeight: unimplemented('autonomyWeight'),
     roleAppeal: unimplemented('roleAppeal'),
-    antirequisitesOf: unimplemented('antirequisitesOf'),
   };
 
   return { registry, grid: MagicGrid.from(registry), nodeIds };

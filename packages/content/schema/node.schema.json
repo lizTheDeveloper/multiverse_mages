@@ -243,6 +243,25 @@
           "maximum": 1073741823
         }
       }
+    },
+    "condition": {
+      "description": "When this effect contributes. 'always' is the default; 'revealed' requires an Intellego reveal to have fired; 'holds-cell' requires the mage to hold a minimum node count in a specific cell.",
+      "type": "object",
+      "required": ["kind"],
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "type": "string",
+          "enum": ["always", "revealed", "holds-cell"]
+        },
+        "cell": {
+          "$ref": "#/$defs/contentId"
+        },
+        "minNodes": {
+          "type": "integer",
+          "minimum": 1
+        }
+      }
     }
   }
 }

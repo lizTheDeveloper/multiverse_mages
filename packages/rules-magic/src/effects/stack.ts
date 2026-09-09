@@ -125,6 +125,10 @@ function signedMagnitudes(contribution: EffectContribution): readonly SignedMagn
       // Neither contributes a magnitude (compositional-content.md §3.3).
       // `control`'s payload is handled separately, in groupByPrimitive below.
       return [];
+    default: {
+      const _exhaustive: never = contribution.mode;
+      throw new RangeError(`unknown effect mode: ${String(_exhaustive)}`);
+    }
   }
 }
 

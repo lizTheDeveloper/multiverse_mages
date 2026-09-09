@@ -14,7 +14,7 @@
 
 import type { EntityHandle, Fixed } from '@mm/sim-core';
 import { FP_ONE, floorDiv } from '@mm/sim-core';
-import type { PrimitiveRecord } from '@mm/content';
+import type { EffectControl, PrimitiveRecord } from '@mm/content';
 import type { AblationMask, ClampCounters } from '@mm/primitives';
 import { stackMagnitudes } from '@mm/primitives';
 
@@ -225,12 +225,18 @@ export function capitalRateMultiplier(
   contribution: Fixed,
   counters?: ClampCounters,
   ablation?: AblationMask,
+  control?: EffectControl,
 ): CapitalRateOutcome {
   const outcome = stackMagnitudes(primitive, [...nodeBonuses, contribution], {
     ...(counters === undefined ? {} : { counters }),
     ...(ablation === undefined ? {} : { ablation }),
   });
-  return { multiplier: outcome.value, clamped: outcome.clamped, contribution };
+  let value = outcome.value;
+  if (control !== undefined) {
+    if (control.floor !== undefined && value < control.floor) value = control.floor;
+    if (control.ceiling !== undefined && value > control.ceiling) value = control.ceiling;
+  }
+  return { multiplier: value, clamped: outcome.clamped || control !== undefined, contribution };
 }
 
 /**
