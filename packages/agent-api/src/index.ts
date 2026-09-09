@@ -58,7 +58,12 @@
  * and the signature it satisfies is the contract.
  */
 
-export type { ActionCostTable, CatalogueNode, ContentCatalogue } from './catalogue.js';
+export type {
+  ActionCostTable,
+  ActionMaterialCost,
+  CatalogueNode,
+  ContentCatalogue,
+} from './catalogue.js';
 export { EMPTY_CATALOGUE, buildCatalogue } from './catalogue.js';
 
 export type { GodActionId } from './actions.js';
@@ -119,11 +124,43 @@ export {
 export type { EngagementView, ObservationInput } from './observation.js';
 export { isEngaged, rawObservation } from './observation.js';
 
+/**
+ * §4.1's observation, named rather than positional — the entitlement half of
+ * `docs/design/observation-entitlement.md`.
+ *
+ * `PlayerState` says *what a player may see*; `OBSERVATION_BLOCKS` says where it
+ * goes. Those were one statement until now, made positionally, which is why a
+ * trait could be added to the world and silently reach nobody.
+ */
+export type {
+  PlayerEngagement,
+  PlayerInstitutions,
+  PlayerKnowledgeCell,
+  PlayerObjective,
+  PlayerResources,
+  PlayerSide,
+  PlayerState,
+  PlayerClock,
+} from './player-state.js';
+export { encodePlayerState, playerStateFields, project } from './player-state.js';
+
+export type { TraitClass, TraitClassification, UnencodedGap, WithholdingReason } from './entitlement.js';
+export {
+  DECLARED_UNENCODED,
+  TRAIT_CLASSES,
+  TRAIT_CLASSIFICATION,
+  WITHHOLDING_REASONS,
+  assertAllTraitsClassified,
+  assertNoUndeclaredGaps,
+  unclassifiedTraits,
+  unencodedObservables,
+} from './entitlement.js';
+
 export type { Candidate, CandidateInput, CandidateLists } from './candidates.js';
 export { buildCandidates, candidateAt } from './candidates.js';
 
-export type { MaskInput } from './mask.js';
-export { isLegal, legalityMask } from './mask.js';
+export type { EngagementStance, MaskInput } from './mask.js';
+export { ENGAGEMENT_ACTIONS, isLegal, legalityMask, unaffordableReason } from './mask.js';
 
 export type { AdmissionResult, GateInput, RejectedAction, RejectionReason } from './gate.js';
 export { admit } from './gate.js';
@@ -196,6 +233,58 @@ export {
   locationSharePerMille,
   mageContainment,
 } from './knowledge-census.js';
+
+/**
+ * §4.4's third projection: what a candidate slot *is*, for a reader who is not
+ * a policy.
+ *
+ * Same placement and the same reasoning as the census above — emitted on
+ * request, unreachable from {@link AgentView}, read by no rule.
+ * `./candidate-detail.ts` argues it, and `docs/design/interface-findings.md`
+ * §1.11 is the finding it answers.
+ */
+export type {
+  CandidateDetail,
+  CandidateDetailInput,
+  CandidateDetailProjection,
+  MageDescriptor,
+  UniversityDescriptor,
+} from './candidate-detail.js';
+export { describeCandidates } from './candidate-detail.js';
+
+/**
+ * §4.4's fourth projection: one college, whole.
+ *
+ * Same placement and the same reasoning as the three above — emitted on
+ * request, unreachable from {@link AgentView}, read by no rule.
+ * `./academy.ts` argues it, and it is what a university screen is drawn from.
+ */
+export type {
+  AcademyInput,
+  AcademyProjection,
+  RosterEntry,
+  ShelfEntry,
+  TeachingEffort,
+  UniversityDossier,
+} from './academy.js';
+export { describeAcademy } from './academy.js';
+
+/**
+ * §4.4's fifth projection: where a tick's material came from and where it went.
+ *
+ * The first one that is not a reading of state. `./flow.ts` argues it, and
+ * `economy-flow-models.md` §5.2 is the finding behind it — *"every metric in the
+ * registry measures a level, a rate, or a distribution at a checkpoint. None
+ * reconciles flows."*
+ */
+export type {
+  FlowAmounts,
+  FlowBreach,
+  FlowClaimant,
+  FlowLedger,
+  FlowReportSource,
+} from './flow.js';
+export { FLOW_KINDS, describeFlow } from './flow.js';
 
 export type { AgentRng, AgentRngInput } from './agent-rng.js';
 export { agentRng } from './agent-rng.js';

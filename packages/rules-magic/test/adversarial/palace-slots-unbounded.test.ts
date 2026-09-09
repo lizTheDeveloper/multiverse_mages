@@ -109,7 +109,7 @@ const nodes: readonly KnowledgeNode[] = Array.from({ length: NODE_COUNT }, (_, i
   researchCost: 1024,
   teachCost: 1024,
   scribeCost: 1024,
-  rediscoveryMultiplier: 4096,
+  rediscoveryMultiplier: 4096, knowledgeKind: 'episteme',
 }));
 
 const catalog = catalogOf(nodes);

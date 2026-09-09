@@ -69,6 +69,7 @@ export type {
   PrimitiveConsumptionReport,
 } from './consumption.js';
 export {
+  PRIMITIVE_CONSUMPTION_EXCLUSIONS,
   checkPrimitiveConsumption,
   createConsumptionRecorder,
   formatPrimitiveConsumptionReport,

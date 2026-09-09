@@ -73,6 +73,7 @@ function node(overrides: Partial<KnowledgeNode> & { nodeId: number }): Knowledge
     teachCost: 1024,
     scribeCost: 2048,
     rediscoveryMultiplier: 4096,
+    knowledgeKind: 'episteme' as const,
     ...overrides,
   };
 }

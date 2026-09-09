@@ -150,7 +150,18 @@ describe('selectShard partitions the task space', () => {
   });
 
   it('gives an empty shard rather than throwing when there are fewer tasks than shards', () => {
-    const tasks = allTasks({ factors: [{ id: 'growth', levels: [0] }], replicates: 1 });
+    // One strategy, so `replicates: 1` is still a whole number of round-robin
+    // cycles. W18's sweep validator rejects a pool the replicate count cannot
+    // deal out evenly — round-robin cycles on the replicate index alone, so
+    // `replicates: 1` against the two-strategy toy pool would silently drop
+    // `toy-greedy`. This test is about empty *shards*, not about pool coverage,
+    // so it takes the smallest pool that makes one task rather than asserting
+    // against a sweep the harness now refuses to dispatch.
+    const tasks = allTasks({
+      factors: [{ id: 'growth', levels: [0] }],
+      replicates: 1,
+      agentPool: { strategies: ['toy-passive'], assignment: 'round-robin', slots: 1 },
+    });
     expect(tasks.size).toBe(1);
     const sizes = Array.from(
       { length: 4 },

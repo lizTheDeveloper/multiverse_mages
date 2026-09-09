@@ -74,11 +74,13 @@ export const GOD_ACTION = {
   openPortal: 14,
   /** — */
   declareAscension: 15,
+  /** speciesId — the species whose scholar is invited (§4.2, `alliances`) */
+  inviteScholar: 16,
 } as const;
 
 export type GodActionId = (typeof GOD_ACTION)[keyof typeof GOD_ACTION];
 
-/** `16`. The length of every legality mask, and of a policy's output layer. */
+/** `17`. The length of every legality mask, and of a policy's output layer. */
 export const ACTION_SPACE_SIZE = Object.keys(GOD_ACTION).length;
 
 /** Every action id, ascending. */
@@ -126,6 +128,7 @@ export const PARAMETERIZED_ACTIONS: readonly GodActionId[] = Object.freeze([
   GOD_ACTION.encourageResearch,
   GOD_ACTION.changeTradition,
   GOD_ACTION.openPortal,
+  GOD_ACTION.inviteScholar,
 ]);
 
 /**
@@ -155,6 +158,10 @@ export const CANDIDATE_SLOTS: Readonly<Record<number, number>> = Object.freeze({
   [GOD_ACTION.encourageResearch]: 16,
   [GOD_ACTION.changeTradition]: 8,
   [GOD_ACTION.openPortal]: 8,
+  // One slot per species the content declares, and the shipped table declares
+  // six. Eight leaves room for two more without moving a pinned constant, which
+  // is what `k` being pinned is for.
+  [GOD_ACTION.inviteScholar]: 8,
 });
 
 /** How many candidate slots an action has. `0` for an action that takes none. */

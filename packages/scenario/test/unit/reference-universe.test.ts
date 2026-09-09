@@ -26,7 +26,15 @@
  */
 
 import { snapshotHash } from '@mm/sim-core';
-import { GRID_CELL_COUNT, findUniverse, permits, readRulesetForObservation } from '@mm/state';
+import {
+  GRID_CELL_COUNT,
+  MAGE,
+  UNIVERSITY,
+  componentOf,
+  findUniverse,
+  permits,
+  readRulesetForObservation,
+} from '@mm/state';
 import { BOT_POOL_REGISTRY, taskFor } from '@mm/mc-harness';
 import {
   REFERENCE_REGISTRIES,
@@ -34,14 +42,23 @@ import {
   REFERENCE_SWEEP,
   censusLine,
   executeReferenceRun,
+  executeReferenceRunAsync,
   referenceContent,
   referenceScenario,
   shippedContent,
 } from '@mm/scenario';
 import { describe, expect, it } from 'vitest';
 
-/** The v1 rectangle: three techniques × four forms (`contracts.md` §2.2). */
-const V1_CELL_COUNT = 12;
+/**
+ * The v1 rectangle (`contracts.md` §2.2).
+ *
+ * Was twelve — three techniques × four forms. `material-economy` opened the
+ * grid, so it is five × fourteen. A local literal rather than the loader's
+ * constant, deliberately: this asserts that the *reference universe* permits
+ * what *content* flags, and importing the number both sides derive from would
+ * make the two agree by construction.
+ */
+const V1_CELL_COUNT = 70;
 
 const CONFIG = { worldTickCap: 24, options: { cohortSize: 4, foundingNodes: 4 } } as const;
 
@@ -49,7 +66,7 @@ const CONFIG = { worldTickCap: 24, options: { cohortSize: 4, foundingNodes: 4 } 
 const content = referenceContent();
 
 describe('the reference universe starts from shipped content', () => {
-  it('permits exactly the twelve cells content flags v1, and no thirteenth', () => {
+  it('permits exactly the cells content flags v1, and nothing beyond them', () => {
     const state = referenceScenario(content).scenario.create(0x0005_0001, CONFIG);
     const ruleset = readRulesetForObservation(state, findUniverse(state));
 
@@ -59,8 +76,10 @@ describe('the reference universe starts from shipped content', () => {
     }
     expect(permitted).toHaveLength(V1_CELL_COUNT);
 
-    // And they are the twelve content named, not twelve of the same shape. A
-    // rectangle of the right size in the wrong place would hold no v1 nodes.
+    // And they are the cells content named, not a rectangle of the same size. A
+    // rectangle of the right size in the wrong place would hold no v1 nodes —
+    // which is still the property worth checking at seventy of seventy, because
+    // it is what fails first the day a content set flags a proper subset again.
     const registry = shippedContent();
     const v1CellIds = registry.cells
       .filter((entry) => entry.record.v1 === true)
@@ -69,8 +88,8 @@ describe('the reference universe starts from shipped content', () => {
     expect(permitted).toEqual(v1CellIds);
   });
 
-  it('seeds every shipped species, a founding academy, and knowledge somebody can teach', () => {
-    const run = executeReferenceRun(task(0, 0), { content, censusIntervalTicks: 12 });
+  it('seeds every shipped species, a founding academy, and knowledge somebody can teach', async () => {
+    const run = await executeReferenceRunAsync(task(0, 0), { content, censusIntervalTicks: 12 });
     const first = run.samples[0];
     expect(first).toBeDefined();
 
@@ -137,7 +156,7 @@ describe('the founding species mask selects who founds the universe', () => {
     expect(snapshotHash(explicit)).toBe(snapshotHash(before));
   });
 
-  it('seeds only the species whose bits are set', () => {
+  it('seeds only the species whose bits are set', async () => {
     const registry = shippedContent();
     const speciesCount = registry.species.length;
     expect(speciesCount).toBeGreaterThan(1);
@@ -150,7 +169,7 @@ describe('the founding species mask selects who founds the universe', () => {
       [0b11, 2],
       [(1 << speciesCount) - 1, speciesCount],
     ] as const) {
-      const run = executeReferenceRun(
+      const run = await executeReferenceRunAsync(
         {
           ...task(0, 0),
           worldTickCap: 12,
@@ -175,9 +194,78 @@ describe('the founding species mask selects who founds the universe', () => {
   });
 });
 
+/**
+ * `foundingUniversities` — the instrument S2's falsifying measurement needs and
+ * the scenario did not have.
+ *
+ * *"`universityProfile`'s dominant cells differ between two universities on the
+ * same seed"* was not runnable in any form, because no starting position had ever
+ * held two universities: W24 compared two *runs* with one academy each, which
+ * cannot see a boundary between institutions at all. `scripts/w78-university-\
+ * divergence.mjs` is the reading; this is the knob it turns.
+ *
+ * As with the species mask, the assertion that matters most is the first: the
+ * default builds the **byte-identical** universe the scenario built before the
+ * option existed, so every committed baseline still describes the state it was
+ * taken on.
+ */
+describe('the founding university count decides how many academies open', () => {
+  const ACADEMY_CONFIG = { worldTickCap: 4, options: { cohortSize: 4, foundingNodes: 6 } } as const;
+
+  it('changes nothing when it is absent', () => {
+    const before = referenceScenario(content).scenario.create(0x0005_0020, ACADEMY_CONFIG);
+    const explicit = referenceScenario(content).scenario.create(0x0005_0020, {
+      ...ACADEMY_CONFIG,
+      options: { ...ACADEMY_CONFIG.options, foundingUniversities: 1 },
+    });
+    expect(snapshotHash(explicit)).toBe(snapshotHash(before));
+  });
+
+  it('opens that many academies and deals the founders round-robin between them', () => {
+    const state = referenceScenario(content).scenario.create(0x0005_0021, {
+      ...ACADEMY_CONFIG,
+      options: { ...ACADEMY_CONFIG.options, foundingUniversities: 2 },
+    });
+
+    const universities = componentOf(state, UNIVERSITY);
+    const academies: number[] = [];
+    universities.forEach((_row, handle) => {
+      academies.push(handle);
+    });
+    expect(academies).toHaveLength(2);
+
+    // Every academy owns a distinct library — the container the boundary exists
+    // to make meaningful. Two academies sharing a shelf would look like a
+    // boundary and hold nothing apart.
+    const libraries = academies.map((handle) => universities.get(handle, 'libraryId'));
+    expect(new Set(libraries).size).toBe(2);
+
+    // Six founders, one per species, dealt three and three. Nobody is left
+    // unaffiliated at founding: the round-robin is over academies, not over
+    // academies and the commons.
+    const staff = new Map<number, number>();
+    const mages = componentOf(state, MAGE);
+    mages.forEach((_row, handle) => {
+      const university = mages.get(handle, 'universityId');
+      staff.set(university, (staff.get(university) ?? 0) + 1);
+    });
+    expect(staff.get(0) ?? 0).toBe(0);
+    expect([...staff.values()].sort((a, b) => a - b)).toEqual([3, 3]);
+  });
+
+  it('refuses a universe with no academy rather than running two silent centuries', () => {
+    expect(() =>
+      referenceScenario(content).scenario.create(0x0005_0022, {
+        ...ACADEMY_CONFIG,
+        options: { ...ACADEMY_CONFIG.options, foundingUniversities: 0 },
+      }),
+    ).toThrow(/never teach and never scribe/);
+  });
+});
+
 describe('the universe does something when it is stepped', () => {
-  it('grows, promotes, researches, and writes it down', () => {
-    const run = executeReferenceRun(task(3, 0), { content, censusIntervalTicks: 6 });
+  it('grows, promotes, researches, and writes it down', async () => {
+    const run = await executeReferenceRunAsync(task(3, 0), { content, censusIntervalTicks: 6 });
     const first = run.samples[0];
     const last = run.samples[run.samples.length - 1];
     if (first === undefined || last === undefined) throw new Error('no census was taken');
@@ -197,12 +285,12 @@ describe('the universe does something when it is stepped', () => {
     expect(last.saturated).toEqual([]);
   });
 
-  it('keeps somebody alive at every census, in every cell of the sweep', () => {
+  it('keeps somebody alive at every census, in every cell of the sweep', async () => {
     // Across all four cells, not one: extinction is absorbing in this loop —
     // `deliverBirths` synthesises no founding population — so a cell that dies
     // out stays dead, and a test of one cell would not see it.
     for (let cellIndex = 0; cellIndex < 4; cellIndex += 1) {
-      const run = executeReferenceRun(task(cellIndex, 1), { content, censusIntervalTicks: 12 });
+      const run = await executeReferenceRunAsync(task(cellIndex, 1), { content, censusIntervalTicks: 12 });
       for (const sample of run.samples) {
         expect(sample.population).toBeGreaterThan(0);
         expect(sample.livingMages).toBeGreaterThan(0);
@@ -212,7 +300,7 @@ describe('the universe does something when it is stepped', () => {
 });
 
 describe('what this build cannot do, asserted rather than assumed', () => {
-  it('produces a different universe depending on which strategy plays it', () => {
+  it('produces a different universe depending on which strategy plays it', async () => {
     // This assertion used to run the other way, and the comment on it said the
     // day `god-agency` landed the test would fail and that failing was how
     // anyone would find out the pool had started to differentiate. It did, and
@@ -226,9 +314,10 @@ describe('what this build cannot do, asserted rather than assumed', () => {
     // entitled to agree, and a test demanding total separation would be a test
     // of the bot pool's diversity rather than of whether actions do anything.
     const base = task(1, 3);
-    const outcomes = BOT_POOL_REGISTRY.ids.map((strategyId) =>
-      executeReferenceRun({ ...base, strategies: [strategyId] }, { content }),
-    );
+    const outcomes = [];
+    for (const strategyId of BOT_POOL_REGISTRY.ids) {
+      outcomes.push(await executeReferenceRunAsync({ ...base, strategies: [strategyId] }, { content }));
+    }
 
     const first = outcomes[0];
     if (first === undefined) throw new Error('the bot pool is empty');
@@ -246,7 +335,7 @@ describe('what this build cannot do, asserted rather than assumed', () => {
     expect(submitted.size).toBeGreaterThan(1);
   });
 
-  it('shelves what it writes, so library depth tracks the books rather than reading zero', () => {
+  it('shelves what it writes, so library depth tracks the books rather than reading zero', async () => {
     // **This test used to assert the opposite**, as a tripwire: the loop wrote
     // books and never shelved one, `shelveGrimoire` sat unused in `rules-magic`,
     // and the channel §7's `capitalSnowball` is pinned to read zero for as long
@@ -254,7 +343,7 @@ describe('what this build cannot do, asserted rather than assumed', () => {
     // of the university whose scriptorium produced it, argued in `gateway.ts` —
     // so the tripwire has done its job and this is now an assertion about the
     // behaviour it was waiting for.
-    const run = executeReferenceRun(task(3, 2), { content, censusIntervalTicks: 12 });
+    const run = await executeReferenceRunAsync(task(3, 2), { content, censusIntervalTicks: 12 });
     const last = run.samples[run.samples.length - 1];
     expect(last?.grimoires).toBeGreaterThan(0);
     // The channel is *distinct nodes shelved*, so it is bounded above by the
@@ -265,7 +354,7 @@ describe('what this build cannot do, asserted rather than assumed', () => {
     expect(last?.libraryDepth).toBeLessThanOrEqual(last?.nodesKnown ?? 0);
   });
 
-  it('writes many copies of few nodes, which is what the shelf now lets anyone see', () => {
+  it('writes many copies of few nodes, which is what the shelf now lets anyone see', async () => {
     // The finding the previous test's number is worth reading for, recorded as
     // an assertion so it cannot quietly stop being true. This universe writes
     // hundreds of books and they are copies of a handful of nodes: the scribable
@@ -277,11 +366,34 @@ describe('what this build cannot do, asserted rather than assumed', () => {
     // exists to make visible. Recorded here because it was invisible while the
     // shelf was empty, and because the ratio is the thing a later tuning pass
     // will want to have watched from the beginning.
-    const run = executeReferenceRun(task(3, 2), { content, censusIntervalTicks: 12 });
+    const run = await executeReferenceRunAsync(task(3, 2), { content, censusIntervalTicks: 12 });
     const last = run.samples[run.samples.length - 1];
     if (last === undefined) throw new Error('no census was taken');
     expect(last.grimoires).toBeGreaterThan(last.libraryDepth);
   });
+});
+
+describe('the yield that lets a worker answer its runner changes no number', () => {
+  /**
+   * **The acceptance test for `executeReferenceRunAsync`.**
+   *
+   * `mc-harness`'s `pacing.ts` argues that a paused run and an unpaused one are
+   * the same run: there is one copy of the loop body, and the pause is a
+   * `setImmediate` rather than anything the rules path can observe. An argument
+   * is not evidence, and the cost of being wrong here is every committed balance
+   * baseline, so the two are run over the same task and compared whole —
+   * outcome, census samples, checkpoints, raid log and metrics together, rather
+   * than one field somebody chose.
+   *
+   * `toStrictEqual` and not `toEqual`: a paused run that returned `undefined`
+   * where the synchronous one returned an absent key would pass the loose form.
+   */
+  it('produces a result identical to the synchronous entry point', async () => {
+    const paced = await executeReferenceRunAsync(task(2, 1), { content, censusIntervalTicks: 12 });
+    const straight = executeReferenceRun(task(2, 1), { content, censusIntervalTicks: 12 });
+    expect(paced.outcome.ticksRun).toBeGreaterThan(0);
+    expect(paced).toStrictEqual(straight);
+  }, 300_000);
 });
 
 /** One task of the committed sweep, built the way the sweep itself builds it. */

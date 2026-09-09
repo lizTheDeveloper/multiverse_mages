@@ -17,10 +17,14 @@
  * Two claims carry the design and each is checked here rather than described:
  *
  * 1. **The grant's shape is unchanged.** A grant inside budget is still a full
- *    instance at `grantMastery`. `setMastery`'s only non-test caller is the decay
- *    pass and it lowers, so a granted instance is the universe's one source of
- *    knowledge above the teach threshold; a budget that quietly weakened the
- *    grant would delete that source while appearing to ration it.
+ *    instance at `grantMastery`. When this suite was written that was
+ *    load-bearing twice over: `setMastery`'s only non-test caller was the decay
+ *    pass and it lowers, so a granted instance was the universe's *one* source
+ *    of knowledge above the teach threshold, and a budget that quietly weakened
+ *    the grant would have deleted that source while appearing to ration it.
+ *    `rules-magic`'s `practice` (`w196/mastery-rises`) is a second source now,
+ *    so the assertion below is about the grant staying a gift rather than about
+ *    it being the only thing keeping knowledge transmissible.
  * 2. **A universe with no budget row is unbounded.** Every world built before
  *    this component existed is such a world, and reading absence as a budget of
  *    zero would switch founding grants off for all of them at once.
@@ -34,7 +38,7 @@
 import { describe, expect, it } from 'vitest';
 
 import type { Action, EntityHandle, SimState } from '@mm/sim-core';
-import { TIME_MODE, createState } from '@mm/sim-core';
+import { TIME_MODE, createState, rngFromRootSeed } from '@mm/sim-core';
 import {
   EVER_KNOWN,
   GRANT_BUDGET,
@@ -70,6 +74,19 @@ interface Bench {
 }
 
 /** A god world, optionally carrying a budget row. No row means no budget. */
+/**
+ * A tick-bound RNG for the resolver, which needs one only for action 16's
+ * personality roll. Bound at tick 0: these benches resolve one action against a
+ * hand-built world, and the tick a draw is keyed on is not what any of them
+ * measures.
+ */
+const TEST_RNG = {
+  rootSeed: 1,
+  stream: (subsystemId: number) => rngFromRootSeed(1).stream(subsystemId, 0),
+  actorStream: (subsystemId: number, actorKey: number) =>
+    rngFromRootSeed(1).actorStream(subsystemId, 0, actorKey),
+};
+
 function bench(budget?: {
   startingGrants: number;
   accrualNodes?: number;
@@ -85,6 +102,9 @@ function bench(budget?: {
     knowledge: KnowledgeSubsystem.fromState(world.state, catalog.nodeCount),
     edictBudgetMax: 8,
     portalNodes: new Set(nodesCarrying('portal').keys()),
+    invitableSpecies: new Set<number>(),
+    speciesOf: () => undefined,
+    rng: TEST_RNG,
     requestEngagement: () => {},
   };
   if (budget !== undefined) {

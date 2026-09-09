@@ -83,6 +83,18 @@ export const RAID_END_REASON = {
   /** One side has no living combatant left. */
   sideEliminated: 3,
   /**
+   * Every surviving raider withdrew through the portal.
+   *
+   * Distinct from {@link RAID_END_REASON.sideEliminated} deliberately. Both
+   * leave the attacker with nobody on the field, and folding them together
+   * makes *"the warband was wiped out"* and *"the warband went home"* the same
+   * observation — which is precisely the distinction `withdraw-after-ticks`
+   * exists to create, and the one a reader of the end-reason histogram most
+   * needs. Appended rather than inserted: these ids are a public contract for
+   * the same reason `RAID_VERB`'s are.
+   */
+  raidersWithdrew: 5,
+  /**
    * The compile-time ceiling was reached, which proves the decrement guarantee
    * has been broken. Always accompanied by a raised invariant violation.
    */
@@ -165,6 +177,15 @@ export function terminationOf(input: {
   readonly allObjectivesResolved: boolean;
   readonly livingAttackers: number;
   readonly livingDefenders: number;
+  /**
+   * Of the attackers no longer on the field, how many left alive.
+   *
+   * Supplied so that "the attacker's side is empty" can be *explained* rather
+   * than only detected. Optional and defaulting to zero, because every caller
+   * that predates withdrawal being reachable meant "eliminated" by an empty
+   * side and still does.
+   */
+  readonly withdrawnAttackers?: number;
 }): Termination | undefined {
   if (input.engagementTick >= MAX_ENGAGEMENT_TICKS) {
     return { reason: RAID_END_REASON.ceilingReached };
@@ -172,6 +193,14 @@ export function terminationOf(input: {
   if (input.raid.portalStability <= 0) return { reason: RAID_END_REASON.portalCollapsed };
   if (input.allObjectivesResolved) return { reason: RAID_END_REASON.objectivesResolved };
   if (input.livingAttackers === 0) {
+    // An empty attacking side is two different endings and the histogram has to
+    // be able to tell them apart: a warband that was killed, and a warband that
+    // went home. `withdrawnAttackers > 0` distinguishes them, and the tie —
+    // some withdrew, the rest died — reads as a withdrawal, because a raid in
+    // which anybody got out is one the timer ended rather than the defender.
+    if ((input.withdrawnAttackers ?? 0) > 0) {
+      return { reason: RAID_END_REASON.raidersWithdrew };
+    }
     return { reason: RAID_END_REASON.sideEliminated, eliminated: RAID_SIDE.attacker };
   }
   if (input.livingDefenders === 0) {

@@ -82,6 +82,32 @@ export class TerrainNavigator {
   }
 
   /**
+   * Whether a walker at `from` can ever reach `goal` over this terrain.
+   *
+   * The same breadth-first field {@link stepTowardGoal} steers by, asked as a
+   * question instead of for a direction — so "can she get home" and "which way
+   * is home" can never disagree, and the field is computed once and cached for
+   * both.
+   *
+   * Exists because {@link stepTowardGoal} **degrades rather than refuses**: an
+   * unreachable goal falls through to a direct step that slides along whatever
+   * is in the way, so a walker who can never arrive walks forever and looks
+   * busy doing it. That was invisible while no raider ever tried to leave;
+   * with `withdraw-after-ticks` live it became a raid whose every attacker was
+   * marching at a wall until the portal collapsed three thousand ticks later.
+   * Same cell counts as reached, matching `stepTowardGoal`'s first branch.
+   */
+  canReach(from: Point, goal: Point): boolean {
+    const side = this.#terrain.cellsPerSide;
+    const size = this.#terrain.cellSize;
+    const fromCell = cellOfPoint(from, size, side);
+    const goalCell = cellOfPoint(goal, size, side);
+    if (fromCell.column === goalCell.column && fromCell.row === goalCell.row) return true;
+    const field = this.#fieldTo(goalCell);
+    return field[fromCell.row * side + fromCell.column] !== UNREACHABLE;
+  }
+
+  /**
    * The next position on the way to `goal`.
    *
    * `allowance` is the per-tick movement allowance *before* terrain cost;

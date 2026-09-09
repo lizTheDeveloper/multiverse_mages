@@ -62,8 +62,11 @@ revoking an edict, and changing tradition.
 explicit that the rule covers 8-12, 14 and 15 equally — blessing a defender mid-raid or declaring
 ascension to escape a losing one violates frozen policy exactly as squarely as forbidding a
 technique does, and it says in terms that silence in an earlier draft was not permission. The
-implemented mask closes all fifteen non-noop actions, so a later-added action is masked by
-default rather than by someone remembering to add it here.*
+implemented mask closes all sixteen non-noop actions, so a later-added action is masked by
+default rather than by someone remembering to add it here. Action 16 (`invite scholar`) is the
+first action to arrive after that sentence was written, and it was indeed masked in engagement
+without an edit — `legalityMask` returns early on `inEngagement`, which is the mechanism the
+sentence is describing.*
 
 #### Scenario: Ruleset actions available at world scale
 
@@ -75,6 +78,42 @@ default rather than by someone remembering to add it here.*
 
 - **WHEN** an agent submits a forbid-technique action during engagement
 - **THEN** the ruleset is unchanged and the illegal-action counter increments
+
+### Requirement: A god may invite a scholar of a species the universe lacks
+
+The action space MUST carry an `invite scholar` action, parameterized by species id, which spends
+favor to create a living mage of that species affiliated to one of the universe's universities.
+It MUST be legal only when the universe holds portal magic — a living mage holding a node that
+carries the `portal` primitive, in a cell the ruleset permits — and only for a species that no
+living mage in the universe already belongs to.
+
+`ages-of-magic.md` §2f makes alliances *"the way that you get visiting mages"* while `contracts.md`
+§1.1 puts one universe in a simulation instance, so there is no second realm to negotiate with.
+The immigrant is the smallest construction that makes the fiction mechanically true: what arrives
+is an ordinary mage row, not a modifier.
+
+#### Scenario: A universe without portal magic cannot invite
+
+- **WHEN** no living mage holds a node carrying the `portal` primitive in a permitted cell
+- **THEN** the invite action is masked, and submitting it changes nothing and increments the
+  illegal-action counter
+
+#### Scenario: A species already present cannot be invited
+
+- **WHEN** a living mage of the named species already exists in the universe
+- **THEN** that species is absent from the action's candidate list
+
+#### Scenario: An invited scholar is a real mage of her own species
+
+- **WHEN** an invitation resolves
+- **THEN** a living mage of the invited species exists, affiliated to a university, and her
+  personality is drawn around **her own** species' curiosity rather than the host's
+
+#### Scenario: The invitation costs no RNG stream
+
+- **WHEN** the arriving scholar's personality is rolled
+- **THEN** the draw is taken on the existing mage-birth stream keyed on her own entity handle, so
+  no other actor's draws move and no committed balance baseline is invalidated
 
 ### Requirement: Normalization occurs at the boundary
 

@@ -221,7 +221,11 @@ describe('what crosses the boundary is what agent-api exported', () => {
     // action would make the head's width a function of the world.
     const { last } = driveOne(opened(1), 0, 0x66_66_66_66, 1);
     const candidates = last['candidates'] as { action: number; slots: number }[];
-    expect(candidates.map((one) => one.action)).toEqual([8, 9, 10, 11, 12, 13, 14]);
+    // 16 (`inviteScholar`) joined the list in `w109` and needed no change on
+    // this side of the boundary — which is the property this test is really
+    // asserting: the bridge exports whatever `agent-api` declares parameterized
+    // rather than a list transcribed a second time.
+    expect(candidates.map((one) => one.action)).toEqual([8, 9, 10, 11, 12, 13, 14, 16]);
     for (const one of candidates) expect(one.slots).toBeGreaterThan(0);
   });
 

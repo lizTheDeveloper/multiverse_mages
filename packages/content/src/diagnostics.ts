@@ -47,11 +47,17 @@ export type ContentDiagnosticCode =
   | 'prerequisite-cycle'
   | 'inverted-tier'
   | 'edict-conflict'
+  | 'technique-sign'
+  | 'asymmetric-exclusion'
+  | 'self-exclusion'
+  | 'intellego-exclusion'
   | 'content-invariant'
   | 'hook-set'
   | 'hook-kind'
   | 'hook-params'
   | 'species-invariant'
+  | 'envelope-imbalance'
+  | 'grade-ladder'
   | 'mode-technique-incoherent'
   | 'mode-payload-missing'
   | 'mode-payload-extraneous'
@@ -61,16 +67,16 @@ export type ContentDiagnosticCode =
   | 'antirequisite-contradicts-prerequisite'
   | 'track-unknown'
   | 'track-exclusion-self'
+  | 'exclusion-reason-missing'
   | 'track-exclusion-unsatisfiable'
   | 'track-excluded-by-trunk'
   | 'track-unreachable-from-trunk'
-  | 'exclusion-reason-missing'
   | 'research-cost-is-tier-alone'
   | 'effect-gloss-missing'
-  | 'ritual-too-few-roles'
+  | 'ritual-castable-by-one'
   | 'ritual-role-track-unknown'
-  | 'ritual-duplicate-role-track'
-  | 'ritual-castable-by-one';
+  | 'ritual-too-few-roles'
+  | 'ritual-duplicate-role-track';
 
 /**
  * Thrown by {@link loadContent} when the content set has any defect at all.

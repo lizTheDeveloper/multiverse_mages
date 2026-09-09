@@ -237,16 +237,22 @@ describe('termination is structural, not hoped for', () => {
     // both are injected rather than hoped for: the portal never decays, and no
     // objective can ever be completed. Either alone still terminates, which is
     // the argument working.
-    // Three things have to be true at once for a raid to be unable to end, and
-    // each is arranged rather than hoped for: the portal never decays, no
-    // objective can ever be completed, and neither side can kill the other.
-    // Any one of them absent and the raid still terminates, which is the
-    // argument working rather than the test being lucky.
+    // **Four** things have to be true at once for a raid to be unable to end,
+    // and each is arranged rather than hoped for: the portal never decays, no
+    // objective can ever be completed, neither side can kill the other, and no
+    // raider walks home. Any one of them absent and the raid still terminates,
+    // which is the argument working rather than the test being lucky.
+    //
+    // The fourth is new with `withdraw-after-ticks`. Withdrawal used to be
+    // unreachable, so this test did not have to suppress it; now it is an
+    // ordinary way for a raid to end and leaving it live would make the ceiling
+    // untestable — the raid would end at tick 57 by `sideEliminated` and the
+    // check would pass for the wrong reason, which is worse than failing.
     const { raid } = build({
       faults: { disableStabilityDecay: true },
       raiderNodes: [],
       hostNodes: [],
-      tuningOverride: { objectiveProgressPerTick: 0 },
+      tuningOverride: { objectiveProgressPerTick: 0, withdrawAfterTicks: MAX_ENGAGEMENT_TICKS },
     });
     expect(() => runRaid(raid)).toThrow(EngagementCeilingReached);
     expect(engagementTickOf(raid)).toBeGreaterThanOrEqual(MAX_ENGAGEMENT_TICKS);
@@ -260,7 +266,7 @@ describe('termination is structural, not hoped for', () => {
       faults: { disableStabilityDecay: true },
       raiderNodes: [],
       hostNodes: [],
-      tuningOverride: { objectiveProgressPerTick: 0 },
+      tuningOverride: { objectiveProgressPerTick: 0, withdrawAfterTicks: MAX_ENGAGEMENT_TICKS },
     });
     try {
       runRaid(raid);

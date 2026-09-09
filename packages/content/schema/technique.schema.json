@@ -11,12 +11,30 @@
     "technique": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["id", "name", "gloss", "bit"],
+      "required": ["id", "name", "gloss", "bit", "envelope"],
       "properties": {
         "id": { "$ref": "#/$defs/contentId" },
         "name": { "type": "string", "minLength": 1, "maxLength": 64 },
         "gloss": { "type": "string", "minLength": 1, "maxLength": 200 },
-        "bit": { "type": "integer", "minimum": 0, "maximum": 4 }
+        "bit": { "type": "integer", "minimum": 0, "maximum": 4 },
+        "envelope": { "$ref": "#/$defs/envelope" }
+      }
+    },
+    "envelope": {
+      "description": "sound-design.md §4.1: the technique's shape over an acquisition's own duration. `slots` are fp multipliers on effort at eight equal positions in `progress / required`. The loader additionally checks that the reciprocals sum to the flat curve's, so a shape redistributes work and never discounts it.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "gloss", "slots", "tuningStatus"],
+      "properties": {
+        "id": { "$ref": "#/$defs/contentId" },
+        "gloss": { "type": "string", "minLength": 1, "maxLength": 400 },
+        "slots": {
+          "type": "array",
+          "minItems": 8,
+          "maxItems": 8,
+          "items": { "type": "integer", "minimum": 64, "maximum": 16384 }
+        },
+        "tuningStatus": { "type": "string", "enum": ["untuned", "tuned"] }
       }
     },
     "contentId": {

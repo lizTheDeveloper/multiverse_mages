@@ -87,6 +87,8 @@ function observe(): {
   readonly constantMismatches: string[];
   readonly teachableMismatches: string[];
   readonly flipMismatches: string[];
+  /** Flips that came later than projected, because the holder practised. */
+  readonly flipsDeferredByPractice: number;
 } {
   const run = referenceScenario(content);
   let state = run.scenario.create(SEED, CONFIG);
@@ -97,6 +99,7 @@ function observe(): {
   const flipMismatches: string[] = [];
   let predictionsChecked = 0;
   let crossingsSeen = 0;
+  let flipsDeferredByPractice = 0;
 
   for (let tick = 0; tick < TICKS; tick += 1) {
     state = step(state, [], rngFromRootSeed(state.rootSeed));
@@ -129,11 +132,26 @@ function observe(): {
         // tick the census said it would?
         crossingsSeen += 1;
         predictionsChecked += 1;
-        if (worldTick !== forecast.predictedFlip) {
+        // ## The projection is a floor, since `w196/mastery-rises`
+        //
+        // `ticksToUnteachable` projects **decay alone**, which was the whole of
+        // what could happen to a mastery when this test was written:
+        // `setMastery`'s one rules-path caller was the decay sweep. `practice`
+        // is a second caller and it raises, so an instance whose holder went
+        // back to the desk outlives the projection.
+        //
+        // A late flip is therefore the census being *conservative* and is
+        // counted rather than failed. An **early** flip is still a hard
+        // mismatch: nothing in the rules removes mastery faster than the decay
+        // this projection is made of, so the census promising a tick the sweep
+        // beats would mean the two disagree about the sweep itself.
+        if (worldTick < forecast.predictedFlip) {
           flipMismatches.push(
             `${key}: predicted at tick ${String(forecast.predictedAt)} to stop on ` +
-              `${String(forecast.predictedFlip)}, actually stopped on ${String(worldTick)}`,
+              `${String(forecast.predictedFlip)}, actually stopped EARLY on ${String(worldTick)}`,
           );
+        } else if (worldTick > forecast.predictedFlip) {
+          flipsDeferredByPractice += 1;
         }
         pending.delete(key);
         continue;
@@ -151,7 +169,14 @@ function observe(): {
     }
   }
 
-  return { predictionsChecked, crossingsSeen, constantMismatches, teachableMismatches, flipMismatches };
+  return {
+    predictionsChecked,
+    crossingsSeen,
+    constantMismatches,
+    teachableMismatches,
+    flipMismatches,
+    flipsDeferredByPractice,
+  };
 }
 
 describe('the census publishes the rules, not a second opinion of them', () => {
@@ -172,9 +197,21 @@ describe('the census publishes the rules, not a second opinion of them', () => {
     expect(result.teachableMismatches).toEqual([]);
   });
 
-  it('predicts the exact tick the decay sweep takes an instance below the threshold', () => {
+  it('never promises a tick the decay sweep beats', () => {
     // The claim the whole projection rests on: `ticksToUnteachable` describes
-    // `decayHeldKnowledge`, not merely itself.
+    // `decayHeldKnowledge`, not merely itself. Since `w196/mastery-rises` it is
+    // a **lower bound** rather than an exact tick, because `practice` can raise
+    // a mastery the projection assumed would only fall. Early is a mismatch;
+    // late is the census being conservative about an operation it does not
+    // model, and `flipsDeferredByPractice` counts those so the deferral is
+    // visible rather than absorbed.
     expect(result.flipMismatches).toEqual([]);
+  });
+
+  it('is visibly deferred by practice, so the bound is not vacuously exact', () => {
+    // The vacuity guard for the loosened assertion above. If nothing ever
+    // outlived its projection, the bound would be untested and the exact
+    // equality it replaced should come back.
+    expect(result.flipsDeferredByPractice).toBeGreaterThan(0);
   });
 });

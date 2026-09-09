@@ -42,6 +42,13 @@
  * effective rediscovery multiplier is a number `rules-magic` and `rules-world`
  * must agree on, §5 rule 3 forbids either importing the other, and they had in
  * fact drifted into computing opposite things. See that module's note.
+ *
+ * `envelope.ts` is here for the first reason again, before the drift rather
+ * than after it. `sound-design.md` §4.1 makes each technique a *shape over
+ * time*, and the acquisition paths that shape applies to are split across
+ * `rules-magic` (research) and `@mm/coordination` (teaching, scribing). Three
+ * call sites and one curve, rather than three curves. See that module's note
+ * for why the curve is over an acquisition's duration and not an effect's.
  */
 
 export type { AblationMask } from './ablation.js';
@@ -60,8 +67,8 @@ export type {
 } from './conformance.js';
 export { ablationConformance } from './conformance.js';
 
-export type { CapContext, CapOutcome } from './caps.js';
-export { ClampCounters, applyCap, capLimit } from './caps.js';
+export type { CapContext, CapOutcome, FloorOutcome } from './caps.js';
+export { ClampCounters, applyCap, applyFloor, capLimit, stackingFloor } from './caps.js';
 
 export type { PrimitiveStackingRule } from './stacking.js';
 export {
@@ -87,3 +94,17 @@ export {
   effectiveRediscoveryMultiplier,
   speciesRediscoveryMultiplier,
 } from './rediscovery.js';
+
+export type { EffortEnvelope, EnvelopeProblem } from './envelope.js';
+export {
+  ENVELOPE_HARMONIC_TARGET,
+  ENVELOPE_SLOTS,
+  ENVELOPE_SLOT_CEILING,
+  ENVELOPE_SLOT_FLOOR,
+  RIGID_ENVELOPE,
+  envelopeHarmonicSum,
+  envelopeMultiplier,
+  envelopeProblems,
+  envelopeSlotAt,
+  shapedEffort,
+} from './envelope.js';

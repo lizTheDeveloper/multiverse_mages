@@ -51,8 +51,7 @@ export {
   V1_TECHNIQUE_COUNT,
   contentSchemas,
   loadContent,
-  normaliseAntirequisites,
-  normaliseTrackExclusions,
+  permitsNegativeMagnitude,
   validateContent,
 } from './load.js';
 
@@ -126,3 +125,11 @@ export {
 } from './raid.js';
 
 export * from './types.js';
+
+export type { CharacterAsset, CharacterRecord } from './character-types.js';
+export {
+  assetInputHash,
+  assetKinds,
+  characterFor,
+  isStale,
+} from './character.js';

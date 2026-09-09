@@ -51,6 +51,15 @@ const COMMITTED_PINS: DefinitionPins = {
     definitionVersion: 1,
     digest: '35b224f02bbf086b90bf9d6918748337d325930d78eb759665c934124c015d97',
   },
+  // New at this change, and version **1** rather than a bump: it does not
+  // rename or redefine an existing quantity. It adds the one this registry
+  // never had — a reading of a *material stock*. Eighteen metrics shipped
+  // beside seven material kinds, a claimant order and a ceiling that spills,
+  // and none of them could say what any of it did.
+  materialGradeProfile: {
+    definitionVersion: 1,
+    digest: 'a835d0e1a4bfe595260176b76d3e273b73cb207d3469020e722654cce9f559e9',
+  },
   capitalSnowball: {
     definitionVersion: 1,
     digest: '1afc93fe54fe9aed0bbe6ac2efc3ee52e82ea7cc82a54d451e22f0a6a463d688',

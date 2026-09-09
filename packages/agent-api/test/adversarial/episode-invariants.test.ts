@@ -302,7 +302,12 @@ describe('the mask and submit agree, across the whole action space', () => {
   it('rejects an id outside §4.2 without throwing, as §4.2 requires', () => {
     const session = createSession({ scenario: plainScenario() });
     session.reset(0x3030_0002, { worldTickCap: 8 });
-    for (const kind of [16, -1, 1.5, Number.NaN, 65_535]) {
+    // 16 left this list when `w109` appended `inviteScholar`: it is now an id
+    // §4.2 declares, so an out-of-space probe must use 17. The distinction the
+    // assertion is about — "not an action" versus "an action you may not take"
+    // — is exactly what would have been lost by leaving it here and relaxing
+    // the expectation to accept `masked`.
+    for (const kind of [17, -1, 1.5, Number.NaN, 65_535]) {
       const before = session.illegalActionCount();
       const result = session.submit({ kind, params: [] });
       expect(result.admitted, `kind ${String(kind)}`).toBe(false);

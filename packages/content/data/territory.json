@@ -2,45 +2,50 @@
   {
     "id": "river-delta",
     "name": "The River Delta",
-    "gloss": "Silt, flood, and three harvests a year. Small, and worth more than everything around it.",
+    "gloss": "Silt, flood, and three harvests a year. Small, and worth more than everything around it — and the same water that feeds the harvests takes the books back a page at a time.",
     "landUnits": 300,
     "capacityPerLandUnit": 40960,
+    "libraryUpkeepMultiplier": 2048,
     "yieldPerLandUnit": { "food": 2048, "stone": 128, "vellum": 384 },
     "tuningStatus": "untuned"
   },
   {
     "id": "arable-lowland",
     "name": "The Arable Lowland",
-    "gloss": "The ordinary country most people live in, and the reason there are most people.",
+    "gloss": "The ordinary country most people live in, and the reason there are most people. Nothing here is remarkable, which is why every other kind is measured against it.",
     "landUnits": 1600,
     "capacityPerLandUnit": 20480,
+    "libraryUpkeepMultiplier": 1024,
     "yieldPerLandUnit": { "food": 1536, "stone": 256, "vellum": 384 },
     "tuningStatus": "untuned"
   },
   {
     "id": "upland-pasture",
     "name": "The Upland Pasture",
-    "gloss": "Thin soil that carries herds rather than fields.",
+    "gloss": "Thin soil that carries herds rather than fields. Dry air, and a shelf of stone to build the shelves on.",
     "landUnits": 1200,
     "capacityPerLandUnit": 6144,
+    "libraryUpkeepMultiplier": 896,
     "yieldPerLandUnit": { "food": 640, "stone": 384, "vellum": 768 },
     "tuningStatus": "untuned"
   },
   {
     "id": "deep-forest",
     "name": "The Deep Forest",
-    "gloss": "Timber and game, and a long walk to either.",
+    "gloss": "Timber and game, and a long walk to either. Everything under the canopy is damp, including the archive.",
     "landUnits": 900,
     "capacityPerLandUnit": 3072,
+    "libraryUpkeepMultiplier": 1280,
     "yieldPerLandUnit": { "food": 384, "stone": 256, "vellum": 1024 },
     "tuningStatus": "untuned"
   },
   {
     "id": "highland-waste",
     "name": "The Highland Waste",
-    "gloss": "Rock, weather, and the occasional stubborn holdfast.",
+    "gloss": "Rock, weather, and the occasional stubborn holdfast. It feeds nobody and it forgets nothing: cold, dry, and no one passing through to burn what is written.",
     "landUnits": 2000,
     "capacityPerLandUnit": 512,
+    "libraryUpkeepMultiplier": 512,
     "yieldPerLandUnit": { "food": 64, "stone": 512, "vellum": 64 },
     "tuningStatus": "untuned"
   }

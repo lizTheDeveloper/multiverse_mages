@@ -48,6 +48,17 @@ run — `CANDIDATE_SLOTS` pinning 32, the ninety-three authored effects, the `EC
 with two members. Those were checked by hand on the same ref and nothing re-checks them. Treat a
 mismatched line number as the cheapest signal that one has rotted.
 
+**Findings 1.11 and 1.12** were measured on **2026-08-15** at `ad7f80c2`, playing rather than
+recording: `npm run play`, seed 20260813, the live scenario the play server builds
+(`referenceScenario(content, { raids: true })`, `scripts/play-server.mjs:144`), driven in a browser
+and then re-driven headlessly to 4,000 ticks with `noop` submitted every tick. **A live run at seed
+S is not the same episode as the recording at seed S** — `scripts/play-server.mjs:51–61` records why
+(the recorder submits `{ id }` where `admit()` reads `action.kind`, so its 400 ticks are rejected
+actions rather than no-ops) — so the recorder's numbers above and the ones below are measurements of
+two different universes and must not be compared. Nothing re-checks these two: the `ui-recording`
+test covers the recorder, not the server, so the cited line numbers are again the cheapest signal
+that a row has rotted.
+
 Findings 1.1–1.5 and §§2–7 predate this note and carry no ref. That is a gap, not a convention.
 
 ---
@@ -340,6 +351,106 @@ finding earlier.
 
 *Lands in: `agent-api`'s session surface. Not `contracts.md` — the contract already permits these
 projections; the session simply does not offer them.*
+
+---
+
+### 1.11 A candidate slot carries no identity, and the state holds no name to give it — **open**
+
+Found by playing the universe rather than reading a frame. Under every verb whose candidate resolves
+to an **entity** — grant-founding-knowledge, bless, assign-role, fund-university, open-portal —
+`ui/play/index.html:462` refuses to invent a person and prints the reason instead:
+
+> These are entity handles. Nothing in the read path says who they are.
+
+`ui/shared/session.js:81` carries the same sentence as a capability reason —
+`mageNames: 'Candidate slots carry entity handles. Nothing on the read path turns one into a name.'`
+— and the page offers the slots as *"3 of 19, by §4.4 ranking"*, which is the most a client can
+truthfully say today.
+
+**The split is between content and entities, not between verbs.** `ui/play/index.html:306–341` names
+the candidates of encourage-research, change-tradition and invite-species without difficulty, because
+their `params[0]` is a cell, a tradition or a species id and `packages/content` carries a name for
+each. The same list machinery goes anonymous the moment a slot holds a handle. So this is not a
+missing feature of the play page — it is the one place where §4.4's list addresses something the
+content graph does not name.
+
+**And a slot is not always an entity, which the anonymous label cannot say either.**
+`fundUniversityCandidates` puts `{ params: [0] }` — *found a new one* — in slot 0 ahead of the
+standing universities (`packages/agent-api/src/candidates.ts:331`), and
+`foundingKnowledgeCandidates` pairs a mage handle with a **node id** (`:266`), half of which content
+does name. The label is per slot, not per param, so both come out as *"1 of 2, by §4.4 ranking"*.
+
+**This is not 1.1 and it is not 1.8.** Those are about *which* entities reach a list and *how many*
+of its slots are real. This is about what a slot says once it is in the list: `Candidate` is
+`{ readonly params: readonly number[] }` (`packages/agent-api/src/candidates.ts:83`) and §4.4
+specifies only the agent's half of the exchange — *"the agent selects a slot index"*. A policy
+network needs nothing more. A player deciding which of nineteen mages to bless needs all of it. §7
+wants it too, from the other end: *"name the outcome, and the game names the mage"* is the direction
+judged best-aligned with being a god, and a game that picks the mage still has to say which mage it
+picked.
+
+**There is no name in the state to expose, and that is the half worth deciding.** `MAGE`
+(`packages/state/src/components.ts:554`) is `speciesId, birthTick, roleId, universityId, curiosity,
+ambition, caution, vigor, maxVigor, alive` — that field list is the whole of what a mage is in
+state, and none of it is a name. So the ask splits in two, and conflating them makes the cheap half
+wait for the expensive one:
+
+- **Attributes that exist and do not travel.** Species, age (derived from `birthTick`, never
+  stored), role, affiliation and the personality triple are all in state and none of them reaches
+  the read path, which carries mages as 6 × 8 counts. This is 1.10's shape exactly — a projection
+  the package can compute and the session does not offer — and *"a cautious gnome enchanter of
+  forty, at the Third College"* identifies a mage to a player without a name existing anywhere.
+- **A personal name, which nothing holds.** That is new content and a naming scheme is a design
+  decision, not a format change.
+
+Whether the descriptor rides on the `Candidate` — widening a payload every consumer pays for every
+tick — or sits beside `knowledgeCensus` as a per-handle lookup that costs nothing to anyone who does
+not ask, is the decision. It compounds with 1.8 either way: an anonymous slot whose list length
+moves under the cursor means slot 3 is a different unnamed mage on the next tick.
+
+*Lands in: `contracts.md` §4.4, for whether a candidate carries anything besides `params`;
+`agent-api`'s session surface for the lookup. Any personal name is `packages/content` and a separate
+question.*
+
+---
+
+### 1.12 `materials` is three stocks summed, and the split already exists one layer down — **open**
+
+`ui/play/index.html:265` captions its materials tile *"food + stone + vellum"*. The caption is
+honest and it is also the finding: the page can name the three stocks and can only show their total.
+`packages/agent-api/src/observation.ts:259` adds them into slot 3 of the `resources` block, and the
+comment above it gives the reason — the block is five slots, vision §6 prices a resize at *"a resize
+invalidates every trained agent"*, so *"the fact that an agent cannot yet tell a food shortage from a
+vellum one is recorded as an open question rather than paid for with a resize nobody scheduled."*
+**The nearest thing to that record is about a different consumer.** `campaign-plan.md` W161 makes the
+same argument against the university harness — *"A harness that pools them cannot show a university
+that can build but cannot keep books"* — and a grep of `docs/design/` for the three stock names turns
+up nothing saying it about the observation. This entry is that record.
+
+Two things make it more than a resize argument.
+
+**The distinction exists one layer down, and was argued for in the same words.**
+`WorldStepReport` publishes `producedByKind`, `remainingByKind` and `shortKinds`, and
+`packages/coordination/src/world-step.ts:447–454` says why: *"A single number could not say whether
+a universe was short of **food** or short of **vellum**, and those are opposite problems with
+opposite fixes: one is relieved by Creo Herbam and the other by Creo Animal. The two per-kind series
+below are what makes the bottleneck nameable, which is what makes a spell worth casting."* The rules
+layer paid for the split, the report carries it, and the read path flattens it again. So this is
+1.10's shape rather than a contract change — a projection the packages already compute that the
+session does not offer.
+
+**And the sum does not merely lose the bottleneck; over a long run it moves the opposite way.**
+Measured 2026-08-15 at `ad7f80c2`, seed 20260813, the live play scenario with `noop` submitted every
+tick: at tick 606, the tick the universe holds its most books — 528 grimoires, library depth 40 —
+the vellum stock is **364 fp** against 988,095 at tick 40, while the summed slot reads 2,311,532 and
+climbs from there to **5,564,454** by tick 4,000 on stone nothing is spending. Vellum is short on
+1,036 of those 4,000 ticks and the books go to zero. A player watching the tile sees materials more
+than double across the span in which the thing that makes books runs out. The trace, and what it
+does to the library, is in `economy-flow-models.md` §3.1.
+
+*Lands in: `agent-api`'s session surface, as a per-kind projection that costs the RL vector nothing.
+`contracts.md` §4.1 only if the observation itself is ever widened, which this finding does not ask
+for.*
 
 ---
 

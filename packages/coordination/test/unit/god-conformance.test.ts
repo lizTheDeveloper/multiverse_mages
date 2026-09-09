@@ -106,7 +106,7 @@ describe('the dispatch table matches contracts.md §4.2 exactly', () => {
     const doc = readFileSync(CONTRACTS, 'utf8');
     const section = doc.slice(doc.indexOf('### 4.2'), doc.indexOf('### 4.3'));
     const rows = [...section.matchAll(/^\|\s*(\d+)\s*\|\s*([^|]+?)\s*\|/gm)];
-    expect(rows.length).toBe(16);
+    expect(rows.length).toBe(17);
 
     const camel = (name: string): string =>
       name

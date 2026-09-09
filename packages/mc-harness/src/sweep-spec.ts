@@ -62,7 +62,12 @@ export interface SweepFactor {
 export const ASSIGNMENT_RULE = {
   /** Every slot gets the first strategy. The single-agent case. */
   fixed: 'fixed',
-  /** Slot *i* of run *n* gets strategy `(n + i) mod poolSize`. */
+  /**
+   * Slot *i* of run *n* gets strategy `(n + i) mod poolSize`, where *n* is the
+   * **replicate** index. `cellIndex` does not enter it, so the set of
+   * strategies a round-robin sweep ever assigns is decided by `replicates`
+   * alone — see {@link roundRobinCoverageProblem}.
+   */
   roundRobin: 'round-robin',
   /** Every ordered pairing, each played in both slot assignments. */
   mirrored: 'mirrored',
@@ -167,6 +172,62 @@ function isNonNegativeInteger(value: unknown): value is number {
 }
 
 /**
+ * Why a round-robin sweep would not cover its own pool, or `undefined`.
+ *
+ * ## The defect this refuses, stated as arithmetic
+ *
+ * `assignStrategies` under `round-robin` at one slot returns
+ * `strategies[replicateIndex % size]`, and **`cellIndex` does not enter it**.
+ * So the strategies a sweep ever runs are `strategies[0 .. min(replicates,
+ * size) - 1]`, no matter how many factor cells there are: adding cells
+ * multiplies the runs each already-covered strategy gets and never reaches a
+ * new one.
+ *
+ * `bin/tune-balance.mjs` defaulted to `--replicates 6` against an
+ * eight-strategy pool. Every trial of that search therefore scored a **six**
+ * strategy pool — `portal-rush` and `worship-maximizer` were never assigned a
+ * single run — and nothing warned, because the fold over the records that
+ * exist produces six outcomes and every downstream statistic normalises by six.
+ * The shipped constant `ascension-summit-cells = 13` was chosen by that scan.
+ *
+ * ## Why divisibility rather than "at least the pool size"
+ *
+ * Covering the pool is necessary and not sufficient. At 12 replicates over 8
+ * strategies four strategies get 8 runs and four get 4, and the two headline
+ * numbers then stop being the same quantity: `ascensionRate` is run-weighted
+ * and the exploit margin's pool mean is an unweighted mean of per-strategy
+ * rates, so an uneven pool makes them disagree for a reason that is an artefact
+ * of scheduling rather than of the ruleset. Requiring `replicates % size === 0`
+ * buys full **and** equal coverage in one condition, and it is the same rule
+ * `tournamentSchedule` already applies to its pairing count.
+ *
+ * ## Refuse, not warn
+ *
+ * A warning is a line in a log nobody reads, and this defect already reached a
+ * committed constant once. The sweep does not run.
+ */
+export function roundRobinCoverageProblem(
+  poolSize: number,
+  replicates: number,
+): string | undefined {
+  if (!isPositiveInteger(poolSize) || !isPositiveInteger(replicates)) return undefined;
+  if (replicates % poolSize === 0) return undefined;
+  const covered = Math.min(replicates, poolSize);
+  const dropped = poolSize - covered;
+  return (
+    `replicates is ${String(replicates)} against a round-robin pool of ${String(poolSize)} ` +
+    'strategies, and round-robin assignment cycles on the replicate index alone: this sweep ' +
+    `would assign only ${String(covered)} of them` +
+    (dropped > 0
+      ? `, dropping ${String(dropped)}, and no number of factor cells rescues it`
+      : ', unevenly — some strategies would get twice the runs of others, so the run-weighted ' +
+        'ascension rate and the unweighted per-strategy pool mean would disagree for a reason ' +
+        'that is scheduling rather than balance') +
+    `. Set replicates to a multiple of ${String(poolSize)}.`
+  );
+}
+
+/**
  * Every way `spec` fails the format, as human-readable lines, sorted.
  *
  * Sorted so that two runs of the validator over the same broken file produce
@@ -262,6 +323,10 @@ export function validateSweep(spec: SweepSpec, registries: SweepRegistries): str
     }
     if (!isPositiveInteger(pool.slots)) {
       problems.push('agentPool.slots must be a positive integer.');
+    }
+    if (pool.assignment === ASSIGNMENT_RULE.roundRobin && Array.isArray(pool.strategies)) {
+      const problem = roundRobinCoverageProblem(pool.strategies.length, spec.replicates);
+      if (problem !== undefined) problems.push(problem);
     }
     if (pool.assignment === ASSIGNMENT_RULE.mirrored && pool.slots !== 2) {
       problems.push(

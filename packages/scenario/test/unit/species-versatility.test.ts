@@ -40,9 +40,14 @@ function bySpecies(id: string) {
 }
 
 describe('the grid the measurement is taken against', () => {
-  it('is the full seventy, of which the v1 ruleset permits twelve', () => {
+  it('is the full seventy, all of which the v1 ruleset now permits', () => {
+    // Was `enabledCells: 12`. `material-economy` flags every cell `"v1": true`
+    // in `cell.json`, and `v1RulesetAxes` derives the mask from the flag rather
+    // than from a literal — which is exactly why that function was written as a
+    // derivation. Re-pinned because this restates a **content decision**: the
+    // number is `cell.json`'s and is recomputable from it, not a run outcome.
     expect(sample.gridCells).toBe(70);
-    expect(sample.enabledCells).toBe(12);
+    expect(sample.enabledCells).toBe(70);
   });
 
   it('covers every species content declares', () => {
@@ -67,12 +72,17 @@ describe('breadth: every species can staff the whole grid', () => {
    * distinguishes the shipped species — it is universal, which is a different
    * and more serious problem than one species having it.
    */
-  it('gives all six species 70/70 and 12/12', () => {
+  it('gives all six species 70/70 twice over', () => {
+    // The second pair was `12` while twelve cells were enabled. Every cell is
+    // enabled now, so the enabled figure and the grid figure coincide — and the
+    // finding **strengthens**: it was "every species can staff every cell the
+    // god opened" over a twelfth of the grid, and it is now the same statement
+    // over all of it.
     for (const entry of sample.species) {
       expect([entry.speciesId, entry.staffableCells, entry.staffableEnabledCells]).toEqual([
         entry.speciesId,
         70,
-        12,
+        70,
       ]);
     }
   });
@@ -109,50 +119,32 @@ describe('depth: the contrast vector, which does separate them', () => {
    * the derivation is reading the content correctly and the tie above is real.
    */
   it('ranks elf and draconic at the top and orc at the bottom', () => {
-    // **These six numbers moved when `w20/compositional-content` landed, and
-    // the ranking they were written to check survived the move.** Before it,
-    // the file read 70 / 70 / 69 / 55 / 55 / 2 against a 300-node grid whose
-    // cells ran out before most ceilings did. W20 authors 57 more nodes into
-    // the twelve v1 cells and deepens the ladders it kept, so a cell is now
-    // harder to exhaust and every figure below the top comes down.
+    expect(bySpecies('elf').exhaustibleCells).toBe(70);
     expect(bySpecies('draconic').exhaustibleCells).toBe(70);
-    expect(bySpecies('elf').exhaustibleCells).toBe(64);
-    expect(bySpecies('dwarf').exhaustibleCells).toBe(57);
-    expect(bySpecies('human').exhaustibleCells).toBe(45);
-    expect(bySpecies('gnome').exhaustibleCells).toBe(45);
-    expect(bySpecies('orc').exhaustibleCells).toBe(1);
+    expect(bySpecies('dwarf').exhaustibleCells).toBe(69);
+    expect(bySpecies('human').exhaustibleCells).toBe(55);
+    expect(bySpecies('gnome').exhaustibleCells).toBe(55);
+    expect(bySpecies('orc').exhaustibleCells).toBe(2);
   });
 
-  it('shows the ceiling has become a real constraint at 5, not only at 3', () => {
-    // **This assertion has been inverted by a content change, and that is the
-    // finding rather than a maintenance chore.**
-    //
-    // It used to read *"the ceiling is inert above 5 and sharp at 3"*, and
-    // asserted that draconic (ceiling 7) could exhaust exactly **1** cell more
-    // than dwarf (ceiling 5) — a gap of one across two whole ceiling steps,
-    // which is what "a ceiling nothing hits is not a constraint" meant. The
-    // shipped grid was too shallow for the difference between a 5 and a 7 to
-    // be worth anything, so orc's 3 was the only ceiling that bound.
-    //
-    // On W20's content the same gap is **13**. Deeper ladders in the twelve v1
-    // cells mean a tier-6 and tier-7 mage now reaches cells a tier-5 mage
-    // cannot finish, so the authored ceilings above 5 have started paying.
-    // That is `depthCeiling` becoming a species trait that discriminates,
-    // which is what it was authored to be — recorded here rather than
-    // smoothed, because it is a claim a reviewer should be able to disagree
-    // with by reading these two numbers.
-    expect(bySpecies('draconic').exhaustibleCells - bySpecies('dwarf').exhaustibleCells).toBe(13);
-    // orc's 3 still binds hardest by a wide margin, which is unchanged.
-    expect(bySpecies('orc').exhaustibleCells).toBe(1);
+  it('shows the ceiling is inert above 5 and sharp at 3', () => {
+    // dwarf (5), elf (6) and draconic (7) are within one cell of each other. A
+    // ceiling nothing hits is not a constraint; orc's is the only one that is.
+    expect(bySpecies('draconic').exhaustibleCells - bySpecies('dwarf').exhaustibleCells).toBe(1);
   });
 });
 
 describe('the teachable window, which is where the separation actually lives', () => {
   /**
-   * Nothing in the rules path raises mastery — `setMastery`'s only non-test
-   * caller is the decay pass, and it lowers. So a species is not limited by what
-   * it can learn; it is limited by how long it can still teach what it was
-   * granted before the instance falls back below the threshold.
+   * Written when nothing in the rules path raised mastery — `setMastery`'s only
+   * non-test caller was the decay pass, and it lowers — so a species was not
+   * limited by what it could learn but by how long it could still teach what it
+   * was granted.
+   *
+   * `rules-magic`'s `practice` (`w196/mastery-rises`) added the climb, so this
+   * window is now the *decay* half of the separation rather than all of it. The
+   * numbers below are unchanged and still assert what they always did: how long
+   * a fully-mastered instance stays transmissible in each species' hands.
    */
   it('runs from 32 ticks to 102 across the six', () => {
     expect(bySpecies('gnome').teachableWindowTicks).toBe(32);
@@ -177,46 +169,47 @@ describe('the teachable window, which is where the separation actually lives', (
 
 describe('affinity liveness against the permitted cells', () => {
   /**
-   * **The measurement this block was written to report has been fixed by the
-   * content change that this merge brings, and the numbers are inverted.**
+   * **All thirteen authored affinity entries are live, and none is inert.** This
+   * read `[4, 7]` while twelve cells were enabled: seven of the eleven then
+   * authored named a form no permitted cell used, and human and gnome had no
+   * live entry at all. It did not bias them — `affinityTerm` defaults a missing
+   * key to `FP_ONE` and subtracts it, so an undeclared species scores exactly
+   * zero rather than badly — but seven authored numbers could not influence
+   * anything.
    *
-   * It used to read: *"seven of the eleven authored affinity entries name a
-   * form no permitted cell uses, and two species have no live entry at all"* —
-   * so four authored numbers were doing all the work and seven could not
-   * influence anything in this ruleset. The two species with nothing live were
-   * **human and gnome**, which is to say the two species the harness most
-   * wanted to tell apart were, in the v1 ruleset, mechanically identical on
-   * this axis by accident of which forms their affinities named.
+   * `material-economy` flags every cell `"v1": true`, so every form is in a
+   * permitted cell and every authored entry now bites. Re-pinned as a
+   * **content decision**: the numbers are a function of `cell.json` and
+   * `species.json` and are recomputable from them without running anything.
    *
-   * `w20/compositional-content` re-authors `species.json` from 11 affinity
-   * entries to 26 — human goes from 0 authored entries to 4, gnome from 2 to
-   * 5 — and aims them at forms the twelve permitted cells actually use. The
-   * live count goes 4 -> 19 while the inert count stays at 7.
+   * Eleven became **thirteen** on `w/exp-yields`, 2026-08-16: human gained
+   * `animal: 1152` and `herbam: 1280`. Two reasons, and both are deliberate.
+   * The economic one is that `species.affinities` now also derives a species'
+   * **land aptitude** (`rules-world`'s `aptitude.ts`), and a human with no
+   * authored entry derives exactly neutral — so the author's *"humans are a
+   * little bit better at agrarian stuff"* had no expression at all. The
+   * research one is the side the entries always had: humans now also *study*
+   * beasts and plants a little more readily, which is the same sentence read
+   * the other way and is accepted rather than hidden.
    *
-   * This is the mechanism behind that branch's headline claim that human and
-   * gnome are the first pair of species with genuinely distinct playstyles. It
-   * is worth being exact about what is and is not shown here: the branch's own
-   * separation figures (a Jaccard of 0.57 on held repertoires, 1.7x reach)
-   * are simulated results measured elsewhere, whereas what this file proves is
-   * only the precondition — that the authored numbers are now *reachable*.
-   * `exhaustibleCells` above still gives human and gnome the identical 45, so
-   * the affinity vector is where the whole of the difference between them
-   * lives, and it did not exist before this content.
+   * This is the shape the campaign is looking for — authored content that the
+   * ruleset made unreachable, becoming reachable.
    */
-  it('finds nineteen live entries and seven inert ones', () => {
+  it('finds all thirteen entries live and none inert', () => {
     const live = sample.species.reduce((sum, entry) => sum + entry.liveAffinityEntries, 0);
     const inert = sample.species.reduce((sum, entry) => sum + entry.inertAffinityEntries, 0);
-    expect([live, inert]).toEqual([19, 7]);
+    expect([live, inert]).toEqual([13, 0]);
   });
 
-  it('gives human and gnome live entries, where they had none', () => {
-    // The whole point of the re-authoring: the two species that were
-    // indistinguishable on this axis now both carry affinities that a
-    // permitted cell can actually read.
-    expect(bySpecies('human').liveAffinityEntries).toBe(4);
-    expect(bySpecies('gnome').liveAffinityEntries).toBe(3);
-    // Human's four are all live — it is the only species with nothing inert.
+  it('gives human the two agrarian entries it did not have, and gnome its two', () => {
+    // Human's zero used to be one of two different zeroes and the reason this
+    // assertion carried an inert count beside a live one: gnome had **two
+    // authored entries and neither was live**, while human declared none at all.
+    // Human now declares two and both are live, so the inert count is still
+    // zero — and it is still asserted, because "no entries" and "no live
+    // entries" must never collapse into one reading again.
+    expect(bySpecies('human').liveAffinityEntries).toBe(2);
     expect(bySpecies('human').inertAffinityEntries).toBe(0);
-    expect(bySpecies('gnome').inertAffinityEntries).toBe(2);
+    expect(bySpecies('gnome').liveAffinityEntries).toBe(2);
   });
 });

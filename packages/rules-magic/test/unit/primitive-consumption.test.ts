@@ -30,6 +30,7 @@ import { describe, expect, it } from 'vitest';
 
 import type { ConsumptionRecorder } from '../../src/effects/index.js';
 import {
+  PRIMITIVE_CONSUMPTION_EXCLUSIONS,
   PRIMITIVE_COVERAGE_EXCLUSIONS,
   checkPrimitiveConsumption,
   createConsumptionRecorder,
@@ -60,8 +61,15 @@ function registryWithNoKnowledgeStealNodes(): ReturnType<typeof shippedRegistry>
   });
 }
 
-/** Every primitive the registry declares, minus the exclusions. */
-function required(exclusions: readonly string[] = PRIMITIVE_COVERAGE_EXCLUSIONS): string[] {
+/**
+ * Every primitive the registry declares, minus the exclusions.
+ *
+ * The default is {@link PRIMITIVE_CONSUMPTION_EXCLUSIONS} — **empty** since
+ * `lifespan` and `fertility` gained a node-driven consumer — and no longer
+ * `coverage.ts`'s list. The two are different questions and now give different
+ * answers; `consumption.ts` records why the split was forced.
+ */
+function required(exclusions: readonly string[] = PRIMITIVE_CONSUMPTION_EXCLUSIONS): string[] {
   return shippedRegistry()
     .primitives.map((entry) => entry.record.id)
     .filter((id) => !exclusions.includes(id))
@@ -126,29 +134,19 @@ describe('the accessor records the fetch, because that is the whole mechanism', 
   });
 
   it('scans the whole grid, exactly as the wiring it replaced did', () => {
-    // Twenty nodes across the pre-authored grid carry `lifespan`, and the
-    // accessor must find all twenty: the production helper it replaced
-    // (`scenario`'s `nodesCarrying`) scanned every node, and legality is
-    // decided later, per node, by `permits()`. Filtering to v1 here would be a
-    // silent behaviour change dressed up as a check.
-    //
-    // **The premise this test was written on has changed, and the number with
-    // it.** It read "`lifespan` is a declared *coverage* exclusion — no **v1**
-    // node carries it — and seventeen non-v1 nodes in the pre-authored grid
-    // do". On `w20/compositional-content`'s grid three of the twelve v1 cells
-    // now author a `lifespan` node, which is why that branch takes `lifespan`
-    // out of `PRIMITIVE_COVERAGE_EXCLUSIONS` — the gap closed on purpose
-    // rather than rotting shut. Seventeen becomes twenty, and the split is
-    // 3 v1 / 17 non-v1. The test still discriminates the behaviour it was
-    // built for: an implementation that filtered to v1 would return 3 here,
-    // and one that filtered v1 *out* would return 17.
+    // `lifespan` is a declared *coverage* exclusion — no **v1** node carries it —
+    // and seventeen non-v1 nodes in the pre-authored grid do. The accessor must
+    // still find those seventeen, because the production helper it replaced
+    // (`scenario`'s `nodesCarrying`) scanned every node and legality is decided
+    // later, per node, by `permits()`. Filtering to v1 here would be a silent
+    // behaviour change dressed up as a check.
     const found = nodeEffectMagnitudes(
       shippedRegistry(),
       'lifespan',
       'test.sink',
       createConsumptionRecorder(),
     );
-    expect(found.size).toBe(20);
+    expect(found.size).toBe(17);
   });
 
   it('keeps two consumers of one primitive rather than deduplicating them away', () => {
@@ -311,26 +309,15 @@ describe('direction four: an excluded primitive gains a node consumer', () => {
     // An exclusion that quietly becomes covered is the failure `coverage.ts`
     // argues about at length, and it rots the same way here.
     //
-    // The probe is `fertility` rather than `lifespan`, which is what this test
-    // was written with. `lifespan` stopped being an exclusion on
-    // `w20/compositional-content` — three v1 cells author a node carrying it —
-    // so registering a node consumer for it is no longer the situation this
-    // direction exists to catch. `fertility` is the one remaining entry in
-    // `PRIMITIVE_COVERAGE_EXCLUSIONS`, with five node consumers in the
-    // pre-authored grid and none in a v1 cell, so it is exactly the shape
-    // `lifespan` used to be.
-    recorder.register({
-      primitiveId: 'fertility',
-      consumer: 'test/fecundity.sink',
-      kind: 'node',
-      nodeCount: 4,
-    });
-
-    const report = checkPrimitiveConsumption(registry, recorder);
+    // The exclusion list is passed explicitly, because the shipped one is empty
+    // — which is the campaign's exit condition and not a reason to stop testing
+    // the direction. `direct-damage` stands in for whatever the next parked
+    // primitive would be.
+    const report = checkPrimitiveConsumption(registry, recorder, ['direct-damage']);
     expect(report.ok).toBe(false);
-    expect(report.consumedExclusions).toEqual(['fertility']);
+    expect(report.consumedExclusions).toEqual(['direct-damage']);
     expect(formatPrimitiveConsumptionReport(report)).toContain(
-      'FAIL: excluded primitive(s) now node-driven: fertility',
+      'FAIL: excluded primitive(s) now node-driven: direct-damage',
     );
   });
 });
@@ -391,19 +378,38 @@ describe('direction six: nothing registered at all', () => {
   });
 });
 
-describe('the two checks share one exclusion list', () => {
-  it('defaults to the coverage check’s exclusions rather than restating them', () => {
+describe('the two checks no longer share one exclusion list', () => {
+  it('defaults to an empty consumption list, which is the campaign’s exit condition', () => {
     const { recorder, registry } = fullyConsumed();
-    expect(checkPrimitiveConsumption(registry, recorder).exclusions).toEqual([
-      ...PRIMITIVE_COVERAGE_EXCLUSIONS,
-    ]);
+    expect(checkPrimitiveConsumption(registry, recorder).exclusions).toEqual([]);
+    expect([...PRIMITIVE_CONSUMPTION_EXCLUSIONS]).toEqual([]);
+  });
+
+  it('leaves the coverage list standing, because its question is the other one', () => {
+    // `lifespan` and `fertility` had a node-driven consumer *and* no v1 node
+    // authoring them, and one list cannot hold both answers — which is what this
+    // pair of assertions says out loud.
+    //
+    // **Both lists are empty now, and they emptied for different reasons, which
+    // is the point rather than a coincidence that erases it.** The consumption
+    // list emptied when the last parked primitive got a consumer; the coverage
+    // list emptied when `material-economy` enabled all seventy cells, so the
+    // seventeen `lifespan` nodes and five `fertility` nodes became v1 content.
+    // The assertion is kept exact rather than deleted: the day either list gains
+    // an entry, it must gain it for its own reason, and a test that stopped
+    // looking would let one borrow the other's.
+    expect([...PRIMITIVE_COVERAGE_EXCLUSIONS]).toEqual([]);
+    const { recorder, registry } = fullyConsumed();
+    expect(checkPrimitiveConsumption(registry, recorder).consumed.map((e) => e.primitiveId)).toContain(
+      'lifespan',
+    );
   });
 
   it('states the exclusions in the formatted report, so a reader sees the gap', () => {
     const { recorder, registry } = fullyConsumed();
-    const text = formatPrimitiveConsumptionReport(checkPrimitiveConsumption(registry, recorder));
-    // One name, not two: `w20/compositional-content` closed the `lifespan`
-    // gap, so `fertility` is the whole of the declared list now.
-    expect(text).toContain('Declared exclusions: fertility');
+    const text = formatPrimitiveConsumptionReport(
+      checkPrimitiveConsumption(registry, recorder, ['fertility', 'lifespan']),
+    );
+    expect(text).toContain('Declared exclusions: fertility, lifespan');
   });
 });

@@ -52,6 +52,7 @@ import type {
   SlotPolicy,
   TerminalStatus,
 } from '@mm/mc-harness';
+import type { CandidateLists } from '@mm/agent-api';
 import { TERMINAL_REASON } from '@mm/mc-harness';
 
 /** The scenario configuration a toy session is reset with. */
@@ -104,6 +105,17 @@ export class ToySession implements AgentSession<ToyConfig> {
     view[2] = this.wealth >= this.ascendAt ? 1 : 0;
     view[3] = this.growth / 8;
     return view;
+  }
+
+  /**
+   * No parameterized candidates: this double drives the discrete head only.
+   *
+   * An empty map is the honest answer rather than a stub — `rotate` falls back
+   * to `candidateSlotCount`'s declared pin when an action has no entry, which is
+   * exactly the behaviour these tests were written against.
+   */
+  candidates(): CandidateLists {
+    return new Map();
   }
 
   legalActions(): Uint8Array {
@@ -260,6 +272,10 @@ function runToyEpisode(
         session.observe(),
         session.legalActions(),
         slot,
+        // The toy action space is unparameterized, so there are no candidate
+        // lists to hand over; `rotate` falls back to the declared pin, which is
+        // what every assertion in this file was written against.
+        session.candidates(),
       );
       // `normalizeSubmission`, inlined — this file may not import it. The toy
       // action space is unparameterized, so a submission's `parameter` is

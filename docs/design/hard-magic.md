@@ -99,6 +99,14 @@ The mechanics above mostly **exist**. `subsystem.ts` has a mortality path that d
 dying mage held; `teaching.ts` exists; `scribing.ts` consumes materials and can refuse for
 `insufficient-materials`. An earlier draft of this document said they were absent. They are not.
 
+> **These numbers are undated and are not current — noted 2026-08-15.** The ref they were taken on
+> was never recorded, which is the failure `CLAUDE.md` names; the `library depth 1.00` row places
+> them before `w7/knowledge-capital`, but that is an inference from the number, not a recorded fact. They are left unedited because a measurement is a statement about the
+> tree it was taken on. **Do not read the `library depth 1.00` row as a present-tense fact** —
+> `vision.md` §13 gives **15 books over a library depth reaching 36 distinct nodes** for the same
+> 200-world-year reference run, and the capital contribution series `0 → 336` fp where it was pinned
+> at `fp(32)`.
+
 What the numbers say instead, from a 2400-tick run:
 
 | | `passive-control` | `archivist` |
@@ -125,17 +133,59 @@ Two facts explain the whole flat result:
 
 So the missing pieces, in dependency order:
 
-1. **Library depth must feed research rate** — §6a's compounding loop, *"the consequential one"*,
-   genuinely unimplemented and being built separately. This is what makes a university worth funding
-   for a reason other than worship.
+1. ~~**Library depth must feed research rate** — §6a's compounding loop, *"the consequential one"*,
+   genuinely unimplemented and being built separately.~~ **BUILT — corrected 2026-08-15, verified at
+   `08ca5368`.** `packages/coordination/src/capital.ts` is the coordinating layer that joins the two
+   halves `contracts.md` §5 rule 3 forbids either package from joining: `libraryCapital` is imported
+   at `world-step.ts:183` and called at `:724`, and `world-step.ts:1580` reads
+   `capital.depthFor(row.universityId)` and passes it — with the mage's species `depthCeiling`, so
+   *"a draconic-deep library accelerates nothing for orcs"* — through `libraryRateMultiplier` →
+   `capitalRateMultiplier` for `research-rate`, `teach-rate` and `scribe-rate` alike. Dormant
+   knowledge counts for nothing: the depth predicate is `permits(ruleset, cellOf(nodeId))`, so
+   forbidding a cell costs a university its research advantage immediately and costs it no book.
+   **This piece is what makes a university worth funding for a reason other than worship, and it now
+   does.** What is *not* settled is whether the pair of compounding loops runs away: `capitalSnowball`
+   is defined (`metrics-registry.ts:271`) and no committed baseline carries a value or a tolerance for
+   it — see `invariants.md` INV-29.
 2. **The loss channel must be able to reach a last copy.** Whether by fewer copies, faster decay, or
    raids that burn, `libraryDependence` has to be able to leave zero — otherwise the archivist, the
-   dwarf's retention and the gnome's rediscovery are all insurance against nothing.
-3. **Grimoire durability by species**, so *"it's dwarven, it'll outlive us both"* is mechanical
-   rather than flavour — worth doing only after (2), for the same reason.
+   dwarf's retention and the gnome's rediscovery are all insurance against nothing. **Still open,
+   and deliberately not re-judged here (2026-08-15).** Two of the three named routes have moved —
+   redundancy is now penalised (upkeep is charged per instance while capital pays per distinct node,
+   `world-step.ts:1737`) and raids fire (`scenario/src/raids.ts:423`) — but whether
+   `libraryDependence` has actually left zero is a sweep, and this pass ran no sweep. **The question
+   is recorded rather than answered:** re-measure `libraryDependence` before ticking this piece.
+3. ~~**Grimoire durability by species**, so *"it's dwarven, it'll outlive us both"* is mechanical
+   rather than flavour — worth doing only after (2), for the same reason.~~ **BUILT, and it was
+   already built when this list was written — corrected 2026-08-15, verified at `08ca5368`.**
+   `packages/rules-magic/src/instances/scribing.ts:186` writes
+   `durability = mul(SCRIBE_DURABILITY_BASE, scribeAffinity) + roll` onto every grimoire, fed from
+   the scribe's species (`world-step.ts:1874` → `gateway.ts:808`), and `SCRIBE_DURABILITY_BASE` has
+   been there since `f90df276`, the `knowledge-model` release. It is **consumed**:
+   `packages/rules-raid/src/consequences.ts:255` clamps a burn attempt at
+   `min(durability, grimoireBurnResistCap)` — *"a dwarven book resists fire; it is not fireproof"*.
+   **One correction to a correction:** `audit-sequence.md` §2.1 credits PR #170 with closing this
+   piece on the evidence that *"`GRIMOIRE.durability` is computed from `scribeAffinity`"*. That was
+   already true on `main` — `primitive.json` still holds 16 entries at `08ca5368`, so #170 is not
+   merged, and the property is present anyway. Attributing it to #170 would put a closed row back in
+   an open PR's ledger.
 
-Item 1 is what makes universities matter. Item 2 is what makes the species table load-bearing. The
-order is forced: durability and retention are meaningless until destruction is possible.
+   The honest residue is narrow and is a matter of *which* loss channel durability touches: it gates
+   surviving a **burning**, and nothing else. `packages/rules-magic/src/instances/decay.ts` says so
+   deliberately — *"A book's fragility is `durability`, not forgetting, and conflating the two would
+   make scribing pointless"* — so a dwarven book does not outlast a human one **on a shelf**, only in
+   a fire. Whether that is the intended reading of *"it'll outlive us both"* is an authoring
+   decision, not a defect.
+
+~~Item 1 is what makes universities matter. Item 2 is what makes the species table load-bearing. The
+order is forced: durability and retention are meaningless until destruction is possible.~~
+
+**Rewritten 2026-08-15 at `08ca5368`: items 1 and 3 are built and item 2 is the only one left.** The
+forced order held and was worked in the wrong direction — durability (3) shipped with
+`knowledge-model` and the capital loop (1) closed later, while (2), the precondition both were said
+to depend on, is still the open one. So the ordering argument stands as an argument and the list no
+longer describes the tree: **the remaining question is whether the loss channel can reach a last
+copy, and it is a measurement, not a mechanism.**
 
 ## The claim this design makes, and how it would be disproved
 

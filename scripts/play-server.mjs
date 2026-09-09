@@ -1,0 +1,927 @@
+#!/usr/bin/env node
+/*
+ * Multiverse Mages — the local play server. Dev tooling, not the core.
+ * Copyright (C) 2026 Ann Kelner
+ *
+ * This program is free software: you can redistribute it and/or modify it under
+ * the terms of the GNU Affero General Public License as published by the GNU
+ * Free Software Foundation, either version 3 of the License, or (at your
+ * option) any later version. See the LICENSE file at the repository root, or
+ * <https://www.gnu.org/licenses/>.
+ *
+ * SPDX-License-Identifier: AGPL-3.0-or-later
+ */
+
+/**
+ * `npm run play` — one command, a browser, and a universe that is actually
+ * running.
+ *
+ *     npm run play                  # http://localhost:8300/
+ *     npm run play -- --port 9001 --seed 7 --ticks 4000
+ *
+ * ## What this is, and what it deliberately is not
+ *
+ * Every page under `ui/` reads `ui/session.json`, a recording. A recording
+ * cannot be *acted on*: the whole point of the god's console is that a person
+ * presses something and the world is different afterwards. This holds one live
+ * `AgentSession` in memory — built exactly the way `scripts/record-session.mjs`
+ * builds one, from `referenceScenario` over `referenceContent` — and serves it
+ * over HTTP in **the same document shape the recording has**, so the pages that
+ * already parse a recording parse this without learning a second format.
+ *
+ * ## Why not `@mm/server`
+ *
+ * `packages/server` is the *authoritative multiplayer* server: match lifecycle,
+ * admission of several clients' batches into one canonical ordering, snapshot
+ * codec, desync detection by hash. Every one of those exists to solve a problem
+ * a single local player does not have — there is one action source, one clock,
+ * and no peer to desync from. Using `Match` here would mean standing up a
+ * two-party protocol to talk to itself. It is the right thing to reuse when
+ * `pvp-server` ships, and a detour tonight.
+ *
+ * ## The boundary, stated
+ *
+ * This file is **dev tooling**. It reads a wall clock (nothing does — the client
+ * paces itself), it is not imported by any package, and it lives in `scripts/`
+ * for the same reason `record-session.mjs` does. It drives `AgentSession` and
+ * never reaches past it into `sim-core`. The simulation is untouched: this
+ * calls `submit()` and reads `observe()`, and that is the whole of its contact
+ * with the rules.
+ *
+ * ## The recorder's `{ id: }` bug, and why this file does not copy it
+ *
+ * `record-session.mjs` submits `{ id: GOD_ACTION.noop }`. `admit()` reads
+ * `action.kind`, so **every one of those 400 ticks is rejected
+ * `unknown-action`** and increments `noteIllegalAction()`. Measured: 40 ticks of
+ * `{ id: 0 }` gives snapshot `07466680da25d689` and `illegalActionCount 40`;
+ * 40 ticks of `{ kind: 0 }` gives `70664c0580e14131` and `0`. This file submits
+ * `{ kind }`, which means **a live run at seed S is not the same episode as the
+ * recording at seed S.** That is the recorder's defect to fix, not this one's to
+ * reproduce — fixing it moves `ui/session.json` and its golden, which is a
+ * separate change.
+ */
+
+import { readFile } from 'node:fs/promises';
+import { createServer } from 'node:http';
+import path from 'node:path';
+import process from 'node:process';
+import { fileURLToPath } from 'node:url';
+
+import {
+  CANDIDATE_SLOTS,
+  GOD_ACTION,
+  OBSERVATION_BLOCKS,
+  OBSERVATION_DESCRIPTORS,
+  OBSERVATION_LAYOUT_DIGEST,
+  OBSERVATION_SCHEMA_VERSION,
+  createSession,
+} from '../packages/agent-api/dist/index.js';
+import { GOAL_NAMES } from '../packages/rules-world/dist/index.js';
+import {
+  SANDBOX_CHEAT,
+  SANDBOX_CLAIMANTS,
+  SANDBOX_CLAIMANT_KIND,
+  SANDBOX_MATERIAL_KINDS,
+  SANDBOX_SATISFY_FLOOR,
+  normalizeSandbox,
+  referenceContent,
+  referenceScenario,
+} from '../packages/scenario/dist/index.js';
+import { MAGE_ROLE } from '../packages/state/dist/index.js';
+
+const HERE = path.dirname(fileURLToPath(import.meta.url));
+const ROOT = path.join(HERE, '..');
+
+const arg = (name, fallback) => {
+  const i = process.argv.indexOf(`--${name}`);
+  return i >= 0 ? process.argv[i + 1] : fallback;
+};
+
+const PORT = Number(arg('port', '8300'));
+const DEFAULT_SEED = Number(arg('seed', '20260813'));
+const DEFAULT_CAP = Number(arg('ticks', '4000'));
+/**
+ * Ticks the universe runs before anyone can look at it. `--warm 0` for none.
+ *
+ * **Tick 0 is not a playable position, and pretending otherwise wastes the first
+ * minute of every session.** The god starts with no favor, `mask.ts` folds
+ * affordability into the same bit as legality, and measured on the reference
+ * scenario exactly **one** of sixteen actions is legal at tick 0 — the no-op.
+ * Twelve are legal by tick 10 and thirteen by tick 25. So the run opens on a
+ * world that has already been going a while, the way a god arriving at a
+ * universe would.
+ *
+ * These are **real ticks in the real run**: they are on the spine, they are in
+ * the action log, and the control replays them like any others. Nothing is
+ * skipped or fabricated to make the opening screen look better.
+ */
+const WARM = Math.max(0, Math.min(2000, Number(arg('warm', '40'))));
+
+/**
+ * Whether the cheat routes exist at all. `npm run play -- --sandbox`.
+ *
+ * **Off by default, and off means the route is a 403, not a no-op.** A cheat
+ * endpoint that quietly did nothing would be the worst of both: an operator
+ * would believe a grant landed, and the run would be honest while the screen
+ * said otherwise. So the flag gates the write route and `GET /live/sandbox`
+ * reports `enabled: false` so the console can say why the panel is inert.
+ *
+ * It is a flag rather than always-on because a person can leave this server
+ * running for hours and the whole value of the layer depends on nobody being
+ * able to cheat a run they later quote. Turning it on is a deliberate act with
+ * a visible consequence — the banner, the scenario id, the brand in the bytes.
+ */
+const SANDBOX = process.argv.includes('--sandbox');
+
+/* ------------------------------------------------------------------ the run */
+
+/**
+ * The content and the registry are built once. `referenceScenario` is rebuilt
+ * per run because `reset()` re-seeds an episode but the scenario carries the
+ * catalogue and the portal targets the session was constructed with.
+ */
+const content = referenceContent();
+const { registry } = content;
+
+/**
+ * `cell` on a node record is the cell's **string** id; every client index is by
+ * interned `cellId`. One map, built once, rather than a `find` per node.
+ */
+const cellIdByStringId = new Map(registry.cells.map(({ contentId, record: c }) => [c.id, contentId]));
+
+/**
+ * A node's authored id to its interned `nodeId`, so `prerequisites` — which
+ * content states as authored ids — can be published as the numbers every client
+ * index already uses.
+ */
+const nodeIdByStringId = new Map(registry.nodes.map(({ contentId, record: n }) => [n.id, contentId]));
+
+/**
+ * An authored prerequisite list, interned.
+ *
+ * **Throws rather than emitting `0`.** A `0` here would be the reserved null
+ * (§0) sitting in a prerequisite list, and a client's reachability arithmetic
+ * would read it as a requirement nothing can satisfy — a node quietly
+ * unreachable forever, with no error anywhere. The content loader already
+ * refuses an unresolvable prerequisite; this is the second lock, on the one
+ * translation between the two id spaces.
+ */
+const internPrerequisites = (node) =>
+  (node.prerequisites ?? []).map((id) => {
+    const nodeId = nodeIdByStringId.get(id);
+    if (nodeId === undefined) {
+      throw new Error(
+        `Node ${node.id} declares prerequisite ${id}, which content does not name. A client ` +
+          'reading this graph would draw an edge from nowhere.',
+      );
+    }
+    return nodeId;
+  });
+
+
+/** The one non-invertible-rule guard `record-session.mjs` documents at length. */
+const INVERTIBLE = new Set(['ratio', 'flag']);
+const nonInvertible = OBSERVATION_DESCRIPTORS.map((d, i) => [i, d]).filter(
+  ([, d]) => !INVERTIBLE.has(d.rule),
+);
+if (nonInvertible.length > 0) {
+  throw new Error(
+    `Slots ${nonInvertible.map(([i]) => i).join(', ')} use a normalization rule this server ` +
+      'cannot invert, so the integers it publishes would be plausible and wrong.',
+  );
+}
+
+/**
+ * A run: the session, every frame observed so far, and **the log of what was
+ * submitted**.
+ *
+ * The log is what makes {@link controlExperiment} possible. A candidate slot
+ * index resolves against the state of the tick it was submitted on, so replaying
+ * the same slot indices from the same seed reproduces the same admitted actions
+ * — which is what lets the server answer *"and what would have happened if you
+ * had not?"* without ever mutating the run the player is in.
+ */
+let run = null;
+
+/**
+ * A run, optionally cheated.
+ *
+ * The cheat sheet belongs to **the run**, not to a moment in it, and that is a
+ * deliberate restriction rather than a shortcut. Two reasons, and the second is
+ * the one that would have bitten:
+ *
+ * 1. Every founding cheat is a *starting position*, which is the only place a
+ *    scenario is allowed to write one. Applying a grant to a running episode
+ *    would mean reaching past `AgentSession` into the state it owns.
+ * 2. {@link controlExperiment} answers *"and what if you had not?"* by replaying
+ *    this run's action log into fresh sessions. A cheat applied mid-run is not
+ *    in that log, so both control arms would silently diverge from the run they
+ *    claim to be about — a checker answering about the wrong input, which is a
+ *    shape this repository has found five of. Rebuilding the run instead keeps
+ *    the control exact: `fresh()` builds the scenario from the same sheet.
+ *
+ * So `POST /live/sandbox` starts a new universe. It says so, and the response
+ * carries the new provenance.
+ */
+function newRun(seed, cap, sandbox = null) {
+  const { scenario, sandbox: sheet } = referenceScenario(content, {
+    raids: true,
+    ...(sandbox === null ? {} : { sandbox }),
+  });
+  const session = createSession({ scenario, strategyId: 'play-server' });
+  session.reset(seed, { worldTickCap: cap });
+  return {
+    seed,
+    cap,
+    session,
+    sandbox,
+    sheet: sheet ?? null,
+    frames: [],
+    log: [],
+    startedAt: Date.now(),
+  };
+}
+
+/** Which cheat names a sheet declares, for the banner and the log line. */
+function declaredCheats(spec) {
+  if (spec === null || spec === undefined) return [];
+  const named = [];
+  const has = (key) => spec[key] !== undefined && spec[key] !== null;
+  if (has('setMaterials')) named.push('setMaterial');
+  if (has('grantMaterials')) named.push('grantMaterial');
+  if (has('materialFloor') || (spec.satisfy ?? []).length > 0) named.push('materialFloor');
+  if (has('materialCeiling')) named.push('materialCeiling');
+  if (has('favor')) named.push('favor');
+  if (has('favorCap')) named.push('favorCap');
+  if (has('prestige')) named.push('prestige');
+  if (has('worship') || has('worshipTier')) named.push('worship');
+  if (has('armTechniques') || has('armForms') || spec.armEverything === true) named.push('armAxes');
+  if (has('edictBudget')) named.push('edictBudget');
+  if (has('grantBudget')) named.push('grantBudget');
+  if (spec.completeConstruction === true) named.push('completeConstruction');
+  if ((spec.foundUniversities ?? 0) > 0) named.push('foundUniversity');
+  if (has('studentSeats')) named.push('studentSeats');
+  if ((spec.grantKnowledge ?? []).length > 0) named.push('grantKnowledge');
+  if ((spec.shelveKnowledge ?? []).length > 0) named.push('shelveKnowledge');
+  return named;
+}
+
+/** One tick, encoded the way `record-session.mjs` encodes one. */
+function encodeFrame(session) {
+  const normalized = session.observe();
+  const mask = session.legalActions();
+  const candidates = session.candidates();
+  const sat = [];
+  const obs = [];
+  for (let i = 0; i < normalized.length; i += 1) {
+    const v = normalized[i];
+    const d = OBSERVATION_DESCRIPTORS[i];
+    if (v >= 1 && d.rule === 'ratio') sat.push(i);
+    obs.push(Math.round(v * d.divisor));
+  }
+  return {
+    obs,
+    sat,
+    // `material-stock`'s seven kinds, which §4.1 sums three of into
+    // `resources[39]` and has no slot at all for the other four. Same field,
+    // same source and same reasoning as `record-session.mjs`: the §4.4 player
+    // projection, the stocks only, nothing that is already in `obs`. Held
+    // equivalent to the recorder **by hand** — see the longer note there.
+    stocks: { ...session.playerState().resources.stocks },
+    /**
+     * §4.4's candidate descriptors — what each slot *is*, beside what it
+     * submits.
+     *
+     * `candidates` above carries `params` and nothing else, which is everything
+     * a policy needs and nothing at all to a person: `docs/design/
+     * interface-findings.md` §1.11 is that finding, and *"1 of 19, by §4.4
+     * ranking"* is what a page can print without this. Taken from the same §4.4
+     * projection surface `stocks` comes from — emitted on request, read by no
+     * rule, and outside the observation, so `OBSERVATION_SIZE` and the layout
+     * digest do not move.
+     *
+     * `byAction` is aligned slot-for-slot with `candidates`; `mages` and
+     * `universities` are per-handle lookups, so a mage named by three verbs is
+     * shipped once. `goal` is **absent** rather than null for a mage who has
+     * never committed — `JSON.stringify` drops an undefined field, and that is
+     * the distinction `GOAL_COMMITMENT` makes load-bearing between "has not
+     * chosen" and "chose idle".
+     */
+    /**
+     * §4.4's flow ledger for the tick just stepped — where this tick's material
+     * came from and where it went.
+     *
+     * The fourth sidecar off the same §4.4 projection surface as `stocks`,
+     * `candidateDetail` and `academy`, and the first that is not a reading of
+     * state at all: `economy-flow-models.md` §5.2 is the finding — *"every metric
+     * in the registry measures a level, a rate, or a distribution at a
+     * checkpoint. None reconciles flows."* `obs` carries seven closing levels and
+     * nothing about how they got there, so a universe that spent its vellum and
+     * one that leaked it are the same two numbers.
+     *
+     * **Absent rather than null on the opening frame**, and absent again on any
+     * frame whose report is of a different tick — `JSON.stringify` drops an
+     * undefined field, which is the distinction a client must be able to make.
+     * `session.flowLedger()` returns `undefined` in both cases and `ui/shared/
+     * session.js` renders that as absent rather than as zero, because an empty
+     * granary is a crisis and an unknown granary is not.
+     *
+     * Emitted as the projection returns it: it is already a fresh structure of
+     * plain objects, arrays and integers, so nothing is reshaped here. A field
+     * renamed on the way through would be a second vocabulary for one projection.
+     *
+     * **Kept in step with the sibling script by hand.** A comment in this
+     * repository refers to `scripts/play-control.mjs --shape` as the thing that
+     * holds the recorder and the live server equivalent; that script does not
+     * exist, so nothing automated checks it.
+     */
+    flow: session.flowLedger(),
+    candidateDetail: encodeCandidateDetail(session.candidateDetails()),
+    /**
+     * §4.4's academy projection — every college, its roster, its shelf, the
+     * lessons in progress, and the cells the ruleset permits.
+     *
+     * Same surface and the same reasoning as `stocks` and `candidateDetail`
+     * above: emitted on request from a running session, read by no rule, outside
+     * the observation, so `OBSERVATION_SIZE` and the layout digest do not move.
+     * §4.1 has none of it — `MAGE.universityId` reaches no slot, `EFFORT_PROGRESS`
+     * reaches no slot, and the mage block is 6 species x 8 tiers of counts, so a
+     * policy cannot tell a college of five from five hermits.
+     *
+     * `permittedCells` is the one field here that is a *rule* rather than a
+     * reading. It is `permits()` over the cells content populates, computed in
+     * `agent-api` precisely so that a page does not reconstruct it out of the
+     * ruleset block's nineteen bits and eight edict slots — which is what §5's
+     * "the client computes no rules" forbids.
+     */
+    academy: encodeAcademy(session.academy()),
+    mask: [...mask],
+    candidates: Object.fromEntries(
+      [...candidates].map(([action, list]) => [action, [...(list ?? [])]]),
+    ),
+    status: session.status(),
+  };
+}
+
+
+/**
+ * The §4.4 academy projection, as JSON.
+ *
+ * Maps keyed by number do not survive `JSON.stringify`, so both tables become
+ * objects keyed by the decimal handle — the same treatment
+ * {@link encodeCandidateDetail} gives, read back the same way through
+ * `Number(key)`. Nothing is reshaped beyond that.
+ */
+function encodeAcademy(academy) {
+  return {
+    universities: Object.fromEntries(
+      [...academy.universities].map(([handle, dossier]) => [
+        handle,
+        {
+          college: { ...dossier.college },
+          roster: dossier.roster.map((entry) => ({ ...entry, nodeIds: [...entry.nodeIds] })),
+          shelf: dossier.shelf.map((entry) => ({ ...entry })),
+          teaching: dossier.teaching.map((entry) => ({ ...entry })),
+          staffHeadcount: dossier.staffHeadcount,
+        },
+      ]),
+    ),
+    mages: Object.fromEntries([...academy.mages].map(([handle, mage]) => [handle, { ...mage }])),
+    permittedCells: [...academy.permittedCells],
+    unaffiliated: academy.unaffiliated,
+  };
+}
+
+/**
+ * The §4.4 candidate projection, as JSON.
+ *
+ * Maps keyed by number do not survive `JSON.stringify`, so both are turned into
+ * objects keyed by the decimal handle — which is what `ui/shared/session.js`
+ * reads back through `Number(key)`. Nothing is reshaped beyond that: a field
+ * renamed here would be a second vocabulary for one projection.
+ */
+function encodeCandidateDetail(detail) {
+  return {
+    byAction: Object.fromEntries(
+      [...detail.byAction].map(([action, rows]) => [action, rows.map((row) => ({ ...row }))]),
+    ),
+    mages: Object.fromEntries([...detail.mages].map(([handle, mage]) => [handle, { ...mage }])),
+    universities: Object.fromEntries(
+      [...detail.universities].map(([handle, university]) => [handle, { ...university }]),
+    ),
+  };
+}
+
+const observeInto = (r) => {
+  r.frames.push(encodeFrame(r.session));
+};
+
+/**
+ * The static half of the document: everything `ui/shared/session.js` reads that
+ * is not a frame.
+ *
+ * Duplicated from `record-session.mjs` rather than extracted into a shared
+ * module, deliberately. That script has a golden test that re-runs it, and
+ * sharing code with it would make a change here a change to a fixture. The two
+ * are held equivalent by `scripts/play-control.mjs --shape`, which builds a live
+ * document and a recorded one and diffs their keys.
+ */
+function header(r) {
+  return {
+    provenance: {
+      seed: r.seed,
+      ticks: r.frames.length - 1,
+      tickCap: r.cap,
+      scenarioId: r.session.scenarioId,
+      observationSchemaVersion: OBSERVATION_SCHEMA_VERSION,
+      observationLayoutDigest: OBSERVATION_LAYOUT_DIGEST,
+      actionSpaceSize: r.session.actionSpaceSize,
+      snapshotHash: r.session.snapshotHash(),
+      recordedBy: 'scripts/play-server.mjs',
+      /** The one field a recording does not have. Views use it to say LIVE. */
+      live: true,
+      /**
+       * Present **only** on a cheated run, and the key every surface keys its
+       * banner off. Additive: `ui/shared/session.js` reads with `??`, and an
+       * honest run's provenance is byte-identical to what it always was.
+       *
+       * The authoritative mark is not this — it is the `sandbox-brand`
+       * component inside the snapshot, which survives a save, refuses to load
+       * into an honest build, and cannot be cleared by playing on. This is the
+       * copy a browser can see.
+       */
+      ...(r.sheet === null
+        ? {}
+        : {
+            sandbox: {
+              digest: r.sheet.digest,
+              cheats: declaredCheats(r.sandbox),
+              spec: r.sandbox,
+            },
+          }),
+    },
+    layout: OBSERVATION_BLOCKS.map((b) => ({ name: b.name, offset: b.offset, size: b.size })),
+    actions: Object.fromEntries(Object.entries(GOD_ACTION).map(([k, v]) => [v, k])),
+    content: {
+      techniques: registry.techniques.map(({ record: t }) => ({ bit: t.bit, id: t.id, name: t.name })),
+      forms: registry.forms.map(({ record: f }) => ({ bit: f.bit, id: f.id, name: f.name })),
+      cells: registry.cells.map(({ contentId, record: c }) => ({
+        cellId: contentId,
+        id: c.id,
+        technique: c.technique,
+        form: c.form,
+        /* How many nodes the cell carries at all. The grid says "4 of 5 known",
+           which is the number a player needs; the count alone cannot say it. */
+        nodeCount: (c.nodes ?? []).length,
+      })),
+      species: registry.species.map(({ contentId, record: s }) => ({
+        speciesId: contentId,
+        id: s.id,
+        name: s.name,
+        /**
+         * §1.3's depth ceiling — the deepest tier this species can research at
+         * all. `gatherFrontier` applies it *after* the gateway's prerequisite
+         * and legality filter, so a frontier drawn without it overstates what a
+         * gnome of forty can actually begin. Content, like the graph above.
+         */
+        depthCeiling: s.depthCeiling,
+      })),
+      actionCosts: Object.fromEntries(
+        registry.godCosts.map(({ record: g }) => [g.actionId, g.favorCost]),
+      ),
+    /**
+     * Every node, so a founding grant can say *which* node it would found.
+     *
+     * `agent-api`'s catalogue carries a node's cell and tier and deliberately no
+     * name — it is a projection for an encoder, and §5 keeps `@mm/content` out
+     * of a package a renderer imports. A *name* is content, and this is where
+     * content is published to the client. `cellId` rides along so a page can
+     * place the node on the grid it is already drawing.
+     */
+    nodes: registry.nodes.map(({ contentId, record: n }) => ({
+      nodeId: contentId,
+      id: n.id,
+      name: n.name,
+      cellId: cellIdByStringId.get(n.cell) ?? 0,
+      tier: n.tier,
+      /**
+       * §2.3's prerequisite edges, interned — **the research graph, which no
+       * client has ever been shipped.**
+       *
+       * The grid the pages draw is seventy cells of counts, and a count cannot
+       * say what comes next. 300 nodes carry 292 edges between them, 36 of which
+       * cross cells, and every one of those was invisible: a page could show
+       * that a college knows four nodes in *creo animal* and not that the fifth
+       * is gated behind a node in a cell the god has forbidden.
+       *
+       * This is **content**, published where content is published. Nothing about
+       * the observation moves — `OBSERVATION_SIZE` is 400, the digest is
+       * 46182c35d829b205, no schema revision, no baseline — because a header is
+       * not a frame and the graph is the same in every universe this content
+       * builds.
+       *
+       * What it buys is that "what could this college learn next" becomes set
+       * arithmetic a client can do: a node is within reach when every id in this
+       * list is held and its cell is in the frame's `academy.permittedCells`,
+       * which is the same filter `CoordinatingKnowledgeGateway.researchFrontier`
+       * applies. The *rule* — which cells are permitted — is still computed by
+       * `agent-api`; only the graph walk is here.
+       */
+      prerequisites: internPrerequisites(n),
+    })),
+    /**
+     * `MAGE_ROLE`'s words. §1.2 stores a role as a `u8` and the enum lives in
+     * `@mm/state`; publishing the mapping here keeps the client from carrying a
+     * hand-copied table that a fifth role would silently break.
+     */
+    mageRoles: Object.fromEntries(Object.entries(MAGE_ROLE).map(([name, id]) => [id, name])),
+    /**
+     * `rules-world`'s permanent goal registry, by id — what a mage is currently
+     * working on. `@mm/state` records why the table cannot live anywhere else:
+     * *"it would be a second copy of a table whose whole contract is that there
+     * is one"*. This script may read it because a script is not a package; the
+     * projection that carries `goalId` may not, and does not.
+     */
+    goals: { ...GOAL_NAMES },
+      candidateSlots: { ...CANDIDATE_SLOTS },
+      /**
+       * The traditions, so the console can name action 13's parameter. Not in a
+       * recording's content block; additive, and `session.js` reads it with `??`.
+       */
+      traditions: registry.traditions.map(({ contentId, record: t }) => ({
+        traditionId: contentId,
+        id: t.id,
+        name: t.name ?? t.id,
+      })),
+    },
+  };
+}
+
+/* ------------------------------------------------------------ playing a tick */
+
+/** Advances one tick with one submission. Returns what the gate said. */
+function tick(r, action) {
+  if (r.session.status() !== 'running') {
+    return { admitted: false, rejection: `episode-${r.session.status()}` };
+  }
+  const result = r.session.submit(action);
+  r.log.push(action);
+  observeInto(r);
+  return {
+    admitted: result.admitted,
+    ...(result.rejection === undefined ? {} : { rejection: result.rejection }),
+    status: result.status,
+  };
+}
+
+/**
+ * The honesty control: the same seed, the same log, one tick played two ways.
+ *
+ * Replays this run's whole action log into two fresh sessions, then gives one of
+ * them `action` and the other a no-op, runs both `settle` further no-op ticks,
+ * and reports the snapshot hashes and **which observation slots differ**.
+ *
+ * The two numbers answer different questions and both are worth having.
+ * A differing hash proves the action reached the simulation. Differing
+ * observation slots prove it reached something a player can *see*. Measured on
+ * `main`, `assignRole` moves the hash and moves **zero** drawn slots — the
+ * action is admitted, the world diverges, and no pane in the console changes.
+ * That is a finding about the read path, not a broken control.
+ *
+ * **A refused action moves the hash too**, and that is not a bug in this: a
+ * rejection calls `state.noteIllegalAction()`, and `illegalActionCount` is
+ * inside the hashed snapshot. So the hash answers *"did the submission reach the
+ * simulation"* and not *"did it do anything"*. The two questions are reported
+ * separately for exactly that reason, and `admitted` is the one that separates
+ * them.
+ */
+function controlExperiment(r, action, settle = 30) {
+  const fresh = () => {
+    // The same sheet, deliberately. A control built without it would compare
+    // the player's cheated universe against an honest one and report the whole
+    // difference as the action's doing.
+    const { scenario } = referenceScenario(content, {
+      raids: true,
+      ...(r.sandbox === null ? {} : { sandbox: r.sandbox }),
+    });
+    const s = createSession({ scenario, strategyId: 'play-control' });
+    s.reset(r.seed, { worldTickCap: r.cap });
+    for (const a of r.log) s.submit(a);
+    return s;
+  };
+  const withIt = fresh();
+  const without = fresh();
+  /* The third replay is the **null control**, and it is the difference between a
+     checker and a checker you have reason to believe. It does exactly what
+     `without` does, so it must come back byte-identical to it. If it ever does
+     not, the replay is nondeterministic and every number below is noise — which
+     is a third answer, not a quiet "yes". */
+  const nul = fresh();
+  const submission = withIt.submit(action);
+  without.submit({ kind: GOD_ACTION.noop });
+  nul.submit({ kind: GOD_ACTION.noop });
+  for (let i = 0; i < settle; i += 1) {
+    if (withIt.status() === 'running') withIt.submit({ kind: GOD_ACTION.noop });
+    if (without.status() === 'running') without.submit({ kind: GOD_ACTION.noop });
+    if (nul.status() === 'running') nul.submit({ kind: GOD_ACTION.noop });
+  }
+  const admitted = submission.admitted;
+  const a = withIt.observe();
+  const b = without.observe();
+  const blockOf = (i) =>
+    OBSERVATION_BLOCKS.find((x) => i >= x.offset && i < x.offset + x.size)?.name ?? 'unknown';
+  const slots = [];
+  for (let i = 0; i < a.length; i += 1) {
+    if (a[i] !== b[i]) slots.push({ slot: i, block: blockOf(i) });
+  }
+  return {
+    action,
+    admitted,
+    ...(submission.rejection === undefined ? {} : { rejection: submission.rejection }),
+    atTick: r.log.length,
+    settle,
+    withHash: withIt.snapshotHash(),
+    withoutHash: without.snapshotHash(),
+    hashDiffers: withIt.snapshotHash() !== without.snapshotHash(),
+    /**
+     * `true` when the null replay matched its twin, which is what makes the row
+     * above mean anything. `false` is *"do not believe this measurement"*.
+     */
+    nullControlHeld: nul.snapshotHash() === without.snapshotHash(),
+    slotsDiffering: slots.length,
+    slots: slots.slice(0, 40),
+    blocks: [...new Set(slots.map((s) => s.block))],
+  };
+}
+
+/* ---------------------------------------------------------------- the server */
+
+const MIME = {
+  '.html': 'text/html; charset=utf-8',
+  '.js': 'application/javascript; charset=utf-8',
+  '.mjs': 'application/javascript; charset=utf-8',
+  '.css': 'text/css; charset=utf-8',
+  '.json': 'application/json; charset=utf-8',
+  '.svg': 'image/svg+xml',
+  '.png': 'image/png',
+  '.jpg': 'image/jpeg',
+  '.webp': 'image/webp',
+  '.woff2': 'font/woff2',
+  '.wav': 'audio/wav',
+  '.md': 'text/markdown; charset=utf-8',
+  '.txt': 'text/plain; charset=utf-8',
+};
+
+const json = (res, code, body) => {
+  const text = JSON.stringify(body);
+  res.writeHead(code, {
+    'content-type': 'application/json; charset=utf-8',
+    'cache-control': 'no-store',
+  });
+  res.end(text);
+};
+
+const readBody = async (req) => {
+  const chunks = [];
+  for await (const c of req) chunks.push(c);
+  if (chunks.length === 0) return {};
+  try {
+    return JSON.parse(Buffer.concat(chunks).toString('utf8'));
+  } catch {
+    return null;
+  }
+};
+
+/** A submitted action, validated here so a typo is a 400 and not a stack trace. */
+const toAction = (body, actionSpaceSize) => {
+  const kind = Number(body?.kind);
+  // The bound is the session's, not a literal. `w109/alliances` took the action
+  // space from 16 to 17, and a hardcoded 16 made `inviteScholar` a dead button:
+  // the mask reported it legal, the console offered it, and this returned 400.
+  if (!Number.isInteger(kind) || kind < 0 || kind >= actionSpaceSize) return null;
+  const raw = Array.isArray(body?.params) ? body.params : [];
+  const params = raw.map(Number);
+  if (!params.every(Number.isInteger)) return null;
+  return { kind, params };
+};
+
+const server = createServer((req, res) => {
+  void handle(req, res).catch((err) => {
+    json(res, 500, { error: String(err?.message ?? err) });
+  });
+});
+
+async function handle(req, res) {
+  const url = new URL(req.url, `http://localhost:${PORT}`);
+  const route = url.pathname;
+
+  if (route === '/') {
+    res.writeHead(302, { location: '/ui/console/' });
+    res.end();
+    return;
+  }
+
+  /* ------------------------------------------------------------- live routes */
+
+  if (route === '/live/session.json' && req.method === 'GET') {
+    json(res, 200, { ...header(run), frames: run.frames });
+    return;
+  }
+
+  if (route === '/live/frames' && req.method === 'GET') {
+    // Incremental: a client that already holds N frames asks for the rest, so a
+    // long run does not re-ship 4,000 frames on every button press.
+    const since = Math.max(0, Number(url.searchParams.get('since') ?? '0'));
+    json(res, 200, {
+      provenance: header(run).provenance,
+      from: Math.min(since, run.frames.length),
+      frames: run.frames.slice(since),
+    });
+    return;
+  }
+
+  if (route === '/live/submit' && req.method === 'POST') {
+    const body = await readBody(req);
+    const action = toAction(body, run.session.actionSpaceSize);
+    if (action === null) {
+      json(res, 400, { error: 'body must be {kind:int within the session action space, params:int[]}' });
+      return;
+    }
+    const from = run.frames.length;
+    const outcome = tick(run, action);
+    json(res, 200, { ...outcome, from, frames: run.frames.slice(from) });
+    return;
+  }
+
+  if (route === '/live/advance' && req.method === 'POST') {
+    const body = await readBody(req);
+    // Capped so a fat-fingered 10,000 cannot wedge the event loop for a minute.
+    const n = Math.max(1, Math.min(500, Number(body?.ticks ?? 1)));
+    const from = run.frames.length;
+    let last = { admitted: true, status: run.session.status() };
+    for (let i = 0; i < n; i += 1) {
+      if (run.session.status() !== 'running') break;
+      last = tick(run, { kind: GOD_ACTION.noop });
+    }
+    json(res, 200, { ...last, from, frames: run.frames.slice(from) });
+    return;
+  }
+
+  if (route === '/live/control' && req.method === 'POST') {
+    const body = await readBody(req);
+    const action = toAction(body, run.session.actionSpaceSize);
+    if (action === null) {
+      json(res, 400, { error: 'body must be {kind:int within the session action space, params:int[]}' });
+      return;
+    }
+    const settle = Math.max(0, Math.min(200, Number(body?.settle ?? 30)));
+    json(res, 200, controlExperiment(run, action, settle));
+    return;
+  }
+
+  if (route === '/live/sandbox' && req.method === 'GET') {
+    json(res, 200, {
+      enabled: SANDBOX,
+      // Derived from the component's field list, never listed here: three kinds
+      // today, seven on the material-economy branch, and a console that spelled
+      // them out would offer three of seven with no error anywhere.
+      materialKinds: SANDBOX_MATERIAL_KINDS,
+      claimants: SANDBOX_CLAIMANTS,
+      claimantKind: SANDBOX_CLAIMANT_KIND,
+      cheatBits: SANDBOX_CHEAT,
+      satisfyFloor: SANDBOX_SATISFY_FLOOR,
+      active: run.sandbox,
+      digest: run.sheet?.digest ?? null,
+      cheats: declaredCheats(run.sandbox),
+      ...(SANDBOX
+        ? {}
+        : {
+            why: 'Start the server with --sandbox to enable the cheat routes. Off is not a no-op: this route refuses rather than pretending.',
+          }),
+    });
+    return;
+  }
+
+  if (route === '/live/sandbox' && req.method === 'POST') {
+    if (!SANDBOX) {
+      json(res, 403, {
+        error:
+          'The sandbox is off. Restart with `npm run play -- --sandbox`. This refuses rather than ' +
+          'silently doing nothing, because an operator who believed a grant landed on an honest ' +
+          'run is the failure the whole layer exists to prevent.',
+      });
+      return;
+    }
+    const body = await readBody(req);
+    if (body === null || typeof body !== 'object') {
+      json(res, 400, { error: 'body must be JSON' });
+      return;
+    }
+    const spec = body.spec ?? {};
+    let sheet;
+    try {
+      // Validated before anything is rebuilt, so a typo'd material kind is a 400
+      // naming the kinds that exist rather than a universe that quietly ignored
+      // half the request.
+      sheet = normalizeSandbox(spec);
+    } catch (err) {
+      json(res, 400, { error: String(err?.message ?? err) });
+      return;
+    }
+    const seed = Number.isInteger(Number(body.seed)) ? Number(body.seed) : run.seed;
+    const cap = Math.max(1, Math.min(100000, Number(body.ticks ?? run.cap)));
+    const warm = Math.max(0, Math.min(2000, Number(body.warm ?? WARM)));
+    run = newRun(seed, cap, spec);
+    observeInto(run);
+    for (let i = 0; i < warm; i += 1) tick(run, { kind: GOD_ACTION.noop });
+    process.stderr.write(
+      `  SANDBOX: a new universe, seed ${seed}, cheats [${declaredCheats(spec).join(', ')}], ` +
+        `digest ${sheet.digest}. Every run from here is branded.\n`,
+    );
+    json(res, 200, {
+      restarted: true,
+      note: 'A cheat sheet is a starting position, so this is a NEW universe at the same seed — the previous run is gone, not converted.',
+      ...header(run),
+      frames: run.frames,
+    });
+    return;
+  }
+
+  if (route === '/live/reset' && req.method === 'POST') {
+    const body = await readBody(req);
+    const seed = Number.isInteger(Number(body?.seed)) ? Number(body.seed) : DEFAULT_SEED;
+    const cap = Math.max(1, Math.min(100000, Number(body?.ticks ?? DEFAULT_CAP)));
+    // A reset **keeps the cheat sheet** unless the caller clears it explicitly.
+    // The alternative — a reset that quietly returns to an honest universe —
+    // would let a person cheat, reset, and take a measurement believing the two
+    // runs were comparable. `{"sandbox": null}` is how you leave the sandbox,
+    // and it is a new universe when you do.
+    const sheet = body?.sandbox === null ? null : run.sandbox;
+    run = newRun(seed, cap, sheet);
+    observeInto(run);
+    // A restart that dropped the player back on the unplayable tick 0 would be a
+    // worse button than no button.
+    const warm = Math.max(0, Math.min(2000, Number(body?.warm ?? WARM)));
+    for (let i = 0; i < warm; i += 1) tick(run, { kind: GOD_ACTION.noop });
+    json(res, 200, { ...header(run), frames: run.frames });
+    return;
+  }
+
+  /* ----------------------------------------------------------- static files */
+
+  if (req.method !== 'GET' && req.method !== 'HEAD') {
+    json(res, 405, { error: `${req.method} is not a method this server has` });
+    return;
+  }
+
+  // Resolve under the repo root and refuse anything that escapes it. `ui/` pages
+  // import `../shared/session.js`, so the root has to be the repo and not `ui/`.
+  const decoded = decodeURIComponent(route);
+  let file = path.normalize(path.join(ROOT, decoded));
+  if (!file.startsWith(ROOT + path.sep) && file !== ROOT) {
+    json(res, 403, { error: 'outside the served root' });
+    return;
+  }
+  if (decoded.endsWith('/')) file = path.join(file, 'index.html');
+
+  try {
+    const data = await readFile(file);
+    res.writeHead(200, {
+      'content-type': MIME[path.extname(file).toLowerCase()] ?? 'application/octet-stream',
+      // A dev server that caches is a dev server that lies about your last edit.
+      'cache-control': 'no-store',
+    });
+    res.end(req.method === 'HEAD' ? undefined : data);
+  } catch {
+    json(res, 404, { error: `no file at ${decoded}` });
+  }
+}
+
+run = newRun(DEFAULT_SEED, DEFAULT_CAP);
+observeInto(run);
+for (let i = 0; i < WARM; i += 1) tick(run, { kind: GOD_ACTION.noop });
+
+server.listen(PORT, () => {
+  const at = run.frames.length - 1;
+  const legal = run.frames[at].mask.reduce((n, m) => n + m, 0);
+  process.stderr.write(
+    `\n  Multiverse Mages — a live universe, seed ${run.seed}, cap ${run.cap} ticks.\n\n` +
+      `    http://localhost:${PORT}/\n\n` +
+      `  ${run.frames[at].obs.length} observation slots, layout ${OBSERVATION_LAYOUT_DIGEST.slice(0, 12)}…\n` +
+      `  Opened at tick ${at}${WARM > 0 ? ` — it ran ${WARM} ticks on its own first, because tick 0 is not a playable position` : ''}.\n` +
+      // The session's own size, not a literal. This is the second half of the
+      // bug #195 fixed in `toAction`: `inviteScholar` widened the space from 16
+      // to 17, the submit path was corrected, and this banner was not — so the
+      // first thing the operator reads on startup undercounts the action space
+      // by one and can never say more than "16 of 16".
+      `  ${legal} of ${run.session.actionSpaceSize} actions legal right now. ` +
+      'Advance time and more open up.\n' +
+      (SANDBOX
+        ? '  SANDBOX ROUTES ARE ON. Any run you cheat is branded in its snapshot, refuses to\n' +
+          '  load into an honest build, and is refused by the balance harness. Do not quote it.\n'
+        : '') +
+      '  Ctrl-C to end the universe.\n\n',
+  );
+});
+
+export { controlExperiment, header, newRun, observeInto, tick };

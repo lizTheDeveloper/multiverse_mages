@@ -88,8 +88,12 @@ function drawSquare(seed: number, techniqueCount: number, formCount: number) {
 }
 
 describe('the default opening is the v1 rectangle and nothing has moved', () => {
-  it('opens exactly the twelve cells content flags v1', () => {
-    expect(openCells(build({}))).toHaveLength(12);
+  it('opens exactly the cells content flags v1', () => {
+    // Was twelve. `material-economy` opened the grid, so the default opening is
+    // all seventy. The literal is kept rather than derived from the registry:
+    // a count read back out of the thing under test cannot fail, and the point
+    // of this assertion is that the default opening *is* the flagged set.
+    expect(openCells(build({}))).toHaveLength(70);
   });
 
   it('is byte-identical to naming the counts as zero', () => {

@@ -56,6 +56,16 @@ export {
   worldDeps,
 } from './content-set.js';
 
+export type { RaidRecord, RaidSystemDeps } from './raids.js';
+export { raidSystem } from './raids.js';
+
+export type { DirectiveLog, EngagementPolicy, TranslatedDirective } from './raid-directives.js';
+export {
+  admitsRuleChange,
+  applySubmittedDirectives,
+  runRaidWithPolicy,
+} from './raid-directives.js';
+
 export type { AnnihilationSite } from './annihilation.js';
 export { AnnihilationRecorder } from './annihilation.js';
 
@@ -76,16 +86,69 @@ export {
   collectReferenceMetrics,
 } from './measures.js';
 
+export {
+  AXIS_PRICE_ACTION_IDS,
+  AXIS_PRICE_IDENTITY,
+  appliedAxisPriceScale,
+  withAxisPriceScale,
+} from './axis-price.js';
+
+export type {
+  LegacyRecord,
+  LegacyRecordInput,
+  LegacySeedInput,
+  LegacySeedOutcome,
+} from './legacy.js';
+export {
+  LEGACY_RECORD_SCHEMA,
+  legacyArchiveCandidates,
+  legacyRecordOf,
+  seedLegacy,
+  splitLegacyMaterials,
+} from './legacy.js';
+
 export type { ReferenceContent, ReferenceOptions, ReferenceRun } from './reference-universe.js';
 export {
+  AXIS_PRICE_FACTOR_ID,
   REFERENCE_FACTOR_IDS,
   REFERENCE_SCENARIO_ID,
   TRADITION_FACTOR_ID,
+  academySiteKindOf,
   buildReferenceState,
   referenceContent,
   referenceOptions,
   referenceScenario,
 } from './reference-universe.js';
+
+export type {
+  KnowledgeGrant,
+  MaterialLevels,
+  NormalizedSandbox,
+  SandboxBrand,
+  SandboxFoundingDeps,
+  SandboxSpec,
+} from './sandbox.js';
+export {
+  SANDBOX_BRAND,
+  SANDBOX_BRAND_VERSION,
+  SANDBOX_CHEAT,
+  SANDBOX_CLAIMANTS,
+  SANDBOX_CLAIMANT_KIND,
+  SANDBOX_GRIMOIRE_DURABILITY,
+  SANDBOX_MATERIAL_KINDS,
+  SANDBOX_SATISFY_FLOOR,
+  applyFoundingCheats,
+  applyKnowledgeCheats,
+  defineSandboxWorldSchema,
+  foundUniversity,
+  isSandboxSchema,
+  normalizeSandbox,
+  sandboxBrandOf,
+  sandboxDigest,
+  sandboxProvenance,
+  sandboxScenarioId,
+  sandboxSystem,
+} from './sandbox.js';
 
 export type { ReferenceExecutorOptions, ReferenceRunResult } from './executor.js';
 export {
@@ -93,7 +156,9 @@ export {
   SCENARIO_BUILD_VERSION,
   collectDeclaredMetrics,
   executeReferenceRun,
+  executeReferenceRunAsync,
   makeReferenceExecutor,
+  makeReferenceExecutorAsync,
   referenceProvenance,
 } from './executor.js';
 
@@ -126,6 +191,7 @@ export {
 } from './long-run.js';
 
 export type {
+  FoundingAudit,
   StrategyAudit,
   StrategyAuditOptions,
   VerbAudit,
@@ -134,11 +200,14 @@ export type {
 export {
   AUDIT_RUN_SEED,
   AUDIT_WORLD_TICK_CAP,
+  FOUNDING_PROBE,
   VERB_VERDICT,
   actionName,
+  auditFounding,
   auditPool,
   auditStrategy,
   formatAudit,
+  formatFounding,
 } from './strategy-audit.js';
 export { speciesCellOccupancy } from './species-occupancy.js';
 

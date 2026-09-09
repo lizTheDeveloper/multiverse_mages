@@ -286,6 +286,19 @@ A node **exists in your universe** while at least one instance does. Operations:
 - **Theft** — the `knowledge-steal` primitive, concentrated in *Intellego Mentem* and *Rego
   Nomen*. Reading it from a mind mid-raid, or looting the grimoire that holds it. A True Naming
   universe makes this far more dangerous in both directions.
+- **Practice** — a mage spends a month keeping a node she already holds sharp, and its mastery
+  goes back up. The only operation that raises mastery: forgetting is otherwise monotone, which
+  is why for three releases 93.4% of held instances sat below the threshold at which their holder
+  can teach them (`ages-of-magic.md` §2c). It costs the month, so it competes with research and
+  teaching; it is refused in a forbidden cell, so an interdiction cannot be practised away; and
+  it is what the economy's `resource-yield` reads, so a universe's harvest reflects the magic its
+  mages are *casting* rather than the magic they happen to know.
+
+This list was **six** operations for three releases, and practice was the missing seventh. It was
+missing in the strong sense: `decay.ts` named it in its own prose — *"nothing in this subsystem
+restores mastery; practice does, and practice is an operation somebody has to perform"* — and
+nobody performed it, so the game shipped the perish half of publish-or-perish and none of the
+publish half.
 
 This is what makes losing hurt in a way that losing units never does.
 
@@ -542,13 +555,13 @@ agreement — that agreement is how "did the vision get built?" is answerable.
 | 0.1.0 | `sim-core-foundation` | `simulation-core`, `world-persistence`, `deterministic-replay` | released |
 | 0.2.0 | `core-contracts` | `state-schema`, `content-schemas`, `primitive-semantics`, `observation-action-space`, `module-boundaries` | released |
 | 0.3.0 | `knowledge-model` | `magic-grid`, `magic-primitives`, `knowledge-instances`, `magic-traditions` | released; archived |
-| 0.4.0 | `mages-and-species` | `species-traits`, `mage-lifecycle`, `mage-autonomy`, `universities`, `economy` | 100/107 — 8.1 and 8.2 deliberately unchecked |
-| 0.5.0 | `agent-interface` | `agent-api`, `mc-harness`, `balance-metrics` | 91/91 — tasks complete, unreleased |
+| 0.4.0 | `mages-and-species` | `species-traits`, `mage-lifecycle`, `mage-autonomy`, `universities`, `economy` | released |
+| 0.5.0 | `agent-interface` | `agent-api`, `mc-harness`, `balance-metrics` | released |
 | 0.7.0 | `god-agency` | `favor-economy`, `worship-loop`, `interventions`, `ascension-and-prestige` | 59/75, and it runs every world tick |
 | 0.9.0 | `raid-engagement` | `portals`, `host-ruleset-arbitration`, `raid-space`, `raid-objectives`, `raid-consequences` | 67/92; raids fire on the campaign branches, not yet on `main` |
 | 0.11.0 | `gym-bridge` | `rl-bridge` | 76/76 — tasks complete, unreleased |
 | 0.13.0 | `electron-client` | `client-shell`, `world-presentation` | proposal only — no tasks, no package |
-| 0.15.0 | `pvp-server` | `authoritative-lockstep`, `direct-challenge`, `universe-persistence`, `hetzner-deployment` | proposal only — no tasks, no package on `main` |
+| 0.15.0 | `pvp-server` | `authoritative-lockstep`, `direct-challenge`, `universe-persistence`, `hetzner-deployment` | 33/41; `packages/server` exists — re-measured 2026-08-16 on `origin/main@57bcbc44`. The 2026-08-12 amendment read *"proposal only — no tasks, no package on `main`"*; see the note below |
 | — | `metis-knowledge` | `metis-knowledge` | proposal only — 1/51 |
 | 1.0.0 | — | contracts freeze; public release | — |
 
@@ -561,9 +574,31 @@ they name was between two-thirds and entirely built, and one of the three now ex
 the campaign integration branches; on `main` `REFERENCE_MECHANICS.raidEngagement` is still `false`
 and nothing opens a portal, so that row says what it says. Four cells moved between the two checks:
 `mages-and-species` is 100/107 rather than 102 because tasks 8.1 and 8.2 were deliberately
-unchecked, `pvp-server` has neither tasks nor a package on `main`, and `v0.3.0` is now tagged.
+unchecked, ~~`pvp-server` has neither tasks nor a package on `main`~~ (**that clause is false at
+`origin/main@57bcbc44`, re-measured 2026-08-16 — see the note below**), and `v0.3.0` is now tagged.
 Anyone reading the old column would still have materially underestimated how far the project has
 gone, which is the failure mode this table exists to prevent.
+
+> **Reconciled with `w25/spec-refresh` on 2026-08-16, and three cells above were re-measured rather
+> than arbitrated.** The amendment on `origin/w25/spec-refresh@dc9b9ecf` (written 2026-08-12) carried
+> a different Status column, and the difference is not a disagreement about facts but about *which
+> tree* — it was written on the round-3 integration tree, this copy against `main`. Both readings are
+> kept here, each named for its ref:
+>
+> - **`mages-and-species`** — this copy: `100/107`. `w25`: `102/107`. Counted on the Group A
+>   integration tree at 2026-08-16: **100 of 107**, so `100/107` is current and `102/107` is the
+>   pre-unchecking figure. `openspec/changes/mages-and-species/tasks.md` 8.1 and 8.2 are deliberately
+>   unchecked; a lower number here is not a regression.
+> - **`raid-engagement`** — this copy: *"raids fire on the campaign branches, not yet on `main`"*.
+>   `w25`: *"raids now fire"*. Both true of their own trees. On the Group A tree at 2026-08-16
+>   `packages/mc-harness/src/metrics-telemetry.ts` still declares `raidEngagement: false`, so `main`'s
+>   reading holds here and `w25`'s holds on the integration tree it was written against.
+> - **`pvp-server`** — this copy said *"proposal only — no tasks, no package on `main`"*. `w25` said
+>   *"33/41; `packages/server` exists"*. **`w25` is the one that survives re-measurement.** At
+>   `origin/main@57bcbc44`, `git ls-tree origin/main packages/` lists `packages/server`, and
+>   `openspec/changes/pvp-server/tasks.md` counts **33 of 41**. The cell above has been corrected and
+>   both claims left standing, because the failure mode this table exists to prevent is a stale cell
+>   read in the present tense.
 
 The distinction the old column lost is the one worth keeping: **a finished task list is not a
 shipped version.** `agent-interface` and `gym-bridge` are complete and unreleased, which under the
@@ -656,8 +691,15 @@ Tracked for resolution during the changes that need them, not blocking:
 - How long is a world year in real seconds, and how long should a raid run? Pacing is a tuning
   output of the balance harness, not an up-front decision; the contracts fix the *units*, not the
   values.
-- How much prestige may carry between runs before the meta-game decides matches before they
-  start? Deferred to `god-agency`; the balance harness must test it adversarially.
+- ~~How much prestige may carry between runs before the meta-game decides matches before they
+  start?~~ **Answered by `god-agency`.** The recurrence is `prestige' = prestige × retention + earned`,
+  with retention 75% and max earn 2048 per run. The analytic limit is `earn-max / (1 − retention)` =
+  8192, enforced by a loader identity rather than a post-hoc clamp. An infinite streak of perfect
+  runs approaches it and never exceeds it. Stagnation earns 128, cutoff 256, ascension 1024 before
+  achievement terms. `prestigeAdvantage` — the head-start a high-prestige universe gets — is measured
+  by the balance harness against a threshold of 60% (`contracts.md` §7). All constants are flagged
+  `tuningStatus: "untuned"` and expected to be retuned by the harness. *(Answered 2026-09-06, ref
+  `god-constant.json` and `packages/scenario/src/legacy.ts` at 77733b89.)*
 - **How asymmetric should the technique switches be, and is the Intellego trunk deliberate?**
   Surfaced while prototyping the ruleset UI, and verified against shipped content: **all eleven
   cross-cell prerequisites in the v1 subset originate in an Intellego cell**, nine of them within
@@ -679,9 +721,20 @@ Tracked for resolution during the changes that need them, not blocking:
   enabled, or that the twelve-cell start stands and the other fifty-eight are reached by
   permitting? The two are very different games and the second is the one §4's permit verb
   describes.
-- How large is the edict budget, and how does it scale with worship tier? Deferred to
-  `god-agency` and expected to be retuned repeatedly by the balance harness.
-- What is the exact worship formula? Deferred to `god-agency`, same caveat.
+- ~~How large is the edict budget, and how does it scale with worship tier?~~ **Answered by
+  `god-agency`.** `edictBudget = 1 + worshipTier`, capped by `EDICT_BUDGET_MAX = 8` in `contracts.md`
+  §0. A universe falling a worship tier keeps its edicts in force and is barred only from issuing
+  more — the invariant is "may issue while `length < edictBudget`", not "must revoke when budget
+  shrinks." Expected to be retuned by the balance harness. *(Answered 2026-09-06, ref `mask.ts:249`
+  and `god-constant.json` at 77733b89.)*
+- ~~What is the exact worship formula?~~ **Answered by `god-agency`.** Three saturating source
+  classes, each `sat(raw, cap, half)` with `sat(x, c, h) = c × x / (x + h)`: **mages** (1 fp per
+  head + 0.5 fp blessed bonus, cap 4, half ~50 mages), **universities** (2 fp per completed
+  building, cap 3, half ~10), **populace** (0.015625 fp per head, cap 2, half ~1000). Sum ceiling
+  9.0 fp. Worship lags its target through an asymmetric first-order filter with separate rise (5%)
+  and fall (2%) rates. `worshipTier` is derived from geometric thresholds. All constants are in
+  `god-constant.json` and flagged untuned. *(Answered 2026-09-06, ref `packages/rules-world/src/
+  economy/counts.ts` at 77733b89.)*
 - **Which schools exclude which, and what reason does each exclusion carry?** §4b fixes the rule
   and the test — per mage, reason-bearing, symmetric because the reason is — and names no pairs.
   The content shape is also open: an anti-requisite is the mirror of a prerequisite and

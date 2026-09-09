@@ -67,6 +67,7 @@ function apiDouble(options: { endAfter: number; reason: number }) {
           return 'truncated';
       }
     },
+    candidates: () => new Map(),
     accounting: () => ({ submitted: ticks, rejected: 0, rejectedByAction: {} }),
   };
 }

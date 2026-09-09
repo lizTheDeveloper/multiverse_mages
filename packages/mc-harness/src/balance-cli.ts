@@ -19,7 +19,7 @@
  * that only run on a bad day, and a CLI whose logic lives in its shell is a CLI
  * nobody unit tests.
  *
- * ## Two commands, and the asymmetry between them is the point
+ * ## Three commands, and the asymmetry between them is the point
  *
  * {@link gateCommand} runs in CI on every push. It reads a baseline and never
  * writes one.
@@ -30,21 +30,29 @@
  * system. `baseline-regeneration.test.ts` asserts that, by reading the CI
  * configuration files (task 9.6).
  *
- * The one thing shared between them is {@link compareToBaseline}, so that the
- * movement a regeneration records in `supersededDeltas` and the movement the
- * gate would have reported are the same arithmetic rather than two
- * implementations of it.
+ * {@link resealCommand} writes a baseline's **provenance** and nothing else,
+ * under the same by-hand rule, and only after a verification sweep has shown
+ * that no gated metric moved. It exists because the gate refuses on a
+ * provenance mismatch before reading any metric, which made a content-only
+ * change unmergeable without re-recording numbers that had not moved. See
+ * `reseal.ts` for why it runs a sweep it then throws away.
+ *
+ * The one thing shared between all three is {@link compareToBaseline}, so that
+ * the movement a regeneration records in `supersededDeltas`, the movement a
+ * re-seal refuses over, and the movement the gate would have reported are the
+ * same arithmetic rather than three implementations of it.
  */
 
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname } from 'node:path';
 
 import type { Baseline } from './baseline.js';
-import { encodeBaseline, parseBaseline } from './baseline.js';
+import { encodeBaseline, encodedFieldSpan, parseBaseline } from './baseline.js';
 import type { CliSink, ScenarioModule } from './cli.js';
 import type { GateReport } from './gate.js';
 import { compareToBaseline, describeGate, missingBaselineReport } from './gate.js';
 import { regenerateBaseline } from './regenerate.js';
+import { describeDrift, resealBaseline } from './reseal.js';
 import type { SweepResult } from './runner.js';
 import { runSweep } from './runner.js';
 import { OUTPUT_MODE } from './storage.js';
@@ -264,5 +272,117 @@ export async function regenerateCommand(
   } else {
     for (const change of regenerated.changes) sink.out(`  ${change}`);
   }
+  return 0;
+}
+
+/** Arguments the re-seal command accepts, already parsed. */
+export interface ResealArgs extends GateSweepOptions {
+  /** The calendar date the re-seal is taken, `YYYY-MM-DD`. Recorded in the note. */
+  readonly sealedOn: string;
+  /** Extra context, appended *after* the mandatory note rather than replacing it. */
+  readonly notes?: readonly string[];
+  /** Verify and report, and write nothing whatever the verdict. */
+  readonly dryRun: boolean;
+}
+
+/** Where a re-seal's own assertion looks: the encoded metric block, byte for byte. */
+const SEALED_FIELD = 'metrics';
+
+/**
+ * Re-seals a committed baseline's provenance against this build, having first
+ * established by measurement that no metric moved.
+ *
+ * The order is the opposite of {@link regenerateCommand}'s and for the same
+ * reason: the cheap refusals come first, and the sweep is dispatched only once
+ * the file it would re-seal has been read and found intact. What is *not*
+ * optional is the sweep itself. There is no flag that skips it, because a
+ * re-seal whose invariance claim is unchecked is exactly the silent laundering
+ * it exists to replace.
+ */
+export async function resealCommand(
+  args: ResealArgs,
+  scenario: ScenarioModule,
+  sink: CliSink,
+): Promise<number> {
+  const loaded = loadBaseline(args.baselinePath);
+  if ('problems' in loaded) {
+    sink.err(
+      `The baseline at ${args.baselinePath} cannot be re-sealed, and nothing was written. A ` +
+        're-seal preserves a file\'s metrics verbatim, which is only meaningful if the file is ' +
+        'intact to begin with.',
+    );
+    for (const problem of loaded.problems) sink.err(`  ${problem}`);
+    return 1;
+  }
+  const previousText = readFileSync(args.baselinePath, 'utf8');
+
+  const sweepFile = readSweepFile(args.sweepPath, scenario.registries);
+  if ('problems' in sweepFile) {
+    sink.err(`The sweep at ${args.sweepPath} is not usable, and nothing was written.`);
+    for (const problem of sweepFile.problems) sink.err(`  ${problem}`);
+    return 1;
+  }
+  const { spec } = sweepFile;
+
+  sink.out(
+    `Verifying ${spec.sweepId} against its committed baseline. This runs the gate sweep, and ` +
+      'discards every number it produces: the re-seal writes provenance only.',
+  );
+
+  let result: SweepResult;
+  try {
+    result = await executeSweep(spec, args, scenario);
+  } catch (error: unknown) {
+    sink.err(error instanceof Error ? error.message : String(error));
+    return 1;
+  }
+
+  const resealed = resealBaseline({
+    baseline: loaded.baseline,
+    summary: result.summary,
+    sealedOn: args.sealedOn,
+    ...(args.notes === undefined ? {} : { notes: args.notes }),
+  });
+
+  if ('problems' in resealed) {
+    sink.err(`Refusing to re-seal ${spec.sweepId}, and nothing was written.`);
+    for (const problem of resealed.problems) sink.err(`  ${problem}`);
+    return 1;
+  }
+
+  // Reported on the way through, pass or fail, and before the write. This is
+  // the row-attributing instrument: a re-seal banks no number, and the author
+  // is shown every movement it is sealing over rather than being told only
+  // about the ones that broke a tolerance.
+  sink.out(`Observed movement, none of it written (k = ${String(loaded.baseline.toleranceK)}):`);
+  for (const entry of resealed.drift) sink.out(`  ${describeDrift(entry)}`);
+  for (const moved of resealed.movedKeys) sink.out(`  ${moved}`);
+
+  const encoded = encodeBaseline(resealed.baseline);
+  const before = encodedFieldSpan(previousText, SEALED_FIELD);
+  const after = encodedFieldSpan(encoded, SEALED_FIELD);
+  if (before === undefined || after === undefined || before !== after) {
+    sink.err(
+      `The re-sealed ${args.baselinePath} does not carry a byte-identical ${SEALED_FIELD} block, ` +
+        'and nothing was written. That is the one invariant this command promises, so a re-seal ' +
+        'that cannot demonstrate it is a bug in this command and not a result.',
+    );
+    return 1;
+  }
+
+  if (args.dryRun) {
+    sink.out(
+      `--dry-run: ${args.baselinePath} is unchanged. It would have been re-sealed to contentHash ` +
+        `${resealed.baseline.contentHash}.`,
+    );
+    return 0;
+  }
+
+  writeFileSync(args.baselinePath, encoded, 'utf8');
+  sink.out(
+    `Re-sealed ${args.baselinePath} (contentHash ${loaded.baseline.contentHash} → ` +
+      `${resealed.baseline.contentHash}). No metric value moved; ` +
+      `${String(loaded.baseline.notes.length)} note(s) preserved and one appended.`,
+  );
   return 0;
 }

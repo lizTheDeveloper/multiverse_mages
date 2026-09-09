@@ -48,7 +48,7 @@ import {
   BALANCE_RUN_METRIC_IDS,
   REFERENCE_REGISTRIES,
   REFERENCE_SWEEP,
-  makeReferenceExecutor,
+  makeReferenceExecutorAsync,
   referenceContent,
   referenceProvenance,
   referenceScenario,
@@ -89,14 +89,25 @@ const SLOW_TEST_MS = 180_000;
  */
 const OPTIONS = { cohortSize: 4, foundingMages: 2, foundingNodes: 4 } as const;
 
-/** Ticks between yields back to the event loop. See {@link play}. */
-const YIELD_EVERY_TICKS = 60;
+/**
+ * Ticks between yields back to the event loop. See {@link play}.
+ *
+ * **Twelve, not sixty.** Sixty was a guess and it was too coarse: instrumented
+ * on `integration/all-branches` on 2026-08-18, the longest stretch this file
+ * left the event loop untouched was **31.6 s** inside a full `npm run verify` on
+ * a sixteen-core box under load — half of birpc's hardcoded 60 s window before
+ * the 1.4-3.5x CI factor `vitest.config.ts` measures is applied at all. Twelve
+ * is one world year, which is the period `long-run.ts` set as this
+ * repository's convention, and it puts the stretch at about six seconds.
+ */
+const YIELD_EVERY_TICKS = 12;
 
 interface Arm {
   readonly hash: string;
   readonly raids: number;
   readonly censusTicks: readonly number[];
   readonly reaches: number;
+  readonly gradeSamples: number;
 }
 
 /**
@@ -125,6 +136,7 @@ async function playOnce(seed: number, raids: boolean, telemetry: boolean, ticks:
     raids: run.raids().length,
     censusTicks: recorded.census.map((sample) => sample.worldTick),
     reaches: recorded.tierFirstReached.length,
+    gradeSamples: recorded.materialGrades.length,
   };
 }
 
@@ -243,7 +255,10 @@ async function runSweepFor(strategy: string): Promise<readonly RunRecord[]> {
   const result = await runSweep({
     spec: specFor(strategy),
     registries: REFERENCE_REGISTRIES,
-    execution: { mode: 'inline', execute: makeReferenceExecutor({ content }) },
+    // The async executor, for the reason `YIELD_EVERY_TICKS` above gives: an
+    // inline sweep is one unbroken synchronous block per run, and the yield
+    // inside `play` cannot reach it. The records are identical either way.
+    execution: { mode: 'inline', execute: makeReferenceExecutorAsync({ content }) },
     provenance: referenceProvenance(content),
   });
   return result.records;
@@ -299,12 +314,41 @@ describe('the §7 per-run metrics reach a run record', () => {
     async () => {
       // The can-it-move check, and the reason it needs two strategies: the
       // passive control submits only no-ops, so its rejection rate is 0 for a
-      // real reason and a zero there proves nothing on its own. `portal-rush`
-      // asks for action 14 whether or not it can afford one.
+      // real reason and a zero there proves nothing on its own.
+      //
+      // The positive control **was** `portal-rush`, on the reasoning that it
+      // "asks for action 14 whether or not it can afford one". That was true and
+      // it was a defect: it rotated its slot index over `candidateSlotCount`'s
+      // declared pin rather than over the live candidate list, so roughly half
+      // its portal submissions named a target that did not exist. Once the lists
+      // reach the strategies its rate is **zero**, and a probe that only worked
+      // because the thing it probed was broken is not a probe.
+      //
+      // `uniform-random-legal` is the principled replacement. It draws its slot
+      // uniformly *by design* — `strategies.ts` says changing that distribution
+      // "is a design decision and not a bug fix" — so it names out-of-range
+      // slots on purpose and will keep doing so for as long as it is the noise
+      // floor. Its rejections are a property of what it is, not of what is
+      // broken.
       const passive = valuesOf(await recordsFor('passive-control'), 'illegalActionRate');
-      const rushing = valuesOf(await recordsFor('portal-rush'), 'illegalActionRate');
+      const drawing = valuesOf(await recordsFor('uniform-random-legal'), 'illegalActionRate');
       expect(passive.every((value) => value === 0)).toBe(true);
-      expect(rushing.every((value) => value > 0)).toBe(true);
+      expect(drawing.every((value) => value > 0)).toBe(true);
     },
   );
 });
+
+describe('the material-grade sampler is wired to a real universe, not to a type', () => {
+  it('takes a sample on every census tick a run reaches', async () => {
+    // The producer-side positive control for `materialGradeProfile`. Without
+    // it, the metric would be a collector over a field nothing fills — which is
+    // the shape this project has already shipped once as "a metric that could
+    // only ever read zero". This says the samples exist and are on the census
+    // lattice; the two-arm world-loop test in `coordination` is what says the
+    // numbers in them move.
+    const armed = await play(SEEDS[0] as number, false, true);
+    expect(armed.gradeSamples).toBeGreaterThan(0);
+    expect(armed.gradeSamples).toBe(armed.censusTicks.length);
+  });
+});
+

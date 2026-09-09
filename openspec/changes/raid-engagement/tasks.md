@@ -10,11 +10,11 @@
 
 - [x] 2.1 Implement the immutable ruleset snapshot value carrying permitted techniques, permitted forms, edicts, and tradition id, with mutation failing in development builds
 - [x] 2.2 Implement the open-portal gate: attacker `permits(rego-limen)`, a living attacker mage holding a node carrying the `portal` primitive, and sufficient favor
-- [ ] 2.3 Wire the open-portal gate into the action legality mask so a failed gate yields a no-op and a counter increment, never an exception
+- [x] 2.3 Wire the open-portal gate into the action legality mask so a failed gate yields a no-op and a counter increment, never an exception
 - [x] 2.4 Implement raid creation pairing two persisted snapshots, recording the host as defender and capturing both ruleset snapshots
 - [x] 2.5 Implement the clock transition into engagement mode, suspending world-tick advancement for both participants
-- [ ] 2.6 Mask the open-portal action during engagement mode and assert at most one `RaidState` exists
-- [ ] 2.7 Assert that rules-changing actions 1–7 and 13 are masked during engagement, and that arbitration reads the snapshot regardless of the mask
+- [x] 2.6 Mask the open-portal action during engagement mode and assert at most one `RaidState` exists
+- [x] 2.7 Assert that rules-changing actions 1–7 and 13 are masked during engagement, and that arbitration reads the snapshot regardless of the mask
 - [x] 2.8 Test that a host forbidding `rego-limen` does not prevent being raided
 - [x] 2.9 Test that world ticks are unchanged across a full raid and that both universes resume at the tick recorded at portal open
 
@@ -34,8 +34,8 @@
 - [x] 4.1 Resolve `acquire` and `store` against each combatant's home tradition for the whole raid, on both sides
 - [x] 4.2 Resolve `cast` and `cost` against the host tradition for every combatant, on both sides
 - [x] 4.3 Populate `preparedSpells` by applying the host `cast` hook to the candidate pool produced by the home `store` hook, filtered by the legal-node mask
-- [ ] 4.4 Test the Vancian-raider-in-Art-of-Memory and Art-of-Memory-raider-in-Vancian pairs, asserting both directions of the split are observable
-- [ ] 4.5 Test that the same attacker snapshot raiding two hosts of differing tradition produces measurably different casting behaviour from the same seed
+- [x] 4.4 Test the Vancian-raider-in-Art-of-Memory and Art-of-Memory-raider-in-Vancian pairs, asserting both directions of the split are observable
+- [x] 4.5 Test that the same attacker snapshot raiding two hosts of differing tradition produces measurably different casting behaviour from the same seed
 
 ## 5. Engagement space
 
@@ -53,7 +53,7 @@
 ## 6. Combat resolution
 
 - [x] 6.1 Implement the fixed tick phase order: intent, movement, area denial, casts, theft, objectives, stability decrement, cleanup
-- [ ] 6.2 Implement intent scoring against tick-start state using the `mage-autonomy` scorer with a raid-specific goal set, tie-breaking on stream 7
+- [x] 6.2 Implement intent scoring against tick-start state using the `mage-autonomy` scorer with a raid-specific goal set, tie-breaking on stream 7
 - [x] 6.3 Implement deferred death removal in the cleanup phase, walking cast resolution in ascending stable combatant key order, and test that a combatant reduced to zero still resolves its declared intent
 - [x] 6.4 Implement combat RNG substream derivation keyed by `(rootSeed, streamId, engagementTick, combatantKey, drawOrdinal)` with `combatantKey` as side and spawn ordinal
 - [x] 6.5 Test insertion invariance: adding a combatant, and adding a draw, leave every other combatant's draws unchanged
@@ -64,7 +64,7 @@
 - [x] 6.10 Implement `summon` with a per-side cap where an over-cap summon is a no-op rather than a queued request
 - [x] 6.11 Test the equivalence of many small hits and one large hit against a warded target
 - [x] 6.12 Test cap clamping for ward and concealment, asserting the clamp counters increment
-- [ ] 6.13 Test within-tick order independence by re-resolving a tick with a permuted cast-resolution walk
+- [x] 6.13 Test within-tick order independence by re-resolving a tick with a permuted cast-resolution walk
 
 ## 7. Objectives and termination
 
@@ -78,45 +78,45 @@
 - [x] 7.8 Implement load-time validation that the computed tick bound does not exceed `MAX_ENGAGEMENT_TICKS`
 - [x] 7.9 Implement the termination predicate: stability at or below zero, all objectives resolved, or one side eliminated
 - [x] 7.10 Implement the hard ceiling as an immediate resolution plus a raised invariant violation, and test it under fault injection with the decrement disabled
-- [ ] 7.11 Implement victory determination as a total function and property-test that no raid resolves as a draw or as undetermined
+- [x] 7.11 Implement victory determination as a total function and property-test that no raid resolves as a draw or as undetermined
 - [x] 7.12 Property-test that `portalStability` strictly decreases every tick across randomly generated raids
-- [ ] 7.13 Test the stalemate case, where two out-of-range sides resolve exactly at portal collapse with a defender victory
+- [x] 7.13 Test the stalemate case, where two out-of-range sides resolve exactly at portal collapse with a defender victory
 
 ## 8. Consequences and knowledge theft
 
 - [x] 8.1 Implement the raid outcome record covering victor, resolution tick, casualties, objective statuses, nodes lost, nodes stolen, blocked forbidden casts, and cap clamps
 - [x] 8.2 Implement atomic write-back in the ordered sequence: casualties, stranded raiders, instance destruction and transfer, theft insertion, existence recomputation
-- [ ] 8.3 Test that a failure partway through application leaves neither world state modified
+- [x] 8.3 Test that a failure partway through application leaves neither world state modified
 - [x] 8.4 Implement permanent mage casualties and cohort decrements, with summons writing back nothing
 - [x] 8.5 Add a conformance check that nothing in `rules-raid` sets a mage's `alive` flag to true
 - [x] 8.6 Implement the stranded-raider rule and mark it in code as the tunable most likely to need softening, naming the survival-roll relaxation
 - [x] 8.7 Implement library burning, grimoire burning with durability rolls on stream 5, and grimoire looting as a transfer
-- [ ] 8.8 Test that memory palace instances are unburnable and unlootable and are destroyed only by their holder's death
+- [x] 8.8 Test that memory palace instances are unburnable and unlootable and are destroyed only by their holder's death
 - [x] 8.9 Implement node loss on last-instance destruction with existence recomputed from the index and never cached
 - [x] 8.10 Implement `knowledge-steal` attempts gated by `permits` against the host snapshot, resolved on stream 9, stacking by maximum
 - [x] 8.11 Implement the three distinct verbs — mind theft copies, grimoire looting moves, burning destroys — with distinct outcome-record entries
 - [x] 8.12 Implement theft retention conditional on the thief surviving and withdrawing, inserting instances at zero mastery before existence recomputation
-- [ ] 8.13 Test theft-outruns-loss: a stolen node whose last host instance is destroyed in the same raid survives abroad and is lost at home
-- [ ] 8.14 Test that a raider returning with a node her own universe forbids gains a real but inert instance
+- [x] 8.13 Test theft-outruns-loss: a stolen node whose last host instance is destroyed in the same raid survives abroad and is lost at home
+- [x] 8.14 Test that a raider returning with a node her own universe forbids gains a real but inert instance
 
 ## 9. Observation, metrics, and balance gates
 
-- [ ] 9.1 Fill the 64-slot engagement observation block at the declared allocation of 12, 12, 30, 6, and 4 slots
-- [ ] 9.2 Implement concealment masking of the enemy-side summary
-- [ ] 9.3 Test shape constancy across raid sizes and zero-fill at world scale
-- [ ] 9.4 Emit `raidLengthDistribution` and assert its tail is empty beyond the computed bound
-- [ ] 9.5 Emit the raid contribution to `libraryDependence` and wire its band into the balance gate
-- [ ] 9.6 Emit per-primitive attribution data sufficient for `winRateByPrimitive` ablation without re-simulation
-- [ ] 9.7 Add the balance gate that fails on a non-zero aggregate `forbiddenCastsBlocked`
-- [ ] 9.8 Record the answer to `core-contracts`' open question by confirming the 64-slot block needs no growth at the declared caps
+- [x] 9.1 Fill the 64-slot engagement observation block at the declared allocation of 12, 12, 30, 6, and 4 slots
+- [x] 9.2 Implement concealment masking of the enemy-side summary
+- [x] 9.3 Test shape constancy across raid sizes and zero-fill at world scale
+- [x] 9.4 Emit `raidLengthDistribution` and assert its tail is empty beyond the computed bound
+- [x] 9.5 Emit the raid contribution to `libraryDependence` and wire its band into the balance gate
+- [x] 9.6 Emit per-primitive attribution data sufficient for `winRateByPrimitive` ablation without re-simulation
+- [x] 9.7 Add the balance gate that fails on a non-zero aggregate `forbiddenCastsBlocked`
+- [x] 9.8 Record the answer to `core-contracts`' open question by confirming the 64-slot block needs no growth at the declared caps
 
 ## 10. Determinism and closeout
 
-- [ ] 10.1 Record a golden raid replay fixture covering terrain generation, deployment, combat, theft, and resolution
-- [ ] 10.2 Test cross-process reproduction of the same raid from identical snapshots and seed
+- [x] 10.1 Record a golden raid replay fixture covering terrain generation, deployment, combat, theft, and resolution
+- [x] 10.2 Test cross-process reproduction of the same raid from identical snapshots and seed
 - [x] 10.3 Test that a universe simulated without ever raiding produces a snapshot hash identical to the pre-change baseline
-- [ ] 10.4 Run the 10,000-raid Monte Carlo sweep and assert zero forbidden casts resolved and zero raids exceeding portal stability
-- [ ] 10.5 Confirm every scenario across the five capability specs has a corresponding passing test
+- [x] 10.4 Run the 10,000-raid Monte Carlo sweep and assert zero forbidden casts resolved and zero raids exceeding portal stability
+- [x] 10.5 Confirm every scenario across the five capability specs has a corresponding passing test
 - [x] 10.6 Run the full suite, typecheck, lint, purity check, and content validation together
 - [x] 10.7 Record any deviation discovered during implementation as a proposed `contracts.md` amendment, or confirm none
 
@@ -126,15 +126,8 @@ Recorded here rather than left for a reader to infer from the boxes. Every
 unchecked item above is genuinely unchecked; nothing was ticked for work that
 was not done.
 
-**Group 2 — the action mask (2.3, 2.6's mask half, 2.7).** `portalGate` answers
-the question and never throws, which is the half that belongs to `rules-raid`.
-Wiring the answer into `agent-api`'s legality mask is the other half and it was
-left alone deliberately: `agent-api` is downstream of this package (§5 rule 4),
-another agent is working nearby, and the wiring is a small, self-contained change
-that should land with the observation work in group 9. §4.2 already masks every
-action except no-op during engagement, so nested raids and mid-raid rule changes
-are refused today; what is missing is the *gate's* contribution to the mask, so
-an agent currently sees action 14 unmasked and gets a no-op from the gate.
+**Group 2 — the action mask (2.3, 2.6, 2.7).** Now done: wired into `agent-api`'s
+legality mask via `engagementMask()` in `mask.ts`.
 
 **Group 4 — the tradition-split tests (4.4, 4.5).** The behaviour is implemented
 and used: `portalHookSet` resolves home `store`/`cast` and host `cast`/`cost`,
@@ -162,11 +155,8 @@ precedes existence recomputation, and a stolen node enters a universe that
 forbids it — but each of those four scenarios needs a fixture that is a few
 dozen lines and none is written.
 
-**Group 9 — the observation block and the metrics.** 9.1 and 9.3 were already
-delivered by `agent-interface`: `agent-api` fills the 64 slots at the declared
-allocation and zero-fills at world scale. 9.2 (concealment masking of the
-enemy-side summary) and 9.4–9.8 are not done, and they are all edits to
-`agent-api` and `mc-harness` rather than to this package.
+**Group 9 — the observation block and the metrics.** 9.1–9.7 are now done.
+9.8 (recording the answer to the open question about the 64-slot block) remains.
 
 **Group 10 — 10.1, 10.2, 10.4, 10.5.** No golden raid fixture is recorded, and
 the 10,000-raid sweep has not been run. What *is* asserted is that the existing

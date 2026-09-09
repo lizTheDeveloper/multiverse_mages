@@ -123,7 +123,7 @@
       {
         "id": "human-annoyance-cracking-3",
         "tier": "annoyance-cracking",
-        "text": "Two centuries a junior researcher and they still call her *promising*!",
+        "text": "Two centuries a junior researcher and they're still 'promising'!",
         "about": ""
       },
       {
@@ -203,6 +203,66 @@
         "tier": "cross-species",
         "text": "Fifteen hundred years. I'm a rounding error to them. Fine. Rounding errors compound.",
         "about": "draconic"
+      },
+      {
+        "id": "human-cross-elf-a",
+        "tier": "cross-species",
+        "text": "I write down everything that one says. They think it's flattery. It's a backup.",
+        "about": "elf"
+      },
+      {
+        "id": "human-cross-elf-b",
+        "tier": "cross-species",
+        "text": "Asked how long the review would take. \"Soon.\" In their units, that's most of my career.",
+        "about": "elf"
+      },
+      {
+        "id": "human-cross-dwarf-a",
+        "tier": "cross-species",
+        "text": "The requisition took nine weeks. The record outlives me by two centuries. Good trade. Genuinely.",
+        "about": "dwarf"
+      },
+      {
+        "id": "human-cross-dwarf-b",
+        "tier": "cross-species",
+        "text": "I have the questions, they have the shelf. Only one of those survives me.",
+        "about": "dwarf"
+      },
+      {
+        "id": "human-cross-draconic-a",
+        "tier": "cross-species",
+        "text": "I asked a question two birthdays ago. They're still considering it. I've started a second in parallel.",
+        "about": "draconic"
+      },
+      {
+        "id": "human-cross-draconic-b",
+        "tier": "cross-species",
+        "text": "Asked what the founding of my field was like. \"Loud.\" That's the whole surviving account.",
+        "about": "draconic"
+      },
+      {
+        "id": "human-cross-gnome-a",
+        "tier": "cross-species",
+        "text": "They've discovered it four times. I have all four write-ups. Two disagree. Both are correct.",
+        "about": "gnome"
+      },
+      {
+        "id": "human-cross-gnome-b",
+        "tier": "cross-species",
+        "text": "They lose it by supper, I lose it by dying. Same problem, different schedule.",
+        "about": "gnome"
+      },
+      {
+        "id": "human-cross-orc-a",
+        "tier": "cross-species",
+        "text": "Sixty years. Twenty fewer than mine, and not one complaint. I've been complaining since breakfast.",
+        "about": "orc"
+      },
+      {
+        "id": "human-cross-orc-b",
+        "tier": "cross-species",
+        "text": "They built the archive I'm terrified of losing. Took one season. My footnote took longer.",
+        "about": "orc"
       }
     ]
   },
@@ -294,7 +354,7 @@
       {
         "id": "elf-annoyance-irritated-2",
         "tier": "annoyance-irritated",
-        "text": "I began this before your first mage was born. She has since also died, which I felt was hasty.",
+        "text": "I began this before your first mage was born. That one has since also died, which I felt was hasty.",
         "about": ""
       },
       {
@@ -391,6 +451,66 @@
         "id": "elf-cross-species-2",
         "tier": "cross-species",
         "text": "That hall went up in a season. I have been forming an opinion about it for forty years.",
+        "about": "orc"
+      },
+      {
+        "id": "elf-cross-human-a",
+        "tier": "cross-species",
+        "text": "Still forming a first impression of that family. This is the fourth one I have met.",
+        "about": "human"
+      },
+      {
+        "id": "elf-cross-human-b",
+        "tier": "cross-species",
+        "text": "Nine of their eighty years on one index. Finished, too. I have begun nothing that long.",
+        "about": "human"
+      },
+      {
+        "id": "elf-cross-dwarf-a",
+        "tier": "cross-species",
+        "text": "I knew that one's great-grandmother. Professionally. We disagreed about a shelving standard. The standard won.",
+        "about": "dwarf"
+      },
+      {
+        "id": "elf-cross-dwarf-b",
+        "tier": "cross-species",
+        "text": "Three copies of everything. I keep none. One of us is wrong; I have a suspect.",
+        "about": "dwarf"
+      },
+      {
+        "id": "elf-cross-draconic-a",
+        "tier": "cross-species",
+        "text": "Beside that one I am a passing enthusiasm. Seven centuries in, nearly at peace with it.",
+        "about": "draconic"
+      },
+      {
+        "id": "elf-cross-draconic-b",
+        "tier": "cross-species",
+        "text": "I asked in a spring. The answer came in a later spring. Neither of us hurried.",
+        "about": "draconic"
+      },
+      {
+        "id": "elf-cross-gnome-a",
+        "tier": "cross-species",
+        "text": "Discovered the same principle four times. Delighted each time. I attend now for the delight.",
+        "about": "gnome"
+      },
+      {
+        "id": "elf-cross-gnome-b",
+        "tier": "cross-species",
+        "text": "Eleven things while I finished a sentence. Two were correct. I will ask which, presently.",
+        "about": "gnome"
+      },
+      {
+        "id": "elf-cross-orc-a",
+        "tier": "cross-species",
+        "text": "Asked me what the work was for. Seven hundred years, no answer ready. I'll send one.",
+        "about": "orc"
+      },
+      {
+        "id": "elf-cross-orc-b",
+        "tier": "cross-species",
+        "text": "Sixty years, none spent waiting to see how it turns out. Most of mine have been.",
         "about": "orc"
       }
     ]
@@ -489,7 +609,7 @@
       {
         "id": "dwarf-annoyance-irritated-3",
         "tier": "annoyance-irritated",
-        "text": "The elf assures me she remembers it. An assurance is not an archive.",
+        "text": "The elf assures me they remember it. An assurance is not an archive.",
         "about": ""
       },
       {
@@ -581,6 +701,66 @@
         "tier": "cross-species",
         "text": "Remembers everything, perfectly, for seven hundred years. And then they won't.",
         "about": "elf"
+      },
+      {
+        "id": "dwarf-cross-human-a",
+        "tier": "cross-species",
+        "text": "Fastest hand in the archive. Half of it is wrong. I would still rather have the half.",
+        "about": "human"
+      },
+      {
+        "id": "dwarf-cross-human-b",
+        "tier": "cross-species",
+        "text": "Signed a hundred-year revision schedule. I countersigned it. One of us has to be there.",
+        "about": "human"
+      },
+      {
+        "id": "dwarf-cross-elf-a",
+        "tier": "cross-species",
+        "text": "Asked for a fair copy. They recited it instead. A recitation is not a deposit.",
+        "about": "elf"
+      },
+      {
+        "id": "dwarf-cross-elf-b",
+        "tier": "cross-species",
+        "text": "The borrowing slip says 'shortly.' It is dated ninety years ago. They did mean it.",
+        "about": "elf"
+      },
+      {
+        "id": "dwarf-cross-draconic-a",
+        "tier": "cross-species",
+        "text": "There is a gap in my index three centuries wide. Not a loss. A decision.",
+        "about": "draconic"
+      },
+      {
+        "id": "dwarf-cross-draconic-b",
+        "tier": "cross-species",
+        "text": "Asked what was taken out. Told me: better unwritten. I let it stand. Once.",
+        "about": "draconic"
+      },
+      {
+        "id": "dwarf-cross-gnome-a",
+        "tier": "cross-species",
+        "text": "Read their own forty-year-old notes. Praised the author warmly. I have filed the review with the original.",
+        "about": "gnome"
+      },
+      {
+        "id": "dwarf-cross-gnome-b",
+        "tier": "cross-species",
+        "text": "Rediscovers what nobody recorded. I record what nobody would rediscover. We are not in competition.",
+        "about": "gnome"
+      },
+      {
+        "id": "dwarf-cross-orc-a",
+        "tier": "cross-species",
+        "text": "Nine thousand volumes in the vault they built. Their name was in none of them. As of this morning, one.",
+        "about": "orc"
+      },
+      {
+        "id": "dwarf-cross-orc-b",
+        "tier": "cross-species",
+        "text": "Asked whether it was written down. 'No. I will show you.' I have opened a new class of record.",
+        "about": "orc"
       }
     ]
   },
@@ -758,6 +938,66 @@
         "tier": "last-copy",
         "text": "When I go, it goes. I have made my peace. You have not.",
         "about": ""
+      },
+      {
+        "id": "draconic-cross-human-a",
+        "tier": "cross-species",
+        "text": "They call themselves a rounding error. I have learned eleven hundred of their names. I did not have to.",
+        "about": "human"
+      },
+      {
+        "id": "draconic-cross-human-b",
+        "tier": "cross-species",
+        "text": "Eighty years, and they begin work that takes three hundred. I used to think they did not know. They know.",
+        "about": "human"
+      },
+      {
+        "id": "draconic-cross-elf-a",
+        "tier": "cross-species",
+        "text": "They keep it all in memory and write nothing down. So did I. I am the last one who can check whether I was right.",
+        "about": "elf"
+      },
+      {
+        "id": "draconic-cross-elf-b",
+        "tier": "cross-species",
+        "text": "Fewer of them every century. They have not said it aloud yet. Neither did we.",
+        "about": "elf"
+      },
+      {
+        "id": "draconic-cross-dwarf-a",
+        "tier": "cross-species",
+        "text": "They write everything down. What they know will still be here when they are not. I cannot say that.",
+        "about": "dwarf"
+      },
+      {
+        "id": "draconic-cross-dwarf-b",
+        "tier": "cross-species",
+        "text": "I have watched that archive burn twice. Both times they began again within the month. When mine burned, I did not.",
+        "about": "dwarf"
+      },
+      {
+        "id": "draconic-cross-gnome-a",
+        "tier": "cross-species",
+        "text": "They asked me something in the spring. I have the answer now. They will not remember asking. I will tell them anyway.",
+        "about": "gnome"
+      },
+      {
+        "id": "draconic-cross-gnome-b",
+        "tier": "cross-species",
+        "text": "They lose a thing and find it again and it is new each time. Nothing has been new to me since before this building stood.",
+        "about": "gnome"
+      },
+      {
+        "id": "draconic-cross-orc-a",
+        "tier": "cross-species",
+        "text": "Sixty years, and they build for four hundred. They know the arithmetic. They lift anyway.",
+        "about": "orc"
+      },
+      {
+        "id": "draconic-cross-orc-b",
+        "tier": "cross-species",
+        "text": "That one has never asked me a single question. Hands me the other end of the beam instead. I prefer it.",
+        "about": "orc"
       }
     ]
   },
@@ -935,6 +1175,66 @@
         "tier": "cross-species",
         "text": "I asked a question in the spring. Still inhaling. I've forgotten the question; the answer will be magnificent.",
         "about": "draconic"
+      },
+      {
+        "id": "gnome-cross-human-a",
+        "tier": "cross-species",
+        "text": "They finish things. Finish them! Because the clock's right there— eighty years, tick— and I've three hundred and fifty and forty-one unfinished. Forty-two. Forty-two now.",
+        "about": "human"
+      },
+      {
+        "id": "gnome-cross-human-b",
+        "tier": "cross-species",
+        "text": "I gave them one idea. One! And they've still got it, days later, whole— go and ask them what it was. I'd dearly like to know.",
+        "about": "human"
+      },
+      {
+        "id": "gnome-cross-elf-a",
+        "tier": "cross-species",
+        "text": "They pause before answering. A whole breath! I fit eleven ideas in that pause and kept none, and then they hand me back the good one. How. How.",
+        "about": "elf"
+      },
+      {
+        "id": "gnome-cross-elf-b",
+        "tier": "cross-species",
+        "text": "I tell them everything— everything— because they keep it. In two hundred years they'll hand one back and it'll be brand new to me. I've arranged myself a present.",
+        "about": "elf"
+      },
+      {
+        "id": "gnome-cross-dwarf-a",
+        "tier": "cross-species",
+        "text": "One question a decade out of that one. One! And it's always the question that ruins my whole afternoon— can I have it now? Now? ...Fine. I'll wait.",
+        "about": "dwarf"
+      },
+      {
+        "id": "gnome-cross-dwarf-b",
+        "tier": "cross-species",
+        "text": "Made me fill in a form to be allowed to think. Twelve boxes! Invented something in box four, lost it in box five— magnificent form, though.",
+        "about": "dwarf"
+      },
+      {
+        "id": "gnome-cross-draconic-a",
+        "tier": "cross-species",
+        "text": "Curiosity of a stone, that one— no. No, unfair: they spent it. All of it, centuries back, and got answers. What's it like, being done? Oh, that's a lovely thought.",
+        "about": "draconic"
+      },
+      {
+        "id": "gnome-cross-draconic-b",
+        "tier": "cross-species",
+        "text": "Said a word for a whole art that's gone. Only them left holding it. I wrote it down— I wrote it— where. Where. Fetch the dwarf. Fetch the dwarf.",
+        "about": "draconic"
+      },
+      {
+        "id": "gnome-cross-orc-a",
+        "tier": "cross-species",
+        "text": "I explained it once, badly, and they said 'so it's a lever.' It is! It's a lever. I'd have needed a month to get to lever.",
+        "about": "orc"
+      },
+      {
+        "id": "gnome-cross-orc-b",
+        "tier": "cross-species",
+        "text": "Sixty years and no fuss about it— none!— and I've had three hundred and fifty and I'm frightened most mornings. They handed me a chair. So I sat down.",
+        "about": "orc"
       }
     ]
   },
@@ -1014,13 +1314,13 @@
       {
         "id": "orc-annoyance-irritated-1",
         "tier": "annoyance-irritated",
-        "text": "Sixty years, me. Four universities. Ask the elf her total.",
+        "text": "Sixty years, me. Four universities. Ask the elf their total.",
         "about": ""
       },
       {
         "id": "orc-annoyance-irritated-2",
         "tier": "annoyance-irritated",
-        "text": "The archmage asked me to move her library. Twice. Same library.",
+        "text": "The archmage asked me to move their library. Twice. Same library.",
         "about": ""
       },
       {
@@ -1118,6 +1418,66 @@
         "tier": "cross-species",
         "text": "Brilliant, that one. Couldn't find their own front door. I built it.",
         "about": "gnome"
+      },
+      {
+        "id": "orc-cross-human-a",
+        "tier": "cross-species",
+        "text": "That one panics properly. Panics, then finishes. I'll take that over calm.",
+        "about": "human"
+      },
+      {
+        "id": "orc-cross-human-b",
+        "tier": "cross-species",
+        "text": "Did the sums, that one. Forty-one working years left. Then went straight back to work.",
+        "about": "human"
+      },
+      {
+        "id": "orc-cross-elf-a",
+        "tier": "cross-species",
+        "text": "All that one knows sits in one head. I don't like a load on one post.",
+        "about": "elf"
+      },
+      {
+        "id": "orc-cross-elf-b",
+        "tier": "cross-species",
+        "text": "Asked what colour they wanted the hall. Still deciding. It's grey. Grey's fine.",
+        "about": "elf"
+      },
+      {
+        "id": "orc-cross-dwarf-a",
+        "tier": "cross-species",
+        "text": "Somebody wrote the masons' names down. Spelled right, too. That'll be the dwarf.",
+        "about": "dwarf"
+      },
+      {
+        "id": "orc-cross-dwarf-b",
+        "tier": "cross-species",
+        "text": "Filed a form to move a ladder. Then moved it. Ladder's where I wanted it.",
+        "about": "dwarf"
+      },
+      {
+        "id": "orc-cross-draconic-a",
+        "tier": "cross-species",
+        "text": "Everyone tiptoes round that one. I just don't give them the short jobs.",
+        "about": "draconic"
+      },
+      {
+        "id": "orc-cross-draconic-b",
+        "tier": "cross-species",
+        "text": "Roof'll want doing twice more. That one'll be here for both. I showed them the seams.",
+        "about": "draconic"
+      },
+      {
+        "id": "orc-cross-gnome-a",
+        "tier": "cross-species",
+        "text": "Won't write it down, so I chalk it on the wall. They find it fresh every week.",
+        "about": "gnome"
+      },
+      {
+        "id": "orc-cross-gnome-b",
+        "tier": "cross-species",
+        "text": "Keep a bucket of sand by that bench. Never had to say why.",
+        "about": "gnome"
       }
     ]
   },
@@ -1125,13 +1485,13 @@
     "id": "bank-scribe",
     "speaker": "scribe",
     "speakerKind": "populace",
-    "voiceId": "XrExE9yKIg1WjnnlVkGX",
+    "voiceId": "yZ3w1DL4ZAxIdOscv2t8",
     "voicePrompt": "Tired, patient, mid-range, talking while doing something else with their hands.",
     "lines": [
       {
         "id": "scribe-selection-1",
         "tier": "selection",
-        "text": "Copying. He writes his threes like fives. I fix them. He's never known.",
+        "text": "Copying. They write their threes like fives. I fix them. They've never known.",
         "about": ""
       },
       {
@@ -1143,7 +1503,7 @@
       {
         "id": "scribe-selection-3",
         "tier": "selection",
-        "text": "This one cost a herd. He's titled it 'Preliminary Notes.'",
+        "text": "This one cost a herd. They've titled it 'Preliminary Notes.'",
         "about": ""
       },
       {
@@ -1155,7 +1515,7 @@
       {
         "id": "scribe-selection-5",
         "tier": "selection",
-        "text": "She dictates faster than a person can write. I've never asked her to slow down.",
+        "text": "They dictate faster than a person can write. I've never asked them to slow down.",
         "about": ""
       },
       {
@@ -1170,7 +1530,7 @@
     "id": "bank-student",
     "speaker": "student",
     "speakerKind": "populace",
-    "voiceId": "EXAVITQu4vr4xnSDxMaL",
+    "voiceId": "nDJIICjR9zfJExIFeSCN",
     "voicePrompt": "Young, eager, slightly too loud, checking whether that was right.",
     "lines": [
       {
@@ -1194,7 +1554,7 @@
       {
         "id": "student-selection-4",
         "tier": "selection",
-        "text": "Professor says I show promise. Six years running. She's four hundred.",
+        "text": "Professor says I show promise. Six years running. They're four hundred.",
         "about": ""
       },
       {
@@ -1209,7 +1569,7 @@
     "id": "bank-laborer",
     "speaker": "laborer",
     "speakerKind": "populace",
-    "voiceId": "iP95p4xoKVk53GoZ742B",
+    "voiceId": "chcMmmtY1cmQh2ye1oXi",
     "voicePrompt": "Practical, level, unhurried. Talking over noise.",
     "lines": [
       {
@@ -1274,6 +1634,285 @@
         "tier": "selection",
         "text": "Mages go through the portal. I stay this side. Things come back.",
         "about": ""
+      }
+    ]
+  },
+  {
+    "id": "bank-idle",
+    "speaker": "idle",
+    "speakerKind": "populace",
+    "voiceId": "XrExE9yKIg1WjnnlVkGX",
+    "voicePrompt": "Level, unhurried, entirely without self-pity. Someone with nothing to do who would rather be doing something, being decent about it. Observant — they have had months to watch and nobody has asked them anything.",
+    "lines": [
+      {
+        "id": "idle-selection-1",
+        "tier": "selection",
+        "text": "Three months of thoughts and nobody to give them to. Start anywhere.",
+        "about": ""
+      },
+      {
+        "id": "idle-selection-2",
+        "tier": "selection",
+        "text": "No vellum came. I've sharpened every knife in the hall. Twice.",
+        "about": ""
+      },
+      {
+        "id": "idle-selection-3",
+        "tier": "selection",
+        "text": "First light, every day. The carts have to come sometime.",
+        "about": ""
+      },
+      {
+        "id": "idle-selection-4",
+        "tier": "selection",
+        "text": "Two of the mages count their steps across the yard. Every time.",
+        "about": ""
+      },
+      {
+        "id": "idle-selection-5",
+        "tier": "selection",
+        "text": "The scaffolding's been up since spring. Holding nothing. Holding it perfectly.",
+        "about": ""
+      },
+      {
+        "id": "idle-selection-6",
+        "tier": "selection",
+        "text": "I've counted every mage through that portal. Nobody asked me to. The numbers don't match.",
+        "about": ""
+      }
+    ]
+  },
+  {
+    "id": "bank-human-flavour",
+    "speaker": "human",
+    "speakerKind": "populace-flavour",
+    "voiceId": "7DTpboyigwqXiCkvQjMX",
+    "voicePrompt": "Mid-thirties, quick and slightly breathless, warm, always sounds like they are already late. Neutral accent. Reads sincerely, never for laughs.",
+    "lines": [
+      {
+        "id": "human-laborer-1",
+        "tier": "flavour",
+        "text": "Won't see the roof on. Did the sums at lunch. Grandchildren, maybe.",
+        "about": "laborer"
+      },
+      {
+        "id": "human-scribe-1",
+        "tier": "flavour",
+        "text": "Twelve pages a day, thirty years. I know which books I'll never reach.",
+        "about": "scribe"
+      },
+      {
+        "id": "human-student-1",
+        "tier": "flavour",
+        "text": "Nineteen. The reading list is forty years. Checked twice. I'll read faster.",
+        "about": "student"
+      },
+      {
+        "id": "human-soldier-1",
+        "tier": "flavour",
+        "text": "Ran the odds on tonight. Not good. Fine. I wanted the number.",
+        "about": "soldier"
+      },
+      {
+        "id": "human-idle-1",
+        "tier": "flavour",
+        "text": "Added up the days. Not many, against eighty years. Felt like all of them.",
+        "about": "idle"
+      }
+    ]
+  },
+  {
+    "id": "bank-elf-flavour",
+    "speaker": "elf",
+    "speakerKind": "populace-flavour",
+    "voiceId": "pFZP5JQG7iQjIQuC4Bku",
+    "voicePrompt": "Age indeterminate, very slow, quiet, never raises volume, leaves long gaps between clauses. Utterly unhurried. Faintly amused at nothing in particular.",
+    "lines": [
+      {
+        "id": "elf-laborer-1",
+        "tier": "flavour",
+        "text": "The beams want another eighty years in the ground. I planted them. We're ahead.",
+        "about": "laborer"
+      },
+      {
+        "id": "elf-scribe-1",
+        "tier": "flavour",
+        "text": "Same book since before the archmage was born. I'm nearly at the middle.",
+        "about": "scribe"
+      },
+      {
+        "id": "elf-student-1",
+        "tier": "flavour",
+        "text": "Don't test me yet. I've only been studying it forty years.",
+        "about": "student"
+      },
+      {
+        "id": "elf-soldier-1",
+        "tier": "flavour",
+        "text": "Three hundred years on this gate. Ten of them were interesting.",
+        "about": "soldier"
+      },
+      {
+        "id": "elf-idle-1",
+        "tier": "flavour",
+        "text": "No work this decade. I've been watching the river take the bank — a finger a year. I'll mention it when it's a valley.",
+        "about": "idle"
+      }
+    ]
+  },
+  {
+    "id": "bank-dwarf-flavour",
+    "speaker": "dwarf",
+    "speakerKind": "populace-flavour",
+    "voiceId": "rZcizibcb1rTBqSwSjpY",
+    "voicePrompt": "Dry, precise, mid-range, the cadence of someone reading a catalogue number aloud. Certain. Not unkind.",
+    "lines": [
+      {
+        "id": "dwarf-laborer-1",
+        "tier": "flavour",
+        "text": "There's a certificate for the foundation. Buried with it. Someone in four hundred years has a good day.",
+        "about": "laborer"
+      },
+      {
+        "id": "dwarf-scribe-1",
+        "tier": "flavour",
+        "text": "They're wrong on page nine. I copy it wrong. The margin's mine.",
+        "about": "scribe"
+      },
+      {
+        "id": "dwarf-student-1",
+        "tier": "flavour",
+        "text": "Did I pass? ...I've a Notice of Failure ready. Form Nine. Better it's mine.",
+        "about": "student"
+      },
+      {
+        "id": "dwarf-soldier-1",
+        "tier": "flavour",
+        "text": "One commendation in two hundred years. Wrong name on it. I've never said. They stood where I stood.",
+        "about": "soldier"
+      },
+      {
+        "id": "dwarf-idle-1",
+        "tier": "flavour",
+        "text": "Nothing again today. I write that down too. Someone will want to know when it started.",
+        "about": "idle"
+      }
+    ]
+  },
+  {
+    "id": "bank-draconic-flavour",
+    "speaker": "draconic",
+    "speakerKind": "populace-flavour",
+    "voiceId": "uVKHymY7OYMd6OailpG5",
+    "voicePrompt": "Enormous and quiet. Extremely slow. Low fundamental with a lot of chest. Never shouts, never needs to. Occasional, unexpected sadness.",
+    "lines": [
+      {
+        "id": "draconic-laborer-1",
+        "tier": "flavour",
+        "text": "I have outlived four crews on this wall. Lift.",
+        "about": "laborer"
+      },
+      {
+        "id": "draconic-scribe-1",
+        "tier": "flavour",
+        "text": "I knew the one who wrote this. They were wrong here. I copy it as they wrote it.",
+        "about": "scribe"
+      },
+      {
+        "id": "draconic-student-1",
+        "tier": "flavour",
+        "text": "I knew this once. I let it go. The professor is thirty. They teach it well.",
+        "about": "student"
+      },
+      {
+        "id": "draconic-soldier-1",
+        "tier": "flavour",
+        "text": "I will take the night. All of it. I have stood longer ones.",
+        "about": "soldier"
+      },
+      {
+        "id": "draconic-idle-1",
+        "tier": "flavour",
+        "text": "The others are counting the days. I know how many there are.",
+        "about": "idle"
+      }
+    ]
+  },
+  {
+    "id": "bank-gnome-flavour",
+    "speaker": "gnome",
+    "speakerKind": "populace-flavour",
+    "voiceId": "OTMqA7lryJHXgAnPIQYt",
+    "voicePrompt": "Fast, bright, interrupts itself constantly, genuinely delighted by everything. Trails off mid-sentence and starts a new one.",
+    "lines": [
+      {
+        "id": "gnome-laborer-1",
+        "tier": "flavour",
+        "text": "Forty-one braces, not forty. I worked out why once— gone. Still forty-one.",
+        "about": "laborer"
+      },
+      {
+        "id": "gnome-scribe-1",
+        "tier": "flavour",
+        "text": "Gone before the quill lands— so I can't improve it. That's why I'm accurate.",
+        "about": "scribe"
+      },
+      {
+        "id": "gnome-student-1",
+        "tier": "flavour",
+        "text": "Third time in this lecture. Loved it all three— no. Don't tell them. Don't.",
+        "about": "student"
+      },
+      {
+        "id": "gnome-soldier-1",
+        "tier": "flavour",
+        "text": "Forgot which door. Not how— never how. Nothing's come through this one.",
+        "about": "soldier"
+      },
+      {
+        "id": "gnome-idle-1",
+        "tier": "flavour",
+        "text": "Four hundred ideas since spring. I'd tell you one if I had one.",
+        "about": "idle"
+      }
+    ]
+  },
+  {
+    "id": "bank-orc-flavour",
+    "speaker": "orc",
+    "speakerKind": "populace-flavour",
+    "voiceId": "DUAKkudcC2PI6KEqJ60K",
+    "voicePrompt": "Warm, blunt, unbothered. Working-voice — the sound of someone talking while carrying something. Quietly amused by everyone else.",
+    "lines": [
+      {
+        "id": "orc-laborer-1",
+        "tier": "flavour",
+        "text": "Won't see this one finished. Nor did the one who trained me. Still gets finished.",
+        "about": "laborer"
+      },
+      {
+        "id": "orc-scribe-1",
+        "tier": "flavour",
+        "text": "I mixed this ink. I built the desk. The words are theirs.",
+        "about": "scribe"
+      },
+      {
+        "id": "orc-student-1",
+        "tier": "flavour",
+        "text": "Tell me twice and I've got it for life. Is that quick enough?",
+        "about": "student"
+      },
+      {
+        "id": "orc-soldier-1",
+        "tier": "flavour",
+        "text": "I built this wall. I know where it's thin. That's why I'm here.",
+        "about": "soldier"
+      },
+      {
+        "id": "orc-idle-1",
+        "tier": "flavour",
+        "text": "Nothing to build today. So I've been looking. That gate's dropped a finger's width.",
+        "about": "idle"
       }
     ]
   }

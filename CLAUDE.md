@@ -57,7 +57,7 @@ table uses the real change and capability IDs so it stays in sync with `openspec
 - `openspec show <change>` / `openspec validate <change> --strict`
 - `/opsx:apply` — implement a change's tasks
 
-Current state: released through **0.3.0**. `sim-core-foundation` gave `packages/sim-core` its
+Current state: released through **0.4.0**. `sim-core-foundation` gave `packages/sim-core` its
 deterministic substrate — fixed-point arithmetic, the splittable PRNG, the entity store, the
 dual-scale clock, the pure `step` contract, versioned snapshots, replay, golden fixtures and the
 benchmark. `core-contracts` added `content` (schemas, loader, v1 data), `state` (the §1 world state
@@ -75,7 +75,7 @@ here is not a regression — `agent-interface` (91/91) and `gym-bridge` (76/76) 
 task-complete and unreleased, `god-agency` is 59/75 with its favor and worship systems installed
 into the world step, and `raid-engagement` is 67/92 with `packages/rules-raid` built but nothing in
 `scenario` opening a portal yet. `metis-knowledge` (1/51), `electron-client` and `pvp-server` are
-still proposals. The next release to cut is 0.4.0, `mages-and-species`.
+still proposals. The next release to cut is 0.7.0, `god-agency`.
 
 Four packages are **deviations from `contracts.md` §5 as originally drawn**, all recorded there with
 their reasoning: `state`, `primitives`, `coordination`, and `scenario`. §5 was written before anyone
@@ -86,15 +86,46 @@ imports it — and that is what makes its unusually wide edge list safe. Two fur
 `goal-commitment` component and the `effort-progress` component, neither of which
 `mages-and-species` expected to need. A third, from **§1.1**, is the `grant-budget` component: god
 action 8 is no longer unlimited, and an absent row means unbounded so that every older save and
-every hand-built test world keeps the behaviour it was written against. Each cost a world-schema
-revision — `WORLD_SCHEMA_VERSION` is now 6, after `material-stock` took revision 5 — and none of
-them moved `sim-core`'s
-`SNAPSHOT_VERSION`, which is inside the hashed header and would break every golden fixture with a
-version error instead of a behaviour diff.
+every hand-built test world keeps the behaviour it was written against. Two more, from **§1.1 and
+§1.4**, arrived with `university-siting`: the `territory-holding` component (`landUnits` moving out
+of content, exactly as §2.7 said it would) and the `university-site` component (a university stands
+in a *kind of country* — a relationship, which vision §7a permits, and not a coordinate, which it
+forbids).
+
+Each addition cost a world-schema revision — `WORLD_SCHEMA_VERSION` is now **11**: revision 2
+`goal-commitment`, 3 `effort-progress`, 4 `god-agency`'s four rows, 5 `material-stock`, 6
+`grant-budget`, **7 `material-economy` widening `material-stock` from three kinds to seven**, 8
+`bar-phase`, 9 `mid-raid-change`, 10 the siting pair, 11 `knowledge-fidelity` — and **none of them
+moved `sim-core`'s `SNAPSHOT_VERSION`**, which is inside the hashed header and would break every
+golden fixture with a version error instead of a behaviour diff.
+`packages/state/src/migrations.ts` carries the argument for each one, including why revision 10 must
+*not* synthesize the territory rows it would be so convenient to synthesize.
+
+**Revision 7 is the only one whose marker is a field rather than a component**, and it is worth
+knowing before touching `worldSchemaVersionOf`: `material-stock` gained four columns rather than a
+new section, so the test for it is "does the stock carry a `labor` column" and it must sit below the
+four section tests above it and above `grant-budget`'s. While `material-economy` was unmerged the
+number was held open by a `{ from: 6, to: 8 }` bridge in `addBarPhase`; that bridge is gone and the
+walk is dense 1 → 11.
+
+Four steps in this walk have been renumbered at least once — `bar-phase` three times, the siting
+pair three times — because four branches each authored their step as revision 7 against a `main`
+that was at 6. A migration's number is its position in a walk, not a name.
 
 Two commands worth knowing before touching the core:
 
-- `npm run verify` — typecheck, lint, dependency-purity, and the full test suite. This is the gate.
+- `npm run verify` — typecheck, lint, dependency-purity, and the full test suite. This is the
+  **merge** gate.
+- `npm run verify:balance` — the three Monte Carlo balance gates. **Not** in `verify` since
+  2026-08-14: they run per-commit in a non-blocking Actions job and are required at *release*, not
+  at merge. They were the entire cost of checking a commit, the self-hosted runner serialises, and
+  during a campaign every commit is sweep-bearing — so they queued every unrelated pull request
+  behind a number that was moving on purpose. `ci.yml`'s `balance` job carries the argument and the
+  condition for putting them back.
+- `npm run verify:full` — `verify` plus `verify:balance` plus the two-hundred-year ascension gate.
+  **This is what an even MINOR requires** (`release-plan.md`), and the reason the split is safe: the
+  sweeps are release evidence, and a release that skips them is taking an even MINOR without the
+  evidence the parity scheme exists to carry.
 - `npm run goldens:regen` — regenerates the golden replay fixtures. **Never run this to make a
   test pass.** A fixture diff is a claim that behaviour changed on purpose, and reviewers read it
   as one.
@@ -165,6 +196,17 @@ quietly dropped a workspace one side added. The failure then surfaces as a wall 
 `npm ci` fails after a merge, run `npm install` and commit the lock before believing anything else
 the tree tells you. Three separate agents lost time to this in one session before it was written
 down.
+
+**The same auto-merge trap has a second shape, and it is worse: YAML.** Bringing `w59/gate-power`
+current, git auto-merged `.github/workflows/ci.yml` **without a conflict** and produced a *duplicate*
+`ascension:` job — main already carried that job verbatim. A duplicate mapping key is not a syntax
+error, so there is no conflict marker, no typecheck failure, and no test that fails. It lands directly
+in the workflow that gates `main`. `package-lock.json` at least breaks loudly on `npm ci`; a duplicate
+YAML key just silently takes one of the two definitions.
+
+So after any merge that touches `.github/workflows/`, **read the merged file** rather than trusting a
+clean `git merge`. When the other side is `main` and your branch's version is stale, take main's
+wholesale.
 
 The reason is concrete: more than one agent or person may be editing this repository at the same
 time. Files changing underneath a running command produce failures that look like real defects and
@@ -299,6 +341,131 @@ command might assume.
 If you do land a commit on the wrong branch: **reverting is usually right and force-pushing is not.**
 Reverting a *merge* commit is the exception — it poisons future merges of the same content for
 whoever owns the branch, so a stray merge is better left in place than reverted.
+
+## `gh pr create` takes the branch of the directory you run it in
+
+I patched a file in a worktree, committed and pushed it there, then ran `gh pr create` from the **shared
+checkout** — which sits on a different branch. `gh` used *that* branch as the head. The pull request
+carried **my title and body**, describing a fix that was not in it, over an unrelated two-file image diff.
+I then merged it, putting someone else's unreviewed work on `main` under a commit message about something
+else.
+
+**Always pass `--head <branch>` explicitly**, or run `gh` from the worktree that holds the work. And
+**before merging, check the PR's files match its description** — `gh pr view <n> --json headRefName,files`
+costs one call and is the only thing that would have caught this.
+
+## `git worktree add <dir> <branch>` checks out the *local* branch, not the remote
+
+An agent ran `git worktree add .claude/worktrees/x w116/complete-affiliation` and got a checkout **89
+commits behind `origin`**, because a local ref of that name existed and was stale. Merging `origin/main`
+into it produced **seven conflicts including `packages/coordination/src/world-step.ts`** — a file that had
+already been verified clean at the real head. Resolving those would have been surgery on the deterministic
+rules path to fix a conflict that does not exist.
+
+**Add worktrees from the remote ref, or fast-forward immediately after:**
+
+    git worktree add <dir> --detach origin/<branch>       # or
+    git -C <dir> merge --ff-only origin/<branch>
+
+And when a merge conflicts in a file someone told you was clean, **suspect your ref before their finding.**
+
+## A guessable temp path is shared, exactly like the stash
+
+An agent wrote a PR body to `/tmp/pr-body.md`, another overwrote it, and the first **pushed the second's
+PR body onto its own pull request** before catching it.
+
+**And the obvious fix is not enough.** Told to use the session scratchpad instead, agents hit the same
+collision there within the hour — one found *another agent's PR body* at its own `pr-body.md` path and
+caught it only because it read the file back before pushing.
+
+**The rule is about the filename, not the directory.** Any path another process could guess is shared,
+wherever it lives. Put something unique in the name — the branch, the PR number, the task id — and **read
+a file back before acting on it** when anything else might have written there.
+
+## A source file with a NUL byte makes `grep` return nothing, silently
+
+`packages/scenario/src/executor.ts` carries two literal NUL bytes — an intentional memo-key separator,
+committed on `main`. `grep` therefore treats all 880 lines as **binary** and prints nothing at all rather
+than matching. An agent lost a detour to it.
+
+So a `grep` that comes back empty has two readings — *"not present"* and *"the file was skipped"* — and
+nothing distinguishes them. **Use `grep -a` when a negative matters**, or confirm with a positive control
+that the file is being read at all. This is the same failure as a pathspec that matches no files: an empty
+result that looks like an answer.
+
+## A trailing `echo` throws away the exit code you were checking
+
+A compound command's status is its **last** command's status. So
+
+    npm test; echo "done=$?"
+
+reports success no matter what `npm test` did — the shell's status is `echo`'s, and any harness reading it
+sees green. An agent read `done=1` in the output while the wrapper above it said *exit code 0*, and the two
+disagreed for the whole run.
+
+This is the `awk '{print $2}'` trap in a different costume: **the thing you read is not the thing you
+think you read.** Put the check first and let it fail —
+
+    npm test || { echo "FAILED"; exit 1; }
+
+— or capture the status into a variable *before* anything else runs, and never end a block whose failure
+matters with a bare `echo`.
+
+## Do not write into a running measurement
+
+The documented hazard is *reading* a stale `dist` and believing the result. **The inverse is worse and
+happened tonight:** an agent rebuilt `dist` while a baseline regeneration was running, and the
+regeneration recorded numbers from a tree that changed underneath it. The output was well-formed, plausible
+and wrong, and nothing flagged it — it was caught only because the agent remembered starting both.
+
+A measurement run is a lock on the tree it reads. **Before `tsc --build`, `npm ci`, a branch switch, or any
+file swap, check whether a regeneration or sweep is in flight in that worktree** — and if you started one,
+finish it before touching anything it reads.
+
+This is also why the "many sessions share this machine" rule cuts both ways: your build can corrupt someone
+else's measurement, in a different worktree, through the shared `dist`.
+
+## A gate run taken after re-recording cannot fail
+
+When a baseline is regenerated from a tree and the gate is then run on that same tree, the gate compares
+the tree against numbers derived from it. **It passes by construction.** Quoting that run as evidence the
+change is safe is circular, and it looks exactly like evidence.
+
+**Cite the pre-record run**: the gate against the *old* baselines, which either shows every row at
+`delta 0.00000` or shows what moved. `supersededDeltas` in the regenerated file carries the same
+information and is committed, so it is quotable after the fact.
+
+Two related traps in the same command:
+
+- **`regenerate.ts` replaces `notes` and defaults to empty.** Carrying prior entries forward is an
+  explicit act, not a default. A re-record that silently drops four notes looks identical to one that
+  never had them.
+- **`contentHash` at the top level of a baseline is a tamper seal over the file's own fields, not a
+  content revision.** `provenance.contentHash` is the content revision. Reasoning from the wrong one
+  produces confident nonsense — two baselines with different seals can hold identical provenance.
+
+## A state you established earlier is not a state you can trust later
+
+Two failures in one session, and they are the same failure twice.
+
+**A `git commit --amend` that errors leaves the index staged.** Amend refused with *"would make it
+empty"*; the follow-up `git commit` took **the index as it stood** rather than the working tree. The
+branch then carried `main`'s original file while the regenerated one sat uncommitted beside it — two
+commits, **zero net diff**, and `Verify` and `ci/hetzner-lint` both green on a pull request that
+changed nothing. A green check on an empty diff looks exactly like a green check on a real one.
+
+**A branch cut earlier does not know what `main` did since.** An agent spent an evening building a
+module that had landed on `main` mid-session in a more complete form — and only found out because a
+CI failure named a test file it had never written. The branch was deleted unmerged.
+
+So:
+
+- **After an `amend` that errors, re-stage before committing.**
+- **`gh pr view <n> --json files` before every merge.** One call. It has now caught two distinct
+  disasters: a PR carrying someone else's images under my title, and a PR that changed nothing at
+  all.
+- **Re-fetch `main` before building anything substantial**, not only before merging. A session long
+  enough to be worth having is long enough for `main` to move underneath it.
 
 ## A background loop outlives the reasoning that started it
 

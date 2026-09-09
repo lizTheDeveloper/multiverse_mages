@@ -35,7 +35,7 @@ import {
 } from '../../src/index.js';
 
 /**
- * The registry as shipped at 0.4.0.
+ * The registry as shipped: ids 0-8 at 0.4.0, then `apply-magic` and `practice`.
  *
  * A second copy, on purpose. Every other pinned table in this repository is
  * pinned the same way — `WORLD_COMPONENTS` in `state-schema.test.ts`,
@@ -56,6 +56,16 @@ const AS_SHIPPED: readonly (readonly [string, number])[] = [
   // Appended by `apply-magic` (w107). Nothing above it moved, which is the only
   // thing this pin is here to check.
   ['apply-magic', 9],
+  // Appended by `practice` (w196). Nothing above it moved. The pin is updated
+  // deliberately and in the same commit as the append, which is the procedure
+  // this file exists to force: a new goal takes the next unused id, and the
+  // literal below is what a reviewer checks that claim against.
+  ['practice', 10],
+  // Appended by `working-duration`. Nothing above it moved. The eleventh goal
+  // and the first that is pure upkeep: a month spent keeping a working standing
+  // is a month not spent researching, which is the tradeoff `node.json`'s Muto
+  // glosses have described since the grid was authored.
+  ['sustain-working', 11],
 ];
 
 const BASELINE_CONSEQUENCE =
@@ -66,7 +76,7 @@ const BASELINE_CONSEQUENCE =
   'there moves.';
 
 describe('the goal registry is append-only', () => {
-  it('holds exactly the goals shipped, at exactly their ids', () => {
+  it('holds exactly the goals shipped so far, at exactly their ids', () => {
     const actual = GOALS_IN_ORDER.map((goal) => [GOAL_NAMES[goal], goal] as const);
     // The message is attached to the assertion rather than left to the diff so
     // that a renumbering explains itself where CI prints it.
@@ -121,7 +131,7 @@ describe('idle is id zero and is the goal nothing can remove', () => {
 });
 
 describe('goals that need a node say so once', () => {
-  it('lists exactly the target-taking goals', () => {
+  it('lists exactly the eight target-taking goals', () => {
     expect([...GOALS_NEEDING_A_TARGET]).toEqual([
       GOAL.researchNode,
       GOAL.rediscoverNode,
@@ -132,6 +142,13 @@ describe('goals that need a node say so once', () => {
       // with no project behind it — every candidate's `remainingCost` is zero,
       // because she already knows them all.
       GOAL.applyMagic,
+      // `practice` names the node she drills, and is the second goal with no
+      // project behind it for the same reason.
+      GOAL.practice,
+      // `sustain-working` names the node the working stands over. The third
+      // with no project behind it — `remainingCost` there is ticks before it
+      // lapses, which is a deadline rather than a debt.
+      GOAL.sustainWorking,
     ]);
   });
 

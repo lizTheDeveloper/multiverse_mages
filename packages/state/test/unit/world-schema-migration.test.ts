@@ -40,29 +40,43 @@ import {
 import {
   BLESSING,
   EFFORT_PROGRESS,
+  BAR_PHASE,
   ERA_EVALUATION,
   GOAL_COMMITMENT,
   GOD_STATE,
   GRANT_BUDGET,
+  KNOWLEDGE_FIDELITY,
+  STANDING_WORKING,
   MAGE,
+  MATERIAL_GRADE,
   MATERIAL_STOCK,
+  TERRITORY_HOLDING,
   UNIVERSE,
+  UNIVERSITY_SITE,
   UPHEAVAL,
+  WORLD_COMPONENTS,
+  WORLD_SCHEMA_MIGRATIONS,
   WORLD_SCHEMA_VERSION,
   addEffortProgress,
   addGoalCommitment,
   addGodAgencyState,
   addGrantBudget,
+  addMidRaidChange,
+  addTerritorySiting,
+  addKnowledgeFidelity,
+  addMaterialGrade,
   attachRecord,
   collectRecords,
   componentOf,
   defineWorldStateSchema,
   findUniverse,
   foundingGrantsRemaining,
+  MID_RAID_CHANGE,
   loadWorldSnapshot,
   migrateWorldEnvelope,
   readRecord,
   splitMaterialsByKind,
+  widenMaterialStock,
   worldSchemaVersionOf,
 } from '@mm/state';
 
@@ -80,6 +94,9 @@ function envelopeWithout(...names: readonly string[]): SnapshotEnvelope {
 
 /** The four sections `god-agency` appended, named once. */
 const GOD_SECTIONS = [GOD_STATE.name, BLESSING.name, UPHEAVAL.name, ERA_EVALUATION.name];
+
+/** The two sections `university-siting` appended, named once. */
+const SITING_SECTIONS = [TERRITORY_HOLDING.name, UNIVERSITY_SITE.name];
 
 /**
  * A `materials` value to give a synthetic pre-revision-5 `universe` section.
@@ -133,31 +150,200 @@ function withLegacyMaterialsField(
 /** The world as a build that had never heard of goal commitments saw it. */
 function revisionOneEnvelope(): SnapshotEnvelope {
   return withLegacyMaterialsField(
-    envelopeWithout(GOAL_COMMITMENT.name, EFFORT_PROGRESS.name, MATERIAL_STOCK.name, ...GOD_SECTIONS, GRANT_BUDGET.name),
+    envelopeWithout(GOAL_COMMITMENT.name, EFFORT_PROGRESS.name, MATERIAL_STOCK.name, ...GOD_SECTIONS, GRANT_BUDGET.name, BAR_PHASE.name, MID_RAID_CHANGE.name, ...SITING_SECTIONS, KNOWLEDGE_FIDELITY.name, MATERIAL_GRADE.name, STANDING_WORKING.name),
   );
 }
 
 /** The world as the build that added the goal commitment, and nothing after it, saw it. */
 function revisionTwoEnvelope(): SnapshotEnvelope {
   return withLegacyMaterialsField(
-    envelopeWithout(EFFORT_PROGRESS.name, MATERIAL_STOCK.name, ...GOD_SECTIONS, GRANT_BUDGET.name),
+    envelopeWithout(EFFORT_PROGRESS.name, MATERIAL_STOCK.name, ...GOD_SECTIONS, GRANT_BUDGET.name, BAR_PHASE.name, MID_RAID_CHANGE.name, ...SITING_SECTIONS, KNOWLEDGE_FIDELITY.name, MATERIAL_GRADE.name, STANDING_WORKING.name),
   );
 }
 
 /** The world as the last build before the god had verbs saw it. */
 function revisionThreeEnvelope(): SnapshotEnvelope {
-  return withLegacyMaterialsField(envelopeWithout(MATERIAL_STOCK.name, ...GOD_SECTIONS, GRANT_BUDGET.name));
+  return withLegacyMaterialsField(envelopeWithout(MATERIAL_STOCK.name, ...GOD_SECTIONS, GRANT_BUDGET.name, BAR_PHASE.name, MID_RAID_CHANGE.name, ...SITING_SECTIONS, KNOWLEDGE_FIDELITY.name, MATERIAL_GRADE.name, STANDING_WORKING.name));
 }
 
 /** The world as the last build before the economy differentiated into kinds saw it. */
 function revisionFourEnvelope(materialsValue: number = LEGACY_MATERIALS_VALUE): SnapshotEnvelope {
-  return withLegacyMaterialsField(envelopeWithout(MATERIAL_STOCK.name, GRANT_BUDGET.name), materialsValue);
+  return withLegacyMaterialsField(envelopeWithout(MATERIAL_STOCK.name, GRANT_BUDGET.name, BAR_PHASE.name, MID_RAID_CHANGE.name, ...SITING_SECTIONS, KNOWLEDGE_FIDELITY.name, MATERIAL_GRADE.name, STANDING_WORKING.name), materialsValue);
+}
+
+/**
+ * The three kinds `material-stock` carried at revisions 5 and 6, frozen.
+ *
+ * A literal rather than `Object.keys(MATERIAL_STOCK.fields)`, and the same
+ * reason the migration itself freezes it: the live spec now names seven, so a
+ * fixture reading the spec would build a **revision-7** section and call it a
+ * revision-5 one.
+ */
+const REVISION_FIVE_KINDS = ['food', 'stone', 'vellum'] as const;
+
+/** Rebuilds `material-stock` with only the columns revision 6 knew about. */
+function withThreeKindStock(envelope: SnapshotEnvelope): SnapshotEnvelope {
+  const stock = envelope.components.find((component) => component.name === MATERIAL_STOCK.name);
+  if (stock === undefined) return envelope;
+
+  const width = stock.fields.length;
+  const rows = stock.slots.length;
+  const keep = REVISION_FIVE_KINDS.map((kind) =>
+    stock.fields.findIndex((field) => field.name === kind),
+  );
+  const values = new Uint32Array(rows * keep.length);
+  for (let row = 0; row < rows; row += 1) {
+    for (let index = 0; index < keep.length; index += 1) {
+      values[row * keep.length + index] = stock.values[row * width + (keep[index] as number)] as number;
+    }
+  }
+  const rewritten: SnapshotComponent = {
+    name: stock.name,
+    fields: REVISION_FIVE_KINDS.map((kind) => ({ name: kind, kind: 'i32' as const })),
+    slots: stock.slots,
+    values,
+  };
+  return {
+    ...envelope,
+    components: envelope.components.map((component) =>
+      component.name === MATERIAL_STOCK.name ? rewritten : component,
+    ),
+  };
 }
 
 /** The world as the last build whose founding grants were unlimited saw it. */
 function revisionFiveEnvelope(): SnapshotEnvelope {
-  return envelopeWithout(GRANT_BUDGET.name);
+  return withThreeKindStock(
+    envelopeWithout(GRANT_BUDGET.name, BAR_PHASE.name, MID_RAID_CHANGE.name, ...SITING_SECTIONS, KNOWLEDGE_FIDELITY.name, MATERIAL_GRADE.name, STANDING_WORKING.name),
+  );
 }
+
+/**
+ * The world as the last build with only three material kinds saw it.
+ *
+ * `withThreeKindStock` is what makes this a revision **6** and not a revision 7:
+ * every `revisionNEnvelope` above it drops the *sections* later revisions added,
+ * and revision 7's marker is a `material-stock` **field**, so dropping sections
+ * alone would leave a seven-column stock in an envelope claiming to be older
+ * than the widening. That is the one revision in this walk a component test
+ * cannot detect, and this is the only line that expresses it.
+ */
+function revisionSixEnvelope(): SnapshotEnvelope {
+  return withThreeKindStock(
+    envelopeWithout(BAR_PHASE.name, MID_RAID_CHANGE.name, ...SITING_SECTIONS, KNOWLEDGE_FIDELITY.name, MATERIAL_GRADE.name, STANDING_WORKING.name),
+  );
+}
+
+/** The world as the last build before the god's law had a clock saw it. */
+function revisionSevenEnvelope(): SnapshotEnvelope {
+  return envelopeWithout(BAR_PHASE.name, MID_RAID_CHANGE.name, ...SITING_SECTIONS, KNOWLEDGE_FIDELITY.name, MATERIAL_GRADE.name, STANDING_WORKING.name);
+}
+
+/** The world as the last build that believed a raid was frozen policy saw it. */
+function revisionEightEnvelope(): SnapshotEnvelope {
+  return envelopeWithout(MID_RAID_CHANGE.name, ...SITING_SECTIONS, KNOWLEDGE_FIDELITY.name, MATERIAL_GRADE.name, STANDING_WORKING.name);
+}
+
+/** The world as the last build in which a university stood nowhere saw it. */
+function revisionNineEnvelope(): SnapshotEnvelope {
+  return envelopeWithout(...SITING_SECTIONS, KNOWLEDGE_FIDELITY.name, MATERIAL_GRADE.name, STANDING_WORKING.name);
+}
+
+/** The world as the last build before scribing fidelity saw it. */
+function revisionTenEnvelope(): SnapshotEnvelope {
+  return envelopeWithout(KNOWLEDGE_FIDELITY.name, MATERIAL_GRADE.name, STANDING_WORKING.name);
+}
+
+/**
+ * The world as the last build in which no rock had ever been improved saw it.
+ *
+ * Revision **11**: it carries `knowledge-fidelity` and neither of the two
+ * sections above it. **Both branches in this merge authored a function by this
+ * name and each excluded only its own component** — `w/exp-grades` only
+ * `material-grade`, `w/exp-duration` only `standing-working`. Either alone
+ * would make a "revision 11" fixture read as a 12 or a 13, and every walk
+ * beneath it would start from the wrong place without throwing. The union
+ * excludes both.
+ */
+function revisionElevenEnvelope(): SnapshotEnvelope {
+  return envelopeWithout(MATERIAL_GRADE.name, STANDING_WORKING.name);
+}
+
+/**
+ * The world as the last build before a working could expire saw it.
+ *
+ * Revision **12**: `material-grade` has landed, `standing-working` has not.
+ * `w/exp-duration` had no such envelope to author — 12 was a hole in that tree
+ * and its `revisionElevenEnvelope` was the bridge's input. It exists here
+ * because 12 is now a real revision and the walk below it has to be shown to
+ * pass through it rather than over it.
+ */
+function revisionTwelveEnvelope(): SnapshotEnvelope {
+  return envelopeWithout(STANDING_WORKING.name);
+}
+
+describe('the hole at revision 12 is filled, and the bridge over it is narrowed', () => {
+  /*
+   * These three assertions were authored on `w/exp-duration` to pin a **bridge**
+   * — `addStandingWorking` as `{ from: 11, to: 13 }`, spanning a revision 12
+   * that belonged to `w/exp-grades` and was not in that tree. They are rewritten
+   * here rather than deleted, because the merge that fills the hole is exactly
+   * the event they were written to be failed by: the bridge test's own comment
+   * says the merge "must narrow this step to `{ from: 12, to: 13 }` **in the
+   * same commit** that adds the `{ from: 11, to: 12 }` beneath it".
+   *
+   * So each one keeps its subject and inverts its claim: there **is** a step
+   * from 12, there is **no** step spanning more than one revision, and the walk
+   * is dense with no exception carved out of it.
+   */
+  it('walks a revision-11 save all the way to 13, one step at a time', () => {
+    // The failure this pins throws on **every save on disk**:
+    // `migrateWorldEnvelope` walks by `from`, so a `{ from: 12 }` step with
+    // nothing beneath it cannot be reached from 11 and the walk dies with "no
+    // world-schema migration is registered from revision 11". It is also the
+    // failure a *careless narrow* produces from the other direction — narrowing
+    // `addStandingWorking` without adding `addMaterialGrade` leaves the same
+    // hole at 12.
+    const walked = migrateWorldEnvelope(revisionElevenEnvelope());
+    expect(worldSchemaVersionOf(walked)).toBe(WORLD_SCHEMA_VERSION);
+    const carried = walked.components.map((component) => component.name);
+    // **Both** sections, and this is the assertion that catches the merge error
+    // that throws nothing: an un-narrowed `{ from: 11, to: 13 }` still reaches
+    // revision 13 and still lands `standing-working`, and skips
+    // `material-grade` in silence.
+    expect(carried).toContain(MATERIAL_GRADE.name);
+    expect(carried).toContain(STANDING_WORKING.name);
+  });
+
+  it('registers a step from 12, and no step that spans more than one revision', () => {
+    expect(WORLD_SCHEMA_MIGRATIONS.filter((step) => step.from === 12)).toHaveLength(1);
+    expect(WORLD_SCHEMA_MIGRATIONS.filter((step) => step.to - step.from > 1)).toEqual([]);
+  });
+
+  it('has a step for every revision below the current one, with no exception', () => {
+    // The positive control, and it is what the `if (revision === 12) continue`
+    // that used to stand here has become. "No step spans two revisions" is
+    // satisfied by a walk with no steps at all, so the complement is asserted:
+    // every revision from 1 up to the current one is a `from` somewhere.
+    const froms = new Set(WORLD_SCHEMA_MIGRATIONS.map((step) => step.from));
+    for (let revision = 1; revision < WORLD_SCHEMA_VERSION; revision += 1) {
+      expect(`from ${String(revision)} exists: ${String(froms.has(revision))}`).toBe(
+        `from ${String(revision)} exists: true`,
+      );
+    }
+    // And the walk reaches, revision by revision, from a marker the reader can
+    // check rather than from the loop's own arithmetic: each step's target is
+    // read back off the envelope it produced.
+    let envelope = revisionOneEnvelope();
+    for (let revision = 1; revision < WORLD_SCHEMA_VERSION; revision += 1) {
+      expect(worldSchemaVersionOf(envelope)).toBe(revision);
+      const step = WORLD_SCHEMA_MIGRATIONS.find((candidate) => candidate.from === revision);
+      envelope = step!.migrate(envelope);
+      expect(worldSchemaVersionOf(envelope)).toBe(revision + 1);
+    }
+    expect(worldSchemaVersionOf(envelope)).toBe(WORLD_SCHEMA_VERSION);
+  });
+});
 
 describe('the world-schema revision is read off the snapshot itself', () => {
   it('reads each revision from the newest component it carries', () => {
@@ -166,6 +352,23 @@ describe('the world-schema revision is read off the snapshot itself', () => {
     expect(worldSchemaVersionOf(revisionThreeEnvelope())).toBe(3);
     expect(worldSchemaVersionOf(revisionFourEnvelope())).toBe(4);
     expect(worldSchemaVersionOf(revisionFiveEnvelope())).toBe(5);
+    expect(worldSchemaVersionOf(revisionSixEnvelope())).toBe(6);
+    // Revision 7 is the one arm that is not a component test: its marker is a
+    // `material-stock` field. `revisionSevenEnvelope` differs from
+    // `revisionSixEnvelope` by exactly that — same sections, seven columns
+    // instead of three — which is what makes this pair a positive control for
+    // the field arm rather than a restatement of the section arms.
+    expect(worldSchemaVersionOf(revisionSevenEnvelope())).toBe(7);
+    expect(worldSchemaVersionOf(revisionEightEnvelope())).toBe(8);
+    expect(worldSchemaVersionOf(revisionNineEnvelope())).toBe(9);
+    expect(worldSchemaVersionOf(revisionTenEnvelope())).toBe(10);
+    expect(worldSchemaVersionOf(revisionElevenEnvelope())).toBe(11);
+    // Revision 12, and this is the arm the merge of `w/exp-grades` and
+    // `w/exp-duration` could get wrong without throwing: a revision-13 envelope
+    // carries `material-grade` too, so a marker chain that tested 12 before 13
+    // would read every current save as a 12. The line above and the line below
+    // are what separates the two orders.
+    expect(worldSchemaVersionOf(revisionTwelveEnvelope())).toBe(12);
     expect(worldSchemaVersionOf(stateToEnvelope(populatedWorld().state))).toBe(
       WORLD_SCHEMA_VERSION,
     );
@@ -178,7 +381,7 @@ describe('the world-schema revision is read off the snapshot itself', () => {
     // hash in the project and fails the fixtures with a version error rather
     // than a behaviour diff.
     expect(SNAPSHOT_VERSION).toBe(1);
-    expect(WORLD_SCHEMA_VERSION).toBe(6);
+    expect(WORLD_SCHEMA_VERSION).toBe(13);
   });
 });
 
@@ -220,7 +423,9 @@ describe('migrating a revision-1 world snapshot forward', () => {
     expect(carried).toContain(GOAL_COMMITMENT.name);
     expect(carried).toContain(EFFORT_PROGRESS.name);
     for (const name of GOD_SECTIONS) expect(carried).toContain(name);
+    expect(carried).toContain(BAR_PHASE.name);
     expect(carried).toContain(MATERIAL_STOCK.name);
+    expect(carried).toContain(MID_RAID_CHANGE.name);
 
     // And the rewrite actually ran: `universe` no longer carries `materials`,
     // which is the one part of this walk that is not "append an empty
@@ -228,6 +433,8 @@ describe('migrating a revision-1 world snapshot forward', () => {
     // wrong without any test noticing.
     const universe = walked.components.find((component) => component.name === UNIVERSE.name);
     expect(universe?.fields.map((field) => field.name)).not.toContain('materials');
+
+    for (const name of SITING_SECTIONS) expect(carried).toContain(name);
   });
 
   it('returns an already-current envelope untouched, as the same object', () => {
@@ -340,7 +547,12 @@ describe('migrating a revision-4 world snapshot forward (splitMaterialsByKind)',
     expect(universe?.fields.map((field) => field.name)).not.toContain('materials');
 
     const stock = after.components.find((component) => component.name === MATERIAL_STOCK.name);
-    expect(stock?.fields.map((field) => field.name)).toEqual(Object.keys(MATERIAL_STOCK.fields));
+    // The frozen three, **not** `Object.keys(MATERIAL_STOCK.fields)`. Revision 5
+    // produced three columns; the live spec now names seven, and a step that read
+    // the spec would emit a revision-7 section from a revision-4 save — which
+    // reads as revision 7 immediately, so the walk exits and `addGrantBudget`
+    // never runs. See the walk test below.
+    expect(stock?.fields.map((field) => field.name)).toEqual([...REVISION_FIVE_KINDS]);
     expect(stock?.slots).toEqual(universe?.slots);
     // LEGACY_MATERIALS_VALUE is 1000, not a multiple of three: trunc(1000/3)
     // is 333, so stone and vellum get 333 each and food takes the remainder
@@ -452,7 +664,15 @@ describe('migrating a revision-4 world snapshot forward (splitMaterialsByKind)',
     const bytes = encodeSnapshot(revisionFourEnvelope());
     const migrated = loadWorldSnapshot(bytes, defineWorldStateSchema());
     const [row] = collectRecords(migrated, MATERIAL_STOCK);
-    expect(row?.row).toEqual({ food: 334, stone: 333, vellum: 333 });
+    expect(row?.row).toEqual({
+      food: 334,
+      stone: 333,
+      vellum: 333,
+      labor: 0,
+      essence: 0,
+      insight: 0,
+      passage: 0,
+    });
   });
 });
 
@@ -517,6 +737,226 @@ describe('migrating a revision-5 world snapshot forward', () => {
   });
 });
 
+describe('migrating a revision-6 world snapshot forward (widenMaterialStock)', () => {
+  it('appends the four new kinds at zero and leaves the three it found alone', () => {
+    const before = revisionSixEnvelope();
+    const beforeStock = before.components.find((c) => c.name === MATERIAL_STOCK.name);
+    if (beforeStock === undefined) throw new Error('fixture must carry a material-stock section');
+
+    const after = widenMaterialStock.migrate(before);
+    expect(worldSchemaVersionOf(after)).toBe(7);
+
+    const stock = after.components.find((c) => c.name === MATERIAL_STOCK.name);
+    expect(stock?.fields.map((field) => field.name)).toEqual(Object.keys(MATERIAL_STOCK.fields));
+    expect(stock?.slots).toEqual(beforeStock.slots);
+
+    const width = stock?.fields.length ?? 0;
+    for (let row = 0; row < beforeStock.slots.length; row += 1) {
+      for (let index = 0; index < REVISION_FIVE_KINDS.length; index += 1) {
+        expect(
+          stock?.values[row * width + index],
+          `${String(REVISION_FIVE_KINDS[index])} at row ${String(row)} moved across a migration ` +
+            'documented to append columns and touch nothing',
+        ).toBe(beforeStock.values[row * REVISION_FIVE_KINDS.length + index]);
+      }
+      // **An absent kind reads zero, never as a shortage.** This is the whole
+      // requirement: a migrated save must not starve on a stock it was never
+      // given the chance to accumulate.
+      for (let index = REVISION_FIVE_KINDS.length; index < width; index += 1) {
+        expect(
+          stock?.values[row * width + index],
+          `${String(stock?.fields[index]?.name)} at row ${String(row)} did not read zero`,
+        ).toBe(0);
+      }
+    }
+  });
+
+  it('widens a section with no rows at all', () => {
+    // A schema declared and never stepped. The columns still have to arrive, or
+    // the component check refuses the restored state on the field list alone.
+    const before = revisionSixEnvelope();
+    const emptied: SnapshotEnvelope = {
+      ...before,
+      components: before.components.map((component) =>
+        component.name === MATERIAL_STOCK.name
+          ? { ...component, slots: new Uint32Array(0), values: new Uint32Array(0) }
+          : component,
+      ),
+    };
+    const stock = widenMaterialStock
+      .migrate(emptied)
+      .components.find((c) => c.name === MATERIAL_STOCK.name);
+    expect(stock?.fields.map((field) => field.name)).toEqual(Object.keys(MATERIAL_STOCK.fields));
+    expect(stock?.values.length).toBe(0);
+  });
+
+  it('leaves the container format version exactly where it found it', () => {
+    const before = revisionSixEnvelope();
+    expect(widenMaterialStock.migrate(before).version).toBe(before.version);
+    expect(widenMaterialStock.migrate(before).version).toBe(SNAPSHOT_VERSION);
+  });
+
+  it('does not mutate the envelope it was given', () => {
+    const before = revisionSixEnvelope();
+    const stock = before.components.find((c) => c.name === MATERIAL_STOCK.name);
+    const width = stock?.fields.length;
+    widenMaterialStock.migrate(before);
+    expect(
+      before.components.find((c) => c.name === MATERIAL_STOCK.name)?.fields.length,
+    ).toBe(width);
+  });
+
+  it('walks a revision-4 save to 7 without skipping the grant budget', () => {
+    // The regression test for the trap this revision very nearly shipped.
+    //
+    // `splitMaterialsByKind` used to build its field table from
+    // `Object.keys(MATERIAL_STOCK.fields)` — the *live* spec. The moment the
+    // spec named seven kinds, the 4 -> 5 step emitted a seven-column section, a
+    // revision-4 save read as **revision 7** the instant it reached 5, and
+    // `migrateWorldEnvelope`'s loop exited with `grant-budget` never appended:
+    // a save silently missing a component, produced by a migration that threw
+    // nothing.
+    for (const envelope of [revisionOneEnvelope(), revisionFourEnvelope()]) {
+      const walked = migrateWorldEnvelope(envelope);
+      expect(worldSchemaVersionOf(walked)).toBe(WORLD_SCHEMA_VERSION);
+      expect(walked.components.map((component) => component.name)).toContain(GRANT_BUDGET.name);
+      const stock = walked.components.find((c) => c.name === MATERIAL_STOCK.name);
+      expect(stock?.fields.map((field) => field.name)).toEqual(Object.keys(MATERIAL_STOCK.fields));
+    }
+  });
+
+  it('restores a revision-6 save with the four new kinds at zero and nothing else moved', () => {
+    // End to end, through the real loader, and the control is **the revision-7
+    // save of the same world** rather than the current world.
+    //
+    // The branch this came from compared against `populatedWorld().state`
+    // directly, and on that tree the two were the same thing: revision 7 was the
+    // newest revision, so a save one step behind it differed only in the stock.
+    // Four more revisions arrived between 6 and 11 on the combine — `bar-phase`,
+    // `mid-raid-change`, the siting pair, `knowledge-fidelity` — and every one
+    // of them appends a section a revision-6 save does not carry. So a revision-6
+    // save walked to 11 is legitimately *not* byte-identical to the current
+    // world, and asserting that it is would be asserting that four unrelated
+    // migrations are no-ops.
+    //
+    // The claim being made is about `widenMaterialStock` and nothing else, so
+    // the control is the envelope that differs from it in exactly one thing: the
+    // same sections, seven stock columns instead of three. Both walk through the
+    // same four appends, so those cancel, and what is left is the spec's *"an
+    // absent kind is not a shortage"* stated as a hash.
+    const { universe } = populatedWorld();
+    const migrated = loadWorldSnapshot(
+      encodeSnapshot(revisionSixEnvelope()),
+      defineWorldStateSchema(),
+    );
+    const control = loadWorldSnapshot(
+      encodeSnapshot(revisionSevenEnvelope()),
+      defineWorldStateSchema(),
+    );
+
+    const row = readRecord(migrated, MATERIAL_STOCK, universe);
+    expect(row).toEqual(readRecord(control, MATERIAL_STOCK, universe));
+    expect(row.labor).toBe(0);
+    expect(row.essence).toBe(0);
+    expect(row.insight).toBe(0);
+    expect(row.passage).toBe(0);
+
+    expect(snapshotHash(migrated)).toBe(snapshotHash(control));
+    expect(Array.from(serializeState(migrated))).toEqual(Array.from(serializeState(control)));
+
+    // The positive control on the control: the two envelopes really are a
+    // revision apart, or the equality above would be a tautology over one
+    // object.
+    expect(worldSchemaVersionOf(revisionSixEnvelope())).toBe(6);
+    expect(worldSchemaVersionOf(revisionSevenEnvelope())).toBe(7);
+  });
+});
+
+describe('migrating a revision-6 world snapshot forward', () => {
+  it('appends mid-raid-change as an empty section, in last position', () => {
+    const before = revisionSixEnvelope();
+    const after = addMidRaidChange.migrate(before);
+    const appended = after.components.slice(before.components.length);
+
+    expect(appended.map((component) => component.name)).toEqual([MID_RAID_CHANGE.name]);
+    expect(appended[0]?.slots.length).toBe(0);
+    expect(appended[0]?.values.length).toBe(0);
+    expect(appended[0]?.fields.map((field) => field.name)).toEqual(
+      Object.keys(MID_RAID_CHANGE.fields),
+    );
+  });
+});
+
+describe('migrating a revision-9 world snapshot forward', () => {
+  it("appends university-siting's two sections, in WORLD_COMPONENTS order, both empty", () => {
+    const before = revisionNineEnvelope();
+    const after = addTerritorySiting.migrate(before);
+    const appended = after.components.slice(before.components.length);
+
+    expect(appended.map((component) => component.name)).toEqual(SITING_SECTIONS);
+    for (const component of appended) {
+      expect(component.slots.length).toBe(0);
+      expect(component.values.length).toBe(0);
+    }
+    expect(appended[0]?.fields.map((field) => field.name)).toEqual(
+      Object.keys(TERRITORY_HOLDING.fields),
+    );
+  });
+
+  it('leaves the container format version exactly where it found it', () => {
+    const before = revisionNineEnvelope();
+    expect(addTerritorySiting.migrate(before).version).toBe(before.version);
+    expect(addTerritorySiting.migrate(before).version).toBe(SNAPSHOT_VERSION);
+  });
+
+  it('restores a pre-raid-engagement save owing no surcharge on anything', () => {
+    // Empty rather than synthesised, and here the distinction is a bill. Before
+    // this revision the rule was that a raid in progress was frozen policy, so
+    // no save in existence holds a change this section could describe. A zeroed
+    // row would charge a god four times over for an edict she issued in
+    // peacetime.
+    const migrated = loadWorldSnapshot(
+      encodeSnapshot(revisionSixEnvelope()),
+      defineWorldStateSchema(),
+    );
+    expect(componentOf(migrated, MID_RAID_CHANGE).size).toBe(0);
+  });
+
+  it('does not mutate the envelope it was given', () => {
+    const before = revisionNineEnvelope();
+    const componentCount = before.components.length;
+    addTerritorySiting.migrate(before);
+    expect(before.components).toHaveLength(componentCount);
+  });
+
+  it('restores a pre-siting save holding no ground and standing nowhere', () => {
+    // Empty sections, and for `territory-holding` that is the *load-bearing*
+    // choice rather than the obvious one. A revision-4 save's `K` came from
+    // `territory.json`, so "no holding rows" would starve it if it were read as
+    // "holds nothing" -- and the repair is deliberately not to synthesise the
+    // shipped rows here, because this package takes only types from `content`
+    // and a frozen table could not describe a save written against a different
+    // content set. Absent rows mean "not yet materialized", the world step
+    // materializes the endowment on the first tick that finds none, and a
+    // universe that has genuinely lost its ground carries rows saying zero.
+    const migrated = loadWorldSnapshot(
+      encodeSnapshot(revisionNineEnvelope()),
+      defineWorldStateSchema(),
+    );
+    expect(componentOf(migrated, TERRITORY_HOLDING).size).toBe(0);
+    expect(componentOf(migrated, UNIVERSITY_SITE).size).toBe(0);
+  });
+
+  it('keeps the god state a revision-4 save did record', () => {
+    const { universe } = populatedWorld();
+    const migrated = loadWorldSnapshot(
+      encodeSnapshot(revisionNineEnvelope()),
+      defineWorldStateSchema(),
+    );
+    expect(componentOf(migrated, GOD_STATE).has(universe)).toBe(true);
+  });
+});
+
 describe('an older save loads into a current world', () => {
   it('loads, and nobody in it is committed to anything or part-way through anything', () => {
     const bytes = encodeSnapshot(revisionOneEnvelope());
@@ -531,8 +971,12 @@ describe('an older save loads into a current world', () => {
   });
 
   it('re-serializes to exactly the bytes a fresh save with neither makes', () => {
-    const { state, universe, mage, effort } = populatedWorld();
+    const { state, universe, mage, effort, instance } = populatedWorld();
     componentOf(state, GOAL_COMMITMENT).remove(mage);
+    // And the fidelity row, for the same reason as the god sections below: the
+    // revision-1 envelope has no `knowledge-fidelity` section, so the fresh
+    // save it is compared against must carry no `knowledge-fidelity` row.
+    componentOf(state, KNOWLEDGE_FIDELITY).remove(instance);
     // The row, not the entity. Both sides of the comparison come from the same
     // fixture and therefore from the same entity table; destroying one here
     // would be comparing two different allocation histories.
@@ -550,6 +994,22 @@ describe('an older save loads into a current world', () => {
       BLESSING,
       UPHEAVAL,
       ERA_EVALUATION,
+      BAR_PHASE,
+      MID_RAID_CHANGE,
+      TERRITORY_HOLDING,
+      UNIVERSITY_SITE,
+      // And `material-grade`. `addMaterialGrade` appends an **empty** section,
+      // so a revision-1 save comes forward holding no refined material at all —
+      // which is the absent-value reading working, not a loss. The fixture
+      // seeds a row for its own reasons and it has to come off for the two
+      // sides to be the same world.
+      MATERIAL_GRADE,
+      // And revision 12's. A revision-1 envelope has no `standing-working`
+      // section, so the fresh save it is compared against must hold no working
+      // — which is also the assertion `standing-working-migrates-empty.test.ts`
+      // makes from the behavioural end: an old save has no working standing, and
+      // therefore has none lapsing.
+      STANDING_WORKING,
     ];
     for (const spec of godSpecs) {
       const store = componentOf(state, spec);
@@ -561,7 +1021,15 @@ describe('an older save loads into a current world', () => {
     // splitMaterialsByKind divides that into thirds with the remainder on
     // food, not into the 500/250/150 split `populatedWorld()` seeds for its
     // own, unrelated reasons.
-    attachRecord(state, MATERIAL_STOCK, universe, { food: 334, stone: 333, vellum: 333 });
+    attachRecord(state, MATERIAL_STOCK, universe, {
+      food: 334,
+      stone: 333,
+      vellum: 333,
+      labor: 0,
+      essence: 0,
+      insight: 0,
+      passage: 0,
+    });
 
     const migrated = loadWorldSnapshot(
       encodeSnapshot(revisionOneEnvelope()),
@@ -597,11 +1065,152 @@ describe('an older save loads into a current world', () => {
       [encodeSnapshot(revisionThreeEnvelope()), /god-state/],
       [encodeSnapshot(revisionFourEnvelope()), /material-stock/],
       [encodeSnapshot(revisionFiveEnvelope()), /grant-budget/],
+      // Revisions 6 and 7 both name `bar-phase`, and that is measured rather
+      // than assumed: the component check reports a **missing section** before
+      // it reports a field-list mismatch, so a revision-6 envelope — which is
+      // short both `bar-phase` and four stock columns — is refused on the
+      // section. The two rows are not redundant even so; each asserts that its
+      // own envelope loads through the migration and refuses without it, which
+      // is the property, and the field arm is covered by
+      // `worldSchemaVersionOf` above.
+      [encodeSnapshot(revisionSixEnvelope()), /bar-phase/],
+      [encodeSnapshot(revisionSevenEnvelope()), /bar-phase/],
+      [encodeSnapshot(revisionEightEnvelope()), /mid-raid-change/],
+      [encodeSnapshot(revisionNineEnvelope()), /territory-holding/],
+      [encodeSnapshot(revisionTenEnvelope()), /knowledge-fidelity/],
+      // Revision 11 is short **both** later sections, and the component check
+      // reports the first missing one — `material-grade`, which
+      // `WORLD_COMPONENTS` declares before `standing-working`. Revision 12 is
+      // short only the second, which is what makes the pair non-redundant.
+      [encodeSnapshot(revisionElevenEnvelope()), /material-grade/],
+      [encodeSnapshot(revisionTwelveEnvelope()), /standing-working/],
     ] as const) {
       expect(() => loadWorldSnapshot(bytes, defineWorldStateSchema())).not.toThrow();
       expect(() => envelopeToState(decodeSnapshot(bytes), defineWorldStateSchema())).toThrow(
         missing,
       );
     }
+  });
+});
+
+describe('migrating a revision-6 world snapshot forward', () => {
+  it('appends knowledge-fidelity as an empty section, in last position', () => {
+    const before = revisionSixEnvelope();
+    const after = addKnowledgeFidelity.migrate(before);
+
+    const appended = after.components[after.components.length - 1];
+    expect(appended?.name).toBe(KNOWLEDGE_FIDELITY.name);
+    expect(appended?.slots.length).toBe(0);
+    expect(appended?.values.length).toBe(0);
+    expect(appended?.fields.map((field) => field.name)).toEqual(
+      Object.keys(KNOWLEDGE_FIDELITY.fields),
+    );
+  });
+
+  it('appends it last, which is where WORLD_COMPONENTS puts it', () => {
+    // The position, not merely the presence. Section order in an envelope is
+    // `WORLD_COMPONENTS` order, so a component declared anywhere but last would
+    // line every revision-6 save's sections up against the wrong layouts -- and
+    // the failure would not be a refusal, it would be one component's values
+    // read as another's. Asserted against the declaration itself rather than
+    // against a literal index, so it keeps holding at revision 11.
+    //
+    // The second assertion named `grant-budget` because, on W190's own branch,
+    // that *was* the component before this one. Four more have been appended
+    // since (`bar-phase`, `mid-raid-change`, and siting's two), so the
+    // predecessor is now `university-site`. Only the **last** position is a
+    // property of this component; the identity of its predecessor is not, so
+    // that half is dropped rather than re-pinned to a name the next append would
+    // move again.
+    //
+    // And the same append has now happened again: revision 12's `material-grade`
+    // sits last, so this assertion names *it*. That is the assertion doing its
+    // job rather than rotting — what it pins is "the newest component is last",
+    // which is the property section order depends on, and the name it carries is
+    // whichever component most recently arrived.
+    const declared = WORLD_COMPONENTS.map((spec) => spec.name);
+    expect(declared[declared.length - 1]).toBe(STANDING_WORKING.name);
+    // And `material-grade`, revision 12, is now its predecessor —
+    // `knowledge-fidelity` held that slot on `w/exp-duration`, which did not
+    // carry revision 12. Pinned as a pair so the next append has to move both
+    // lines and cannot quietly leave one describing an older tree.
+    expect(declared[declared.length - 2]).toBe(MATERIAL_GRADE.name);
+  });
+
+  it('leaves the container format version exactly where it found it', () => {
+    const before = revisionTenEnvelope();
+    expect(addKnowledgeFidelity.migrate(before).version).toBe(before.version);
+    expect(addKnowledgeFidelity.migrate(before).version).toBe(SNAPSHOT_VERSION);
+  });
+
+  it('does not mutate the envelope it was given', () => {
+    const before = revisionSixEnvelope();
+    const componentCount = before.components.length;
+    addKnowledgeFidelity.migrate(before);
+    expect(before.components).toHaveLength(componentCount);
+  });
+
+  it('restores a pre-fidelity save with every book fresh and sound', () => {
+    // Empty, and the emptiness is the whole repair. Every reader of this
+    // component treats an absent row as copy generation zero and `sound`, which
+    // is exactly what a save written before scribing fidelity recorded: nothing.
+    //
+    // Synthesising a distance from `acquiredTick` was the alternative and there
+    // is no honest rule for it -- the old state does not record what a book was
+    // copied *from*, so any number chosen would be a fidelity loss the save
+    // never suffered, applied retroactively to a library the player already has.
+    const migrated = loadWorldSnapshot(
+      encodeSnapshot(revisionSixEnvelope()),
+      defineWorldStateSchema(),
+    );
+    expect(componentOf(migrated, KNOWLEDGE_FIDELITY).size).toBe(0);
+  });
+});
+
+describe('migrating a revision-11 world snapshot forward (addMaterialGrade)', () => {
+  it('appends material-grade as an empty section, in last position', () => {
+    const before = revisionElevenEnvelope();
+    const after = addMaterialGrade.migrate(before);
+
+    const appended = after.components[after.components.length - 1];
+    expect(appended?.name).toBe(MATERIAL_GRADE.name);
+    // Zero rows, not zeroed rows. A universe that never refined anything holds
+    // no refined material, and a synthesised zero row would be a claim that
+    // somebody looked.
+    expect(appended?.slots.length).toBe(0);
+    expect(appended?.values.length).toBe(0);
+    expect(appended?.fields.map((field) => field.name)).toEqual(Object.keys(MATERIAL_GRADE.fields));
+  });
+
+  it('leaves the container format version and the raw stock exactly where it found them', () => {
+    const before = revisionElevenEnvelope();
+    const after = addMaterialGrade.migrate(before);
+    expect(after.version).toBe(before.version);
+    expect(after.version).toBe(SNAPSHOT_VERSION);
+    // Grades are a second axis on the stock, not a re-partition of it: an
+    // eleven-revision save must come forward holding every unit of raw stone it
+    // went in with, or the migration has quietly spent a resource.
+    const stockBefore = before.components.find((component) => component.name === MATERIAL_STOCK.name);
+    const stockAfter = after.components.find((component) => component.name === MATERIAL_STOCK.name);
+    expect(stockAfter).toEqual(stockBefore);
+  });
+
+  it('does not mutate the envelope it was given', () => {
+    const before = revisionElevenEnvelope();
+    const componentCount = before.components.length;
+    addMaterialGrade.migrate(before);
+    expect(before.components).toHaveLength(componentCount);
+    expect(before.components.some((component) => component.name === MATERIAL_GRADE.name)).toBe(
+      false,
+    );
+  });
+
+  it('reads the migrated envelope as revision 12, so the walk terminates', () => {
+    // The positive control on the step's own marker. `migrateWorldEnvelope`
+    // throws if a step leaves behind no marker its target revision is
+    // recognised by — this asserts the marker landed rather than trusting the
+    // loop's error not to fire.
+    expect(worldSchemaVersionOf(revisionElevenEnvelope())).toBe(11);
+    expect(worldSchemaVersionOf(addMaterialGrade.migrate(revisionElevenEnvelope()))).toBe(12);
   });
 });

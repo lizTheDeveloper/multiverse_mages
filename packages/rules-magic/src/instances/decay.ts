@@ -112,7 +112,10 @@ export function masteryDecayPerTick(retention: Fp): Fp {
  * cell erases knowledge "gradually... and recoverably if the god changes their
  * mind in time" — recovering means *keeping what survived*, not being handed
  * back what was already lost. Nothing in this subsystem restores mastery;
- * practice does, and practice is an operation somebody has to perform.
+ * **`practice.ts` does**, and it is the operation this sentence spent three
+ * releases asking somebody to perform. Decay is still monotone: the two
+ * operations move mastery in opposite directions and neither is allowed to move
+ * it in the other's.
  *
  * So the floor is clamped to the incoming mastery before it is applied: decay
  * is a monotonically non-increasing function of mastery, unconditionally. An

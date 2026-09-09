@@ -32,32 +32,7 @@ import {
   formatPrimitiveCoverageReport,
 } from '../../src/effects/index.js';
 
-import type { ContentFileName } from '@mm/content';
-
 import { effectsOf, nodeDocuments, registryWith, shippedRegistry, v1CellIds } from './effect-fixtures.js';
-
-/**
- * A v1 node in a `perdo`-technique cell, as a raw document.
- *
- * `remove` is the only W20 effect mode that needs no extra payload
- * (`node.schema.json`'s `mode-payload-missing`/`mode-payload-extraneous`; see
- * `TECHNIQUE_TO_MODE`/`MODE_PAYLOADS` in `load.ts`), and every v1 cell is
- * intellego, perdo or rego (`compositional-content.md` §3.3's v1 rectangle),
- * so `perdo` is the one technique these fixtures can push a bare
- * `{ mode: 'remove' }` effect into without also authoring a `reveals` or
- * `control` payload to stay coherent with the cell it lands in.
- */
-function firstPerdoV1Node(
-  documents: Record<ContentFileName, unknown>,
-): Record<string, unknown> {
-  const cells = documents['cell.json'] as Record<string, unknown>[];
-  const perdoCells = new Set(
-    cells.filter((cell) => cell['technique'] === 'perdo' && cell['v1'] === true).map((cell) => cell['id']),
-  );
-  const found = nodeDocuments(documents).find((node) => perdoCells.has(node['cell']));
-  if (found === undefined) throw new Error('node.json declares no v1 node in a perdo cell');
-  return found;
-}
 
 describe('the v1 subset exercises every primitive but the declared exclusions', () => {
   it('passes on the shipped content', () => {
@@ -70,7 +45,10 @@ describe('the v1 subset exercises every primitive but the declared exclusions', 
     expect(report.misplacedPortalNodes).toEqual([]);
   });
 
-  it('exercises every registry primitive except fertility', () => {
+  // Was 'except lifespan and fertility'. The exclusion list is empty now, so the
+  // filter below removes nothing and the claim is the stronger one: every
+  // primitive the registry declares is exercised by enabled content.
+  it('exercises every registry primitive', () => {
     const registry = shippedRegistry();
     const report = checkPrimitiveCoverage(registry);
     const exercised = new Set(report.exercised.map((entry) => entry.primitiveId));
@@ -81,19 +59,31 @@ describe('the v1 subset exercises every primitive but the declared exclusions', 
     expect([...exercised].sort()).toEqual([...expected].sort());
   });
 
-  it('declares exactly the one exclusion the design accepted', () => {
-    // `lifespan` left this list in W20: a life-extension ladder is now
-    // authored in rego-nomen, and content exercising it is the whole point.
-    expect([...PRIMITIVE_COVERAGE_EXCLUSIONS]).toEqual(['fertility']);
+  // Was 'declares exactly the two exclusions the design accepted', asserting
+  // `['fertility', 'lifespan']`. Enabling all seventy cells covered both — 5
+  // nodes carry `fertility` and 17 carry `lifespan` — and the check fails in that
+  // direction on purpose, so the list is empty. The assertion is kept exact
+  // rather than deleted: an entry reappearing is a claim that some primitive is
+  // unmeasurable at 0.5.0, and it should still be hard to make quietly.
+  it('declares no exclusions, because enabled content covers every primitive', () => {
+    expect([...PRIMITIVE_COVERAGE_EXCLUSIONS]).toEqual([]);
   });
 
-  it('states the exclusion in the formatted report, and lifespan as exercised rather than excluded', () => {
-    const report = checkPrimitiveCoverage(shippedRegistry());
-    const text = formatPrimitiveCoverageReport(report);
-    expect(text).toContain('fertility');
-    expect(text).toContain('Declared exclusions: fertility');
-    expect(report.exercised.map((entry) => entry.primitiveId)).toContain('lifespan');
-    expect(report.coveredExclusions).toEqual([]);
+  it('states the exclusions in the formatted report, so a reader sees the gap', () => {
+    // Two halves, because the shipped list is empty and a report of nothing
+    // cannot demonstrate that the report would name a gap. The first asserts the
+    // line is still printed — a reader must be able to see that the list is empty
+    // rather than infer it from silence — and the second passes exclusions
+    // explicitly, which is the same argument the check itself takes.
+    const shipped = formatPrimitiveCoverageReport(checkPrimitiveCoverage(shippedRegistry()));
+    expect(shipped).toContain('Declared exclusions:');
+    expect(shipped).not.toMatch(/Declared exclusions: \w/u);
+
+    const withGap = formatPrimitiveCoverageReport(
+      checkPrimitiveCoverage(shippedRegistry(), ['fertility', 'lifespan']),
+    );
+    expect(withGap).toContain('fertility');
+    expect(withGap).toContain('lifespan');
   });
 });
 
@@ -122,27 +112,31 @@ describe('direction one: a primitive stops being exercised', () => {
 
 describe('direction two: an exclusion becomes covered', () => {
   it('fails and says the exclusion list must be updated deliberately', () => {
-    // Deliberately a *v1* node, and specifically one in a perdo cell -- see
-    // `firstPerdoV1Node`'s doc for why. `fertility` is the one exclusion left
-    // (W20 moved `lifespan` off this list: rego-nomen now authors it for
-    // real).
+    // This direction fired for real: the shipped list held `fertility` and
+    // `lifespan`, enabling all seventy cells covered both, `npm run check:coverage`
+    // went red, and the fix was to empty the list. So the exclusion is now passed
+    // explicitly rather than read from the shipped default, which is empty and
+    // could not express the case. `lifespan` is still the primitive, and the v1
+    // filter below still matters: the check reads only flagged content, and a
+    // fixture that mutated an unflagged node would assert the opposite of what it
+    // means the day a content set flags a proper subset again.
+    const v1 = v1CellIds(shippedRegistry());
     const registry = registryWith((documents) => {
-      const first = firstPerdoV1Node(documents);
+      const first = nodeDocuments(documents).find((node) => v1.has(node['cell'] as string));
+      if (first === undefined) throw new Error('node.json declares no v1 node');
       effectsOf(first).push({
-        primitive: 'fertility',
+        primitive: 'lifespan',
         magnitude: 12,
         target: 'self',
         durationTicks: 0,
-        mode: 'remove',
-        gloss: 'test fixture: an extra effect pushed onto a real v1 node to cover an exclusion.',
       });
     });
 
-    const report = checkPrimitiveCoverage(registry);
+    const report = checkPrimitiveCoverage(registry, ['lifespan']);
     expect(report.ok).toBe(false);
-    expect(report.coveredExclusions).toEqual(['fertility']);
+    expect(report.coveredExclusions).toEqual(['lifespan']);
     const text = formatPrimitiveCoverageReport(report);
-    expect(text).toContain('fertility');
+    expect(text).toContain('lifespan');
     expect(text).toMatch(/exclusion list/i);
   });
 });
@@ -171,18 +165,18 @@ describe('portal belongs to the mandated cell', () => {
   it('fails when portal is authored anywhere else', () => {
     // A v1 cell that is not rego-limen, for the same reason as above: portal
     // authored in a non-v1 cell is invisible to a check scoped to v1 content, so
-    // the stray has to be somewhere the check actually reads. A perdo cell,
-    // specifically, so `mode: 'remove'` needs no extra payload to stay
-    // coherent -- see `firstPerdoV1Node`'s doc.
+    // the stray has to be somewhere the check actually reads.
+    const v1 = v1CellIds(shippedRegistry());
     const registry = registryWith((documents) => {
-      const stray = firstPerdoV1Node(documents);
+      const stray = nodeDocuments(documents).find(
+        (node) => node['cell'] !== PORTAL_HOME_CELL_ID && v1.has(node['cell'] as string),
+      );
+      if (stray === undefined) throw new Error('every v1 node is in rego-limen; fixture impossible');
       effectsOf(stray).push({
         primitive: PORTAL_PRIMITIVE_ID,
         magnitude: 1024,
         target: 'universe',
         durationTicks: 0,
-        mode: 'remove',
-        gloss: 'test fixture: portal authored outside its mandated cell.',
       });
     });
 

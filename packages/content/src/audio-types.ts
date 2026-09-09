@@ -103,7 +103,8 @@ export type VoiceLineTier =
   | 'blessed'
   | 'death'
   | 'last-copy'
-  | 'cross-species';
+  | 'cross-species'
+  | 'flavour';
 
 /** A single bark line (sound-design.md §8). */
 export interface VoiceLineRecord {
@@ -118,7 +119,7 @@ export interface VoiceLineRecord {
 export interface VoiceLineBankRecord {
   readonly id: string;
   readonly speaker: string;
-  readonly speakerKind: 'species' | 'populace';
+  readonly speakerKind: 'species' | 'populace' | 'populace-flavour';
   /**
    * The text-to-speech voice this bank records in.
    *

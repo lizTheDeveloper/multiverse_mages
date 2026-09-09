@@ -32,9 +32,8 @@
  *
  * ## Existing primitives only
  *
- * A blessing contributes to `research-rate`, `teach-rate` and `lifespan`; an
- * encouragement contributes to `research-rate` for one cell. All four are
- * **magnitudes**, handed to a caller that puts them through `stackMagnitudes`
+ * A blessing contributes to `research-rate`, `teach-rate` and `lifespan`. All
+ * three are **magnitudes**, handed to a caller that puts them through `stackMagnitudes`
  * alongside every other source of the same primitive — a library's contribution
  * above all — so they share one `(1 + Σ)` channel and one cap with it. That is
  * what keeps a blessing visible to
@@ -44,8 +43,8 @@
  */
 
 import type { Fixed, SimState } from '@mm/sim-core';
-import { fromInt } from '@mm/sim-core';
 import type { CellResolver } from '@mm/rules-magic';
+import { fromInt } from '@mm/sim-core';
 import { activeBlessings, activeEncouragements } from '@mm/state';
 
 import type { GodConstants } from './constants.js';
@@ -61,24 +60,73 @@ import { emphasisAt } from './interventions.js';
  * and the one cap — so the registry records moved to `WorldStepDeps.primitives`
  * with them. Keeping them here as well would be a dep nothing reads, which in
  * this codebase is how a tuning knob comes to do nothing.
+ *
+ * **The `CellResolver` was removed here on `w52/emphasis-reorders`, and put
+ * back on the Group F merge, 2026-08-16.** W52's reason was sound and is
+ * quoted rather than deleted: *"It was here to answer 'which cell is this node
+ * in' while an encouragement multiplied research on that node. The emphasis map
+ * is now handed out keyed by cell and the node-to-cell question is asked by the
+ * party that holds the candidate — which already carries its `cellId` — so the
+ * dep would be an unread one."*
+ *
+ * Its premise is false on this tree. `w53/practice` landed one row earlier in
+ * the same group and gave `practiceBonusesFor` an emphasis term keyed on the
+ * node's cell, so the dep **is** read. The removal auto-merged without a
+ * conflict while its one remaining user stayed, which is how a dropped
+ * dependency gets installed silently — the merge did not fail, the typecheck
+ * did.
+ *
+ * The two branches compose to an asymmetry worth stating rather than resolving
+ * inside a merge: an encouraged cell now reaches **practice twice** — once as
+ * `target-appeal.ts`'s preference term and once as a rate bonus here — and
+ * **research once**, as the preference only. W52's argument (*what an
+ * encouragement changes is which node a mage picks, not how fast a rate runs*)
+ * generalises to practice, and W53's channel is the thing it would delete.
+ * Neither branch measured the other, so this merge composes what each shipped
+ * and leaves the asymmetry for the owner.
  */
 export interface GodEffectDeps {
   readonly constants: GodConstants;
+  /** Node-to-cell, for `practiceBonusesFor`'s emphasis term. See the note above. */
   readonly cells: CellResolver;
 }
 
-/** The three callbacks `WorldStepDeps` takes. */
+/** The callbacks `WorldStepDeps` takes. */
 export interface GodEffectHooks {
   readonly researchBonusesFor: (
     state: SimState,
     worldTick: number,
     mage: number,
-    nodeId: number,
   ) => readonly Fixed[];
+  /**
+   * Which cells carry a live emphasis this tick, and how strongly.
+   *
+   * The whole of what `encourageResearch` now buys. It is handed to the outlook
+   * rather than to the work phase because an encouragement is a statement about
+   * **what to study**, and the only place that decision is made is
+   * `target-appeal.ts`.
+   */
+  readonly emphasisFor: (state: SimState, worldTick: number) => ReadonlyMap<number, Fixed>;
   readonly teachBonusesFor: (
     state: SimState,
     worldTick: number,
     mage: number,
+  ) => readonly Fixed[];
+  /**
+   * The god's contribution to a mage's `practice-rate` on one node.
+   *
+   * Takes a `nodeId`, unlike the teaching hook and like the research one,
+   * because an encouragement is keyed on a **cell** and practice happens in one.
+   * That is the only channel through which `encourageResearch` reaches
+   * maintenance at all: a god who pushes attention onto Rego Terram makes its
+   * spells both cheaper to derive and cheaper to keep, which is what pushing
+   * attention onto a subject does.
+   */
+  readonly practiceBonusesFor: (
+    state: SimState,
+    worldTick: number,
+    mage: number,
+    nodeId: number,
   ) => readonly Fixed[];
   readonly lifespanEffectsFor: (
     state: SimState,
@@ -87,7 +135,12 @@ export interface GodEffectHooks {
   ) => readonly Fixed[];
 }
 
-/** One tick's god-side effects, cached per state. */
+/**
+ * One tick's god-side effects, cached per state.
+ *
+ * `emphasis` is keyed by **cell** id and valued in `fp`, and it is now read by
+ * target selection rather than by the work phase. See {@link GodEffectHooks}.
+ */
 interface GodEffects {
   readonly worldTick: number;
   readonly blessed: ReadonlySet<number>;
@@ -95,7 +148,7 @@ interface GodEffects {
 }
 
 /**
- * Builds the three hooks over one per-run cache.
+ * Builds the four hooks over one per-run cache.
  *
  * The cache is keyed on the `SimState` object rather than on the tick, because
  * `step` clones the state every tick: a new state is a new key, an old state is
@@ -130,17 +183,36 @@ export function godEffectHooks(deps: GodEffectDeps): GodEffectHooks {
     // *"4.0 × 2.0 without anyone deciding it should be 8.0"* that
     // `mages-and-species/design.md` rejects. The caller sums the sources and
     // clamps them once; this function's job is to say what the god contributed.
-    researchBonusesFor: (state, worldTick, mage, nodeId) => {
+    //
+    // Blessing only, now. An encouragement used to push `research-rate` for its cell
+    // from here, and it does not any more: vision §7's *"encourage a research
+    // direction"* is the god's one *ordinal* verb — it names a cell rather than a
+    // mage or an axis, so it is a preference — and
+    // spending it on a speed left the queue's order identical in every universe,
+    // which `strategy-dimensionality.md` measured as containment 1.000 for every
+    // cross-strategy pair. It is now a term in `target-appeal.ts` instead, and
+    // deliberately not both: a verb that is simultaneously a preference and a
+    // speed cannot be attributed by an ablation.
+    researchBonusesFor: (state, worldTick, mage) =>
+      effectsFor(state, worldTick).blessed.has(mage) ? [deps.constants.blessResearchRate] : [],
+
+    emphasisFor: (state, worldTick) => effectsFor(state, worldTick).emphasis,
+
+    teachBonusesFor: (state, worldTick, mage) =>
+      effectsFor(state, worldTick).blessed.has(mage) ? [deps.constants.blessTeachRate] : [],
+
+    // The same two sources as research, against a different constant. Written
+    // out rather than delegated to `researchBonusesFor`, because aliasing two
+    // primitives onto one channel is how an ablation sweep comes to report a
+    // `research-rate` effect that was half `practice-rate` all along.
+    practiceBonusesFor: (state, worldTick, mage, nodeId) => {
       const effects = effectsFor(state, worldTick);
       const sources: Fixed[] = [];
-      if (effects.blessed.has(mage)) sources.push(deps.constants.blessResearchRate);
+      if (effects.blessed.has(mage)) sources.push(deps.constants.blessPracticeRate);
       const emphasis = effects.emphasis.get(deps.cells.cellOf(nodeId));
       if (emphasis !== undefined && emphasis > 0) sources.push(emphasis);
       return sources;
     },
-
-    teachBonusesFor: (state, worldTick, mage) =>
-      effectsFor(state, worldTick).blessed.has(mage) ? [deps.constants.blessTeachRate] : [],
 
     // `lifespan` is `additive` in months rather than a multiplier, so this hands
     // back magnitudes for `effectiveLifespan` to stack rather than a stacked

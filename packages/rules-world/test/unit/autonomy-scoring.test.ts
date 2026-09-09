@@ -36,16 +36,16 @@ import {
   termsFor,
 } from '../../src/index.js';
 
-import { outlook, richOutlook, speciesNamed, target } from './autonomy-fixtures.js';
+import { goalAppealWeights, outlook, richOutlook, speciesNamed, target } from './autonomy-fixtures.js';
 
 const scoreOf = (goal: (typeof GOALS_IN_ORDER)[number], state: ReturnType<typeof outlook>): number =>
-  scoreGoal(goal, state).score;
+  scoreGoal(goal, state, goalAppealWeights).score;
 
 describe('a score is the sum of six terms', () => {
   it('sums to the unclamped total, term for term', () => {
     const state = richOutlook();
     for (const goal of GOALS_IN_ORDER) {
-      const scored = scoreGoal(goal, state);
+      const scored = scoreGoal(goal, state, goalAppealWeights);
       const summed = TERM_KINDS.reduce((total, kind) => total + scored.terms[kind], 0);
       expect(scored.rawTotal).toBe(summed);
     }
@@ -58,7 +58,7 @@ describe('a score is the sum of six terms', () => {
     for (const id of ['human', 'elf', 'dwarf', 'draconic', 'gnome', 'orc']) {
       const state = richOutlook({ species: speciesNamed(id) });
       for (const goal of GOALS_IN_ORDER) {
-        const scored = scoreGoal(goal, state);
+        const scored = scoreGoal(goal, state, goalAppealWeights);
         expect(Number.isInteger(scored.score)).toBe(true);
         for (const kind of TERM_KINDS) expect(Number.isInteger(scored.terms[kind])).toBe(true);
       }
@@ -75,7 +75,7 @@ describe('a score is the sum of six terms', () => {
           raidPressure: -100_000,
         });
         for (const goal of GOALS_IN_ORDER) {
-          const { terms } = scoreGoal(goal, state);
+          const { terms } = scoreGoal(goal, state, goalAppealWeights);
           for (const kind of TERM_KINDS) {
             expect(Math.abs(terms[kind])).toBeLessThanOrEqual(TERM_BOUND[kind]);
           }
@@ -136,7 +136,7 @@ describe('the clamp is applied once, after summation', () => {
     expect(headroom).toBeLessThan(SCORE_CEILING);
 
     for (const goal of GOALS_IN_ORDER) {
-      expect(scoreGoal(goal, richOutlook()).clamped).toBe(false);
+      expect(scoreGoal(goal, richOutlook(), goalAppealWeights).clamped).toBe(false);
     }
   });
 });
@@ -147,7 +147,7 @@ describe('idle is the floor for every mage in every situation', () => {
       for (const normalizedAge of [0, 512, 1400]) {
         const state = richOutlook({ species: speciesNamed(id), normalizedAge });
         expect(scoreOf(GOAL.idle, state)).toBe(0);
-        for (const kind of TERM_KINDS) expect(termsFor(GOAL.idle, state)[kind]).toBe(0);
+        for (const kind of TERM_KINDS) expect(termsFor(GOAL.idle, state, goalAppealWeights)[kind]).toBe(0);
       }
     }
   });
@@ -221,7 +221,7 @@ describe('age shapes the score', () => {
     const long = richOutlook({ species: speciesNamed('elf'), normalizedAge: 512 });
     const short = richOutlook({ species: speciesNamed('orc'), normalizedAge: 512 });
     for (const goal of GOALS_IN_ORDER) {
-      expect(termsFor(goal, long).age).toBe(termsFor(goal, short).age);
+      expect(termsFor(goal, long, goalAppealWeights).age).toBe(termsFor(goal, short, goalAppealWeights).age);
     }
   });
 });
@@ -236,10 +236,97 @@ describe('opportunity shapes the score without referring to anywhere', () => {
             target(index + 1),
           ),
         }),
+        goalAppealWeights,
       ).opportunity;
 
     expect(at(1)).toBeLessThan(at(2));
     expect(at(2)).toBeLessThan(at(4));
     expect(at(4)).toBe(at(40));
+  });
+});
+
+/**
+ * ## Affiliation is priced as a gate, not as an activity
+ *
+ * The claim under test is the one W116 shipped: an unaffiliated mage cannot
+ * scribe and cannot ward — `scribeThroughputFor` returns zero for
+ * `universityId === 0` and `feasibility.ts` masks `ward-duty` on the same
+ * field — so `affiliate` is worth what it unlocks rather than what it
+ * accomplishes, and a mage who *already* has a university and merely sees a
+ * deeper library is making a different, much smaller decision.
+ *
+ * Every number below is untuned, so nothing here asserts a magnitude. Each
+ * assertion is an ordering, which is what the tables encode.
+ */
+describe('affiliation is a capability gate for a mage who has no university', () => {
+  const unaffiliated = (overrides = {}): ReturnType<typeof outlook> =>
+    richOutlook({ universityId: 0, scribeThroughput: 0, scribableTargets: [], ...overrides });
+
+  it('prices a first affiliation above a transfer, on the opportunity axis', () => {
+    const first = termsFor(GOAL.affiliate, unaffiliated(), goalAppealWeights).opportunity;
+    const transfer = termsFor(GOAL.affiliate, richOutlook(), goalAppealWeights).opportunity;
+    expect(first).toBeGreaterThan(transfer);
+    expect(transfer).toBeGreaterThan(0);
+  });
+
+  it('never lets a content weight be silently clamped by the term bound', () => {
+    // A weight authored above the bound would sit in `autonomy-weight.json`
+    // looking like the number the run used. Both are inside it, and the first
+    // is exactly the bound — which is the claim that the axis is saturated
+    // rather than merely large.
+    const first = termsFor(GOAL.affiliate, unaffiliated(), goalAppealWeights).opportunity;
+    expect(first).toBe(TERM_BOUND.opportunity);
+    expect(goalAppealWeights.affiliation.firstOpportunity).toBeLessThanOrEqual(
+      TERM_BOUND.opportunity,
+    );
+    expect(Math.abs(goalAppealWeights.affiliation.transferOpportunity)).toBeLessThanOrEqual(
+      TERM_BOUND.opportunity,
+    );
+  });
+
+  it('scores nothing at all when there is nowhere to go', () => {
+    const nowhere = unaffiliated({ betterAffiliationAvailable: false, preferredUniversity: 0 });
+    expect(termsFor(GOAL.affiliate, nowhere, goalAppealWeights).opportunity).toBe(0);
+  });
+
+  it('lets ambition price a transfer and not a first affiliation', () => {
+    // Moving to a deeper library to make a bigger name is ambition. Needing an
+    // institution before you may write anything down is not a temperament, and
+    // pricing it as one left the unambitious unaffiliated for life.
+    const keen = { curiosity: 1024, ambition: 1280, caution: 1024 };
+    const meek = { curiosity: 1024, ambition: 768, caution: 1024 };
+    expect(termsFor(GOAL.affiliate, unaffiliated({ personality: keen }), goalAppealWeights)
+      .personality).toBe(
+      termsFor(GOAL.affiliate, unaffiliated({ personality: meek }), goalAppealWeights).personality,
+    );
+    expect(
+      termsFor(GOAL.affiliate, richOutlook({ personality: keen }), goalAppealWeights).personality,
+    ).toBeGreaterThan(
+      termsFor(GOAL.affiliate, richOutlook({ personality: meek }), goalAppealWeights).personality,
+    );
+  });
+
+  it('outscores research for a default-role mage of five of the six shipped species', () => {
+    // The default role is `researcher` (`create.ts`), so this is what an
+    // un-intervened universe does. **Gnome is the exception and is asserted as
+    // one**: its species curiosity of fp(1792) puts research above every other
+    // goal it has, at every age, and no in-bounds pricing of a gate can outvote
+    // a species trait at its extreme. That is a finding about the content set,
+    // and a run in which gnomes affiliate as readily as dwarves means somebody
+    // has moved either the curiosity or the term bounds.
+    const affiliates: string[] = [];
+    for (const id of ['human', 'elf', 'dwarf', 'draconic', 'gnome', 'orc']) {
+      const species = speciesNamed(id);
+      const state = unaffiliated({ species, personality: {
+        curiosity: species.curiosity, ambition: 1024, caution: 1024,
+      } });
+      if (scoreOf(GOAL.affiliate, state) > scoreOf(GOAL.researchNode, state)) affiliates.push(id);
+    }
+    expect(affiliates).toEqual(['human', 'elf', 'dwarf', 'draconic', 'orc']);
+  });
+
+  it('leaves a transfer below research, so a settled mage keeps working', () => {
+    const settled = richOutlook({ personality: { curiosity: 1024, ambition: 1024, caution: 1024 } });
+    expect(scoreOf(GOAL.affiliate, settled)).toBeLessThan(scoreOf(GOAL.researchNode, settled));
   });
 });

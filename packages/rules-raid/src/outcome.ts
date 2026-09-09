@@ -35,6 +35,7 @@ import type { Fixed } from '@mm/sim-core';
 import type { Handle, RaidSideValue } from '@mm/state';
 
 import type { ActionEconomyReport } from './action-economy.js';
+import type { ExposureRecord } from './exposure.js';
 import type { ObjectiveKindValue } from './objectives.js';
 import type { RaidEndReasonValue } from './termination.js';
 
@@ -67,15 +68,21 @@ export interface ObjectiveOutcome {
 /**
  * One knowledge instance that left the host universe, and how.
  *
- * The three verbs are distinct entries rather than one "taken" flag because
- * they produce three different worlds: reading a mind **copies**, looting a
- * grimoire **moves**, burning **destroys**. A record that conflated them could
- * not answer "did the host still know this afterwards", which is the only
- * question `libraryDependence` is about.
+ * The verbs are distinct entries rather than one "taken" flag because they
+ * produce different worlds: reading a mind **copies**, looting a grimoire
+ * **moves**, burning **destroys**. A record that conflated them could not answer
+ * "did the host still know this afterwards", which is the only question
+ * `libraryDependence` is about.
+ *
+ * `'witnessed'` is the fourth and it runs the other way. `raid-engagement.md`
+ * §3's exposure: a spell cast inside the host universe is cast in front of the
+ * host's academics, and casting teaches them. Nothing leaves the host — the
+ * host *gains* — so filing it as a `'copied'` would be a theft nobody committed,
+ * and every metric that reads this list would count it on the wrong side.
  */
 export interface KnowledgeMovement {
   readonly nodeId: ContentId;
-  readonly verb: 'copied' | 'moved' | 'destroyed';
+  readonly verb: 'copied' | 'moved' | 'destroyed' | 'witnessed';
   /** The combatant that did it, or `0` for a library burned without a thief. */
   readonly byCombatant: Handle;
   /**
@@ -85,6 +92,29 @@ export interface KnowledgeMovement {
    * says the mechanic is working.
    */
   readonly forfeited: boolean;
+}
+
+/**
+ * One ruleset change made during the raid, and therefore locked for it.
+ *
+ * `raid-engagement.md` §1's second half. The lock itself is in-memory and dies
+ * with the engagement; this is what the raid leaves on the constitution, and it
+ * is what makes the post-raid revert cost payable seasons later. `paidCost` is
+ * carried rather than recomputed for the reason the component that stores it
+ * carries it: the surcharge is defined against what the change cost *when it
+ * was made*.
+ */
+export interface ConstitutionalMark {
+  /** `RULE_SCOPE`: technique, form, or cell. */
+  readonly scope: number;
+  /** Technique bit, form bit, or cell id, by `scope`. */
+  readonly targetId: number;
+  /** `RULE_CHANGE_KIND`: which way legality moved. */
+  readonly changeKind: number;
+  /** What the player paid inside the raid. */
+  readonly paidCost: Fixed;
+  /** The engagement tick it was decided on. */
+  readonly atTick: number;
 }
 
 /** Everything one raid did. Frozen; the write-back reads it and never edits it. */
@@ -98,6 +128,15 @@ export interface RaidOutcome {
 
   readonly casualties: readonly CasualtyRecord[];
   readonly cohortLosses: readonly CohortLossRecord[];
+  /**
+   * Host knowledge instances a raider left silently wrong, ascending.
+   *
+   * Not a {@link KnowledgeMovement}, and that is the point of the mechanic: no
+   * instance moved, none was destroyed, and `nodesLostByHost` does not change.
+   * *"Enter, corrupt, leave undetected"* — the victim's ledger of what a raid
+   * cost him balances to zero, and stays balanced until a reader fails.
+   */
+  readonly corruptedInstances: readonly Handle[];
   readonly objectives: readonly ObjectiveOutcome[];
 
   /** Instances that left the host universe, by verb. */
@@ -146,6 +185,71 @@ export interface RaidOutcome {
 
   /** Peak simultaneous combatants per side, for the cap's own bound test. */
   readonly peakCombatants: readonly [number, number];
+
+  /**
+   * **Did anybody come home?** Mage raiders only — summons and detachments are
+   * not people this universe gets back.
+   *
+   * Three counts rather than one rate, because the interesting failure is a
+   * denominator: `raidersFielded` is what the attacker sent, `raidersWithdrawn`
+   * is what reached the portal alive, and `raidersStranded` is what
+   * `raid.ts`'s stranded-raider rule took. The remainder — fielded less the
+   * other two — is what died fighting, which is a different kind of loss and
+   * must not be folded in with the ones the timer killed.
+   *
+   * Added because the withdrawal rule was measured as **dead** and nothing in
+   * the record could show it: `localCasualties` counted the bodies without
+   * distinguishing a mage killed in a fight from a mage the portal ate, so a
+   * withdrawal threshold that never once fired read exactly like one that fired
+   * and was survived. That is the same shape as the `bySource: {}` blindness
+   * `RaidRecord.actionEconomy` was added to close — a live mechanic and an
+   * instrument structurally incapable of seeing it.
+   */
+  readonly raidersFielded: number;
+  /** Mage raiders that reached the portal alive and went home. */
+  readonly raidersWithdrawn: number;
+  /** Mage raiders alive at resolution but not withdrawn, and therefore lost. */
+  readonly raidersStranded: number;
+
+  /**
+   * Favor the defending god spent on raid verbs (`raid-engagement.md` §3).
+   *
+   * Settled here rather than debited during the raid, for the reason every
+   * other consequence is: the record is complete before a field of either world
+   * moves, so a raid never leaves a universe partly paid.
+   */
+  readonly favorSpentByDefender: Fixed;
+  /** Vis the attacker spent. The other half of §3's asymmetry. */
+  readonly visSpentByAttacker: Fixed;
+  /**
+   * Vis the raiding party did not bring home.
+   *
+   * Recorded rather than inserted anywhere: §3 calls Vis lootable, and there is
+   * no world-scale place to put it until the economy capability gives Vis
+   * production and storage — which the economy spec amendment says in as many
+   * words. A number nobody can spend yet is honest; a number invented into a
+   * resource that does not exist would not be.
+   */
+  readonly visCapturedByDefender: Fixed;
+  /**
+   * What the host learned by watching, and which of her mages learned it.
+   *
+   * The attacker's second payment (`raid-engagement.md` §3). Ascending by node.
+   * The same nodes appear in `knowledgeMovements` under `'witnessed'`; this
+   * carries the recipient, which a movement record has no field for and which
+   * the write-back needs. Recomputing the recipient at write-back instead would
+   * get a different answer — casualties are applied first, so the living mages
+   * are not the same set the resolution saw.
+   */
+  readonly exposures: readonly ExposureRecord[];
+
+  /**
+   * Ruleset changes made under the lock, ascending by scope then target.
+   *
+   * Empty for every raid nobody intervened in, which is every raid the engine
+   * ran before `raid-engagement.md` §1 existed.
+   */
+  readonly constitutionalMarks: readonly ConstitutionalMark[];
 }
 
 /** How much of one primitive one raid saw, by side. */

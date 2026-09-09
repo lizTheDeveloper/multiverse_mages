@@ -34,7 +34,7 @@ import { describe, expect, it } from 'vitest';
 import { EVAL_PERIOD, GOAL, GoalHistogram, selectGoal } from '../../src/index.js';
 import type { MageGoalCommitment, MageOutlook } from '../../src/index.js';
 
-import { appealWeights, richOutlook, target } from './autonomy-fixtures.js';
+import { appealWeights, goalAppealWeights, richOutlook, target } from './autonomy-fixtures.js';
 import { stepRng } from './mage-fixtures.js';
 
 const POPULATION = 300;
@@ -76,6 +76,7 @@ describe('no synchronized goal stampede', () => {
       for (let mage = 1; mage <= POPULATION; mage += 1) {
         const selection = selectGoal({
       appeal: appealWeights,
+      goalAppeal: goalAppealWeights,
           outlook: calmOutlook(mage),
           worldTick: tick,
           incumbent: commitments.get(mage),
@@ -96,6 +97,7 @@ describe('no synchronized goal stampede', () => {
       for (let mage = 1; mage <= POPULATION; mage += 1) {
         const selection = selectGoal({
       appeal: appealWeights,
+      goalAppeal: goalAppealWeights,
           outlook: excitedOutlook(mage),
           worldTick: tick,
           incumbent: commitments.get(mage),
@@ -142,6 +144,7 @@ describe('no synchronized goal stampede', () => {
     for (let mage = 1; mage <= POPULATION; mage += 1) {
       const selection = selectGoal({
       appeal: appealWeights,
+      goalAppeal: goalAppealWeights,
         outlook: excitedOutlook(mage),
         worldTick: 50,
         incumbent: commitments.get(mage),

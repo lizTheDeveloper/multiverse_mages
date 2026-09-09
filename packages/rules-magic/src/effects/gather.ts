@@ -14,7 +14,7 @@
 /**
  * ## One gate, in one place
  *
- * Four questions decide whether a held instance is a candidate at all:
+ * Four questions decide whether a held instance contributes anything:
  *
  * 1. Is it held somewhere that can act — a mind or a palace, not a book?
  * 2. Is its mastery at or above the activation threshold?
@@ -30,35 +30,6 @@
  * instance produces no contribution at all, and {@link EffectContribution} has
  * nowhere to record that a question was ever asked.
  *
- * ## A fifth question, added by W20, asked second
- *
- * `compositional-content.md` §3.4 gives every effect a `when`: `always`
- * (the default, and every effect authored before this change), `revealed`
- * (latent — contributes only while a held `reveal` effect names it), or
- * `holds-cell` (contributes only while the holder has at least `minNodes` of
- * a named cell). Answering it needs to know, in advance, which reveals are
- * active and how many nodes of each cell are held — information that is not
- * available effect by effect. So gathering is **two passes** over the same
- * instances rather than one:
- *
- * - **Pass 1** asks the original four questions only, and from what survives
- *   collects every active `reveal` effect's target and a per-cell count of
- *   held, contributing instances (`holds-cell`'s "held" is exactly this: the
- *   same location/mastery/permits notion of "held and usable" the other four
- *   gates already define, not a bare knowledge-graph membership check).
- *   A `reveal` effect's own `when` is deliberately **not** consulted in this
- *   pass — only the four original gates are — so a reveal can never itself be
- *   latent behind another reveal. That keeps this a single non-cyclic sweep
- *   instead of a fixed-point search over a graph nothing here promises
- *   terminates.
- * - **Pass 2** asks all five questions, including `when`, over the same
- *   instances in the same order, and is what actually builds the returned
- *   contributions — `reveal`-mode and `control`-mode effects included, marked
- *   by their `mode` so a caller can see they carry no magnitude.
- *
- * Two passes over the *same* materialized list, so a one-shot iterable is
- * copied once at the top rather than consumed twice.
- *
  * ## What this file may not do
  *
  * It may not combine anything. Two instances of the same primitive produce two
@@ -66,19 +37,17 @@
  * see `contracts.md` §3 and the lint rule that enforces it.
  */
 
-import type { ContentId, ContentRegistry, EffectRecord, NodeRecord } from '@mm/content';
+import type { ContentId, ContentRegistry } from '@mm/content';
 import type { Fixed, TimeMode } from '@mm/sim-core';
 import type { Ruleset } from '@mm/state';
 import { permits } from '@mm/state';
 
-import type {
-  EffectContribution,
-  EffectSourceInstance,
-  RevealTarget,
-} from './contribution.js';
+import type { EffectContribution, EffectSourceInstance } from './contribution.js';
 import { CONTRIBUTING_LOCATION_KINDS, MASTERY_ACTIVATION_THRESHOLD } from './contribution.js';
 import { requireNode, requirePrimitive } from './registry-lookup.js';
 import { primitiveAppliesInMode } from './scale.js';
+import type { StandingWorkings } from '../workings/standing.js';
+import { requiresWorking } from '../workings/standing.js';
 
 /**
  * Everything gathering needs that is not the instances themselves.
@@ -99,6 +68,22 @@ export interface EffectGatherContext {
   readonly cellOf: (nodeId: ContentId) => number;
   /** Defaults to {@link MASTERY_ACTIVATION_THRESHOLD}. */
   readonly activationThreshold?: Fixed;
+  /**
+   * The workings standing in this universe right now — the fourth gate.
+   *
+   * **Required, and it has no default.** `NO_WORKINGS_STAND` exists for a
+   * caller who means *"nothing stands here"* and it has to be named. A default
+   * would let an unwired consumer look wired: with a permissive default the
+   * whole duration mechanism is decorative for anyone who forgot the field, and
+   * with a refusing one a real contribution vanishes. Both are silent, and a
+   * compile error is neither.
+   *
+   * It is consulted **only** for effects whose `durationTicks` is non-zero. A
+   * zero-duration effect never asks, which is what makes the shipped grid —
+   * where every world-scale effect is authored `0` — byte-identical under any
+   * view whatsoever.
+   */
+  readonly standing: StandingWorkings;
 }
 
 /**
@@ -111,79 +96,6 @@ export interface EffectGatherContext {
  */
 function isContributingLocation(instance: EffectSourceInstance): boolean {
   return CONTRIBUTING_LOCATION_KINDS.has(instance.locationKind);
-}
-
-/**
- * Whether a held target's declared fields all match a candidate `revealed`
- * effect. `compositional-content.md` §3.4: "a reveal matches when every field
- * it declares matches" — an undeclared field imposes no constraint, and
- * declaring both `cell` and `primitive` is the conjunction of both.
- */
-function revealMatches(target: RevealTarget, nodeCell: string, primitiveId: string): boolean {
-  if (target.cell !== undefined && target.cell !== nodeCell) return false;
-  if (target.primitive !== undefined && target.primitive !== primitiveId) return false;
-  return true;
-}
-
-/**
- * Whether `effect`'s `when` is satisfied, given what pass 1 collected.
- *
- * Absent `when` means `always`, per `compositional-content.md` §3.4 and every
- * effect authored before it existed.
- */
-function whenSatisfied(
-  effect: EffectRecord,
-  nodeCell: string,
-  revealTargets: readonly RevealTarget[],
-  heldCellCounts: ReadonlyMap<string, number>,
-): boolean {
-  const when = effect.when ?? { kind: 'always' as const };
-  switch (when.kind) {
-    case 'always':
-      return true;
-    case 'revealed':
-      return revealTargets.some((target) => revealMatches(target, nodeCell, effect.primitive));
-    case 'holds-cell':
-      return (heldCellCounts.get(when.cell) ?? 0) >= when.minNodes;
-  }
-}
-
-/** Builds one contribution, adding `control`/`transformTo` only when the effect carries them (`exactOptionalPropertyTypes`). */
-function buildContribution(
-  instance: EffectSourceInstance,
-  effect: EffectRecord,
-  primitiveId: string,
-): EffectContribution {
-  const contribution: {
-    nodeId: ContentId;
-    primitiveId: string;
-    magnitude: Fixed;
-    target: EffectContribution['target'];
-    durationTicks: number;
-    mode: EffectContribution['mode'];
-    // `NonNullable`, not the indexed type. Indexing an optional property yields
-    // `T | undefined`, which under `exactOptionalPropertyTypes` is a *wider*
-    // type than the target's `control?: EffectControl` — that one permits the
-    // key to be absent but never permits it to be present and undefined.
-    control?: NonNullable<EffectContribution['control']>;
-    transformTo?: NonNullable<EffectContribution['transformTo']>;
-  } = {
-    nodeId: instance.nodeId,
-    primitiveId,
-    magnitude: effect.magnitude,
-    target: effect.target,
-    durationTicks: effect.durationTicks,
-    mode: effect.mode,
-  };
-  if (effect.control !== undefined) contribution.control = effect.control;
-  if (effect.transformTo !== undefined) contribution.transformTo = effect.transformTo;
-  return contribution;
-}
-
-/** A candidate that survived the four original gates, with its node resolved once. */
-interface Candidate {
-  readonly instance: EffectSourceInstance;
-  readonly node: NodeRecord;
 }
 
 /**
@@ -203,54 +115,61 @@ export function gatherEffects(
   instances: Iterable<EffectSourceInstance>,
   context: EffectGatherContext,
 ): readonly EffectContribution[] {
-  const { registry, ruleset, mode, cellOf } = context;
+  const { registry, ruleset, mode, cellOf, standing } = context;
   const threshold = context.activationThreshold ?? MASTERY_ACTIVATION_THRESHOLD;
 
-  // ---- The four original gates, and `requireNode`, each asked exactly once
-  // per instance, before either of the two `when`-passes below runs. Two
-  // passes over the *reveal/holds-cell* question must not become two
-  // evaluations of legality — `cellOf`/`permits` counting once per candidate
-  // is a documented invariant (`effect-gathering.test.ts`), not an
-  // implementation detail free to move.
-  const candidates: Candidate[] = [];
+  const contributions: EffectContribution[] = [];
+
   for (const instance of instances) {
     if (!isContributingLocation(instance)) continue;
     if (instance.mastery < threshold) continue;
-    // ---- The single legality point, asked once per instance. ----
+
+    // ---- The single legality point. Asked once; the answer is never stored. ----
     if (!permits(ruleset, cellOf(instance.nodeId))) continue;
-    candidates.push({ instance, node: requireNode(registry, instance.nodeId) });
-  }
 
-  // ---- Pass 1, over the gated candidates only: collects what pass 2 needs
-  // to answer `when` — active reveals, and a per-cell count of held,
-  // contributing instances. A `reveal` effect's own `when` is deliberately
-  // not consulted here, so a reveal can never itself be latent behind
-  // another reveal — see this file's opening note.
-  const revealTargets: RevealTarget[] = [];
-  const heldCellCounts = new Map<string, number>();
-
-  for (const { node } of candidates) {
-    heldCellCounts.set(node.cell, (heldCellCounts.get(node.cell) ?? 0) + 1);
-
-    for (const effect of node.effects) {
-      if (effect.mode !== 'reveal') continue;
+    const node = requireNode(registry, instance.nodeId);
+    for (let effectIndex = 0; effectIndex < node.effects.length; effectIndex += 1) {
+      const effect = node.effects[effectIndex];
+      if (effect === undefined) continue;
       const primitive = requirePrimitive(registry, effect.primitive);
       if (!primitiveAppliesInMode(primitive, mode)) continue;
-      if (effect.reveals !== undefined) revealTargets.push(effect.reveals);
-    }
-  }
 
-  // ---- Pass 2, over the same candidates in the same order: scale and
-  // `when`, and builds the result.
-  const contributions: EffectContribution[] = [];
+      // ---- The fourth gate: is the working still standing? ----------------
+      //
+      // Asked only of an effect that declares a duration. `durationTicks: 0`
+      // means instantaneous or permanent — the effect this game has always had
+      // — and it never reaches this line, which is why a content set whose
+      // world-scale effects are all authored `0` produces byte-identical
+      // contributions under `NO_WORKINGS_STAND` and under a full universe of
+      // live workings. `workings/standing.ts` argues that reading at length,
+      // because the other reading silently switches off 381 of 419 authored
+      // effects and looks like a balance change from every series the harness
+      // records.
+      //
+      // `standsAt` answers `false` for a working that was never lit and for one
+      // that has lapsed alike. Nothing here can tell those apart and nothing
+      // here should: a lapse is an event with a revert and a report line, and
+      // the world step owns it.
+      if (
+        requiresWorking(effect.durationTicks) &&
+        !standing.standsAt(instance.holder, instance.nodeId)
+      ) {
+        continue;
+      }
 
-  for (const { instance, node } of candidates) {
-    for (const effect of node.effects) {
-      const primitive = requirePrimitive(registry, effect.primitive);
-      if (!primitiveAppliesInMode(primitive, mode)) continue;
-      if (!whenSatisfied(effect, node.cell, revealTargets, heldCellCounts)) continue;
-
-      contributions.push(buildContribution(instance, effect, primitive.id));
+      contributions.push({
+        nodeId: instance.nodeId,
+        primitiveId: primitive.id,
+        magnitude: effect.magnitude,
+        target: effect.target,
+        durationTicks: effect.durationTicks,
+        effectIndex,
+        // Passed through, never judged here. A material requirement is a
+        // question about a stock, and this module has no stock and must not
+        // acquire one — `contracts.md` §5 keeps `rules-magic` out of the
+        // economy, and the gate lives with whoever holds the material.
+        ...(effect.requires === undefined ? {} : { requires: effect.requires }),
+      });
     }
   }
 

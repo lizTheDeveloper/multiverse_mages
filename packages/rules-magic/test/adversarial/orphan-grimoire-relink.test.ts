@@ -107,7 +107,8 @@ import { GRIMOIRE, LOCATION_KIND, componentOf, defineWorldStateSchema } from '@m
 
 import { MASTERY_MAX } from '../../src/instances/constants.js';
 import { destroyGrimoire, grimoiresIn, shelveGrimoire } from '../../src/instances/location.js';
-import { STANDARD_STORE, scribe } from '../../src/instances/scribing.js';
+import { scribe } from '../../src/instances/scribing.js';
+import { STANDARD_STORE } from '../support/store-hooks.js';
 import { KnowledgeSubsystem } from '../../src/instances/subsystem.js';
 import type { InstanceView } from '../../src/traditions/index.js';
 import { changeTradition, hooksOfTradition } from '../../src/traditions/index.js';

@@ -200,31 +200,31 @@ describe('established: cap boundaries are exact, and the counter does not over-c
     const ward = primitive('ward');
     const counters = new ClampCounters();
     const atCap = stackMagnitudes(ward, [922], { counters });
-    expect(atCap).toEqual({ value: 922, clamped: false });
+    expect(atCap).toEqual({ value: 922, clamped: false, floored: false });
     expect(counters.count('ward')).toBe(0);
   });
 
   it('one part in 1024 below the cap is also not clamped', () => {
     const ward = primitive('ward');
     const belowCap = stackMagnitudes(ward, [921]);
-    expect(belowCap).toEqual({ value: 921, clamped: false });
+    expect(belowCap).toEqual({ value: 921, clamped: false, floored: false });
   });
 
   it('one part in 1024 above the cap is clamped down to it and counted once', () => {
     const ward = primitive('ward');
     const counters = new ClampCounters();
     const aboveCap = stackMagnitudes(ward, [923], { counters });
-    expect(aboveCap).toEqual({ value: 922, clamped: true });
+    expect(aboveCap).toEqual({ value: 922, clamped: true, floored: false });
     expect(counters.count('ward')).toBe(1);
   });
 
   it('the same boundary holds for an additive-into-multiplier cap (build-rate, fp(4096))', () => {
     const buildRate = primitive('build-rate');
     // additiveIntoMultiplier([3072]) === FP_ONE + 3072 === 4096, exactly the cap.
-    expect(stackMagnitudes(buildRate, [3072])).toEqual({ value: 4096, clamped: false });
-    expect(stackMagnitudes(buildRate, [3071])).toEqual({ value: 4095, clamped: false });
+    expect(stackMagnitudes(buildRate, [3072])).toEqual({ value: 4096, clamped: false, floored: false });
+    expect(stackMagnitudes(buildRate, [3071])).toEqual({ value: 4095, clamped: false, floored: false });
     const counters = new ClampCounters();
-    expect(stackMagnitudes(buildRate, [3073], { counters })).toEqual({ value: 4096, clamped: true });
+    expect(stackMagnitudes(buildRate, [3073], { counters })).toEqual({ value: 4096, clamped: true, floored: false });
     expect(counters.count('build-rate')).toBe(1);
   });
 
@@ -233,7 +233,7 @@ describe('established: cap boundaries are exact, and the counter does not over-c
     const counters = new ClampCounters();
     // fraction fp(1024) = "prevents everything" pre-cap.
     expect(multiplicativeOnRemainder([FP_ONE])).toBe(FP_ONE);
-    expect(stackMagnitudes(ward, [FP_ONE], { counters })).toEqual({ value: 922, clamped: true });
+    expect(stackMagnitudes(ward, [FP_ONE], { counters })).toEqual({ value: 922, clamped: true, floored: false });
     expect(counters.count('ward')).toBe(1);
   });
 });

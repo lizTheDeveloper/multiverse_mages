@@ -35,10 +35,18 @@ function at(x: number, y: number): Point {
   return { x: x * FP_ONE, y: y * FP_ONE };
 }
 
+/**
+ * Where `openPortal` puts the portal, and therefore the one cell
+ * `generateTerrain` guarantees passable. Repeated here rather than imported
+ * because `raid.ts` does not export it — and a test that passed a *different*
+ * point would be exercising a grid no raid can produce.
+ */
+const PORTAL: Point = { x: Math.floor(tuning.battlefieldExtent / 2), y: 0 };
+
 describe('terrain is regenerated from the seed, never stored', () => {
   it('produces an identical grid from an identical seed', () => {
-    const a = generateTerrain(tuning, rngFromRootSeed(4242));
-    const b = generateTerrain(tuning, rngFromRootSeed(4242));
+    const a = generateTerrain(tuning, rngFromRootSeed(4242), PORTAL);
+    const b = generateTerrain(tuning, rngFromRootSeed(4242), PORTAL);
     for (let row = 0; row < a.cellsPerSide; row += 1) {
       for (let column = 0; column < a.cellsPerSide; column += 1) {
         expect(a.at({ column, row })).toEqual(b.at({ column, row }));
@@ -47,8 +55,8 @@ describe('terrain is regenerated from the seed, never stored', () => {
   });
 
   it('produces a different grid from a different seed', () => {
-    const a = generateTerrain(tuning, rngFromRootSeed(1));
-    const b = generateTerrain(tuning, rngFromRootSeed(2));
+    const a = generateTerrain(tuning, rngFromRootSeed(1), PORTAL);
+    const b = generateTerrain(tuning, rngFromRootSeed(2), PORTAL);
     let differences = 0;
     for (let row = 0; row < a.cellsPerSide; row += 1) {
       for (let column = 0; column < a.cellsPerSide; column += 1) {
@@ -59,7 +67,7 @@ describe('terrain is regenerated from the seed, never stored', () => {
   });
 
   it('covers the whole field in whole cells', () => {
-    const grid = generateTerrain(tuning, rngFromRootSeed(7));
+    const grid = generateTerrain(tuning, rngFromRootSeed(7), PORTAL);
     expect(grid.cellsPerSide * grid.cellSize).toBe(tuning.battlefieldExtent);
   });
 
@@ -68,7 +76,7 @@ describe('terrain is regenerated from the seed, never stored', () => {
     // rock would pass every other assertion in this file while making every
     // raid a stalemate, and `raidLengthDistribution` would report that as a
     // finding about the game.
-    const grid = generateTerrain(tuning, rngFromRootSeed(11));
+    const grid = generateTerrain(tuning, rngFromRootSeed(11), PORTAL);
     let passable = 0;
     const total = grid.cellsPerSide * grid.cellsPerSide;
     for (let row = 0; row < grid.cellsPerSide; row += 1) {
@@ -80,7 +88,7 @@ describe('terrain is regenerated from the seed, never stored', () => {
   });
 
   it('treats everything outside the grid as impassable and sight-blocking', () => {
-    const grid = generateTerrain(tuning, rngFromRootSeed(3));
+    const grid = generateTerrain(tuning, rngFromRootSeed(3), PORTAL);
     const outside = grid.at({ column: -1, row: 0 });
     expect(outside.passable).toBe(false);
     expect(outside.blocksLineOfSight).toBe(true);
@@ -90,7 +98,7 @@ describe('terrain is regenerated from the seed, never stored', () => {
 describe('movement and displacement stop at the same wall', () => {
   /** A field with a wall down column 5, so a crossing has to be stopped. */
   function walled(): ReturnType<typeof generateTerrain> {
-    const grid = generateTerrain(tuning, rngFromRootSeed(9));
+    const grid = generateTerrain(tuning, rngFromRootSeed(9), PORTAL);
     const cellSize = grid.cellSize;
     const cellsPerSide = grid.cellsPerSide;
     return {
@@ -116,7 +124,7 @@ describe('movement and displacement stop at the same wall', () => {
   });
 
   it('takes the largest blink source and not their sum', () => {
-    const open = generateTerrain(tuning, rngFromRootSeed(5));
+    const open = generateTerrain(tuning, rngFromRootSeed(5), PORTAL);
     const clear = {
       ...open,
       at: () => ({ passable: true, blocksLineOfSight: false, moveCost: FP_ONE }),
@@ -129,7 +137,7 @@ describe('movement and displacement stop at the same wall', () => {
   });
 
   it('does not displace at all when every source is zero', () => {
-    const open = generateTerrain(tuning, rngFromRootSeed(5));
+    const open = generateTerrain(tuning, rngFromRootSeed(5), PORTAL);
     expect(blinkToward(at(3, 3), at(90, 3), [], open)).toEqual(at(3, 3));
   });
 

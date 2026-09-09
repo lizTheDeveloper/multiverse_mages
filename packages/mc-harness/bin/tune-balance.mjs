@@ -17,7 +17,18 @@
  *
  *     node packages/mc-harness/bin/tune-balance.mjs \
  *       --scenario ./packages/scenario/bin/scenario.mjs \
- *       --replicates 6 --passes 2 --out ./balance/tuning
+ *       --replicates 24 --passes 2 --out ./balance/tuning
+ *
+ * ## Coverage is refused, not warned about
+ *
+ * `--replicates` used to default to 6 against an eight-strategy pool. Round-robin
+ * assignment cycles on the replicate index alone, so every trial of that search
+ * scored a **six**-strategy pool with `portal-rush` and `worship-maximizer`
+ * absent, and nothing said so. `ascension-summit-cells = 13` was chosen by that
+ * scan. There are now two guards: `roundRobinCoverageProblem` refuses a
+ * replicate count that is not a multiple of the pool size before any run is
+ * dispatched, and `coverageProblem` asserts the coverage the records actually
+ * show after each trial. Both throw.
  *
  * ## Why this writes to `packages/content/data` at all
  *
@@ -52,12 +63,15 @@ import path from 'node:path';
 import process from 'node:process';
 import { fileURLToPath } from 'node:url';
 
-import { scoreBalance, candidatesForAxis } from '../dist/tuner.js';
+import { scoreBalance, candidatesForAxis, coverageProblem, describeScore } from '../dist/tuner.js';
+import { roundRobinCoverageProblem } from '../dist/sweep-spec.js';
 
 const USAGE = `mm-tune-balance — coordinate descent over the untuned ascension constants.
 
   --scenario <module>    Scenario module. Required.
-  --replicates <n>       Replicates per cell per candidate. Default 6.
+  --sweep <file>         Sweep template. Default balance/sweeps/balance-gate-ascension.sweep.json.
+  --replicates <n>       Replicates per cell per candidate. Must be a multiple of
+                         the pool size; defaults to the pool size itself.
   --passes <n>           Coordinate-descent passes over every axis. Default 2.
   --workers <n>          Sweep workers. Default 8.
   --out <dir>            Where the trial log is written. Required.
@@ -72,7 +86,7 @@ golden fixtures are never touched.`;
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const REPO = path.resolve(HERE, '../../..');
 const CONSTANTS = path.join(REPO, 'packages/content/data/god-constant.json');
-const SWEEP_TEMPLATE = path.join(REPO, 'balance/sweeps/balance-gate-ascension.sweep.json');
+const DEFAULT_SWEEP_TEMPLATE = path.join(REPO, 'balance/sweeps/balance-gate-ascension.sweep.json');
 const RUN_SWEEP = path.join(REPO, 'packages/mc-harness/bin/run-sweep.mjs');
 
 /**
@@ -141,8 +155,20 @@ const WEIGHTS = { variety: 1, correlation: 1, exploit: 1 };
 const BAND = { min: 0.05, max: 0.2 };
 
 function parseArgs(argv) {
-  const known = new Set(['--scenario', '--replicates', '--passes', '--workers', '--out', '--axes']);
-  const args = { replicates: 6, passes: 2, workers: 8, apply: false };
+  const known = new Set([
+    '--scenario',
+    '--sweep',
+    '--replicates',
+    '--passes',
+    '--workers',
+    '--out',
+    '--axes',
+  ]);
+  // `replicates` is deliberately left undefined here rather than given a
+  // literal. The old default was 6 against an eight-strategy pool, which
+  // silently evaluated every candidate on six strategies; the number that is
+  // right is a property of the sweep template, so it is read from it.
+  const args = { passes: 2, workers: 8, apply: false };
   for (let index = 0; index < argv.length; index += 1) {
     const flag = argv[index];
     if (flag === '--help' || flag === '-h') return { help: true };
@@ -154,7 +180,10 @@ function parseArgs(argv) {
     const value = argv[index + 1];
     if (value === undefined) throw new Error(`${flag} needs a value.`);
     const key = flag.slice(2);
-    args[key] = key === 'scenario' || key === 'out' || key === 'axes' ? value : Number(value);
+    args[key] =
+      key === 'scenario' || key === 'out' || key === 'axes' || key === 'sweep'
+        ? value
+        : Number(value);
     index += 1;
   }
   for (const required of ['scenario', 'out']) {
@@ -251,30 +280,38 @@ function outcomesOf(ndjsonPath) {
  */
 const SHARED_SWEEP_ID = 'tune-shared-seeds';
 
-async function evaluate(args, constants, vector, trialDir, trialId) {
+async function evaluate(args, constants, template, vector, trialDir, trialId) {
   writeVector(constants, vector);
-  const sweep = JSON.parse(readFileSync(SWEEP_TEMPLATE, 'utf8'));
-  sweep.sweepId = SHARED_SWEEP_ID;
-  sweep.replicates = args.replicates;
+  const sweep = { ...template, sweepId: SHARED_SWEEP_ID, replicates: args.replicates };
   const trialOut = path.join(trialDir, `trial-${trialId}`);
   mkdirSync(trialOut, { recursive: true });
   const sweepPath = path.join(trialOut, 'candidate.sweep.json');
   writeFileSync(sweepPath, JSON.stringify(sweep, null, 2));
   await runSweep(args, sweepPath, trialOut);
   const outcomes = outcomesOf(path.join(trialOut, `${SHARED_SWEEP_ID}.0.runs.ndjson`));
+  // The observed half of the coverage guard. `roundRobinCoverageProblem` has
+  // already refused a specification that could not cover the pool; this checks
+  // what the records actually contain, because a run can still be lost to a
+  // failed worker and a fold over the survivors is scored as if it were the
+  // whole pool. Throwing rather than warning: the first version of this tool
+  // warned about nothing at all and its number reached a committed constant.
+  const problem = coverageProblem(outcomes, template.agentPool.strategies);
+  if (problem !== undefined) {
+    throw new Error(
+      `trial ${String(trialId)} did not cover its pool, so its score is not a score: ${problem}`,
+    );
+  }
   return { outcomes, score: scoreBalance(outcomes, WEIGHTS, BAND) };
 }
 
 function report(vector, score) {
   const flag = score.feasible ? 'FEASIBLE' : 'infeasible';
-  const terms =
-    `rate ${score.ascensionRate.toFixed(3)}` +
-    ` variety ${score.variety.toFixed(3)}` +
-    ` corr ${score.correlation.toFixed(2)}` +
-    ` exploit ${score.exploitMargin.toFixed(3)}` +
-    ` top ${score.topShare.toFixed(2)}`;
+  // `describeScore` owns the term list so that a term added to the score cannot
+  // be left out of the log. Pearson, Spearman and the winner count print
+  // together and always: one coefficient alone is what made +0.955 readable as
+  // evidence when it was one point against a cluster of seven ties.
   const vec = AXES.map((axis) => `${axis.constantId.replace('ascension-', '')}=${vector[axis.constantId]}`).join(' ');
-  return `${flag} score ${score.score.toFixed(4)} | ${terms} | ${vec}`;
+  return `${flag} score ${score.score.toFixed(4)} | ${describeScore(score)} | ${vec}`;
 }
 
 async function main() {
@@ -282,6 +319,24 @@ async function main() {
   if (args.help) {
     process.stdout.write(`${USAGE}\n`);
     return;
+  }
+
+  const templatePath =
+    args.sweep === undefined ? DEFAULT_SWEEP_TEMPLATE : path.resolve(args.sweep);
+  const template = JSON.parse(readFileSync(templatePath, 'utf8'));
+  const poolSize = template.agentPool.strategies.length;
+  // The pool size is the only replicate count that covers a round-robin pool
+  // exactly once per cell, so it is the default. A caller who wants more
+  // statistical power raises it by whole multiples.
+  if (args.replicates === undefined) args.replicates = poolSize;
+  if (template.agentPool.assignment === 'round-robin') {
+    const problem = roundRobinCoverageProblem(poolSize, args.replicates);
+    if (problem !== undefined) {
+      throw new Error(
+        `--replicates would score a partial pool, which is how ascension-summit-cells = 13 was ` +
+          `chosen: ${problem}`,
+      );
+    }
   }
 
   const originalBytes = readFileSync(CONSTANTS, 'utf8');
@@ -323,7 +378,7 @@ async function main() {
   let trialId = 0;
 
   try {
-    best = (await evaluate(args, constants, incumbent, trialDir, trialId++)).score;
+    best = (await evaluate(args, constants, template, incumbent, trialDir, trialId++)).score;
     process.stdout.write(`baseline  ${report(incumbent, best)}\n`);
     log.push({ trial: 0, vector: { ...incumbent }, score: best });
 
@@ -331,7 +386,7 @@ async function main() {
       let improvedThisPass = false;
       for (const axis of searchAxes) {
         for (const candidate of candidatesForAxis(incumbent, axis)) {
-          const { score } = await evaluate(args, constants, candidate, trialDir, trialId);
+          const { score } = await evaluate(args, constants, template, candidate, trialDir, trialId);
           log.push({ trial: trialId, vector: { ...candidate }, score });
           // Feasibility first: a candidate that satisfies the hard constraints
           // beats every candidate that does not, whatever their scores. Only

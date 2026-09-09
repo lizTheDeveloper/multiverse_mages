@@ -385,11 +385,30 @@ describe('every gate is wired into both CI systems (docs/devops/ci-and-deploy.md
     expect(scripts[name]).toContain('balance-gate.mjs');
   });
 
-  it.each(pushGateScripts)('npm run verify runs %s', (name) => {
-    // This is the whole of the self-hosted runner's wiring: scripts/ci-check.sh
-    // names no gate of its own, because its contract is to stay equivalent to
-    // verify. Asserting that here means the runner cannot silently lose a gate.
-    expect(scripts['verify']).toContain(`npm run ${name}`);
+  it.each(pushGateScripts)('npm run verify:balance runs %s', (name) => {
+    // **These three left `verify` on 2026-08-14**, and this assertion moved with
+    // them rather than being deleted — the guard's job is to make sure no gate
+    // can be silently *lost*, which is orthogonal to which command holds it.
+    //
+    // They now sit in `verify:balance`, run on every commit in a non-blocking
+    // Actions job, and are required at release rather than at merge. The reason
+    // is the one the `ascension` gate already moved for, one rung down the cost
+    // ladder: the self-hosted runner serialises against a 2400 s timeout, so a
+    // sweep-bearing commit is a queue hazard for every other pull request, and
+    // during a campaign *every* commit is sweep-bearing. See ci.yml's `balance`
+    // job for the full argument and for when they come back.
+    //
+    // This still covers the self-hosted runner, because scripts/ci-check.sh
+    // names no gate of its own — its contract is to stay equivalent to verify.
+    expect(scripts['verify:balance']).toContain(`npm run ${name}`);
+  });
+
+  it('verify:full still runs the three, so one command means all of them', () => {
+    // The escape hatch the split needs, and the same one the ascension move
+    // needed: `verify` is the merge gate and no longer runs everything, so
+    // `verify:full` has to be what a person and the release checklist name when
+    // they mean the whole suite.
+    expect(scripts['verify:full']).toContain('npm run verify:balance');
   });
 
   it('npm run verify:full runs every gate, so one command still means all of them', () => {
@@ -420,30 +439,54 @@ describe('every gate is wired into both CI systems (docs/devops/ci-and-deploy.md
     expect(script).not.toContain('balance-gate.mjs');
   });
 
-  it.each(pushGateScripts)('every full-suite GitHub Actions job runs %s by name', (name) => {
-    // The workflow lists its steps by hand, so a gate added only to verify would
-    // run on the self-hosted runner and be absent from Actions — which is the
-    // exact drift docs/devops/ci-and-deploy.md warns about, in the form where
-    // the two systems disagree about a commit and nobody knows why.
+  it.each(pushGateScripts)('%s runs in some GitHub Actions job', (name) => {
+    // The workflow lists its steps by hand, so a gate added only to an npm
+    // script would run on the self-hosted runner and be absent from Actions —
+    // the exact drift docs/devops/ci-and-deploy.md warns about, in the form
+    // where the two systems disagree about a commit and nobody knows why.
     //
-    // The filter is *"runs the test suite"* rather than *"is a job"*, and that
-    // distinction is load-bearing. This used to assert `jobs.length === 2` and
-    // walk all of them, which made adding any narrow single-purpose job — the
-    // non-blocking `consumption` job below is the first — fail three balance
-    // assertions with a message about balance. The property the check is
-    // actually for is that a job claiming to check a commit checks it *fully*;
-    // a job that does not run the suite is not making that claim.
+    // **What this asserts changed on 2026-08-14, and the property did not.**
+    // It used to require every *full-suite* job to name each gate, which was
+    // right while the gates lived inside `verify`. They now live in their own
+    // non-blocking `balance` job, so that phrasing would force them back into
+    // the merge gate — the opposite of the decision. The property worth keeping
+    // is the one the check was always for: **a gate cannot be silently lost.**
+    // So: it must run in *some* job, and this fails if a gate is deleted from
+    // the workflow entirely rather than moved.
     const jobs = actionsJobs();
-    const fullSuite = [...jobs].filter(([, body]) => body.includes('npm test'));
-    // Both of them: the pinned-Node gate and the next-major early warning. A
-    // floor rather than an equality, so a third full-suite job is allowed — but
-    // a filter that quietly matched nothing would pass this loop vacuously, and
-    // that is what this line prevents.
-    expect(fullSuite.length).toBeGreaterThanOrEqual(2);
-    for (const [jobName, body] of fullSuite) {
-      expect(body, `Actions job "${jobName}" runs the suite without ${name}`).toContain(
-        `npm run ${name}`,
-      );
+    const running = [...jobs].filter(([, body]) => body.includes(`npm run ${name}`));
+    expect(
+      running.length,
+      `no GitHub Actions job runs ${name} — a gate that runs nowhere is a gate that was deleted`,
+    ).toBeGreaterThan(0);
+  });
+
+  it('keeps the three balance gates out of the required merge jobs', () => {
+    // The other half of the same decision, asserted so that putting them back
+    // is a deliberate diff rather than a drift. A job that runs the test suite
+    // is a job a commit must clear to merge; the sweeps are required at release
+    // instead (release-plan.md, MINOR parity), and ci.yml's `balance` job
+    // carries the argument and the condition for reversing this.
+    // Required jobs only. A job carrying `continue-on-error` cannot block a
+    // merge, so what it runs costs a contributor wall-clock and never a red
+    // required check — `next-node` is the standing example, and it keeps the
+    // gates deliberately: an early warning about the next Node major is more
+    // useful complete than fast.
+    const jobs = actionsJobs();
+    const blocking = [...jobs].filter(
+      ([, body]) => body.includes('npm test') && !body.includes('continue-on-error: true'),
+    );
+    expect(blocking.length).toBeGreaterThanOrEqual(1);
+    for (const [jobName, body] of blocking) {
+      for (const name of pushGateScripts) {
+        expect(
+          body,
+          `Actions job "${jobName}" runs the suite AND ${name} — the balance gates were moved ` +
+            'out of the merge path on 2026-08-14 because they queue every other pull request ' +
+            'behind them on the serialising self-hosted runner. Putting one back belongs in a ' +
+            'commit that says so.',
+        ).not.toContain(`npm run ${name}`);
+      }
     }
   });
 });

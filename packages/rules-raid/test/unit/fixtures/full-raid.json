@@ -1,0 +1,168 @@
+{
+  "formatVersion": 1,
+  "name": "full-raid",
+  "description": "A raid with soldiers (deployment and detachments), combat (direct-damage), theft system active (im-read-the-surface), library objectives, and attacker victory — covering terrain generation, deployment, the engagement loop, and consequence accounting. Seed chosen for an attacker win with objectives resolved.",
+  "raidSeed": 42,
+  "raiderNodes": [
+    "cig-the-uncontained-hour",
+    "im-read-the-surface"
+  ],
+  "hostNodes": [
+    "cig-the-uncontained-hour"
+  ],
+  "withSoldiers": true,
+  "outcome": {
+    "victor": 0,
+    "reason": 3,
+    "resolutionTick": 84,
+    "maxTicks": 2787,
+    "casualties": [
+      {
+        "side": 0,
+        "mageId": 1048576,
+        "stranded": false
+      },
+      {
+        "side": 1,
+        "mageId": 1048576,
+        "stranded": false
+      }
+    ],
+    "cohortLosses": [
+      {
+        "side": 0,
+        "cohortId": 1048581,
+        "count": 100
+      },
+      {
+        "side": 0,
+        "cohortId": 1048581,
+        "count": 100
+      },
+      {
+        "side": 0,
+        "cohortId": 1048581,
+        "count": 100
+      },
+      {
+        "side": 1,
+        "cohortId": 1048586,
+        "count": 100
+      },
+      {
+        "side": 1,
+        "cohortId": 1048586,
+        "count": 100
+      }
+    ],
+    "corruptedInstances": [],
+    "objectives": [
+      {
+        "kind": 3,
+        "targetId": 1048576,
+        "value": 4096,
+        "status": 1
+      },
+      {
+        "kind": 1,
+        "targetId": 1048579,
+        "value": 3840,
+        "status": 0
+      },
+      {
+        "kind": 2,
+        "targetId": 1048580,
+        "value": 2048,
+        "status": 1
+      }
+    ],
+    "knowledgeMovements": [],
+    "nodesLostByHost": [],
+    "nodesGainedByRaider": [],
+    "forbiddenCastsBlocked": 0,
+    "capClamps": [],
+    "primitiveApplication": [
+      [
+        "direct-damage",
+        {
+          "attacker": 236928,
+          "defender": 240000,
+          "applications": 157
+        }
+      ]
+    ],
+    "actionEconomy": {
+      "deniedTicks": [
+        [
+          "soldier-intrinsic",
+          [
+            76,
+            91
+          ]
+        ]
+      ],
+      "hpRemoved": [
+        [
+          "direct-damage",
+          [
+            384,
+            384
+          ]
+        ],
+        [
+          "soldier-intrinsic",
+          [
+            234112,
+            237184
+          ]
+        ]
+      ],
+      "attempts": [
+        [
+          "direct-damage",
+          {
+            "removing": 0,
+            "hurting": 2,
+            "spent": 0
+          }
+        ],
+        [
+          "soldier-intrinsic",
+          {
+            "removing": 7,
+            "hurting": 148,
+            "spent": 0
+          }
+        ]
+      ],
+      "totalCombatantTicks": 505,
+      "removals": [
+        4,
+        3
+      ],
+      "summonsRemoved": [
+        0,
+        0
+      ],
+      "saves": [
+        0,
+        0
+      ],
+      "unimplementedChannels": [
+        "displacement"
+      ]
+    },
+    "peakCombatants": [
+      4,
+      4
+    ],
+    "raidersFielded": 1,
+    "raidersWithdrawn": 0,
+    "raidersStranded": 0,
+    "favorSpentByDefender": 0,
+    "visSpentByAttacker": 0,
+    "visCapturedByDefender": 0,
+    "exposures": [],
+    "constitutionalMarks": []
+  }
+}

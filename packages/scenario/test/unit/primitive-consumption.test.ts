@@ -108,24 +108,86 @@ describe('god-driven consumption is recorded, and does not count', () => {
     },
   );
 
-  it('leaves a non-node primitive out of the consumed set', () => {
+  it('no longer has a god-only primitive to leave out, and says which ones moved', () => {
     const { recorder, registry } = recorded();
     const report = checkPrimitiveConsumption(registry, recorder);
     const consumed = report.consumed.map((entry) => entry.primitiveId);
 
-    // The failure this whole check exists to prevent: `research-rate` is stacked
-    // every tick from blessing constants, and counting that as coverage would
-    // report the pipeline connected while no mage's knowledge moved a rate.
-    expect(consumed).not.toContain('research-rate');
+    // **This assertion has now been rewritten twice, and both rewrites are the
+    // point rather than a weakening.** It first named `research-rate` — the
+    // loudest case: consumed every tick, by the god, and by nothing a scholar
+    // could learn. W18 wired it, so the test swapped to `lifespan`, the
+    // surviving god-only primitive.
+    //
+    // `lifespan` is now wired too (`coordination/knowledge-vitality`), and with
+    // it the last one. **There is no primitive left that the god moves and
+    // knowledge cannot**, which is exactly the state
+    // `.github/workflows/ci.yml`'s consumption job names as the condition for
+    // making the check blocking again.
+    //
+    // So the assertion inverts: the god-only set is empty, and every primitive
+    // the registry declares is reachable from an authored node.
+    expect(report.nonNode.map((entry) => entry.primitiveId)).toEqual([]);
+    for (const primitiveId of ['research-rate', 'teach-rate', 'scribe-rate', 'lifespan', 'fertility']) {
+      expect(consumed, `${primitiveId} lost its node-driven consumer`).toContain(primitiveId);
+    }
   });
 
   it('explains itself in the report rather than leaving a reader guessing', () => {
+    // **A synthetic god-only registration, and not an assertion that the section
+    // is empty.** `consumption.ts` argues that `nonNode`'s whole job is to
+    // explain why a primitive plainly in use is nonetheless unreachable by an
+    // academic — and the day that explanation is needed again is the day a new
+    // primitive lands with a god consumer and no node one. A test that asserted
+    // the section stays empty would pass on the tree that deleted the section's
+    // formatter and fail nothing.
+    //
+    // So this replays the real universe's registrations with one edit: the
+    // vitality wire's node-driven `lifespan` row is dropped, leaving the god's
+    // blessing behind. That is a universe this repository shipped four commits
+    // ago, and it is the shape the formatter exists for.
     const { recorder, registry } = recorded();
-    const text = formatPrimitiveConsumptionReport(checkPrimitiveConsumption(registry, recorder));
+    const godOnly = createConsumptionRecorder();
+    for (const registration of recorder.registrations()) {
+      if (registration.primitiveId === 'lifespan' && registration.kind === 'node') continue;
+      godOnly.register(registration);
+    }
 
+    const report = checkPrimitiveConsumption(registry, godOnly, ['lifespan']);
+    expect(report.nonNode.map((entry) => entry.primitiveId)).toEqual(['lifespan']);
+
+    const text = formatPrimitiveConsumptionReport(report);
     expect(text).toContain('Consumed, but never from node effects');
-    expect(text).toContain('coordination/god/effects.researchMultiplierFor');
+    expect(text).toContain('coordination/god/effects.lifespanEffectsFor');
+    // `w52/emphasis-reorders` (Group F) asserted `toContain('coordination/god/
+    // effects.researchBonusesFor')` under this section header, against the
+    // pre-`godOnly` body of this test. Tried on the Group F merge, 2026-08-16,
+    // and it fails: the report no longer prints non-node consumer *strings* at
+    // all once every primitive has a node-driven consumer, so that assertion is
+    // unsatisfiable on this tree rather than merely unnecessary. Recorded here
+    // instead of silently dropped.
   });
+
+  it.each(['research-rate', 'scribe-rate', 'teach-rate'])(
+    'moves %s into the consumed set once knowledge can reach it',
+    (primitiveId) => {
+      const { recorder, registry } = recorded();
+      const report = checkPrimitiveConsumption(registry, recorder);
+      const entry = report.consumed.find((row) => row.primitiveId === primitiveId);
+
+      // Registered from the line that reads the authored magnitudes, so a
+      // registration cannot outlive the fetch it describes.
+      expect(entry?.consumers).toContain('coordination/academic-effects.academicRateBonuses');
+      expect(entry?.nodeCount).toBeGreaterThan(0);
+
+      // And the god's explanatory line drops away, which is this check's own
+      // design rather than a loss: `nonNode` is filtered to primitives nothing
+      // node-driven reached, because its only job is to explain why a primitive
+      // that is plainly in use is nonetheless unreachable by an academic. Once it
+      // *is* reachable there is nothing left to explain.
+      expect(report.nonNode.map((row) => row.primitiveId)).not.toContain(primitiveId);
+    },
+  );
 });
 
 describe('the check is wired in as a non-blocking Actions job, not as part of verify', () => {

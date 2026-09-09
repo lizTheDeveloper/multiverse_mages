@@ -1,0 +1,149 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://multiverse-mages.invalid/schema/character/character.schema.json",
+  "title": "character.json",
+  "description": "Named individuals — a mage with a name, a voice, and a portrait. Renderer-only content: never loaded by the simulation, never part of contentRevision, for the same reason the audio set is not (contracts §0 makes contentRevision a compatibility gate, and adding a character must not stop two players raiding each other). The simulation's mages hash into this pool; it does not know these records exist.",
+  "type": "array",
+  "items": {
+    "$ref": "#/$defs/character"
+  },
+  "$defs": {
+    "character": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "name",
+        "species",
+        "voiceId",
+        "assets"
+      ],
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/contentId"
+        },
+        "name": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 64
+        },
+        "species": {
+          "$ref": "#/$defs/contentId"
+        },
+        "voiceId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 64
+        },
+        "voiceNote": {
+          "type": "string",
+          "maxLength": 300
+        },
+        "ageBracket": {
+          "enum": [
+            "young",
+            "middle",
+            "old"
+          ]
+        },
+        "note": {
+          "type": "string",
+          "maxLength": 300
+        },
+        "look": {
+          "type": "string",
+          "maxLength": 300,
+          "description": "Visual description for the art generator, and ONLY that. Distinct from `note`, which is flavour prose for a reader — the first portrait generated came back as Santa Claus because a note about requisition forms in a coat pocket was fed to the generator as costume."
+        },
+        "lines": {
+          "type": "array",
+          "maxItems": 40,
+          "description": "Lines that override the species bank for THIS character. A character with no lines speaks its species' bank unchanged — which is correct for most of them. Overriding is for a persona whose specific history the line depends on, and a line here must still read as its species' register (sound-design §8.1a) or the character stops sounding like what it is.",
+          "items": {
+            "$ref": "#/$defs/line"
+          }
+        },
+        "assets": {
+          "type": "object",
+          "additionalProperties": false,
+          "propertyNames": {
+            "$ref": "#/$defs/contentId"
+          },
+          "properties": {
+            "portrait": {
+              "$ref": "#/$defs/asset"
+            },
+            "sprite": {
+              "$ref": "#/$defs/asset"
+            },
+            "voice": {
+              "$ref": "#/$defs/asset"
+            }
+          }
+        }
+      }
+    },
+    "asset": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "path",
+        "inputHash"
+      ],
+      "properties": {
+        "path": {
+          "type": "string",
+          "maxLength": 200
+        },
+        "inputHash": {
+          "type": "string",
+          "maxLength": 32,
+          "description": "Hash of the inputs that produced this asset. The forge recomputes it from the character's current fields and marks the asset STALE when they differ — which is how a character stays up to date when a new per-mage detail is added, without anyone remembering to regenerate."
+        }
+      }
+    },
+    "contentId": {
+      "type": "string",
+      "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$",
+      "maxLength": 64
+    },
+    "line": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "tier",
+        "text"
+      ],
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/contentId"
+        },
+        "tier": {
+          "enum": [
+            "selection",
+            "acknowledgement",
+            "annoyance-polite",
+            "annoyance-irritated",
+            "annoyance-cracking",
+            "annoyance-unhinged",
+            "breakthrough",
+            "blessed",
+            "death",
+            "last-copy",
+            "cross-species"
+          ]
+        },
+        "text": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 300
+        },
+        "about": {
+          "type": "string",
+          "maxLength": 64
+        }
+      }
+    }
+  }
+}

@@ -281,10 +281,14 @@ describe('the regeneration entrypoint is unreachable from anything automated (ta
     expect(gate).not.toMatch(/import[^;]*regenerate/);
     expect(gate).not.toMatch(/spawn|exec|fork/);
 
-    // The gate's own module writes run records and nothing else.
+    // The gate's own module writes run records and nothing else. Two commands
+    // in it write now — `regenerateCommand` and `resealCommand` — and the
+    // assertion that matters is unchanged: *every* write in this module goes to
+    // the baseline path a caller named, and none of them is in the gate.
     const cli = readRepoFile('packages/mc-harness/src/balance-cli.ts');
     const writes = [...cli.matchAll(/writeFileSync\(([^,]+),/g)].map((match) => match[1]?.trim());
-    expect(writes).toEqual(['args.baselinePath']);
+    expect(new Set(writes)).toEqual(new Set(['args.baselinePath']));
+    expect(writes).toHaveLength(2);
 
     // And that one write is inside the regeneration command, not the gate.
     const gateStart = cli.indexOf('export async function gateCommand');
@@ -316,7 +320,12 @@ describe('the regeneration entrypoint is unreachable from anything automated (ta
     // Not vacuous: the gate *is* wired in, so the assertion above is about
     // reachability and not about an empty script table.
     expect(manifest.scripts['balance:gate']).toContain('balance-gate.mjs');
-    expect(manifest.scripts['verify']).toContain('balance:gate');
+    // `verify:balance`, not `verify`: the three Monte Carlo gates moved out of
+    // the merge path on 2026-08-14 and are required at release instead. The
+    // positive control still holds — the gate is wired into a script the repo
+    // runs, so the assertion above is about reachability of the *regeneration*
+    // entrypoint and not about an empty script table.
+    expect(manifest.scripts['verify:balance']).toContain('balance:gate');
   });
 
   it('is not reachable from any test file in this workspace', () => {

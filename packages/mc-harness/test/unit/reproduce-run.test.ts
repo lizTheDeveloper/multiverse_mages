@@ -20,13 +20,14 @@ import { describe, expect, it } from 'vitest';
 import {
   FIXTURE_PROVENANCE,
   POOL_WORKER_URL,
+  TOY_FIXED_POOL,
   TOY_REGISTRIES,
   toySweep,
   withTempDirectoryAsync,
 } from './fixtures.js';
 import { makeToyExecutor } from '../fixtures/toy-world.js';
 
-const spec = toySweep({ replicates: 5, failureThreshold: 2 });
+const spec = toySweep({ replicates: 5, failureThreshold: 2, agentPool: TOY_FIXED_POOL });
 
 function scenario(overrides: Partial<ScenarioModule> = {}): ScenarioModule {
   return {

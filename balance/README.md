@@ -5,6 +5,37 @@ Two kinds of file live here, and one command each.
     balance/sweeps/      the experiments, as committed JSON
     balance/baselines/   what each gate sweep measured, and how far it may move
 
+One further artifact, which is neither:
+
+    balance/metric-reachability.json   which metrics can be made to move at all
+
+## Before a metric may be gated or optimised — `npm run check:metric-reachability`
+
+A gate compares a metric against a baseline. It cannot tell you whether the metric is capable of
+moving in the first place, and **an instrument that cannot move reads as green forever**. The
+campaign found ten of those; every one was passing.
+
+So `scripts/check-metric-reachability.mjs` asks, per registered metric: ablate the mechanism it
+names, run paired arms under common random numbers, and report one of three verdicts —
+
+- **`moves`** — the paired 95% interval excludes zero. Safe to gate, safe to optimise.
+- **`inert`** — the experiment ran, the lever demonstrably reached the simulation, and the metric
+  did not respond. A finding *about the metric*.
+- **`not-measurable`** — the experiment could not be run: no producer, no observation, no pair, or a
+  lever that never reached the simulation. **Not** a claim that the mechanism does nothing.
+
+`inert ∪ not-measurable` is the **quarantine list**, and it is published rather than applied
+silently, because a silently-skipped metric is how this failure returns.
+
+**It is deliberately not in `npm run verify`.** It costs minutes, and — the load-bearing reason — a
+quarantine list must not be a build failure. The cheapest way to clear a build failure is to stop
+measuring, and this list is only worth anything while nobody is under pressure to shorten it. It
+exits non-zero on exactly one condition: a registered metric with *no* verdict, which is the
+silently-skipped metric the guard forbids.
+
+The report is stamped with the git SHA it was taken on. It will rot the day somebody wires a
+collector or consumes the ablation mask — re-run it rather than reading it.
+
 ## What the gates actually do
 
 There are **four** of them, and they are four instruments rather than one instrument run four times.
@@ -257,26 +288,39 @@ proportional change in that metric the gate would report as `regressed`. Anythin
 
 | metric | 5-year gate | 20-year gate | 20-year agency gate | 200-year gate |
 |---|---|---|---|---|
-| `referenceGrimoires` | 5.6 % | 6.6 % | 12.6 % | 16.2 % |
-| `referenceKnowledgeInstances` | 2.2 % | 2.5 % | 4.6 % | 7.2 % |
-| `referenceLibraryDepth` | 16.5 % | 14.3 % | 22.9 % | 17.5 % |
-| `referenceLivingMages` | 0.8 % | 1.6 % | 3.2 % | 6.1 % |
-| `referenceNodesGained` | 2.9 % | 1.4 % | 2.8 % | 2.8 % |
-| `referenceNodesGainedFinalQuarter` | — | 3.8 % | 10.1 % | 26.4 % |
-| `referenceNodesKnown` | 2.4 % | 1.3 % | 2.6 % | 2.7 % |
-| `referencePeakPopulation` | 0.0 % | 5.8 % | 8.2 % | 1.4 % |
-| `referencePopulation` | 1.0 % | 1.7 % | 3.3 % | 8.1 % |
-| `referencePopulationChange` | 8.7 % | 5.3 % | 10.1 % | 8.2 % |
+| `referenceGrimoires` | 4.1 % | 7.7 % | 15.5 % | 16.4 % |
+| `referenceKnowledgeInstances` | 2.0 % | 4.2 % | 8.0 % | 30.5 % |
+| `referenceLibraryDepth` | 17.3 % | 17.0 % | 22.1 % | 24.4 % |
+| `referenceLivingMages` | 0.5 % | 1.5 % | 2.6 % | 10.0 % |
+| `referenceNodesGained` | 0.8 % | 2.5 % | 2.7 % | 9.3 % |
+| `referenceNodesGainedFinalQuarter` | — | 7.2 % | 12.2 % | 142.2 % |
+| `referenceNodesKnown` | 0.7 % | 2.4 % | 2.6 % | 9.2 % |
+| `referencePeakPopulation` | 0.0 % | 10.1 % | 0.9 % | 13.3 % |
+| `referencePopulation` | 1.0 % | 1.9 % | 3.4 % | 18.4 % |
+| `referencePopulationChange` | 4.3 % | 9.4 % | 15.0 % | 18.5 % |
 | runs | 200 | 200 | 64 | 64 |
 | plays a god verb | no | no | **yes** | **yes** |
 | wall clock, 4 workers | 4 s | 27 s | **10 s** | **830–1154 s** |
+
+
+**Re-measured 2026-09-06** against all four baselines re-recorded after the material-economy change
+and the 154-branch integration (PR #218). The 200-year column moved substantially because the
+ascension baseline was re-recorded for the first time since the economy was wired.
+
+**`referenceNodesGainedFinalQuarter` at 142.2 % on the 200-year gate is blind.** The metric can
+more than double without the gate noticing. This happened because at 2400 ticks the strategies that
+peak early and coast produce a final quarter that is almost entirely noise, and the spread across
+seeds exceeds the mean. The metric is still collected — it is the only instrument that can tell
+front-loaded from sustained growth — but the gate cannot police it at this sample size. If
+front-loading matters for the next release, the 200-year gate needs more replicates (128 or 256)
+rather than a wider tolerance.
 
 Both multi-strategy gates carry **80 further lines each**, one per `(metric, strategy)`. That is
 where their power actually lives; the column above is a summary of a mean taken over eight
 strategies that do very different things, and both figures below count **measured, nonzero** arm
 lines only — a line at zero has no proportional effect to be minimum-detectable about, which is the
 same reason the table above prints an em dash rather than `Infinity`. Agency arm lines: median MDE
-11.3 %, **78 of 80** below 100 %. Ascension arm lines: median 13.8 %, 67 of 77 below 100 % (the
+14.0 %, **77 of 80** below 100 %. Ascension arm lines: median 13.8 %, 67 of 77 below 100 % (the
 denominator moved from 80 to 77 when the convention was written down here, not when any file
 changed).
 
@@ -294,6 +338,15 @@ to zero that three standard errors exceed it. MDE is now 114 % and 289 % on thos
 instrument did not change; the arm moved under it, twice, in opposite directions.** That is the
 argument for keeping the list rather than a threshold: a line this close to zero will cross 100 %
 in either direction on a re-roll, and the crossing has to arrive with a rationale each time.
+
+**And a third opened at `anti-requisites` (PR #161) — this one a mechanic, not a re-roll.**
+The shipped exclusion pair (`creo-ignem` ⊥ `creo-umbra`, `destructive`) cut
+`permissive-breadth`'s final-quarter node gain to a fraction of what it was, and an arm whose mean
+has fallen onto zero is one whose three-standard-error tolerance exceeds it. It is listed alongside
+the two `denial-warden` lines in `gate-power.test.ts`'s `BLIND_ARM_LINES` so that a fourth cannot
+join them in silence. Note the contrast with the pair above, which is the whole reason the list
+carries reasons rather than counts: **the `denial-warden` crossings are the arm moving under a
+re-roll, and this one is content the god actually shipped.**
 
 `referencePeakPopulation` on the five-year gate has an MDE of exactly zero — its jackknife standard
 error is 0, because the peak is 216 in all 200 runs, so the gate demands exact equality. That is the
@@ -465,6 +518,57 @@ measurement: **a regenerated baseline is a claim that behaviour changed on purpo
 **Nothing automated invokes it.** Not `npm test`, not `npm run verify`, neither CI system.
 `packages/mc-harness/test/unit/baseline-regeneration.test.ts` reads the CI configuration and fails
 if that ever stops being true.
+
+## Re-sealing a baseline, when the content moved and the behaviour did not
+
+A baseline carries two different claims — *what this build measured*, and *which build that was* —
+and until 2026-08-14 they could only be changed together. That was a real problem, because the gate
+refuses `baseline-invalid` on a `provenance` mismatch **before it reads a single metric**. Author a
+node's gloss, and every gate reports a failure while every metric underneath it reads its committed
+value to the digit. The branch is unmergeable, and the only expressible remedy was to re-record
+numbers that had not moved — which costs a merge conflict to every other open branch and banks
+whatever else has drifted since.
+
+    node packages/mc-harness/bin/reseal-baseline.mjs \
+      --scenario  ./packages/scenario/bin/scenario.mjs \
+      --sweep     ./balance/sweeps/balance-gate.sweep.json \
+      --baseline  ./balance/baselines/balance-gate-v1.baseline.json \
+      --sealed-on 2026-08-14 \
+      --workers   4
+
+It rewrites `provenance`, appends one note, recomputes `contentHash`, and **passes every metric line
+through byte for byte** — asserted on the encoded file text before the write, not on two in-memory
+arrays. `--dry-run true` verifies and reports without touching the file. `--note` is repeatable and
+appends; nothing here ever replaces `notes`, because a file that lost four caveats is
+indistinguishable from one that never had them.
+
+**It runs the gate sweep anyway, and no flag skips it.** *"Re-seal without re-measuring"* is a
+statement about what gets **written**, not about what gets **checked**. A content hash is opaque to
+behaviour, so the only sound way to know a re-seal is the right tool is to measure and throw the
+measurement away. The verification costs exactly what the gate costs — 4 s, 27 s and 10 s for the
+three gates inside the required check, ~1000 s for the two-hundred-year one — and not one of its
+numbers is written.
+
+If any gated metric has left its tolerance, become available, stopped being available, or moved its
+`definitionVersion`, the command **refuses and names it**, and a sweep that is disqualified, differently
+seeded or differently configured is refused too. Re-sealing over a real movement would hide a
+regression behind a fresh seal, which is worse than the blocked merge it was reaching for. There is
+no `--force` and no `--skip-verify`, and `baseline-reseal.test.ts` fails if one appears.
+
+**A re-seal is not a way to make a red gate green.** If the gate is red on a *number*, this command
+will refuse, and the answer is a regeneration with a rationale — or finding out why the number moved.
+The two are different claims and the file says which one it is carrying.
+
+The design constraint it is built against is the one `reachability:pin` violates: *a tool that writes
+a whole baseline needs an instrument that attributes rows, or its convenience path silently launders
+someone else's debt.* The instrument here is the drift report. Every gated metric's observed
+movement is printed on **every** run, including the passing ones and the zero ones, and the largest
+is written into the note where it stays in the file. The command banks no number, and the author sees
+exactly what they are sealing over.
+
+**Nothing automated invokes this one either** — not even an npm script, which is a step stricter than
+the regeneration command needs, because a re-seal is cheaper to run and produces a smaller diff, so a
+reachable one would be the easier mistake to make.
 
 ## The five sweeps
 

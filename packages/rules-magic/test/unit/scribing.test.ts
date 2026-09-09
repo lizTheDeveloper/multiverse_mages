@@ -17,7 +17,8 @@ import { GRIMOIRE, HOLDER_KIND, LOCATION_KIND, readRecord } from '@mm/state';
 
 import { MASTERY_MAX, SCRIBE_CAPACITY_PER_TIER } from '../../src/instances/constants.js';
 import type { ScribingInputs } from '../../src/instances/scribing.js';
-import { PALACE_STORE, STANDARD_STORE, scribe } from '../../src/instances/scribing.js';
+import { scribe } from '../../src/instances/scribing.js';
+import { PALACE_STORE, STANDARD_STORE } from '../support/store-hooks.js';
 import { KnowledgeSubsystem } from '../../src/instances/subsystem.js';
 import {
   HOME_CELL,

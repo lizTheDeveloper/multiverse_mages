@@ -173,6 +173,38 @@ describe('the world schema is stable in the way the snapshot format needs', () =
       // Appended by the founding-grant budget, as world-schema revision 6, and
       // after `material-stock` for exactly the reason above.
       'grant-budget',
+      // Appended as world-schema revision 8: sound-design.md §5.2's eight-bar
+      // unease, which is the one duration the design attaches to a
+      // constitutional act. A component rather than two more fields on
+      // `god-state`, because a section carries its field table inline — see
+      // §1.1's own note on why widening a row is the expensive shape.
+      'bar-phase',
+      // Appended by `raid-engagement`, as world-schema revision 9 -- renumbered
+      // from 5, then 7, on successive merges: 7 is reserved for
+      // `material-economy` and 8 was taken by `bar-phase`.
+      'mid-raid-change',
+      // Appended by `university-siting`, together, as world-schema revision 10.
+      // The pair for the same reason the four above are a group: a site is
+      // meaningless without ground to stand in, and no build has shipped one
+      // without the other. Last, because section order is snapshot order and
+      // this pair was renumbered behind `material-stock` and `grant-budget` when
+      // the branch was brought current.
+      'territory-holding',
+      'university-site',
+      // Appended by scribing fidelity, as world-schema revision 11. It hangs off
+      // a knowledge-instance handle and so reads as if it belonged beside
+      // `knowledge-instance`; it goes last, because every revision-6 save on
+      // disk was written with twenty sections and expects the twenty-first to be
+      // the one it does not know.
+      'knowledge-fidelity',
+      'material-grade',
+      // Appended by `working-duration`, as world-schema revision 13: a working
+      // that stands after the cast and expires unless a mage spends a month
+      // renewing it. It hangs off a mage handle and a node id and so reads as if
+      // it belonged beside `knowledge-instance`; it goes last, because every
+      // revision-11 save on disk was written with twenty-one sections and
+      // expects the twenty-second to be the one it does not know.
+      'standing-working',
     ]);
   });
 

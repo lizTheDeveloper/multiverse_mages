@@ -13,12 +13,11 @@
  */
 
 import type { EntityHandle, Fixed } from '@mm/sim-core';
-import { floorDiv } from '@mm/sim-core';
+import { FP_ONE, floorDiv } from '@mm/sim-core';
 import type { PrimitiveRecord } from '@mm/content';
-import type { ClampCounters, EffectControl } from '@mm/primitives';
+import type { AblationMask, ClampCounters } from '@mm/primitives';
 import { stackMagnitudes } from '@mm/primitives';
 
-import { primitiveFloor } from '../economy/primitive-floor.js';
 import type { LibraryDepth } from './library.js';
 import { TIER_COUNT, libraryUpkeep, relevantDepth } from './library.js';
 
@@ -181,10 +180,10 @@ export function libraryRateMultiplier(
   depth: LibraryDepth | undefined,
   depthCeiling: number,
   counters?: ClampCounters,
-  clamp?: EffectControl,
+  ablation?: AblationMask,
 ): CapitalRateOutcome {
   const bonus = depth === undefined ? 0 : contributionFor(depth, depthCeiling);
-  return capitalRateMultiplier(primitive, nodeBonuses, bonus, counters, clamp);
+  return capitalRateMultiplier(primitive, nodeBonuses, bonus, counters, ablation);
 }
 
 /** What a capped rate evaluation produced, and whether the cap bound. */
@@ -206,19 +205,30 @@ export interface CapitalRateOutcome {
  * @param contribution - The library's contribution, from
  * {@link contributionFor}. Passed as a value rather than computed here so that
  * a caller with a cached-per-tick depth does not recount the shelves per mage.
+ * @param ablation - §9's mask. Absent is the control arm, which is what every
+ * ordinary run uses.
+ *
+ * ## The mask was missing here until the academic primitives had node sources
+ *
+ * `stackMagnitudes` is the single place a mask is applied, and this function is
+ * the only route by which the three academic rates reach it. Until
+ * `coordination/academic-effects.ts` existed, `nodeBonuses` carried only the
+ * god's constants and an arm naming `research-rate` had nothing to neutralize,
+ * so the omission was invisible. It is not invisible now: a sweep arm
+ * neutralizing one of these three would otherwise report *no effect* while the
+ * effect ran at full strength, which is a false causal claim rather than a
+ * missing one.
  */
 export function capitalRateMultiplier(
   primitive: PrimitiveRecord,
   nodeBonuses: readonly Fixed[],
   contribution: Fixed,
   counters?: ClampCounters,
-  clamp?: EffectControl,
+  ablation?: AblationMask,
 ): CapitalRateOutcome {
-  const floor = primitiveFloor(primitive);
   const outcome = stackMagnitudes(primitive, [...nodeBonuses, contribution], {
     ...(counters === undefined ? {} : { counters }),
-    ...(clamp === undefined ? {} : { clamp }),
-    ...(floor === undefined ? {} : { floor }),
+    ...(ablation === undefined ? {} : { ablation }),
   });
   return { multiplier: outcome.value, clamped: outcome.clamped, contribution };
 }
@@ -270,19 +280,35 @@ export interface UpkeepOutcome {
   readonly library: EntityHandle;
   /** Materials actually paid, `fp`. */
   readonly paid: Fixed;
-  /** Materials owed and not paid, `fp`. */
-  readonly shortfall: Fixed;
   /**
-   * Instances this library must give up because it could not be maintained.
+   * Materials owed and not paid, `fp`.
    *
-   * A count rather than a list of handles: *which* instance is destroyed is the
-   * knowledge subsystem's decision (`contracts.md` §5 rule 3 — this package may
-   * not reach into `rules-magic`), and this side owns only how many.
+   * **This is the whole of what degradation is charged against**, and it is
+   * reported rather than converted here. It used to be turned into an instance
+   * count on the way out, at a flat `floorDiv(shortfall, 32)` — every book on
+   * the shelf priced the same regardless of how well it was made, which is why
+   * a grimoire's `durability` never changed an outcome outside a raid that has
+   * never run. See {@link DEGRADATION_PER_SHORTFALL}.
    */
-  readonly degradedInstances: number;
+  readonly shortfall: Fixed;
 }
 
-/** Materials of unpaid upkeep that cost a library one instance. **Untuned.** */
+/**
+ * Divisor turning a book's `durability` into the unpaid upkeep it takes to
+ * destroy it. **Untuned.**
+ *
+ * `durability = mul(1024, scribeAffinity) + roll(0..256)`, so at the reference
+ * affinity of `fp(1024)` a book costs `1024 / 32 = 32` — **exactly the flat
+ * price this constant used to charge every book**, which is what makes the
+ * change neutral where the old number was implicitly calibrated and differential
+ * on either side of it. A dwarf's book (`scribeAffinity` 1792) costs ~56 to
+ * neglect to death; an orc's (384) costs ~12.
+ *
+ * The magnitude lives here, in `rules-world`, because it is upkeep's price.
+ * *Spending* it against particular books is `coordination`'s job — `contracts.md`
+ * §5 rule 3 keeps this package out of `rules-magic`, so it may not know that a
+ * shelf holds books at all, let alone how sturdy they are.
+ */
 export const DEGRADATION_PER_SHORTFALL: Fixed = 32;
 
 /**
@@ -294,35 +320,34 @@ export const DEGRADATION_PER_SHORTFALL: Fixed = 32;
  * libraries happen to appear in an iteration would make which library goes
  * short depend on the history that reached the state rather than on the state.
  *
+ * `siteMultiplier` is the country the owning university stands in, `fp`
+ * (`universities/siting.ts`). Optional, and neutral when omitted: a library
+ * whose university is unsited pays what it always paid.
+ *
  * @returns One outcome per library, in the same ascending order, and the
  * materials left. The stock is returned rather than mutated for the reason
  * `advanceConstruction` gives: the materials stock has four claimants and one
  * of them must not be able to write it behind the others' backs.
  */
 export function applyLibraryUpkeep(
-  libraries: readonly { handle: EntityHandle; depth: LibraryDepth }[],
+  libraries: readonly { handle: EntityHandle; depth: LibraryDepth; siteMultiplier?: Fixed }[],
   materials: Fixed,
 ): { outcomes: readonly UpkeepOutcome[]; materialsRemaining: Fixed } {
   const ordered = [...libraries].sort((a, b) => a.handle - b.handle);
   let remaining = Math.max(0, materials);
   const outcomes: UpkeepOutcome[] = [];
 
-  for (const { handle, depth } of ordered) {
-    const owed = libraryUpkeep(depth);
+  for (const { handle, depth, siteMultiplier } of ordered) {
+    const owed = libraryUpkeep(depth, siteMultiplier ?? FP_ONE);
     const paid = Math.min(owed, remaining);
     remaining -= paid;
     const shortfall = owed - paid;
-    outcomes.push({
-      library: handle,
-      paid,
-      shortfall,
-      // Floor, so a shortfall smaller than one instance's worth costs nothing
-      // this tick. It is not banked -- a "pending degradation" counter would be
-      // a field on a component `contracts.md` §1.5 does not have, and a library
-      // that is one unit short every tick forever is a library whose universe
-      // has a materials problem the economy layer will report.
-      degradedInstances: Math.min(depth.instanceCount, floorDiv(shortfall, DEGRADATION_PER_SHORTFALL)),
-    });
+    // The shortfall is reported whole. Nothing is banked between ticks -- a
+    // "pending degradation" counter would be a field on a component
+    // `contracts.md` §1.5 does not have, and a library that is a unit short
+    // every tick forever is a library whose universe has a materials problem
+    // the economy layer already reports.
+    outcomes.push({ library: handle, paid, shortfall });
   }
 
   return { outcomes, materialsRemaining: remaining };

@@ -212,9 +212,27 @@ export const MATERIAL_STOCK = {
     food: 'i32',
     stone: 'i32',
     vellum: 'i32',
+    labor: 'i32',
+    essence: 'i32',
+    insight: 'i32',
+    passage: 'i32',
   },
 } as const satisfies ComponentSpec<ComponentFields>;
 
+/**
+ * The seven stocks, appended in `form.json`'s kind order and never reordered.
+ *
+ * The four after `vellum` are `material-economy`'s, and they exist because the
+ * economy could only see three of the fourteen things magic acts on. Seven of
+ * the forms yielded nothing at all, two of them — `mentem` and `limen` — inside
+ * the v1 opening square, so a god who opened on mind-magic and thresholds
+ * generated no economy and no reading of the interface said why.
+ *
+ * Each names its producing forms and its sink, in the discipline the first three
+ * carry. A kind with a producer and no sink is not a resource; it is a label on
+ * one, and `docs/design/economy-flow-models.md` §4 is explicit that the count is
+ * only defensible if each earns its slot.
+ */
 export interface MaterialStockRecord {
   /** Eaten by subsistence. Grain, meat, water — Herbam, Animal, Aquam. */
   food: Fp;
@@ -222,9 +240,77 @@ export interface MaterialStockRecord {
   stone: Fp;
   /** Spent scribing grimoires and keeping libraries. Parchment and paper — Animal, Herbam, Nomen. */
   vellum: Fp;
+  /** Spent on construction rate — raising a university faster. Person-months of work — Corpus. */
+  labor: Fp;
+  /** Spent enchanting, and on the price of a dispensation. Raw magic held as stuff — Vim. */
+  essence: Fp;
+  /** Spent on university teaching throughput. What a faculty teaches out of — Mentem, Imaginem. */
+  insight: Fp;
+  /** Spent opening a portal and holding it. Threshold, fate, shadow — Limen, Fatum, Umbra. */
+  passage: Fp;
 }
 
 export const MATERIAL_STOCK_FIELDS_MATCH: KeysMatch<MaterialStockRecord, typeof MATERIAL_STOCK> =
+  true;
+
+/**
+ * ## Refined material — a second axis on the stocks, not more of them
+ *
+ * `mt-turn-the-poor-ore` specifies a graded material and an ordinal on it —
+ * *"Change worthless rock into ore that is merely bad. Never into good ore: the
+ * working improves a thing by one step and has never once been made to take
+ * two."* Three grades, and a working moves exactly one step along them.
+ *
+ * ## Why this is a dimension and not four more kinds
+ *
+ * The obvious shape is to append `ore` and `iron` to {@link MATERIAL_KINDS} and
+ * be done. It is wrong, and the cost is concrete rather than aesthetic:
+ * `LAND_MATERIAL_KINDS` is the denominator of `territoryYieldShares`, so a
+ * fourth land kind divides every existing share by a larger number and **every
+ * territory in the game produces a different mix than it did** — a content
+ * retune disguised as a schema addition, landing on the one function whose
+ * whole design note is that territory decides the mix. Grades as a second axis
+ * move no share at all: `LAND_MATERIAL_KINDS` is untouched, `landTotal` is
+ * untouched, and a universe that never refines anything produces exactly what
+ * it produced before.
+ *
+ * ## Grade 0 is not here, and that is the absent-value reading
+ *
+ * The raw stock stays in {@link MATERIAL_STOCK}, unmoved and unrenamed. This
+ * component holds only what has been *improved*, so **an absent row reads as
+ * grade zero and never as a shortage** — the same guarantee `grant-budget` gave
+ * by reading an absent row as unbounded, and the reason every save written
+ * before grades existed behaves identically after them. Refining is additive
+ * supply drawn from the raw stock through a claimant, never a re-partition of a
+ * stock something else was already counting.
+ *
+ * ## Two columns, because two is what the writing pays for
+ *
+ * Only `stone` carries a ladder: it is the one kind with a producer
+ * (`mt-turn-the-poor-ore`, `mn-call-it-iron-until-it-is`) *and* a consumer
+ * (`cig-the-standing-furnace` runs the great foundries on ore;
+ * `iig-the-colour-of-ready-iron` reads the colour of ready iron) authored in
+ * `node.json`. A column no rung can fill and nothing can spend is the shape of
+ * a metric that could only ever read zero, and `contracts.md` §2.12 records
+ * what widening it would cost.
+ */
+export const MATERIAL_GRADE = {
+  name: 'material-grade',
+  fields: {
+    stoneWorked: 'i32',
+    stoneFine: 'i32',
+  },
+} as const satisfies ComponentSpec<ComponentFields>;
+
+/** One row per universe holding refined material. Absent means nothing refined. */
+export interface MaterialGradeRecord {
+  /** Grade 1 — `mt-turn-the-poor-ore`'s *"ore that is merely bad"*. `fp`. */
+  stoneWorked: Fp;
+  /** Grade 2 — `mn-call-it-iron-until-it-is`'s iron, the grade above it. `fp`. */
+  stoneFine: Fp;
+}
+
+export const MATERIAL_GRADE_FIELDS_MATCH: KeysMatch<MaterialGradeRecord, typeof MATERIAL_GRADE> =
   true;
 
 /**
@@ -471,14 +557,116 @@ export const ERA_EVALUATION_FIELDS_MATCH: KeysMatch<EraEvaluationRecord, typeof 
   true;
 
 /**
+ * How much of one kind of country this universe holds (`contracts.md` §2.7's
+ * own migration, taken).
+ *
+ * §2.7 wrote this move before anyone needed it: *"`landUnits` is a per-universe
+ * endowment carried in content because a simulation instance holds exactly one
+ * universe (§1.1). When that stops being true — a raid that takes ground —
+ * `landUnits` moves to §1.1 and this record keeps `capacityPerLandUnit`, which
+ * is a property of the kind of country and not of who holds it."* This is that
+ * row. Content keeps the habitability of a *kind*; the universe holds a
+ * **count** of it.
+ *
+ * ## No coordinates, and none needed
+ *
+ * `vision.md` §7a: *"World-scale entities carry no coordinates at all."* A
+ * holding is a count and a kind. There is no position, no extent, no adjacency
+ * and no distance between two holdings — a universe holding delta and waste is
+ * not holding them *next to* anything. {@link assertNoWorldPositions} passes on
+ * this component for the ordinary reason: it declares no `x` and no `y`.
+ *
+ * ## Absent rows mean "not materialized", never "holds nothing"
+ *
+ * A universe that has lost all its ground carries a row with `landUnits: 0`.
+ * The distinction matters because a snapshot written before this component
+ * existed has *no rows at all*, and the first world tick materializes the
+ * content endowment into it — `god-state`'s lazy-creation rule, for the same
+ * reason: *"no row means this universe has not been stepped yet"*. Aliasing the
+ * two would make a conquered universe indistinguishable from an old save, and
+ * colonization needs to tell them apart.
+ */
+export const TERRITORY_HOLDING = {
+  name: 'territory-holding',
+  fields: {
+    kindId: 'u16',
+    landUnits: 'u32',
+  },
+} as const satisfies ComponentSpec<ComponentFields>;
+
+export interface TerritoryHoldingRecord {
+  /** Interned `territory` content id. Never `0`. */
+  kindId: ContentId;
+  /** Land units of this kind the universe holds. A count, not `fp`. */
+  landUnits: number;
+}
+
+export const TERRITORY_HOLDING_FIELDS_MATCH: KeysMatch<
+  TerritoryHoldingRecord,
+  typeof TERRITORY_HOLDING
+> = true;
+
+/**
+ * Where a university stands — the §1.4 field that makes a university *somewhere*
+ * without making it *somewhere in particular*.
+ *
+ * ## Why this is a relationship and not a position
+ *
+ * `vision.md` §7a splits the game in two: *"At world scale there is no map.
+ * Universities, populations, materials, and knowledge are **counts and
+ * relationships**."* It forbids coordinates and it names relationships as the
+ * thing world scale is made of. *"This university stands in that kind of
+ * country"* is a relationship: it supports **co-location** (two universities
+ * with the same `kindId` stand in the same country, which is what multi-mage
+ * ritual needs from siting) and it supports **terrain**, and it supports neither
+ * distance nor direction, because neither exists at this scale.
+ *
+ * ## Why a component rather than a field on §1.4's row
+ *
+ * The same argument `goal-commitment` and `effort-progress` were added under. A
+ * field exists for every university, so "unsited" would need a sentinel content
+ * id — a reserved entry in a namespace whose whole contract is that its ids are
+ * permanent and mean one kind of country each. An absent row says it with
+ * nothing invented, costs nothing for the universities not using it, and makes
+ * the world-schema step an appended empty section rather than a column-by-column
+ * rewrite of every older save's university section.
+ *
+ * ## Keyed by content id, not by a holding's handle
+ *
+ * The alternative — a handle to a {@link TERRITORY_HOLDING} row — would couple
+ * siting to the order in which holdings are materialized, so a scenario could
+ * not site its founding academy at build time. Every mage row already stores a
+ * `speciesId` this way; this is the same move.
+ */
+export const UNIVERSITY_SITE = {
+  name: 'university-site',
+  fields: {
+    kindId: 'u16',
+  },
+} as const satisfies ComponentSpec<ComponentFields>;
+
+export interface UniversitySiteRecord {
+  /** Interned `territory` content id. Never `0` — an unsited university has no row. */
+  kindId: ContentId;
+}
+
+export const UNIVERSITY_SITE_FIELDS_MATCH: KeysMatch<UniversitySiteRecord, typeof UNIVERSITY_SITE> =
+  true;
+
+/**
  * The founding-grant budget (`contracts.md` §1.1, added by `w69/grant-budget`).
  *
  * God action 8 grants a **full instance at `grantMastery`** — the shape is
- * unchanged and deliberately so. `setMastery`'s only non-test caller is the
- * decay pass and it lowers, so a granted instance is currently the only source
- * of knowledge above the teach threshold in the universe. Weakening the grant
- * would delete the thing before its replacement exists. What this component
- * limits is the **count**: grants become scarce rather than weak.
+ * unchanged and deliberately so. When this row was added, `setMastery`'s only
+ * non-test caller was the decay pass and it lowers, so a granted instance was
+ * the only source of knowledge above the teach threshold in the universe and
+ * weakening the grant would have deleted the thing before its replacement
+ * existed. The replacement exists: `rules-magic`'s `practice`
+ * (`w196/mastery-rises`) raises mastery, so a universe is no longer wholly
+ * dependent on grants for transmissible knowledge. The grant stays full anyway
+ * — a founding gift the founder must drill for a year before using is a delay,
+ * not a gift — and what this component limits is still the **count**: grants
+ * are scarce rather than weak.
  *
  * ## Why the parameters live in state and not only in content
  *
@@ -533,6 +721,52 @@ export interface GrantBudgetRecord {
 }
 
 export const GRANT_BUDGET_FIELDS_MATCH: KeysMatch<GrantBudgetRecord, typeof GRANT_BUDGET> = true;
+
+/**
+ * The bar's law-clock — `sound-design.md` §5.2's eight-bar unease, as state.
+ *
+ * §3.1 makes one world tick one bar. §5.2 says a permit's dissonance *"decays
+ * over about eight bars"*, which is the only duration the design attaches to a
+ * constitutional act, and this row is the one integer needed to know whether it
+ * is still ringing.
+ *
+ * **A component rather than two more fields on `god-state`.** §1.1's own note
+ * on that row explains why: a snapshot section carries its field table inline,
+ * so an added *field* reshapes the section and every older save has to be
+ * rewritten column by column, where an added *component* is an appended empty
+ * section — the migration shape this project has used three times and tested.
+ * Widening `god-state` would have been the obvious move and the expensive one.
+ *
+ * Created lazily on the first constitutional act, so *no row* means *this
+ * universe has never changed its own law*, which is exactly what it means. A
+ * universe that never legislates never pays.
+ *
+ * Deliberately holds only the unease. The other half of the timing rule — which
+ * of §3.1's subdivisions the bar is playing — is read from whether any project
+ * of that subsystem is in flight, and a cached bitmask would be a second record
+ * of a fact the effort rows already carry.
+ */
+export const BAR_PHASE = {
+  name: 'bar-phase',
+  fields: {
+    uneaseUntilTick: 'i32',
+    lastConstitutionalTick: 'i32',
+  },
+} as const satisfies ComponentSpec<ComponentFields>;
+
+export interface BarPhaseRecord {
+  /**
+   * World tick at which the last constitutional act's unease lapses.
+   *
+   * A constitutional act committed strictly before this pays the off-grid
+   * surcharge, scaled by how much of the decay is left.
+   */
+  uneaseUntilTick: Tick;
+  /** The tick the unease started on, so the remaining share is computable. */
+  lastConstitutionalTick: Tick;
+}
+
+export const BAR_PHASE_FIELDS_MATCH: KeysMatch<BarPhaseRecord, typeof BAR_PHASE> = true;
 
 // ---------------------------------------------------------------------------
 // §1.2 Mage. §1.3 Populace cohort.
@@ -897,6 +1131,153 @@ export const KNOWLEDGE_INSTANCE_FIELDS_MATCH: KeysMatch<
 > = true;
 
 /**
+ * How far a written or remembered instance is from the mind it came from, and
+ * whether it is silently wrong (`docs/design/scribing-fidelity.md`).
+ *
+ * ## Why this is a second component and not two fields on `knowledge-instance`
+ *
+ * Two reasons, and the first one is mechanical. `worldSchemaVersionOf` infers a
+ * save's revision from the **component names** an envelope carries; a field
+ * appended to an existing component adds no name, so there would be nothing for
+ * revision 7 to key on, and every revision-6 save would fail
+ * `validateAgainstSchema`'s field-count check with no migration able to say
+ * which revision it was. `goal-commitment`, `effort-progress` and `grant-budget`
+ * all arrived this way for the same reason, and the empty-section migration they
+ * share is the proven repair.
+ *
+ * The second is that **an absent row is the correct default and is the common
+ * case.** A node researched into a living mind is at generation zero and sound;
+ * so is every instance in every save written before this component existed. A
+ * sparse side table says that in the storage, rather than paying two columns on
+ * every instance in a Monte Carlo run to carry zeros.
+ *
+ * ## `copyGeneration` is `fp`, and additive
+ *
+ * `fp(1024)` is one whole generation of copying. It is a *distance*, accumulated
+ * by addition at each scribing, and the mētis fraction is a **curve read off
+ * it** — never a multiplier applied per copy. That is the shape the design
+ * requires: *"one copy out: fine"*, a plateau and then a fall, which a constant
+ * per-generation multiplier cannot produce. Storing the distance and deriving
+ * the fraction makes the plateau structural rather than a property of some
+ * chosen coefficient.
+ *
+ * It is fixed-point rather than an integer count because a better scribe
+ * advances the distance by *less than* one generation per copy — that is what
+ * `scribeAffinity` buys.
+ *
+ * ## `corruption` is one field, not two flags
+ *
+ * A book is sound, or silently wrong, or known to be wrong. Two booleans would
+ * make a fourth state representable — "not corrupted but marked corrupted" —
+ * which nothing may produce and everything reading them would have to handle.
+ */
+export const KNOWLEDGE_FIDELITY = {
+  name: 'knowledge-fidelity',
+  fields: {
+    copyGeneration: 'i32',
+    corruption: 'u8',
+  },
+} as const satisfies ComponentSpec<ComponentFields>;
+
+export interface KnowledgeFidelityRecord {
+  /**
+   * Copies away from a living holder, in `fp`. `fp(1024)` is one generation.
+   * An absent row means `0` — straight out of a mind that researched it.
+   */
+  copyGeneration: Fp;
+  /** `@mm/rules-magic`'s `CORRUPTION`: `0` sound, `1` hidden, `2` marked. */
+  corruption: Enum8;
+}
+
+export const KNOWLEDGE_FIDELITY_FIELDS_MATCH: KeysMatch<
+  KnowledgeFidelityRecord,
+  typeof KNOWLEDGE_FIDELITY
+> = true;
+
+/**
+ * A working that stands after the cast, expires, and must be renewed
+ * (`docs/design/vision.md` §4; the Muto glosses in `node.json`).
+ *
+ * ## The absent object the content has been describing all along
+ *
+ * Three hundred and one spell glosses were audited and the single most-implied
+ * mechanism absent from the tree was this one. Muto states it as its own
+ * premise — *"the change is **worn, not granted**"*, *"every animal so held is
+ * **counting down to its own shape**"*, *"renewed about as often as **a sentry
+ * is changed**"*, *"a wall you have **agreed to build twice**"* — and Rego
+ * answers it from the other side: `rv-the-working-kept-in-iron` binds a working
+ * into a thing *"so that it goes on being cast without being cast again"*, which
+ * is only a sentence if the default is that it does not.
+ *
+ * Before this component the game had no way to say any of it. Every effect
+ * entry in `node.json` carries a `durationTicks`, **381 of 419 of them zero**,
+ * and the field was authored and read by nothing outside the raid's
+ * `area-denial` fields. A node's effect applied for as long as somebody knew the
+ * node, forever, for free.
+ *
+ * ## What the row is, and what it is keyed on
+ *
+ * One row per **(holder, node)** — the pair `gatherEffects` asks about. A
+ * working belongs to the mage who is holding it up, because that is what the
+ * upkeep costs a month of: `rules-world`'s `sustainWorking` goal. Two mages
+ * holding the same node hold two workings, and one lapsing does not take the
+ * other down. That mirrors {@link EFFORT_PROGRESS}, which is one entity per
+ * project rather than a slot on the mage row, and for the same reason: a mage
+ * may hold any number and a fixed set of slots expresses only whatever number
+ * somebody guessed.
+ *
+ * ## `litTick` is stored, and it is not decoration
+ *
+ * `expiresTick` alone would answer every liveness question. `litTick` is here
+ * because *"a wall you have agreed to build twice"* is a statement about how
+ * long the agreement has been kept, and because a renewal count without a start
+ * cannot say whether a working has been carried for a career or lit last month.
+ * Both are read by the world step's report, which is how a lapse is observed.
+ *
+ * ## An absent row means **never lit**, and that is not the same as expired
+ *
+ * This is the whole hazard of the component and it is stated here rather than
+ * left to a reader. A row whose `expiresTick` has passed is a working that
+ * **lapsed** — something reverted, and the tick's report says so. **No row at
+ * all** is a working that was never established: nothing reverts, nothing is
+ * reported, and the mage may light one. Collapsing the two — synthesising rows
+ * at `expiresTick: 0` for a migrated save, or treating a missing row as an
+ * expired one — would make every save written before this component lapse every
+ * working in the universe on its first tick, and it would look exactly like the
+ * rule working. `migrations.ts`' revision 11 → 12 step appends an **empty**
+ * section for precisely that reason, and a test in `state` pins that a migrated
+ * save reports zero lapses.
+ */
+export const STANDING_WORKING = {
+  name: 'standing-working',
+  fields: {
+    holder: 'u32',
+    nodeId: 'u16',
+    litTick: 'i32',
+    expiresTick: 'i32',
+    renewals: 'u16',
+  },
+} as const satisfies ComponentSpec<ComponentFields>;
+
+export interface StandingWorkingRecord {
+  /** The mage holding it up. Her death ends the working, not pauses it. */
+  holder: Handle;
+  /** The node being held standing. */
+  nodeId: ContentId;
+  /** The world tick the working was first established. Never rewritten by a renewal. */
+  litTick: Tick;
+  /** The world tick it stops standing on. Live while `worldTick < expiresTick`. */
+  expiresTick: Tick;
+  /** How many months have been spent renewing it since it was lit. */
+  renewals: number;
+}
+
+export const STANDING_WORKING_FIELDS_MATCH: KeysMatch<
+  StandingWorkingRecord,
+  typeof STANDING_WORKING
+> = true;
+
+/**
  * The per-node **ever-known** record (`contracts.md` §1.5).
  *
  * §1.5 marks this *"persisted, and not derivable"*, and the distinction is
@@ -1029,6 +1410,57 @@ export interface ObjectiveRecord {
 
 export const OBJECTIVE_FIELDS_MATCH: KeysMatch<ObjectiveRecord, typeof OBJECTIVE> = true;
 
+/**
+ * One ruleset change made **during a raid**, still bearing its lock's mark.
+ *
+ * `docs/design/raid-engagement.md` §1 repeals the vision's frozen-policy rule
+ * and replaces it with two halves. The first half — *"every change locks until
+ * the raid ends"* — needs no world state at all: a raid runs inside a single
+ * world tick, so a lock cannot outlive the in-memory `Raid` object it is
+ * attached to and there is nothing for a snapshot to carry.
+ *
+ * The second half is what this component is for. *"After the raid, reverting a
+ * mid-raid change costs substantially more favor than the change did."* The
+ * revert happens seasons later, across saves and restarts, so the mark has to
+ * be durable. One row per change, hung on its own entity rather than on the
+ * universe, because a god may make several under pressure and a fixed field
+ * would cap what the design deliberately does not.
+ *
+ * `paidCost` is carried rather than recomputed. The surcharge is defined
+ * against *what the change cost when it was made*, and a raid's verb prices are
+ * content the balance harness will move — recomputing later would price a
+ * historical decision at today's rates, which is not what the design says and
+ * is not what the player was told.
+ */
+export const MID_RAID_CHANGE = {
+  name: 'mid-raid-change',
+  fields: {
+    scope: 'u8',
+    targetId: 'u16',
+    changeKind: 'u8',
+    paidCost: 'i32',
+    markedTick: 'i32',
+  },
+} as const satisfies ComponentSpec<ComponentFields>;
+
+export interface MidRaidChangeRecord {
+  /** {@link RULE_SCOPE}: technique, form, or cell. */
+  scope: Enum8;
+  /** The technique bit, the form bit, or the cell id, by `scope`. */
+  targetId: ContentId;
+  /** {@link RULE_CHANGE_KIND}: which way legality moved. */
+  changeKind: Enum8;
+  /** Favor paid for the change inside the raid. The surcharge's base. */
+  paidCost: Fp;
+  /** The world tick the raid that produced this mark ended on. */
+  markedTick: Tick;
+}
+
+export const MID_RAID_CHANGE_FIELDS_MATCH: KeysMatch<
+  MidRaidChangeRecord,
+  typeof MID_RAID_CHANGE
+> = true;
+
 // ---------------------------------------------------------------------------
 // Schemas.
 // ---------------------------------------------------------------------------
@@ -1065,6 +1497,56 @@ export const WORLD_COMPONENTS = [
   // after `material-stock` and so goes after it, however much both of them
   // read as if they belonged beside `UNIVERSE`.
   GRANT_BUDGET,
+  // And a third time, two revisions later. `bar-phase` takes world-schema
+  // revision **8** — 7 is reserved for `material-economy`, which is not in this
+  // tree — and it goes last for the same reason the two above do. §4.5: every
+  // component that has ever been added has been appended, never inserted.
+  BAR_PHASE,
+  // And once more, a revision later still: `mid-raid-change` is world-schema
+  // revision **9**. It was written against revision 4 on `w37/raid-playable` and
+  // takes its place at the end of the list on the merge, behind the two
+  // sections that landed on `main` while the branch was out.
+  MID_RAID_CHANGE,
+  // And once more, for `university-siting`. It was written as revision 5, where
+  // it would have sat above `MATERIAL_STOCK`; the branch was brought current
+  // after `main` had taken 5 and 6, so it is revision 7 and it goes at the end.
+  // Section order is this list's order, and a renumbered migration whose
+  // sections stayed where the old number put them would line every older save
+  // against the wrong layouts — the exact failure the note above describes.
+  TERRITORY_HOLDING,
+  UNIVERSITY_SITE,
+  // Revision 7, and the argument has not changed: `knowledge-fidelity` hangs off
+  // a knowledge-instance handle and reads as if it belonged next to
+  // `KNOWLEDGE_INSTANCE`. It goes last, because section order is this list's
+  // order and every revision-6 save on disk was written with twenty sections.
+  KNOWLEDGE_FIDELITY,
+  // Revision 12, and the argument has not changed once in eleven additions:
+  // `material-grade` reads as if it belonged beside `MATERIAL_STOCK`, whose
+  // second axis it is, and it goes **last** because section order in a snapshot
+  // is this list's order and every revision-11 save on disk was written with
+  // twenty-one sections.
+  MATERIAL_GRADE,
+  // Revision 13, and the rule has not bent once in twelve revisions:
+  // `standing-working` is appended, never inserted. It hangs off a mage handle
+  // and a node id and so reads as if it belonged beside `KNOWLEDGE_INSTANCE`;
+  // section order in a snapshot is this list's order, and every revision-11 save
+  // on disk was written with twenty-one sections.
+  //
+  // Authored as revision 12, and renumbered to 13. `w/exp-grades` took 12 with
+  // the `material-grade` above off this same base; both branches checked every
+  // ref in the repository and both found 12 free, six hours apart.
+  // `docs/design/sim-rigor-2026-08-15.md` §4.4 settles a collision by arrival,
+  // and this one arrived second. **Both are now in this list, in revision
+  // order**, and `migrations.ts`' bridge is narrowed to `{ from: 12, to: 13 }`
+  // in the same commit that put `material-grade`'s step beneath it — the hole
+  // it spanned is filled and there is no bridge left.
+  //
+  // A third unmerged branch (`16e5fa4c`, "sustain — a standing condition") adds
+  // a *different* component named `sustained-working` and claims a revision of
+  // its own; the names are deliberately distinct because the mechanisms are —
+  // that one gates an effect on **who** still holds it, this one on **how long
+  // ago** it was cast — and whoever merges it takes the next free number.
+  STANDING_WORKING,
 ] as const satisfies readonly ComponentSpec<ComponentFields>[];
 
 /** Engagement-scale components, in snapshot order. */

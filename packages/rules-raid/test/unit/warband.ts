@@ -317,18 +317,34 @@ export function resolveWarband(options: WarbandOptions): WarbandResult {
   // The engagement reading has to be taken while the engagement store still
   // exists, and before the write-back — which does not touch it, but reading
   // afterwards would make that a claim rather than an ordering.
-  const briefByMage = new Map<Handle, CombatantBrief>();
+  // Keyed by `side:mageId`, for exactly the reason `strandedMages` below is:
+  // the two universes number their entities independently, so the raider and
+  // the warden created first both hold handle 1. Keyed by the bare handle — as
+  // this was — the second roster walked silently **overwrote** the first, and
+  // every attacker whose id collided with a defender's read that defender's
+  // brief: her `withdrew`, her `stolen`, her hit points, and whether she was
+  // fielded at all.
+  //
+  // Invisible until `withdraw-after-ticks` made withdrawal reachable, because
+  // every brief on both sides then agreed on the only field anybody checked.
+  // The first run in which raiders came home reported 173 attackers alive and
+  // 58 withdrawn out of 180 — a hundred and fifteen mages who had, according to
+  // the fixture, survived being stranded. They had not; the fixture was reading
+  // the wrong mage.
+  const key = (side: RaidSideValue, mageId: Handle): string =>
+    `${String(side)}:${String(mageId)}`;
+  const briefByMage = new Map<string, CombatantBrief>();
   for (const roster of raid.rosters) {
     for (const brief of roster.briefs) {
       if (brief.sourceKind !== COMBATANT_SOURCE_KIND.mage) continue;
-      briefByMage.set(brief.sourceId, brief);
+      briefByMage.set(key(brief.side, brief.sourceId), brief);
     }
   }
   const combatants = componentOf(raid.engagement.entities, COMBATANT);
-  const engagementRow = new Map<Handle, { hp: Fixed; maxHp: Fixed }>();
-  for (const [mageId, brief] of briefByMage) {
+  const engagementRow = new Map<string, { hp: Fixed; maxHp: Fixed }>();
+  for (const [mageKey, brief] of briefByMage) {
     if (!combatants.has(brief.handle)) continue;
-    engagementRow.set(mageId, {
+    engagementRow.set(mageKey, {
       hp: combatants.get(brief.handle, 'hp'),
       maxHp: combatants.get(brief.handle, 'maxHp'),
     });
@@ -344,12 +360,12 @@ export function resolveWarband(options: WarbandOptions): WarbandResult {
   const strandedMages = new Set<string>(
     outcome.casualties
       .filter((casualty) => casualty.stranded)
-      .map((casualty) => `${String(casualty.side)}:${String(casualty.mageId)}`),
+      .map((casualty) => key(casualty.side, casualty.mageId)),
   );
 
   const fates: MageFate[] = enlisted.map((member) => {
-    const brief = briefByMage.get(member.mageId);
-    const row = engagementRow.get(member.mageId);
+    const brief = briefByMage.get(key(member.side, member.mageId));
+    const row = engagementRow.get(key(member.side, member.mageId));
     const mages = componentOf(member.world, MAGE);
     const aliveAfter = mages.get(member.mageId, 'alive') === 1;
     const knownAfter = heldNodes(member.knowledge, member.mageId);
@@ -362,7 +378,7 @@ export function resolveWarband(options: WarbandOptions): WarbandResult {
       aliveBefore: member.aliveBefore,
       aliveAfter,
       died: member.aliveBefore && !aliveAfter,
-      stranded: strandedMages.has(`${String(member.side)}:${String(member.mageId)}`),
+      stranded: strandedMages.has(key(member.side, member.mageId)),
       withdrew: brief?.withdrawn ?? false,
       captured: false,
       worldVigorBefore: member.vigorBefore,

@@ -38,6 +38,7 @@ import type {
   TechniqueRecord,
 } from '@mm/content';
 
+import { RIGID_ENVELOPE } from '@mm/primitives';
 import type { GridContent } from '@mm/rules-magic';
 
 /** The five techniques and their §2.1 bit positions, in authored order. */
@@ -114,14 +115,24 @@ export function gridContentFixture(options: FixtureOptions = {}): GridContent {
 
   const techniques: Interned<TechniqueRecord>[] = FIXTURE_TECHNIQUES.map(([id, bit]) => ({
     contentId: internFromBit(bit),
-    record: { id, name: id, gloss: `${id} (fixture)`, bit },
+    // The flat envelope, which is `RIGID_ENVELOPE` and is also the answer a
+    // caller supplying none gets — so a fixture grid behaves exactly as it did
+    // before techniques carried a shape at all.
+    record: { id, name: id, gloss: `${id} (fixture)`, bit, envelope: RIGID_ENVELOPE },
   }));
 
   // `yieldWeights` all-zero and `tuningStatus: 'untuned'`: these forms are
   // inert placeholders for the grid rules under test, and routing any of them
-  // into food/stone/vellum would be an economy fact this fixture does not mean
-  // to assert. `kinds.ts` reads an all-zero form the same way — "not happening
-  // in the world" — so zero is the fixture-neutral choice, not a workaround.
+  // into a material kind would be an economy fact this fixture does not mean to
+  // assert.
+  //
+  // `material-economy` made an all-zero row a **load failure** for *shipped*
+  // content — a form the economy cannot see is a hole in the grid — and that
+  // rule deliberately does not reach here. These records are hand-built, never
+  // pass through `loadContent`, and are not claims about any universe's
+  // taxonomy; they are the neutral element for tests about grid legality. If
+  // they were routed, every one of those tests would also be asserting an
+  // economy it does not care about.
   const forms: Interned<FormRecord>[] = FIXTURE_FORMS.map(([id, bit]) => ({
     contentId: internFromBit(bit),
     record: {
@@ -129,7 +140,7 @@ export function gridContentFixture(options: FixtureOptions = {}): GridContent {
       name: id,
       gloss: `${id} (fixture)`,
       bit,
-      yieldWeights: { food: 0, stone: 0, vellum: 0 },
+      yieldWeights: { food: 0, stone: 0, vellum: 0, labor: 0, essence: 0, insight: 0, passage: 0 },
       tuningStatus: 'untuned',
     },
   }));

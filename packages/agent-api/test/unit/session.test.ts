@@ -128,7 +128,15 @@ function probeScenario(log: DrawLog, terminalReason = 0): Scenario {
         favorCap: 100 * FP,
         ascended: 0,
       });
-      attachRecord(state, MATERIAL_STOCK, universe, { food: 100 * FP, stone: 0, vellum: 0 });
+      attachRecord(state, MATERIAL_STOCK, universe, {
+        food: 100 * FP,
+        stone: 0,
+        vellum: 0,
+        labor: 0,
+        essence: 0,
+        insight: 0,
+        passage: 0,
+      });
       const cohort = state.entities.create();
       attachRecord(state, POPULACE_COHORT, cohort, {
         speciesId: 1,

@@ -4,9 +4,47 @@ How a commit in this repository gets checked, and what would have to be true for
 deployed. Written down because the arrangement is non-obvious: there are **two** CI systems, on
 purpose, and they are not redundant.
 
+## The balance gates left the merge path — 2026-08-14
+
+`npm run verify` ran the three Monte Carlo gates until this date. It does not any more. They live in
+`npm run verify:balance`, run on every commit in a **non-blocking** `balance` job in `ci.yml`, and
+are **required at release** through `release-plan.md`'s `verify:full`.
+
+**Why.** Three things compounded:
+
+- The sweeps were the entire cost of a commit check once the cheap checks are discounted, and the
+  self-hosted runner **serialises against a 2400 s timeout** — so a sweep-bearing commit is a queue
+  hazard for every other pull request, which is the queue documented above.
+- `scripts/ci-check.sh` already skipped them for docs-only diffs for exactly this reason. That skip
+  cannot help the case that actually hurts: a **campaign**, where every commit touches `packages/`
+  and pays the full sweep, several agents deep, on one box. Measured during the integration-debt
+  campaign: sustained load average above 300, with test timeouts that were load and not defects —
+  and a determinism test that timed out at 30 s under load above 400, which reads exactly like a
+  real defect and was not.
+- **A balance gate is the wrong question at merge.** It asks *"did this change the game's
+  numbers"*. During work that is deliberately moving numbers the answer is *yes, on purpose*, so the
+  gate fires, is read as expected, and is ignored — while still costing the time. `balance/README.md`
+  already states the rule: *a gate that takes ten minutes gets deleted*, and a gate people route
+  around is worse than no gate, because it still costs the time and no longer earns the trust.
+
+**Why this is safe.** `release-plan.md` already encodes balance validation in **MINOR parity** — an
+even MINOR means the baselines are committed and green, and it requires `verify:full` on the commit
+being tagged. `verify:full` runs `verify` + `verify:balance` + the ascension gate. So the sweeps did
+not become optional; they moved to where they make a claim someone could check.
+
+This is the **same move the two-hundred-year ascension gate made on 2026-08-13**, one rung down the
+cost ladder, and `ci.yml`'s `balance` job carries the full argument plus the condition for reversing
+it. `horizon-gate.test.ts` fails if a gate stops running anywhere in Actions, and separately fails if
+one reappears in a required merge job — so both directions are a deliberate diff rather than a drift.
+
+**What is unchanged.** `scripts/ci-check.sh` still delegates to `npm run verify` and names no gate of
+its own, so the two systems cannot disagree about what a merge requires.
+
 ## Two CI systems, different threat models
 
-(Two *systems*. There are **three** balance gates, and they run inside both — see below.)
+(Two *systems*. There are **three** balance gates, and since 2026-08-14 they run inside
+**neither** merge gate — they have their own non-blocking Actions job and are required at release.
+See *"The balance gates left the merge path"* below.)
 
 | | GitHub Actions (`.github/workflows/ci.yml`) | Self-hosted runner (`ci/hetzner-lint`) |
 |---|---|---|
@@ -329,9 +367,10 @@ The self-hosted runner is **serialized**. With five pull requests open, all five
 `ci/hetzner-lint` reporting *"Queued -- another CI run in progress"* while every GitHub Actions check
 was already green. Nothing was failing; the queue was the whole delay.
 
-Each run is the full `npm run verify` — typecheck, lint, purity, content, audio, coverage, ~3,900
-tests, **and three Monte Carlo balance gates**. One test alone (`reference-long-run`) takes 332s in
-isolation.
+Each run is `npm run verify` — typecheck, lint, purity, content, audio, coverage, generated
+artifacts, ~4,700 tests. It **no longer includes the three Monte Carlo balance gates**; see
+below. One test alone (`reference-long-run`) takes 332s in isolation, so the suite is still the
+thing to watch.
 
 That last number matters more than it looks, because **the receiver kills a run at 600 seconds**. The
 existing box is already inside a factor of two of that ceiling on the test suite alone. A second
@@ -441,6 +480,36 @@ a1998f1  success
 One confirmed-green `Verify` in eight, and three commits with no verification on record at all. This
 is also why the `ui/session.json` break survived four merges: **the signal was being destroyed about
 as fast as it was generated.**
+
+That particular break can no longer recur, for a reason unrelated to this section:
+`ui/session.json` is no longer committed. It and `ui/design-dashboard/data.json` are built by
+`npm run check:generated` — see the section below — so there is no committed copy left to be broken
+by a merge. The point about destroyed signal stands for everything else.
+
+## `check:generated`: the two UI payloads are built, not committed
+
+`ui/session.json` and `ui/design-dashboard/data.json` are pure functions of the repository. They
+used to be committed and pinned byte-for-byte by a test, which reddened `main` three times on
+unrelated work; each fix projected another field out of the equality, and by the third the pin was
+green over a genuinely stale payload — measured on `63f44ced`, `main`'s tip at the time, in exactly
+the three fields the last projection had carved out. `scripts/check-generated-artifacts.mjs` carries
+the full argument.
+
+Both are now gitignored and built. Staleness is therefore impossible rather than detected, and what
+the check gates instead is the pair of properties that removal depends on: **each generator is
+deterministic** (run twice, bytes compared — about 1.4 s for both) and **neither artifact is
+tracked**. It exits `0` clean, `42` on a finding, and `1` when a generator itself is broken, which
+is deliberately not the same answer as "no findings".
+
+It is wired **exactly as the balance gates are**, and for the reason stated above: the self-hosted
+runner picks it up through `npm run verify`, and Actions names it as its own step in both
+full-suite jobs. It belongs on the Actions side of the required set because it needs no credentials,
+no network and no services — two node scripts over the tree — so it is safe in the only job that may
+see a fork pull request.
+
+**A local consequence worth knowing:** the check writes both artifacts at their canonical paths, so
+`npm run verify` leaves you with a working `npm run ui`. `npm run ui` also builds them before
+serving, and `npm run ui:record` / `npm run ui:dashboard` build one each.
 
 **The window is set by a job that is explicitly not required.** `Balance gate, two hundred world
 years` takes ~35 minutes and lives in this workflow, so the *run* holds the group for ~40 minutes

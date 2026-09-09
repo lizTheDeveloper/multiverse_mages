@@ -40,19 +40,24 @@ import { permits } from '@mm/state';
  *
  * `floor((MASTERY_MAX − DEFAULT_TEACH_THRESHOLD) / masteryDecayPerTick(retention))`.
  *
- * ## This is the number that separates the species, and here is why
+ * ## What this number was, and what it is now
  *
- * Nothing in the rules path raises mastery. `setMastery` has exactly one
- * non-test caller — `rules-magic`'s decay pass — and it only ever lowers.
- * Research creates an instance at `DEFAULT_INITIAL_MASTERY` (256), which is
- * below the 512 teach threshold and can never climb to it. Every teachable
- * instance in a universe therefore descends from a god's founding grant at
- * 1024, and is sliding back toward the species' retention floor — which for all
- * six shipped species is *also* below 512.
+ * It was written as *the* number separating the species, and at the time it
+ * was: nothing in the rules path raised mastery. `setMastery` had exactly one
+ * non-test caller — `rules-magic`'s decay pass — and it only ever lowered.
+ * Research created an instance at `DEFAULT_INITIAL_MASTERY` (256), below the
+ * 512 teach threshold, and it could never climb. Every teachable instance in a
+ * universe descended from a god's founding grant at 1024 and was sliding toward
+ * the species' retention floor, which for all six shipped species is *also*
+ * below 512.
  *
- * So "can this species staff a cell" does not turn on what it can learn. It
- * turns on how long it can still pass on what it was handed, and that is this
- * window.
+ * `rules-magic`'s `practice` (`w196/mastery-rises`) is the operation that
+ * climbs, so "can this species staff a cell" now turns on **two** things: how
+ * far it can climb, which is `practiceCeiling(tier, depthCeiling)` and is a
+ * question about *reach*, and how long it holds what it was handed, which is
+ * this window and is a question about *retention*. This function still answers
+ * only the second, from full mastery, deliberately — see `constants.ts`'
+ * `PRACTICE_CEILING_BASE` for why the two spans are kept apart.
  */
 export function teachableWindowTicks(retention: number): number {
   const headroom = MASTERY_MAX - DEFAULT_TEACH_THRESHOLD;

@@ -86,11 +86,31 @@ const eslint = new ESLint({ cwd: repoRoot });
  * a file that is in neither list, which is what forces the decision to be made.
  */
 const INTEGER_SIDE = [
+  // Counts, sums and set membership over integer component fields; the one
+  // comparison is `mastery > best`. No division anywhere — a shelf's redundancy
+  // is a count and a mage's frontier is set arithmetic, and both stay integers
+  // all the way to the client, which is the only place a percentage is made.
+  'academy.ts',
   'actions.ts',
+  // Reads integer component fields and hands them on unchanged. The only
+  // arithmetic is a subtraction (`worldTick - birthTick`) and a comparison; a
+  // client turns months into years and vigor into a percentage, on its own side
+  // of the boundary.
+  'candidate-detail.ts',
   'candidates.ts',
   'catalogue.ts',
   'digest.ts',
+  'entitlement.ts',
   'explain.ts',
+  // The flow ledger, and it is integer-side for a reason worth stating rather
+  // than assuming from the absence of a decimal point: every quantity in a
+  // ledger is `fp` and the identity it exists to express —
+  // `closing - opening == faucet - sink` — is asserted **exactly**, with no
+  // tolerance, because a tolerance would hide the one-unit-per-tick leak the
+  // conservation check exists to find. A division here would introduce exactly
+  // the rounding that assertion refuses. The client divides by 1024; this side
+  // does not.
+  'flow.ts',
   'gate.ts',
   'index.ts',
   'knowledge-census.ts',
@@ -98,6 +118,7 @@ const INTEGER_SIDE = [
   'mask.ts',
   'observation.ts',
   'outcome.ts',
+  'player-state.ts',
   'agent-rng.ts',
   'session.ts',
   'view.ts',

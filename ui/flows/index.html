@@ -1,0 +1,1873 @@
+<!doctype html>
+<!--
+  Multiverse Mages — the flow map.
+  Copyright (C) 2026 Ann Kelner
+  SPDX-License-Identifier: AGPL-3.0-or-later
+
+  The author asked for maps of the consumers and producers. There are **two**
+  maps here and they are kept apart on purpose, because they are true in
+  different ways:
+
+  1. **The structural map** — what *can* flow to what. Sources, the seven
+     stocks, and every claimant on them. Derived from content and code; true of
+     every run, including runs nobody has done. It is **drawn, not fed**: the
+     read path publishes a form's `id`, `name` and `bit` and nothing else, and
+     `content.actionCosts` carries the *favor* price only, so the routing
+     weights, the territory mix and the material prices are all copied out of
+     the repository under a banner that says so and names the ref they were
+     taken on. `ui/economy/index.html` set that precedent for one table; this
+     page has four and states them the same way.
+
+  2. **The measured lanes** — what this run's stocks actually did, per kind,
+     with the consequence beside them. Fed, entirely, from `stocks` and the
+     §4.2 mask.
+
+  What is deliberately **absent** is the third thing: what flowed *per tick*.
+  `world-step.ts` computes it — `faucetByKind` and `sinkByKind` are real fields
+  on the report object, asserted every tick as `delta == faucet − sink` — and
+  nothing persists them, no script publishes them and no frame carries them. So
+  this page never claims a flow it cannot see. Where it wants one it diffs two
+  frames and calls the result a diff, which is production *minus* consumption
+  and cannot be taken apart. `WHY_ABSENT.eventDeltas` is the sentence for it.
+
+  ## Three things this page had to get right and could have got wrong
+
+  - **`labor` is an allocation, not a faucet.** Every other land kind comes out
+    of the territory split; `labor` is taken off `MATERIALS_PER_LABORER`
+    *before* the split, by subtraction, so a laborer's month is divided rather
+    than extended. It is drawn as a tap upstream of the split, with a hollow
+    head, and never as a fourth output of the land. Corpus magic *amplifies* it
+    through `resource-yield` and does not supply it — that edge is dashed, like
+    every other multiplier on the map, because nothing moves along it.
+
+  - **The god's material costs are not in the world ledger.** `interventions.ts`
+    deducts them before the world system runs in the same step, so they are
+    already in the stock the world tick opens with. They are drawn as sinks
+    because that is what they are, in their own group, and a reader who later
+    gets a `faucet`/`sink` sidecar must not expect to find them inside it.
+
+  - **Seven categorical hues do not exist in `shared/theme.css`.** Searched
+    exhaustively over its fourteen distinct colour tokens: the best seven-token
+    set has a worst pair at OKLab ΔE **6.1** (`--summit`↔`--soft` on vellum),
+    against the 15 floor for normal vision, and the obvious set —
+    `--limen`↔`--palace` — measures **7.2 light and 4.2 dark**. So kind is
+    **not** encoded by hue anywhere on this page. Identity is carried by
+    position (always `MATERIAL_KINDS` order, everywhere) and by a label that is
+    always present. Colour is reserved for state: `--god` for what you are
+    looking at and for the god's own verbs, `--loss` for a stock at zero and for
+    a verb that went dark, `--warn` for one heading there. Nothing on the page
+    uses `opacity` on a mark or a glyph, because opacity is a contrast
+    multiplier and the "dimmed" edge is the one that fails.
+
+  Serve with `npm run ui` and open /ui/flows/. Live first, recording as the
+  fallback. This page never advances the clock.
+-->
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Multiverse Mages — the flow map</title>
+<link rel="stylesheet" href="../shared/theme.css" />
+
+<style>
+  body {
+    max-width: 76rem;
+    margin: 0 auto;
+    padding: 1.1rem 1.25rem 4rem;
+  }
+
+  h1 {
+    font-size: 1.35rem;
+    margin: 0 0 0.15rem;
+  }
+  .sub {
+    font-size: 0.85rem;
+    color: var(--soft);
+    margin: 0 0 1rem;
+    max-width: 56rem;
+  }
+  .sub b {
+    color: var(--ink);
+    font-weight: 600;
+  }
+
+  .topbar {
+    display: flex;
+    gap: 0.6rem;
+    align-items: center;
+    flex-wrap: wrap;
+    margin: 0.9rem 0 1rem;
+  }
+  button {
+    font: inherit;
+    font-size: 0.85rem;
+    padding: 0.35rem 0.7rem;
+    border: 1px solid var(--edge);
+    border-radius: 3px;
+    background: var(--panel);
+    color: var(--ink);
+    cursor: pointer;
+  }
+  button:hover:not(:disabled) {
+    border-color: var(--god);
+  }
+  button:focus-visible {
+    outline: 2px solid var(--god);
+    outline-offset: 2px;
+  }
+  .hint {
+    font-size: 0.75rem;
+    color: var(--faint);
+  }
+  #err {
+    color: var(--loss);
+    font-size: 0.85rem;
+  }
+
+  section {
+    margin-top: 2.1rem;
+  }
+  section > h2 {
+    font-size: 0.95rem;
+    margin: 0 0 0.15rem;
+    display: flex;
+    align-items: baseline;
+    gap: 0.55rem;
+    flex-wrap: wrap;
+  }
+  section > h2 .s {
+    font-weight: 400;
+    font-size: 0.75rem;
+    color: var(--soft);
+  }
+  section > p.lede {
+    margin: 0 0 0.8rem;
+    font-size: 0.8rem;
+    color: var(--soft);
+    max-width: 60rem;
+  }
+  section > p.lede b {
+    color: var(--ink);
+  }
+  code {
+    font-family: var(--mono);
+    font-size: 0.92em;
+    color: var(--soft);
+  }
+
+  /* ---- the drawn-not-fed banner ---------------------------------------- */
+  .drawn {
+    border: 1px solid var(--edge);
+    border-left: 3px solid var(--warn);
+    background: var(--sunk);
+    padding: 0.5rem 0.75rem;
+    font: 11px/1.6 var(--mono);
+    color: var(--faint);
+    margin: 0 0 0.9rem;
+  }
+  .drawn b {
+    color: var(--warn);
+    text-transform: uppercase;
+    letter-spacing: 0.09em;
+  }
+  .drawn .ok {
+    color: var(--ok);
+  }
+  .drawn .bad {
+    color: var(--loss);
+  }
+
+  /* ---- the focus chips -------------------------------------------------- */
+  .chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.3rem;
+    margin: 0 0 0.9rem;
+  }
+  .chips button {
+    font-size: 0.78rem;
+    padding: 0.28rem 0.6rem;
+    background: var(--ctl-latent-bg);
+    color: var(--ctl-latent-fg);
+    border-color: var(--ctl-latent-border);
+  }
+  .chips button[aria-pressed='true'] {
+    background: var(--ctl-charged-bg);
+    color: var(--ctl-charged-fg);
+    border-color: var(--ctl-charged-border);
+    font-weight: 600;
+  }
+
+  /* ---- the structural map ----------------------------------------------- */
+  .mapwrap {
+    overflow-x: auto;
+    border: 1px solid var(--line);
+    background: var(--plate);
+    border-radius: 3px;
+  }
+  .mapwrap svg {
+    display: block;
+    min-width: 66rem;
+  }
+  /* `--edge` measured 1.52:1 against `--plate` — a node boundary is a mark and
+     the map is unreadable without it, so the hairline is `--faint` (6.9:1) and
+     not the panel edge the rest of the chrome uses. The rect *fills* below are
+     surfaces rather than marks, exactly as `body`'s background is, and carry no
+     information the label inside does not. */
+  .n-box {
+    fill: var(--panel);
+    stroke: var(--faint);
+    stroke-width: 1;
+  }
+  .n-box.is-focus {
+    stroke: var(--god);
+    stroke-width: 2;
+  }
+  .n-box.is-land {
+    fill: var(--sunk);
+  }
+  .n-name {
+    fill: var(--ink);
+    font: 600 11.5px var(--sans);
+  }
+  .n-name.is-focus {
+    fill: var(--god);
+  }
+  .n-sub {
+    fill: var(--faint);
+    font: 9.5px var(--mono);
+  }
+  .n-kind {
+    fill: var(--soft);
+    font: 9.5px var(--mono);
+  }
+  .edge {
+    fill: none;
+    stroke: var(--soft);
+  }
+  .edge.is-focus {
+    stroke: var(--god);
+  }
+  .edge.is-mult {
+    stroke-dasharray: 5 4;
+  }
+  .col-head {
+    fill: var(--soft);
+    font: 600 10px var(--mono);
+    letter-spacing: 0.14em;
+  }
+  .maplegend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.35rem 1.4rem;
+    font: 11px/1.7 var(--mono);
+    color: var(--faint);
+    margin: 0.55rem 0 0;
+  }
+  .maplegend b {
+    color: var(--soft);
+    font-weight: 500;
+  }
+
+  /* ---- the consequence table -------------------------------------------- */
+  table.conseq {
+    border-collapse: collapse;
+    width: 100%;
+    font-size: 0.8rem;
+  }
+  table.conseq th,
+  table.conseq td {
+    border-bottom: 1px solid var(--line);
+    padding: 0.45rem 0.55rem;
+    text-align: left;
+    vertical-align: top;
+  }
+  table.conseq th {
+    font: 10px var(--mono);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--soft);
+    font-weight: 500;
+  }
+  table.conseq td.kind {
+    font-family: var(--mono);
+    color: var(--ink);
+    font-weight: 600;
+    white-space: nowrap;
+  }
+  table.conseq td.perm {
+    color: var(--loss);
+    font-weight: 600;
+    white-space: nowrap;
+  }
+  table.conseq td.rec {
+    color: var(--soft);
+    white-space: nowrap;
+  }
+  table.conseq tr.is-focus td {
+    background: var(--sunk);
+  }
+  table.conseq td em {
+    color: var(--soft);
+  }
+
+  /* ---- the measured lanes ------------------------------------------------ */
+  .lane {
+    border: 1px solid var(--line);
+    border-left: 3px solid var(--edge);
+    background: var(--panel);
+    border-radius: 3px;
+    padding: 0.65rem 0.8rem 0.75rem;
+    margin: 0 0 0.6rem;
+  }
+  .lane.is-focus {
+    border-left-color: var(--god);
+  }
+  .lane.is-short {
+    border-left-color: var(--loss);
+  }
+  .lane-head {
+    display: flex;
+    align-items: baseline;
+    gap: 0.6rem;
+    flex-wrap: wrap;
+    margin: 0 0 0.15rem;
+  }
+  .lane-name {
+    font: 600 1rem var(--mono);
+    color: var(--ink);
+    letter-spacing: 0.03em;
+  }
+  .lane-now {
+    font: 400 1.25rem var(--serif);
+    color: var(--ink);
+  }
+  .lane-tag {
+    font: 10px var(--mono);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    padding: 0.12rem 0.4rem;
+    border-radius: 2px;
+    border: 1px solid var(--edge);
+    color: var(--soft);
+  }
+  .lane-tag.short {
+    color: var(--loss);
+    border-color: var(--loss);
+  }
+  .lane-tag.falling {
+    color: var(--warn);
+    border-color: var(--warn);
+  }
+  .lane-tag.flat {
+    color: var(--faint);
+  }
+  .lane-io {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.2rem 1.2rem;
+    font: 11px/1.6 var(--mono);
+    color: var(--faint);
+    margin: 0.25rem 0 0.5rem;
+  }
+  .lane-io b {
+    color: var(--soft);
+    font-weight: 500;
+  }
+  .plots {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 0.3rem;
+  }
+  .plot {
+    border: 1px solid var(--line);
+    background: var(--plate);
+    border-radius: 2px;
+    padding: 0.3rem 0.4rem 0.15rem;
+  }
+  .plot h4 {
+    margin: 0 0 0.1rem;
+    font: 10px var(--mono);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--soft);
+    font-weight: 500;
+    display: flex;
+    justify-content: space-between;
+    gap: 0.6rem;
+  }
+  .plot h4 span:last-child {
+    color: var(--faint);
+    text-transform: none;
+    letter-spacing: 0;
+  }
+  .plot svg {
+    display: block;
+    width: 100%;
+    height: auto;
+  }
+  .p-line {
+    fill: none;
+    stroke: var(--ink);
+    stroke-width: 1.6;
+  }
+  .p-line.conseq {
+    stroke: var(--soft);
+  }
+  .p-base {
+    stroke: var(--line);
+    stroke-width: 1;
+  }
+  .p-price {
+    stroke: var(--warn);
+    stroke-width: 1;
+    stroke-dasharray: 4 3;
+  }
+  .p-cross {
+    stroke: var(--loss);
+    stroke-width: 1.2;
+  }
+  .p-zero {
+    stroke: var(--loss);
+    stroke-width: 1.2;
+    stroke-dasharray: 2 3;
+  }
+  .p-lab {
+    font: 9px var(--mono);
+    fill: var(--faint);
+  }
+  .p-lab.warn {
+    fill: var(--warn);
+  }
+  .p-lab.loss {
+    fill: var(--loss);
+  }
+  .p-legal {
+    fill: var(--god);
+  }
+  .p-dark {
+    fill: var(--loss);
+  }
+  .p-axis {
+    display: flex;
+    justify-content: space-between;
+    gap: 0.6rem;
+    font: 9px var(--mono);
+    color: var(--faint);
+    padding: 0.05rem 0 0.15rem;
+  }
+  .lane-conseq {
+    font-size: 0.78rem;
+    color: var(--soft);
+    margin: 0.45rem 0 0;
+    border-top: 1px solid var(--line);
+    padding-top: 0.4rem;
+  }
+  .lane-conseq b {
+    color: var(--ink);
+  }
+  .lane-conseq .permanent {
+    color: var(--loss);
+    font-weight: 600;
+  }
+
+  /* ---- the measured map --------------------------------------------------- */
+  .flowtable-wrap {
+    overflow-x: auto;
+  }
+  table.flow {
+    border-collapse: collapse;
+    width: 100%;
+    min-width: 46rem;
+    font: 11px var(--mono);
+    margin: 0 0 0.7rem;
+  }
+  table.flow th,
+  table.flow td {
+    border-bottom: 1px solid var(--line);
+    padding: 0.35rem 0.5rem;
+    text-align: right;
+    white-space: nowrap;
+  }
+  /* The one column that may wrap: it holds a sentence, and forcing a sentence
+     onto one line is what pushed the table into a scroll it did not need. */
+  table.flow td.wrap {
+    white-space: normal;
+    min-width: 16rem;
+  }
+  table.flow th {
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--soft);
+    font-weight: 500;
+    font-size: 10px;
+  }
+  table.flow th.l,
+  table.flow td.l {
+    text-align: left;
+  }
+  table.flow td.k {
+    color: var(--ink);
+    font-weight: 600;
+  }
+  /* A zero is recessive, not alarming. The first cut painted every zero in
+     `--loss`, which made "lost to the ceiling · 0" — the outcome you want —
+     the loudest mark on the page. The kinds that genuinely never moved are
+     called out once, per row, by `is-inert`. */
+  table.flow td.zero {
+    color: var(--faint);
+  }
+  table.flow tr.is-inert td.k::after {
+    content: ' · inert';
+    color: var(--warn);
+    font-weight: 400;
+  }
+  table.flow td.n {
+    color: var(--soft);
+  }
+  table.flow td.big {
+    color: var(--ink);
+  }
+  table.flow tr.is-focus td {
+    background: var(--sunk);
+  }
+  table.flow .grp {
+    border-left: 1px solid var(--rule-hi);
+  }
+  .flownote {
+    font-size: 0.78rem;
+    color: var(--soft);
+    margin: 0 0 0.8rem;
+    max-width: 62rem;
+  }
+  .flownote b {
+    color: var(--ink);
+  }
+  .flownote .good {
+    color: var(--ok);
+    font-weight: 600;
+  }
+  .flownote .bad {
+    color: var(--loss);
+    font-weight: 600;
+  }
+
+  /* ---- the absent panel --------------------------------------------------- */
+  .absent {
+    border: 1px solid var(--edge);
+    border-left: 3px solid var(--loss);
+    background: var(--sunk);
+    padding: 0.7rem 0.85rem;
+    font-size: 0.8rem;
+    color: var(--soft);
+  }
+  .absent h3 {
+    margin: 0 0 0.3rem;
+    font: 600 0.85rem var(--sans);
+    color: var(--ink);
+  }
+  .absent p {
+    margin: 0 0 0.55rem;
+    max-width: 62rem;
+  }
+  .absent p:last-child {
+    margin-bottom: 0;
+  }
+  .absent .probe {
+    font: 11px var(--mono);
+    color: var(--faint);
+  }
+  .absent .probe.found {
+    color: var(--warn);
+  }
+</style>
+
+<div id="src"></div>
+
+<h1>The flow map</h1>
+<p class="sub">
+  Sources, stocks, sinks — for all <b>seven</b> material kinds. Two maps kept apart: what
+  <b>can</b> flow, which is a fact about the content and holds for every run, and what this
+  run's stocks <b>did</b>, which is a fact about one seed. What flowed <em>per tick</em> is
+  neither, and the last panel says why.
+</p>
+
+<div class="topbar">
+  <button id="reread" type="button">Re-read the universe</button>
+  <span class="hint" id="rereadhint"></span>
+</div>
+<div id="err"></div>
+
+<div class="chips" id="chips" role="group" aria-label="Which kind to follow"></div>
+
+<section>
+  <h2>The structural map <span class="s">what can flow to what · true of every run</span></h2>
+  <p class="lede">
+    Three columns: what makes material, the seven stocks it lands in, and every claimant that can
+    take it away. Follow one kind with the chips above and the map draws only that kind's
+    plumbing. <b>No number in this map comes from the run</b> — they are routing weights and
+    prices, and the banner below says which file each came out of.
+  </p>
+  <div class="drawn" id="drawn"></div>
+  <div class="mapwrap"><svg id="map" role="img" aria-labelledby="maptitle"><title id="maptitle">Sources, stocks and sinks for the seven material kinds</title></svg></div>
+  <div class="maplegend">
+    <span><b>——</b> material moves along this edge</span>
+    <span><b>- - -</b> <code>resource-yield</code> multiplier — nothing moves; it scales what the
+      edge below it already carries</span>
+    <span><b>⊣</b> an allocation taken by subtraction, not new supply</span>
+    <span><b>▸</b> weight of the edge is its share of the source, out of 1024</span>
+  </div>
+</section>
+
+<section>
+  <h2>What running out actually does <span class="s">the reason the seven are not one number</span></h2>
+  <p class="lede">
+    There is <b>no debt, no market, and no substitution between kinds</b> — a shortfall clamps at
+    zero and is recorded as a shortfall. What differs, and what a player most needs the map to
+    teach, is the <em>consequence</em>. One of these is not recoverable.
+  </p>
+  <table class="conseq" id="conseq"></table>
+</section>
+
+<section>
+  <h2>The measured lanes <span class="s">what this run's stocks did · fed, per kind</span></h2>
+  <p class="lede">
+    One lane per kind, in <code>MATERIAL_KINDS</code> order, the same order as the map above.
+    Each carries the stock over the whole run, the consequence series beside it, and — where the
+    god has a verb priced in that kind — a dashed line at the price and a strip saying whether
+    the verb was legal. <b>The crossing and the strip are independent readings</b>: the stock
+    comes from the <code>stocks</code> sidecar and the strip from the §4.2 mask, and when they
+    coincide to the tick that is a measurement, not a drawing.
+  </p>
+  <div id="lanes"></div>
+</section>
+
+<section>
+  <h2>The measured map <span class="s">what did flow, per tick · from the flow ledger</span></h2>
+  <p class="lede">
+    The structural map above says what <em>can</em> flow. This says what did, summed over the run,
+    from the per-tick <code>flow</code> sidecar — <b>the only reading on this page that is a flow
+    rather than a level</b>. Every other number here is a stock or a difference of stocks, and a
+    difference of stocks nets a faucet against a sink. This does not.
+  </p>
+  <div id="measured"></div>
+  <div class="absent" id="absent"></div>
+</section>
+
+<script type="module">
+  // Its own block: nav.js imports nothing, so a sibling module that fails to
+  // evaluate cannot take the navigation down with it.
+  import { mountNav } from '../shared/nav.js';
+  mountNav();
+</script>
+
+<script type="module">
+  import { mountSourceNote, openSession, WHY_ABSENT } from '../shared/session.js';
+  import { mountThemeControl } from '../shared/theme.js';
+
+  const $ = (id) => document.getElementById(id);
+
+  /*
+   * The one guard every number on this page goes through, borrowed verbatim in
+   * spirit from `ui/economy/`: `undefined` is what the read path hands back for
+   * a stock it does not carry, and `0` is what a naive `?? 0` prints instead.
+   * An empty granary is a crisis and an unknown granary is not.
+   */
+  const fmt = (n, dp = 1) => {
+    if (typeof n !== 'number' || !Number.isFinite(n)) return '—';
+    if (Math.abs(n) >= 1000) return Math.round(n).toLocaleString('en-US');
+    if (Number.isInteger(n)) return String(n);
+    return n.toFixed(dp);
+  };
+  const signed = (n) => (typeof n === 'number' && n > 0 ? `+${fmt(n)}` : fmt(n));
+  const el = (tag, cls, text) => {
+    const node = document.createElement(tag);
+    if (cls) node.className = cls;
+    if (text !== undefined) node.textContent = text;
+    return node;
+  };
+
+  /* =====================================================================
+   * DRAWN, NOT FED — the four tables the read path does not publish
+   *
+   * Taken from the working tree on branch `w/flow-map`, base
+   * `integration/all-branches` @ 4621db1a, on 2026-08-16. Every one of them is
+   * a *measurement of a ref*, so it is dated and the ref is named, per
+   * CLAUDE.md. The page cross-checks two of them against what the session does
+   * publish — see `rotCheck` — because a mismatched row is the cheapest signal
+   * that one of these has gone stale.
+   * ===================================================================== */
+
+  const SOURCE_REF = 'integration/all-branches @ 4621db1a, read 2026-08-16';
+
+  /** `MATERIAL_KINDS` — the fixed order, and it is the page's only identity encoding. */
+  const KINDS = ['food', 'stone', 'vellum', 'labor', 'essence', 'insight', 'passage'];
+
+  /**
+   * `packages/content/data/form.json` → `yieldWeights`, out of 1024.
+   *
+   * Read rather than assumed, and four rows were not what the brief predicted:
+   * `animal` and `herbam` both split food/vellum 512/512, `aquam` is 768 food /
+   * 256 stone, `auram` is 256 food / 768 stone, and `ignem` is 1024 stone. A
+   * form whose weights are all zero would contribute nowhere — there are none
+   * left, which is the whole of what `material-economy` changed.
+   *
+   * Ordered by the kind each one mostly feeds, so the ribbons in the map cross
+   * as little as the routing allows.
+   */
+  const FORMS = [
+    ['aquam', 'Aquam', 'water and liquids', { food: 768, stone: 256 }],
+    ['herbam', 'Herbam', 'plant and wood', { food: 512, vellum: 512 }],
+    ['animal', 'Animal', 'beasts and their parts', { food: 512, vellum: 512 }],
+    ['auram', 'Auram', 'air and weather', { food: 256, stone: 768 }],
+    ['ignem', 'Ignem', 'fire and heat', { stone: 1024 }],
+    ['terram', 'Terram', 'earth and stone', { stone: 1024 }],
+    ['nomen', 'Nomen', 'true name', { vellum: 1024 }],
+    ['corpus', 'Corpus', 'body, and the labor it is', { labor: 1024 }],
+    ['vim', 'Vim', 'raw magic, unfiltered', { essence: 1024 }],
+    ['mentem', 'Mentem', 'mind, and what it holds', { insight: 1024 }],
+    ['imaginem', 'Imaginem', 'image and the senses', { insight: 1024 }],
+    ['limen', 'Limen', 'threshold and boundary', { passage: 1024 }],
+    ['fatum', 'Fatum', 'fate, the passage a life takes', { passage: 1024 }],
+    ['umbra', 'Umbra', 'shadow, and a way past', { passage: 1024 }],
+  ];
+
+  /**
+   * `territoryYieldShares(territory.json)` over the five shipped regions, out of
+   * 1024 — computed with the built `@mm/rules-world` rather than by hand.
+   *
+   * **`materials.ts` says `470/1024` for food and that number has rotted.** The
+   * comment predates the seven-kind territory retune; the shipped mix is now
+   * 482 / 241 / 301. Recorded here rather than corrected there, because this
+   * page owns no file in `packages/`.
+   */
+  const LAND_SHARES = { food: 482, stone: 241, vellum: 301 };
+
+  /** `MATERIALS_PER_LABORER`, and the tap that comes off it first. */
+  const PER_LABORER = 16;
+  const LABOR_SHARE = 64; // `labor-share-of-month` in autonomy-weight.json, out of 1024.
+
+  /**
+   * The claimants, in the order they are paid.
+   *
+   * The first seven are `CONSUMPTION_ORDER` and are settled inside the world
+   * step. The last five are the god's, priced in `god-cost.json`, and are
+   * deducted by `interventions.ts` **before** the world system runs in the same
+   * step — so they are already in the stock the world tick opens with and will
+   * never appear in a `faucet`/`sink` ledger built from the world step's own
+   * mutations. Grouped separately for exactly that reason.
+   *
+   * Five god actions carry a material price, not the four the brief named:
+   * `grant-founding-knowledge` (vellum 4) and `bless-mage` (insight 2) are the
+   * two easy to miss, and `fund-university` is priced in **two** kinds.
+   */
+  const SINKS = [
+    { id: 'subsistence', name: 'Subsistence', group: 'world', order: 1,
+      price: { food: 1 }, note: '1 fp per person per tick + every applying mage’s ration' },
+    { id: 'casting', name: 'Casting', group: 'world', order: 2,
+      price: { vellum: 4 }, note: 'casting-vellum-per-month — 4 fp per mage-month of work' },
+    { id: 'teaching', name: 'Teaching throughput', group: 'world', order: 3,
+      price: { insight: 4 }, note: 'teaching-insight-per-month — reserved at the lectern' },
+    { id: 'libraryUpkeep', name: 'Library upkeep', group: 'world', order: 4,
+      price: { vellum: 0 }, note: 'per library, × the territory’s upkeep multiplier' },
+    { id: 'scribing', name: 'Scribing', group: 'world', order: 5,
+      price: { vellum: 0 }, note: 'paid at the desk in phase 5, outside consumeMaterials' },
+    { id: 'construction', name: 'Construction', group: 'world', order: 6,
+      price: { stone: 0 }, note: 'stone per person-month of building work' },
+    { id: 'constructionLabor', name: 'Construction hire', group: 'world', order: 7,
+      price: { labor: 256 }, note: 'construction-labor-per-month — months over the crew only' },
+    { id: 'issueDispensation', name: 'issue-dispensation', group: 'god', action: 5,
+      price: { essence: 4096 }, note: 'god action 5 — priced at 4.0 essence' },
+    { id: 'grantFounding', name: 'grant-founding-knowledge', group: 'god', action: 8,
+      price: { vellum: 4096 }, note: 'god action 8 — priced at 4.0 vellum' },
+    { id: 'blessMage', name: 'bless-mage', group: 'god', action: 9,
+      price: { insight: 2048 }, note: 'god action 9 — priced at 2.0 insight' },
+    { id: 'fundUniversity', name: 'fund-university', group: 'god', action: 11,
+      price: { stone: 8192, labor: 4096 }, note: 'god action 11 — 8.0 stone and 4.0 labor, both' },
+    { id: 'openPortal', name: 'open-portal', group: 'god', action: 14,
+      price: { passage: 16384 }, note: 'god action 14 — priced at 16.0 passage' },
+  ];
+
+  /** Which god action, if any, this page can draw a price line for, per kind. */
+  const GOD_PRICE = {
+    vellum: { action: 8, name: 'grant-founding-knowledge', fp: 4096 },
+    essence: { action: 5, name: 'issue-dispensation', fp: 4096 },
+    insight: { action: 9, name: 'bless-mage', fp: 2048 },
+    passage: { action: 14, name: 'open-portal', fp: 16384 },
+    stone: { action: 11, name: 'fund-university', fp: 8192 },
+    labor: { action: 11, name: 'fund-university', fp: 4096 },
+  };
+
+  /**
+   * What a shortfall in each kind actually costs, and whether it can be undone.
+   *
+   * The one that cannot is `vellum`, and it is the reason the seven kinds are
+   * not one number: `degradeUnkeptLibraries` asks the knowledge gateway to
+   * destroy instances a library could not keep, and `contracts.md` §1.5 makes
+   * losing an instance permanent. A delayed grimoire is a delay; a destroyed
+   * instance is gone.
+   */
+  const CONSEQUENCE = {
+    food: {
+      first: 'the subsistence claim goes unpaid',
+      then: 'the shortfall share feeds the carrying-capacity penalty, which brakes fertility through the logistic term',
+      permanent: null,
+      recover: 'recoverable',
+      short: 'Food shortfall <b>kills nobody.</b> `K` falls, the brake bites, and births slow — a population already born stays born.',
+    },
+    stone: {
+      first: 'the construction claim goes unpaid',
+      then: 'build progress stops accruing; a site stalls where it stands',
+      permanent: null,
+      recover: 'recoverable',
+      short: 'Construction stalls. Nothing standing is lost, and the site resumes when the quarry does.',
+    },
+    vellum: {
+      first: 'library upkeep goes unpaid — it is paid before scribing, out of the same stock',
+      then: 'degradeUnkeptLibraries asks the knowledge gateway to destroy the instances the shelf could not keep',
+      permanent: 'shelved knowledge is destroyed',
+      recover: 'NOT recoverable',
+      short: 'The only kind whose shortfall <span class="permanent">destroys something permanently</span>. Three claimants contend for it — casting, upkeep, scribing — and it is the only stock where <code>CONSUMPTION_ORDER</code> still adjudicates anything.',
+    },
+    labor: {
+      first: 'the construction hire goes unpaid',
+      then: 'a site builds at the crew rate the populace supplied and no faster',
+      permanent: null,
+      recover: 'recoverable',
+      short: 'Hands for hire run out. The crew keeps working; only the hire stops.',
+    },
+    essence: {
+      first: 'issue-dispensation stops being affordable',
+      then: 'the action is masked — the god cannot cut an exception into their own ruleset',
+      permanent: null,
+      recover: 'recoverable',
+      short: 'A god verb goes dark. Nothing in the world changes on its own.',
+    },
+    insight: {
+      first: 'the teaching claim goes unpaid',
+      then: 'teachingFundedShare falls below 1, teaching loses its +25% subsidy, and bless-mage stops being affordable',
+      permanent: null,
+      recover: 'recoverable',
+      short: 'Teaching slows rather than stops — a drain, not a gate: the insight spent is proportional to the teaching done, so there is no cliff anywhere on the curve.',
+    },
+    passage: {
+      first: 'open-portal stops being affordable',
+      then: 'the universe cannot raid; no portal opens by the god’s hand',
+      permanent: null,
+      recover: 'recoverable',
+      short: 'A god verb goes dark. The multiverse stops being reachable.',
+    },
+  };
+
+  /** Which forms feed a kind, as a display string. */
+  const sourcesOf = (kind) => {
+    const list = FORMS.filter(([, , , w]) => (w[kind] ?? 0) > 0).map(
+      ([, name, , w]) => `${name} ${w[kind]}`,
+    );
+    if (kind === 'labor') list.unshift(`the tap ${LABOR_SHARE}/1024 of every laborer-month`);
+    else if (LAND_SHARES[kind] !== undefined) list.unshift(`the land ${LAND_SHARES[kind]}/1024`);
+    return list;
+  };
+
+  /** Which claimants take a kind, as a display string. */
+  const sinksOf = (kind) =>
+    SINKS.filter((s) => s.price[kind] !== undefined).map((s) => s.name);
+
+  /* =====================================================================
+   * THE STRUCTURAL MAP
+   * ===================================================================== */
+
+  /*
+   * Column widths are **measured, not chosen.** The first cut clipped
+   * "× the territory's libraryUpke|" mid-word inside its own box, which reads
+   * as a rendering fault rather than as a long label. Each column is now wide
+   * enough for its longest string at 9.5px mono, and the map scrolls inside
+   * `.mapwrap` rather than scaling down — a legible map you have to scroll is
+   * better than an illegible one that fits.
+   */
+  const MAP = {
+    w: 1056,
+    leftX: 6,
+    leftW: 260,
+    midX: 452,
+    midW: 196,
+    rightX: 700,
+    rightW: 346,
+    top: 26,
+  };
+
+  /** A rounded ribbon from the right edge of one box to the left edge of another. */
+  const ribbon = (x1, y1, x2, y2) => {
+    const dx = Math.max(40, (x2 - x1) * 0.45);
+    return `M${x1.toFixed(1)},${y1.toFixed(1)} C${(x1 + dx).toFixed(1)},${y1.toFixed(1)} ` +
+      `${(x2 - dx).toFixed(1)},${y2.toFixed(1)} ${x2.toFixed(1)},${y2.toFixed(1)}`;
+  };
+
+  const svgEl = (tag, attrs = {}, text) => {
+    const node = document.createElementNS('http://www.w3.org/2000/svg', tag);
+    for (const [k, v] of Object.entries(attrs)) node.setAttribute(k, String(v));
+    if (text !== undefined) node.textContent = text;
+    return node;
+  };
+
+  function buildMap(focus) {
+    const svg = $('map');
+    // Everything but the accessible <title>, which the markup owns.
+    for (const child of [...svg.children]) {
+      if (child.tagName.toLowerCase() !== 'title') child.remove();
+    }
+
+    /* ---- geometry ------------------------------------------------------- */
+    const landH = 62;
+    const tapH = 44;
+    const formH = 26;
+    const formGap = 5;
+    const landY = MAP.top;
+    const tapY = landY + landH + 10;
+    const formsY = tapY + tapH + 16;
+    const height = formsY + FORMS.length * (formH + formGap) + 16;
+
+    svg.setAttribute('viewBox', `0 0 ${MAP.w} ${height}`);
+    svg.setAttribute('height', String(height));
+
+    const stockH = 54;
+    const stockGap = (height - MAP.top - 12 - KINDS.length * stockH) / (KINDS.length - 1);
+    const stockY = (i) => MAP.top + i * (stockH + stockGap);
+
+    const sinkH = 32;
+    const sinkGap = (height - MAP.top - 12 - SINKS.length * sinkH) / (SINKS.length - 1);
+    const sinkY = (i) => MAP.top + i * (sinkH + sinkGap);
+
+    const edges = svgEl('g');
+    const nodes = svgEl('g');
+    svg.append(edges, nodes);
+
+    svg.append(svgEl('text', { class: 'col-head', x: MAP.leftX, y: 14 }, 'MAKES IT'));
+    svg.append(svgEl('text', { class: 'col-head', x: MAP.midX, y: 14 }, 'THE SEVEN STOCKS'));
+    svg.append(svgEl('text', { class: 'col-head', x: MAP.rightX, y: 14 }, 'TAKES IT AWAY'));
+
+    /**
+     * One labelled box.
+     *
+     * `nameY` is explicit rather than derived from the box height, because a
+     * 26-high form row and a 62-high land block want the name in different
+     * places and a helper that guesses gets one of them wrong every time.
+     */
+    const box = (x, y, w, h, cls, name, sub, extra = {}) => {
+      const focused = extra.focus === true;
+      const rect = svgEl('rect', {
+        x, y, width: w, height: h, rx: 3,
+        class: `n-box${cls ? ` ${cls}` : ''}${focused ? ' is-focus' : ''}`,
+      });
+      if (extra.title !== undefined) rect.append(svgEl('title', {}, extra.title));
+      nodes.append(rect);
+      const nameY = extra.nameY ?? y + 15;
+      nodes.append(svgEl('text', {
+        class: `n-name${focused ? ' is-focus' : ''}`, x: x + 8, y: nameY,
+      }, name));
+      if (sub !== undefined) {
+        for (const [i, line] of sub.entries()) {
+          nodes.append(svgEl('text', {
+            class: 'n-sub', x: x + 8, y: (extra.subY ?? y + 28) + i * 11,
+          }, line));
+        }
+      }
+      if (extra.right !== undefined) {
+        nodes.append(svgEl('text', {
+          class: 'n-kind', x: x + w - 8, y: nameY, 'text-anchor': 'end',
+        }, extra.right));
+      }
+      return rect;
+    };
+
+    /* ---- left: the land, the tap, the fourteen forms --------------------- */
+    const active = (kind) => focus === null || focus === kind;
+
+    box(MAP.leftX, landY, MAP.leftW, landH, 'is-land', 'Laborer cohorts',
+      [`count × ${PER_LABORER} fp × species.laborAffinity`,
+       'split by territory yield share',
+       'no farm, no quarry, no site laborers'],
+      { focus: focus !== null && LAND_SHARES[focus] !== undefined });
+
+    box(MAP.leftX + 16, tapY, MAP.leftW - 16, tapH, '', 'The labor tap',
+      [`labor-share-of-month = ${LABOR_SHARE}/1024`,
+       'taken off the top, by subtraction'],
+      { focus: focus === 'labor' });
+
+    // The bracket that says the tap comes off the trunk before the split.
+    edges.append(svgEl('path', {
+      class: 'edge',
+      'stroke-width': 1.4,
+      d: `M${MAP.leftX + 8},${landY + landH} L${MAP.leftX + 8},${tapY + tapH / 2} L${MAP.leftX + 16},${tapY + tapH / 2}`,
+    }));
+    edges.append(svgEl('path', {
+      class: 'edge', 'stroke-width': 1.4,
+      d: `M${MAP.leftX + 12},${tapY + tapH / 2 - 5} L${MAP.leftX + 12},${tapY + tapH / 2 + 5}`,
+    }));
+
+    const formRow = (i) => formsY + i * (formH + formGap);
+    for (const [i, [id, name, gloss, weights]] of FORMS.entries()) {
+      const y = formRow(i);
+      const kinds = Object.keys(weights);
+      box(MAP.leftX, y, MAP.leftW, formH, '', name, undefined, {
+        focus: focus !== null && kinds.includes(focus),
+        nameY: y + 17,
+        right: kinds.map((k) => `${k} ${weights[k]}`).join(' · '),
+        title: `${id} — ${gloss}. Applied: ${kinds.map((k) => `${k} ${weights[k]}/1024`).join(', ')}.`,
+      });
+    }
+
+    /* ---- middle: the seven stocks ---------------------------------------- */
+    for (const [i, kind] of KINDS.entries()) {
+      const y = stockY(i);
+      const land = LAND_SHARES[kind];
+      const sub = [
+        land === undefined ? 'made by a mage spending a month' : `land ${land}/1024, and applied magic`,
+      ];
+      box(MAP.midX, y, MAP.midW, stockH, '', kind, sub, { focus: focus === kind });
+      nodes.append(svgEl('text', {
+        class: 'n-sub', x: MAP.midX + 8, y: y + 44,
+      }, `${sourcesOf(kind).length} in · ${sinksOf(kind).length} out`));
+    }
+
+    /* ---- right: the claimants --------------------------------------------
+     *
+     * Two groups, and the split is load-bearing rather than cosmetic. The
+     * numbered seven are `CONSUMPTION_ORDER`, settled inside the world step in
+     * that order — and the order only ranks claimants that *share* a kind, so
+     * the only place it still adjudicates anything is vellum. The five below
+     * are the god's, deducted by `interventions.ts` before the world system
+     * runs in the same step.
+     */
+    for (const [i, sink] of SINKS.entries()) {
+      const y = sinkY(i);
+      const kinds = Object.keys(sink.price);
+      const label = sink.group === 'god' ? `▸ ${sink.name}` : `${sink.order}. ${sink.name}`;
+      box(MAP.rightX, y, MAP.rightW, sinkH, '', label, [sink.note], {
+        focus: focus !== null && kinds.includes(focus),
+        nameY: y + 14,
+        subY: y + 26,
+        title: `${sink.name} — paid in ${kinds.join(' and ')}. ${sink.note}`,
+      });
+    }
+
+    /* ---- the edges -------------------------------------------------------- */
+    const edge = (x1, y1, x2, y2, weight, opts = {}) => {
+      const path = svgEl('path', {
+        class: `edge${opts.focus === true ? ' is-focus' : ''}${opts.mult === true ? ' is-mult' : ''}`,
+        'stroke-width': (0.9 + 4.2 * Math.min(1, weight / 1024)).toFixed(2),
+        d: ribbon(x1, y1, x2, y2),
+      });
+      path.append(svgEl('title', {}, opts.title ?? ''));
+      edges.append(path);
+    };
+
+    const stockLeft = (kind) => ({ x: MAP.midX, y: stockY(KINDS.indexOf(kind)) + stockH / 2 });
+    const stockRight = (kind) => ({ x: MAP.midX + MAP.midW, y: stockY(KINDS.indexOf(kind)) + stockH / 2 });
+
+    // The land's three, and the tap's one.
+    for (const [kind, share] of Object.entries(LAND_SHARES)) {
+      if (!active(kind)) continue;
+      const to = stockLeft(kind);
+      edge(MAP.leftX + MAP.leftW, landY + landH / 2, to.x, to.y, share, {
+        focus: focus === kind,
+        title: `the land → ${kind}: ${share}/1024 of every worked laborer-month`,
+      });
+    }
+    if (active('labor')) {
+      const to = stockLeft('labor');
+      edge(MAP.leftX + MAP.leftW, tapY + tapH / 2, to.x, to.y, LABOR_SHARE * 6, {
+        focus: focus === 'labor',
+        title: `the tap → labor: ${LABOR_SHARE}/1024 of the month, taken by subtraction before the split`,
+      });
+    }
+
+    // The fourteen forms, and the one dashed multiplier edge that stands for
+    // the ambient channel every one of them also has.
+    for (const [i, [, name, , weights]] of FORMS.entries()) {
+      const y = formRow(i) + formH / 2;
+      for (const [kind, weight] of Object.entries(weights)) {
+        if (!active(kind)) continue;
+        const to = stockLeft(kind);
+        edge(MAP.leftX + MAP.leftW, y, to.x, to.y, weight, {
+          focus: focus === kind,
+          title: `${name} applied → ${kind}: ${weight}/1024 of the month’s output`,
+        });
+      }
+    }
+    /*
+     * The **ambient** channel, and it is drawn differently because it is a
+     * different thing. Every edge above is material moving. This one is not:
+     * holding a permitted, castable `resource-yield` node multiplies what the
+     * land already produces, per kind, and costs the knower nothing — she
+     * contributes it asleep. `application.ts` insists on the distinction and so
+     * does this map: dashed, no arrow into a stock, and it lands on the land
+     * block rather than on any kind.
+     *
+     * Drawn once rather than fourteen times. It is a property of the ruleset,
+     * not of any one form's month, and fourteen dashed curves would read as a
+     * fifteenth to twenty-eighth supply route.
+     */
+    const multX = MAP.leftX + MAP.leftW - 44;
+    const mult = svgEl('path', {
+      class: 'edge is-mult', 'stroke-width': 1.6,
+      d: `M${multX},${formsY - 6} L${multX},${landY + landH + 6} L${MAP.leftX + MAP.leftW / 2},${landY + landH + 6}`,
+    });
+    mult.append(svgEl('title', {},
+      'resource-yield, ambient: holding a permitted castable node multiplies what every laborer ' +
+      'cohort produces, in the kinds that node’s form is made of. Nothing moves along this edge — ' +
+      'it scales the three the land already carries.'));
+    edges.append(mult);
+    nodes.append(svgEl('text', {
+      class: 'n-sub', x: MAP.leftX + 2, y: formsY - 9,
+    }, 'resource-yield, ambient — scales the land, supplies nothing'));
+
+    // Stocks to claimants.
+    for (const [i, sink] of SINKS.entries()) {
+      const y = sinkY(i) + sinkH / 2;
+      for (const kind of Object.keys(sink.price)) {
+        if (!active(kind)) continue;
+        const from = stockRight(kind);
+        const price = sink.price[kind];
+        edge(from.x, from.y, MAP.rightX, y, price > 0 ? Math.min(1024, price / 4) : 380, {
+          focus: focus === kind,
+          title: `${kind} → ${sink.name}${price > 0 ? ` (${(price / 1024).toFixed(price >= 1024 ? 1 : 3)} per unit of demand)` : ''}`,
+        });
+      }
+    }
+  }
+
+  /* =====================================================================
+   * THE CONSEQUENCE TABLE
+   * ===================================================================== */
+
+  function drawConsequences(focus) {
+    const rows = [
+      '<tr><th>kind</th><th>what goes unpaid first</th><th>and then</th>' +
+      '<th>permanently lost</th><th></th></tr>',
+    ];
+    for (const kind of KINDS) {
+      const c = CONSEQUENCE[kind];
+      rows.push(
+        `<tr${focus === kind ? ' class="is-focus"' : ''}>` +
+        `<td class="kind">${kind}</td>` +
+        `<td>${c.first}</td>` +
+        `<td><em>${c.then}</em></td>` +
+        `<td class="${c.permanent === null ? '' : 'perm'}">${c.permanent ?? 'nothing'}</td>` +
+        `<td class="rec">${c.recover}</td></tr>`,
+      );
+    }
+    $('conseq').innerHTML = rows.join('');
+  }
+
+  /* =====================================================================
+   * THE MEASURED LANES
+   * ===================================================================== */
+
+  const PLOT = { w: 720, h: 46, pad: 4 };
+  const MAX_POINTS = 720;
+
+  /** Samples a series to the pixel budget, and reports the stride it used. */
+  function sample(values) {
+    const stride = Math.max(1, Math.ceil(values.length / MAX_POINTS));
+    const out = [];
+    for (let i = 0; i < values.length; i += stride) out.push([i, values[i]]);
+    const lastIndex = values.length - 1;
+    if (out.at(-1)?.[0] !== lastIndex) out.push([lastIndex, values[lastIndex]]);
+    return { points: out, stride };
+  }
+
+  /**
+   * One series, one range, one plot. **Never two scales in one frame** — a
+   * consequence gets its own plot below the stock rather than a second y-axis.
+   */
+  function plot({ title, right, values, ticks, marks = [], cls = '' }) {
+    const { points, stride } = sample(values);
+    const max = Math.max(1, ...values);
+    const n = ticks.length - 1;
+    const x = (t) => PLOT.pad + (n === 0 ? 0 : (t / n) * (PLOT.w - 2 * PLOT.pad));
+    const y = (v) => PLOT.h - PLOT.pad - (Math.max(0, v) / max) * (PLOT.h - 2 * PLOT.pad);
+    const d = points
+      .map(([t, v], i) => `${i === 0 ? 'M' : 'L'}${x(t).toFixed(1)},${y(v).toFixed(1)}`)
+      .join('');
+
+    const extras = marks
+      .map((m) => {
+        if (m.kind === 'hline') {
+          return `<line class="p-price" x1="${PLOT.pad}" y1="${y(m.at).toFixed(1)}" ` +
+            `x2="${PLOT.w - PLOT.pad}" y2="${y(m.at).toFixed(1)}" />` +
+            `<text class="p-lab warn" x="${PLOT.w - PLOT.pad}" y="${Math.max(9, y(m.at) - 3).toFixed(1)}" ` +
+            `text-anchor="end">${m.label}</text>`;
+        }
+        const px = x(m.at);
+        const anchor = px > PLOT.w * 0.6 ? 'end' : 'start';
+        return `<line class="${m.kind === 'zero' ? 'p-zero' : 'p-cross'}" x1="${px.toFixed(1)}" y1="1" ` +
+          `x2="${px.toFixed(1)}" y2="${PLOT.h - PLOT.pad}" />` +
+          `<text class="p-lab loss" x="${(px + (anchor === 'end' ? -3 : 3)).toFixed(1)}" y="10" ` +
+          `text-anchor="${anchor}">${m.label}</text>`;
+      })
+      .join('');
+
+    return (
+      '<div class="plot">' +
+      `<h4><span>${title}</span><span>0 – ${fmt(max)}${stride > 1 ? ` · every ${stride}th tick` : ''}</span></h4>` +
+      `<svg viewBox="0 0 ${PLOT.w} ${PLOT.h}" preserveAspectRatio="none" role="img" ` +
+      `aria-label="${title}, ${values.length} ticks, from ${fmt(values[0])} to ${fmt(values.at(-1))}, range 0 to ${fmt(max)}">` +
+      `<line class="p-base" x1="0" y1="${PLOT.h - PLOT.pad}" x2="${PLOT.w}" y2="${PLOT.h - PLOT.pad}" />` +
+      extras +
+      `<path class="p-line ${cls}" d="${d}" />` +
+      '</svg>' +
+      `<div class="p-axis"><span>tick ${ticks[0]}</span><span>${fmt(values.at(-1))} now</span>` +
+      `<span>tick ${ticks.at(-1)}</span></div>` +
+      '</div>'
+    );
+  }
+
+  /**
+   * The legality strip: one mark per sampled tick, cyan where the god's verb was
+   * legal and red where it was dark.
+   *
+   * `WHY_ABSENT.maskReason` applies and is printed under it: the mask is one bit
+   * and cannot say whether the verb went dark for want of the material or for
+   * want of favor. What makes it evidence anyway is that the *stock* crossing
+   * the price and the *bit* going to zero are two independent readings, and they
+   * are compared rather than assumed.
+   */
+  function legalityStrip(series, label) {
+    const { points, stride } = sample(series);
+    const cellW = (PLOT.w - 2 * PLOT.pad) / Math.max(1, points.length);
+    const rects = points
+      .map(([, v], i) =>
+        `<rect class="${v === 1 ? 'p-legal' : 'p-dark'}" x="${(PLOT.pad + i * cellW).toFixed(2)}" ` +
+        `y="0" width="${Math.max(0.7, cellW).toFixed(2)}" height="10" />`)
+      .join('');
+    const legal = series.filter((v) => v === 1).length;
+    return (
+      '<div class="plot">' +
+      `<h4><span>${label}</span><span>legal on ${fmt(legal)} of ${fmt(series.length)} ticks` +
+      `${stride > 1 ? ` · every ${stride}th shown` : ''}</span></h4>` +
+      `<svg viewBox="0 0 ${PLOT.w} 10" preserveAspectRatio="none" role="img" ` +
+      `aria-label="${label}: legal on ${legal} of ${series.length} ticks">${rects}</svg>` +
+      '</div>'
+    );
+  }
+
+  /* =====================================================================
+   * THE MEASURED MAP — the flow ledger, when the read path carries one
+   *
+   * `w/flow-ledger` published the shape (commit 61ec54f4) and this page
+   * consumes it **feature-detected, never assumed**: `session.capabilities()
+   * .flowLedger` on a tree that has it, and a `typeof f.flow === 'function'`
+   * guard for a tree that does not, because this page must keep loading against
+   * the `session.js` it was written beside.
+   *
+   * Nothing here re-decodes the sidecar. `frame.flow()` already returns world
+   * units and already refuses a half-written ledger; a second decoder in a
+   * renderer is the desync `contracts.md` §5 exists to prevent, and it would be
+   * this page's own version of the bug it spends a section describing.
+   * ===================================================================== */
+
+  /** Every frame's ledger, in order, or `null` if the read path carries none. */
+  function readFlows(session) {
+    const probe = session.frame(session.frameCount - 1);
+    if (typeof probe.flow !== 'function') return null;
+    if (session.capabilities().flowLedger !== true) return null;
+    const out = [];
+    for (let i = 0; i < session.frameCount; i += 1) {
+      const f = session.frame(i).flow();
+      if (f !== null) out.push(f);
+    }
+    return out.length > 0 ? out : null;
+  }
+
+  /**
+   * The run summed, per kind — and the sum is the whole point.
+   *
+   * A level series can say `essence` never moved. Only this can say **why**:
+   * whether the faucet produced nothing or the sink took exactly what arrived.
+   * Those are different universes and the stock reads identically in both.
+   *
+   * `godGap` is derived rather than published, and it is the one derived figure
+   * here: `opening[t] - closing[t-1]`. The ledger's own documentation says that
+   * gap is real and says what it is — `interventions.ts` spends the stocks in a
+   * system that runs before the world loop in the same step — so the sum of the
+   * negative gaps is what the god paid. It is labelled as an inference and not
+   * as a field, because it is not one.
+   */
+  function flowTotals(flows) {
+    const kinds = flows[0].kinds;
+    const zero = () => Object.fromEntries(kinds.map((k) => [k, 0]));
+    const totals = {
+      kinds,
+      land: zero(), applied: zero(), faucet: zero(), sink: zero(), spilled: zero(),
+      godGap: zero(), godGapTicks: zero(),
+      shortTicks: zero(),
+      byClaimant: new Map(),
+      breaches: [],
+      ticks: flows.length,
+    };
+    for (const [i, flow] of flows.entries()) {
+      for (const kind of kinds) {
+        totals.land[kind] += flow.land[kind] ?? 0;
+        totals.applied[kind] += flow.applied[kind] ?? 0;
+        totals.faucet[kind] += flow.faucet[kind] ?? 0;
+        totals.sink[kind] += flow.sink[kind] ?? 0;
+        totals.spilled[kind] += flow.spilled[kind] ?? 0;
+        if (flow.short[kind] === true) totals.shortTicks[kind] += 1;
+        if (i > 0) {
+          const gap = (flow.opening[kind] ?? 0) - (flows[i - 1].closing[kind] ?? 0);
+          if (Math.abs(gap) > 1e-9) {
+            totals.godGap[kind] += gap;
+            totals.godGapTicks[kind] += 1;
+          }
+        }
+      }
+      for (const row of flow.claimants) {
+        const key = `${row.claimant}|${row.kind}`;
+        const acc = totals.byClaimant.get(key) ?? {
+          claimant: row.claimant, kind: row.kind, owed: 0, paid: 0, shortfall: 0, shortTicks: 0,
+        };
+        acc.owed += row.owed;
+        acc.paid += row.paid;
+        acc.shortfall += row.shortfall;
+        if (row.shortfall > 0) acc.shortTicks += 1;
+        totals.byClaimant.set(key, acc);
+      }
+      for (const b of flow.breaches) totals.breaches.push({ tick: flow.worldTick, ...b });
+    }
+    return totals;
+  }
+
+  /** Everything the lanes read, decoded once per load. */
+  function readRun(session) {
+    const frames = [];
+    for (let i = 0; i < session.frameCount; i += 1) {
+      const f = session.frame(i);
+      const r = f.resources();
+      const inst = f.institutions();
+      const pop = f.block('population');
+      let people = 0;
+      for (const v of pop) people += v;
+      const buckets = f.mageBuckets();
+      let taught = 0;
+      for (const b of buckets) taught += b.taught;
+      frames.push({
+        tick: f.clock().worldTick,
+        stocks: Object.fromEntries(KINDS.map((k) => [k, r[k]])),
+        grimoires: inst.grimoires,
+        libraryDepth: inst.libraryDepth,
+        universities: inst.universities,
+        people,
+        taught,
+        mask: Object.fromEntries(
+          Object.values(GOD_PRICE).map((g) => [g.action, f.isLegal(g.action) ? 1 : 0]),
+        ),
+      });
+    }
+    return frames;
+  }
+
+  /** The consequence series a kind gets drawn beside it, and where it comes from. */
+  const CONSEQUENCE_SERIES = {
+    food: { key: 'people', title: 'people alive — §4.1 population block' },
+    stone: { key: 'universities', title: 'universities standing — §4.1 institutions' },
+    vellum: { key: 'grimoires', title: 'grimoires on the shelf — §4.1 institutions' },
+    labor: { key: 'universities', title: 'universities standing — §4.1 institutions' },
+    essence: { key: 'taught', title: 'mages holding at least one node — §4.1 mage buckets' },
+    insight: { key: 'taught', title: 'mages holding at least one node — §4.1 mage buckets' },
+    passage: { key: 'universities', title: 'universities standing — §4.1 institutions' },
+  };
+
+  function drawLanes(frames, focus) {
+    const host = $('lanes');
+    host.innerHTML = '';
+    const ticks = frames.map((f) => f.tick);
+    const window = Math.min(40, frames.length - 1);
+
+    for (const kind of KINDS) {
+      const series = frames.map((f) => f.stocks[kind]);
+      const known = series.every((v) => typeof v === 'number' && Number.isFinite(v));
+      const now = series.at(-1);
+      const before = series[series.length - 1 - window];
+      const delta = known && window > 0 ? now - before : undefined;
+
+      const lane = el('div', 'lane');
+      lane.dataset.kind = kind;
+      if (focus === kind) lane.classList.add('is-focus');
+
+      /* Three distinct states, and they must not share a sentence: a stock at
+         zero, a stock falling toward it, and a stock that has not moved at all.
+         A flat stock is the interesting one — it means neither its faucet nor
+         its sink ever fired, which no level series says out loud. */
+      const firstZero = known ? series.findIndex((v) => v < 0.5) : -1;
+      const flat = known && series.every((v) => v === series[0]);
+      let tag = null;
+      if (!known) tag = ['flat', 'not on the read path'];
+      else if (firstZero >= 0) tag = ['short', `at zero since tick ${ticks[firstZero]}`];
+      else if (flat) tag = ['flat', `never moved in ${frames.length - 1} ticks`];
+      else if (delta !== undefined && delta < 0) tag = ['falling', `${signed(delta)} over ${window} months`];
+
+      const head = el('div', 'lane-head');
+      head.append(el('span', 'lane-name', kind));
+      head.append(el('span', 'lane-now', known ? fmt(now) : '—'));
+      if (tag !== null) head.append(el('span', `lane-tag ${tag[0]}`, tag[1]));
+      if (firstZero >= 0) lane.classList.add('is-short');
+      lane.append(head);
+
+      /* The structural row says what *can* reach this stock; the measured suffix
+         says what did. Kept on one line rather than in a second block, because
+         the pair is the page's whole argument and splitting them invites reading
+         the capability as the measurement. */
+      const t = flowTotalsForRun;
+      const measuredIn =
+        t === null
+          ? ''
+          : ` — measured: land ${fmt(t.land[kind] ?? 0)}, applied ${fmt(t.applied[kind] ?? 0)}`;
+      const measuredOut =
+        t === null ? '' : ` — measured: ${fmt(t.sink[kind] ?? 0)} spent over ${fmt(t.ticks)} ticks`;
+      const io = el('div', 'lane-io');
+      const inRow = el('div');
+      inRow.innerHTML = `<b>in ▸</b> ${sourcesOf(kind).join(' · ')}${measuredIn}`;
+      const outRow = el('div');
+      outRow.innerHTML = `<b>out ▸</b> ${sinksOf(kind).join(' · ')}${measuredOut}`;
+      io.append(inRow, outRow);
+      lane.append(io);
+
+      const cseries = CONSEQUENCE_SERIES[kind];
+      const cvalues = frames.map((f) => f[cseries.key]);
+
+      const plots = el('div', 'plots');
+      if (!known) {
+        plots.innerHTML =
+          `<div class="plot"><h4><span>${kind}</span><span>absent</span></h4>` +
+          '<p class="hint">The frame does not carry this kind. Nothing is drawn rather than a ' +
+          'zero drawn — an empty stock is a crisis and an unknown stock is not.</p></div>';
+      } else {
+        const price = GOD_PRICE[kind];
+        const marks = [];
+        if (price !== undefined) {
+          marks.push({ kind: 'hline', at: price.fp / 1024, label: `${price.name} costs ${fmt(price.fp / 1024)}` });
+          const crossed = series.findIndex((v) => v < price.fp / 1024);
+          if (crossed > 0) {
+            marks.push({ kind: 'cross', at: crossed, label: `tick ${ticks[crossed]}: below the price` });
+          }
+        }
+        if (firstZero > 0) marks.push({ kind: 'zero', at: firstZero, label: `tick ${ticks[firstZero]}: zero` });
+
+        plots.innerHTML =
+          plot({ title: `${kind} in stock`, values: series, ticks, marks }) +
+          plot({
+            title: cseries.title,
+            values: cvalues,
+            ticks,
+            cls: 'conseq',
+            marks: marks.filter((m) => m.kind !== 'hline'),
+          }) +
+          (price === undefined ? '' : legalityStrip(frames.map((f) => f.mask[price.action]), `§4.2 mask · ${price.name}`));
+      }
+      lane.append(plots);
+
+      const c = CONSEQUENCE[kind];
+      const foot = el('div', 'lane-conseq');
+      let story = c.short;
+      if (known && firstZero >= 0) {
+        /*
+         * The join, stated in numbers rather than left to the eye. Peak is taken
+         * *before* the stock ran out and the trough *after* it, over the window
+         * that follows, so the pair is a before-and-after about this shortage
+         * and not about the whole run. It is a **correlation drawn from two
+         * level series** and it is labelled as one: nothing on the read path
+         * attributes a lost grimoire to a specific unpaid claim, which is
+         * `WHY_ABSENT.eventDeltas` again.
+         */
+        const after = cvalues.slice(firstZero, Math.min(cvalues.length, firstZero + 400));
+        const peak = Math.max(...cvalues.slice(0, firstZero + 1));
+        const trough = after.length > 0 ? Math.min(...after) : peak;
+        const fell = peak > 0 && trough < peak * 0.98;
+        story =
+          `<b>It ran out at tick ${ticks[firstZero]}.</b> ${c.short}` +
+          (fell
+            ? ` <b>Beside it:</b> ${cseries.title.split(' — ')[0]} peaked at ${fmt(peak)} before ` +
+              `tick ${ticks[firstZero]} and had fallen to ${fmt(trough)} by tick ` +
+              `${ticks[firstZero + after.indexOf(trough)]} — two level series lining up, not an ` +
+              'attribution the read path can make.'
+            : '');
+      } else if (known && flat) {
+        /* A flat stock has two explanations and a level series cannot separate
+           them: nothing was made, or exactly as much was made as was spent. With
+           a ledger it is no longer a guess. */
+        const t2 = flowTotalsForRun;
+        const madeNothing =
+          t2 !== null && (t2.faucet[kind] ?? 0) < 0.05 && (t2.sink[kind] ?? 0) < 0.05;
+        story =
+          `<b>The stock never moved.</b> It sat at ${fmt(series[0])} for the whole run, which is ` +
+          'the opening endowment. ' +
+          (t2 === null
+            ? 'Whether that is because nothing was made or because as much was made as was spent ' +
+              'is exactly what a level series cannot say. '
+            : madeNothing
+              ? `The ledger says why: <b>${fmt(t2.faucet[kind] ?? 0)} in and ` +
+                `${fmt(t2.sink[kind] ?? 0)} out over ${fmt(t2.ticks)} ticks</b> — neither faucet ` +
+                'nor sink ever fired, so no mage ever cast a form that makes it and no claimant ' +
+                'ever asked for it. '
+              : `The ledger says why: <b>${fmt(t2.faucet[kind] ?? 0)} in and ` +
+                `${fmt(t2.sink[kind] ?? 0)} out</b> — it moved and came back. `) +
+          c.short;
+      }
+      if (known && delta !== undefined) {
+        story +=
+          ` <em>Net ${signed(delta)} over the last ${window} months — a diff, not production: ` +
+          'it nets this kind’s faucet against its sink and nothing on the read path can take ' +
+          'the two apart.</em>';
+      }
+      foot.innerHTML = story;
+      lane.append(foot);
+
+      host.append(lane);
+    }
+  }
+
+  /* =====================================================================
+   * THE BANNER, THE ROT CHECK AND THE ABSENT PANEL
+   * ===================================================================== */
+
+  /**
+   * The cheapest available signal that one of the drawn tables has gone stale.
+   *
+   * Form names and the seven kinds *are* published; their weights and prices are
+   * not. So the page compares the halves it can: every form the run names must
+   * have a row here, and every kind this page draws must be in the frame's
+   * sidecar. A mismatch does not tell you the weights are wrong — it tells you
+   * the file moved under the copy, which is the moment to go and re-read it.
+   */
+  function rotCheck(session) {
+    const runForms = (session.content.forms ?? []).map((f) => f.id);
+    const drawnForms = FORMS.map(([id]) => id);
+    const missingForms = runForms.filter((id) => !drawnForms.includes(id));
+    const extraForms = drawnForms.filter((id) => !runForms.includes(id));
+    const stocks = session.last().resources();
+    const missingKinds = KINDS.filter(
+      (k) => typeof stocks[k] !== 'number' || !Number.isFinite(stocks[k]),
+    );
+    return { missingForms, extraForms, missingKinds, runForms };
+  }
+
+  function drawBanner(session) {
+    const check = session === null ? null : rotCheck(session);
+    const lines = [
+      '<b>Copied from the repository</b> — the read path publishes a form’s <code>id</code>, ' +
+      '<code>name</code> and <code>bit</code>, and <code>content.actionCosts</code> carries the ' +
+      '<em>favor</em> price only. So four tables here are copied out of the repository: ' +
+      '<code>packages/content/data/form.json</code> (routing weights), ' +
+      '<code>packages/content/data/territory.json</code> via ' +
+      '<code>territoryYieldShares</code> (the land mix), ' +
+      '<code>packages/content/data/god-cost.json</code> (material prices) and ' +
+      '<code>packages/rules-world/src/economy/materials.ts</code> ' +
+      `(<code>CONSUMPTION_ORDER</code>). Taken on ${SOURCE_REF}.`,
+    ];
+    if (check !== null) {
+      const bad =
+        check.missingForms.length + check.extraForms.length + check.missingKinds.length > 0;
+      lines.push(
+        `<span class="${bad ? 'bad' : 'ok'}">Rot check: ${check.runForms.length} forms named by ` +
+        `the run, ${FORMS.length} drawn here` +
+        (check.missingForms.length > 0 ? ` · no row for ${check.missingForms.join(', ')}` : '') +
+        (check.extraForms.length > 0 ? ` · drawn but not in the run: ${check.extraForms.join(', ')}` : '') +
+        ` · ${KINDS.length - check.missingKinds.length} of ${KINDS.length} kinds present in ` +
+        'the frame' +
+        (check.missingKinds.length > 0 ? ` (absent: ${check.missingKinds.join(', ')})` : '') +
+        '.</span>',
+      );
+      lines.push(
+        '<span>It compares the halves it can. Names and kinds are fed; weights and prices are ' +
+        'not, so a green line here says the files still line up, never that a magnitude is ' +
+        'current. Every magnitude reachable from this page is <b>untuned</b> ' +
+        '(<code>docs/design/release-plan.md</code>): no release before 0.5.0 may claim ' +
+        'otherwise.</span>',
+      );
+    }
+    $('drawn').innerHTML = lines.map((l) => `<div>${l}</div>`).join('');
+  }
+
+  /**
+   * The measured map: one row per kind, faucets on the left, claimants on the
+   * right, in the same order as the structural map above.
+   *
+   * The **conservation column is the reason this is worth drawing at all.**
+   * `faucet − sink` is checked against `closing − opening` summed over the run,
+   * which is the ledger's own invariant restated by a consumer rather than by
+   * the producer — two projections off one surface agreeing is weaker than two
+   * surfaces agreeing, and this page says which it has.
+   */
+  function drawMeasured(totals, focus) {
+    const host = $('measured');
+    if (totals === null) {
+      host.innerHTML = '';
+      return;
+    }
+    /*
+     * **World claimants only**, and the exclusion is the point rather than a
+     * filter: the ledger is built from the *world step's* stock mutations, and
+     * `interventions.ts` spends a god price in a system that runs before it. So
+     * a god verb's spending is structurally not in `claimants` and never will
+     * be. A kind whose only sink is a god verb therefore reads "nothing" here
+     * while the structural map above shows it an arrow, and those two are both
+     * correct — which is exactly the confusion the cell spells out rather than
+     * leaving to be noticed.
+     */
+    const claimantsOf = (kind) =>
+      SINKS.filter((sk) => sk.group === 'world' && sk.price[kind] !== undefined).map((sk) => sk.id);
+    const godOnly = (kind) =>
+      claimantsOf(kind).length === 0
+        ? SINKS.filter((sk) => sk.group === 'god' && sk.price[kind] !== undefined).map((sk) => sk.name)
+        : [];
+    const cell = (v, cls = '') => {
+      const zero = Math.abs(v) < 0.05;
+      return `<td class="${cls}${zero ? ' zero' : ' big'}">${zero ? '0' : fmt(v)}</td>`;
+    };
+
+    const rows = [
+      '<tr><th class="l">kind</th><th>from the land</th><th>from applied magic</th>' +
+      '<th class="grp">total in</th><th class="grp">total out</th><th>lost to the ceiling</th>' +
+      '<th class="grp">the god took</th><th>ticks short</th><th class="l grp">where it went</th></tr>',
+    ];
+    for (const kind of totals.kinds) {
+      const paid = claimantsOf(kind)
+        .map((id) => {
+          const row = totals.byClaimant.get(`${id}|${kind}`);
+          const label = SINKS.find((sk) => sk.id === id)?.name ?? id;
+          return row === undefined || row.paid < 0.05
+            ? `<span class="zero">${label} 0</span>`
+            : `${label} ${fmt(row.paid)}${row.shortTicks > 0 ? ` (short on ${fmt(row.shortTicks)})` : ''}`;
+        })
+        .join(' · ');
+      const only = godOnly(kind);
+      const where =
+        paid !== ''
+          ? paid
+          : only.length > 0
+            ? `<span class="zero">no world claimant</span> — only ${only.join(' and ')}, which ` +
+              'the world step never sees'
+            : '<span class="zero">nothing</span>';
+      const inert =
+        Math.abs(totals.faucet[kind] ?? 0) < 0.05 && Math.abs(totals.sink[kind] ?? 0) < 0.05;
+      const rowCls = [focus === kind ? 'is-focus' : '', inert ? 'is-inert' : ''].filter(Boolean).join(' ');
+      rows.push(
+        `<tr${rowCls === '' ? '' : ` class="${rowCls}"`}><td class="l k">${kind}</td>` +
+        cell(totals.land[kind]) +
+        cell(totals.applied[kind]) +
+        cell(totals.faucet[kind], 'grp') +
+        cell(totals.sink[kind], 'grp') +
+        cell(totals.spilled[kind]) +
+        cell(-totals.godGap[kind], 'grp') +
+        `<td class="n">${fmt(totals.shortTicks[kind])}</td>` +
+        `<td class="l n grp wrap">${where}</td></tr>`,
+      );
+    }
+
+    const breached = totals.breaches.length;
+    const godTicks = Object.values(totals.godGapTicks).reduce((a, b) => a + b, 0);
+    host.innerHTML =
+      `<div class="flowtable-wrap"><table class="flow">${rows.join('')}</table></div>` +
+      '<p class="flownote">' +
+      `Summed over <b>${fmt(totals.ticks)}</b> ticks that carried a ledger. ` +
+      (breached === 0
+        ? '<span class="good">No conservation breach on any tick</span> — the simulation asserts ' +
+          '<code>closing − opening == faucet − sink</code> per kind with no epsilon and publishes ' +
+          'the answer, so this is the series saying it was asked, not an assertion that merely ' +
+          'never threw. '
+        : `<span class="bad">${fmt(breached)} conservation breach(es)</span> — material moved ` +
+          'without recording itself. ' +
+          totals.breaches.slice(0, 3).map((b) => `tick ${b.tick} ${b.kind} ${fmt(b.discrepancy)}`).join(', ') +
+          '. ') +
+      '<b>“The god took” is an inference, not a field.</b> The ledger is a statement about one ' +
+      'tick, and <code>interventions.ts</code> spends the stocks in a system that runs before the ' +
+      'world loop in the same step — so the gap between one tick’s <code>closing</code> and the ' +
+      `next tick’s <code>opening</code> is what happened outside the world loop. It is non-zero on ` +
+      `<b>${fmt(godTicks)}</b> (kind, tick) pairs here. On this build nothing else moves a stock ` +
+      'there, so the gap is the god’s bill — but it is the gap that is measured, and the ' +
+      'attribution that is read in.</p>';
+  }
+
+  /**
+   * The frame keys this page knows how to read. Anything else is new.
+   *
+   * `flow` is on this list because the page now *consumes* it. It was not, for
+   * one commit, and the probe correctly reported it as unrecognised on a tree
+   * that had it — which is the probe working, and also the reason it is worth
+   * keeping: the list is a claim about what this page understands, and it goes
+   * stale the moment the read path grows something.
+   */
+  const KNOWN_FRAME_KEYS = [
+    'obs', 'sat', 'stocks', 'candidateDetail', 'academy', 'mask', 'candidates', 'status', 'flow',
+  ];
+
+  function drawAbsent(session, totals) {
+    /* The frame's own keys, not this page's list of them. Printing
+       `KNOWN_FRAME_KEYS.length` here reported "carries 9 keys" about a frame
+       that carries 8 — a checker describing its own expectation rather than its
+       input, which is the shape this repository has been bitten by five times. */
+    const frameKeys =
+      session === null ? [] : Object.keys(session.frame(session.frameCount - 1).raw ?? {});
+    const probe = session === null ? null : frameKeys.filter((k) => !KNOWN_FRAME_KEYS.includes(k));
+
+    /*
+     * The panel has two states and they are different claims, so they are
+     * different paragraphs rather than one paragraph with a word swapped. When
+     * the ledger is present the interesting thing is no longer its absence — it
+     * is what is *still* absent with it there, which is attribution: the ledger
+     * says a claimant went short and never says which grimoire that cost.
+     */
+    if (totals !== null) {
+      const why = WHY_ABSENT.flowLedger ?? '';
+      $('absent').innerHTML =
+        '<h3>The ledger is here. What is still not.</h3>' +
+        '<p>Every arrow in the measured map above is a real per-tick flow off the ' +
+        `<code>flow</code> sidecar, over ${fmt(totals.ticks)} ticks. Frame 0 carries none by ` +
+        'construction — nothing has been stepped at tick 0 — and this page counts the ticks it ' +
+        'actually got rather than the frames it holds.</p>' +
+        '<p><b>What a flow still cannot tell you is which thing it cost.</b> The ledger says ' +
+        '<code>libraryUpkeep</code> went short by so much on tick 800; it does not say which ' +
+        'instance was destroyed, and it cannot — that decision belongs to the knowledge side ' +
+        `(<code>contracts.md</code> §5 rule 3). ${WHY_ABSENT.eventDeltas} So the “beside it” ` +
+        'numbers in the lanes remain two level series lining up, and the map still stops short ' +
+        'of saying <em>this</em> unpaid claim burned <em>that</em> book.</p>' +
+        `<p>${why}</p>` +
+        `<p class="probe${probe !== null && probe.length > 0 ? ' found' : ''}">` +
+        (probe === null
+          ? 'Frame probe: no session.'
+          : probe.length === 0
+            ? 'Frame probe: no key on the last frame is unknown to this page.'
+            : `Frame probe: unrecognised frame key(s) — <b>${probe.join(', ')}</b>. Something ` +
+              'else grew on the read path; this page does not guess at a shape it has not read.') +
+        '</p>';
+      return;
+    }
+
+    $('absent').innerHTML =
+      '<h3>What did flow, per tick — and why it is not on this page</h3>' +
+      `<p>${WHY_ABSENT.eventDeltas} That is the general form of it. The specific form is ` +
+      'sharper, and worse: <b>the simulation already computes exactly this and throws it away.</b> ' +
+      '<code>packages/coordination/src/world-step.ts</code> builds <code>faucetByKind</code> and ' +
+      '<code>sinkByKind</code> every tick from the stock mutations themselves, asserts ' +
+      '<code>delta == faucet − sink</code> per kind with no epsilon, and hands both to an ' +
+      'optional <code>onReport</code> callback. Nothing persists them, no script publishes them, ' +
+      'and no frame carries them — so the moment the tick ends, the only reconciliation of ' +
+      'flows in the project is gone.</p>' +
+      '<p>What that costs this page, precisely: every arrow in the structural map is a ' +
+      '<em>capability</em> and not a measurement. It can say Herbam <em>can</em> make vellum; it ' +
+      'cannot say how much vellum Herbam made this run, or whether any mage ever cast it. The ' +
+      'lanes work around it in the only honest way available — a stock that never moves ' +
+      'proves both its faucet and its sink stayed shut, and a diff over a window is production ' +
+      'minus consumption with no way to separate them.</p>' +
+      '<p>Two things a reader wiring that sidecar later must know. <b>The god’s material ' +
+      'costs are not in that ledger</b>: <code>interventions.ts</code> deducts them before the ' +
+      'world system runs in the same step, so they are already in the stock the tick opens with, ' +
+      'and their absence from <code>sinkByKind</code> is correct rather than a leak. And ' +
+      '<b>scribing is paid at the desk</b>, outside <code>consumeMaterials</code>, which is why ' +
+      'the world step adds it to <code>sink.vellum</code> by hand.</p>' +
+      `<p class="probe${probe !== null && probe.length > 0 ? ' found' : ''}">` +
+      (probe === null
+        ? 'Frame probe: no session.'
+        : probe.length === 0
+          ? `Frame probe: the last frame carries ${fmt(frameKeys.length)} keys and this page ` +
+            'knows all of them. No flow sidecar has landed.'
+          : `Frame probe: the last frame carries key(s) this page has never seen — ` +
+            `<b>${probe.join(', ')}</b>. Something grew on the read path. This page does not ` +
+            'guess at a shape it has not read; go and read it.') +
+      '</p>';
+  }
+
+  /* =====================================================================
+   * COMPOSITION
+   * ===================================================================== */
+
+  let session = null;
+  let frames = [];
+  let flowTotalsForRun = null;
+  let focus = null;
+
+  function drawChips() {
+    const host = $('chips');
+    host.innerHTML = '';
+    const make = (kind, label) => {
+      const b = el('button', null, label);
+      b.type = 'button';
+      b.setAttribute('aria-pressed', String(focus === kind));
+      b.addEventListener('click', () => {
+        focus = focus === kind ? null : kind;
+        redraw();
+      });
+      host.append(b);
+    };
+    make(null, 'all seven');
+    for (const kind of KINDS) make(kind, kind);
+  }
+
+  function redraw() {
+    drawChips();
+    buildMap(focus);
+    drawConsequences(focus);
+    drawMeasured(flowTotalsForRun, focus);
+    if (frames.length > 0) drawLanes(frames, focus);
+  }
+
+  async function load() {
+    session = null;
+    frames = [];
+    $('err').textContent = '';
+    $('src').innerHTML = '';
+    /* Live first, recording as the fallback — `ui/console/index.html:337`'s
+       pattern. This page never advances the clock: a map is a thing you read,
+       and two open tabs driving one universe race each other's clocks. */
+    session =
+      (await openSession({ live: '' }).catch(() => null)) ??
+      (await openSession({ recording: '../session.json' }).catch(() => null));
+
+    /*
+     * Three capabilities, and `flowLedger` is named even though the `session.js`
+     * this page was written beside has no such key: `mountSourceNote` tests
+     * `caps[k] !== true`, so an unknown key reports absent with its own generic
+     * sentence, and a tree that *has* the key reports the real one. Naming it is
+     * how the strip stays honest on both trees instead of on the one it was
+     * written against.
+     */
+    mountSourceNote($('src'), session, ['materialBreakdown', 'eventDeltas', 'flowLedger']);
+    drawBanner(session);
+    flowTotalsForRun = null;
+    if (session !== null) {
+      const flows = readFlows(session);
+      if (flows !== null) flowTotalsForRun = flowTotals(flows);
+    }
+    drawAbsent(session, flowTotalsForRun);
+
+    if (session === null) {
+      $('err').textContent =
+        'No universe and no recording — the structural map below is still true, because it ' +
+        'is derived from content rather than from a run. Run `npm run ui` for the lanes.';
+      $('lanes').innerHTML = '';
+      redraw();
+      return;
+    }
+
+    frames = readRun(session);
+    redraw();
+
+    $('rereadhint').textContent = session.live
+      ? `Live universe · ${session.frameCount} frames held · this page never advances ` +
+        'the clock, so re-read after playing elsewhere.'
+      : `Recording · ${session.frameCount} frames · nothing here can advance it.`;
+  }
+
+  mountThemeControl(document.querySelector('.topbar'));
+  $('reread').addEventListener('click', () => {
+    load().catch((error) => {
+      $('err').textContent = String(error.message ?? error);
+    });
+  });
+
+  try {
+    await load();
+  } catch (error) {
+    $('err').textContent = String(error.message ?? error);
+    redraw();
+  }
+</script>

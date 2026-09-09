@@ -321,6 +321,19 @@ export function provenanceProblems(provenance: Provenance | undefined): string[]
   if (!Number.isInteger(provenance.observationSchemaVersion)) {
     problems.push('provenance.observationSchemaVersion must be an integer.');
   }
+  // A cheated run is refused here rather than flagged, and the refusal is
+  // phrased as a problem with the *provenance block* so that every existing
+  // caller inherits it without being edited: `runSweep` throws before
+  // dispatching a single task, and `baseline.ts` rejects a baseline file that
+  // carries it. See `Provenance.sandbox`.
+  if (provenance.sandbox !== undefined) {
+    problems.push(
+      `provenance.sandbox is set to "${String(provenance.sandbox)}", so this run was taken under ` +
+        'the sandbox cheat layer and is not evidence about anything. Materials, favor, prestige, ' +
+        'the ruleset and knowledge can all have been granted outright on a sandbox run. Re-run ' +
+        'without the sandbox before recording, sealing or gating on it.',
+    );
+  }
   const versions = provenance.metricDefinitionVersions;
   if (versions === undefined || typeof versions !== 'object') {
     problems.push('provenance.metricDefinitionVersions must be an object keyed by metric id.');

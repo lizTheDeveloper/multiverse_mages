@@ -25,6 +25,21 @@
  *     npm run ui:record            # 400 ticks, seed 20260813, to ui/session.json
  *     node scripts/record-session.mjs --ticks 1200 --seed 7 --out /tmp/s.json
  *
+ * ## Generated, and deliberately not committed
+ *
+ * `ui/session.json` used to be committed and pinned byte-for-byte. It is now
+ * gitignored and built — `npm run ui` builds it for you, and `npm run verify`
+ * refreshes it. A 1.1 MB generated JSON in version control conflicts on every
+ * branch that moves a rule, and a conflict in it is resolved by regenerating
+ * rather than by reading, which means the merge is decided by whoever ran the
+ * command last. `scripts/check-generated-artifacts.mjs` has the full argument
+ * and gates the two properties this rests on: this recorder is deterministic,
+ * and the artifact is not tracked.
+ *
+ * That determinism is load-bearing rather than incidental. It is why the file CI
+ * builds is the file you build, and it is why nothing here may read a clock, a
+ * path or anything else about the machine it runs on.
+ *
  * ## Why a recording rather than a live session
  *
  * `agent-api` is TypeScript compiled to `dist/`, and the prototypes are static
@@ -59,7 +74,9 @@ import {
   OBSERVATION_SCHEMA_VERSION,
   createSession,
 } from '../packages/agent-api/dist/index.js';
+import { GOAL_NAMES } from '../packages/rules-world/dist/index.js';
 import { referenceContent, referenceScenario } from '../packages/scenario/dist/index.js';
+import { MAGE_ROLE } from '../packages/state/dist/index.js';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const arg = (name, fallback) => {
@@ -73,6 +90,41 @@ const out = arg('out', path.join(HERE, '..', 'ui', 'session.json'));
 
 const content = referenceContent();
 const { registry } = content;
+
+/**
+ * `cell` on a node record is the cell's **string** id; every client index is by
+ * interned `cellId`. One map, built once, rather than a `find` per node.
+ */
+const cellIdByStringId = new Map(registry.cells.map(({ contentId, record: c }) => [c.id, contentId]));
+
+/**
+ * A node's authored id to its interned `nodeId`, so `prerequisites` — which
+ * content states as authored ids — can be published as the numbers every client
+ * index already uses.
+ */
+const nodeIdByStringId = new Map(registry.nodes.map(({ contentId, record: n }) => [n.id, contentId]));
+
+/**
+ * An authored prerequisite list, interned.
+ *
+ * **Throws rather than emitting `0`.** A `0` here would be the reserved null
+ * (§0) sitting in a prerequisite list, and a client's reachability arithmetic
+ * would read it as a requirement nothing can satisfy — a node quietly
+ * unreachable forever, with no error anywhere. The content loader already
+ * refuses an unresolvable prerequisite; this is the second lock, on the one
+ * translation between the two id spaces.
+ */
+const internPrerequisites = (node) =>
+  (node.prerequisites ?? []).map((id) => {
+    const nodeId = nodeIdByStringId.get(id);
+    if (nodeId === undefined) {
+      throw new Error(
+        `Node ${node.id} declares prerequisite ${id}, which content does not name. A client ` +
+          'reading this graph would draw an edge from nowhere.',
+      );
+    }
+    return nodeId;
+  });
 const { scenario } = referenceScenario(content, { raids: true });
 const session = createSession({ scenario, strategyId: 'ui-recording' });
 
@@ -117,6 +169,55 @@ if (nonInvertible.length > 0) {
   );
 }
 
+
+/**
+ * The §4.4 academy projection, as JSON.
+ *
+ * Maps keyed by number do not survive `JSON.stringify`, so both tables become
+ * objects keyed by the decimal handle — the same treatment
+ * {@link encodeCandidateDetail} gives, read back the same way through
+ * `Number(key)`. Nothing is reshaped beyond that.
+ */
+function encodeAcademy(academy) {
+  return {
+    universities: Object.fromEntries(
+      [...academy.universities].map(([handle, dossier]) => [
+        handle,
+        {
+          college: { ...dossier.college },
+          roster: dossier.roster.map((entry) => ({ ...entry, nodeIds: [...entry.nodeIds] })),
+          shelf: dossier.shelf.map((entry) => ({ ...entry })),
+          teaching: dossier.teaching.map((entry) => ({ ...entry })),
+          staffHeadcount: dossier.staffHeadcount,
+        },
+      ]),
+    ),
+    mages: Object.fromEntries([...academy.mages].map(([handle, mage]) => [handle, { ...mage }])),
+    permittedCells: [...academy.permittedCells],
+    unaffiliated: academy.unaffiliated,
+  };
+}
+
+/**
+ * The §4.4 candidate projection, as JSON.
+ *
+ * Maps keyed by number do not survive `JSON.stringify`, so both are turned into
+ * objects keyed by the decimal handle — which is what `ui/shared/session.js`
+ * reads back through `Number(key)`. Nothing is reshaped beyond that: a field
+ * renamed here would be a second vocabulary for one projection.
+ */
+function encodeCandidateDetail(detail) {
+  return {
+    byAction: Object.fromEntries(
+      [...detail.byAction].map(([action, rows]) => [action, rows.map((row) => ({ ...row }))]),
+    ),
+    mages: Object.fromEntries([...detail.mages].map(([handle, mage]) => [handle, { ...mage }])),
+    universities: Object.fromEntries(
+      [...detail.universities].map(([handle, university]) => [handle, { ...university }]),
+    ),
+  };
+}
+
 const frames = [];
 const record = () => {
   const normalized = session.observe();
@@ -136,6 +237,92 @@ const record = () => {
     // Integer fp, reconstructed. Not what the session returned — see above.
     obs,
     sat,
+    // The one thing `obs` structurally cannot carry: `material-stock`'s seven
+    // kinds, which §4.1 sums three of into the single `resources[39]` slot and
+    // has no slot at all for the other four. Taken from the §4.4 player
+    // projection, which is not the observation and is not bounded by its width
+    // — see `AgentSession.playerState`.
+    //
+    // The stocks and no more. `favor`, `worship` and `prestige` are already in
+    // `obs`, and emitting them here as well would put one fact in two places per
+    // frame, where they can disagree: `obs` is reconstructed through a divisor
+    // and saturates, this is exact, and a view reading whichever it happened to
+    // reach would report two different universes.
+    //
+    // **Kept in step with `play-server.mjs` by hand.** A comment elsewhere in
+    // this repository refers to `scripts/play-control.mjs --shape` as the thing
+    // that holds the recorder and the live server equivalent; that script does
+    // not exist, so nothing automated checks it. A live server serving a
+    // different frame shape than the recorder makes every page work against one
+    // and not the other.
+    stocks: { ...session.playerState().resources.stocks },
+    /**
+     * §4.4's candidate descriptors — what each slot *is*, beside what it
+     * submits.
+     *
+     * `candidates` above carries `params` and nothing else, which is everything
+     * a policy needs and nothing at all to a person: `docs/design/
+     * interface-findings.md` §1.11 is that finding, and *"1 of 19, by §4.4
+     * ranking"* is what a page can print without this. Taken from the same §4.4
+     * projection surface `stocks` comes from — emitted on request, read by no
+     * rule, and outside the observation, so `OBSERVATION_SIZE` and the layout
+     * digest do not move.
+     *
+     * `byAction` is aligned slot-for-slot with `candidates`; `mages` and
+     * `universities` are per-handle lookups, so a mage named by three verbs is
+     * shipped once. `goal` is **absent** rather than null for a mage who has
+     * never committed — `JSON.stringify` drops an undefined field, and that is
+     * the distinction `GOAL_COMMITMENT` makes load-bearing between "has not
+     * chosen" and "chose idle".
+     */
+    /**
+     * §4.4's flow ledger for the tick just stepped — where this tick's material
+     * came from and where it went.
+     *
+     * The fourth sidecar off the same §4.4 projection surface as `stocks`,
+     * `candidateDetail` and `academy`, and the first that is not a reading of
+     * state at all: `economy-flow-models.md` §5.2 is the finding — *"every metric
+     * in the registry measures a level, a rate, or a distribution at a
+     * checkpoint. None reconciles flows."* `obs` carries seven closing levels and
+     * nothing about how they got there, so a universe that spent its vellum and
+     * one that leaked it are the same two numbers.
+     *
+     * **Absent rather than null on the opening frame**, and absent again on any
+     * frame whose report is of a different tick — `JSON.stringify` drops an
+     * undefined field, which is the distinction a client must be able to make.
+     * `session.flowLedger()` returns `undefined` in both cases and `ui/shared/
+     * session.js` renders that as absent rather than as zero, because an empty
+     * granary is a crisis and an unknown granary is not.
+     *
+     * Emitted as the projection returns it: it is already a fresh structure of
+     * plain objects, arrays and integers, so nothing is reshaped here. A field
+     * renamed on the way through would be a second vocabulary for one projection.
+     *
+     * **Kept in step with the sibling script by hand.** A comment in this
+     * repository refers to `scripts/play-control.mjs --shape` as the thing that
+     * holds the recorder and the live server equivalent; that script does not
+     * exist, so nothing automated checks it.
+     */
+    flow: session.flowLedger(),
+    candidateDetail: encodeCandidateDetail(session.candidateDetails()),
+    /**
+     * §4.4's academy projection — every college, its roster, its shelf, the
+     * lessons in progress, and the cells the ruleset permits.
+     *
+     * Same surface and the same reasoning as `stocks` and `candidateDetail`
+     * above: emitted on request from a running session, read by no rule, outside
+     * the observation, so `OBSERVATION_SIZE` and the layout digest do not move.
+     * §4.1 has none of it — `MAGE.universityId` reaches no slot, `EFFORT_PROGRESS`
+     * reaches no slot, and the mage block is 6 species x 8 tiers of counts, so a
+     * policy cannot tell a college of five from five hermits.
+     *
+     * `permittedCells` is the one field here that is a *rule* rather than a
+     * reading. It is `permits()` over the cells content populates, computed in
+     * `agent-api` precisely so that a page does not reconstruct it out of the
+     * ruleset block's nineteen bits and eight edict slots — which is what §5's
+     * "the client computes no rules" forbids.
+     */
+    academy: encodeAcademy(session.academy()),
     mask: [...mask],
     // Candidate lists are slot-indexed per parameterized action (§4.4).
     // `CandidateLists` is a ReadonlyMap keyed by action id, not a plain object —
@@ -205,11 +392,21 @@ const doc = {
       id: c.id,
       technique: c.technique,
       form: c.form,
+      /* How many nodes the cell carries at all. The grid says "4 of 5 known",
+         which is the number a player needs; the count alone cannot say it. */
+      nodeCount: (c.nodes ?? []).length,
     })),
     species: registry.species.map(({ contentId, record: s }) => ({
       speciesId: contentId,
       id: s.id,
       name: s.name,
+      /**
+       * §1.3's depth ceiling — the deepest tier this species can research at
+       * all. `gatherFrontier` applies it *after* the gateway's prerequisite and
+       * legality filter, so a frontier drawn without it overstates what a gnome
+       * of forty can actually begin. Content, like the graph above.
+       */
+      depthCeiling: s.depthCeiling,
     })),
     actionCosts: Object.fromEntries(
       registry.godCosts.map(({ record: g }) => [g.actionId, g.favorCost]),
@@ -218,6 +415,60 @@ const doc = {
     // a view, because a hand-copied constant in a page whose whole argument is
     // "nothing here is invented" would be the one invented number on it — and
     // it would go stale the moment finding 1.8 is fixed.
+    /**
+     * Every node, so a founding grant can say *which* node it would found.
+     *
+     * `agent-api`'s catalogue carries a node's cell and tier and deliberately no
+     * name — it is a projection for an encoder, and §5 keeps `@mm/content` out
+     * of a package a renderer imports. A *name* is content, and this is where
+     * content is published to the client. `cellId` rides along so a page can
+     * place the node on the grid it is already drawing.
+     */
+    nodes: registry.nodes.map(({ contentId, record: n }) => ({
+      nodeId: contentId,
+      id: n.id,
+      name: n.name,
+      cellId: cellIdByStringId.get(n.cell) ?? 0,
+      tier: n.tier,
+      /**
+       * §2.3's prerequisite edges, interned — **the research graph, which no
+       * client has ever been shipped.**
+       *
+       * The grid the pages draw is seventy cells of counts, and a count cannot
+       * say what comes next. 300 nodes carry 292 edges between them, 36 of which
+       * cross cells, and every one of those was invisible: a page could show
+       * that a college knows four nodes in *creo animal* and not that the fifth
+       * is gated behind a node in a cell the god has forbidden.
+       *
+       * This is **content**, published where content is published. Nothing about
+       * the observation moves — `OBSERVATION_SIZE` is 400, the digest is
+       * 46182c35d829b205, no schema revision, no baseline — because a header is
+       * not a frame and the graph is the same in every universe this content
+       * builds.
+       *
+       * What it buys is that "what could this college learn next" becomes set
+       * arithmetic a client can do: a node is within reach when every id in this
+       * list is held and its cell is in the frame's `academy.permittedCells`,
+       * which is the same filter `CoordinatingKnowledgeGateway.researchFrontier`
+       * applies. The *rule* — which cells are permitted — is still computed by
+       * `agent-api`; only the graph walk is here.
+       */
+      prerequisites: internPrerequisites(n),
+    })),
+    /**
+     * `MAGE_ROLE`'s words. §1.2 stores a role as a `u8` and the enum lives in
+     * `@mm/state`; publishing the mapping here keeps the client from carrying a
+     * hand-copied table that a fifth role would silently break.
+     */
+    mageRoles: Object.fromEntries(Object.entries(MAGE_ROLE).map(([name, id]) => [id, name])),
+    /**
+     * `rules-world`'s permanent goal registry, by id — what a mage is currently
+     * working on. `@mm/state` records why the table cannot live anywhere else:
+     * *"it would be a second copy of a table whose whole contract is that there
+     * is one"*. This script may read it because a script is not a package; the
+     * projection that carries `goalId` may not, and does not.
+     */
+    goals: { ...GOAL_NAMES },
     candidateSlots: { ...CANDIDATE_SLOTS },
   },
   frames,

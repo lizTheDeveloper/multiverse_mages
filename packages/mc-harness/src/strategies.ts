@@ -97,7 +97,7 @@
  *   rules packages, which §5 forbids the harness.
  */
 
-import type { AgentRng } from '@mm/agent-api';
+import type { AgentRng, CandidateLists } from '@mm/agent-api';
 import {
   ACTION_SPACE_SIZE,
   GOD_ACTION,
@@ -132,6 +132,17 @@ export interface PreferenceInput {
   readonly mask: Uint8Array;
   /** Rounds this policy has already acted in this episode. Zero on the first. */
   readonly round: number;
+  /**
+   * §4.4's slot-indexed candidate lists, keyed by action id.
+   *
+   * The mask is per-kind: it says whether an action has *any* target, never how
+   * many. Without this a strategy picking a slot index is guessing against
+   * `candidateSlotCount`'s declared constant, which outruns the live list for
+   * most of a run — `blessMage` is pinned at 32 against 13–18 living mages
+   * early on. Every index past the end is refused as an ordinary illegal action
+   * and buys nothing.
+   */
+  readonly candidates: CandidateLists;
   readonly context: StrategyContext;
 }
 
@@ -429,10 +440,24 @@ function formExceptFirst(round: number): number {
  * was driving, right up until the grid was re-authored.
  */
 
-/** Cycles a slot index over an action's pinned `k`. */
-function rotate(action: number, round: number): number {
-  const slots = candidateSlotCount(action);
-  return slots === 0 ? 0 : round % slots;
+/**
+ * Cycles a slot index over the action's **live** candidate list.
+ *
+ * Was `round % candidateSlotCount(action)` — the *declared* pin. `CANDIDATE_SLOTS`
+ * states the maximum a list may reach, not its length now, so rotating over it
+ * names a slot past the end for most of a run: `blessMage` is pinned at 32
+ * against 13–18 living mages early. §4.4 makes that "an ordinary illegal
+ * action", so the turn is spent and nothing is bought.
+ *
+ * Falls back to the pin only when the lists are unavailable, which no
+ * production path does — the episode loop always has them. Keeping the fallback
+ * means a test double that omits `candidates` behaves as it did rather than
+ * dividing by zero, and the `?? ` is the only place the old constant is still
+ * consulted.
+ */
+function rotate(action: number, round: number, candidates: CandidateLists): number {
+  const live = candidates.get(action)?.length ?? candidateSlotCount(action);
+  return live === 0 ? 0 : round % live;
 }
 
 /**
@@ -553,7 +578,7 @@ const PERMISSIVE_BREADTH: StrategyDefinition = {
     GOD_ACTION.fundUniversity,
     GOD_ACTION.encourageResearch,
   ],
-  preferences: ({ observation, round }) => {
+  preferences: ({ candidates, observation, round }) => {
     const universities = channel(observation, UNIVERSITY_COUNT);
     const preferred: ActionSubmission[] = [];
     // Found *first* while there is nothing to fund, and only then permit.
@@ -582,7 +607,7 @@ const PERMISSIVE_BREADTH: StrategyDefinition = {
     if (universities !== 0) {
       preferred.push({
         action: GOD_ACTION.fundUniversity,
-        parameter: rotate(GOD_ACTION.fundUniversity, round),
+        parameter: rotate(GOD_ACTION.fundUniversity, round, candidates),
       });
     }
     // Slot 0 is the deepest permitted cell; rotating spreads encouragement
@@ -590,7 +615,7 @@ const PERMISSIVE_BREADTH: StrategyDefinition = {
     // narrow-depth below.
     preferred.push({
       action: GOD_ACTION.encourageResearch,
-      parameter: rotate(GOD_ACTION.encourageResearch, round),
+      parameter: rotate(GOD_ACTION.encourageResearch, round, candidates),
     });
     return preferred;
   },
@@ -731,7 +756,7 @@ const ARCHIVIST: StrategyDefinition = {
     GOD_ACTION.blessMage,
     GOD_ACTION.assignRole,
   ],
-  preferences: ({ observation, round }) => {
+  preferences: ({ candidates, observation, round }) => {
     const libraries = channel(observation, LIBRARY_DEPTH);
     const preferred: ActionSubmission[] = [];
     // Below a shallow library, build the shelves; above it, fill them.
@@ -739,10 +764,10 @@ const ARCHIVIST: StrategyDefinition = {
       preferred.push({ action: GOD_ACTION.fundUniversity, parameter: 0 });
     }
     preferred.push(
-      { action: GOD_ACTION.grantFoundingKnowledge, parameter: rotate(GOD_ACTION.grantFoundingKnowledge, round) },
+      { action: GOD_ACTION.grantFoundingKnowledge, parameter: rotate(GOD_ACTION.grantFoundingKnowledge, round, candidates) },
       { action: GOD_ACTION.blessMage, parameter: 0 },
-      { action: GOD_ACTION.assignRole, parameter: rotate(GOD_ACTION.assignRole, round) },
-      { action: GOD_ACTION.fundUniversity, parameter: rotate(GOD_ACTION.fundUniversity, round) },
+      { action: GOD_ACTION.assignRole, parameter: rotate(GOD_ACTION.assignRole, round, candidates) },
+      { action: GOD_ACTION.fundUniversity, parameter: rotate(GOD_ACTION.fundUniversity, round, candidates) },
     );
     return preferred;
   },
@@ -794,8 +819,8 @@ const PORTAL_RUSH: StrategyDefinition = {
       'to win while being one of the seven that could not.',
   },
   signatureActions: [GOD_ACTION.openPortal, GOD_ACTION.assignRole, GOD_ACTION.declareAscension],
-  preferences: ({ round }) => [
-    { action: GOD_ACTION.openPortal, parameter: rotate(GOD_ACTION.openPortal, round) },
+  preferences: ({ candidates, round }) => [
+    { action: GOD_ACTION.openPortal, parameter: rotate(GOD_ACTION.openPortal, round, candidates) },
     // Somebody has to go through it. `rules-raid`'s `RAIDING_ROLES` is the
     // `raider` role alone and `createMage` makes every mage a `researcher`, so
     // a god who opens portals and never assigns a role sends an empty warband:
@@ -809,7 +834,7 @@ const PORTAL_RUSH: StrategyDefinition = {
     // `raider` about one submission in three. That is the coarsest instrument
     // the action space offers and it is enough: the point of this bot is that
     // it raids, not that it fields an optimal warband.
-    { action: GOD_ACTION.assignRole, parameter: rotate(GOD_ACTION.assignRole, round) },
+    { action: GOD_ACTION.assignRole, parameter: rotate(GOD_ACTION.assignRole, round, candidates) },
     // Tempo while the portal is unreachable: push the deepest cell and permit
     // the technique that would open more of it.
     { action: GOD_ACTION.encourageResearch, parameter: 0 },
@@ -845,7 +870,7 @@ const WORSHIP_MAXIMIZER: StrategyDefinition = {
       'rather than an achievement. That reading only exists if it declares on the first round it can.',
   },
   signatureActions: [GOD_ACTION.blessMage, GOD_ACTION.fundUniversity, GOD_ACTION.changeTradition],
-  preferences: ({ observation, round }) => {
+  preferences: ({ candidates, observation, round }) => {
     const favor = channel(observation, FAVOR);
     const worship = channel(observation, WORSHIP);
     const preferred: ActionSubmission[] = [];
@@ -856,16 +881,16 @@ const WORSHIP_MAXIMIZER: StrategyDefinition = {
     // Worship low relative to favor: buy visibility — blessings and buildings.
     if (worship < favor) {
       preferred.push(
-        { action: GOD_ACTION.blessMage, parameter: rotate(GOD_ACTION.blessMage, round) },
+        { action: GOD_ACTION.blessMage, parameter: rotate(GOD_ACTION.blessMage, round, candidates) },
         { action: GOD_ACTION.fundUniversity, parameter: 0 },
       );
     }
     preferred.push(
-      { action: GOD_ACTION.fundUniversity, parameter: rotate(GOD_ACTION.fundUniversity, round) },
+      { action: GOD_ACTION.fundUniversity, parameter: rotate(GOD_ACTION.fundUniversity, round, candidates) },
       // A tradition change is the one lever §2.5 gives over how casting is
       // priced, so a strategy about prices tries it once the cheap moves are
       // masked.
-      { action: GOD_ACTION.changeTradition, parameter: rotate(GOD_ACTION.changeTradition, round) },
+      { action: GOD_ACTION.changeTradition, parameter: rotate(GOD_ACTION.changeTradition, round, candidates) },
     );
     return preferred;
   },
@@ -1186,7 +1211,7 @@ const ALLOCATE_SPREAD: StrategyDefinition = {
     GOD_ACTION.fundUniversity,
     GOD_ACTION.encourageResearch,
   ],
-  preferences: ({ round }) =>
+  preferences: ({ candidates, round }) =>
     allocationPreferences(round, (action, currentRound) =>
       action === GOD_ACTION.fundUniversity
         ? // Slots 1-7: the existing universities. Slot 0 is skipped because it
@@ -1198,9 +1223,258 @@ const ALLOCATE_SPREAD: StrategyDefinition = {
           ? // Not `rotate`: the blessing list is shorter than its pinned k for
             // most of a run. See SPREAD_BLESS_SLOTS.
             currentRound % SPREAD_BLESS_SLOTS
-          : rotate(action, currentRound),
+          : rotate(action, currentRound, candidates),
     ),
 };
+// The sects: a pool whose gods do not all permit the same magic (W18, item E).
+// ---------------------------------------------------------------------------
+
+/**
+ * ## Why a homogeneous pool makes looting unmeasurable
+ *
+ * Every strategy above starts from — and, apart from `permissive-breadth`, stays
+ * inside — the same v1 rectangle: three techniques × four forms, twelve cells,
+ * fifty-one nodes. `contracts.md` §5 calls knowledge *"portable, lootable"*, and
+ * W8's raid work measured looting crossing the fifty-one-node ceiling by roughly
+ * nine nodes a run **from cells the raider's own god forbade**.
+ *
+ * That measurement is only available because the raid victim held something the
+ * raider could not have derived. **In a pool where every god permits the same
+ * twelve cells there is nothing foreign to loot**, so raids can move copies and
+ * can never move knowledge, and every metric about knowledge diversity is a
+ * measurement of the instrument rather than of the game. That is a defect in the
+ * pool, not in the raid engine.
+ *
+ * ## What a sect is
+ *
+ * Three gods who disagree about what magic may exist. Each one:
+ *
+ * - **permits a band of the form axis that the others never touch** — the bands
+ *   are disjoint by construction, and the test asserts it from the emitted
+ *   action stream rather than from this comment;
+ * - **forbids at least one axis the v1 rectangle starts with**, so its ruleset
+ *   differs *downward* as well as upward;
+ * - and every axis a sect forbids is one that another sect holds. That is the
+ *   property that makes a raid able to bring home something the raider's own god
+ *   forbade, and it is the one the pairwise test pins.
+ *
+ * The bands are read off the shipped content rather than invented: the v1
+ * rectangle is `intellego`/`perdo`/`rego` × `mentem`/`terram`/`limen`/`nomen`,
+ * which as 1-based axis ids is techniques {2, 4, 5} and forms {8, 9, 13, 14}.
+ * The ten forms outside it are what the three sects divide.
+ *
+ * ## What this is not
+ *
+ * It is **not** a measurement. Raids are not on this branch, so nothing here has
+ * been observed looting anything; what is delivered is pool composition plus an
+ * executable statement of the property, and the sects are appended to
+ * {@link BOT_POOL} rather than substituted into it, so no committed sweep and no
+ * committed baseline changes. `balance/sweeps/pool-heterogeneous.sweep.json` is
+ * the sweep that runs them, and it is deliberately not wired into any gate.
+ */
+interface SectRuleset {
+  readonly strategyId: string;
+  /** Technique ids, 1-based, this sect permits beyond the v1 rectangle. */
+  readonly permitTechniques: readonly number[];
+  /** Form ids, 1-based, this sect permits. Disjoint across sects. */
+  readonly permitForms: readonly number[];
+  /** Form ids this sect forbids. Each is one another sect holds. */
+  readonly forbidForms: readonly number[];
+  readonly gloss: string;
+}
+
+/**
+ * The three sects, and the axes each one claims.
+ *
+ * Disjointness is a property of these three lists and is asserted by
+ * `ruleset-heterogeneity.test.ts` rather than trusted here: three hand-written
+ * lists that must not overlap are exactly the shape of thing that stops being
+ * true in a later edit.
+ */
+export const SECT_RULESETS: readonly SectRuleset[] = Object.freeze([
+  {
+    strategyId: 'sect-elemental',
+    // Creo, the one technique no other sect claims.
+    permitTechniques: [1],
+    // animal, aquam, auram, corpus.
+    permitForms: [1, 2, 3, 4],
+    // limen — a v1 form, and one both other sects keep.
+    forbidForms: [13],
+    gloss: 'the elements and the body, and a god who will not have thresholds',
+  },
+  {
+    strategyId: 'sect-artifice',
+    // Muto.
+    permitTechniques: [3],
+    // herbam, ignem, imaginem, vim.
+    permitForms: [5, 6, 7, 10],
+    // nomen — a v1 form the other two keep.
+    forbidForms: [14],
+    gloss: 'making and unmaking matter, and a god who will not have true names',
+  },
+  {
+    strategyId: 'sect-umbral',
+    // No extra technique: this sect's difference is entirely on the form axis,
+    // which keeps one arm of the trio free of the technique variable.
+    permitTechniques: [],
+    // umbra, fatum.
+    permitForms: [11, 12],
+    // mentem and terram — two v1 forms both other sects keep.
+    forbidForms: [8, 9],
+    gloss: 'shadow and fate, and a god who will not have minds or earth',
+  },
+]);
+
+/** `values[round % values.length]`, or `undefined` for an empty list. */
+function cycle(values: readonly number[], round: number): number | undefined {
+  return values.length === 0 ? undefined : (values[round % values.length] as number);
+}
+
+/**
+ * One sect, as a strategy definition.
+ *
+ * The preference list rotates **which kind of action is most-preferred** on a
+ * four-round cycle rather than listing all four at once. `policyFor` submits the
+ * first preference the mask permits, and `permitTechnique` is legal in almost
+ * every round, so a single list would starve the forbids and the encouragement
+ * for the whole run — which is the mechanism that made `portal-rush`'s third
+ * preference unreachable for every sweep this project has published.
+ */
+function sectStrategy(sect: SectRuleset): StrategyDefinition {
+  return {
+    strategyId: sect.strategyId,
+    version: 1,
+    hypothesis:
+      `Whether a pool of gods who disagree makes looting measurable. This sect permits ${sect.gloss}, ` +
+      'and every axis it forbids is one another sect holds — so a raid against a rival can bring ' +
+      'home a node from a cell this god forbade, which is the only way §5\'s "portable, lootable" ' +
+      'can show up as knowledge rather than as copies. It probes the instrument as much as the ' +
+      'game: if the three sects still end on the same node set, then the ruleset is not what ' +
+      'binds what a universe knows, and the campaign\'s central claim is wrong.',
+    ascension: {
+      when: ASCENSION_STANCE.whenEligible,
+      because:
+        'Symmetric with permissive-breadth, whose ruleset move this is a partition of. The three ' +
+        'sects are compared against each other, so a difference in stance between them — or ' +
+        'between them and the strategy they partition — would be a second variable in a ' +
+        'comparison that exists to isolate one.',
+    },
+    // `permitTechnique` is listed only by the sects that claim one. A signature
+    // action a strategy never names is a claim `degeneracyOf` would report as
+    // denied when the strategy never wanted it — the pool's own definition of a
+    // signature is "the actions without which this strategy is not
+    // distinguishable from the passive control", and sect-umbral's difference is
+    // entirely on the form axis.
+    signatureActions: [
+      ...(sect.permitTechniques.length > 0 ? [GOD_ACTION.permitTechnique] : []),
+      GOD_ACTION.permitForm,
+      GOD_ACTION.forbidForm,
+      GOD_ACTION.encourageResearch,
+    ],
+    preferences: ({ round }) => {
+      const preferred: ActionSubmission[] = [];
+      switch (round % 4) {
+        case 0: {
+          const parameter = cycle(sect.permitTechniques, round);
+          if (parameter !== undefined) {
+            preferred.push({ action: GOD_ACTION.permitTechnique, parameter });
+          }
+          break;
+        }
+        case 1: {
+          const parameter = cycle(sect.permitForms, round);
+          if (parameter !== undefined) {
+            preferred.push({ action: GOD_ACTION.permitForm, parameter });
+          }
+          break;
+        }
+        case 2: {
+          const parameter = cycle(sect.forbidForms, round);
+          if (parameter !== undefined) {
+            preferred.push({ action: GOD_ACTION.forbidForm, parameter });
+          }
+          break;
+        }
+        default:
+          break;
+      }
+      // Slot 0 is the deepest permitted cell, so this pushes whatever the sect's
+      // own ruleset has made reachable — which is the point of giving the three
+      // of them different rulesets.
+      preferred.push({ action: GOD_ACTION.encourageResearch, parameter: 0 });
+      return preferred;
+    },
+  };
+}
+
+/** The three sects, as strategies. Appended to the pool, never substituted in. */
+export const SECT_STRATEGIES: readonly StrategyDefinition[] = Object.freeze(
+  SECT_RULESETS.map(sectStrategy),
+);
+
+/**
+ * `permit-then-idle` plus one purchase a world year: the reachability probe for
+ * W63's institution conjunct.
+ *
+ * W63 added `ascension-institutions` to both paths after `permit-then-idle` won
+ * 40 of 40 at n=400 by opening the grid and then submitting nothing for 2260
+ * ticks. That conjunct refuses every strategy in the pool, and **a predicate
+ * nothing can satisfy is indistinguishable from a predicate that is correct
+ * over an impoverished pool** — the two readings have opposite consequences and
+ * no committed measurement separated them, because no member both opens the
+ * grid and buys anything. `permissive-breadth` lists `fundUniversity` behind
+ * `permitTechnique`, which is always legal, so it never reaches it;
+ * `archivist` funds constantly and permits nothing, so it sits at the
+ * fifty-one-node content ceiling.
+ *
+ * This is the ablation-complement of `permit-then-idle` and nothing else: the
+ * identical 140-round permit prefix, the identical silence afterwards, with
+ * `fundUniversity` at slot 0 on every twelfth round — one world year — so that
+ * `policyFor` actually reaches it. Placement is the whole of the difference and
+ * it is placement, not effort: a strategy that lists the purchase behind an
+ * always-legal action has not chosen to build, it has been sorted out of
+ * building.
+ *
+ * It is a **verification probe and not part of the shipped pool's argument**,
+ * appended for the reason `idle-then-declare` and `permit-then-idle` were: the
+ * claim it exists to falsify is W63's own.
+ */
+const OPEN_THEN_BUILD: StrategyDefinition = {
+  strategyId: 'open-then-build',
+  version: 1,
+  hypothesis:
+    'Whether W63\'s institution conjunct is satisfiable at all, or whether it closes both paths ' +
+    'for everyone. It differs from permit-then-idle by one submission a world year — founding a ' +
+    'university, the one thing in this build no ruleset edit produces — and by nothing else. If ' +
+    'it also ends at 0 of 40 then the conjunct is unreachable and the predicate is wrong; if it ' +
+    'wins where permit-then-idle no longer does, then the difference between the two is exactly ' +
+    'what the win condition now reads.',
+  ascension: {
+    when: ASCENSION_STANCE.whenEligible,
+    because:
+      'Symmetric with permit-then-idle, which it is the one-action extension of. A difference in ' +
+      'stance would put a second variable inside a comparison that exists to isolate one.',
+  },
+  signatureActions: [GOD_ACTION.fundUniversity, GOD_ACTION.permitTechnique, GOD_ACTION.permitForm],
+  preferences: ({ round }) => {
+    const opening: ActionSubmission[] =
+      round >= 140
+        ? []
+        : [
+            { action: GOD_ACTION.permitTechnique, parameter: technique(round) },
+            { action: GOD_ACTION.permitForm, parameter: form(round) },
+          ];
+    // Parameter 0 is the founding purchase rather than a top-up of an existing
+    // site: §4.2 gives founding and funding one action id, and `god-cost.json`
+    // prices them apart.
+    return round % WORLD_TICKS_PER_YEAR === 0
+      ? [{ action: GOD_ACTION.fundUniversity, parameter: 0 }, ...opening]
+      : opening;
+  },
+};
+
+/** `contracts.md` §1.1's world year. One founding attempt per year, not per tick. */
+const WORLD_TICKS_PER_YEAR = 12;
 
 /**
  * The pool, in registration order.
@@ -1210,11 +1484,147 @@ const ALLOCATE_SPREAD: StrategyDefinition = {
  * sorts the ids it publishes, and this array is what a reader compares against
  * the spec paragraph.
  *
- * The two verification probes are appended rather than inserted so that
- * `round-robin` assignment — `strategies[replicateIndex % size]` over the *sweep
- * file's* list, not this one — is unaffected for any sweep that does not name
- * them.
+ * The verification probes and the three sects are appended rather than
+ * inserted so that `round-robin` assignment — `strategies[replicateIndex % size]`
+ * over the *sweep file's* list, not this one — is unaffected for any sweep that
+ * does not name them. `balance-gate-ascension.sweep.json` names the original
+ * eight and only the original eight, so its committed baseline is untouched by
+ * anything below `WORSHIP_MAXIMIZER`.
  */
+
+// ---------------------------------------------------------------------------
+// The alliance pair. Read them together; they exist to be subtracted.
+// ---------------------------------------------------------------------------
+
+/**
+ * The preference list both alliance arms play, minus the invitation.
+ *
+ * Factored out rather than written twice because the whole measurement is the
+ * difference between two strategies, and two hand-maintained copies of "the
+ * same thing except one line" is exactly the shape that drifts. A pairing whose
+ * arms disagreed about anything other than action 16 would attribute the
+ * difference to alliances anyway, and nobody would be able to tell.
+ */
+function allianceGroundwork(
+  observation: Float64Array,
+  round: number,
+  candidates: CandidateLists,
+): ActionSubmission[] {
+  const universities = channel(observation, UNIVERSITY_COUNT);
+  const preferred: ActionSubmission[] = [];
+
+  // Found before anything else while there is nothing to fund — the fix
+  // `permissive-breadth` version 4 records, and an alliance needs a university
+  // more than that strategy does: `invitePlan` refuses when there is no host,
+  // and an unaffiliated mage cannot scribe at all.
+  if (universities === 0) {
+    preferred.push({ action: GOD_ACTION.fundUniversity, parameter: 0 });
+  }
+
+  // Breadth, on `permissive-breadth`'s rotation. The portal chain is seven
+  // nodes across `rego-limen` and `intellego-limen`, both of which the v1
+  // rectangle already permits — so this is not what opens the gate. It is what
+  // keeps the universe out of stagnation long enough to reach it: draconic runs
+  // on this build end at a mean of 1,060 world ticks of a possible 2,400, and
+  // 83 of 100 of them end as stagnation rather than as time.
+  preferred.push(
+    { action: GOD_ACTION.permitTechnique, parameter: technique(round) },
+    { action: GOD_ACTION.permitForm, parameter: form(round) },
+  );
+
+  // Founding grants, rotated across slots. The candidate list is prerequisite-
+  // free roots in permitted cells, which is where `rl-hold-the-door` and
+  // `il-sense-the-seam` live — the two entry points of the portal chain. This
+  // does not name them (a slot index cannot name a node), it shortens every
+  // chain including theirs.
+  preferred.push({
+    action: GOD_ACTION.grantFoundingKnowledge,
+    parameter: rotate(GOD_ACTION.grantFoundingKnowledge, round, candidates),
+  });
+
+  // Roles, rotated. `role-appeal-raider-portal` is +256 and is the only term in
+  // `targetAppeal` that argues *for* a portal node; the species term argues
+  // against it at −384 for a curiosity-256 species. Rotating rather than
+  // targeting, for the same reason as the grants.
+  preferred.push({
+    action: GOD_ACTION.assignRole,
+    parameter: rotate(GOD_ACTION.assignRole, round, candidates),
+  });
+
+  if (universities !== 0) {
+    preferred.push({
+      action: GOD_ACTION.fundUniversity,
+      parameter: rotate(GOD_ACTION.fundUniversity, round, candidates),
+    });
+  }
+
+  preferred.push({
+    action: GOD_ACTION.encourageResearch,
+    parameter: rotate(GOD_ACTION.encourageResearch, round, candidates),
+  });
+
+  return preferred;
+}
+
+const ALLIANCE_HYPOTHESIS =
+  'Whether a civilization that cannot grow its own faculty can borrow one in time. Draconic ' +
+  'matures at 3,600 months against a 2,400-tick horizon, so no draconic born in a run can ever ' +
+  'become a mage in it: the founding cohort is the entire mage population, fertility is ' +
+  'irrelevant at this horizon, and the species ascends 0 of 100. The claim is that action 16 ' +
+  'moves that number and that it moves it *within the horizon* — allied draconic ascending later ' +
+  'but at the same rate would falsify it as squarely as no change at all. The paired control is ' +
+  '`alliance-abstainer`, which plays this identical list without the invitation, so the ' +
+  'difference between the two arms is one action and nothing else.';
+
+/** Breadth, a host, and a scholar from abroad the moment the gate opens. */
+const ALLIANCE_SEEKER: StrategyDefinition = {
+  strategyId: 'alliance-seeker',
+  version: 1,
+  hypothesis: ALLIANCE_HYPOTHESIS,
+  ascension: {
+    when: ASCENSION_STANCE.whenEligible,
+    because:
+      'The hypothesis is about tempo, not about ceiling — whether allies get a slow species to the ' +
+      'summit before the run ends. Declaring the moment the condition opens is what makes ' +
+      '`ticksRun` on an ascended run readable as "when", and both arms take the same stance so ' +
+      'that the comparison is of eligibility and not of nerve.',
+  },
+  signatureActions: [GOD_ACTION.inviteScholar],
+  preferences: ({ observation, round, candidates }) => [
+    // First, and the position is the strategy. The mask is closed until a
+    // living mage holds portal magic, so this costs nothing on every round
+    // where it is not available and fires on the first round where it is —
+    // which is what makes the arrival tick a measurement rather than a
+    // consequence of where a line sits in a list.
+    { action: GOD_ACTION.inviteScholar, parameter: 0 },
+    ...allianceGroundwork(observation, round, candidates),
+  ],
+};
+
+/** `alliance-seeker` with the invitation removed. The control half of the pair. */
+const ALLIANCE_ABSTAINER: StrategyDefinition = {
+  strategyId: 'alliance-abstainer',
+  version: 1,
+  hypothesis:
+    'The null of `alliance-seeker`. It plays the identical preference list without action 16, so ' +
+    'that the paired difference between the two arms is the invitation and not the breadth, the ' +
+    'grants, the roles or the university that both of them buy. It exists to answer the second ' +
+    'half of the design requirement — that a draconic universe must still *fail* without allies — ' +
+    'which a comparison against a differently-played baseline could not answer at all.',
+  ascension: {
+    when: ASCENSION_STANCE.whenEligible,
+    because: 'Identical to `alliance-seeker` by construction; see its stance.',
+  },
+  signatureActions: [
+    GOD_ACTION.permitTechnique,
+    GOD_ACTION.permitForm,
+    GOD_ACTION.fundUniversity,
+    GOD_ACTION.grantFoundingKnowledge,
+    GOD_ACTION.assignRole,
+  ],
+  preferences: ({ observation, round, candidates }) => allianceGroundwork(observation, round, candidates),
+};
+
 export const BOT_POOL: readonly StrategyDefinition[] = Object.freeze([
   PASSIVE_CONTROL,
   UNIFORM_RANDOM_LEGAL,
@@ -1228,6 +1638,10 @@ export const BOT_POOL: readonly StrategyDefinition[] = Object.freeze([
   PERMIT_THEN_IDLE,
   ALLOCATE_CONCENTRATE,
   ALLOCATE_SPREAD,
+  ALLIANCE_SEEKER,
+  ALLIANCE_ABSTAINER,
+  OPEN_THEN_BUILD,
+  ...SECT_STRATEGIES,
 ]);
 
 // ---------------------------------------------------------------------------
@@ -1327,8 +1741,19 @@ export const BOT_POOL_REGISTRY: BotStrategyRegistry = botStrategyRegistry(BOT_PO
  */
 export function policyFor(definition: StrategyDefinition, context: StrategyContext): SlotPolicy {
   let round = 0;
-  return (observation: Float64Array, mask: Uint8Array): ActionSubmission => {
-    const preferences = effectivePreferences(definition, { observation, mask, round, context });
+  return (
+    observation: Float64Array,
+    mask: Uint8Array,
+    _slot: number,
+    candidates: CandidateLists,
+  ): ActionSubmission => {
+    const preferences = effectivePreferences(definition, {
+      observation,
+      mask,
+      round,
+      candidates,
+      context,
+    });
     round += 1;
     for (const preference of preferences) {
       if (isLegal(mask, preference.action)) return preference;
@@ -1478,7 +1903,15 @@ export const POOL_BUILD_LIMITS: Readonly<Record<string, string>> = Object.freeze
     'measured (tools/w29/two-universes.mjs, 200 ticks, seed 589825): food 321443 vs 468099, vellum ' +
     '75733 vs 274403, months to raise a university 30 vs 42. The reason the five strategies ' +
     'converged was that permitting a cell had no economic consequence; it now has one. Re-run the ' +
-    'four factor cells before quoting any figure in this entry.',
+    'four factor cells before quoting any figure in this entry. '  +
+    'W63 RE-MEASUREMENT: the Pareto front is still one point and it has moved onto the permit '  +
+    'axis. At n=400 over five arms, permit-then-idle -- two buttons for 140 of 2400 ticks, then '  +
+    'an empty preference list forever -- ascends 40 of 40, ahead of permissive-breadth at 38 of '  +
+    '40 which does the same AND funds, dispenses and encourages; every other member is at 0. So '  +
+    'the pool separates on exactly one thing and it is not play, it is whether the ruleset was '  +
+    'edited. ascension-institutions is the conjunct added against that, and open-then-build is '  +
+    'the probe that shows it reachable. The sentence to delete this entry on is unchanged and '  +
+    'still unmet.',
   'universities-are-founded-and-never-finished':
     'SUPERSEDED BY W29, kept because the measurement it records is still the measurement — what ' +
     'changed underneath it is the mechanism. The clause "advanceConstruction in rules-world has ' +
@@ -1490,7 +1923,13 @@ export const POOL_BUILD_LIMITS: Readonly<Record<string, string>> = Object.freeze
     'round and founds hundreds. Those are facts about the strategies, not about construction, and ' +
     'a Path A gate on completedUniversities is still inverted for that reason. Re-measure before ' +
     'quoting any number here: every one of them was taken against a build where nothing a laborer ' +
-    'did could finish a site.',
+    'did could finish a site. W63 ACTED ON THIS AND THE INVERSION IS WHY: both ascension paths ' +
+    'now carry an ascension-institutions conjunct, and the inversion recorded above is exactly ' +
+    'what made it untestable from this pool -- permissive-breadth cannot reach fundUniversity ' +
+    'and archivist cannot reach the knowledge conjuncts, so no member both opens the grid and ' +
+    'buys anything. open-then-build is permit-then-idle plus one founding a world year at slot ' +
+    '0, appended for that reason and no other. It is the difference between a predicate that is ' +
+    'wrong and a pool that cannot exhibit it.',
 'noise-floor-submits-axis-actions-bare':
     'uniform-random-legal draws a parameter only when candidateSlotCount says the action has one, ' +
     'and CANDIDATE_SLOTS covers 8–14 alone — actions 1–7 are not §4.4 parameterized actions, so ' +

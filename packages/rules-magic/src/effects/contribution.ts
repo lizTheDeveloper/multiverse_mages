@@ -35,29 +35,13 @@
  * see `stack.ts`.
  */
 
-import type {
-  ContentId,
-  EffectCondition,
-  EffectControl,
-  EffectMode,
-  EffectTarget,
-  RevealTarget,
-} from '@mm/content';
+import type { ContentId, EffectControl, EffectMode, EffectTarget, GradeRequirement } from '@mm/content';
 import type { Fixed } from '@mm/sim-core';
+import type { Handle } from '@mm/state';
 import { LOCATION_KIND } from '@mm/state';
 
-// `EffectMode`, `EffectCondition`, `RevealTarget` and `EffectControl` are
-// re-exported here (see the bottom of this file) rather than only imported,
-// so the rest of this package keeps importing them from `./contribution.js`
-// as it did while this package carried its own copies. `@mm/content` is now
-// the source of truth for all four — `packages/content/src` caught up to
-// `node.schema.json`'s `mode`/`when`/`reveals`/`control`/`transformTo` while
-// this task group was in flight — so `AuthoredEffect` is gone: `node.effects`
-// is read as plain `EffectRecord` again.
-
 /**
- * One legal, in-scale, above-threshold, `when`-satisfied source of one
- * primitive.
+ * One legal, in-scale, above-threshold source of one primitive.
  *
  * Every field is data the stacker or its caller needs. Legality is not among
  * them, deliberately — see this module's opening note.
@@ -72,23 +56,32 @@ export interface EffectContribution {
   readonly target: EffectTarget;
   readonly durationTicks: number;
   /**
-   * The technique's envelope. `reveal` and `control` contribute no magnitude
-   * at all (`compositional-content.md` §3.3) — they are still emitted as
-   * contributions, marked by this field, so a caller can see that a latent
-   * effect or a control gate is active without it appearing as a stacked
-   * value.
+   * Which of the node's effects this is, `0`-based and in authored order.
+   *
+   * Carried so that two effects of one node stay distinguishable downstream —
+   * `cig-the-standing-furnace` declares both an `area-denial` and a
+   * `resource-yield`, and only the second is gated on ore. Without an index the
+   * pair collapses to one node id and a consumer cannot say which effect it is
+   * holding.
    */
-  readonly mode: EffectMode;
-  /** Present only when `mode` is `control` — Rego's `{floor, ceiling}` gate. */
-  readonly control?: EffectControl;
+  readonly effectIndex: number;
   /**
-   * Present only when `mode` is `transform` — the primitive the `+magnitude`
-   * half lands on. `stackContributions` is what turns one `transform`
-   * contribution into two signed magnitudes; this is the field it needs to
-   * do that without re-deriving it from the node.
+   * Refined material this effect must be holding to contribute, if any.
+   *
+   * Passed through untouched. `gatherEffects` deliberately does not decide
+   * whether the requirement is met: it has no view of a material stock and
+   * `contracts.md` §5 keeps `rules-magic` out of the economy. The consumer that
+   * *does* hold the stock — `coordination`'s `universe-effects.ts` — is the one
+   * that gates. Absent means unconditional, which is what every effect authored
+   * before grades existed means.
    */
+  readonly requires?: GradeRequirement;
+  readonly mode?: EffectMode;
+  readonly control?: EffectControl;
   readonly transformTo?: string;
 }
+
+export type { EffectCondition, EffectControl, EffectMode, RevealTarget } from '@mm/content';
 
 /**
  * The part of a knowledge instance that effect gathering reads.
@@ -100,6 +93,22 @@ export interface EffectContribution {
  */
 export interface EffectSourceInstance {
   readonly nodeId: ContentId;
+  /**
+   * The mage — or library, or grimoire — the instance is filed against.
+   *
+   * `KNOWLEDGE_INSTANCE.locationId`, carried rather than looked up, because
+   * `gatherEffects` now has a question it cannot answer without it: *does a
+   * working over this node, held up by this holder, still stand?* A working is
+   * one row per **(holder, node)** — `standing.ts` says why — and a gather that
+   * knew only the node would fold every mage's working into one, so one mage
+   * renewing would hold the effect up for a hundred who had not.
+   *
+   * Required rather than optional. An optional holder would have to default,
+   * and both defaults are wrong in a way nothing would notice: default-refuse
+   * silently drops a real contribution, default-admit silently makes the whole
+   * duration mechanism decorative for whoever forgot to fill it in.
+   */
+  readonly holder: Handle;
   /** {@link LOCATION_KIND}. */
   readonly locationKind: number;
   /** `0` just learned, `fp(1024)` teachable without loss (`contracts.md` §1.5). */
@@ -141,7 +150,3 @@ export const CONTRIBUTING_LOCATION_KINDS: ReadonlySet<number> = new Set([
  * — can move it without touching this file.
  */
 export const MASTERY_ACTIVATION_THRESHOLD: Fixed = 512;
-
-// Re-exported so `gather.ts`, `stack.ts`, and this package's own barrel keep
-// a single import path for the mode vocabulary — see this file's opening note.
-export type { EffectCondition, EffectControl, EffectMode, RevealTarget };

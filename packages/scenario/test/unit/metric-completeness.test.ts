@@ -61,7 +61,7 @@ import {
   REFERENCE_METRIC_IDS,
   REFERENCE_REGISTRIES,
   REFERENCE_SWEEP,
-  makeReferenceExecutor,
+  makeReferenceExecutorAsync,
   referenceContent,
   referenceProvenance,
 } from '@mm/scenario';
@@ -81,7 +81,12 @@ beforeAll(async () => {
   const result = await runSweep({
     spec: REFERENCE_SWEEP,
     registries: REFERENCE_REGISTRIES,
-    execution: { mode: 'inline', execute: makeReferenceExecutor({ content }) },
+    // The async executor: an inline sweep is one unbroken synchronous block per
+    // run, and this file's was 21.1 s of one, measured across the whole suite on
+    // 2026-08-18. `RunExecutor` has always permitted a promise and
+    // `runTasksInline` has always awaited one; the records are identical either
+    // way, which is `reference-sweep.test.ts`'s claim to make.
+    execution: { mode: 'inline', execute: makeReferenceExecutorAsync({ content }) },
     provenance: referenceProvenance(content),
   });
   records = result.records;

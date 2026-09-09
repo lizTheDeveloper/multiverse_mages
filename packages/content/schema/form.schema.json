@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://multiverse-mages.invalid/schema/form.schema.json",
   "title": "form.json",
-  "description": "The fourteen forms — what magic is done to. `bit` positions are dense, stable, and serialized into snapshots (contracts.md §2.1). `yieldWeights` routes a `resource-yield` magnitude on a node in this form's cells to the material kind (`food`, `stone`, `vellum`) sound-design.md §4.2 says this form actually is.",
+  "description": "The fourteen forms — what magic is done to. `bit` positions are dense, stable, and serialized into snapshots (contracts.md §2.1). `yieldWeights` routes a `resource-yield` magnitude on a node in this form's cells to the material kind (`food`, `stone`, `vellum`, `labor`, `essence`, `insight`, `passage`) sound-design.md §4.2 says this form actually is. All seven keys are required: an unlisted kind must fail the load rather than default to zero, because zero is a claim about the form and not an absence of one. A row that is zero in all seven is refused by the loader, which is a rule per-property JSON Schema cannot express.",
   "type": "array",
   "minItems": 14,
   "maxItems": 14,
@@ -24,11 +24,15 @@
     "yieldWeights": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["food", "stone", "vellum"],
+      "required": ["food", "stone", "vellum", "labor", "essence", "insight", "passage"],
       "properties": {
         "food": { "$ref": "#/$defs/weightFp" },
         "stone": { "$ref": "#/$defs/weightFp" },
-        "vellum": { "$ref": "#/$defs/weightFp" }
+        "vellum": { "$ref": "#/$defs/weightFp" },
+        "labor": { "$ref": "#/$defs/weightFp" },
+        "essence": { "$ref": "#/$defs/weightFp" },
+        "insight": { "$ref": "#/$defs/weightFp" },
+        "passage": { "$ref": "#/$defs/weightFp" }
       }
     },
     "weightFp": { "type": "integer", "minimum": 0, "maximum": 1024 },

@@ -75,6 +75,13 @@
     "floor": { "kind": "fp", "value": 256 }
   },
   {
+    "id": "practice-rate",
+    "unit": "multiplier-on-practice-progress",
+    "scale": "world",
+    "stacking": "additive-into-multiplier",
+    "cap": { "kind": "fp", "value": 4096 }
+  },
+  {
     "id": "lifespan",
     "unit": "additive-months",
     "scale": "world",
@@ -107,6 +114,13 @@
   {
     "id": "knowledge-steal",
     "unit": "fp-probability-per-attempt-of-copying-an-instance",
+    "scale": "engagement",
+    "stacking": "max",
+    "cap": { "kind": "none" }
+  },
+  {
+    "id": "knowledge-corrupt",
+    "unit": "fp-probability-per-attempt-of-corrupting-an-instance",
     "scale": "engagement",
     "stacking": "max",
     "cap": { "kind": "none" }

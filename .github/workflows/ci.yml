@@ -133,41 +133,28 @@ jobs:
       - name: Primitive coverage over v1 content
         run: npm run check:coverage
 
+      - name: Generated UI artifacts (built here, not committed)
+        # `ui/session.json` and `ui/design-dashboard/data.json` are pure
+        # functions of the repository and are built rather than committed, so
+        # the thing to gate is what makes that safe: each generator is
+        # deterministic (run twice, bytes compared) and neither artifact is
+        # tracked. It needs no credentials, no network and no services — two
+        # node scripts over the tree — which is what makes it safe here, in the
+        # only job that may see a fork pull request.
+        #
+        # Exit 42 is a finding; exit 1 is the generator itself being broken, and
+        # the two are deliberately not the same answer. Listed here by hand
+        # because this workflow lists its steps by hand; the self-hosted runner
+        # picks it up through `npm run verify`. Both, or the two gates disagree.
+        run: npm run check:generated
+
       - name: Test (unit + golden replay)
         run: npm test
 
-      - name: Balance regression gate (five world years)
-        # The committed baseline for the gate sweep, compared metric by metric.
-        # Fails the build when a gated metric moves beyond its tolerance, and
-        # equally when the baseline is missing — a gate that passes without one
-        # reports green forever. Listed here by hand because this workflow does;
-        # the self-hosted runner picks it up through `npm run verify`, which the
-        # script is also part of. Both, or the two gates disagree.
-        run: npm run balance:gate
-
-      - name: Balance regression gate (twenty world years)
-        # The same four cells and the same 200 runs, run to world-year twenty
-        # instead of five, against its own baseline. It is a separate step and
-        # not a longer version of the one above because the two answer different
-        # questions: the fast gate is sensitive and cheap, and this one can see a
-        # plateau that has not started yet at year five. Deleting either leaves a
-        # blind spot the other does not cover — balance/README.md has the
-        # measurements, and horizon-gate.test.ts fails if this step goes missing.
-        run: npm run balance:gate:horizon
-
-      - name: Balance regression gate (twenty world years, eight strategies)
-        # Same horizon as the step above and a different pool, which is the
-        # entire point. The two gates above run `passive-control` fixed, and
-        # `passive-control` declares an empty preference list — so between them
-        # their 400 runs submit no god intervention at all, and no change to any
-        # of the fifteen verbs in coordination/src/god/interventions.ts can move
-        # either of them by construction. That blind spot used to be covered
-        # only by the two-hundred-year gate below, the most expensive instrument
-        # here. This one covers it in about nine seconds. The single declared
-        # difference from the step above is the pool, so a divergence between
-        # them is attributable to god agency and to nothing else —
-        # horizon-gate.test.ts fails if that stops being true.
-        run: npm run balance:gate:agency
+      # The three balance gates are deliberately NOT here any more, since
+      # 2026-08-14. They run in the `balance` job below, on every commit, and
+      # are required at release rather than at merge. See that job for why, and
+      # for the condition under which they come back.
 
       # `check:consumption` is deliberately NOT here. It is expected to be red
       # until the effect pipeline is wired, so it runs in its own non-blocking
@@ -215,6 +202,21 @@ jobs:
       - name: Primitive coverage over v1 content
         run: npm run check:coverage
 
+      - name: Generated UI artifacts (built here, not committed)
+        # `ui/session.json` and `ui/design-dashboard/data.json` are pure
+        # functions of the repository and are built rather than committed, so
+        # the thing to gate is what makes that safe: each generator is
+        # deterministic (run twice, bytes compared) and neither artifact is
+        # tracked. It needs no credentials, no network and no services — two
+        # node scripts over the tree — which is what makes it safe here, in the
+        # only job that may see a fork pull request.
+        #
+        # Exit 42 is a finding; exit 1 is the generator itself being broken, and
+        # the two are deliberately not the same answer. Listed here by hand
+        # because this workflow lists its steps by hand; the self-hosted runner
+        # picks it up through `npm run verify`. Both, or the two gates disagree.
+        run: npm run check:generated
+
       - name: Test (unit + golden replay)
         run: npm test
 
@@ -256,6 +258,98 @@ jobs:
       # job at the bottom of this file. See that job for the condition under
       # which it moves back into this one. `check:reachability` is absent for
       # the same reason and sits in the job below it.
+
+  balance:
+    # The three Monte Carlo balance gates, run on every commit and required at
+    # release rather than at merge — the same move the `ascension` job below
+    # made on 2026-08-13, for the same reason, one rung down the cost ladder.
+    #
+    # ## Why they left `verify`
+    #
+    # They were the entire cost of checking a commit once the cheap checks are
+    # discounted, and the cost is not paid on the hosted runner alone: the
+    # self-hosted runner **serialises** against a 2400 s timeout, so every
+    # sweep-bearing commit is a queue hazard for every other pull request, and
+    # `scripts/ci-check.sh` already skips them for docs-only changes for exactly
+    # this reason. What that skip cannot help is the case that actually hurts —
+    # a **campaign**, where every commit touches `packages/` and therefore pays
+    # the full sweep, several agents deep, on one box. Measured during the
+    # integration-debt campaign: load average above 300 sustained, with test
+    # timeouts that were load and not defects.
+    #
+    # ## And a balance gate is the wrong question at merge
+    #
+    # A gate asks "did this change the game's numbers". During a campaign that
+    # is deliberately moving numbers, the answer is *yes, on purpose* — so the
+    # gate fires, is read as expected, and is ignored, while still costing the
+    # time. `balance/README.md`'s own rule: *a gate that takes ten minutes gets
+    # deleted*, and a gate people route around is worse than no gate, because it
+    # still costs the time and no longer earns the trust.
+    #
+    # Where they belong is where they make a claim someone could check.
+    # `release-plan.md` already says it: **MINOR parity encodes balance
+    # validation** — even MINOR means the baselines are committed and green.
+    # That is a release statement, not a merge statement.
+    #
+    # ## When to make this blocking again
+    #
+    # Move these steps back into the two verify jobs above — and back into
+    # `npm run verify` in package.json, so `scripts/ci-check.sh` picks them up
+    # through the same gate — when the sweeps are fast enough that a commit does
+    # not queue behind them, or when a campaign is no longer the normal mode of
+    # work here. Neither is true on 2026-08-14.
+    #
+    # `npm run verify:balance` runs exactly these three, and `verify:full` runs
+    # everything including the two-hundred-year gate. Neither this job nor the
+    # `ascension` job below is a required status check; **`release-plan.md` is
+    # what makes them required at release**, and a release that skips them is
+    # taking an even MINOR without the evidence the scheme exists to carry.
+    name: Balance gates (non-blocking)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - name: Set up Node from .nvmrc
+        uses: actions/setup-node@v6
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - name: Install
+        run: npm ci
+      - name: Build
+        run: npm run typecheck
+      - name: Balance regression gate (five world years)
+        # The committed baseline for the gate sweep, compared metric by metric.
+        # Fails the build when a gated metric moves beyond its tolerance, and
+        # equally when the baseline is missing — a gate that passes without one
+        # reports green forever. Listed here by hand because this workflow does;
+        # the self-hosted runner picks it up through `npm run verify`, which the
+        # script is also part of. Both, or the two gates disagree.
+        run: npm run balance:gate
+
+      - name: Balance regression gate (twenty world years)
+        # The same four cells and the same 200 runs, run to world-year twenty
+        # instead of five, against its own baseline. It is a separate step and
+        # not a longer version of the one above because the two answer different
+        # questions: the fast gate is sensitive and cheap, and this one can see a
+        # plateau that has not started yet at year five. Deleting either leaves a
+        # blind spot the other does not cover — balance/README.md has the
+        # measurements, and horizon-gate.test.ts fails if this step goes missing.
+        run: npm run balance:gate:horizon
+
+      - name: Balance regression gate (twenty world years, eight strategies)
+        # Same horizon as the step above and a different pool, which is the
+        # entire point. The two gates above run `passive-control` fixed, and
+        # `passive-control` declares an empty preference list — so between them
+        # their 400 runs submit no god intervention at all, and no change to any
+        # of the fifteen verbs in coordination/src/god/interventions.ts can move
+        # either of them by construction. That blind spot used to be covered
+        # only by the two-hundred-year gate below, the most expensive instrument
+        # here. This one covers it in about nine seconds. The single declared
+        # difference from the step above is the pool, so a divergence between
+        # them is attributable to god agency and to nothing else —
+        # horizon-gate.test.ts fails if that stops being true.
+        run: npm run balance:gate:agency
+
 
   ascension:
     # The two-hundred-year balance gate, run on every commit and required at
@@ -391,6 +485,59 @@ jobs:
       - name: Primitive consumption (can knowledge move each primitive?)
         run: npm run check:consumption
 
+  baselines:
+    # Do the committed baselines name the content they were taken on?
+    #
+    # A second, against the gates' minutes. `balance` and `ascension` answer
+    # *"did a metric move"*; this answers the strictly weaker *"is this baseline
+    # even about this build"*, and a gate whose baseline names another revision
+    # reports `baseline-invalid` and compares nothing at all.
+    #
+    # ## Why it exists
+    #
+    # The three Monte Carlo gates left `npm run verify` on 2026-08-14 for a good
+    # reason, recorded in the `balance` job below: they were the whole cost of
+    # checking a commit, the self-hosted runner serialises, and during a
+    # campaign every commit is sweep-bearing. **Two days later all four
+    # baselines were stale** — `main`'s content revision had moved and nothing
+    # had been re-recorded, because a red pull request is what used to force it
+    # and there are no red pull requests when the gate does not block.
+    #
+    # Moving a gate off the blocking path does not reduce it to "runs less
+    # often". It removes the only thing that was maintaining its baseline. This
+    # restores the forcing signal without restoring the cost.
+    #
+    # ## When to make this blocking
+    #
+    # Put `check:baselines` into `verify` — and therefore into
+    # `scripts/ci-check.sh` through the same gate — once every baseline names
+    # the current revision. Adding it while four of four are stale would block
+    # every unrelated pull request on a re-record nobody has scheduled, which is
+    # the failure the split of 2026-08-14 was avoiding.
+    name: Baseline freshness (non-blocking)
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node from .nvmrc
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - name: Install
+        run: npm ci
+
+      # It reads the *loader's* revision rather than the literal pinned in
+      # `interning.test.ts`, so it needs the build: a stale test and a stale
+      # baseline agreeing with each other would otherwise pass.
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Do the baselines name this content?
+        run: npm run check:baselines
+
   reachability:
     # The same question as `consumption`, one level down: `check:consumption`
     # asks whether an authored *primitive* reaches the simulation; this asks
@@ -403,23 +550,43 @@ jobs:
     # one this job mechanises: **"the symbol exists" and "a test covers it" are
     # both compatible with "the game never runs it."**
     #
-    # It is expected to be RED. At the time this job was added: 1 orphaned
-    # package, 94 exported values with no production caller, 10 called only by
-    # symbols that are themselves unreached, 1 component declared and never read
-    # or written, 3 god constants resolved and never consumed, and 6 read only
-    # by unreached code — 115 findings. That is the finding the check exists to
+    # The underlying check is RED and is meant to be: 125 findings on the tree
+    # this job's gate was pinned against. That is the finding it exists to
     # publish, not a regression to be silenced, and it is far too large to hold
     # inside `npm run verify`: a gate that cannot merge is a gate nobody sees.
     #
-    # Non-blocking here also keeps `scripts/ci-check.sh` equivalent to
-    # `npm run verify`, because neither runs it. `check:consumption` is
-    # non-blocking for the same reason and by the same mechanism.
+    # ## What changed, and why the job is no longer `continue-on-error`
     #
-    # ## When to make this blocking
+    # For as long as this job could only be red, it carried no information.
+    # Finding 126 looked exactly like findings 1..125, so the only reader who
+    # learned anything from a red run was one who had memorised the previous
+    # one. `completeAffiliation` was reported here for weeks; four separate
+    # investigations then rediscovered it independently, each at the cost of
+    # hours, because *nobody could tell a new finding from the standing pile.*
     #
-    # Move the step into the two jobs above — and into `verify` and
-    # `verify:nosweeps` in package.json, so the self-hosted runner picks it up
-    # through the same gate — when, and only when:
+    # So the report is still published — the first step, which is allowed to
+    # fail, prints all 125 with the argument for each — and the *gate* is now
+    # the ratchet in the second step. It fails only when the reported set stops
+    # matching `scripts/reachability-baseline.json`: a new finding, a pinned one
+    # that disappeared without the baseline being updated, or one that changed
+    # category. That makes this job meaningful today rather than after somebody
+    # fixes a hundred-odd symbols.
+    #
+    # Removing `continue-on-error` therefore makes the job able to *fail*; it
+    # does not make it *required*. The two required contexts are configured in
+    # the repository ruleset — `Verify (pinned Node)` and `ci/hetzner-lint` —
+    # and changing that set is the owner's call, not this workflow's.
+    #
+    # The ratchet is also deliberately absent from `verify` and
+    # `verify:nosweeps`, which is what keeps `scripts/ci-check.sh` equivalent to
+    # `npm run verify`. Adding it there would make it blocking through the back
+    # door, via a required context. `check:consumption` is out for the same
+    # reason and by the same mechanism.
+    #
+    # ## When to make the underlying check blocking
+    #
+    # Move `check:reachability` itself into the two jobs above — and into
+    # `verify` and `verify:nosweeps` — when, and only when:
     #
     #   the finding count is small enough that a pull request adding one symbol
     #   ahead of its caller is a conversation rather than a blockage
@@ -428,9 +595,8 @@ jobs:
     # never by lengthening `DECLARED_EXCLUSIONS` in the script. Every entry there
     # is a finding the check will never make again, and each carries a written
     # argument for exactly that reason.
-    name: Rules-path reachability (non-blocking)
+    name: Rules-path reachability ratchet
     runs-on: ubuntu-latest
-    continue-on-error: true
     steps:
       - uses: actions/checkout@v4
 
@@ -446,5 +612,16 @@ jobs:
       - name: Install
         run: npm ci
 
-      - name: Reachability (does anything call this?)
+      # The report, in full, with the argument for every finding. This is the
+      # thing a reader opens the job to read, so it must run even though it is
+      # red — and it is red on every tree that has a backlog, hence the guard.
+      - name: Reachability report (does anything call this?)
+        continue-on-error: true
         run: npm run check:reachability
+
+      # The gate. Exit 0 = the reported findings are exactly the pinned ones;
+      # 42 = the set drifted in either direction; 1 = the probe itself broke,
+      # which is a different answer from "no new findings" and must not be
+      # folded into it. `scripts/w117-gate-check.sh` is the model.
+      - name: Reachability ratchet (any finding not already pinned?)
+        run: npm run check:reachability:ratchet

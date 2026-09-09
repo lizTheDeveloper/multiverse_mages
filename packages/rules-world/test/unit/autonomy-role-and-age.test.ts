@@ -51,7 +51,7 @@ import {
   selectGoal,
 } from '../../src/index.js';
 
-import { appealWeights, outlook, richOutlook, speciesNamed, target } from './autonomy-fixtures.js';
+import { appealWeights, goalAppealWeights, outlook, richOutlook, speciesNamed, target } from './autonomy-fixtures.js';
 import { stepRng } from './mage-fixtures.js';
 
 describe('the role bias table is bounded', () => {
@@ -105,11 +105,11 @@ describe('a role changes the ordering without closing anything off', () => {
     const professor = richOutlook({ roleId: MAGE_ROLE.professor });
     const researcher = richOutlook({ roleId: MAGE_ROLE.researcher });
 
-    expect(scoreGoal(GOAL.teach, professor).score).toBeGreaterThan(
-      scoreGoal(GOAL.teach, researcher).score,
+    expect(scoreGoal(GOAL.teach, professor, goalAppealWeights).score).toBeGreaterThan(
+      scoreGoal(GOAL.teach, researcher, goalAppealWeights).score,
     );
-    expect(scoreGoal(GOAL.researchNode, researcher).score).toBeGreaterThan(
-      scoreGoal(GOAL.researchNode, professor).score,
+    expect(scoreGoal(GOAL.researchNode, researcher, goalAppealWeights).score).toBeGreaterThan(
+      scoreGoal(GOAL.researchNode, professor, goalAppealWeights).score,
     );
   });
 
@@ -122,6 +122,7 @@ describe('a role changes the ordering without closing anything off', () => {
     });
     const selection = selectGoal({
       appeal: appealWeights,
+      goalAppeal: goalAppealWeights,
       outlook: stuck,
       worldTick: 0,
       incumbent: undefined,
@@ -136,6 +137,7 @@ describe('a role changes the ordering without closing anything off', () => {
     for (const role of MAGE_ROLE_VALUES) {
       const mask = selectGoal({
       appeal: appealWeights,
+      goalAppeal: goalAppealWeights,
         outlook: richOutlook({ roleId: role }),
         worldTick: 0,
         incumbent: undefined,

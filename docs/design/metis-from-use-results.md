@@ -2,6 +2,11 @@
 
 **Status: the gating measurement failed. No accrual was built.**
 
+> **Re-decided 2026-08-14 by `w196/mastery-rises`, at `origin/main` `59dfc637`.** The ruling below
+> stands; §5a's premise does not, and §6's recommendation has now been built. See
+> [§10](#10-the-re-decision-2026-08-14) at the end of this document — added by the change that
+> implemented it, not by a reader.
+
 `openspec/changes/metis-knowledge` defines what mētis *is* and has no answer for where it comes
 from. `docs/design/raid-engagement.md` §11c rules that it comes from **applied use, not study**, and
 that the working economy is the larger source because it runs every tick of peacetime. §11c also
@@ -349,3 +354,103 @@ inertness check is the evidence: probed and unprobed runs produce identical snap
 
 **Not regenerated.** The three baselines were taken from W29's side of the merge provisionally and
 no simulation behaviour changed on this branch, so there is nothing for a regeneration to claim.
+
+---
+
+## 10. The re-decision, 2026-08-14
+
+Written by `w196/mastery-rises`, against the tree at `origin/main` `59dfc637`. The brief was: this
+document rejected mētis-from-use, its gating measurement is PR #50 (merged 2026-08-13), and
+`applyMagic` landed as PR #127 (merged 2026-08-14) — so **the ruling that killed the natural
+mechanism for raising mastery was decided against a tree with no applied-work verb.** Both dates are
+confirmed from `git log`: `044b9bd0` for this document, `14155e77` for
+`packages/rules-world/src/economy/application.ts`.
+
+### 10a. What is stale
+
+**§5a is false on this tree.** It says:
+
+> *"`packages/rules-world/src/autonomy/goals.ts` holds the permanent goal registry, and it has nine
+> entries… **None of them applies magic to production.**"*
+
+`GOAL.applyMagic` is id 9 and `economy/application.ts` is its arithmetic. A mage spends the month
+casting one node she holds at the world, eats a ration for it, and puts materials into the stocks.
+The sentence *"No mage in this game ever applies magic to anything"* — §5a's own heading — is a
+statement about a tree that no longer exists, and it should be read as dated.
+
+### 10b. What survives, intact and load-bearing
+
+**Everything in §2, §4 and §5c.** The finding was never *"mastery must not rise from use"*. It was
+much narrower and much stronger:
+
+> Accrual on a **passively-held-knowledge** hook ranks the pool by how little the god interferes.
+> `permit-then-idle` / `permissive-breadth` = **1.0001**. `permit-then-idle` / `denial-warden` =
+> **877**.
+
+That is a property of the *predicate*, not of the era. Any accrual keyed on "which nodes are held
+above a threshold in permitted cells" has it, today and on `main`, because the only god lever on
+that path is still `permits()`. §4's form-mix result is the same finding from the other side: the
+composition tracks the ruleset, not the work.
+
+**`w196` satisfies the surviving constraint by construction.** It accrues to a goal, and a goal
+costs a month. A mage practising is not researching, not teaching, not scribing and not on the wall.
+An idle god's universe does not get it for free, because the mages had to spend something to get it
+and the thing they spent is the scarcest quantity in the game.
+
+### 10c. §6 is what got built, under the name it was given
+
+§6 — *"What to do instead — the recommended hook"* — asked for exactly this and was specific about
+the shape:
+
+> *"Build `practice` as an autonomy goal… A tenth entry in the permanent goal registry, scored and
+> committed like the other nine… **It competes.** A mage practising is not researching, not
+> teaching, not on the wall… **It restores mastery**, which closes §2c's publish-or-perish loop with
+> the counterweight that ruling says was never built."*
+
+`GOAL.practice` is that tenth entry, at id 10, appended. `packages/rules-magic/src/instances/practice.ts`
+is the arithmetic. §5b quoted `decay.ts` — *"nothing in this subsystem restores mastery; practice
+does, and practice is an operation somebody has to perform"* — and that sentence now points at a
+module instead of at a gap.
+
+Two departures from §6 as written, both deliberate:
+
+- **No `EFFORT_PROGRESS` row.** §6 said practice should spend a month *"through `spendTheMonth` and
+  `EFFORT_PROGRESS` the way research, teaching and scribing already do."* Those three are
+  **projects**: they bank progress against an authored requirement and produce an instance when it
+  is met. Practice has no completion — only a mastery that is higher this month than last — so the
+  month is spent immediately onto the instance's own `mastery` field. That is one fewer component
+  row per practising mage per node and one fewer thing a save carries.
+- **`resource-yield` and `build-rate` still gate on knowledge held, not on work performed.** §6
+  wanted the economy rewired onto the new verb. That is a separate change with its own measurement,
+  and folding it in here would have put a balance-moving economy rewire inside a knowledge-lifecycle
+  fix. The verb it would need now exists, which is the part §6 could not assume.
+
+### 10d. What this does *not* re-decide
+
+**Mētis itself is still not built.** `openspec/changes/metis-knowledge` is 1/51 and this change adds
+no mētis resource, no mētis node, and no accrual of anything called mētis. What it adds is the
+**mastery term** §7 said the recommendation pushed toward:
+
+> *"is battle mētis its own node, or a mastery term on nodes already held? The recommendation in §6
+> pushes toward the **mastery term**, because a `practice` goal restoring mastery and a raid
+> restoring mastery are then the same arithmetic under two triggers."*
+
+There are two triggers already — the goal, and casting at the world, which calls the same function
+and is why a low-tier caster stays castable without ever going back to a desk. A raid would be a
+third, and it would be one call rather than a mechanic.
+
+### 10e. The measurement this re-decision was taken against
+
+`tools/w196/mastery-crossings.mjs`, root seed `20260811`, sweep id `w196-mastery-crossings-v1`,
+2 strategies × 2 starting cells × 3 replicates × 600 ticks, on `origin/main` (`cf5a73a7`, the branch
+base) and on `w196/mastery-rises`:
+
+| | upward crossings of the teach threshold | distinct nodes | runs positive |
+|---|---:|---:|---:|
+| before | **0** | 0 | 0 / 12 |
+| after | **69** | 11 | 12 / 12 |
+
+The probe is inert on all four arms — probed and unprobed runs are byte-identical in snapshot hash,
+terminal reason and tick count — and it carries a positive control: 31–150 nodes per run are *born*
+at or above the threshold from god grants, which is the same comparison firing on a path known to
+produce values. A run where the control does not fire exits `42` rather than reporting `0`.

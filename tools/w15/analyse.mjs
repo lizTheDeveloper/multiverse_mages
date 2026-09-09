@@ -40,6 +40,7 @@
 
 import { readFileSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
+import { pathToFileURL } from 'node:url';
 
 /** Loads every arm file under a directory, in filename order. */
 export function loadArms(dir) {
@@ -581,4 +582,12 @@ function main() {
   process.stdout.write(`${lines.join('\n')}\n`);
 }
 
-main();
+// Guarded so this file can be *imported* for its measures rather than only
+// executed for its report. It used to call `main()` at module scope, which meant
+// importing `containment` ran a whole analysis against `process.argv[2]` — the
+// same trap `tools/w46/affinity-arms.mjs` records about `run-arm.mjs`, and the
+// reason W46 restated W15's coordinates instead of importing them. Running this
+// file directly is unchanged; nothing about any published number moves.
+if (process.argv[1] !== undefined && import.meta.url === pathToFileURL(process.argv[1]).href) {
+  main();
+}

@@ -65,9 +65,9 @@
 
 import { TIME_MODE } from '@mm/sim-core';
 import type { SimState, System } from '@mm/sim-core';
-import { KNOWLEDGE_INSTANCE, LOCATION_KIND, MAGE, componentOf } from '@mm/state';
+import { KNOWLEDGE_INSTANCE, LOCATION_KIND, MAGE, MATERIAL_GRADE, componentOf, findUniverse } from '@mm/state';
 import { KnowledgeCensus, isCensusTick } from '@mm/mc-harness';
-import type { CensusSample, TierReach } from '@mm/mc-harness';
+import type { CensusSample, MaterialGradeSample, TierReach } from '@mm/mc-harness';
 
 import type { ReferenceContent } from './reference-universe.js';
 
@@ -82,6 +82,17 @@ export interface BalanceRunTelemetry {
   readonly tierFirstReached: readonly TierReach[];
   /** The species the loaded content declares, in content order. */
   readonly speciesIds: readonly string[];
+  /**
+   * Refined material at each census tick, ascending.
+   *
+   * Sampled on the census lattice rather than every tick, for the reason the
+   * census is: a per-tick series over a 2,400-tick run is a large object to
+   * carry through a worker boundary to answer a question about levels. Always
+   * an array here — this build *has* the ladder, so `[]` would mean "no sample"
+   * and never "no mechanic", and `RunTelemetry.materialGrades` keeps
+   * `undefined` for the second.
+   */
+  readonly materialGrades: readonly MaterialGradeSample[];
 }
 
 /**
@@ -103,6 +114,7 @@ export class BalanceTelemetryRecorder {
   readonly #pairCount: number;
 
   #census = new KnowledgeCensus();
+  #materialGrades: MaterialGradeSample[] = [];
   #reaches: TierReach[] = [];
   #reached = new Set<string>();
   #lastObservedTick = -1;
@@ -138,6 +150,7 @@ export class BalanceTelemetryRecorder {
    */
   begin(state: SimState): void {
     this.#census = new KnowledgeCensus();
+    this.#materialGrades = [];
     this.#reaches = [];
     this.#reached = new Set();
     this.#lastObservedTick = -1;
@@ -192,6 +205,7 @@ export class BalanceTelemetryRecorder {
       census: this.#census.samples(),
       tierFirstReached: this.#reaches,
       speciesIds: this.#speciesIds,
+      materialGrades: this.#materialGrades,
     };
   }
 
@@ -204,6 +218,30 @@ export class BalanceTelemetryRecorder {
    * row, and reading the row twice would double the price of the instrument.
    */
   #scan(state: SimState, worldTick: number, wantCensus: boolean, wantReach: boolean): void {
+    // Sampled on the census lattice, beside the census, because both are
+    // *levels* read off the same state at the same instant — a grade level
+    // taken at a different moment from the knowledge census could not be
+    // correlated with it, which is the whole reason `worshipByClass` sits
+    // beside its checkpoint rather than in its own series.
+    //
+    // **Zero is recorded, absence is not.** A universe with no `material-grade`
+    // row samples as `0/0` rather than being skipped: "held nothing at tick 60"
+    // is a measurement, and dropping the sample would make a run that never
+    // refined indistinguishable from a run nobody sampled — which is the
+    // distinction `RunTelemetry.materialGrades` exists to keep.
+    if (wantCensus) {
+      const grades = componentOf(state, MATERIAL_GRADE);
+      const universe = findUniverse(state);
+      const held =
+        universe !== undefined && grades.has(universe)
+          ? {
+              stoneWorked: grades.get(universe, 'stoneWorked'),
+              stoneFine: grades.get(universe, 'stoneFine'),
+            }
+          : { stoneWorked: 0, stoneFine: 0 };
+      this.#materialGrades.push({ worldTick, ...held });
+    }
+
     const store = componentOf(state, KNOWLEDGE_INSTANCE);
     const nodeIds = store.field('nodeId');
     const locationKinds = store.field('locationKind');

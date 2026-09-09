@@ -35,23 +35,68 @@ const CORE_SRC = ['packages/sim-core/src/**/*.ts', 'packages/sim-core/bench/**/*
  * `contracts.md` §0 puts the float ban on *the rules path*, not on one package,
  * so a package outside this glob is a package where `0.5` compiles. The list is
  * enumerated rather than written as `packages/rules-*` plus a wildcard because
- * two packages must stay out of it and the reason differs for each:
+ * some packages must stay out of it and the reason differs for each.
+ *
+ * **This list, plus {@link CORE_SRC} and {@link PRIMITIVES_SRC}, is exhaustive
+ * over the rules path, and the exclusions below are the complete set.** Read
+ * that as a claim you may check, because the previous version of this comment
+ * read as complete while the list was not: it named two exclusions and one
+ * aside, and `coordination` — the world loop — was in neither the list nor the
+ * exclusions. Nothing said so. `scripts/check-purity.mjs` had been calling
+ * `coordination` rules path in its own comments the whole time. W201 measured
+ * what that cost: the identical line `0.5 + Date.now() + Math.random() +
+ * Math.sqrt(2)` raised five errors in `rules-world/src` and **zero** in
+ * `coordination/src`, and a `Math.random()` planted in `world-step.ts` passed
+ * lint, executed 7,532 times, and passed all 4,631 tests. If you add a package
+ * to `packages/`, it belongs in this list or in the exclusions below — silence
+ * is not a third option.
+ *
+ * `coordination` is here because it **is** the world loop: `world-step.ts`
+ * installs the systems that advance a universe, and the god layer decides
+ * ascension and intervention from state. A float there is a float in the
+ * simulation, whatever §5 calls the package.
+ *
+ * The deliberate exclusions, all six of them. The count is part of the claim:
+ * seven packages ban floats (`sim-core`, `state`, `primitives`, the three
+ * `rules-*`, and now `coordination`) and six do not, and
+ * `purity-lint.test.ts`'s "every package is classified" case asserts that
+ * partition against the real config, so this list cannot quietly fall behind
+ * `packages/` the way it did before.
  *
  * - `agent-api` is the one place floating point is permitted (§4.1): it
  *   normalizes the observation to a `Float64Array` on the way out. Banning
- *   floats there would ban the contract.
+ *   floats there would ban the contract. It is not simply absent — two blocks
+ *   below hold it to the integer-side bans everywhere except `normalize.ts`.
  * - `mc-harness` is host-side tooling — worker processes, result files, a wall
  *   clock to report throughput. Its determinism obligation is to run the core
  *   faithfully, not to be integer-only itself.
- *
- * `content` is also absent, and deliberately so: it parses author-facing JSON,
- * where a malformed float has to be *detected* before it can be rejected.
+ * - `content` parses author-facing JSON, where a malformed float has to be
+ *   *detected* before it can be rejected.
+ * - `scenario` is the composition root and a **leaf**: no package imports it
+ *   (the four `@mm/scenario` mentions in other packages' sources are prose in
+ *   comments, checked at W201 — and note that the obvious way to write that
+ *   path here would close this block comment). What it holds beyond the seeding path is
+ *   measurement — `species-separation.ts` computes standard deviations and
+ *   standard errors, `census.ts` and `measures.ts` report — which is
+ *   `mc-harness`'s justification exactly. Nine float sites live there today and
+ *   every one is in reporting or statistics, none in the state it seeds. The
+ *   honest caveat: that is a fact about the package *now*, and
+ *   `reference-universe.ts` does build world state, so a float there would
+ *   reach a simulation. If this needs tightening, the shape is already in this
+ *   file — split the glob the way `agent-api` is split, exempting the
+ *   measurement files by name rather than exempting the package.
+ * - `server` is the authoritative PvP host: sockets, sessions, wall-clock
+ *   timeouts. It runs the core; it is not the core.
+ * - `gym-bridge` is the RL boundary. Its Python client never crosses this table
+ *   at all — it speaks a wire to a spawned process — and the host side of that
+ *   wire is tooling for the same reason `mc-harness` is.
  */
 const RULES_SRC = [
   'packages/state/src/**/*.ts',
   'packages/rules-magic/src/**/*.ts',
   'packages/rules-world/src/**/*.ts',
   'packages/rules-raid/src/**/*.ts',
+  'packages/coordination/src/**/*.ts',
 ];
 
 const CORE_TEST = [

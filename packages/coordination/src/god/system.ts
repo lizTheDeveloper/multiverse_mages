@@ -54,9 +54,11 @@
 import type { ComponentSpec, EntityHandle, SimState, System } from '@mm/sim-core';
 import { FP_ONE, TIME_MODE, eraOf } from '@mm/sim-core';
 import type { Fixed } from '@mm/sim-core';
-import type { PrimitiveRecord } from '@mm/content';
+import type { PrimitiveRecord, SpeciesRecord } from '@mm/content';
 import type { CellResolver, KnowledgeSubsystem, NodeCatalog } from '@mm/rules-magic';
 import type { ClampCounters } from '@mm/primitives';
+import type { TerritoryKind } from '@mm/rules-world';
+import { zeroAmounts } from '@mm/rules-world';
 import {
   ASCENSION_PATH,
   BLESSING,
@@ -100,8 +102,17 @@ import type { FavorLedgerEntry } from './favor.js';
 import { applyRegeneration, favorRegeneration, ledgerBalances } from './favor.js';
 import { godState, writeGodState } from './god-state.js';
 import type { InterventionReport } from './interventions.js';
+import type { TraditionResolver } from '../traditions.js';
 import { resolveInterventions } from './interventions.js';
 import { edictBudgetFor, favorCapFor, laggedWorship, shockedTarget, worshipTarget } from './worship.js';
+
+/**
+ * A universe with no allies. Shared and frozen rather than rebuilt per tick:
+ * the empty roster is the overwhelmingly common case — every pre-`w109` world
+ * and every arm of the paired measurement's control side — and allocating a set
+ * per tick to represent "nothing" would put garbage in the hot path.
+ */
+const EMPTY_SPECIES_ROSTER: ReadonlySet<number> = Object.freeze(new Set<number>());
 
 /** Everything the god systems need beyond state. Resolved once, per run. */
 export interface GodDeps {
@@ -122,6 +133,30 @@ export interface GodDeps {
   readonly worshipYieldNodes: ReadonlyMap<number, readonly Fixed[]>;
   /** Node ids carrying the `portal` primitive. */
   readonly portalNodes: ReadonlySet<number>;
+  /**
+   * Species an allied realm would send a scholar from, by interned id.
+   *
+   * Optional, and absent means the empty set — a universe with no allies, which
+   * is what every world built before action 16 existed describes. That is the
+   * same "absence is a decision, not a default" shape `grantBudget` uses, and
+   * it is what lets the paired measurement switch the mechanic off by supplying
+   * nothing rather than by branching.
+   */
+  readonly invitableSpecies?: ReadonlySet<number>;
+  /** The species table, for the traits an arriving scholar is built from. */
+  readonly speciesOf?: (speciesId: number) => SpeciesRecord | undefined;
+  /**
+   * What each kind of country is like (`contracts.md` §2.7), for siting a newly
+   * founded university on `defaultSiteKind`'s documented default. Supplied by
+   * `defineWorldSimulation` from the one set on `WorldStepDeps`, so that there
+   * is one territory content set per run rather than two places to configure it.
+   *
+   * Optional for the reason {@link GodDeps.nodesLostThisTick} is: a test may
+   * drive the god systems alone. Absent means the god founds unsited
+   * universities, which is neutral ground and exactly what a world with no
+   * territory has to offer.
+   */
+  readonly territoryKinds?: readonly TerritoryKind[] | undefined;
   /** Where `worship-yield` cap clamps are counted, when a caller keeps counters. */
   readonly clampCounters?: ClampCounters;
   /**
@@ -137,6 +172,16 @@ export interface GodDeps {
    * node was lost", which for a world with no mortality phase is the truth.
    */
   readonly nodesLostThisTick?: ((worldTick: number) => number) | undefined;
+  /**
+   * The hooks a tradition puts in force, by interned id — action 13's rule.
+   *
+   * See `traditions.ts`. Absent means the action moves `UNIVERSE.traditionId`
+   * and nothing else, which is what it did before this existed and what every
+   * world built without a content registry still describes.
+   */
+  readonly traditions?: TraditionResolver | undefined;
+  /** Nodes a tradition change emptied, reported to the world loop's `nodesLost`. */
+  readonly onKnowledgeLost?: ((nodes: number) => void) | undefined;
 }
 
 /** What one tick of god rules did. Reporting only; never an input to a rule. */
@@ -183,6 +228,19 @@ export interface GodSimulation {
   readonly outcome: System;
   /** The last tick's report, or `undefined` before the first god tick. */
   lastReport: () => GodTickReport | undefined;
+  /**
+   * This tick's intervention report, if the tick asking is the tick that wrote
+   * it, and `NO_INTERVENTIONS` otherwise.
+   *
+   * The **same** accessor the outcome system is handed, exposed rather than
+   * duplicated: `world-step.ts` needs `materialsSpentByKind` while its own
+   * report is being assembled, which is between the two systems, and a second
+   * cell for one number is a second place for the two to disagree about which
+   * tick a spend belongs to. `spentTick` is what makes a stale read impossible
+   * rather than unlikely, and it guards this reader exactly as it guards that
+   * one.
+   */
+  interventionsFor: (worldTick: number) => InterventionReport;
 }
 
 const NO_INTERVENTIONS: InterventionReport = Object.freeze({
@@ -190,6 +248,7 @@ const NO_INTERVENTIONS: InterventionReport = Object.freeze({
   refused: 0,
   rolledBack: 0,
   applied: 0,
+  materialsSpentByKind: Object.freeze(zeroAmounts()),
 });
 
 /**
@@ -225,6 +284,7 @@ export function godSystems(deps: GodDeps): GodSimulation {
       },
     ),
     lastReport: () => last,
+    interventionsFor: (tick) => (spentTick === tick ? spent : NO_INTERVENTIONS),
   };
 }
 
@@ -265,9 +325,15 @@ function interventionSystem(
         knowledge: deps.knowledgeFor(ctx.state),
         edictBudgetMax: EDICT_BUDGET_MAX,
         portalNodes: deps.portalNodes,
+        invitableSpecies: deps.invitableSpecies ?? EMPTY_SPECIES_ROSTER,
+        speciesOf: deps.speciesOf ?? (() => undefined),
+        rng: ctx.rng,
+        territoryKinds: deps.territoryKinds ?? [],
         requestEngagement: () => {
           ctx.requestEngagement();
         },
+        traditions: deps.traditions,
+        onKnowledgeLost: deps.onKnowledgeLost,
       });
       onResolved(report, ctx.tick);
     },
@@ -419,6 +485,11 @@ function outcomeSystem(
             cellsKnown: knownCells.size,
             dependence,
             eraNodesLost: god.eraNodesLost,
+            // Read from the same `worshipSources` projection the worship class
+            // uses, taken at step 1 of this tick. A second walk of the
+            // component would be a second answer to the same question, and the
+            // two could disagree while both looked right.
+            completedUniversities: sources.completedUniversities,
           },
           constants,
         );
@@ -441,6 +512,7 @@ function outcomeSystem(
         cellOf: (nodeId: number) => deps.cells.cellOf(nodeId),
         deepest,
         worshipTier,
+        completedUniversities: sources.completedUniversities,
       };
       const path = qualifyingPath(apotheosisFacts, god, ctx.tick, constants);
       god = {

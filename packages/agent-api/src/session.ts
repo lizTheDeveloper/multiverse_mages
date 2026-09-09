@@ -76,6 +76,14 @@ import { OBSERVATION_LAYOUT_DIGEST, OBSERVATION_SCHEMA_VERSION } from './digest.
 import type { RejectionReason } from './gate.js';
 import { admit } from './gate.js';
 import type { OutcomeRecord } from './outcome.js';
+import type { AcademyProjection } from './academy.js';
+import { describeAcademy } from './academy.js';
+import type { CandidateDetailProjection } from './candidate-detail.js';
+import { describeCandidates } from './candidate-detail.js';
+import type { FlowLedger, FlowReportSource } from './flow.js';
+import { describeFlow } from './flow.js';
+import type { PlayerState } from './player-state.js';
+import { project } from './player-state.js';
 import type { AgentView } from './view.js';
 import { observe } from './view.js';
 
@@ -131,6 +139,47 @@ export interface Scenario {
    * every scenario built before raids landed keeps reporting.
    */
   readonly portalTargets?: readonly number[];
+  /**
+   * Species an allied realm would send a scholar from, if any.
+   *
+   * The same §1.1 shape as {@link portalTargets}, and absent for the same
+   * reason: who else is in the sky is the scenario's knowledge, never state's.
+   * Absent means action 16 has no candidates and stays masked — a universe with
+   * nobody to ask.
+   */
+  readonly invitableSpecies?: readonly number[];
+  /**
+   * Node ids carrying the `portal` primitive, for action 16's gate.
+   *
+   * Content, not state, and §5 gives `agent-api` no edge to the effect tables —
+   * so whoever assembled the content supplies it, exactly as it supplies
+   * {@link invitableSpecies}. Absent holds the action closed.
+   */
+  readonly portalNodes?: readonly number[];
+  /**
+   * The world loop's last per-tick report, if the builder installed one.
+   *
+   * The same §1.1/§5 shape as {@link portalTargets} and for a related reason:
+   * the ledger is not in state — `world-step.ts` keeps it out deliberately, so
+   * that *"two peers could not 'desync' over a number no rule reads"* — and
+   * `agent-api` may not import `@mm/coordination`, which owns it. So whoever
+   * installed the loop is the only party that can hand it over, exactly as
+   * whoever built the world is the only party that knows what else is in the
+   * sky.
+   *
+   * Absent means {@link AgentSession.flowLedger} reports absent, which is the
+   * correct answer for a scenario that built a world without the coordinating
+   * loop, and is what every scenario built before this field keeps reporting.
+   *
+   * Typed as `./flow.ts`'s structural {@link FlowReportSource} rather than as
+   * `WorldStepReport`, which this package cannot name. The compiler holds the
+   * two equivalent at the assignment in `reference-universe.ts`.
+   *
+   * **Must be a plain read.** It is called from a projection, on a client's
+   * request, and a function that stepped anything here would advance a universe
+   * because somebody opened a screen.
+   */
+  readonly flowReport?: (() => FlowReportSource | undefined) | undefined;
   /**
    * Builds the initial state.
    *
@@ -245,6 +294,73 @@ export interface AgentSession {
   rng(): AgentRng;
   /** The current state's content hash, for a run record's provenance. */
   snapshotHash(): string;
+  /**
+   * The §4.4 player projection of the current state — what a *client* may see.
+   *
+   * Distinct from {@link AgentSession.observe}, which returns the §4.1 vector a
+   * *policy* is trained on, and it exists because those two are not the same
+   * entitlement. The vector is fixed at `OBSERVATION_SIZE` slots and widening it
+   * invalidates every trained agent, so a quantity the world holds but the
+   * vector aggregates — `material-stock`'s seven kinds into one `materials`
+   * slot — was unreachable by a client for no reason except that the agent's
+   * budget is tight. `project()` was already the named home for the player's
+   * view; nothing exposed it from a running session, so every consumer that had
+   * one had only `observe()`.
+   *
+   * Reads no field the observation withholds: this is the same projection
+   * `unencodedObservables` checks, so a leak would fail that gate rather than
+   * ship quietly.
+   */
+  playerState(): PlayerState;
+  /**
+   * §4.4's candidate descriptors for the lists {@link candidates} returns.
+   *
+   * The same entitlement argument {@link playerState} makes, one level down. A
+   * slot index is everything a *policy* needs — §4.4 hands it a categorical
+   * choice and an outcome to learn from — and it is nothing at all to a
+   * *person*, who is offered nineteen numbers and no reason to prefer one.
+   * `docs/design/interface-findings.md` §1.11 is that finding.
+   *
+   * Aligned slot-for-slot with {@link candidates} **by construction**: it is
+   * handed the very lists that method returns rather than rebuilding them, so
+   * the two cannot describe different worlds. Nothing here reaches
+   * {@link observe}, and no rule reads it.
+   */
+  candidateDetails(): CandidateDetailProjection;
+  /**
+   * §4.4's academy projection: every college, its roster, its shelf, the
+   * lessons in progress, and the cells the ruleset permits.
+   *
+   * The same entitlement argument {@link candidateDetails} makes, for a
+   * different question. A funding chip needs a college in seven counts; a
+   * university *screen* needs the people, the books and the graph, and none of
+   * those is in §4.1 at all — the mage block is 6 species x 8 tiers of counts,
+   * so a policy cannot tell a college of five from five hermits.
+   *
+   * Built on request, read by no rule, unreachable from {@link observe}.
+   * `./academy.ts` argues the placement and the refusals.
+   */
+  academy(): AcademyProjection;
+  /**
+   * §4.4's flow ledger for the tick just stepped, or `undefined`.
+   *
+   * The fourth projection off this session that the observation cannot carry,
+   * and the first that is not a reading of state at all. `./flow.ts` argues the
+   * placement at length; the short version is that every other projection here
+   * reports a **level**, and a level cannot tell material that was spent from
+   * material that was lost.
+   *
+   * `undefined` when nothing has been stepped, and — deliberately the same
+   * answer — when the report on hand is of a different tick than this state.
+   * The world loop's `last` closure survives a `reset`, so a session that did
+   * not guard would serve the previous episode's final tick as this one's
+   * opening position.
+   *
+   * Absent unless the scenario supplies {@link Scenario.flowReport}. A scenario
+   * that builds a world without installing `coordination`'s loop has no ledger
+   * to give, and that is an honest absence rather than a gap.
+   */
+  flowLedger(): FlowLedger | undefined;
 }
 
 /** Builds a session. The episode does not exist until {@link AgentSession.reset}. */
@@ -266,6 +382,16 @@ export function createSession(options: SessionOptions): AgentSession {
    */
   const portalTargets =
     scenario.portalTargets === undefined ? {} : { portalTargets: scenario.portalTargets };
+
+  /** The alliance roster, spread for exactly the reason above. */
+  const invitableSpecies =
+    scenario.invitableSpecies === undefined
+      ? {}
+      : { invitableSpecies: scenario.invitableSpecies };
+
+  /** Action 16's gate, spread for exactly the reason above. */
+  const portalNodes =
+    scenario.portalNodes === undefined ? {} : { portalNodes: scenario.portalNodes };
 
   let state: SimState | undefined;
   let cap = 0;
@@ -316,6 +442,8 @@ export function createSession(options: SessionOptions): AgentSession {
       state: current,
       catalogue: scenario.catalogue,
       ...portalTargets,
+      ...invitableSpecies,
+      ...portalNodes,
       truncated: atCap(current),
     });
     return view;
@@ -412,7 +540,13 @@ export function createSession(options: SessionOptions): AgentSession {
 
       submitted += 1;
       const screened = admit(
-        { state: current, catalogue: scenario.catalogue, ...portalTargets },
+        {
+          state: current,
+          catalogue: scenario.catalogue,
+          ...portalTargets,
+          ...invitableSpecies,
+          ...portalNodes,
+        },
         [action],
       );
       const rejection = screened.rejected[0];
@@ -454,6 +588,51 @@ export function createSession(options: SessionOptions): AgentSession {
 
     snapshotHash(): string {
       return snapshotHash(live());
+    },
+
+    playerState(): PlayerState {
+      // Built fresh rather than memoized beside `view`. The projection is not
+      // on the per-tick path any policy takes — only a client asks for it — and
+      // a second cache invalidated in `submit()` is a second thing that can be
+      // forgotten there and serve a tick-old universe as the current one.
+      return project({ state: live(), catalogue: scenario.catalogue });
+    },
+
+    candidateDetails(): CandidateDetailProjection {
+      // `currentView().candidates` and not a fresh `buildCandidates`: the
+      // alignment this projection promises is only real if both halves come
+      // from one list. Built fresh per call otherwise, for the same reason
+      // `playerState` is — a client asks, a policy does not.
+      return describeCandidates({
+        state: live(),
+        catalogue: scenario.catalogue,
+        lists: currentView().candidates,
+      });
+    },
+
+    academy(): AcademyProjection {
+      // Built fresh per call, like `playerState` and for the same reason: a
+      // client asks and a policy does not, and a second cache invalidated in
+      // `submit()` is a second thing that can be forgotten there and serve a
+      // tick-old universe as the current one.
+      return describeAcademy({ state: live(), catalogue: scenario.catalogue });
+    },
+
+    flowLedger(): FlowLedger | undefined {
+      if (scenario.flowReport === undefined) return undefined;
+      // **`worldTick - 1`, and the off-by-one is the whole guard.**
+      //
+      // `sim-core`'s `step` runs its systems on the tick the state *arrived*
+      // with and calls `advanceClock` afterwards, so the report the world loop
+      // just emitted is stamped with the clock's value *before* the step. A
+      // guard written against `state.clock.worldTick` would therefore never
+      // match, and a permanently-absent ledger is indistinguishable from
+      // absence-handling that works — which is why `session.test.ts` pins the
+      // convention against a real step rather than this comment asserting it.
+      //
+      // At tick 0 this asks for a report of tick -1, which nothing can be, so a
+      // freshly reset episode reports absent without a special case.
+      return describeFlow(scenario.flowReport(), live().clock.worldTick - 1);
     },
   };
 }

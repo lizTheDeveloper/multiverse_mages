@@ -24,7 +24,10 @@ import {
   createUniverse,
   defineWorldStateSchema,
 } from '@mm/state';
-import { KnowledgeSubsystem, MASTERY_ACTIVATION_THRESHOLD } from '@mm/rules-magic';
+import {
+  KnowledgeSubsystem,
+  MASTERY_ACTIVATION_THRESHOLD,
+} from '@mm/rules-magic';
 
 import { CoordinatingKnowledgeGateway } from '../../src/index.js';
 
@@ -89,7 +92,7 @@ function buildWorld() {
       learnRate: species.learnRate,
       rediscoveryAffinity: species.rediscoveryAffinity,
       depthCeiling: species.depthCeiling,
-      scribeAffinity: species.scribeAffinity,
+      scribeAffinity: species.scribeAffinity, curiosity: 1024,
     }),
     store: shippedStorePolicy(traditionId),
     acquire: shippedAcquirePolicy(traditionId),
@@ -245,7 +248,7 @@ function forbiddenGateway(
       learnRate: species.learnRate,
       rediscoveryAffinity: species.rediscoveryAffinity,
       depthCeiling: species.depthCeiling,
-      scribeAffinity: species.scribeAffinity,
+      scribeAffinity: species.scribeAffinity, curiosity: 1024,
     }),
     store: shippedStorePolicy(traditionId),
     acquire: shippedAcquirePolicy(traditionId),
@@ -279,7 +282,7 @@ function buildGatewayOver(
       learnRate: species.learnRate,
       rediscoveryAffinity: species.rediscoveryAffinity,
       depthCeiling: species.depthCeiling,
-      scribeAffinity: species.scribeAffinity,
+      scribeAffinity: species.scribeAffinity, curiosity: 1024,
     }),
     store: shippedStorePolicy(traditionId),
     acquire: shippedAcquirePolicy(traditionId),
@@ -391,3 +394,4 @@ describe('what the frontier quotes is what research charges', () => {
     expect(quoteFor(after, second, nodeId)).toBeGreaterThan(ordinary as number);
   });
 });
+

@@ -44,12 +44,14 @@ presses one button, whatever the constants are set to.
 **Path A — Apotheosis of Mastery.** A *cell stands at its floor* when a living mage holds the
 deepest node present in that cell's content graph, `permits` returns true for the cell, and at
 least `ASCENSION_SUMMIT_COPIES` instances of that node survive anywhere in the universe. Path A is
-satisfied when at least `ASCENSION_SUMMIT_CELLS` cells stand at their floor at once and
-`worshipTier` is at least `ASCENSION_TIER_GATE`.
+satisfied when at least `ASCENSION_SUMMIT_CELLS` cells stand at their floor at once,
+`worshipTier` is at least `ASCENSION_TIER_GATE`, and at least `ASCENSION_INSTITUTIONS` universities
+stand completed.
 
 **Path B — Enduring Canon.** The universe has reached era `ASCENSION_ERA_COUNT`, and every era
-boundary since era 1 passed. A boundary passes when all four hold: the universe knows at least
+boundary since era 1 passed. A boundary passes when all five hold: the universe knows at least
 `ASCENSION_CANON_BREADTH` nodes; those nodes span at least `ASCENSION_CANON_CELLS` distinct cells;
+at least `ASCENSION_INSTITUTIONS` universities stand completed at the boundary;
 `libraryDependence` is at or below `ASCENSION_DEPENDENCE_MAX`; and the nodes that left the universe
 during the era number no more than `max(ASCENSION_LOSS_MAX, nodesKnown × ASCENSION_LOSS_FRACTION)`.
 
@@ -59,16 +61,43 @@ as its floor, so that a small canon is not handed a free loss by the fraction ro
 
 `ASCENSION_MIN_TICK = 600`, `ASCENSION_TIER_GATE = 4`, `ASCENSION_ERA_COUNT = 4`,
 `ASCENSION_DEPENDENCE_MAX = fp(256)` (25%), `ASCENSION_LOSS_MAX = 2`, `ASCENSION_SUMMIT_CELLS`,
-`ASCENSION_SUMMIT_COPIES = 2`, `ASCENSION_CANON_BREADTH`, `ASCENSION_CANON_CELLS` and
-`ASCENSION_LOSS_FRACTION` are untuned placeholders awaiting the balance harness. The five
-achievement constants each have an *identity value* — `ASCENSION_SUMMIT_CELLS = 1`,
-`ASCENSION_SUMMIT_COPIES = 2`, `ASCENSION_CANON_BREADTH = 0`, `ASCENSION_CANON_CELLS = 0`,
-`ASCENSION_LOSS_FRACTION = 0` — at which each predicate is exactly the one that shipped at 0.7.0,
-so a moved balance number can be bisected between the rule and the tuning.
+`ASCENSION_SUMMIT_COPIES = 2`, `ASCENSION_CANON_BREADTH`, `ASCENSION_CANON_CELLS`,
+`ASCENSION_LOSS_FRACTION` and `ASCENSION_INSTITUTIONS` are untuned placeholders awaiting the
+balance harness. The six achievement constants each have an *identity value* —
+`ASCENSION_SUMMIT_CELLS = 1`, `ASCENSION_SUMMIT_COPIES = 2`, `ASCENSION_CANON_BREADTH = 0`,
+`ASCENSION_CANON_CELLS = 0`, `ASCENSION_LOSS_FRACTION = 0`, `ASCENSION_INSTITUTIONS = 0` — at which
+each predicate is exactly the one that shipped at 0.7.0, so a moved balance number can be bisected
+between the rule and the tuning.
 
 The achievement thresholds SHALL be calibrated against the *passive baseline* — what a universe
 reaches with no god action at all — and not against any strategy's score. Calibrating against a
 strategy whose own summit is the passive baseline would reproduce the defect exactly.
+
+**A threshold over knowledge is not sufficient on its own, and each path SHALL therefore contain at
+least one conjunct reading a quantity that no edit to the ruleset produces.** Calibrating above the
+passive baseline was necessary and turned out not to be enough: a universe drives knowledge to the
+ceiling of whatever the ruleset permits without the god acting again, so every threshold over
+knowledge is satisfied on a schedule once the permitting is done, and raising one moves the tick
+that schedule strikes rather than whether it strikes. Measured at n=400 on the merged tree, a policy
+that permits the whole grid over 140 of 2400 ticks and then submits nothing at all won 40 of 40 —
+more often than the policy that did the same and also funded, dispensed and encouraged.
+`ASCENSION_INSTITUTIONS` is that conjunct in both paths: a completed university exists only where
+`foundUniversity` bought the site, because the world loop founds none, so it is an anchor to a cause
+rather than a threshold anyone had to calibrate. It is recomputed rather than banked, so it lapses
+when the buildings do, and Path B rechecks it at every boundary of the run it counts.
+
+#### Scenario: A canon nobody built anywhere to keep does not pass a boundary
+
+- **WHEN** an era boundary finds the universe knowing more than `ASCENSION_CANON_BREADTH` nodes
+  spanning more than `ASCENSION_CANON_CELLS` cells, with `libraryDependence` at zero, no node lost
+  during the era, and only the university the scenario seeded
+- **THEN** the boundary does not pass, and `goodEraRun` resets
+
+#### Scenario: The summit needs somewhere that taught it
+
+- **WHEN** `ASCENSION_SUMMIT_CELLS` cells stand at their floor and `worshipTier` is at or above
+  `ASCENSION_TIER_GATE`, but fewer than `ASCENSION_INSTITUTIONS` universities stand completed
+- **THEN** Path A is not satisfied, and becomes satisfied on the tick the count is reached
 
 #### Scenario: Depth is relative to content
 

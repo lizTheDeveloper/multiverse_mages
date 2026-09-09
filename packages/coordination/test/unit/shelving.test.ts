@@ -52,7 +52,7 @@ import { describe, expect, it } from 'vitest';
 
 import { CoordinatingKnowledgeGateway, EffortLedger } from '../../src/index.js';
 
-import { catalogAndCells, nodeFacets, registry, scribingTraditionId, shippedAcquirePolicy, shippedStorePolicy, speciesTable } from './world-fixtures.js';
+import { catalogAndCells, nodeFacets, registry, scribingTraditionId, shippedAcquirePolicy, shippedStorePolicy, speciesTable, traditionNamed } from './world-fixtures.js';
 
 const ROOT_SEED = 0x0e1f_0001;
 
@@ -67,6 +67,14 @@ interface DeskOptions {
   readonly library?: boolean;
   /** Affiliate the mage with it. Ignored without a university. */
   readonly affiliated?: boolean;
+  /**
+   * The authored id of the tradition this universe holds.
+   *
+   * Defaults to a scribing one, which is what every test here but the mortality
+   * pair wants. Named so a test of the Art of Memory can ask for it: content ids
+   * are interned and first is not file order.
+   */
+  readonly traditionName?: string;
 }
 
 interface Desk {
@@ -95,7 +103,10 @@ function desk(options: DeskOptions = {}): Desk {
   const speciesId = ids[0] as number;
   const species = speciesOf(speciesId);
   if (species === undefined) throw new Error('the shipped registry declares no species');
-  const traditionId = scribingTraditionId();
+  const traditionId =
+    options.traditionName === undefined
+      ? scribingTraditionId()
+      : traditionNamed(options.traditionName);
 
   const state = createState({
     rootSeed: ROOT_SEED,
@@ -169,7 +180,7 @@ function desk(options: DeskOptions = {}): Desk {
           learnRate: species.learnRate,
           rediscoveryAffinity: species.rediscoveryAffinity,
           depthCeiling: species.depthCeiling,
-          scribeAffinity: species.scribeAffinity,
+          scribeAffinity: species.scribeAffinity, curiosity: 1024,
         }),
         store: shippedStorePolicy(traditionId),
         acquire: shippedAcquirePolicy(traditionId),
@@ -374,6 +385,58 @@ describe('what death does to a book still in a mage’s hands', () => {
 
     expect(work.knowledge.instanceCount(nodeId)).toBe(1);
     expect(componentOf(work.state, GRIMOIRE).size).toBe(1);
+  });
+
+  it('takes a memory palace with her, because the store hook says it perishes', () => {
+    // The Art of Memory's whole bargain, and until now it was kept by accident:
+    // the death path destroyed `mind` and `palace` from a hardcoded pair, and
+    // `perishesWithHolder` — the declaration that *says* a palace perishes —
+    // had no caller anywhere in the repository. The two v1 kinds happen to
+    // agree, so the wire could only be proved by asking a policy that disagrees.
+    const work = desk({ traditionName: 'art-of-memory' });
+    const nodeId = grantedNode(work);
+    // Put it where the Art of Memory keeps knowledge. `grantedNode` writes a
+    // `mind` copy because that is what every other test here wants; the palace
+    // is the location this tradition's mages actually fill.
+    work.knowledge.createInstance({
+      nodeId,
+      locationKind: LOCATION_KIND.palace,
+      locationId: work.mage,
+      acquiredTick: 0,
+      mastery: MASTERY_MAX,
+    });
+    expect(work.knowledge.instanceCount(nodeId)).toBe(2);
+
+    work.gateway().onMageDied(work.mage, NO_INHERITOR);
+
+    // Both go: `store: palace` declares `mind` and `palace` alike as perishing,
+    // and there is nothing left of the node in the universe.
+    expect(work.knowledge.instanceCount(nodeId)).toBe(0);
+  });
+
+  it('leaves a palace alone under a store hook that does not list it', () => {
+    // The positive control for the sentence above: the same operation, the same
+    // instance, a policy that declares only `mind` perishing — and the instance
+    // survives. A death path that still read a hardcoded pair would destroy it
+    // here and this test would fail, which is the only way to tell "the hook is
+    // consulted" from "the hook happens to agree".
+    const work = desk();
+    const nodeId = grantedNode(work);
+    const instance = work.knowledge.createInstance({
+      nodeId,
+      locationKind: LOCATION_KIND.palace,
+      locationId: work.mage,
+      acquiredTick: 0,
+      mastery: MASTERY_MAX,
+    });
+    expect(work.knowledge.instanceCount(nodeId)).toBe(2);
+
+    work.gateway().onMageDied(work.mage, NO_INHERITOR);
+
+    // Her mind's copy is gone; the palace one, which a `standard` store hook
+    // never says perishes, is not.
+    expect(work.knowledge.instanceCount(nodeId)).toBe(1);
+    expect(work.knowledge.read(instance).locationKind).toBe(LOCATION_KIND.palace);
   });
 
   it('leaves a mage who died holding nothing untouched', () => {

@@ -1,0 +1,56 @@
+# Multiverse Mages — surface the jobs that do not block.
+# Copyright (C) 2026 Ann Kelner
+# SPDX-License-Identifier: AGPL-3.0-or-later
+#
+# Three jobs on `main` are deliberately not required to merge, for reasons
+# recorded in `docs/devops/ci-and-deploy.md` and in `balance-ci-wiring.test.ts`:
+# the two-hundred-year gate costs 830-1154 s against the other gates' ~40 s and
+# would queue every unrelated PR behind the win condition, and the two design
+# checks report facts that are not always defects on the commit that introduces
+# them.
+#
+# On 2026-08-15 all three had been red for at least six consecutive commits
+# while `Verify (pinned Node)` was green on every one. Nothing was broken by
+# that -- the merges were correct -- but the primitive-consumption check was
+# reporting, in full, a defect the campaign then spent an evening rediscovering
+# by hand. Non-blocking had become unread.
+#
+# This workflow gates nothing and is not a required check. It exists so that a
+# red non-required job produces a red *scheduled* run, which is the one place a
+# failure is not adjacent to a commit somebody already decided was fine.
+name: Non-blocking watch
+
+on:
+  schedule:
+    # 09:00 UTC daily. Deliberately not per-push: the point is to separate the
+    # signal from the commit, and a per-push run would land next to the same
+    # green Verify that hides it today.
+    - cron: '0 9 * * *'
+  workflow_dispatch:
+
+# Read-only. This job reads run conclusions and writes nothing, and holding no
+# write scope is what makes it safe to run on a schedule against `main`.
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: nonblocking-watch
+  cancel-in-progress: false
+
+jobs:
+  watch:
+    name: Are the non-required jobs green on main?
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Read the watched jobs at main's own head
+        env:
+          GH_TOKEN: ${{ github.token }}
+        # Exit 42 means "a watched job is red" and exit 1 means "the probe could
+        # not answer". Both fail the run, and the distinction is in the log
+        # rather than in the status, because a scheduled watcher that stayed
+        # green when it could not read anything would be the failure it exists
+        # to prevent.
+        run: ./scripts/nonblocking-watch.sh

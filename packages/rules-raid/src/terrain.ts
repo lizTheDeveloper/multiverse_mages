@@ -89,8 +89,25 @@ const OUTSIDE: TerrainCell = Object.freeze({
  * Draw order within a cell is fixed — passability, then sight, then going —
  * and each is a separate `nextBounded` on the same per-cell stream. Adding a
  * fourth property appends a draw and leaves the first three where they were.
+ *
+ * ## The portal's own cell is forced passable, after the draws
+ *
+ * A portal is an aperture. The one at `portal` is *"where the attacker came in,
+ * and the only way out"*, and a generator that rolled solid rock under it
+ * walled the entire warband in: `TerrainNavigator` builds an all-`UNREACHABLE`
+ * flow field for an impassable goal, so no raider can ever path home, every
+ * attacker is taken by the stranded-raider rule, and the raid runs to portal
+ * collapse — thousands of ticks after it had anything left to decide.
+ *
+ * Latent until `withdraw-after-ticks` made withdrawal reachable at all: while no
+ * raider ever *tried* to leave, an unreachable exit cost nothing and showed up
+ * nowhere. Measured on the first run where they did try, the tail of the raid
+ * length distribution jumped from 148 to 3,583 — the portal's whole life.
+ *
+ * The override is applied **after** every cell's three draws, never instead of
+ * them, so the stream position is exactly what it was and no other cell moves.
  */
-export function generateTerrain(tuning: RaidTuning, rng: RngSource): TerrainGrid {
+export function generateTerrain(tuning: RaidTuning, rng: RngSource, portal: Point): TerrainGrid {
   const cellsPerSide = floorDiv(tuning.battlefieldExtent, tuning.terrainCellSize);
   if (cellsPerSide < 1) {
     throw new RangeError(
@@ -114,6 +131,22 @@ export function generateTerrain(tuning: RaidTuning, rng: RngSource): TerrainGrid
       // boulder you can see through is a boulder that is only in the way.
       blocksLineOfSight: impassable || blocking,
       moveCost: rough ? tuning.terrainRoughMoveCost : ORDINARY_MOVE_COST,
+    });
+  }
+
+  // The exit, made an exit. Overwritten rather than re-rolled: see the note
+  // above on why the draws must all still have happened.
+  const portalCell = cellOfPoint(portal, tuning.terrainCellSize, cellsPerSide);
+  const portalIndex = portalCell.row * cellsPerSide + portalCell.column;
+  const under = cells[portalIndex] as TerrainCell;
+  if (!under.passable) {
+    cells[portalIndex] = Object.freeze({
+      passable: true,
+      // Sight is left as rolled. Passability is what the portal needs; a portal
+      // that also cleared the cover around it would be a second, unmeasured
+      // change riding on a termination fix.
+      blocksLineOfSight: under.blocksLineOfSight,
+      moveCost: under.moveCost,
     });
   }
 

@@ -35,7 +35,8 @@
  * file is written, so there is nothing to leave behind if a test throws.
  */
 
-import { fileURLToPath } from 'node:url';
+import { readdirSync } from 'node:fs';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 
 import { ESLint } from 'eslint';
 import { beforeAll, describe, expect, it } from 'vitest';
@@ -390,6 +391,14 @@ describe('the float ban covers every rules-path package, not just sim-core', () 
     'packages/rules-world/src/__lint-probe__.ts',
     'packages/rules-raid/src/__lint-probe__.ts',
     'packages/primitives/src/__lint-probe__.ts',
+    // Added by W201. `coordination` is the world loop — `world-step.ts`
+    // installs the systems that advance a universe — and it was in neither the
+    // glob nor the documented exclusions, so `0.5`, `Date.now()` and
+    // `Math.random()` all compiled there. Measured before the fix: the same
+    // injected line raised five errors in `rules-world/src` and zero here, and
+    // a `Math.random()` planted in `world-step.ts` passed lint, ran 7,532
+    // times, and passed all 4,631 tests.
+    'packages/coordination/src/__lint-probe__.ts',
   ];
 
   it.each(rulesPathProbes)('rejects a non-integer literal in %s', async (filePath) => {
@@ -419,4 +428,108 @@ describe('the float ban covers every rules-path package, not just sim-core', () 
     );
     expect(result?.errorCount ?? 0).toBe(0);
   });
+});
+
+/**
+ * Every package under `packages/` is *classified*: it either bans floats or is
+ * a named exclusion. Nothing may be neither.
+ *
+ * The block above probes the packages the config claims to cover, which catches
+ * a ban that stopped firing. It cannot catch the other failure — a package that
+ * was never listed at all — because a probe list and a glob list are written by
+ * the same hand at the same moment, and both were missing `coordination` for as
+ * long as it existed. `scripts/check-purity.mjs` had been calling it rules path
+ * in its own comments the whole time; the tool that carried the ban had simply
+ * never been told.
+ *
+ * So this reads `packages/` off disk rather than from any list, and asserts the
+ * partition. **Adding a workspace package now fails this test until somebody
+ * decides which side it is on** — which is the decision that went unmade.
+ *
+ * The probe is a decimal literal rather than `Math.random()` deliberately:
+ * `agent-api` bans `Math.random` on both sides of its §4.1 float exemption, so
+ * a random-draw probe would classify it as rules path and the partition would
+ * be describing the wrong question.
+ */
+describe('every package under packages/ is on one side of the float ban', () => {
+  /**
+   * The rules path, by name. Duplicated from `eslint.config.mjs` on purpose,
+   * for the same reason `rng-registry-append-only.test.ts` duplicates the stream
+   * table: a test that read its expectation out of the config under test could
+   * not detect a change to that config.
+   */
+  const FLOAT_BANNED = [
+    'coordination',
+    'primitives',
+    'rules-magic',
+    'rules-raid',
+    'rules-world',
+    'sim-core',
+    'state',
+  ];
+
+  /** The deliberate exclusions, with the reason each one is out in the config. */
+  const FLOAT_PERMITTED = [
+    'agent-api',
+    'content',
+    'gym-bridge',
+    'mc-harness',
+    'scenario',
+    'server',
+  ];
+
+  const packagesOnDisk = readdirSync(new URL('packages/', pathToFileURL(repoRoot)), {
+    withFileTypes: true,
+  })
+    .filter((entry) => entry.isDirectory())
+    .map((entry) => entry.name)
+    .sort();
+
+  it('classifies every package on disk, so a new one cannot be silently neither', () => {
+    const classified = new Set([...FLOAT_BANNED, ...FLOAT_PERMITTED]);
+    const unclassified = packagesOnDisk.filter((name) => !classified.has(name));
+    expect(
+      unclassified,
+      `packages/${unclassified.join(', packages/')} appear on disk but in neither list. ` +
+        "Decide: is it rules path? Then add it to RULES_SRC in eslint.config.mjs and to " +
+        'FLOAT_BANNED here. Is it host-side tooling or a documented float boundary? Then add ' +
+        'it to FLOAT_PERMITTED and write the reason into the RULES_SRC comment. Leaving it out ' +
+        'of both is how `coordination` — the world loop — spent its whole life as a package ' +
+        'where 0.5 compiled.',
+    ).toEqual([]);
+    // And the reverse, so a deleted package does not leave a stale claim behind.
+    const missing = [...classified].filter((name) => !packagesOnDisk.includes(name)).sort();
+    expect(missing, `${missing.join(', ')} are listed here but not on disk`).toEqual([]);
+  });
+
+  it.each(FLOAT_BANNED)('rejects a decimal literal in packages/%s/src', async (name) => {
+    const [result] = await eslint.lintText('export const chance = 0.35;\n', {
+      filePath: `packages/${name}/src/__lint-probe__.ts`,
+    });
+    expect(result?.errorCount ?? 0).toBeGreaterThan(0);
+  });
+
+  it.each(FLOAT_PERMITTED)(
+    'does not fire the decimal-literal ban in packages/%s/src, which is the exclusion being claimed',
+    async (name) => {
+      // Not decoration: this half is what makes the list above a *partition*
+      // rather than a wish. If a package quietly gained the ban, the claim that
+      // it is excluded would be false and nothing else here would say so.
+      //
+      // Asserted against *this ban* rather than against `errorCount === 0`,
+      // which is what it said first. These six packages happen to raise nothing
+      // at all on the probe today, so a zero-error assertion would pass for a
+      // reason unrelated to the partition — and would then fail the day someone
+      // adds an unrelated rule the snippet happens to trip, reporting it as
+      // "the exclusion broke". A test whose failure names the wrong cause is
+      // worse than one that never fires.
+      const [result] = await eslint.lintText('export const chance = 0.35;\n', {
+        filePath: `packages/${name}/src/__lint-probe__.ts`,
+      });
+      const decimalBans = messagesFor(result as ESLint.LintResult, 'no-restricted-syntax').filter(
+        (message) => message.includes('Non-integer numeric literal'),
+      );
+      expect(decimalBans, `packages/${name}/src is claimed exempt but the ban fired`).toEqual([]);
+    },
+  );
 });

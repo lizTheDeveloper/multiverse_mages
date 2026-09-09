@@ -95,6 +95,10 @@ Generated from the registry and checked against it. `definitionVersion` is per m
 | `libraryDependence` | `censusIntervalTicks` | `12` |
 | `libraryDependence` | `censusStartTick` | `0` |
 | `libraryDependence` | `excludeEmptyUniverseSamples` | `true` |
+| `materialGradeProfile` | `gradedKinds` | `"stone"` |
+| `materialGradeProfile` | `mechanicAbsentIsNotZero` | `true` |
+| `materialGradeProfile` | `sampleIntervalTicks` | `12` |
+| `materialGradeProfile` | `topGrade` | `2` |
 | `worshipSnowball` | `checkpointTicks` | `[60,120,240,480,1200]` |
 | `worshipSnowball` | `degenerateTotalIsZero` | `0` |
 | `worshipSnowball` | `estimator` | `"G = (2·Σ i·x_i) / (n·Σ x_i) − (n+1)/n, ascending, 1-based"` |

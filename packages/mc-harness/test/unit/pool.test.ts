@@ -33,7 +33,7 @@ import {
 } from '@mm/mc-harness';
 import { describe, expect, it } from 'vitest';
 
-import { POOL_WORKER_URL, TOY_REGISTRIES, toySweep } from './fixtures.js';
+import { POOL_WORKER_URL, TOY_FIXED_POOL, TOY_REGISTRIES, toySweep } from './fixtures.js';
 
 const provenance = {
   buildVersion: 'mc-harness-test-0',
@@ -257,7 +257,7 @@ describe('a run is charged for itself, not for its worker', () => {
     // The other half: the run budget no longer bounds boot, so something has to.
     // A worker that never becomes ready must be given up on rather than leaving
     // the pool waiting forever on a `ready` that is not coming.
-    const spec = toySweep({ replicates: 1 });
+    const spec = toySweep({ replicates: 1, agentPool: TOY_FIXED_POOL });
     const plan = expandSweep(spec, TOY_REGISTRIES);
     const tasks = buildTasks(spec, plan);
     const twoTasks = new Map([...tasks].slice(0, 2));

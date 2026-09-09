@@ -131,7 +131,21 @@ export const GOAL_BASE_APPEAL: Readonly<Record<GoalId, Fixed>> = {
   [GOAL.seekTeaching]: 448,
   [GOAL.teach]: 448,
   [GOAL.scribe]: 384,
-  [GOAL.affiliate]: 256,
+  // Level with `research-node` at the top of the band, and the only entry here
+  // that is not a statement about an activity. Affiliation accomplishes
+  // nothing: it produces no node, no lesson and no book. What it does is
+  // *unlock* — an unaffiliated mage may neither scribe (`scribeThroughputFor`
+  // is zero for `universityId === 0`) nor ward (`feasibility.ts` masks
+  // `ward-duty` on the same field), so two of her nine goals do not exist until
+  // she joins something. A gate on two goals is worth what the goals behind it
+  // are worth, and the highest of those is a research-scale number.
+  //
+  // The base term is where that belongs precisely because it is unconditional:
+  // it is what the *goal* is worth before anything about the mage is
+  // considered. Whether she should act on it *now* is the opportunity term's
+  // job, and that term is what separates a mage with no university from one who
+  // merely has a better option — see {@link opportunityTerm}.
+  [GOAL.affiliate]: 512,
   [GOAL.wardDuty]: 320,
   [GOAL.raidReadiness]: 256,
   /**
@@ -145,6 +159,50 @@ export const GOAL_BASE_APPEAL: Readonly<Record<GoalId, Fixed>> = {
    * sweep should move first.
    */
   [GOAL.applyMagic]: 384,
+  /**
+   * Level with `scribe` and `apply-magic`, **below both teaching goals**.
+   *
+   * Perfecting what she has is worth less than learning something new and less
+   * than passing something on: a universe whose mages all drilled what they
+   * already knew would stop discovering, and vision §5 makes the appetite for
+   * discovery the reason a universe has an academy.
+   *
+   * The ordering against `teach` was measured rather than argued. At 448 —
+   * level with the teaching goals — practice won the argmax often enough to
+   * take teaching down by 94%, which is the opposite of the point: practice
+   * exists to give teaching something to transmit, and a value that starves the
+   * consumer of the stock it produces is wrong however good the stock is.
+   * **Untuned**, and this is one of the two numbers the sweep should move
+   * first — the other is `PRACTICE_GAIN_PER_MONTH`.
+   */
+  [GOAL.practice]: 384,
+  /**
+   * **Level with `apply-magic` and `practice`**, which are the other two goals
+   * that spend a month on a node she already holds.
+   *
+   * It was `128` first, on the argument that upkeep must not win the argmax on
+   * its own merits: a universe whose mages all renewed would stop discovering.
+   * That argument is right and the number was the wrong way to enforce it.
+   * Measured over a sixty-tick seeded universe with nine durable nodes granted
+   * at full mastery, `128` produced **zero** months of upkeep and zero workings
+   * lit, ever — because the urgency term that was supposed to lift it can only
+   * rise once something is standing, and nothing was ever lit. A complete
+   * wiring the game never ran.
+   *
+   * **The rota is enforced by candidacy instead.** `outlook.ts` drops a working
+   * with years left out of `sustainableTargets` entirely — see
+   * `rules-magic`'s `RENEWAL_WINDOW_DENOMINATOR` — so a mage holding nothing
+   * near its expiry has the goal *masked* rather than merely unattractive. That
+   * frees this number to say what it should say: keeping a working standing is
+   * worth about what casting one at the world is worth.
+   *
+   * A literal, like the ten rows above it, rather than a scalar in
+   * `autonomy-weight.json`. That file is the right home for a magnitude the
+   * economy spends; this table is a single tuning surface a reviewer reads top
+   * to bottom, and moving one row out of it into content would leave two places
+   * to look for the same kind of number. **Untuned.**
+   */
+  [GOAL.sustainWorking]: 384,
 };
 
 /**
@@ -174,6 +232,17 @@ export const AGE_TERM: Readonly<Record<AgeBandValue, Readonly<Record<GoalId, Fix
     [GOAL.wardDuty]: -64,
     [GOAL.raidReadiness]: 64,
     [GOAL.applyMagic]: 0,
+    // Drill is what a student does. `mages-and-species` has the young seeking
+    // teachers rather than teaching, and practice is the same phase of a
+    // career from the inside: the months between being taught a thing badly
+    // and holding it well enough to pass on.
+    [GOAL.practice]: 128,
+    // Negative for the young, and it is the one age term that is a statement
+    // about the *institution* rather than about the mage. A working is renewed
+    // by whoever lit it, and a novice has lit nothing; putting her on the rota
+    // would mean a universe staffing its upkeep out of the people who should be
+    // in a classroom.
+    [GOAL.sustainWorking]: -128,
   },
   [AGE_BAND.prime]: {
     [GOAL.idle]: 0,
@@ -186,6 +255,8 @@ export const AGE_TERM: Readonly<Record<AgeBandValue, Readonly<Record<GoalId, Fix
     [GOAL.wardDuty]: 0,
     [GOAL.raidReadiness]: 0,
     [GOAL.applyMagic]: 0,
+    [GOAL.practice]: 0,
+    [GOAL.sustainWorking]: 0,
   },
   [AGE_BAND.senescent]: {
     [GOAL.idle]: 0,
@@ -201,6 +272,17 @@ export const AGE_TERM: Readonly<Record<AgeBandValue, Readonly<Record<GoalId, Fix
     // mage knows leaves the universe when she does unless she spends it on
     // something. A harvest is a use that outlives her exactly as a book is.
     [GOAL.applyMagic]: 128,
+    // Positive, for a third version of the same reason. An old mage at her
+    // species' limit holds her deepest nodes at exactly the teach threshold,
+    // and one tick of decay takes them below it. Keeping her hand in is the
+    // only thing that keeps her able to teach at all in her last years.
+    [GOAL.practice]: 128,
+    // Positive, for the fourth version of the same reason the two rows above
+    // it give. Everything an old mage knows leaves the universe when she does —
+    // and a working she is holding up leaves *sooner*, on the tick after her
+    // last renewal. Keeping it standing is the one thing she can do that
+    // outlives her by exactly as long as somebody else takes to notice.
+    [GOAL.sustainWorking]: 128,
   },
 };
 
@@ -217,11 +299,63 @@ export const OPPORTUNITY_PER_CANDIDATE: Fixed = 64;
  */
 export const OPPORTUNITY_CANDIDATE_CAP = 4;
 
-/** Opportunity a change of affiliation offers when one is worth making. **Untuned.** */
-export const AFFILIATION_OPPORTUNITY: Fixed = 256;
+
 
 function candidateOpportunity(count: number): Fixed {
   return Math.min(count, OPPORTUNITY_CANDIDATE_CAP) * OPPORTUNITY_PER_CANDIDATE;
+}
+
+/**
+ * The two magnitudes affiliation is priced with, read once from content.
+ *
+ * **Two, because the codebase already names two operations.**
+ * `completeAffiliation` and `changeAffiliation` are separate functions, and
+ * `MageOutlook` carries `betterAffiliationAvailable` beside `universityId`
+ * rather than instead of it. Getting a first university is a near-necessity —
+ * it is the gate on scribing and warding. Moving between universities is a
+ * preference about library depth. Pricing both with one number is what made
+ * `affiliate` a goal that scored ≈640 against research's ≈832 and was never
+ * chosen by anybody in any run.
+ */
+export interface AffiliationAppeal {
+  /**
+   * Opportunity for a mage with **no** university, `fp`.
+   *
+   * Bounded by `TERM_BOUND.opportunity`, and the shipped value is that bound:
+   * the strongest statement this axis can make, for the one case where the goal
+   * is a prerequisite rather than an option.
+   */
+  readonly firstOpportunity: Fixed;
+  /** Opportunity for a mage who has one and could have a deeper one, `fp`. */
+  readonly transferOpportunity: Fixed;
+}
+
+/** Every goal-scoring magnitude that is content rather than a table above. */
+export interface GoalAppealWeights {
+  readonly affiliation: AffiliationAppeal;
+}
+
+/** The part of `@mm/content`'s registry {@link readGoalAppeal} reads. */
+export interface GoalAppealSource {
+  autonomyWeight(id: string): number;
+}
+
+/**
+ * Reads the goal-appeal magnitudes, once.
+ *
+ * Eager and by name, exactly as `readTargetAppeal` is and for the same two
+ * reasons: `autonomyWeight` throws on an id the table does not declare, so a
+ * content mistake fails before a single mage has chosen anything; and a
+ * registry lookup per goal per mage per tick is the hot loop the Monte Carlo
+ * harness runs millions of times.
+ */
+export function readGoalAppeal(source: GoalAppealSource): GoalAppealWeights {
+  return Object.freeze({
+    affiliation: Object.freeze({
+      firstOpportunity: source.autonomyWeight('goal-affiliate-first-opportunity'),
+      transferOpportunity: source.autonomyWeight('goal-affiliate-transfer-opportunity'),
+    }),
+  });
 }
 
 /**
@@ -257,6 +391,15 @@ export function speciesTerm(goal: GoalId, outlook: MageOutlook): Fixed {
       // inventing a ninth keeps "which species farms with magic" a content
       // decision.
       return boundTerm('species', shareOfDeviation(species.laborAffinity, 2));
+    case GOAL.practice:
+      // Retention, inverted. A species that forgets slowly has less maintenance
+      // to do and finds it correspondingly less pressing; a species that forgets
+      // fast lives closer to the threshold. `contracts.md` §2.4's retention is
+      // the trait decay divides by, so this is that same trait read from the
+      // mage's side of the ledger — and it is the second rule anywhere that
+      // gives retention a behavioural consequence rather than only an
+      // arithmetic one.
+      return boundTerm('species', -shareOfDeviation(species.retention, 2));
     default:
       return 0;
   }
@@ -288,7 +431,16 @@ export function personalityTerm(goal: GoalId, outlook: MageOutlook): Fixed {
     case GOAL.scribe:
       return boundTerm('personality', shareOfDeviation(caution, 2));
     case GOAL.affiliate:
-      return boundTerm('personality', shareOfDeviation(ambition, 2));
+      // **Ambition prices a transfer and does not price a first affiliation.**
+      // Moving to a deeper library to make a bigger name is what ambition is;
+      // needing an institution before you may write anything down is not a
+      // matter of temperament. Leaving ambition on both would have left a real
+      // tail — a low-ambition mage takes −256 here, which is enough to keep her
+      // unaffiliated for a whole life, and "the unambitious never learn to
+      // write" is a rule nobody chose.
+      return outlook.universityId === 0
+        ? 0
+        : boundTerm('personality', shareOfDeviation(ambition, 2));
     case GOAL.wardDuty:
       return boundTerm('personality', shareOfDeviation(caution, 2));
     case GOAL.raidReadiness:
@@ -302,6 +454,34 @@ export function personalityTerm(goal: GoalId, outlook: MageOutlook): Fixed {
         'personality',
         shareOfDeviation(caution, 4) - shareOfDeviation(curiosity, 4),
       );
+    case GOAL.practice:
+      // Caution keeps what it has; ambition wants the next thing. Both axes,
+      // opposed, because practice is the one goal on the table that is purely
+      // defensive — it produces no node, no student and no book, and an
+      // ambitious mage has to be talked into it by her own decay.
+      return boundTerm(
+        'personality',
+        shareOfDeviation(caution, 2) - shareOfDeviation(ambition, 4),
+      );
+    case GOAL.sustainWorking:
+      // **Caution at full weight — the strongest single-axis personality term in
+      // the table**, and it is doing work no other term here does.
+      //
+      // Caution already raises `scribe` and `ward-duty`, which are the two other
+      // goals whose whole content is *making sure the thing survives*. Upkeep is
+      // that instinct with nothing else in it, so the axis is right; the weight
+      // is a `/1` rather than the usual `/2` because without it the goal was
+      // uniformly dominated. Measured: `sustain-working` at base 384 with no
+      // personality term took **zero** months over sixty ticks — it lost every
+      // argmax to `apply-magic`, which shares its base, its month and most of
+      // its candidates but also carries a species term and a longer candidate
+      // list. A goal that differs from a stronger neighbour by nothing is a goal
+      // no mage ever picks, and it looks exactly like a wiring failure.
+      //
+      // So the term is what makes the rota belong to *particular mages* rather
+      // than to nobody: a cautious mage keeps the walls up and an incautious one
+      // lets them fall, which is a difference a player can see. **Untuned.**
+      return boundTerm('personality', shareOfDeviation(caution, 1));
     default:
       return 0;
   }
@@ -322,7 +502,11 @@ export function ageTerm(goal: GoalId, outlook: MageOutlook): Fixed {
  * throughput, or a boolean about affiliation. There is no coordinate in
  * `MageOutlook` to reach for.
  */
-export function opportunityTerm(goal: GoalId, outlook: MageOutlook): Fixed {
+export function opportunityTerm(
+  goal: GoalId,
+  outlook: MageOutlook,
+  weights: GoalAppealWeights,
+): Fixed {
   switch (goal) {
     case GOAL.researchNode:
       return boundTerm('opportunity', candidateOpportunity(outlook.discoveryTargets.length));
@@ -335,13 +519,44 @@ export function opportunityTerm(goal: GoalId, outlook: MageOutlook): Fixed {
     case GOAL.scribe:
       return boundTerm('opportunity', floorDiv(outlook.scribeThroughput, 4));
     case GOAL.affiliate:
-      return outlook.betterAffiliationAvailable ? AFFILIATION_OPPORTUNITY : 0;
+      // Three cases and only two of them are weights. Nothing available is
+      // zero — and `feasibility.ts` has already masked the goal in that case,
+      // so this arm is reachable only through a direct call.
+      if (!outlook.betterAffiliationAvailable) return 0;
+      return boundTerm(
+        'opportunity',
+        outlook.universityId === 0
+          ? weights.affiliation.firstOpportunity
+          : weights.affiliation.transferOpportunity,
+      );
     case GOAL.wardDuty:
       return boundTerm('opportunity', outlook.wardPressure);
     case GOAL.raidReadiness:
       return boundTerm('opportunity', outlook.raidPressure);
     case GOAL.applyMagic:
       return boundTerm('opportunity', candidateOpportunity(outlook.applicableTargets.length));
+    case GOAL.practice:
+      return boundTerm('opportunity', candidateOpportunity(outlook.practiceTargets.length));
+    case GOAL.sustainWorking:
+      // **The one opportunity term with two summands, and it is the whole shape
+      // of the upkeep economy.**
+      //
+      // The candidate half says *"there is something here to keep"* and is the
+      // same function every other goal uses. The pressure half — see
+      // `MageOutlook.workingUrgency` — says *"and one of them is not standing,
+      // or is about to stop"*. It saturates at `fp(1024)` for an unlit working,
+      // because an unlit durable node is an effect the universe is not getting
+      // at all and nothing else in the game will produce it.
+      //
+      // Summed rather than maxed, so a mage with several workings to keep is
+      // more likely to be on the rota than a mage with one. `boundTerm` clamps
+      // the sum at `TERM_BOUND.opportunity`, so neither half can be the only
+      // thing that decides a career — which is what keeps a universe with one
+      // durable node from putting every cautious mage on upkeep forever.
+      return boundTerm(
+        'opportunity',
+        candidateOpportunity(outlook.sustainableTargets.length) + outlook.workingUrgency,
+      );
     default:
       return 0;
   }
@@ -354,7 +569,11 @@ export function opportunityTerm(goal: GoalId, outlook: MageOutlook): Fixed {
  * so "idle scores at the floor" is a property of one line rather than of nine
  * table rows all happening to hold a zero.
  */
-export function termsFor(goal: GoalId, outlook: MageOutlook): ScoreTerms {
+export function termsFor(
+  goal: GoalId,
+  outlook: MageOutlook,
+  weights: GoalAppealWeights,
+): ScoreTerms {
   if (goal === GOAL.idle) {
     return { base: 0, role: 0, species: 0, personality: 0, age: 0, opportunity: 0 };
   }
@@ -364,6 +583,6 @@ export function termsFor(goal: GoalId, outlook: MageOutlook): ScoreTerms {
     species: speciesTerm(goal, outlook),
     personality: personalityTerm(goal, outlook),
     age: ageTerm(goal, outlook),
-    opportunity: opportunityTerm(goal, outlook),
+    opportunity: opportunityTerm(goal, outlook, weights),
   };
 }

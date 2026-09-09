@@ -69,7 +69,7 @@ const ACQUIRE: AcquirePolicy = {
   stolenMastery: 0,
 };
 
-const RATES = { learnRate: 1024, rediscoveryAffinity: 1024, depthCeiling: 7, scribeAffinity: 1024 };
+const RATES = { learnRate: 1024, rediscoveryAffinity: 1024, depthCeiling: 7, scribeAffinity: 1024, curiosity: 1024 };
 
 function node(overrides: Partial<KnowledgeNode> & { nodeId: number }): KnowledgeNode {
   return {
@@ -79,6 +79,7 @@ function node(overrides: Partial<KnowledgeNode> & { nodeId: number }): Knowledge
     teachCost: 1024,
     scribeCost: 2048,
     rediscoveryMultiplier: 4096,
+    knowledgeKind: 'episteme' as const,
     ...overrides,
   };
 }

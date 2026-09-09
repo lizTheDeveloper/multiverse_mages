@@ -31,6 +31,8 @@ import {
   shippedRegistry,
   v1Nodes,
   worldActiveNodesInDistinctCells,
+  NO_WORKINGS_STAND,
+  TEST_HOLDER,
 } from './effect-fixtures.js';
 
 /**
@@ -65,6 +67,7 @@ describe('effects are sourced from usable knowledge instances', () => {
       ruleset: permissiveRuleset(),
       mode: TIME_MODE.world,
       cellOf: countingCellOf(registry),
+      standing: NO_WORKINGS_STAND,
     });
 
     expect(gathered.map((contribution) => contribution.primitiveId)).toContain(primitiveId);
@@ -76,12 +79,13 @@ describe('effects are sourced from usable knowledge instances', () => {
     const { nodeId } = nodeForScale(registry, 'world');
 
     const gathered = gatherEffects(
-      [{ nodeId, locationKind: LOCATION_KIND.palace, mastery: MASTERY_ACTIVATION_THRESHOLD }],
+      [{ nodeId, holder: TEST_HOLDER, locationKind: LOCATION_KIND.palace, mastery: MASTERY_ACTIVATION_THRESHOLD }],
       {
         registry,
         ruleset: permissiveRuleset(),
         mode: TIME_MODE.world,
         cellOf: countingCellOf(registry),
+        standing: NO_WORKINGS_STAND,
       },
     );
 
@@ -99,6 +103,7 @@ describe('effects are sourced from usable knowledge instances', () => {
         ruleset: permissiveRuleset(),
         mode: TIME_MODE.world,
         cellOf: countingCellOf(registry),
+        standing: NO_WORKINGS_STAND,
       },
     );
 
@@ -116,6 +121,7 @@ describe('effects are sourced from usable knowledge instances', () => {
       ruleset: rulesetInterdicting(cellIdOfNode(registry, nodeId)),
       mode: TIME_MODE.world,
       cellOf: countingCellOf(registry),
+      standing: NO_WORKINGS_STAND,
     });
 
     expect(gathered).toEqual([]);
@@ -146,14 +152,15 @@ describe('written instances produce no direct contribution', () => {
 
     const gathered = gatherEffects(
       [
-        { nodeId, locationKind: LOCATION_KIND.grimoire, mastery: MASTERY_ACTIVATION_THRESHOLD },
-        { nodeId, locationKind: LOCATION_KIND.library, mastery: MASTERY_ACTIVATION_THRESHOLD },
+        { nodeId, holder: TEST_HOLDER, locationKind: LOCATION_KIND.grimoire, mastery: MASTERY_ACTIVATION_THRESHOLD },
+        { nodeId, holder: TEST_HOLDER, locationKind: LOCATION_KIND.library, mastery: MASTERY_ACTIVATION_THRESHOLD },
       ],
       {
         registry,
         ruleset: permissiveRuleset(),
         mode: TIME_MODE.world,
         cellOf: countingCellOf(registry),
+        standing: NO_WORKINGS_STAND,
       },
     );
 
@@ -165,12 +172,13 @@ describe('written instances produce no direct contribution', () => {
     const { nodeId } = nodeForScale(registry, 'world');
 
     const shelved = gatherEffects(
-      [{ nodeId, locationKind: LOCATION_KIND.library, mastery: MASTERY_ACTIVATION_THRESHOLD }],
+      [{ nodeId, holder: TEST_HOLDER, locationKind: LOCATION_KIND.library, mastery: MASTERY_ACTIVATION_THRESHOLD }],
       {
         registry,
         ruleset: permissiveRuleset(),
         mode: TIME_MODE.world,
         cellOf: countingCellOf(registry),
+        standing: NO_WORKINGS_STAND,
       },
     );
     const held = gatherEffects([mindInstance(nodeId)], {
@@ -178,6 +186,7 @@ describe('written instances produce no direct contribution', () => {
       ruleset: permissiveRuleset(),
       mode: TIME_MODE.world,
       cellOf: countingCellOf(registry),
+      standing: NO_WORKINGS_STAND,
     });
 
     expect(shelved).toEqual([]);
@@ -201,12 +210,14 @@ describe('legality is evaluated once per candidate and carried nowhere', () => {
       ruleset: permissiveRuleset(),
       mode: TIME_MODE.world,
       cellOf: countingCellOf(registry),
+      standing: NO_WORKINGS_STAND,
     });
     const gathered = gatherEffects(instances, {
       registry,
       ruleset: rulesetInterdicting(cellIdOfNode(registry, third)),
       mode: TIME_MODE.world,
       cellOf: countingCellOf(registry),
+      standing: NO_WORKINGS_STAND,
     });
 
     const contributingNodes = new Set(gathered.map((contribution) => contribution.nodeId));
@@ -224,26 +235,26 @@ describe('legality is evaluated once per candidate and carried nowhere', () => {
       ruleset: permissiveRuleset(),
       mode: TIME_MODE.world,
       cellOf: countingCellOf(registry),
+      standing: NO_WORKINGS_STAND,
     });
 
     const [contribution] = gathered;
     expect(contribution).toBeDefined();
     if (contribution === undefined) return;
 
-    // The always-present keys, whatever the effect's mode. `control` and
-    // `transformTo` are present only when the effect actually carries them
-    // (`exactOptionalPropertyTypes`) -- `control`-mode and `transform`-mode
-    // respectively -- so real v1 content, which mixes modes freely, is
-    // checked mode-aware rather than against one fixed key list.
-    const keys = new Set(Object.keys(contribution));
-    for (const required of ['durationTicks', 'magnitude', 'mode', 'nodeId', 'primitiveId', 'target']) {
-      expect(keys.has(required), `contribution should carry "${required}"`).toBe(true);
-    }
-    expect(keys.has('legal') || keys.has('permitted') || keys.has('dormant') || keys.has('cellId')).toBe(
-      false,
-    );
-    if (contribution.mode !== 'control') expect(keys.has('control')).toBe(false);
-    if (contribution.mode !== 'transform') expect(keys.has('transformTo')).toBe(false);
+    // `effectIndex` joins the set, and `requires` deliberately does **not**
+    // appear on a node that authors none — absent, not `undefined`, so an
+    // ungated effect carries no field at all and cannot be re-tested into one.
+    // Neither is a legality field, which is what this assertion guards: the
+    // permission answer is asked once and stored nowhere.
+    expect(Object.keys(contribution).sort()).toEqual([
+      'durationTicks',
+      'effectIndex',
+      'magnitude',
+      'nodeId',
+      'primitiveId',
+      'target',
+    ]);
   });
 
   it('resolves each candidate instance cell exactly once', () => {
@@ -256,6 +267,7 @@ describe('legality is evaluated once per candidate and carried nowhere', () => {
       ruleset: permissiveRuleset(),
       mode: TIME_MODE.world,
       cellOf,
+      standing: NO_WORKINGS_STAND,
     });
 
     // Two usable instances, two resolutions — not one per contribution, and not
@@ -272,8 +284,8 @@ describe('legality is evaluated once per candidate and carried nowhere', () => {
     const cellOf = countingCellOf(registry);
 
     gatherEffects(
-      [{ nodeId, locationKind: LOCATION_KIND.grimoire, mastery: MASTERY_ACTIVATION_THRESHOLD }],
-      { registry, ruleset: permissiveRuleset(), mode: TIME_MODE.world, cellOf },
+      [{ nodeId, holder: TEST_HOLDER, locationKind: LOCATION_KIND.grimoire, mastery: MASTERY_ACTIVATION_THRESHOLD }],
+      { registry, ruleset: permissiveRuleset(), mode: TIME_MODE.world, cellOf, standing: NO_WORKINGS_STAND },
     );
 
     expect(cellOf.calls).toBe(0);
@@ -290,6 +302,7 @@ describe('effects route by the scale declared in the registry', () => {
       ruleset: permissiveRuleset(),
       mode: TIME_MODE.engagement,
       cellOf: countingCellOf(registry),
+      standing: NO_WORKINGS_STAND,
     });
 
     expect(gathered.map((contribution) => contribution.primitiveId)).not.toContain(primitiveId);
@@ -304,6 +317,7 @@ describe('effects route by the scale declared in the registry', () => {
       ruleset: permissiveRuleset(),
       mode: TIME_MODE.world,
       cellOf: countingCellOf(registry),
+      standing: NO_WORKINGS_STAND,
     });
 
     expect(gathered.map((contribution) => contribution.primitiveId)).not.toContain(primitiveId);
@@ -316,6 +330,7 @@ describe('effects route by the scale declared in the registry', () => {
       registry,
       ruleset: permissiveRuleset(),
       cellOf: countingCellOf(registry),
+      standing: NO_WORKINGS_STAND,
     } as const;
 
     const inWorld = gatherEffects([mindInstance(nodeId)], { ...shared, mode: TIME_MODE.world });
@@ -346,6 +361,7 @@ describe('the gathered set is a deterministic function of its inputs', () => {
       ruleset: permissiveRuleset(),
       mode: TIME_MODE.world,
       cellOf: countingCellOf(registry),
+      standing: NO_WORKINGS_STAND,
     });
 
     const nodeOrder = gathered.map((contribution) => contribution.nodeId);

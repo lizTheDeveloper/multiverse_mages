@@ -173,6 +173,14 @@
 </div>
 
 <script type="module">
+  // The bar that says where else there is. Its own block, not folded into the
+  // script below: nav.js imports nothing, so a sibling module that fails to
+  // evaluate cannot take the navigation down with it.
+  import { mountNav } from '../shared/nav.js';
+  mountNav();
+</script>
+
+<script type="module">
 /* Real, from packages/content/data/god-cost.json and god-constant.json. All untuned. */
 const FAVOR_CAP_BASE = 20480, FAVOR_CAP_PER_TIER = 10240, TIER_COUNT = 5;
 const FUND_PROGRESS = 256, MASTERY_FULL = 1024;
@@ -304,6 +312,12 @@ render();
      does not carry — which capability is missing and why. Sourced from
      capabilities() rather than prose, so it cannot go stale quietly. */
   import { mountSourceNote, openSession } from '../shared/session.js';
-  const s = await openSession({ recording: '../session.json' }).catch(() => null);
+  /* Live first, recording second, and neither throws: `npm run play` serves this
+     page beside a universe that is still running, `npm run ui` beside one that
+     finished, and a plain static server beside neither. The two sources publish
+     the same document, so everything below reads one model either way. */
+  const s =
+    (await openSession({ live: '' }).catch(() => null)) ??
+    (await openSession({ recording: '../session.json' }).catch(() => null));
   mountSourceNote(document.getElementById('srchost'), s, ['actionMask', 'maskReason']);
 </script>

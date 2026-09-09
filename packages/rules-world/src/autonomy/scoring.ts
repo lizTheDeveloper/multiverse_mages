@@ -16,7 +16,7 @@ import type { Fixed } from '@mm/sim-core';
 
 import type { GoalId } from './goals.js';
 import type { MageOutlook } from './outlook.js';
-import type { ScoreTerms, TermKind } from './terms.js';
+import type { GoalAppealWeights, ScoreTerms, TermKind } from './terms.js';
 import { TERM_KINDS, termsFor } from './terms.js';
 
 /**
@@ -114,13 +114,22 @@ function ablated(terms: ScoreTerms, ablate: TermKind | undefined): ScoreTerms {
   return { ...terms, [ablate]: 0 };
 }
 
-/** Scores one goal for one mage. */
+/**
+ * Scores one goal for one mage.
+ *
+ * @param weights - The goal-appeal magnitudes, read from content. Required
+ * rather than defaulted, for the reason `SelectionInput.appeal` is: a default
+ * would have to be a literal, and a defaulted weight table is a universe
+ * silently running on numbers nobody authored while every test that supplied
+ * one goes on passing.
+ */
 export function scoreGoal(
   goal: GoalId,
   outlook: MageOutlook,
+  weights: GoalAppealWeights,
   options: ScoringOptions = {},
 ): GoalScore {
-  const terms = ablated(termsFor(goal, outlook), options.ablate);
+  const terms = ablated(termsFor(goal, outlook, weights), options.ablate);
   const rawTotal = TERM_KINDS.reduce((sum, kind) => sum + terms[kind], 0);
   const { total, clamped } = combineTerms(terms);
   return { goal, score: total, terms, rawTotal, clamped };
@@ -137,7 +146,8 @@ export function scoreGoal(
 export function scoreGoals(
   goals: readonly GoalId[],
   outlook: MageOutlook,
+  weights: GoalAppealWeights,
   options: ScoringOptions = {},
 ): readonly GoalScore[] {
-  return goals.map((goal) => scoreGoal(goal, outlook, options));
+  return goals.map((goal) => scoreGoal(goal, outlook, weights, options));
 }

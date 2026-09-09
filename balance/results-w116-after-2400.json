@@ -1,0 +1,1483 @@
+{
+  "sweepId": "w116-affiliation-v1",
+  "rootSeed": 20260811,
+  "worldTickCap": 2400,
+  "replicates": 20,
+  "strategies": [
+    "passive-control",
+    "uniform-random-legal",
+    "permissive-breadth",
+    "narrow-depth",
+    "denial-warden",
+    "archivist",
+    "portal-rush",
+    "worship-maximizer",
+    "idle-then-declare",
+    "permit-then-idle"
+  ],
+  "rows": [
+    {
+      "arm": "draconic",
+      "mask": 1,
+      "n": 20,
+      "living": {
+        "n": 20,
+        "mean": 4.3,
+        "se": 0.1468977445995038
+      },
+      "affiliated": {
+        "n": 20,
+        "mean": 4.3,
+        "se": 0.1468977445995038
+      },
+      "grimoires": {
+        "n": 20,
+        "mean": 31.1,
+        "se": 21.019527261948333
+      },
+      "nodesKnown": {
+        "n": 20,
+        "mean": 43.35,
+        "se": 9.522072695639991
+      },
+      "affiliatedShare": 1,
+      "grimoiresPerMage": 7.232558139534884,
+      "runs": [
+        {
+          "strategyId": "passive-control",
+          "cellIndex": 0,
+          "replicateIndex": 0,
+          "living": 5,
+          "affiliated": 5,
+          "grimoires": 392,
+          "nodesKnown": 48
+        },
+        {
+          "strategyId": "uniform-random-legal",
+          "cellIndex": 0,
+          "replicateIndex": 1,
+          "living": 4,
+          "affiliated": 4,
+          "grimoires": 0,
+          "nodesKnown": 13
+        },
+        {
+          "strategyId": "permissive-breadth",
+          "cellIndex": 0,
+          "replicateIndex": 2,
+          "living": 5,
+          "affiliated": 5,
+          "grimoires": 19,
+          "nodesKnown": 128
+        },
+        {
+          "strategyId": "narrow-depth",
+          "cellIndex": 0,
+          "replicateIndex": 3,
+          "living": 4,
+          "affiliated": 4,
+          "grimoires": 0,
+          "nodesKnown": 3
+        },
+        {
+          "strategyId": "denial-warden",
+          "cellIndex": 0,
+          "replicateIndex": 4,
+          "living": 4,
+          "affiliated": 4,
+          "grimoires": 0,
+          "nodesKnown": 0
+        },
+        {
+          "strategyId": "archivist",
+          "cellIndex": 0,
+          "replicateIndex": 5,
+          "living": 4,
+          "affiliated": 4,
+          "grimoires": 181,
+          "nodesKnown": 42
+        },
+        {
+          "strategyId": "portal-rush",
+          "cellIndex": 0,
+          "replicateIndex": 6,
+          "living": 4,
+          "affiliated": 4,
+          "grimoires": 0,
+          "nodesKnown": 1
+        },
+        {
+          "strategyId": "worship-maximizer",
+          "cellIndex": 0,
+          "replicateIndex": 7,
+          "living": 5,
+          "affiliated": 5,
+          "grimoires": 0,
+          "nodesKnown": 50
+        },
+        {
+          "strategyId": "idle-then-declare",
+          "cellIndex": 0,
+          "replicateIndex": 8,
+          "living": 3,
+          "affiliated": 3,
+          "grimoires": 0,
+          "nodesKnown": 51
+        },
+        {
+          "strategyId": "permit-then-idle",
+          "cellIndex": 0,
+          "replicateIndex": 9,
+          "living": 4,
+          "affiliated": 4,
+          "grimoires": 0,
+          "nodesKnown": 111
+        },
+        {
+          "strategyId": "passive-control",
+          "cellIndex": 0,
+          "replicateIndex": 10,
+          "living": 4,
+          "affiliated": 4,
+          "grimoires": 0,
+          "nodesKnown": 51
+        },
+        {
+          "strategyId": "uniform-random-legal",
+          "cellIndex": 0,
+          "replicateIndex": 11,
+          "living": 5,
+          "affiliated": 5,
+          "grimoires": 15,
+          "nodesKnown": 44
+        },
+        {
+          "strategyId": "permissive-breadth",
+          "cellIndex": 0,
+          "replicateIndex": 12,
+          "living": 4,
+          "affiliated": 4,
+          "grimoires": 0,
+          "nodesKnown": 111
+        },
+        {
+          "strategyId": "narrow-depth",
+          "cellIndex": 0,
+          "replicateIndex": 13,
+          "living": 5,
+          "affiliated": 5,
+          "grimoires": 0,
+          "nodesKnown": 2
+        },
+        {
+          "strategyId": "denial-warden",
+          "cellIndex": 0,
+          "replicateIndex": 14,
+          "living": 4,
+          "affiliated": 4,
+          "grimoires": 0,
+          "nodesKnown": 0
+        },
+        {
+          "strategyId": "archivist",
+          "cellIndex": 0,
+          "replicateIndex": 15,
+          "living": 5,
+          "affiliated": 5,
+          "grimoires": 0,
+          "nodesKnown": 29
+        },
+        {
+          "strategyId": "portal-rush",
+          "cellIndex": 0,
+          "replicateIndex": 16,
+          "living": 5,
+          "affiliated": 5,
+          "grimoires": 15,
+          "nodesKnown": 15
+        },
+        {
+          "strategyId": "worship-maximizer",
+          "cellIndex": 0,
+          "replicateIndex": 17,
+          "living": 3,
+          "affiliated": 3,
+          "grimoires": 0,
+          "nodesKnown": 1
+        },
+        {
+          "strategyId": "idle-then-declare",
+          "cellIndex": 0,
+          "replicateIndex": 18,
+          "living": 4,
+          "affiliated": 4,
+          "grimoires": 0,
+          "nodesKnown": 51
+        },
+        {
+          "strategyId": "permit-then-idle",
+          "cellIndex": 0,
+          "replicateIndex": 19,
+          "living": 5,
+          "affiliated": 5,
+          "grimoires": 0,
+          "nodesKnown": 116
+        }
+      ]
+    },
+    {
+      "arm": "dwarf",
+      "mask": 2,
+      "n": 20,
+      "living": {
+        "n": 20,
+        "mean": 18.85,
+        "se": 16.117051284439814
+      },
+      "affiliated": {
+        "n": 20,
+        "mean": 18.85,
+        "se": 16.117051284439814
+      },
+      "grimoires": {
+        "n": 20,
+        "mean": 51.8,
+        "se": 18.78991890965948
+      },
+      "nodesKnown": {
+        "n": 20,
+        "mean": 26.9,
+        "se": 7.776448925746046
+      },
+      "affiliatedShare": 1,
+      "grimoiresPerMage": 2.748010610079575,
+      "runs": [
+        {
+          "strategyId": "passive-control",
+          "cellIndex": 1,
+          "replicateIndex": 0,
+          "living": 3,
+          "affiliated": 3,
+          "grimoires": 27,
+          "nodesKnown": 47
+        },
+        {
+          "strategyId": "uniform-random-legal",
+          "cellIndex": 1,
+          "replicateIndex": 1,
+          "living": 2,
+          "affiliated": 2,
+          "grimoires": 15,
+          "nodesKnown": 28
+        },
+        {
+          "strategyId": "permissive-breadth",
+          "cellIndex": 1,
+          "replicateIndex": 2,
+          "living": 3,
+          "affiliated": 3,
+          "grimoires": 33,
+          "nodesKnown": 1
+        },
+        {
+          "strategyId": "narrow-depth",
+          "cellIndex": 1,
+          "replicateIndex": 3,
+          "living": 2,
+          "affiliated": 2,
+          "grimoires": 24,
+          "nodesKnown": 3
+        },
+        {
+          "strategyId": "denial-warden",
+          "cellIndex": 1,
+          "replicateIndex": 4,
+          "living": 3,
+          "affiliated": 3,
+          "grimoires": 107,
+          "nodesKnown": 10
+        },
+        {
+          "strategyId": "archivist",
+          "cellIndex": 1,
+          "replicateIndex": 5,
+          "living": 2,
+          "affiliated": 2,
+          "grimoires": 20,
+          "nodesKnown": 1
+        },
+        {
+          "strategyId": "portal-rush",
+          "cellIndex": 1,
+          "replicateIndex": 6,
+          "living": 2,
+          "affiliated": 2,
+          "grimoires": 30,
+          "nodesKnown": 6
+        },
+        {
+          "strategyId": "worship-maximizer",
+          "cellIndex": 1,
+          "replicateIndex": 7,
+          "living": 3,
+          "affiliated": 3,
+          "grimoires": 27,
+          "nodesKnown": 1
+        },
+        {
+          "strategyId": "idle-then-declare",
+          "cellIndex": 1,
+          "replicateIndex": 8,
+          "living": 9,
+          "affiliated": 9,
+          "grimoires": 30,
+          "nodesKnown": 48
+        },
+        {
+          "strategyId": "permit-then-idle",
+          "cellIndex": 1,
+          "replicateIndex": 9,
+          "living": 2,
+          "affiliated": 2,
+          "grimoires": 30,
+          "nodesKnown": 143
+        },
+        {
+          "strategyId": "passive-control",
+          "cellIndex": 1,
+          "replicateIndex": 10,
+          "living": 2,
+          "affiliated": 2,
+          "grimoires": 27,
+          "nodesKnown": 1
+        },
+        {
+          "strategyId": "uniform-random-legal",
+          "cellIndex": 1,
+          "replicateIndex": 11,
+          "living": 1,
+          "affiliated": 1,
+          "grimoires": 15,
+          "nodesKnown": 48
+        },
+        {
+          "strategyId": "permissive-breadth",
+          "cellIndex": 1,
+          "replicateIndex": 12,
+          "living": 3,
+          "affiliated": 3,
+          "grimoires": 33,
+          "nodesKnown": 1
+        },
+        {
+          "strategyId": "narrow-depth",
+          "cellIndex": 1,
+          "replicateIndex": 13,
+          "living": 2,
+          "affiliated": 2,
+          "grimoires": 33,
+          "nodesKnown": 4
+        },
+        {
+          "strategyId": "denial-warden",
+          "cellIndex": 1,
+          "replicateIndex": 14,
+          "living": 3,
+          "affiliated": 3,
+          "grimoires": 95,
+          "nodesKnown": 4
+        },
+        {
+          "strategyId": "archivist",
+          "cellIndex": 1,
+          "replicateIndex": 15,
+          "living": 325,
+          "affiliated": 325,
+          "grimoires": 15,
+          "nodesKnown": 41
+        },
+        {
+          "strategyId": "portal-rush",
+          "cellIndex": 1,
+          "replicateIndex": 16,
+          "living": 3,
+          "affiliated": 3,
+          "grimoires": 394,
+          "nodesKnown": 1
+        },
+        {
+          "strategyId": "worship-maximizer",
+          "cellIndex": 1,
+          "replicateIndex": 17,
+          "living": 2,
+          "affiliated": 2,
+          "grimoires": 24,
+          "nodesKnown": 48
+        },
+        {
+          "strategyId": "idle-then-declare",
+          "cellIndex": 1,
+          "replicateIndex": 18,
+          "living": 3,
+          "affiliated": 3,
+          "grimoires": 21,
+          "nodesKnown": 47
+        },
+        {
+          "strategyId": "permit-then-idle",
+          "cellIndex": 1,
+          "replicateIndex": 19,
+          "living": 2,
+          "affiliated": 2,
+          "grimoires": 36,
+          "nodesKnown": 55
+        }
+      ]
+    },
+    {
+      "arm": "elf",
+      "mask": 4,
+      "n": 20,
+      "living": {
+        "n": 20,
+        "mean": 3.4,
+        "se": 0.15217718205053643
+      },
+      "affiliated": {
+        "n": 20,
+        "mean": 3.4,
+        "se": 0.15217718205053643
+      },
+      "grimoires": {
+        "n": 20,
+        "mean": 69.75,
+        "se": 27.380445865425084
+      },
+      "nodesKnown": {
+        "n": 20,
+        "mean": 59.3,
+        "se": 10.412315582495264
+      },
+      "affiliatedShare": 1,
+      "grimoiresPerMage": 20.514705882352942,
+      "runs": [
+        {
+          "strategyId": "passive-control",
+          "cellIndex": 2,
+          "replicateIndex": 0,
+          "living": 4,
+          "affiliated": 4,
+          "grimoires": 24,
+          "nodesKnown": 51
+        },
+        {
+          "strategyId": "uniform-random-legal",
+          "cellIndex": 2,
+          "replicateIndex": 1,
+          "living": 3,
+          "affiliated": 3,
+          "grimoires": 15,
+          "nodesKnown": 51
+        },
+        {
+          "strategyId": "permissive-breadth",
+          "cellIndex": 2,
+          "replicateIndex": 2,
+          "living": 3,
+          "affiliated": 3,
+          "grimoires": 0,
+          "nodesKnown": 143
+        },
+        {
+          "strategyId": "narrow-depth",
+          "cellIndex": 2,
+          "replicateIndex": 3,
+          "living": 4,
+          "affiliated": 4,
+          "grimoires": 153,
+          "nodesKnown": 5
+        },
+        {
+          "strategyId": "denial-warden",
+          "cellIndex": 2,
+          "replicateIndex": 4,
+          "living": 4,
+          "affiliated": 4,
+          "grimoires": 0,
+          "nodesKnown": 0
+        },
+        {
+          "strategyId": "archivist",
+          "cellIndex": 2,
+          "replicateIndex": 5,
+          "living": 3,
+          "affiliated": 3,
+          "grimoires": 202,
+          "nodesKnown": 49
+        },
+        {
+          "strategyId": "portal-rush",
+          "cellIndex": 2,
+          "replicateIndex": 6,
+          "living": 3,
+          "affiliated": 3,
+          "grimoires": 3,
+          "nodesKnown": 50
+        },
+        {
+          "strategyId": "worship-maximizer",
+          "cellIndex": 2,
+          "replicateIndex": 7,
+          "living": 4,
+          "affiliated": 4,
+          "grimoires": 22,
+          "nodesKnown": 51
+        },
+        {
+          "strategyId": "idle-then-declare",
+          "cellIndex": 2,
+          "replicateIndex": 8,
+          "living": 2,
+          "affiliated": 2,
+          "grimoires": 20,
+          "nodesKnown": 51
+        },
+        {
+          "strategyId": "permit-then-idle",
+          "cellIndex": 2,
+          "replicateIndex": 9,
+          "living": 4,
+          "affiliated": 4,
+          "grimoires": 0,
+          "nodesKnown": 143
+        },
+        {
+          "strategyId": "passive-control",
+          "cellIndex": 2,
+          "replicateIndex": 10,
+          "living": 3,
+          "affiliated": 3,
+          "grimoires": 22,
+          "nodesKnown": 51
+        },
+        {
+          "strategyId": "uniform-random-legal",
+          "cellIndex": 2,
+          "replicateIndex": 11,
+          "living": 3,
+          "affiliated": 3,
+          "grimoires": 367,
+          "nodesKnown": 51
+        },
+        {
+          "strategyId": "permissive-breadth",
+          "cellIndex": 2,
+          "replicateIndex": 12,
+          "living": 4,
+          "affiliated": 4,
+          "grimoires": 0,
+          "nodesKnown": 143
+        },
+        {
+          "strategyId": "narrow-depth",
+          "cellIndex": 2,
+          "replicateIndex": 13,
+          "living": 4,
+          "affiliated": 4,
+          "grimoires": 24,
+          "nodesKnown": 5
+        },
+        {
+          "strategyId": "denial-warden",
+          "cellIndex": 2,
+          "replicateIndex": 14,
+          "living": 4,
+          "affiliated": 4,
+          "grimoires": 0,
+          "nodesKnown": 0
+        },
+        {
+          "strategyId": "archivist",
+          "cellIndex": 2,
+          "replicateIndex": 15,
+          "living": 4,
+          "affiliated": 4,
+          "grimoires": 15,
+          "nodesKnown": 51
+        },
+        {
+          "strategyId": "portal-rush",
+          "cellIndex": 2,
+          "replicateIndex": 16,
+          "living": 3,
+          "affiliated": 3,
+          "grimoires": 5,
+          "nodesKnown": 50
+        },
+        {
+          "strategyId": "worship-maximizer",
+          "cellIndex": 2,
+          "replicateIndex": 17,
+          "living": 2,
+          "affiliated": 2,
+          "grimoires": 114,
+          "nodesKnown": 51
+        },
+        {
+          "strategyId": "idle-then-declare",
+          "cellIndex": 2,
+          "replicateIndex": 18,
+          "living": 3,
+          "affiliated": 3,
+          "grimoires": 409,
+          "nodesKnown": 51
+        },
+        {
+          "strategyId": "permit-then-idle",
+          "cellIndex": 2,
+          "replicateIndex": 19,
+          "living": 4,
+          "affiliated": 4,
+          "grimoires": 0,
+          "nodesKnown": 139
+        }
+      ]
+    },
+    {
+      "arm": "gnome",
+      "mask": 8,
+      "n": 20,
+      "living": {
+        "n": 20,
+        "mean": 21,
+        "se": 18.105974588225667
+      },
+      "affiliated": {
+        "n": 20,
+        "mean": 4.7,
+        "se": 2.1886068628239292
+      },
+      "grimoires": {
+        "n": 20,
+        "mean": 75.7,
+        "se": 24.864273672543863
+      },
+      "nodesKnown": {
+        "n": 20,
+        "mean": 61.85,
+        "se": 12.109864400127432
+      },
+      "affiliatedShare": 0.22380952380952382,
+      "grimoiresPerMage": 3.604761904761905,
+      "runs": [
+        {
+          "strategyId": "passive-control",
+          "cellIndex": 3,
+          "replicateIndex": 0,
+          "living": 3,
+          "affiliated": 3,
+          "grimoires": 0,
+          "nodesKnown": 49
+        },
+        {
+          "strategyId": "uniform-random-legal",
+          "cellIndex": 3,
+          "replicateIndex": 1,
+          "living": 2,
+          "affiliated": 2,
+          "grimoires": 82,
+          "nodesKnown": 49
+        },
+        {
+          "strategyId": "permissive-breadth",
+          "cellIndex": 3,
+          "replicateIndex": 2,
+          "living": 2,
+          "affiliated": 1,
+          "grimoires": 0,
+          "nodesKnown": 158
+        },
+        {
+          "strategyId": "narrow-depth",
+          "cellIndex": 3,
+          "replicateIndex": 3,
+          "living": 3,
+          "affiliated": 3,
+          "grimoires": 149,
+          "nodesKnown": 3
+        },
+        {
+          "strategyId": "denial-warden",
+          "cellIndex": 3,
+          "replicateIndex": 4,
+          "living": 4,
+          "affiliated": 4,
+          "grimoires": 0,
+          "nodesKnown": 0
+        },
+        {
+          "strategyId": "archivist",
+          "cellIndex": 3,
+          "replicateIndex": 5,
+          "living": 2,
+          "affiliated": 2,
+          "grimoires": 0,
+          "nodesKnown": 49
+        },
+        {
+          "strategyId": "portal-rush",
+          "cellIndex": 3,
+          "replicateIndex": 6,
+          "living": 4,
+          "affiliated": 4,
+          "grimoires": 7,
+          "nodesKnown": 49
+        },
+        {
+          "strategyId": "worship-maximizer",
+          "cellIndex": 3,
+          "replicateIndex": 7,
+          "living": 4,
+          "affiliated": 4,
+          "grimoires": 24,
+          "nodesKnown": 49
+        },
+        {
+          "strategyId": "idle-then-declare",
+          "cellIndex": 3,
+          "replicateIndex": 8,
+          "living": 3,
+          "affiliated": 3,
+          "grimoires": 0,
+          "nodesKnown": 49
+        },
+        {
+          "strategyId": "permit-then-idle",
+          "cellIndex": 3,
+          "replicateIndex": 9,
+          "living": 2,
+          "affiliated": 0,
+          "grimoires": 0,
+          "nodesKnown": 158
+        },
+        {
+          "strategyId": "passive-control",
+          "cellIndex": 3,
+          "replicateIndex": 10,
+          "living": 2,
+          "affiliated": 2,
+          "grimoires": 24,
+          "nodesKnown": 49
+        },
+        {
+          "strategyId": "uniform-random-legal",
+          "cellIndex": 3,
+          "replicateIndex": 11,
+          "living": 365,
+          "affiliated": 46,
+          "grimoires": 335,
+          "nodesKnown": 49
+        },
+        {
+          "strategyId": "permissive-breadth",
+          "cellIndex": 3,
+          "replicateIndex": 12,
+          "living": 3,
+          "affiliated": 1,
+          "grimoires": 0,
+          "nodesKnown": 166
+        },
+        {
+          "strategyId": "narrow-depth",
+          "cellIndex": 3,
+          "replicateIndex": 13,
+          "living": 3,
+          "affiliated": 3,
+          "grimoires": 137,
+          "nodesKnown": 3
+        },
+        {
+          "strategyId": "denial-warden",
+          "cellIndex": 3,
+          "replicateIndex": 14,
+          "living": 3,
+          "affiliated": 3,
+          "grimoires": 0,
+          "nodesKnown": 0
+        },
+        {
+          "strategyId": "archivist",
+          "cellIndex": 3,
+          "replicateIndex": 15,
+          "living": 3,
+          "affiliated": 3,
+          "grimoires": 271,
+          "nodesKnown": 49
+        },
+        {
+          "strategyId": "portal-rush",
+          "cellIndex": 3,
+          "replicateIndex": 16,
+          "living": 4,
+          "affiliated": 4,
+          "grimoires": 6,
+          "nodesKnown": 49
+        },
+        {
+          "strategyId": "worship-maximizer",
+          "cellIndex": 3,
+          "replicateIndex": 17,
+          "living": 3,
+          "affiliated": 3,
+          "grimoires": 250,
+          "nodesKnown": 49
+        },
+        {
+          "strategyId": "idle-then-declare",
+          "cellIndex": 3,
+          "replicateIndex": 18,
+          "living": 2,
+          "affiliated": 2,
+          "grimoires": 229,
+          "nodesKnown": 49
+        },
+        {
+          "strategyId": "permit-then-idle",
+          "cellIndex": 3,
+          "replicateIndex": 19,
+          "living": 3,
+          "affiliated": 1,
+          "grimoires": 0,
+          "nodesKnown": 161
+        }
+      ]
+    },
+    {
+      "arm": "human",
+      "mask": 16,
+      "n": 20,
+      "living": {
+        "n": 20,
+        "mean": 168.1,
+        "se": 53.65660306645939
+      },
+      "affiliated": {
+        "n": 20,
+        "mean": 167.95,
+        "se": 53.55339072266793
+      },
+      "grimoires": {
+        "n": 20,
+        "mean": 17.65,
+        "se": 12.480990809184474
+      },
+      "nodesKnown": {
+        "n": 20,
+        "mean": 43.05,
+        "se": 9.25216190952147
+      },
+      "affiliatedShare": 0.9991076740035693,
+      "grimoiresPerMage": 0.1049970255800119,
+      "runs": [
+        {
+          "strategyId": "passive-control",
+          "cellIndex": 4,
+          "replicateIndex": 0,
+          "living": 133,
+          "affiliated": 133,
+          "grimoires": 0,
+          "nodesKnown": 49
+        },
+        {
+          "strategyId": "uniform-random-legal",
+          "cellIndex": 4,
+          "replicateIndex": 1,
+          "living": 629,
+          "affiliated": 628,
+          "grimoires": 0,
+          "nodesKnown": 49
+        },
+        {
+          "strategyId": "permissive-breadth",
+          "cellIndex": 4,
+          "replicateIndex": 2,
+          "living": 229,
+          "affiliated": 229,
+          "grimoires": 0,
+          "nodesKnown": 111
+        },
+        {
+          "strategyId": "narrow-depth",
+          "cellIndex": 4,
+          "replicateIndex": 3,
+          "living": 1,
+          "affiliated": 1,
+          "grimoires": 137,
+          "nodesKnown": 5
+        },
+        {
+          "strategyId": "denial-warden",
+          "cellIndex": 4,
+          "replicateIndex": 4,
+          "living": 4,
+          "affiliated": 4,
+          "grimoires": 0,
+          "nodesKnown": 0
+        },
+        {
+          "strategyId": "archivist",
+          "cellIndex": 4,
+          "replicateIndex": 5,
+          "living": 0,
+          "affiliated": 0,
+          "grimoires": 0,
+          "nodesKnown": 0
+        },
+        {
+          "strategyId": "portal-rush",
+          "cellIndex": 4,
+          "replicateIndex": 6,
+          "living": 129,
+          "affiliated": 129,
+          "grimoires": 0,
+          "nodesKnown": 49
+        },
+        {
+          "strategyId": "worship-maximizer",
+          "cellIndex": 4,
+          "replicateIndex": 7,
+          "living": 205,
+          "affiliated": 205,
+          "grimoires": 0,
+          "nodesKnown": 49
+        },
+        {
+          "strategyId": "idle-then-declare",
+          "cellIndex": 4,
+          "replicateIndex": 8,
+          "living": 172,
+          "affiliated": 172,
+          "grimoires": 0,
+          "nodesKnown": 45
+        },
+        {
+          "strategyId": "permit-then-idle",
+          "cellIndex": 4,
+          "replicateIndex": 9,
+          "living": 144,
+          "affiliated": 144,
+          "grimoires": 0,
+          "nodesKnown": 127
+        },
+        {
+          "strategyId": "passive-control",
+          "cellIndex": 4,
+          "replicateIndex": 10,
+          "living": 139,
+          "affiliated": 139,
+          "grimoires": 0,
+          "nodesKnown": 46
+        },
+        {
+          "strategyId": "uniform-random-legal",
+          "cellIndex": 4,
+          "replicateIndex": 11,
+          "living": 0,
+          "affiliated": 0,
+          "grimoires": 0,
+          "nodesKnown": 0
+        },
+        {
+          "strategyId": "permissive-breadth",
+          "cellIndex": 4,
+          "replicateIndex": 12,
+          "living": 144,
+          "affiliated": 144,
+          "grimoires": 0,
+          "nodesKnown": 135
+        },
+        {
+          "strategyId": "narrow-depth",
+          "cellIndex": 4,
+          "replicateIndex": 13,
+          "living": 2,
+          "affiliated": 2,
+          "grimoires": 216,
+          "nodesKnown": 5
+        },
+        {
+          "strategyId": "denial-warden",
+          "cellIndex": 4,
+          "replicateIndex": 14,
+          "living": 2,
+          "affiliated": 2,
+          "grimoires": 0,
+          "nodesKnown": 0
+        },
+        {
+          "strategyId": "archivist",
+          "cellIndex": 4,
+          "replicateIndex": 15,
+          "living": 990,
+          "affiliated": 988,
+          "grimoires": 0,
+          "nodesKnown": 46
+        },
+        {
+          "strategyId": "portal-rush",
+          "cellIndex": 4,
+          "replicateIndex": 16,
+          "living": 148,
+          "affiliated": 148,
+          "grimoires": 0,
+          "nodesKnown": 48
+        },
+        {
+          "strategyId": "worship-maximizer",
+          "cellIndex": 4,
+          "replicateIndex": 17,
+          "living": 145,
+          "affiliated": 145,
+          "grimoires": 0,
+          "nodesKnown": 49
+        },
+        {
+          "strategyId": "idle-then-declare",
+          "cellIndex": 4,
+          "replicateIndex": 18,
+          "living": 146,
+          "affiliated": 146,
+          "grimoires": 0,
+          "nodesKnown": 48
+        },
+        {
+          "strategyId": "permit-then-idle",
+          "cellIndex": 4,
+          "replicateIndex": 19,
+          "living": 0,
+          "affiliated": 0,
+          "grimoires": 0,
+          "nodesKnown": 0
+        }
+      ]
+    },
+    {
+      "arm": "orc",
+      "mask": 32,
+      "n": 20,
+      "living": {
+        "n": 20,
+        "mean": 126.85,
+        "se": 60.89673204437337
+      },
+      "affiliated": {
+        "n": 20,
+        "mean": 126.7,
+        "se": 60.81512536930439
+      },
+      "grimoires": {
+        "n": 20,
+        "mean": 3.55,
+        "se": 2.2141589825484527
+      },
+      "nodesKnown": {
+        "n": 20,
+        "mean": 28.05,
+        "se": 8.660094505379561
+      },
+      "affiliatedShare": 0.9988175009854159,
+      "grimoiresPerMage": 0.02798581001182499,
+      "runs": [
+        {
+          "strategyId": "passive-control",
+          "cellIndex": 5,
+          "replicateIndex": 0,
+          "living": 35,
+          "affiliated": 35,
+          "grimoires": 0,
+          "nodesKnown": 37
+        },
+        {
+          "strategyId": "uniform-random-legal",
+          "cellIndex": 5,
+          "replicateIndex": 1,
+          "living": 774,
+          "affiliated": 773,
+          "grimoires": 0,
+          "nodesKnown": 38
+        },
+        {
+          "strategyId": "permissive-breadth",
+          "cellIndex": 5,
+          "replicateIndex": 2,
+          "living": 32,
+          "affiliated": 32,
+          "grimoires": 0,
+          "nodesKnown": 84
+        },
+        {
+          "strategyId": "narrow-depth",
+          "cellIndex": 5,
+          "replicateIndex": 3,
+          "living": 0,
+          "affiliated": 0,
+          "grimoires": 0,
+          "nodesKnown": 0
+        },
+        {
+          "strategyId": "denial-warden",
+          "cellIndex": 5,
+          "replicateIndex": 4,
+          "living": 9,
+          "affiliated": 9,
+          "grimoires": 0,
+          "nodesKnown": 0
+        },
+        {
+          "strategyId": "archivist",
+          "cellIndex": 5,
+          "replicateIndex": 5,
+          "living": 2,
+          "affiliated": 2,
+          "grimoires": 0,
+          "nodesKnown": 2
+        },
+        {
+          "strategyId": "portal-rush",
+          "cellIndex": 5,
+          "replicateIndex": 6,
+          "living": 0,
+          "affiliated": 0,
+          "grimoires": 0,
+          "nodesKnown": 0
+        },
+        {
+          "strategyId": "worship-maximizer",
+          "cellIndex": 5,
+          "replicateIndex": 7,
+          "living": 0,
+          "affiliated": 0,
+          "grimoires": 0,
+          "nodesKnown": 0
+        },
+        {
+          "strategyId": "idle-then-declare",
+          "cellIndex": 5,
+          "replicateIndex": 8,
+          "living": 0,
+          "affiliated": 0,
+          "grimoires": 0,
+          "nodesKnown": 0
+        },
+        {
+          "strategyId": "permit-then-idle",
+          "cellIndex": 5,
+          "replicateIndex": 9,
+          "living": 40,
+          "affiliated": 40,
+          "grimoires": 0,
+          "nodesKnown": 120
+        },
+        {
+          "strategyId": "passive-control",
+          "cellIndex": 5,
+          "replicateIndex": 10,
+          "living": 0,
+          "affiliated": 0,
+          "grimoires": 0,
+          "nodesKnown": 0
+        },
+        {
+          "strategyId": "uniform-random-legal",
+          "cellIndex": 5,
+          "replicateIndex": 11,
+          "living": 796,
+          "affiliated": 795,
+          "grimoires": 35,
+          "nodesKnown": 38
+        },
+        {
+          "strategyId": "permissive-breadth",
+          "cellIndex": 5,
+          "replicateIndex": 12,
+          "living": 51,
+          "affiliated": 51,
+          "grimoires": 29,
+          "nodesKnown": 120
+        },
+        {
+          "strategyId": "narrow-depth",
+          "cellIndex": 5,
+          "replicateIndex": 13,
+          "living": 23,
+          "affiliated": 23,
+          "grimoires": 0,
+          "nodesKnown": 5
+        },
+        {
+          "strategyId": "denial-warden",
+          "cellIndex": 5,
+          "replicateIndex": 14,
+          "living": 4,
+          "affiliated": 4,
+          "grimoires": 0,
+          "nodesKnown": 0
+        },
+        {
+          "strategyId": "archivist",
+          "cellIndex": 5,
+          "replicateIndex": 15,
+          "living": 699,
+          "affiliated": 698,
+          "grimoires": 0,
+          "nodesKnown": 38
+        },
+        {
+          "strategyId": "portal-rush",
+          "cellIndex": 5,
+          "replicateIndex": 16,
+          "living": 41,
+          "affiliated": 41,
+          "grimoires": 0,
+          "nodesKnown": 38
+        },
+        {
+          "strategyId": "worship-maximizer",
+          "cellIndex": 5,
+          "replicateIndex": 17,
+          "living": 31,
+          "affiliated": 31,
+          "grimoires": 0,
+          "nodesKnown": 34
+        },
+        {
+          "strategyId": "idle-then-declare",
+          "cellIndex": 5,
+          "replicateIndex": 18,
+          "living": 0,
+          "affiliated": 0,
+          "grimoires": 7,
+          "nodesKnown": 7
+        },
+        {
+          "strategyId": "permit-then-idle",
+          "cellIndex": 5,
+          "replicateIndex": 19,
+          "living": 0,
+          "affiliated": 0,
+          "grimoires": 0,
+          "nodesKnown": 0
+        }
+      ]
+    },
+    {
+      "arm": "all-six",
+      "mask": 0,
+      "n": 20,
+      "living": {
+        "n": 20,
+        "mean": 325.5,
+        "se": 161.62429631059413
+      },
+      "affiliated": {
+        "n": 20,
+        "mean": 235.2,
+        "se": 116.38709460019044
+      },
+      "grimoires": {
+        "n": 20,
+        "mean": 275.95,
+        "se": 52.98338741629552
+      },
+      "nodesKnown": {
+        "n": 20,
+        "mean": 71.6,
+        "se": 15.410078725165212
+      },
+      "affiliatedShare": 0.7225806451612903,
+      "grimoiresPerMage": 0.8477726574500768,
+      "runs": [
+        {
+          "strategyId": "passive-control",
+          "cellIndex": 6,
+          "replicateIndex": 0,
+          "living": 74,
+          "affiliated": 68,
+          "grimoires": 141,
+          "nodesKnown": 51
+        },
+        {
+          "strategyId": "uniform-random-legal",
+          "cellIndex": 6,
+          "replicateIndex": 1,
+          "living": 372,
+          "affiliated": 169,
+          "grimoires": 466,
+          "nodesKnown": 51
+        },
+        {
+          "strategyId": "permissive-breadth",
+          "cellIndex": 6,
+          "replicateIndex": 2,
+          "living": 57,
+          "affiliated": 54,
+          "grimoires": 424,
+          "nodesKnown": 196
+        },
+        {
+          "strategyId": "narrow-depth",
+          "cellIndex": 6,
+          "replicateIndex": 3,
+          "living": 15,
+          "affiliated": 15,
+          "grimoires": 60,
+          "nodesKnown": 6
+        },
+        {
+          "strategyId": "denial-warden",
+          "cellIndex": 6,
+          "replicateIndex": 4,
+          "living": 20,
+          "affiliated": 20,
+          "grimoires": 65,
+          "nodesKnown": 3
+        },
+        {
+          "strategyId": "archivist",
+          "cellIndex": 6,
+          "replicateIndex": 5,
+          "living": 2487,
+          "affiliated": 1818,
+          "grimoires": 735,
+          "nodesKnown": 51
+        },
+        {
+          "strategyId": "portal-rush",
+          "cellIndex": 6,
+          "replicateIndex": 6,
+          "living": 75,
+          "affiliated": 73,
+          "grimoires": 133,
+          "nodesKnown": 51
+        },
+        {
+          "strategyId": "worship-maximizer",
+          "cellIndex": 6,
+          "replicateIndex": 7,
+          "living": 68,
+          "affiliated": 61,
+          "grimoires": 95,
+          "nodesKnown": 51
+        },
+        {
+          "strategyId": "idle-then-declare",
+          "cellIndex": 6,
+          "replicateIndex": 8,
+          "living": 58,
+          "affiliated": 55,
+          "grimoires": 136,
+          "nodesKnown": 51
+        },
+        {
+          "strategyId": "permit-then-idle",
+          "cellIndex": 6,
+          "replicateIndex": 9,
+          "living": 77,
+          "affiliated": 74,
+          "grimoires": 623,
+          "nodesKnown": 190
+        },
+        {
+          "strategyId": "passive-control",
+          "cellIndex": 6,
+          "replicateIndex": 10,
+          "living": 63,
+          "affiliated": 61,
+          "grimoires": 121,
+          "nodesKnown": 51
+        },
+        {
+          "strategyId": "uniform-random-legal",
+          "cellIndex": 6,
+          "replicateIndex": 11,
+          "living": 435,
+          "affiliated": 219,
+          "grimoires": 529,
+          "nodesKnown": 51
+        },
+        {
+          "strategyId": "permissive-breadth",
+          "cellIndex": 6,
+          "replicateIndex": 12,
+          "living": 44,
+          "affiliated": 41,
+          "grimoires": 468,
+          "nodesKnown": 206
+        },
+        {
+          "strategyId": "narrow-depth",
+          "cellIndex": 6,
+          "replicateIndex": 13,
+          "living": 14,
+          "affiliated": 14,
+          "grimoires": 56,
+          "nodesKnown": 6
+        },
+        {
+          "strategyId": "denial-warden",
+          "cellIndex": 6,
+          "replicateIndex": 14,
+          "living": 19,
+          "affiliated": 19,
+          "grimoires": 79,
+          "nodesKnown": 2
+        },
+        {
+          "strategyId": "archivist",
+          "cellIndex": 6,
+          "replicateIndex": 15,
+          "living": 2340,
+          "affiliated": 1680,
+          "grimoires": 696,
+          "nodesKnown": 51
+        },
+        {
+          "strategyId": "portal-rush",
+          "cellIndex": 6,
+          "replicateIndex": 16,
+          "living": 84,
+          "affiliated": 75,
+          "grimoires": 107,
+          "nodesKnown": 51
+        },
+        {
+          "strategyId": "worship-maximizer",
+          "cellIndex": 6,
+          "replicateIndex": 17,
+          "living": 75,
+          "affiliated": 71,
+          "grimoires": 112,
+          "nodesKnown": 51
+        },
+        {
+          "strategyId": "idle-then-declare",
+          "cellIndex": 6,
+          "replicateIndex": 18,
+          "living": 55,
+          "affiliated": 41,
+          "grimoires": 81,
+          "nodesKnown": 51
+        },
+        {
+          "strategyId": "permit-then-idle",
+          "cellIndex": 6,
+          "replicateIndex": 19,
+          "living": 78,
+          "affiliated": 76,
+          "grimoires": 392,
+          "nodesKnown": 211
+        }
+      ]
+    }
+  ]
+}

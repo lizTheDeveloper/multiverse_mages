@@ -4,9 +4,13 @@
 
 Mage behaviour SHALL be selected from a fixed enumeration of goals with stable integer ids:
 `idle`, `research-node`, `rediscover-node`, `seek-teaching`, `teach`, `scribe`, `affiliate`,
-`ward-duty`, and `raid-readiness`. Goal ids MUST be append-only; renumbering or reusing an id is
-forbidden, because goal ids are reported in balance metrics and committed baselines are keyed on
-them.
+`ward-duty`, `raid-readiness`, and `practice`. Goal ids MUST be append-only; renumbering or reusing
+an id is forbidden, because goal ids are reported in balance metrics and committed baselines are
+keyed on them.
+
+`practice` was appended after 0.4.0 and is the first exercise of the append-only rule. A baseline
+taken before it is a baseline over a nine-goal world and still means what it meant; a baseline
+taken after it is over a ten-goal world, and the two are not comparable on goal mix.
 
 #### Scenario: Goal ids are stable
 
@@ -22,6 +26,56 @@ them.
 
 - **WHEN** a mage has no feasible goal of any other kind
 - **THEN** it selects `idle`, and no "no goal selected" state is ever reached
+
+### Requirement: Practice restores mastery and competes for the month
+
+A mage SHALL be able to select `practice` on a node she already holds. Practice MUST accumulate
+mage-months against a requirement and, on reaching it, MUST raise that instance's mastery by a
+declared quantum, clamped at full mastery. It MUST be the only operation that raises mastery, and
+it MUST NOT be implemented inside the decay path — decay is a monotonically non-increasing function
+of mastery, unconditionally, and relaxing that reopens the re-permitted-fragment exploit recorded
+against it.
+
+Practice MUST be refused when the node's cell is not permitted, so that an interdiction cannot be
+reversed by the universe's own labour.
+
+#### Scenario: A stale scholar recovers the standing to supervise
+
+- **WHEN** a mage holds a node at a mastery below the teaching threshold and practises it for long
+  enough
+- **THEN** its mastery rises above the threshold and she may teach it again
+
+#### Scenario: Practice costs the month it spends
+
+- **WHEN** a mage's committed goal is `practice`
+- **THEN** she accrues no research, teaching or scribing progress that tick
+
+#### Scenario: An interdicted cell cannot be practised
+
+- **WHEN** a mage practises a node whose cell the ruleset forbids
+- **THEN** the operation is refused, her banked months are unchanged, and no mastery moves
+
+#### Scenario: Candidate ordering favours the stalest node
+
+- **WHEN** a mage's practisable nodes exceed the candidate bound
+- **THEN** the nodes retained are those she holds at the lowest mastery
+
+#### Scenario: Practice is offered for lost standing, not for any imperfection
+
+- **WHEN** a mage holds a node at or above the teaching threshold
+- **THEN** that node is not offered to her as a practice candidate, even though
+  the operation itself would still accept it
+
+Autonomy's candidate list MUST be narrower than the operation's own refusal, and
+narrower on this specific line. Mastery decays every tick, so *below full
+mastery* is a condition every held instance in the universe satisfies within a
+month — a goal gated on it is feasible for every mage on every tick forever and
+does not compete for the month, it wins it by default. It is also nearly
+worthless at its far end: a month spent on a node one point below full mastery
+buys one point back against the clamp. The two are allowed to differ in exactly
+one direction — never offer what the operation would refuse — and the narrowing
+is what makes practice a hysteresis loop around teaching standing rather than a
+permanent top-up.
 
 ### Requirement: Feasibility is a mask, not a weight
 

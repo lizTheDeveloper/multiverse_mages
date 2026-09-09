@@ -44,7 +44,12 @@
  */
 
 import { defineWorld } from '../../packages/sim-core/dist/index.js';
-import { KNOWLEDGE_INSTANCE, collectRecords } from '../../packages/state/dist/index.js';
+import {
+  KNOWLEDGE_INSTANCE,
+  collectRecords,
+  findUniverse,
+  readUniverse,
+} from '../../packages/state/dist/index.js';
 import { defineWorldSimulation } from '../../packages/coordination/dist/index.js';
 import { createSession } from '../../packages/agent-api/dist/index.js';
 import {
@@ -83,6 +88,33 @@ export const POOL = Object.freeze([
  * node"*: a held-set alone cannot tell the archivist's four thousand grimoires
  * from passive control's eleven hundred, and those are copies of the same set.
  */
+/**
+ * How much of the grid the god has actually bought, read off the ruleset masks.
+ *
+ * **Additive, and W158 is why.** Node count alone cannot distinguish *"the god
+ * could not afford a permit"* from *"the god bought the grid and the universe
+ * did not use it"* — the two produce the same terminal composition for opposite
+ * reasons. `permits()` reads exactly these two masks, so a popcount of them is
+ * the ruleset the run finished under, with no second notion of "open" anywhere.
+ *
+ * Nothing that existed before this function reads its output, so every number
+ * every earlier tool produced is unchanged.
+ */
+function openAxesOf(state) {
+  const universe = findUniverse(state);
+  if (universe === undefined) return { techniques: 0, forms: 0 };
+  const record = readUniverse(state, universe);
+  const popcount = (bits) => {
+    let n = 0;
+    for (let value = bits; value !== 0; value >>>= 1) n += value & 1;
+    return n;
+  };
+  return {
+    techniques: popcount(record.permittedTechniques),
+    forms: popcount(record.permittedForms),
+  };
+}
+
 function compositionOf(state) {
   const counts = new Map();
   for (const { row } of collectRecords(state, KNOWLEDGE_INSTANCE)) {
@@ -174,8 +206,12 @@ export function runOne(input) {
 
   const terminal =
     liveState === undefined
-      ? { worldTick: 0, nodeIds: [], counts: [] }
-      : { worldTick: episode.ticksRun, ...compositionOf(liveState) };
+      ? { worldTick: 0, nodeIds: [], counts: [], openAxes: { techniques: 0, forms: 0 } }
+      : {
+          worldTick: episode.ticksRun,
+          ...compositionOf(liveState),
+          openAxes: openAxesOf(liveState),
+        };
 
   return {
     strategyId,
@@ -186,6 +222,11 @@ export function runOne(input) {
     terminalReason: episode.terminalReason,
     ticksRun: episode.ticksRun,
     snapshotHash: raw.snapshotHash(),
+    // Additive (W158). `runEpisode` has always returned this; it was simply
+    // dropped here. It is the only reading that says whether a submission was
+    // *refused* rather than never made, which is what separates a price that
+    // slows a god down from one that deletes the verb.
+    accounting: episode.accounting,
     samples,
     terminal,
   };

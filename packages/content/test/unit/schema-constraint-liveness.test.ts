@@ -126,8 +126,7 @@ const SHADOWED: readonly { readonly constraint: string; readonly why: string }[]
     'god-constant',
     'raid-constant',
     'autonomy-weight',
-    'track',
-    'ritual',
+    'grade-edge',
   ] as const).map(
     (name) => ({
       constraint: `${name}.schema.json#/$defs/contentId minLength`,
@@ -136,6 +135,15 @@ const SHADOWED: readonly { readonly constraint: string; readonly why: string }[]
         'one character, so no string violates minLength without also violating pattern',
     }),
   ),
+  {
+    constraint: 'cell.schema.json#/$defs/cell/properties/excludes maxItems',
+    why:
+      'maxItems is 8 beside uniqueItems, and violating it needs 9 distinct exclusion objects. ' +
+      'The generator builds distinct elements by varying one scalar, and an exclusion is an ' +
+      'object whose `cell` must resolve and whose `resolution` is a 2-member enum, so it cannot ' +
+      'produce nine of them. Unproven for want of a generator rather than shadowed by a sibling — ' +
+      'recorded here because the alternative is leaving it silently unchecked',
+  },
   {
     constraint: 'cell.schema.json#/$defs/cell/properties/edicts maxItems',
     why:
@@ -148,16 +156,17 @@ const SHADOWED: readonly { readonly constraint: string; readonly why: string }[]
   // something" stays true as written.
   ...[
     'cell.schema.json#/$defs/cell/properties/edicts/items',
+    'cell.schema.json#/$defs/exclusion/properties/resolution',
     'node.schema.json#/$defs/node/properties/knowledgeKind',
     'node.schema.json#/$defs/node/properties/tuningStatus',
     'node.schema.json#/$defs/effect/properties/target',
-    'node.schema.json#/$defs/effect/properties/mode',
     'species.schema.json#/$defs/species/properties/tuningStatus',
     'form.schema.json#/$defs/form/properties/tuningStatus',
     'territory.schema.json#/$defs/territory/properties/tuningStatus',
     'primitive.schema.json#/$defs/primitive/properties/scale',
     'primitive.schema.json#/$defs/primitive/properties/stacking',
     'primitive.schema.json#/$defs/cap/properties/kind',
+    'technique.schema.json#/$defs/envelope/properties/tuningStatus',
     'god-cost.schema.json#/$defs/godCost/properties/tuningStatus',
     'god-constant.schema.json#/$defs/godConstant/properties/unit',
     'god-constant.schema.json#/$defs/godConstant/properties/tuningStatus',
@@ -166,23 +175,15 @@ const SHADOWED: readonly { readonly constraint: string; readonly why: string }[]
     'autonomy-weight.schema.json#/$defs/autonomyWeight/properties/unit',
     'autonomy-weight.schema.json#/$defs/autonomyWeight/properties/role',
     'autonomy-weight.schema.json#/$defs/autonomyWeight/properties/tuningStatus',
-    'track.schema.json#/$defs/track/properties/tuningStatus',
-    'ritual.schema.json#/$defs/ritual/properties/tuningStatus',
-    'ritual.schema.json#/$defs/effect/properties/target',
-    'ritual.schema.json#/$defs/effect/properties/mode',
+    'node.schema.json#/$defs/gradeRequirement/properties/kind',
+    'grade-edge.schema.json#/$defs/gradeEdge/properties/tuningStatus',
+    'grade-edge.schema.json#/$defs/gradedKind',
   ].map((pointer) => ({
     constraint: `${pointer} type`,
     why:
       'the sibling enum lists only strings, so any value that violates `type: "string"` violates ' +
       'the enum as well and the type assertion never fires alone',
   })),
-  {
-    constraint: 'node.schema.json#/$defs/condition required:kind',
-    why:
-      'every oneOf branch declares its own "required": ["kind"] (or a superset of it), so an ' +
-      'instance missing "kind" fails every branch regardless of whether the outer required is ' +
-      'present — the outer constraint restates what each branch already guarantees',
-  },
 ];
 
 const shipped = shippedContentDocuments();

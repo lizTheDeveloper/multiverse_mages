@@ -45,7 +45,7 @@ function contractsMarkdown(): string {
 }
 
 describe('the §7 table parser', () => {
-  it('finds exactly the eighteen metric names §7 tabulates', () => {
+  it('finds exactly the nineteen metric names §7 tabulates', () => {
     const ids = contractSection7MetricIds(contractsMarkdown());
     expect(ids).toEqual([
       'ascensionRate',
@@ -59,6 +59,9 @@ describe('the §7 table parser', () => {
       'knowledgeHalfLife',
       'libraryDependence',
       'lossShockRecovery',
+      // The nineteenth, and the first that reads a material stock rather than a
+      // knowledge or raid quantity.
+      'materialGradeProfile',
       'prestigeAdvantage',
       'raidInitiationCost',
       'raidLengthDistribution',

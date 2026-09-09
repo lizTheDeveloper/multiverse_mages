@@ -49,6 +49,7 @@ export {
   EDICT_BUDGET_MAX,
   EDICT_KIND,
   EFFORT_KIND,
+  GOD_ASSIGNABLE_MAGE_ROLES,
   HOLDER_KIND,
   LOCATION_KIND,
   MAGE_ROLE,
@@ -56,7 +57,10 @@ export {
   OBJECTIVE_STATUS,
   OCCUPATION,
   RAID_SIDE,
+  RULE_CHANGE_KIND,
+  RULE_SCOPE,
   TERMINAL_REASON,
+  isGodAssignableRole,
 } from './enums.js';
 export type {
   AscensionPathValue,
@@ -70,6 +74,8 @@ export type {
   ObjectiveStatusValue,
   OccupationValue,
   RaidSideValue,
+  RuleChangeKindValue,
+  RuleScopeValue,
   TerminalReasonValue,
 } from './enums.js';
 
@@ -88,6 +94,15 @@ export {
 export type { Edict, Ruleset, RulesetSnapshot } from './permits.js';
 export { assertNoEdictConflict, findEdictConflict, permits } from './permits.js';
 
+export type { RuleChange } from './rule-change.js';
+export {
+  changesLegality,
+  revertSurcharge,
+  ruleTargetInRange,
+  rulesetWith,
+  writeRuleChange,
+} from './rule-change.js';
+
 export type {
   AxisChangeCounterRecord,
   BlessingRecord,
@@ -98,6 +113,7 @@ export type {
   EffortProgressRecord,
   EncouragedCellRecord,
   Enum8,
+  BarPhaseRecord,
   EraEvaluationRecord,
   EverKnownRecord,
   Fp,
@@ -107,16 +123,22 @@ export type {
   GrimoireRecord,
   Handle,
   KeysMatch,
+  KnowledgeFidelityRecord,
   KnowledgeInstanceRecord,
   LibraryRecord,
   MageRecord,
+  MaterialGradeRecord,
   MaterialStockRecord,
+  MidRaidChangeRecord,
   ObjectiveRecord,
   PopulaceCohortRecord,
   PreparedSpellRecord,
+  StandingWorkingRecord,
+  TerritoryHoldingRecord,
   Tick,
   UniverseRecord,
   UniversityRecord,
+  UniversitySiteRecord,
   UniversityStaffRecord,
   UpheavalRecord,
 } from './components.js';
@@ -129,22 +151,29 @@ export {
   ENCOURAGED_CELL,
   ENGAGEMENT_COMPONENTS,
   ENGAGEMENT_MAX_SLOTS,
+  BAR_PHASE,
   ERA_EVALUATION,
   EVER_KNOWN,
   GOAL_COMMITMENT,
   GOD_STATE,
   GRANT_BUDGET,
   GRIMOIRE,
+  KNOWLEDGE_FIDELITY,
   KNOWLEDGE_INSTANCE,
   LIBRARY,
   MAGE,
+  MATERIAL_GRADE,
   MATERIAL_STOCK,
+  MID_RAID_CHANGE,
   OBJECTIVE,
   POPULACE_COHORT,
   POSITION_FIELD_NAMES,
   PREPARED_SPELL,
+  STANDING_WORKING,
+  TERRITORY_HOLDING,
   UNIVERSE,
   UNIVERSITY,
+  UNIVERSITY_SITE,
   UNIVERSITY_STAFF,
   UPHEAVAL,
   WORLD_COMPONENTS,
@@ -163,7 +192,13 @@ export {
   addGoalCommitment,
   addGodAgencyState,
   addGrantBudget,
+  addMidRaidChange,
+  addTerritorySiting,
+  addKnowledgeFidelity,
+  addMaterialGrade,
+  addStandingWorking,
   splitMaterialsByKind,
+  widenMaterialStock,
   loadWorldSnapshot,
   migrateWorldEnvelope,
   worldSchemaVersionOf,
@@ -172,6 +207,7 @@ export {
 export type { RowOf } from './records.js';
 export { attachRecord, collectRecords, readRecord } from './records.js';
 
+export type { MidRaidMark } from './universe.js';
 export {
   assertTraditionSelected,
   canIssueEdict,
@@ -179,8 +215,10 @@ export {
   readRulesetForObservation,
   createUniverse,
   currentEra,
+  findMidRaidMark,
   findUniverse,
   readEdicts,
+  readMidRaidMarks,
   readUniverse,
 } from './universe.js';
 

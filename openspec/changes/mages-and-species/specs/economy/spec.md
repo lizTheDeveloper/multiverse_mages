@@ -77,8 +77,33 @@ their species' `idle` cohort.
 
 At most a documented `transferRatePerTick` fraction of a cohort SHALL change occupation in a single
 world tick. Reallocation MUST be driven by demand from universities under construction, the scribing
-queue, university capacity, and the standing soldier target, and MUST be deterministic in its
-allocation order.
+queue, university capacity, the standing soldier target, and **the materials the universe owes this
+tick**, and MUST be deterministic in its allocation order.
+
+> **Amended by W23, and the reason is measured.** This requirement originally named four drivers,
+> and it was written before anything had run a universe for two hundred years. When something did,
+> the reference run reached tick 2,400 with **17,188 idle people against 67 laborers**: the four
+> drivers together ask for roughly a hundred jobs however large the populace grows, everybody else
+> falls back to `idle`, and an idle person eats a material and produces none. Material production
+> therefore never tracked what the universe owed. The stock emptied around tick 600 and never
+> returned, library upkeep went unpaid from then on, and vision §5's written record decayed to
+> **zero instances of fifty-one nodes** — one of §5's four knowledge locations surviving at the end
+> of a run.
+>
+> The fifth driver is subsistence plus library upkeep, divided by the reference per-laborer yield
+> (`rules-world/src/populace/demand.ts`). It is a **want**, not an affordability check: §6a's *"a
+> universe can be knowledge-rich and unable to write any of it down"* stays enforced at the desk,
+> where scribing refuses on insufficient materials.
+>
+> **What this deliberately creates, and what 0.5.0 must revisit.** The obligation includes library
+> upkeep, so the economy now commissions its own shelf-keeping: a deeper library asks for the
+> laborers that pay for it. Brake 4 therefore binds against **carrying capacity** rather than against
+> a fixed production floor, and a universe near `K` can afford a much larger shelf than one that is
+> not. That is a real change to how expensive hoarding is, accepted because a written record that
+> cannot persist makes §5 meaningless, and it is a magnitude question — not a mechanism one — for
+> the balance harness to settle. It is **not** a licence for a sixth driver: a driver belongs here
+> only if it is a quantity the universe owes or wants, readable from world state, and traceable to a
+> vision sentence.
 
 #### Scenario: Reallocation is gradual
 
@@ -300,12 +325,45 @@ NOT go negative.
 - **THEN** the carrying capacity `K` falls, births fall, and the effect is recorded rather than
   applied silently
 
-### Requirement: The economy has exactly three tracked inputs
+### Requirement: The economy has exactly three tracked inputs, plus Vis
 
-The economy SHALL track exactly three inputs — populace, materials, and knowledge-as-capital — and
-MUST NOT introduce a fourth resource. Favor and worship are the god's currency and are owned by
+The economy SHALL track exactly **four** inputs — populace, materials, knowledge-as-capital, and
+**Vis** — and MUST NOT introduce a fifth. Favor and worship are the god's currency and are owned by
 `god-agency`; this capability MAY expose the counts worship is computed from but MUST NOT define or
 compute worship.
+
+> **Amended 2026-08-12 by `raid-engagement`, deliberately and by the author's ruling.** The
+> requirement as originally written and shipped read:
+>
+> > The economy SHALL track exactly three inputs — populace, materials, and knowledge-as-capital —
+> > and MUST NOT introduce a fourth resource.
+>
+> It is quoted verbatim rather than deleted, because a requirement that is quietly rewritten is a
+> requirement nobody can tell was ever violated. The sentence above replaces it.
+
+**Why the fourth exists.** `docs/design/raid-engagement.md` §3 rules that the attacker in a raid
+spends Vis: a portable, lootable stock of magical fuel carried through the portal, spent to help the
+attack, capturable, and whose exhaustion is what ends an over-extended raid. That asymmetry — *the
+defender spends favor, the attacker spends something else* — is the whole of why a raid is a matchup
+rather than a dice roll, and it rests on the attacker's currency **not** being favor. Favor comes
+from a populace's worship, and a raiding party is standing where its worshippers do not live.
+
+A stock carried through a portal has to have been produced and stored somewhere first, which makes
+Vis an economic input at world scale whether or not this capability implements it today. Recording
+that here, in the requirement it contradicts, is the point: the alternative is that whoever adds Vis
+production later trips a loader invariant and has to decide, alone and under time pressure, whether a
+shipped requirement or a shipped design is wrong.
+
+**What is and is not built.** As of `raid-engagement`, Vis exists only inside an engagement: seeded
+at portal open from the authored `attacker-vis-stock`, spent by the attacker's raid verbs, and
+reported on `RaidOutcome` as spent and as captured. **There is no world-scale Vis stock, no
+production, and no store**, and captured Vis is therefore recorded rather than banked. Building
+those belongs to this capability, and this requirement is what says the door is open.
+
+**What did not change.** Favor and worship stay the god's, owned by `god-agency`, and this
+capability still MUST NOT write either. `ECONOMIC_INPUTS` in `packages/rules-world/src/economy/` is
+still the countable list that makes the bound checkable rather than asserted in prose; it gains an
+entry when world-scale Vis lands, and not before.
 
 > **W29 reads this requirement as unchanged, and says so explicitly because the reading is
 > arguable.**
@@ -321,11 +379,21 @@ compute worship.
 > change violates it and the requirement needs rewording rather than annotating. That is a question
 > for the author, and it is raised here rather than settled.
 
-#### Scenario: No fourth resource
+> **Still true after the `raid-engagement` amendment above.** W29 is arguing about the *materials*
+> split, and the amendment is about Vis; neither disturbs the other. The clause W29 quotes is the
+> one quoted verbatim in the amendment, which is now "MUST NOT introduce a fifth".
+
+#### Scenario: No fifth resource
 
 - **WHEN** the economy's tracked resources are enumerated
-- **THEN** exactly populace, materials, and knowledge-as-capital appear, and `favor` and `worship`
-  are read-only universe fields this capability never writes
+- **THEN** exactly populace, materials, knowledge-as-capital, and — once world-scale Vis lands — Vis
+  appear, and `favor` and `worship` are read-only universe fields this capability never writes
+
+#### Scenario: Vis is raid-scoped until this capability gives it a store
+
+- **WHEN** a raid resolves with the attacker holding unspent Vis
+- **THEN** the amount is reported on the raid outcome as spent and as captured, and no world-scale
+  stock is written anywhere, because none exists
 
 #### Scenario: Worship inputs are exposed, not computed
 

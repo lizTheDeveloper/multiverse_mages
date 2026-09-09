@@ -150,8 +150,8 @@ cannot be made at all — and per `release-plan.md`, must not be.
 | **INV-26** | No committed balance baseline moves beyond tolerance without deliberate acknowledgement. A primitive whose measured win-rate contribution shifts past its band fails CI. | A baseline diff landing silently. | Balance regression gate | **S** | 0.5.0 |
 | **INV-27** | No scripted god strategy exceeds a 65% win rate against the bot pool. | A tournament sweep where any strategy exceeds it. | Tournament sweep | **S** | 0.6.0 |
 | **INV-28** | The worship loop does not run away: `worshipSnowball` stays below threshold at every measured tick count. | The Gini coefficient exceeding threshold at any measured point. | Snowball metric | **S** | 0.6.0 |
-| **INV-29** | The knowledge-capital loop does not run away: library depth → mage quality → research rate → library depth stays within its band, measured independently of the worship loop. | The compounding metric leaving its band, or the two loops jointly producing a runaway that neither shows alone. | **To be defined** — see Gaps | **S** | 0.6.0 |
-| **INV-30** | Ascension stays a summit: the share of runs that ascend stays inside a band — not a majority, not almost none. | The ascension rate leaving the band in either direction. | **To be defined** — see Gaps | **S** | 0.6.0 |
+| **INV-29** | The knowledge-capital loop does not run away: library depth → mage quality → research rate → library depth stays within its band, measured independently of the worship loop. | The compounding metric leaving its band, or the two loops jointly producing a runaway that neither shows alone. | ~~**To be defined**~~ **`capitalSnowball`, defined at `packages/mc-harness/src/metrics-registry.ts:271`** — corrected 2026-08-15 at `08ca5368`. A Gini over distinct nodes held in library-kind instances, at `worshipSnowball`'s own checkpoint ticks, `definitionVersion: 1`. **Defined and collected; gated on nothing** — no committed baseline carries a value or a tolerance for it, and the *joint* measurement this row's disproof clause asks for does not exist. See Gaps §1 | **S** | 0.6.0 |
+| **INV-30** | Ascension stays a summit: the share of runs that ascend stays inside a band — not a majority, not almost none. | The ascension rate leaving the band in either direction. | ~~**To be defined**~~ **`ascensionRate`, defined at `packages/mc-harness/src/metrics-registry.ts:318`** — corrected 2026-08-15 at `08ca5368`. The band is already pinned: `targetBandMin: 0.05`, `targetBandMax: 0.2`. The definition string ends *"Target band 5–20%, **reported not enforced**"*, which is the gap in one phrase. See Gaps §2 | **S** | 0.6.0 |
 | **INV-31** | Prestige does not decide matches: `prestigeAdvantage` stays under 60%, and prestige does not compound without bound across runs. | The metric exceeding it, or unbounded growth across chained runs. | Prestige sweep | **S** | 0.10.0 |
 | **INV-32** | Zero desyncs. Across 1,000 automated matches, both clients produce identical final snapshot hashes. | One mismatch. | Automated match harness | **S** | 0.10.0 |
 
@@ -185,13 +185,28 @@ worship and knowledge-as-capital — says they feed each other, and says "the ba
 watch it specifically." `release-plan.md` claims `worshipSnowball` at 0.6.0 and `libraryDependence`
 at 0.7.0, but the latter is framed as a raid-consequence band, not as a runaway guard, and nothing
 measures the two loops *jointly*. Two compounding loops that feed each other is the classic shape
-that produces runaway leaders, and a live-PvP game cannot absorb that. **Needs: a defined metric and
-a 0.6.0 claim.**
+that produces runaway leaders, and a live-PvP game cannot absorb that. ~~**Needs: a defined metric
+and a 0.6.0 claim.**~~ **Narrowed 2026-08-15 at `08ca5368`: the metric is defined** —
+`capitalSnowball`, `metrics-registry.ts:271` — and `contracts.md:1341–1347` even declares a
+threshold for it. What is missing is a *value* in a committed baseline (all 199 metric entries across
+the four files under `balance/baselines/`, 90 of them distinct, are `reference*` scenario vital
+signs) and the joint measurement. `balance/README.md` records `capitalSnowball` at **0.380**, above
+the 0.35 its sibling is held to, sitting in a README rather than in a gate. **Needs: a gated value, a
+joint measurement, and a 0.6.0 claim.** Note also that the capital loop itself closed —
+`packages/coordination/src/capital.ts` → `world-step.ts:724`, `:1580` — so this is no longer a claim
+about an inert subsystem.
 
 **2. Ascension rate (INV-30).** Vision §8a states the constraint precisely — "if a majority of Monte
 Carlo runs ascend, it is not a summit; if almost none do, the meta-game never starts" — and no
 release makes any claim about it. This is a two-sided band, which makes it unusual and easy to
-forget: most balance metrics only fail in one direction. **Needs: a band and a 0.6.0 claim.**
+forget: most balance metrics only fail in one direction. ~~**Needs: a band and a 0.6.0 claim.**~~
+**Narrowed 2026-08-15 at `08ca5368`: the band exists** — `targetBandMin: 0.05` / `targetBandMax: 0.2`
+in `metrics-registry.ts:318`'s `pinnedConstants`, matching `contracts.md` §7 — and the metric's own
+definition says it is *"reported not enforced"*. **Needs: enforcement and a 0.6.0 claim.** The
+underlying behaviour is also worse than "unmeasured": `openspec/changes/discriminating-ascension`
+(**0/38**, and carrying no `vision.md` §11 roadmap row) records `uniform-random-legal` ascending 10
+of 10 runs while every deliberate strategy ascends 0 of 10, i.e. the sign inverted, not merely the
+rate.
 
 **3. Knowledge half-life.** Vision §9 lists it among the balance metrics. It is the number that says
 whether pillar 2 — knowledge is physical, and losing it hurts — is actually true in play rather than

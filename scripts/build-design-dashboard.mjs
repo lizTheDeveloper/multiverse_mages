@@ -21,14 +21,22 @@
  *
  *     npm run ui:dashboard         # to ui/design-dashboard/data.json
  *
- * ## Generated, committed, and pinned
+ * ## Generated, and deliberately not committed
  *
- * Exactly the treatment `ui/session.json` gets, for exactly its reason: a
- * committed generated file rots in silence — the page keeps loading, the tables
- * keep rendering, and the repository they describe stopped being this one some
- * commits ago. `packages/content/test/unit/design-dashboard-payload.test.ts`
- * re-runs this script and compares field by field, so a stale payload is a red
- * test rather than a dashboard quietly showing last month's design.
+ * Exactly the treatment `ui/session.json` gets, for exactly its reason. The
+ * payload used to be committed and pinned byte-for-byte, on the argument that a
+ * committed generated file rots in silence. It does — and the pin turned out to
+ * be a worse cure than the disease: it reddened `main` three times on unrelated
+ * work, was defended three times by projecting a field out of the equality, and
+ * by the third projection it was green over a payload that really was stale.
+ * `scripts/check-generated-artifacts.mjs` has the measurement.
+ *
+ * So the file is gitignored and built instead. Rot is impossible rather than
+ * detected: the page reads a payload produced from the tree it is being read on.
+ * `npm run check:generated` gates the properties that makes that sound — this
+ * generator is deterministic, and the artifact is not tracked — and
+ * `packages/content/test/unit/design-dashboard-payload.test.ts` runs it and
+ * asserts that what comes out is a payload the page can draw.
  *
  * ## Why there is no date and no `git rev-parse` in the output
  *
@@ -36,12 +44,13 @@
  * describes"* and that an undated measurement in the present tense will be read
  * as current for as long as it survives. The obvious response — stamp the clock
  * and the commit — is wrong here, twice over. A wall-clock stamp makes the
- * pinning test fail on every run, and a `git` call makes the payload a function
- * of the checkout rather than of the tree (CI checks out shallow, so per-file
- * history is not reliably present).
+ * payload non-deterministic, which `check:generated` fails on and which would
+ * make the dashboard CI builds a different dashboard from the one you build; and
+ * a `git` call makes the payload a function of the checkout rather than of the
+ * tree (CI checks out shallow, so per-file history is not reliably present).
  *
- * The stronger answer is available because of the pin: **this payload is a pure
- * function of the repository contents, and a test asserts it.** So it is a
+ * The stronger answer is available because of that: **this payload is a pure
+ * function of the repository contents, and a check asserts it.** So it is a
  * statement about whatever commit you are reading it on, always, with no date to
  * go stale. What it carries instead of a timestamp is the identity the content
  * itself declares — `contentRevision` — and, for every figure that came out of a
@@ -626,15 +635,20 @@ const doc = {
   provenance: {
     generatedBy: 'scripts/build-design-dashboard.mjs',
     command: 'npm run ui:dashboard',
-    pinnedBy: 'packages/content/test/unit/design-dashboard-payload.test.ts',
+    // Renamed from `pinnedBy` when the payload stopped being committed: nothing
+    // pins it any more, and a field naming a pin that no longer exists is the
+    // kind of stale label this dashboard is against. What gates it is the
+    // determinism-and-untracked check; what asserts its shape is the test the
+    // check's module note names.
+    checkedBy: 'scripts/check-generated-artifacts.mjs',
     // The content's own declared identity. Not a date: see the module note.
     contentRevision: registry.contentRevision,
     contentCounts: { ...registry.counts },
     metricRegistrySize: BALANCE_METRIC_REGISTRY.ids.length,
     note:
-      'This payload is a pure function of the repository contents and a test asserts it, so it ' +
-      'is a statement about the commit you are reading it on. Figures lifted from a document ' +
-      'carry that document\'s own stated date and ref, and are labelled as historical.',
+      'This payload is a pure function of the repository contents, built rather than committed, ' +
+      'so it is a statement about the commit you are reading it on. Figures lifted from a ' +
+      'document carry that document\'s own stated date and ref, and are labelled as historical.',
   },
   grid,
   primitives,

@@ -89,6 +89,11 @@ export function testCatalog(overrides: Partial<KnowledgeNode> = {}): NodeCatalog
     teachCost: 1024,
     scribeCost: 2048,
     rediscoveryMultiplier: 4096,
+    // `episteme` is the fixture default because it is the content majority —
+    // 271 of 300 shipped nodes — not because it is the neutral value. It is not
+    // neutral: it halves the copy distance a scribing costs. A fidelity test
+    // must override it rather than inherit it.
+    knowledgeKind: 'episteme' as const,
     ...overrides,
   };
   return catalogOf([

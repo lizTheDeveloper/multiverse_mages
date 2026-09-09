@@ -35,7 +35,7 @@
 
 import { fromInt, mul } from '@mm/sim-core';
 import type { Fixed } from '@mm/sim-core';
-import type { PrimitiveCap } from '@mm/content';
+import type { PrimitiveCap, PrimitiveStacking } from '@mm/content';
 
 /**
  * What a cap needs from the caller that the registry cannot know.
@@ -112,13 +112,76 @@ export function capLimit(cap: PrimitiveCap, context: CapContext = {}): Fixed | u
   }
 }
 
+/** The outcome of a floor: the value that survived, and whether it was raised. */
+export interface FloorOutcome {
+  readonly value: Fixed;
+  /** True exactly when the floor bound. Counted separately from a clamp. */
+  readonly floored: boolean;
+}
+
+/**
+ * The lower bound a stacking rule imposes, or `undefined` when it imposes none.
+ *
+ * ## Why this is a property of the rule and not of the primitive
+ *
+ * `contracts.md` §3 states a ceiling for every rate multiplier and no floor,
+ * which was sound for exactly as long as every authored magnitude was positive.
+ * Once a node can express a **cost**, `(1 + Σ)` can cross zero, and a negative
+ * multiplier does not slow a rate — it reverses it. Research progress would run
+ * backwards, `scribingThroughput` would return negative scribe-months, and
+ * `expectedBirths` would hand a cohort a negative headcount.
+ *
+ * `additive-into-multiplier` is the only rule with a `(1 + Σ)` to cross, so it
+ * is the only one with a floor. Every other rule keeps the behaviour it always
+ * had:
+ *
+ * - `additive` stays unfloored. `lifespan` is additive and its floor belongs to
+ *   `effectiveLifespan`, which knows the species base a floor is relative to —
+ *   a bound imposed here would be a bound on the *bonus* rather than on the
+ *   life, and those are different numbers.
+ * - `multiplicative-on-remainder`, `max` and `presence` never see a negative:
+ *   the content loader refuses to author one on them, for reasons written down
+ *   at the check itself.
+ *
+ * **Zero, not a small positive number.** A floor above zero would be a balance
+ * magnitude living in code with no `tuningStatus` beside it, and it would cap
+ * how strong a cost an author may write — the same class of defect as the
+ * `"minimum": 1` this change removes. Zero says only what has to be true: the
+ * work does not happen. What a zero rate *means* is then each consumer's to
+ * honour, and all three do it the same way — the month produces nothing.
+ */
+export function stackingFloor(stacking: PrimitiveStacking): Fixed | undefined {
+  return stacking === 'additive-into-multiplier' ? 0 : undefined;
+}
+
+/**
+ * Raises a stacked value to its floor.
+ *
+ * Separate from {@link applyCap} rather than folded into a two-sided clamp,
+ * because the two bounds come from different places and are counted separately:
+ * the ceiling is the primitive's authored `cap`, the floor is its stacking
+ * rule's, and a report that mixed them would make "this rate is pinned at its
+ * ceiling" and "this rate has been costed into the ground" the same row.
+ */
+export function applyFloor(floor: Fixed | undefined, value: Fixed): FloorOutcome {
+  if (floor === undefined || value >= floor) {
+    return { value, floored: false };
+  }
+  return { value: floor, floored: true };
+}
+
 /**
  * Clamps a stacked value to its cap.
  *
- * Clamping is one-sided on purpose: a cap is a ceiling, and a magnitude below
- * it — including a negative one from a debuff — is left exactly as it is. There
- * is no floor in the contract, and inventing one here would quietly make
- * debuffs unable to push a rate below its nominal value.
+ * Clamping here is one-sided on purpose: a cap is a ceiling, and a magnitude
+ * below it — including a negative one from a debuff — is left exactly as it is.
+ * The contract states no floor for a *cap*, and inventing one here would
+ * quietly make debuffs unable to push a rate below its nominal value.
+ *
+ * The lower bound that does exist is {@link stackingFloor}'s, applied by
+ * {@link import('./stack.js').stackMagnitudes} before this function and counted
+ * in its own series. It bounds only the one rule whose `(1 + Σ)` can go
+ * negative, which is a different statement from "every primitive has a floor".
  */
 export function applyCap(
   cap: PrimitiveCap,
@@ -141,21 +204,51 @@ export function applyCap(
  */
 export class ClampCounters {
   readonly #counts = new Map<string, number>();
+  readonly #floors = new Map<string, number>();
 
   /** Records one clamp of `primitiveId`. */
   record(primitiveId: string): void {
     this.#counts.set(primitiveId, (this.#counts.get(primitiveId) ?? 0) + 1);
   }
 
-  /** How many times `primitiveId` was clamped. `0` if never. */
+  /**
+   * Records one *floor* of `primitiveId`, in its own series.
+   *
+   * Kept apart from {@link record} rather than folded into it, and the reason
+   * is the same one that makes the class exist. A ceiling that binds says *the
+   * cap, not the design, is deciding the game*; a floor that binds says *a
+   * stack of authored costs has stopped this rate entirely*. Those are opposite
+   * findings, and `world-step.ts` already reports `rateClamps.total()` into the
+   * capital emission — a floor arriving in that series would silently re-scale
+   * a number that four releases of measurement are written against.
+   */
+  recordFloor(primitiveId: string): void {
+    this.#floors.set(primitiveId, (this.#floors.get(primitiveId) ?? 0) + 1);
+  }
+
+  /** How many times `primitiveId` was clamped at its ceiling. `0` if never. */
   count(primitiveId: string): number {
     return this.#counts.get(primitiveId) ?? 0;
   }
 
-  /** Clamps across all primitives. */
+  /** How many times `primitiveId` was raised to its floor. `0` if never. */
+  floorCount(primitiveId: string): number {
+    return this.#floors.get(primitiveId) ?? 0;
+  }
+
+  /** Ceiling clamps across all primitives. */
   total(): number {
     let sum = 0;
     for (const count of this.#counts.values()) {
+      sum += count;
+    }
+    return sum;
+  }
+
+  /** Floors across all primitives. */
+  floorTotal(): number {
+    let sum = 0;
+    for (const count of this.#floors.values()) {
       sum += count;
     }
     return sum;
@@ -173,8 +266,14 @@ export class ClampCounters {
     return [...this.#counts.entries()].sort(([left], [right]) => (left < right ? -1 : 1));
   }
 
-  /** Drops every count. For reusing a counter between runs. */
+  /** Every floored primitive and its count, sorted by primitive id, for the same reason. */
+  floorEntries(): readonly (readonly [string, number])[] {
+    return [...this.#floors.entries()].sort(([left], [right]) => (left < right ? -1 : 1));
+  }
+
+  /** Drops every count, ceilings and floors alike. For reusing a counter between runs. */
   reset(): void {
     this.#counts.clear();
+    this.#floors.clear();
   }
 }

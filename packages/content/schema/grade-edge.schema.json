@@ -1,0 +1,54 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://multiverse-mages.invalid/schema/grade-edge.schema.json",
+  "title": "grade-edge.json",
+  "description": "One rung of a material grade ladder: a working that improves a thing by exactly one step. The anchor is `mt-turn-the-poor-ore`'s gloss, which specifies the whole mechanic in two sentences — \"Change worthless rock into ore that is merely bad. Never into good ore: the working improves a thing by one step and has never once been made to take two.\" That is three grades (0 worthless / 1 worked / 2 fine), an ordinal on them, a converter that moves one step, and a cap on how far one working can move. `toGrade` must equal `fromGrade + 1`: the one-step rule is a schema-and-loader invariant, not a runtime convention, because a rung that skipped would be authorable and would read as content rather than as a defect. `ratio` below fp(1024) is a conversion that loses — `mh-the-second-harvest`'s \"Nothing is created; a field of straw becomes a smaller field of grain\" — and fp(1024) is a rung whose gloss states no loss. `inputPerTick` is what the rung draws from the grade below each world tick while its node is known; it is a claim on the stock adjudicated by CONSUMPTION_ORDER for grade 0, and against the graded stock above it. Every magnitude here is untuned (docs/design/release-plan.md): no release before 0.5.0 may claim any of them is balanced.",
+  "type": "array",
+  "minItems": 1,
+  "items": { "$ref": "#/$defs/gradeEdge" },
+  "$defs": {
+    "gradeEdge": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "node",
+        "kind",
+        "fromGrade",
+        "toGrade",
+        "ratio",
+        "inputPerTick",
+        "gloss",
+        "tuningStatus"
+      ],
+      "properties": {
+        "id": { "$ref": "#/$defs/contentId" },
+        "node": { "$ref": "#/$defs/contentId" },
+        "kind": { "$ref": "#/$defs/gradedKind" },
+        "fromGrade": { "$ref": "#/$defs/grade" },
+        "toGrade": { "$ref": "#/$defs/grade" },
+        "ratio": { "type": "integer", "minimum": 1, "maximum": 1024 },
+        "inputPerTick": { "type": "integer", "minimum": 1, "maximum": 1073741823 },
+        "gloss": { "type": "string", "minLength": 1, "maxLength": 400 },
+        "tuningStatus": { "type": "string", "enum": ["untuned", "tuned"] }
+      }
+    },
+    "gradedKind": {
+      "type": "string",
+      "description": "Which of the seven material kinds carries a ladder. Only `stone` does today, and the narrowness is deliberate: a graded stock with a producer and no consumer is a label on a resource, which docs/design/economy-flow-models.md §4 refuses. Widening this enum means authoring both ends and adding the columns `material-grade` carries.",
+      "enum": ["stone"]
+    },
+    "grade": {
+      "type": "integer",
+      "description": "0 worthless / 1 worked / 2 fine. Three, because two independent glosses converge on three — `mt-turn-the-poor-ore`'s worthless/bad/good and `maq-sweeten-the-cistern`'s foul/water/clean — and a fourth grade needs a gloss asking for it.",
+      "minimum": 0,
+      "maximum": 2
+    },
+    "contentId": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 64,
+      "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$"
+    }
+  }
+}

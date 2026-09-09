@@ -101,6 +101,7 @@ interface SignedMagnitude {
  */
 function signedMagnitudes(contribution: EffectContribution): readonly SignedMagnitude[] {
   switch (contribution.mode) {
+    case undefined:
     case 'create':
       return [{ primitiveId: contribution.primitiveId, magnitude: contribution.magnitude }];
     case 'remove':

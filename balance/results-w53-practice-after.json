@@ -1,0 +1,1461 @@
+{
+  "sweepId": "w49-applied-use-v1",
+  "rootSeed": 20260811,
+  "worldTickCap": 2400,
+  "runs": [
+    {
+      "strategyId": "passive-control",
+      "coordinates": {
+        "rootSeed": 20260811,
+        "sweepId": "w49-applied-use-v1",
+        "cellIndex": 0,
+        "replicateIndex": 0
+      },
+      "runSeed": 1890169786,
+      "options": {
+        "cohortSize": 4,
+        "foundingNodes": 1
+      },
+      "status": "truncated",
+      "terminalReason": 0,
+      "ticksRun": 2400,
+      "snapshotHash": "a043fd94d5a21d90",
+      "ticksObserved": 2400,
+      "appliedUseInstanceTicks": 56351,
+      "gatedUseInstanceTicks": 63,
+      "heldInstanceTicks": 3050557,
+      "teachableInstanceTicks": 358543,
+      "nodesHeldTicks": 113112,
+      "nodesTeachableTicks": 76363,
+      "practiceCompleted": 17610,
+      "reportedEconomicNodeTicks": 36033,
+      "ticksWithAnyApplication": 2372,
+      "disagreements": 0,
+      "ticksWithoutReport": 0,
+      "peakHolders": 43,
+      "distinctHolders": 162,
+      "byForm": {
+        "Terram": 56351
+      },
+      "holderTop": [
+        801,
+        796,
+        793,
+        730,
+        697
+      ]
+    },
+    {
+      "strategyId": "passive-control",
+      "coordinates": {
+        "rootSeed": 20260811,
+        "sweepId": "w49-applied-use-v1",
+        "cellIndex": 0,
+        "replicateIndex": 1
+      },
+      "runSeed": 249638251,
+      "options": {
+        "cohortSize": 4,
+        "foundingNodes": 1
+      },
+      "status": "truncated",
+      "terminalReason": 0,
+      "ticksRun": 2400,
+      "snapshotHash": "6dcdfe4d8a364f64",
+      "ticksObserved": 2400,
+      "appliedUseInstanceTicks": 31165,
+      "gatedUseInstanceTicks": 0,
+      "heldInstanceTicks": 2268048,
+      "teachableInstanceTicks": 200132,
+      "nodesHeldTicks": 112114,
+      "nodesTeachableTicks": 56384,
+      "practiceCompleted": 14633,
+      "reportedEconomicNodeTicks": 18787,
+      "ticksWithAnyApplication": 2294,
+      "disagreements": 0,
+      "ticksWithoutReport": 0,
+      "peakHolders": 24,
+      "distinctHolders": 98,
+      "byForm": {
+        "Terram": 31165
+      },
+      "holderTop": [
+        787,
+        740,
+        738,
+        706,
+        702
+      ]
+    },
+    {
+      "strategyId": "passive-control",
+      "coordinates": {
+        "rootSeed": 20260811,
+        "sweepId": "w49-applied-use-v1",
+        "cellIndex": 0,
+        "replicateIndex": 2
+      },
+      "runSeed": 2904074012,
+      "options": {
+        "cohortSize": 4,
+        "foundingNodes": 1
+      },
+      "status": "truncated",
+      "terminalReason": 0,
+      "ticksRun": 2400,
+      "snapshotHash": "58e2a28bf42bf72d",
+      "ticksObserved": 2400,
+      "appliedUseInstanceTicks": 36867,
+      "gatedUseInstanceTicks": 138,
+      "heldInstanceTicks": 2219579,
+      "teachableInstanceTicks": 251641,
+      "nodesHeldTicks": 114763,
+      "nodesTeachableTicks": 66767,
+      "practiceCompleted": 8394,
+      "reportedEconomicNodeTicks": 23395,
+      "ticksWithAnyApplication": 2307,
+      "disagreements": 0,
+      "ticksWithoutReport": 0,
+      "peakHolders": 33,
+      "distinctHolders": 129,
+      "byForm": {
+        "Terram": 36867
+      },
+      "holderTop": [
+        816,
+        680,
+        680,
+        597,
+        512
+      ]
+    },
+    {
+      "strategyId": "passive-control",
+      "coordinates": {
+        "rootSeed": 20260811,
+        "sweepId": "w49-applied-use-v1",
+        "cellIndex": 0,
+        "replicateIndex": 3
+      },
+      "runSeed": 1263542477,
+      "options": {
+        "cohortSize": 4,
+        "foundingNodes": 1
+      },
+      "status": "truncated",
+      "terminalReason": 0,
+      "ticksRun": 2400,
+      "snapshotHash": "f329c59154c9ee43",
+      "ticksObserved": 2400,
+      "appliedUseInstanceTicks": 33371,
+      "gatedUseInstanceTicks": 0,
+      "heldInstanceTicks": 2491209,
+      "teachableInstanceTicks": 250421,
+      "nodesHeldTicks": 112331,
+      "nodesTeachableTicks": 70695,
+      "practiceCompleted": 12113,
+      "reportedEconomicNodeTicks": 21053,
+      "ticksWithAnyApplication": 2371,
+      "disagreements": 0,
+      "ticksWithoutReport": 0,
+      "peakHolders": 23,
+      "distinctHolders": 117,
+      "byForm": {
+        "Terram": 33371
+      },
+      "holderTop": [
+        816,
+        680,
+        680,
+        680,
+        680
+      ]
+    },
+    {
+      "strategyId": "passive-control",
+      "coordinates": {
+        "rootSeed": 20260811,
+        "sweepId": "w49-applied-use-v1",
+        "cellIndex": 3,
+        "replicateIndex": 0
+      },
+      "runSeed": 3720131514,
+      "options": {
+        "cohortSize": 12,
+        "foundingNodes": 4
+      },
+      "status": "truncated",
+      "terminalReason": 0,
+      "ticksRun": 2400,
+      "snapshotHash": "883213fd3a10dc06",
+      "ticksObserved": 2400,
+      "appliedUseInstanceTicks": 49583,
+      "gatedUseInstanceTicks": 11,
+      "heldInstanceTicks": 4273178,
+      "teachableInstanceTicks": 298556,
+      "nodesHeldTicks": 115292,
+      "nodesTeachableTicks": 73378,
+      "practiceCompleted": 18384,
+      "reportedEconomicNodeTicks": 30422,
+      "ticksWithAnyApplication": 2391,
+      "disagreements": 0,
+      "ticksWithoutReport": 0,
+      "peakHolders": 33,
+      "distinctHolders": 131,
+      "byForm": {
+        "Terram": 49583
+      },
+      "holderTop": [
+        814,
+        809,
+        803,
+        802,
+        801
+      ]
+    },
+    {
+      "strategyId": "passive-control",
+      "coordinates": {
+        "rootSeed": 20260811,
+        "sweepId": "w49-applied-use-v1",
+        "cellIndex": 3,
+        "replicateIndex": 1
+      },
+      "runSeed": 2079599979,
+      "options": {
+        "cohortSize": 12,
+        "foundingNodes": 4
+      },
+      "status": "truncated",
+      "terminalReason": 0,
+      "ticksRun": 2400,
+      "snapshotHash": "3a11db6d1bb89c4f",
+      "ticksObserved": 2400,
+      "appliedUseInstanceTicks": 60215,
+      "gatedUseInstanceTicks": 291,
+      "heldInstanceTicks": 4426508,
+      "teachableInstanceTicks": 356619,
+      "nodesHeldTicks": 115248,
+      "nodesTeachableTicks": 82569,
+      "practiceCompleted": 20535,
+      "reportedEconomicNodeTicks": 36889,
+      "ticksWithAnyApplication": 2400,
+      "disagreements": 0,
+      "ticksWithoutReport": 0,
+      "peakHolders": 33,
+      "distinctHolders": 146,
+      "byForm": {
+        "Terram": 60215
+      },
+      "holderTop": [
+        1706,
+        1042,
+        816,
+        816,
+        816
+      ]
+    },
+    {
+      "strategyId": "passive-control",
+      "coordinates": {
+        "rootSeed": 20260811,
+        "sweepId": "w49-applied-use-v1",
+        "cellIndex": 3,
+        "replicateIndex": 2
+      },
+      "runSeed": 439068444,
+      "options": {
+        "cohortSize": 12,
+        "foundingNodes": 4
+      },
+      "status": "truncated",
+      "terminalReason": 0,
+      "ticksRun": 2400,
+      "snapshotHash": "e5e43f8e2698c79c",
+      "ticksObserved": 2400,
+      "appliedUseInstanceTicks": 56623,
+      "gatedUseInstanceTicks": 1115,
+      "heldInstanceTicks": 4261987,
+      "teachableInstanceTicks": 349405,
+      "nodesHeldTicks": 115142,
+      "nodesTeachableTicks": 84550,
+      "practiceCompleted": 19801,
+      "reportedEconomicNodeTicks": 34864,
+      "ticksWithAnyApplication": 2371,
+      "disagreements": 0,
+      "ticksWithoutReport": 0,
+      "peakHolders": 35,
+      "distinctHolders": 141,
+      "byForm": {
+        "Terram": 56623
+      },
+      "holderTop": [
+        1012,
+        816,
+        816,
+        816,
+        816
+      ]
+    },
+    {
+      "strategyId": "passive-control",
+      "coordinates": {
+        "rootSeed": 20260811,
+        "sweepId": "w49-applied-use-v1",
+        "cellIndex": 3,
+        "replicateIndex": 3
+      },
+      "runSeed": 3093504205,
+      "options": {
+        "cohortSize": 12,
+        "foundingNodes": 4
+      },
+      "status": "truncated",
+      "terminalReason": 0,
+      "ticksRun": 2400,
+      "snapshotHash": "389f6c82913d204b",
+      "ticksObserved": 2400,
+      "appliedUseInstanceTicks": 59741,
+      "gatedUseInstanceTicks": 88,
+      "heldInstanceTicks": 4192185,
+      "teachableInstanceTicks": 344231,
+      "nodesHeldTicks": 114915,
+      "nodesTeachableTicks": 76943,
+      "practiceCompleted": 15127,
+      "reportedEconomicNodeTicks": 35669,
+      "ticksWithAnyApplication": 2400,
+      "disagreements": 0,
+      "ticksWithoutReport": 0,
+      "peakHolders": 38,
+      "distinctHolders": 154,
+      "byForm": {
+        "Terram": 59741
+      },
+      "holderTop": [
+        1111,
+        908,
+        906,
+        816,
+        814
+      ]
+    },
+    {
+      "strategyId": "permit-then-idle",
+      "coordinates": {
+        "rootSeed": 20260811,
+        "sweepId": "w49-applied-use-v1",
+        "cellIndex": 0,
+        "replicateIndex": 0
+      },
+      "runSeed": 1890169786,
+      "options": {
+        "cohortSize": 4,
+        "foundingNodes": 1
+      },
+      "status": "ascended",
+      "terminalReason": 2,
+      "ticksRun": 1202,
+      "snapshotHash": "0c5d6d9cbb33d1dd",
+      "ticksObserved": 1202,
+      "appliedUseInstanceTicks": 72847,
+      "gatedUseInstanceTicks": 3280,
+      "heldInstanceTicks": 1390877,
+      "teachableInstanceTicks": 221801,
+      "nodesHeldTicks": 151588,
+      "nodesTeachableTicks": 61121,
+      "practiceCompleted": 16562,
+      "reportedEconomicNodeTicks": 23423,
+      "ticksWithAnyApplication": 1175,
+      "disagreements": 30,
+      "ticksWithoutReport": 0,
+      "peakHolders": 36,
+      "distinctHolders": 85,
+      "byForm": {
+        "Terram": 19540,
+        "Aquam": 11813,
+        "Animal": 11706,
+        "Auram": 10841,
+        "Herbam": 10523,
+        "Ignem": 7532,
+        "Corpus": 608,
+        "Limen": 220,
+        "Nomen": 64
+      },
+      "holderTop": [
+        5539,
+        5383,
+        4020,
+        3823,
+        3820
+      ]
+    },
+    {
+      "strategyId": "permit-then-idle",
+      "coordinates": {
+        "rootSeed": 20260811,
+        "sweepId": "w49-applied-use-v1",
+        "cellIndex": 0,
+        "replicateIndex": 1
+      },
+      "runSeed": 249638251,
+      "options": {
+        "cohortSize": 4,
+        "foundingNodes": 1
+      },
+      "status": "ascended",
+      "terminalReason": 2,
+      "ticksRun": 1202,
+      "snapshotHash": "5a97eca0bc9aadf0",
+      "ticksObserved": 1202,
+      "appliedUseInstanceTicks": 60430,
+      "gatedUseInstanceTicks": 2308,
+      "heldInstanceTicks": 1473617,
+      "teachableInstanceTicks": 167631,
+      "nodesHeldTicks": 152569,
+      "nodesTeachableTicks": 63588,
+      "practiceCompleted": 11943,
+      "reportedEconomicNodeTicks": 21373,
+      "ticksWithAnyApplication": 1167,
+      "disagreements": 0,
+      "ticksWithoutReport": 0,
+      "peakHolders": 37,
+      "distinctHolders": 62,
+      "byForm": {
+        "Terram": 14838,
+        "Animal": 9665,
+        "Aquam": 9394,
+        "Herbam": 9125,
+        "Auram": 8821,
+        "Ignem": 7108,
+        "Corpus": 1244,
+        "Limen": 203,
+        "Nomen": 32
+      },
+      "holderTop": [
+        3910,
+        3740,
+        3740,
+        3659,
+        3091
+      ]
+    },
+    {
+      "strategyId": "permit-then-idle",
+      "coordinates": {
+        "rootSeed": 20260811,
+        "sweepId": "w49-applied-use-v1",
+        "cellIndex": 0,
+        "replicateIndex": 2
+      },
+      "runSeed": 2904074012,
+      "options": {
+        "cohortSize": 4,
+        "foundingNodes": 1
+      },
+      "status": "ascended",
+      "terminalReason": 2,
+      "ticksRun": 962,
+      "snapshotHash": "496e46680cdb7ba7",
+      "ticksObserved": 962,
+      "appliedUseInstanceTicks": 78659,
+      "gatedUseInstanceTicks": 0,
+      "heldInstanceTicks": 1034780,
+      "teachableInstanceTicks": 217977,
+      "nodesHeldTicks": 114323,
+      "nodesTeachableTicks": 57548,
+      "practiceCompleted": 1237,
+      "reportedEconomicNodeTicks": 19611,
+      "ticksWithAnyApplication": 934,
+      "disagreements": 0,
+      "ticksWithoutReport": 0,
+      "peakHolders": 47,
+      "distinctHolders": 66,
+      "byForm": {
+        "Animal": 15035,
+        "Aquam": 14904,
+        "Auram": 13676,
+        "Herbam": 13216,
+        "Terram": 12594,
+        "Ignem": 8371,
+        "Corpus": 590,
+        "Limen": 241,
+        "Nomen": 32
+      },
+      "holderTop": [
+        5083,
+        4050,
+        3365,
+        2535,
+        2387
+      ]
+    },
+    {
+      "strategyId": "permit-then-idle",
+      "coordinates": {
+        "rootSeed": 20260811,
+        "sweepId": "w49-applied-use-v1",
+        "cellIndex": 0,
+        "replicateIndex": 3
+      },
+      "runSeed": 1263542477,
+      "options": {
+        "cohortSize": 4,
+        "foundingNodes": 1
+      },
+      "status": "ascended",
+      "terminalReason": 2,
+      "ticksRun": 1442,
+      "snapshotHash": "fc1865a2c6aef2bd",
+      "ticksObserved": 1442,
+      "appliedUseInstanceTicks": 93599,
+      "gatedUseInstanceTicks": 117,
+      "heldInstanceTicks": 2006895,
+      "teachableInstanceTicks": 300960,
+      "nodesHeldTicks": 189349,
+      "nodesTeachableTicks": 94534,
+      "practiceCompleted": 5764,
+      "reportedEconomicNodeTicks": 34006,
+      "ticksWithAnyApplication": 1414,
+      "disagreements": 0,
+      "ticksWithoutReport": 0,
+      "peakHolders": 31,
+      "distinctHolders": 55,
+      "byForm": {
+        "Animal": 17684,
+        "Terram": 16837,
+        "Aquam": 15748,
+        "Herbam": 13923,
+        "Ignem": 13440,
+        "Auram": 13237,
+        "Corpus": 1871,
+        "Nomen": 717,
+        "Limen": 142
+      },
+      "holderTop": [
+        4062,
+        3952,
+        3952,
+        3951,
+        3659
+      ]
+    },
+    {
+      "strategyId": "permit-then-idle",
+      "coordinates": {
+        "rootSeed": 20260811,
+        "sweepId": "w49-applied-use-v1",
+        "cellIndex": 3,
+        "replicateIndex": 0
+      },
+      "runSeed": 3720131514,
+      "options": {
+        "cohortSize": 12,
+        "foundingNodes": 4
+      },
+      "status": "ascended",
+      "terminalReason": 2,
+      "ticksRun": 1202,
+      "snapshotHash": "e4f096bd37e949e5",
+      "ticksObserved": 1202,
+      "appliedUseInstanceTicks": 151506,
+      "gatedUseInstanceTicks": 53,
+      "heldInstanceTicks": 3780164,
+      "teachableInstanceTicks": 454962,
+      "nodesHeldTicks": 151118,
+      "nodesTeachableTicks": 85017,
+      "practiceCompleted": 12055,
+      "reportedEconomicNodeTicks": 53887,
+      "ticksWithAnyApplication": 1202,
+      "disagreements": 0,
+      "ticksWithoutReport": 0,
+      "peakHolders": 42,
+      "distinctHolders": 82,
+      "byForm": {
+        "Animal": 27220,
+        "Terram": 27203,
+        "Aquam": 26638,
+        "Herbam": 24225,
+        "Auram": 24168,
+        "Ignem": 18799,
+        "Corpus": 2470,
+        "Limen": 470,
+        "Nomen": 313
+      },
+      "holderTop": [
+        5418,
+        5373,
+        5367,
+        5242,
+        4922
+      ]
+    },
+    {
+      "strategyId": "permit-then-idle",
+      "coordinates": {
+        "rootSeed": 20260811,
+        "sweepId": "w49-applied-use-v1",
+        "cellIndex": 3,
+        "replicateIndex": 1
+      },
+      "runSeed": 2079599979,
+      "options": {
+        "cohortSize": 12,
+        "foundingNodes": 4
+      },
+      "status": "ascended",
+      "terminalReason": 2,
+      "ticksRun": 1202,
+      "snapshotHash": "86dcc758ea79653d",
+      "ticksObserved": 1202,
+      "appliedUseInstanceTicks": 186039,
+      "gatedUseInstanceTicks": 418,
+      "heldInstanceTicks": 4398138,
+      "teachableInstanceTicks": 534930,
+      "nodesHeldTicks": 148070,
+      "nodesTeachableTicks": 94784,
+      "practiceCompleted": 10175,
+      "reportedEconomicNodeTicks": 67389,
+      "ticksWithAnyApplication": 1202,
+      "disagreements": 0,
+      "ticksWithoutReport": 0,
+      "peakHolders": 62,
+      "distinctHolders": 96,
+      "byForm": {
+        "Aquam": 33194,
+        "Terram": 32913,
+        "Animal": 32551,
+        "Auram": 30422,
+        "Herbam": 30339,
+        "Ignem": 22899,
+        "Corpus": 2771,
+        "Nomen": 508,
+        "Limen": 442
+      },
+      "holderTop": [
+        5411,
+        5405,
+        5383,
+        5199,
+        4130
+      ]
+    },
+    {
+      "strategyId": "permit-then-idle",
+      "coordinates": {
+        "rootSeed": 20260811,
+        "sweepId": "w49-applied-use-v1",
+        "cellIndex": 3,
+        "replicateIndex": 2
+      },
+      "runSeed": 439068444,
+      "options": {
+        "cohortSize": 12,
+        "foundingNodes": 4
+      },
+      "status": "ascended",
+      "terminalReason": 2,
+      "ticksRun": 1202,
+      "snapshotHash": "524c2154a887d106",
+      "ticksObserved": 1202,
+      "appliedUseInstanceTicks": 143753,
+      "gatedUseInstanceTicks": 1381,
+      "heldInstanceTicks": 3689433,
+      "teachableInstanceTicks": 422071,
+      "nodesHeldTicks": 157402,
+      "nodesTeachableTicks": 94959,
+      "practiceCompleted": 10697,
+      "reportedEconomicNodeTicks": 52562,
+      "ticksWithAnyApplication": 1202,
+      "disagreements": 0,
+      "ticksWithoutReport": 0,
+      "peakHolders": 45,
+      "distinctHolders": 87,
+      "byForm": {
+        "Terram": 26296,
+        "Animal": 25654,
+        "Aquam": 25352,
+        "Herbam": 23051,
+        "Auram": 22925,
+        "Ignem": 17565,
+        "Corpus": 2180,
+        "Limen": 463,
+        "Nomen": 267
+      },
+      "holderTop": [
+        5452,
+        5338,
+        4440,
+        4098,
+        3795
+      ]
+    },
+    {
+      "strategyId": "permit-then-idle",
+      "coordinates": {
+        "rootSeed": 20260811,
+        "sweepId": "w49-applied-use-v1",
+        "cellIndex": 3,
+        "replicateIndex": 3
+      },
+      "runSeed": 3093504205,
+      "options": {
+        "cohortSize": 12,
+        "foundingNodes": 4
+      },
+      "status": "ascended",
+      "terminalReason": 2,
+      "ticksRun": 962,
+      "snapshotHash": "233214cfad6c32ad",
+      "ticksObserved": 962,
+      "appliedUseInstanceTicks": 175818,
+      "gatedUseInstanceTicks": 0,
+      "heldInstanceTicks": 3042311,
+      "teachableInstanceTicks": 469583,
+      "nodesHeldTicks": 114783,
+      "nodesTeachableTicks": 68928,
+      "practiceCompleted": 4090,
+      "reportedEconomicNodeTicks": 55719,
+      "ticksWithAnyApplication": 962,
+      "disagreements": 0,
+      "ticksWithoutReport": 0,
+      "peakHolders": 61,
+      "distinctHolders": 96,
+      "byForm": {
+        "Aquam": 32298,
+        "Animal": 31916,
+        "Auram": 30132,
+        "Herbam": 28779,
+        "Terram": 28460,
+        "Ignem": 21534,
+        "Corpus": 1690,
+        "Limen": 977,
+        "Nomen": 32
+      },
+      "holderTop": [
+        5265,
+        5061,
+        4030,
+        3941,
+        3668
+      ]
+    },
+    {
+      "strategyId": "permissive-breadth",
+      "coordinates": {
+        "rootSeed": 20260811,
+        "sweepId": "w49-applied-use-v1",
+        "cellIndex": 0,
+        "replicateIndex": 0
+      },
+      "runSeed": 1890169786,
+      "options": {
+        "cohortSize": 4,
+        "foundingNodes": 1
+      },
+      "status": "ascended",
+      "terminalReason": 2,
+      "ticksRun": 1202,
+      "snapshotHash": "41e668ba8910ad45",
+      "ticksObserved": 1202,
+      "appliedUseInstanceTicks": 110987,
+      "gatedUseInstanceTicks": 1453,
+      "heldInstanceTicks": 1933995,
+      "teachableInstanceTicks": 336906,
+      "nodesHeldTicks": 150923,
+      "nodesTeachableTicks": 77917,
+      "practiceCompleted": 17095,
+      "reportedEconomicNodeTicks": 38086,
+      "ticksWithAnyApplication": 1183,
+      "disagreements": 0,
+      "ticksWithoutReport": 0,
+      "peakHolders": 55,
+      "distinctHolders": 139,
+      "byForm": {
+        "Terram": 25461,
+        "Aquam": 21493,
+        "Auram": 19042,
+        "Herbam": 17837,
+        "Animal": 13225,
+        "Ignem": 12656,
+        "Corpus": 924,
+        "Limen": 179,
+        "Nomen": 170
+      },
+      "holderTop": [
+        5224,
+        5178,
+        4007,
+        3724,
+        3708
+      ]
+    },
+    {
+      "strategyId": "permissive-breadth",
+      "coordinates": {
+        "rootSeed": 20260811,
+        "sweepId": "w49-applied-use-v1",
+        "cellIndex": 0,
+        "replicateIndex": 1
+      },
+      "runSeed": 249638251,
+      "options": {
+        "cohortSize": 4,
+        "foundingNodes": 1
+      },
+      "status": "ascended",
+      "terminalReason": 2,
+      "ticksRun": 1202,
+      "snapshotHash": "f98d7533b0591ce1",
+      "ticksObserved": 1202,
+      "appliedUseInstanceTicks": 51340,
+      "gatedUseInstanceTicks": 858,
+      "heldInstanceTicks": 1157996,
+      "teachableInstanceTicks": 157316,
+      "nodesHeldTicks": 153885,
+      "nodesTeachableTicks": 63250,
+      "practiceCompleted": 5574,
+      "reportedEconomicNodeTicks": 18401,
+      "ticksWithAnyApplication": 1180,
+      "disagreements": 0,
+      "ticksWithoutReport": 0,
+      "peakHolders": 17,
+      "distinctHolders": 33,
+      "byForm": {
+        "Animal": 9720,
+        "Terram": 9299,
+        "Aquam": 8951,
+        "Herbam": 8269,
+        "Auram": 8137,
+        "Ignem": 6219,
+        "Corpus": 548,
+        "Limen": 165,
+        "Nomen": 32
+      },
+      "holderTop": [
+        3981,
+        3740,
+        3740,
+        3659,
+        3101
+      ]
+    },
+    {
+      "strategyId": "permissive-breadth",
+      "coordinates": {
+        "rootSeed": 20260811,
+        "sweepId": "w49-applied-use-v1",
+        "cellIndex": 0,
+        "replicateIndex": 2
+      },
+      "runSeed": 2904074012,
+      "options": {
+        "cohortSize": 4,
+        "foundingNodes": 1
+      },
+      "status": "ascended",
+      "terminalReason": 2,
+      "ticksRun": 962,
+      "snapshotHash": "6a434f8967937b5e",
+      "ticksObserved": 962,
+      "appliedUseInstanceTicks": 68928,
+      "gatedUseInstanceTicks": 0,
+      "heldInstanceTicks": 908207,
+      "teachableInstanceTicks": 194323,
+      "nodesHeldTicks": 114926,
+      "nodesTeachableTicks": 49522,
+      "practiceCompleted": 1294,
+      "reportedEconomicNodeTicks": 16108,
+      "ticksWithAnyApplication": 944,
+      "disagreements": 0,
+      "ticksWithoutReport": 0,
+      "peakHolders": 49,
+      "distinctHolders": 65,
+      "byForm": {
+        "Animal": 13465,
+        "Aquam": 13113,
+        "Auram": 12238,
+        "Herbam": 11787,
+        "Terram": 10749,
+        "Ignem": 6999,
+        "Corpus": 432,
+        "Limen": 113,
+        "Nomen": 32
+      },
+      "holderTop": [
+        5072,
+        3779,
+        3217,
+        2542,
+        2413
+      ]
+    },
+    {
+      "strategyId": "permissive-breadth",
+      "coordinates": {
+        "rootSeed": 20260811,
+        "sweepId": "w49-applied-use-v1",
+        "cellIndex": 0,
+        "replicateIndex": 3
+      },
+      "runSeed": 1263542477,
+      "options": {
+        "cohortSize": 4,
+        "foundingNodes": 1
+      },
+      "status": "ascended",
+      "terminalReason": 2,
+      "ticksRun": 1442,
+      "snapshotHash": "05dbd81a237f84db",
+      "ticksObserved": 1442,
+      "appliedUseInstanceTicks": 93061,
+      "gatedUseInstanceTicks": 126,
+      "heldInstanceTicks": 2043363,
+      "teachableInstanceTicks": 278991,
+      "nodesHeldTicks": 194652,
+      "nodesTeachableTicks": 97381,
+      "practiceCompleted": 4385,
+      "reportedEconomicNodeTicks": 33870,
+      "ticksWithAnyApplication": 1422,
+      "disagreements": 0,
+      "ticksWithoutReport": 0,
+      "peakHolders": 27,
+      "distinctHolders": 54,
+      "byForm": {
+        "Aquam": 16761,
+        "Animal": 16748,
+        "Terram": 15367,
+        "Herbam": 15356,
+        "Auram": 14715,
+        "Ignem": 12484,
+        "Corpus": 1438,
+        "Limen": 96,
+        "Nomen": 96
+      },
+      "holderTop": [
+        4175,
+        3949,
+        3947,
+        3943,
+        3776
+      ]
+    },
+    {
+      "strategyId": "permissive-breadth",
+      "coordinates": {
+        "rootSeed": 20260811,
+        "sweepId": "w49-applied-use-v1",
+        "cellIndex": 3,
+        "replicateIndex": 0
+      },
+      "runSeed": 3720131514,
+      "options": {
+        "cohortSize": 12,
+        "foundingNodes": 4
+      },
+      "status": "ascended",
+      "terminalReason": 2,
+      "ticksRun": 1202,
+      "snapshotHash": "38bbc062a0addff9",
+      "ticksObserved": 1202,
+      "appliedUseInstanceTicks": 182801,
+      "gatedUseInstanceTicks": 26,
+      "heldInstanceTicks": 4365908,
+      "teachableInstanceTicks": 539563,
+      "nodesHeldTicks": 151680,
+      "nodesTeachableTicks": 87559,
+      "practiceCompleted": 16873,
+      "reportedEconomicNodeTicks": 66526,
+      "ticksWithAnyApplication": 1202,
+      "disagreements": 0,
+      "ticksWithoutReport": 0,
+      "peakHolders": 55,
+      "distinctHolders": 101,
+      "byForm": {
+        "Terram": 33543,
+        "Animal": 32004,
+        "Aquam": 31580,
+        "Auram": 30026,
+        "Herbam": 29726,
+        "Ignem": 22134,
+        "Corpus": 2982,
+        "Nomen": 424,
+        "Limen": 382
+      },
+      "holderTop": [
+        5456,
+        5437,
+        5307,
+        5102,
+        4066
+      ]
+    },
+    {
+      "strategyId": "permissive-breadth",
+      "coordinates": {
+        "rootSeed": 20260811,
+        "sweepId": "w49-applied-use-v1",
+        "cellIndex": 3,
+        "replicateIndex": 1
+      },
+      "runSeed": 2079599979,
+      "options": {
+        "cohortSize": 12,
+        "foundingNodes": 4
+      },
+      "status": "ascended",
+      "terminalReason": 2,
+      "ticksRun": 1202,
+      "snapshotHash": "32eac48353f0ae16",
+      "ticksObserved": 1202,
+      "appliedUseInstanceTicks": 207393,
+      "gatedUseInstanceTicks": 0,
+      "heldInstanceTicks": 4511958,
+      "teachableInstanceTicks": 588862,
+      "nodesHeldTicks": 147824,
+      "nodesTeachableTicks": 92341,
+      "practiceCompleted": 8250,
+      "reportedEconomicNodeTicks": 74054,
+      "ticksWithAnyApplication": 1202,
+      "disagreements": 0,
+      "ticksWithoutReport": 0,
+      "peakHolders": 64,
+      "distinctHolders": 103,
+      "byForm": {
+        "Animal": 37186,
+        "Aquam": 36982,
+        "Terram": 36152,
+        "Auram": 34482,
+        "Herbam": 34374,
+        "Ignem": 24355,
+        "Corpus": 3187,
+        "Limen": 419,
+        "Nomen": 256
+      },
+      "holderTop": [
+        5416,
+        5214,
+        5178,
+        5098,
+        4222
+      ]
+    },
+    {
+      "strategyId": "permissive-breadth",
+      "coordinates": {
+        "rootSeed": 20260811,
+        "sweepId": "w49-applied-use-v1",
+        "cellIndex": 3,
+        "replicateIndex": 2
+      },
+      "runSeed": 439068444,
+      "options": {
+        "cohortSize": 12,
+        "foundingNodes": 4
+      },
+      "status": "ascended",
+      "terminalReason": 2,
+      "ticksRun": 1202,
+      "snapshotHash": "74d7b55951e29845",
+      "ticksObserved": 1202,
+      "appliedUseInstanceTicks": 161437,
+      "gatedUseInstanceTicks": 1010,
+      "heldInstanceTicks": 3842598,
+      "teachableInstanceTicks": 456033,
+      "nodesHeldTicks": 156517,
+      "nodesTeachableTicks": 94752,
+      "practiceCompleted": 9797,
+      "reportedEconomicNodeTicks": 57658,
+      "ticksWithAnyApplication": 1202,
+      "disagreements": 0,
+      "ticksWithoutReport": 0,
+      "peakHolders": 48,
+      "distinctHolders": 87,
+      "byForm": {
+        "Aquam": 29271,
+        "Animal": 29153,
+        "Terram": 27653,
+        "Herbam": 26399,
+        "Auram": 26033,
+        "Ignem": 19485,
+        "Corpus": 2430,
+        "Limen": 585,
+        "Nomen": 428
+      },
+      "holderTop": [
+        5486,
+        5264,
+        5182,
+        4372,
+        4000
+      ]
+    },
+    {
+      "strategyId": "permissive-breadth",
+      "coordinates": {
+        "rootSeed": 20260811,
+        "sweepId": "w49-applied-use-v1",
+        "cellIndex": 3,
+        "replicateIndex": 3
+      },
+      "runSeed": 3093504205,
+      "options": {
+        "cohortSize": 12,
+        "foundingNodes": 4
+      },
+      "status": "ascended",
+      "terminalReason": 2,
+      "ticksRun": 962,
+      "snapshotHash": "76c68b1af0aade92",
+      "ticksObserved": 962,
+      "appliedUseInstanceTicks": 139245,
+      "gatedUseInstanceTicks": 209,
+      "heldInstanceTicks": 2706706,
+      "teachableInstanceTicks": 383101,
+      "nodesHeldTicks": 114222,
+      "nodesTeachableTicks": 67710,
+      "practiceCompleted": 7941,
+      "reportedEconomicNodeTicks": 47089,
+      "ticksWithAnyApplication": 962,
+      "disagreements": 0,
+      "ticksWithoutReport": 0,
+      "peakHolders": 46,
+      "distinctHolders": 83,
+      "byForm": {
+        "Animal": 24939,
+        "Aquam": 24853,
+        "Terram": 24035,
+        "Auram": 23859,
+        "Herbam": 22332,
+        "Ignem": 16737,
+        "Corpus": 1875,
+        "Limen": 447,
+        "Nomen": 168
+      },
+      "holderTop": [
+        5207,
+        4817,
+        3920,
+        3882,
+        3599
+      ]
+    },
+    {
+      "strategyId": "denial-warden",
+      "coordinates": {
+        "rootSeed": 20260811,
+        "sweepId": "w49-applied-use-v1",
+        "cellIndex": 0,
+        "replicateIndex": 0
+      },
+      "runSeed": 1890169786,
+      "options": {
+        "cohortSize": 4,
+        "foundingNodes": 1
+      },
+      "status": "stagnated",
+      "terminalReason": 3,
+      "ticksRun": 504,
+      "snapshotHash": "f123e36c8b8f93f0",
+      "ticksObserved": 504,
+      "appliedUseInstanceTicks": 24,
+      "gatedUseInstanceTicks": 0,
+      "heldInstanceTicks": 7708,
+      "teachableInstanceTicks": 3837,
+      "nodesHeldTicks": 1299,
+      "nodesTeachableTicks": 656,
+      "practiceCompleted": 0,
+      "reportedEconomicNodeTicks": 13,
+      "ticksWithAnyApplication": 13,
+      "disagreements": 0,
+      "ticksWithoutReport": 0,
+      "peakHolders": 2,
+      "distinctHolders": 2,
+      "byForm": {
+        "Terram": 24
+      },
+      "holderTop": [
+        14,
+        10
+      ]
+    },
+    {
+      "strategyId": "denial-warden",
+      "coordinates": {
+        "rootSeed": 20260811,
+        "sweepId": "w49-applied-use-v1",
+        "cellIndex": 0,
+        "replicateIndex": 1
+      },
+      "runSeed": 249638251,
+      "options": {
+        "cohortSize": 4,
+        "foundingNodes": 1
+      },
+      "status": "truncated",
+      "terminalReason": 0,
+      "ticksRun": 2400,
+      "snapshotHash": "142cc6d1a01a673c",
+      "ticksObserved": 2400,
+      "appliedUseInstanceTicks": 0,
+      "gatedUseInstanceTicks": 0,
+      "heldInstanceTicks": 7387,
+      "teachableInstanceTicks": 3644,
+      "nodesHeldTicks": 876,
+      "nodesTeachableTicks": 436,
+      "practiceCompleted": 8,
+      "reportedEconomicNodeTicks": 0,
+      "ticksWithAnyApplication": 0,
+      "disagreements": 0,
+      "ticksWithoutReport": 0,
+      "peakHolders": 0,
+      "distinctHolders": 0,
+      "byForm": {},
+      "holderTop": []
+    },
+    {
+      "strategyId": "denial-warden",
+      "coordinates": {
+        "rootSeed": 20260811,
+        "sweepId": "w49-applied-use-v1",
+        "cellIndex": 0,
+        "replicateIndex": 2
+      },
+      "runSeed": 2904074012,
+      "options": {
+        "cohortSize": 4,
+        "foundingNodes": 1
+      },
+      "status": "stagnated",
+      "terminalReason": 3,
+      "ticksRun": 505,
+      "snapshotHash": "6270ff81f4070c14",
+      "ticksObserved": 505,
+      "appliedUseInstanceTicks": 26,
+      "gatedUseInstanceTicks": 0,
+      "heldInstanceTicks": 7105,
+      "teachableInstanceTicks": 3571,
+      "nodesHeldTicks": 1282,
+      "nodesTeachableTicks": 639,
+      "practiceCompleted": 13,
+      "reportedEconomicNodeTicks": 14,
+      "ticksWithAnyApplication": 13,
+      "disagreements": 0,
+      "ticksWithoutReport": 0,
+      "peakHolders": 2,
+      "distinctHolders": 2,
+      "byForm": {
+        "Terram": 26
+      },
+      "holderTop": [
+        15,
+        11
+      ]
+    },
+    {
+      "strategyId": "denial-warden",
+      "coordinates": {
+        "rootSeed": 20260811,
+        "sweepId": "w49-applied-use-v1",
+        "cellIndex": 0,
+        "replicateIndex": 3
+      },
+      "runSeed": 1263542477,
+      "options": {
+        "cohortSize": 4,
+        "foundingNodes": 1
+      },
+      "status": "stagnated",
+      "terminalReason": 3,
+      "ticksRun": 507,
+      "snapshotHash": "cb1c3259d152a71b",
+      "ticksObserved": 507,
+      "appliedUseInstanceTicks": 12,
+      "gatedUseInstanceTicks": 0,
+      "heldInstanceTicks": 7378,
+      "teachableInstanceTicks": 3790,
+      "nodesHeldTicks": 1826,
+      "nodesTeachableTicks": 908,
+      "practiceCompleted": 13,
+      "reportedEconomicNodeTicks": 6,
+      "ticksWithAnyApplication": 12,
+      "disagreements": 0,
+      "ticksWithoutReport": 0,
+      "peakHolders": 1,
+      "distinctHolders": 1,
+      "byForm": {
+        "Terram": 12
+      },
+      "holderTop": [
+        12
+      ]
+    },
+    {
+      "strategyId": "denial-warden",
+      "coordinates": {
+        "rootSeed": 20260811,
+        "sweepId": "w49-applied-use-v1",
+        "cellIndex": 3,
+        "replicateIndex": 0
+      },
+      "runSeed": 3720131514,
+      "options": {
+        "cohortSize": 12,
+        "foundingNodes": 4
+      },
+      "status": "truncated",
+      "terminalReason": 0,
+      "ticksRun": 2400,
+      "snapshotHash": "ba52f3d4d4ff8fe3",
+      "ticksObserved": 2400,
+      "appliedUseInstanceTicks": 245,
+      "gatedUseInstanceTicks": 0,
+      "heldInstanceTicks": 23163,
+      "teachableInstanceTicks": 11433,
+      "nodesHeldTicks": 1479,
+      "nodesTeachableTicks": 742,
+      "practiceCompleted": 13,
+      "reportedEconomicNodeTicks": 108,
+      "ticksWithAnyApplication": 29,
+      "disagreements": 0,
+      "ticksWithoutReport": 0,
+      "peakHolders": 9,
+      "distinctHolders": 10,
+      "byForm": {
+        "Terram": 245
+      },
+      "holderTop": [
+        38,
+        37,
+        37,
+        33,
+        33
+      ]
+    },
+    {
+      "strategyId": "denial-warden",
+      "coordinates": {
+        "rootSeed": 20260811,
+        "sweepId": "w49-applied-use-v1",
+        "cellIndex": 3,
+        "replicateIndex": 1
+      },
+      "runSeed": 2079599979,
+      "options": {
+        "cohortSize": 12,
+        "foundingNodes": 4
+      },
+      "status": "truncated",
+      "terminalReason": 0,
+      "ticksRun": 2400,
+      "snapshotHash": "8284276f07df4d00",
+      "ticksObserved": 2400,
+      "appliedUseInstanceTicks": 757,
+      "gatedUseInstanceTicks": 0,
+      "heldInstanceTicks": 39742,
+      "teachableInstanceTicks": 20173,
+      "nodesHeldTicks": 2943,
+      "nodesTeachableTicks": 1512,
+      "practiceCompleted": 13,
+      "reportedEconomicNodeTicks": 631,
+      "ticksWithAnyApplication": 64,
+      "disagreements": 0,
+      "ticksWithoutReport": 0,
+      "peakHolders": 15,
+      "distinctHolders": 16,
+      "byForm": {
+        "Terram": 757
+      },
+      "holderTop": [
+        100,
+        98,
+        90,
+        88,
+        81
+      ]
+    },
+    {
+      "strategyId": "denial-warden",
+      "coordinates": {
+        "rootSeed": 20260811,
+        "sweepId": "w49-applied-use-v1",
+        "cellIndex": 3,
+        "replicateIndex": 2
+      },
+      "runSeed": 439068444,
+      "options": {
+        "cohortSize": 12,
+        "foundingNodes": 4
+      },
+      "status": "truncated",
+      "terminalReason": 0,
+      "ticksRun": 2400,
+      "snapshotHash": "2dc5c4a5931936aa",
+      "ticksObserved": 2400,
+      "appliedUseInstanceTicks": 378,
+      "gatedUseInstanceTicks": 4,
+      "heldInstanceTicks": 46157,
+      "teachableInstanceTicks": 21847,
+      "nodesHeldTicks": 3824,
+      "nodesTeachableTicks": 1906,
+      "practiceCompleted": 10,
+      "reportedEconomicNodeTicks": 262,
+      "ticksWithAnyApplication": 54,
+      "disagreements": 0,
+      "ticksWithoutReport": 0,
+      "peakHolders": 9,
+      "distinctHolders": 10,
+      "byForm": {
+        "Terram": 378
+      },
+      "holderTop": [
+        73,
+        71,
+        66,
+        48,
+        39
+      ]
+    },
+    {
+      "strategyId": "denial-warden",
+      "coordinates": {
+        "rootSeed": 20260811,
+        "sweepId": "w49-applied-use-v1",
+        "cellIndex": 3,
+        "replicateIndex": 3
+      },
+      "runSeed": 3093504205,
+      "options": {
+        "cohortSize": 12,
+        "foundingNodes": 4
+      },
+      "status": "truncated",
+      "terminalReason": 0,
+      "ticksRun": 2400,
+      "snapshotHash": "379cabadcffb95c6",
+      "ticksObserved": 2400,
+      "appliedUseInstanceTicks": 227,
+      "gatedUseInstanceTicks": 0,
+      "heldInstanceTicks": 25528,
+      "teachableInstanceTicks": 12387,
+      "nodesHeldTicks": 1616,
+      "nodesTeachableTicks": 805,
+      "practiceCompleted": 18,
+      "reportedEconomicNodeTicks": 94,
+      "ticksWithAnyApplication": 29,
+      "disagreements": 0,
+      "ticksWithoutReport": 0,
+      "peakHolders": 8,
+      "distinctHolders": 8,
+      "byForm": {
+        "Terram": 227
+      },
+      "holderTop": [
+        39,
+        38,
+        34,
+        32,
+        32
+      ]
+    }
+  ]
+}

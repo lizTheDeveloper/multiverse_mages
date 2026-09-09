@@ -39,10 +39,8 @@
  * a node is interdicted by. Wiring is `{ cellOf }` at the call site.
  */
 
-import type { ContentId, ContentRegistry, Fp, NodeRecord } from '@mm/content';
+import type { ContentId, ContentRegistry, Fp, KnowledgeKind, NodeRecord } from '@mm/content';
 import type { RngStream } from '@mm/sim-core';
-
-import { closeAntirequisites, internTrack } from './exclusion.js';
 
 /**
  * The part of a node this package reads.
@@ -67,28 +65,15 @@ export interface KnowledgeNode {
   /** At least `@mm/primitives`' `REDISCOVERY_FLOOR`; the loader enforces it. */
   readonly rediscoveryMultiplier: Fp;
   /**
-   * The node's track (`compositional-content.md` §3.1), or `0`/absent for the
-   * shared body of magic every mage can reach. Interned onto `@mm/content`'s
-   * `'track'` namespace — see `exclusion.ts`'s `internTrack` for the bridge
-   * this reads through while that namespace does not exist yet.
+   * `contracts.md` §2.3's authored kind: can this survive being written down?
    *
-   * Optional, deliberately: `projectNode` always sets it, but every fixture a
-   * test built before this feature existed constructs a `KnowledgeNode`
-   * literal directly, and requiring the field would break every one of them
-   * for a track no such fixture cares about. `exclusion.ts` treats an absent
-   * value exactly as `0` — see {@link trackIdOf}.
+   * Shipped on all three hundred nodes since `knowledge-model` — 271 `episteme`,
+   * 29 `metis` — and read by nothing in the rules path until scribing fidelity
+   * gave it one. It scales how much copy distance a scribing costs; see
+   * `fidelity.ts`'s `KNOWLEDGE_KIND_STEP`.
    */
+  readonly knowledgeKind: KnowledgeKind;
   readonly trackId?: ContentId;
-  /**
-   * Nodes this one may never be held alongside, **in one mind**
-   * (`compositional-content.md` §3.2). Ascending by id, and already closed
-   * over both directions by `exclusion.ts`'s `closeAntirequisites` — a
-   * consumer never has to check the reverse edge itself.
-   *
-   * Optional for the same reason {@link trackId} is. Absent reads as no
-   * antirequisites, never as "not yet computed" — see `exclusion.ts`'s
-   * {@link antirequisitesOf}.
-   */
   readonly antirequisites?: readonly ContentId[];
 }
 
@@ -110,6 +95,29 @@ export interface NodeCatalog {
 export interface CellResolver {
   /** The interned cell id a node belongs to. */
   cellOf(nodeId: ContentId): ContentId;
+}
+
+/**
+ * One authored anti-requisite, reduced to what the rules path needs.
+ *
+ * The `reason` is deliberately absent: it is load-bearing at *validation* time,
+ * where §4b makes symmetry follow from it, and it is not a rule input. Carrying
+ * it here would invite a rule to branch on prose.
+ */
+export interface ExclusionEdge {
+  readonly cell: ContentId;
+  readonly resolution: 'refused' | 'destructive';
+}
+
+/**
+ * `cellOf` plus the exclusions authored on a cell (`vision.md` §4b).
+ *
+ * Structural, like {@link CellResolver} beside it, so a call site binds the grid
+ * module's function and a lookup over `cell.json` with no class to construct.
+ */
+export interface ExclusionResolver extends CellResolver {
+  /** The cells this one excludes. Empty for every cell that excludes nothing. */
+  excludedBy(cellId: ContentId): readonly ExclusionEdge[];
 }
 
 /**
@@ -176,38 +184,13 @@ export function catalogOf(nodes: readonly KnowledgeNode[]): NodeCatalog {
  * projection and not a cache — there is nothing here that can go stale without
  * the content revision changing.
  */
-/**
- * Projects a loaded content registry into a catalog, interning every
- * prerequisite once and closing `antirequisites` over both directions.
- *
- * The closure is a second pass over the projected list (`closeAntirequisites`,
- * `exclusion.ts`) rather than something `projectNode` can do node-by-node: a
- * node cannot know what excludes it without having seen every other node's
- * declaration first. Both passes run once per content load, never per
- * operation.
- */
 export function catalogFromRegistry(registry: ContentRegistry): NodeCatalog {
   const nodes: KnowledgeNode[] = [];
   for (const entry of registry.nodes) {
     nodes.push(projectNode(entry.contentId, entry.record, registry));
   }
-  return catalogOf(closeAntirequisites(nodes));
+  return catalogOf(nodes);
 }
-
-/**
- * `NodeRecord` does not yet declare `track` or `antirequisites`
- * (`compositional-content.md` §3.2 — another workstream is adding them to
- * `packages/content` while this was written; `node.schema.json` already
- * declares both). This intersection type bridges the anticipated shape so
- * `projectNode` compiles and is tested against real behaviour now: at runtime
- * it reads `undefined` for either field until content lands, exactly as an
- * absent optional field would, and the cast becomes redundant rather than
- * wrong once `NodeRecord` gains them.
- */
-type ExtendedNodeRecord = NodeRecord & {
-  readonly track?: string;
-  readonly antirequisites?: readonly string[];
-};
 
 function projectNode(
   nodeId: ContentId,
@@ -218,13 +201,6 @@ function projectNode(
   for (const prerequisite of record.prerequisites) {
     prerequisites.push(registry.intern('node', prerequisite));
   }
-
-  const extended = record as ExtendedNodeRecord;
-  const trackId = extended.track === undefined ? 0 : internTrack(registry, extended.track);
-  const antirequisites = [...(extended.antirequisites ?? [])]
-    .map((id) => registry.intern('node', id))
-    .sort((a, b) => a - b);
-
   return {
     nodeId,
     tier: record.tier,
@@ -233,8 +209,7 @@ function projectNode(
     teachCost: record.teachCost,
     scribeCost: record.scribeCost,
     rediscoveryMultiplier: record.rediscoveryMultiplier,
-    trackId,
-    antirequisites,
+    knowledgeKind: record.knowledgeKind,
   };
 }
 

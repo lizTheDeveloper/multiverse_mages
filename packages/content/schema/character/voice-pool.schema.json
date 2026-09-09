@@ -1,0 +1,26 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://multiverse-mages.invalid/schema/character/voice-pool.schema.json",
+  "title": "voice-pool.json",
+  "description": "The voices available for each species, tagged by gender so a character can be cast from the right half of the pool. Renderer-only content, outside contentRevision for the same reason the audio set is. A voice enters the pool by being added here — not by a character happening to use it, which made a voice invisible until it was already assigned to someone.",
+  "type": "array",
+  "items": { "$ref": "#/$defs/voice" },
+  "$defs": {
+    "voice": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["voiceId", "species", "gender"],
+      "properties": {
+        "voiceId": { "type": "string", "minLength": 1, "maxLength": 64 },
+        "species": { "$ref": "#/$defs/contentId" },
+        "gender": {
+          "enum": ["female", "male", "neutral"],
+          "description": "How the voice reads, not a claim about any character. A character of any gender may be cast from any part of the pool; this exists so the pool can be filtered while casting rather than auditioned from scratch each time."
+        },
+        "label": { "type": "string", "maxLength": 120 },
+        "note": { "type": "string", "maxLength": 300 }
+      }
+    },
+    "contentId": { "type": "string", "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$", "maxLength": 64 }
+  }
+}

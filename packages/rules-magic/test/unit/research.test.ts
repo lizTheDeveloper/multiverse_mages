@@ -372,7 +372,7 @@ describe('rediscovery', () => {
         researchCost: 4096,
         teachCost: 1024,
         scribeCost: 2048,
-        rediscoveryMultiplier: 6144,
+        rediscoveryMultiplier: 6144, knowledgeKind: 'episteme',
       },
     ]);
     const at = (rediscoveryAffinity: number): number =>
@@ -417,7 +417,7 @@ describe('rediscovery', () => {
         researchCost: 4096,
         teachCost: 1024,
         scribeCost: 2048,
-        rediscoveryMultiplier: REDISCOVERY_FLOOR,
+        rediscoveryMultiplier: REDISCOVERY_FLOOR, knowledgeKind: 'episteme',
       },
     ]);
 

@@ -36,6 +36,22 @@
  * a message that names what went missing, rather than silently asserting
  * against whatever the renamed node happens to be.
  *
+ * ## W53 added a third gate to `resource-yield`, and it is a practitioner
+ *
+ * The two gates above answer *is it castable* and *is it permitted*. Neither
+ * answers *is anybody casting it*, and W49 measured what that omission cost: an
+ * idle god's universe applied magic to its economy at 1.0001x the rate of a god
+ * that funded universities and encouraged research, because application was
+ * passive. So a `resource-yield` contribution now also requires the holder to be
+ * committed to `GOAL.practice` on that node.
+ *
+ * `stateHolding` writes that commitment by default, because every positive case
+ * in this file is about the *other two* gates and would otherwise be testing the
+ * new one by accident. The case that is about the new gate says so.
+ *
+ * `build-rate` is deliberately not gated — see `universe-effects.ts` — and the
+ * discriminating test below is the pin on that asymmetry.
+ *
  * ## The failure this file exists to catch
  *
  * `universe-effects.ts`'s module note is explicit that an *earlier draft*
@@ -63,6 +79,7 @@ import {
   defineWorldStateSchema,
 } from '@mm/state';
 import { MASTERY_ACTIVATION_THRESHOLD } from '@mm/rules-magic';
+import { GOAL, writeCommitment } from '@mm/rules-world';
 
 import type { UniverseEconomyBonuses, UniverseEffectIndex } from '../../src/index.js';
 import { universeEconomyBonuses, universeEffectIndex } from '../../src/index.js';
@@ -144,17 +161,31 @@ function stateHolding(
   locationKind: number,
   mastery: number,
   rootSeed: number,
-): { state: SimState; instance: EntityHandle } {
+  options: { practising?: boolean } = {},
+): { state: SimState; instance: EntityHandle; holder: EntityHandle } {
   const state = bareState(rootSeed);
   const instance = state.entities.create();
+  const holder = state.entities.create();
   attachRecord(state, KNOWLEDGE_INSTANCE, instance, {
     nodeId,
     locationKind,
-    locationId: state.entities.create(),
+    locationId: holder,
     acquiredTick: 0,
     mastery,
   });
-  return { state, instance };
+  // The practitioner gate, satisfied by default. See the module note: the other
+  // cases in this file are about the castable and permitted gates, and a fixture
+  // that failed the practitioner gate would make every one of them pass for the
+  // wrong reason.
+  if (options.practising !== false) {
+    writeCommitment(state, holder, {
+      goalId: GOAL.practice,
+      targetNodeId: nodeId,
+      adoptedTick: 0,
+      score: 0,
+    });
+  }
+  return { state, instance, holder };
 }
 
 /** `universeEconomyBonuses`, with the shipped content and a caller-supplied ruleset. */
@@ -272,11 +303,23 @@ describe('resource-yield is routed by the node\'s form, and the routing discrimi
     expect(bonuses.resourceYield.vellum).toEqual([]);
   });
 
-  it('a Herbam node routes to food and vellum, and not to stone', () => {
+  it('a Herbam node routes to food, vellum and a little stone — a field, a page, and a beam', () => {
     // `kinds.ts`'s module note names Herbam by hand as one of the forms that
     // is deliberately not partitioned across kinds: "the same herd is dinner
     // and parchment." A test that expected exactly one kind would be
     // asserting a constraint the design explicitly declines to hold.
+    //
+    // **This assertion read `stone: []` until 2026-08-16, and the change is
+    // deliberate.** `form.json`'s fourteen rows carried only nine distinct
+    // baskets — `animal == herbam`, `ignem == terram`, `imaginem == mentem`,
+    // `umbra == fatum == limen` — so five forms were invisible to the economy
+    // and the herder and the farmhand were the same worker. Herbam's re-author
+    // is 640 food / 128 stone / 256 vellum: grain first, then fibre, then the
+    // beam, and the construction stock is what a building is made of.
+    //
+    // Its **dominance** is what carries the meaning, and that is what is
+    // asserted now: a Herbam working is a food working with two side-products,
+    // never a quarry. `shipped-content.test.ts` pins the row itself.
     const nodeId = nodeContentId(HERBAM_NODE);
     const { state } = stateHolding(
       nodeId,
@@ -287,16 +330,35 @@ describe('resource-yield is routed by the node\'s form, and the routing discrimi
 
     const bonuses = bonusesFor(state, permissiveRuleset());
 
+    const sum = (magnitudes: readonly number[]): number =>
+      magnitudes.reduce((total, magnitude) => total + magnitude, 0);
+
     expect(bonuses.resourceYield.food.length).toBeGreaterThan(0);
     expect(bonuses.resourceYield.vellum.length).toBeGreaterThan(0);
-    expect(bonuses.resourceYield.stone).toEqual([]);
+    expect(sum(bonuses.resourceYield.food)).toBeGreaterThan(sum(bonuses.resourceYield.vellum));
+    expect(sum(bonuses.resourceYield.vellum)).toBeGreaterThan(sum(bonuses.resourceYield.stone));
+    // Nothing at all in the four kinds only a mage's month can make. That half
+    // of the old assertion is untouched and is the one that would catch a
+    // routing table wired to the wrong column.
+    for (const kind of ['labor', 'essence', 'insight', 'passage'] as const) {
+      expect(bonuses.resourceYield[kind]).toEqual([]);
+    }
   });
 
   it('permitting Creo Herbam and permitting Rego Terram are no longer the same move', () => {
     // The whole point of the change, restated as one assertion: two nodes in
-    // differently-formed cells contribute to disjoint sets of kinds, so which
-    // cells a ruleset permits now changes *what* a universe's economy can
+    // differently-formed cells contribute to *differently shaped* baskets, so
+    // which cells a ruleset permits now changes *what* a universe's economy can
     // produce and not merely *how much*.
+    //
+    // Phrased as a shape comparison rather than as disjointness, and that is the
+    // 2026-08-16 re-author again. Disjointness was never the claim the design
+    // makes — `kinds.ts` says outright that "forms are deliberately not
+    // partitioned" — and it was only ever true here because Herbam happened to
+    // route nothing to stone. It now routes a little, for the beam, while
+    // Terram routes *everything* to stone. Asserting the shape keeps the claim
+    // true under any future retune that keeps the forms distinct, which
+    // disjointness would not.
     const terram = bonusesFor(
       stateHolding(nodeContentId(TERRAM_NODE), LOCATION_KIND.mind, MASTERY_ACTIVATION_THRESHOLD, 0x0eff_b003)
         .state,
@@ -308,9 +370,134 @@ describe('resource-yield is routed by the node\'s form, and the routing discrimi
       permissiveRuleset(),
     );
 
+    const sum = (magnitudes: readonly number[]): number =>
+      magnitudes.reduce((total, magnitude) => total + magnitude, 0);
+    const share = (bonuses: typeof terram, kind: 'food' | 'stone' | 'vellum'): number => {
+      const total = sum(bonuses.resourceYield.food) + sum(bonuses.resourceYield.stone) +
+        sum(bonuses.resourceYield.vellum);
+      return total === 0 ? 0 : Math.round((sum(bonuses.resourceYield[kind]) * 1024) / total);
+    };
+
+    // Terram is still the pure quarry: everything it routes is stone.
     expect(terram.resourceYield.stone.length).toBeGreaterThan(0);
     expect(terram.resourceYield.food).toEqual([]);
-    expect(herbam.resourceYield.food.length).toBeGreaterThan(0);
-    expect(herbam.resourceYield.stone).toEqual([]);
+    expect(share(terram, 'stone')).toBe(1024);
+
+    // Herbam feeds and writes and barely quarries, which is the opposite
+    // universe on the same two axes.
+    expect(share(herbam, 'food')).toBeGreaterThan(share(terram, 'food'));
+    expect(share(herbam, 'stone')).toBeLessThan(share(terram, 'stone'));
+    expect(share(herbam, 'vellum')).toBeGreaterThan(share(terram, 'vellum'));
+  });
+});
+
+/**
+ * The third gate, and the one primitive that does not have it.
+ *
+ * `AQUAM_NODE` carries **both** economic primitives at `target: "universe"`,
+ * which is what makes the asymmetry testable on a single instance: one holder,
+ * one node, one tick, and the two primitives answer differently.
+ */
+const AQUAM_NODE = 'caq-turn-the-channel';
+
+describe('resource-yield needs a practitioner; build-rate does not', () => {
+  it('yields nothing from a castable, permitted node nobody is practising', () => {
+    // The instance is held at a mind, above the activation threshold, in a
+    // permitted cell — every gate the 0.4.x economy had. Before W53 this was a
+    // full contribution, and that is precisely why `permit-then-idle` scored
+    // 1.0001x `permissive-breadth`: a universe that does nothing still holds
+    // knowledge, and holding was the whole test.
+    const { state } = stateHolding(
+      nodeContentId(AQUAM_NODE),
+      LOCATION_KIND.mind,
+      MASTERY_ACTIVATION_THRESHOLD,
+      0x0eff_c001,
+      { practising: false },
+    );
+
+    const bonuses = bonusesFor(state, permissiveRuleset());
+
+    expect(bonuses.practisedInstances).toBe(0);
+    expect(bonuses.resourceYield.food).toEqual([]);
+    expect(bonuses.resourceYield.stone).toEqual([]);
+    expect(bonuses.resourceYield.vellum).toEqual([]);
+  });
+
+  it('still lets that same node reach construction, because build-rate is the control', () => {
+    const { state } = stateHolding(
+      nodeContentId(AQUAM_NODE),
+      LOCATION_KIND.mind,
+      MASTERY_ACTIVATION_THRESHOLD,
+      0x0eff_c002,
+      { practising: false },
+    );
+
+    const bonuses = bonusesFor(state, permissiveRuleset());
+
+    // One primitive moves per change, so the delta is attributable. A run where
+    // both went dark would be two balance movements measured as one.
+    expect(bonuses.buildRate.length).toBeGreaterThan(0);
+  });
+
+  it('yields from the same node the moment its holder commits to practising it', () => {
+    const { state } = stateHolding(
+      nodeContentId(AQUAM_NODE),
+      LOCATION_KIND.mind,
+      MASTERY_ACTIVATION_THRESHOLD,
+      0x0eff_c003,
+    );
+
+    const bonuses = bonusesFor(state, permissiveRuleset());
+
+    expect(bonuses.practisedInstances).toBe(1);
+    // Aquam routes wholly to food (`form.json`), so this is where it lands.
+    expect(bonuses.resourceYield.food.length).toBeGreaterThan(0);
+  });
+
+  it('is keyed on the node, not on the goal: practising something else yields nothing', () => {
+    // The sharpest form of "work performed". A mage practising her Terram is
+    // not thereby irrigating, and a gate that only asked "is she practising
+    // anything" would have made the target node decorative.
+    const nodeId = nodeContentId(AQUAM_NODE);
+    const { state, holder } = stateHolding(
+      nodeId,
+      LOCATION_KIND.mind,
+      MASTERY_ACTIVATION_THRESHOLD,
+      0x0eff_c004,
+      { practising: false },
+    );
+    writeCommitment(state, holder, {
+      goalId: GOAL.practice,
+      targetNodeId: nodeContentId(TERRAM_NODE),
+      adoptedTick: 0,
+      score: 0,
+    });
+
+    const bonuses = bonusesFor(state, permissiveRuleset());
+
+    expect(bonuses.practisedInstances).toBe(0);
+    expect(bonuses.resourceYield.food).toEqual([]);
+  });
+
+  it('is keyed on the goal, not on the target: researching that node yields nothing', () => {
+    const nodeId = nodeContentId(AQUAM_NODE);
+    const { state, holder } = stateHolding(
+      nodeId,
+      LOCATION_KIND.mind,
+      MASTERY_ACTIVATION_THRESHOLD,
+      0x0eff_c005,
+      { practising: false },
+    );
+    writeCommitment(state, holder, {
+      goalId: GOAL.researchNode,
+      targetNodeId: nodeId,
+      adoptedTick: 0,
+      score: 0,
+    });
+
+    const bonuses = bonusesFor(state, permissiveRuleset());
+
+    expect(bonuses.practisedInstances).toBe(0);
+    expect(bonuses.resourceYield.food).toEqual([]);
   });
 });

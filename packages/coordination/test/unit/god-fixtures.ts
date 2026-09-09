@@ -127,7 +127,7 @@ export function godDeps(): GodDeps {
   };
 }
 
-/** World deps with the god installed, and the three effect seams filled. */
+/** World deps with the god installed, and the four effect seams filled. */
 export function godlyWorldDeps(traditionId: number): WorldStepDeps {
   const { cells } = catalogAndCells();
   return {
@@ -155,10 +155,10 @@ export interface GodWorldOptions {
   readonly traditionId?: number;
   /**
    * Every kind of the working stock, at the same figure — `world-fixtures.ts`'s
-   * `seededWorld` seeds all three abundantly for the same reason, and no test
-   * here has needed to differentiate them, so a single override keeps this
-   * fixture's surface the same shape it had before `MATERIAL_STOCK` split the
-   * one field into three.
+   * `seededWorld` seeds them abundantly for the same reason, and no test here
+   * has needed to differentiate them, so a single override keeps this fixture's
+   * surface the same shape it had before `MATERIAL_STOCK` split the one field
+   * into seven.
    */
   readonly materials?: Fixed;
   readonly prestige?: Fixed;
@@ -205,11 +205,27 @@ export function godWorld(schema: WorldSchema, options: GodWorldOptions = {}): Go
     favorCap: 0,
     ascended: 0,
   });
+  // **All seven at the working figure, not three.** They were three-and-four
+  // zeros while nothing produced or spent the four `material-economy` added.
+  // Now `god-cost.json` prices five verbs in materials — a dispensation in
+  // essence, a blessing in insight, a portal in passage, a funding in stone and
+  // labor — and the resolver refuses an action the stocks cannot pay, exactly
+  // as it refuses one the favor pool cannot. A fixture holding zero of four
+  // kinds would make eight tests in this package fail *correctly*, about a
+  // starting position rather than about the rules they were written for.
+  //
+  // Seeded deliberately rather than by widening a loop: a test that wants a god
+  // who cannot pay a material price sets one kind to zero itself, the way
+  // `knowledge-capital.test.ts` zeroes `vellum` to force a library shortfall.
   const materials = options.materials ?? 1000 * 1024;
   attachRecord(state, MATERIAL_STOCK, universe, {
     food: materials,
     stone: materials,
     vellum: materials,
+    labor: materials,
+    essence: materials,
+    insight: materials,
+    passage: materials,
   });
 
   const speciesId = registry().species[0]?.contentId ?? 1;

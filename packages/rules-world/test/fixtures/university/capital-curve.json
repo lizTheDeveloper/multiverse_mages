@@ -87,8 +87,8 @@
       },
       "adds.shelfReplacementCost": {
         "min": 0,
-        "max": 1142784,
-        "sum": 99606528,
+        "max": 1132544,
+        "sum": 99033088,
         "distinct": 5,
         "minAt": "seededDepth=0 speciesMix=human",
         "maxAt": "seededDepth=256 speciesMix=human"

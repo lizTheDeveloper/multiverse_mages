@@ -47,6 +47,23 @@ export const TOY_REGISTRIES: SweepRegistries = {
   factors: factorRegistry(['growth', 'ascendAt', 'a', 'b', 'c', 'alpha', 'zeta']),
 };
 
+/**
+ * A one-strategy, fixed-assignment pool.
+ *
+ * For tests whose subject is scheduling, storage or reproduction rather than the
+ * strategy pool. Since W18 a **round-robin** sweep must have a replicate count
+ * that is a multiple of its pool size — round-robin cycles on the replicate
+ * index alone, so any other count covers the pool partially or unevenly — and
+ * these tests want replicate counts like 1, 3 and 5 chosen to exercise an edge
+ * of the thing they are actually testing. Fixed assignment has no coverage
+ * question, so it is the honest pool for them.
+ */
+export const TOY_FIXED_POOL = {
+  strategies: ['toy-passive'],
+  assignment: 'fixed',
+  slots: 1,
+} as const;
+
 /** A valid sweep specification, with overrides for the case under test. */
 export function toySweep(overrides: Partial<SweepSpec> = {}): SweepSpec {
   return {

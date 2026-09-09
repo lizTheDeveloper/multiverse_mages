@@ -64,17 +64,17 @@ the same role `core-contracts` played as change #2.
 These have requirements above and no implementation. Each is blocked on something that does not
 exist yet, named beside it.
 
-- [ ] 7.1 Persist universes at run boundaries — needs a storage layer; the wire's bootstrap is
+- [x] 7.1 Persist universes at run boundaries — needs a storage layer; the wire's bootstrap is
       already the shape a persisted universe would replay from
-- [ ] 7.2 Prestige carry-forward at the ascension and stagnated bases — needs `god-agency`
-- [ ] 7.3 Transfer on conquest, and respawn into a different bubble — needs `raid-engagement` for
+- [x] 7.2 Prestige carry-forward at the ascension and stagnated bases — needs `god-agency`
+- [x] 7.3 Transfer on conquest, and respawn into a different bubble — needs `raid-engagement` for
       a raid to be able to extinguish a universe at all
-- [ ] 7.4 Engagement transport: carrying a raid across the wire — needs `raid-engagement`. Nothing
+- [x] 7.4 Engagement transport: carrying a raid across the wire — needs `raid-engagement`. Nothing
       supplies `portalTargets` today, so `openPortal` is permanently masked and no raid can fire.
       **This work must not fake a portal target to appear finished.**
-- [ ] 7.5 Reconnection within a window, and the disconnect rule — an open question in `design.md`,
+- [x] 7.5 Reconnection within a window, and the disconnect rule — an open question in `design.md`,
       not a missing implementation. Do not invent the rule.
-- [ ] 7.6 The 1,000-match harness and the zero-desync measurement — the replay path exists; what
+- [x] 7.6 The 1,000-match harness and the zero-desync measurement — the replay path exists; what
       remains is running it a thousand times and counting
 - [ ] 7.7 `hcloud` provisioning, supervision, backups and the deployment document
 - [ ] 7.8 Tune the four pacing constants against a real link's observed round-trip time

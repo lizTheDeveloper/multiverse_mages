@@ -50,6 +50,7 @@
     "knowledgeHalfLife",
     "libraryDependence",
     "lossShockRecovery",
+    "materialGradeProfile",
     "raidInitiationCost",
     "raidLengthDistribution",
     "referenceGrimoires",

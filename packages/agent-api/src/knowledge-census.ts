@@ -241,8 +241,17 @@ export interface InstanceMastery extends KnowledgeInstanceRecord {
   /** Whether `teach()` would accept this instance's holder as a teacher now. */
   readonly teachable: boolean;
   /**
-   * World ticks until `teach()` starts refusing: `0` if it already does, and
-   * `null` if the floor sits at or above the threshold so it never will.
+   * World ticks until `teach()` starts refusing **under decay alone**: `0` if it
+   * already does, and `null` if the floor sits at or above the threshold so it
+   * never will.
+   *
+   * **A lower bound, not a date.** `rules-magic`'s `practice`
+   * (`w196/mastery-rises`) raises mastery, and this projection does not model it
+   * — it cannot, because whether a mage goes back to the desk next month is a
+   * decision the autonomy layer has not made yet. So an instance never stops
+   * being teachable *sooner* than this says and often stops later.
+   * `knowledge-census-marooning-agreement.test.ts` asserts exactly that
+   * asymmetry, and counts the deferrals so the bound is not vacuously exact.
    *
    * **This is one more than the tick mastery reaches the threshold**, and that
    * is deliberate. `teaching.ts` refuses on `teacherMastery < threshold`, so a
@@ -252,14 +261,26 @@ export interface InstanceMastery extends KnowledgeInstanceRecord {
    */
   readonly ticksToUnteachable: number | null;
   /**
-   * Held, **not dormant**, and below the threshold. Nothing can raise it again.
+   * Held, **not dormant**, and below the threshold — so nobody may teach it
+   * *now*.
    *
-   * `setMastery` has exactly one rules-path caller (`decay.ts`) and it only ever
-   * lowers; `gateway.ts`'s `knows()` is set membership at any mastery, so the
-   * holder is skipped as both a student and a researcher for this node; and
-   * `scribing.ts` writes books at mastery `0` with no path back into a mind.
-   * The instance is alive, uncountable by `knowledgeHalfLife`, and will die with
-   * its holder having taught nobody.
+   * ## This used to be permanent, and `w196/mastery-rises` is why it is not
+   *
+   * Until `rules-magic`'s `practice` existed, `setMastery` had exactly one
+   * rules-path caller — `decay.ts` — and it only ever lowered. A marooned
+   * instance was therefore marooned for good: `gateway.ts`'s `knows()` is set
+   * membership at any mastery, so its holder was skipped as both a student and
+   * a researcher for that node, and `scribing.ts` writes books at mastery `0`
+   * with no path back into a mind. It was alive, uncountable by
+   * `knowledgeHalfLife`, and would die with its holder having taught nobody.
+   *
+   * `GOAL.practice` is the exit. A mage who spends her months drilling carries
+   * the instance back up to `practiceCeiling(tier, depthCeiling)`, which is at
+   * or above the teach threshold for every node she can legally hold. So this
+   * flag now reads *"stranded unless she goes and works on it"* rather than
+   * *"stranded"* — which is still worth publishing, because the month she
+   * spends is a month she is not researching, and a universe with many marooned
+   * instances is one whose academy is about to stop discovering things.
    */
   readonly marooned: boolean;
   /**
