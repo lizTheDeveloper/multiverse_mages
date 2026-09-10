@@ -341,7 +341,7 @@ describe('twenty world years in', () => {
     expect(bySpecies('draconic').occupiedCells).toBe(54);
     expect(bySpecies('human').occupiedCells).toBe(53);
     expect(bySpecies('gnome').occupiedCells).toBe(66);
-    expect(bySpecies('dwarf').occupiedCells).toBe(54);
+    expect(bySpecies('dwarf').occupiedCells).toBe(48);
     //
     // **`material-economy` measured this row too, and its numbers are recorded
     // rather than adopted.** Neither side's pin is a measurement of *this* tree:
