@@ -466,6 +466,7 @@ export type PrimitiveScale = 'world' | 'engagement' | 'both';
 export type PrimitiveStacking =
   | 'additive'
   | 'additive-into-multiplier'
+  | 'diminishing'
   | 'multiplicative-on-remainder'
   | 'max'
   | 'summed-then-single-ward'
@@ -482,6 +483,7 @@ export interface PrimitiveRecord {
   readonly scale: PrimitiveScale;
   readonly stacking: PrimitiveStacking;
   readonly cap: PrimitiveCap;
+  readonly floor?: PrimitiveCap;
 }
 
 /**

@@ -157,9 +157,8 @@ export function gatherEffects(
         continue;
       }
 
-      // w20: mode-aware magnitude filtering. `control` applies a floor/ceiling
-      // but contributes no magnitude. `reveal` reveals but contributes nothing.
-      if (effect.mode === 'control' || effect.mode === 'reveal') continue;
+      // w20: `reveal` reveals but contributes nothing to stacking.
+      if (effect.mode === 'reveal') continue;
 
       contributions.push({
         nodeId: instance.nodeId,
@@ -169,10 +168,10 @@ export function gatherEffects(
         durationTicks: effect.durationTicks,
         effectIndex,
         ...(effect.mode !== undefined ? { mode: effect.mode } : {}),
-        // Passed through, never judged here. A material requirement is a
-        // question about a stock, and this module has no stock and must not
-        // acquire one — `contracts.md` §5 keeps `rules-magic` out of the
-        // economy, and the gate lives with whoever holds the material.
+        // `control`-mode effects carry a floor/ceiling but contribute no
+        // magnitude to stacking. The contribution is still gathered so that
+        // `knowledge-effects.ts` can read the `control` payload.
+        ...(effect.control !== undefined ? { control: effect.control } : {}),
         ...(effect.requires === undefined ? {} : { requires: effect.requires }),
       });
     }

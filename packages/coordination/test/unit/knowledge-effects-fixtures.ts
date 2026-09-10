@@ -72,7 +72,12 @@ export function registryWith(mutate: (documents: Record<ContentFileName, unknown
   return loadContent(source);
 }
 
-/** A non-`v1`, non-Mentem cell every synthetic node in this file is added to. */
+/** Cell per mode — technique must cohere with the mode the node carries. */
+const CELL_FOR_MODE: Record<string, string> = {
+  create: 'creo-animal',
+  remove: 'perdo-animal',
+  control: 'rego-animal',
+};
 export const SYNTHETIC_CELL_ID = 'creo-animal';
 
 /** One effect, shaped exactly as `node.schema.json`'s `MODE_PAYLOADS` requires per mode. */
@@ -98,9 +103,10 @@ export function addSyntheticNode(
   id: string,
   effect: SyntheticEffect,
 ): void {
+  const cellId = CELL_FOR_MODE[effect.mode] ?? SYNTHETIC_CELL_ID;
   const cells = documents['cell.json'] as { id: string; nodes: string[] }[];
-  const cell = cells.find((entry) => entry.id === SYNTHETIC_CELL_ID);
-  if (cell === undefined) throw new Error(`fixture cell "${SYNTHETIC_CELL_ID}" not found in cell.json`);
+  const cell = cells.find((entry) => entry.id === cellId);
+  if (cell === undefined) throw new Error(`fixture cell "${cellId}" not found in cell.json`);
   cell.nodes.push(id);
 
   const nodes = documents['node.json'] as unknown[];
@@ -116,7 +122,7 @@ export function addSyntheticNode(
 
   nodes.push({
     id,
-    cell: SYNTHETIC_CELL_ID,
+    cell: cellId,
     name: id,
     gloss: 'a node authored only for knowledge-effects.ts tests',
     tier: 1,

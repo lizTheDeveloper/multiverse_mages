@@ -50,7 +50,7 @@ describe('the primitive floor', () => {
     const stacked = stackMagnitudes(research, [-2000], { floor: 256, counters });
 
     expect(stacked.value).toBe(256);
-    expect(stacked.clamped).toBe(true);
+    expect(stacked.floored).toBe(true);
     expect(counters.count('research-rate')).toBe(1);
   });
 

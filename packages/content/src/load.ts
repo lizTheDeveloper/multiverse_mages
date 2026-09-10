@@ -1314,7 +1314,7 @@ function checkNodes(
       // what admitted Perdo to the world economy at all.
       const scale = primitive.scale;
       const technique = cell?.technique;
-      if (scale === 'world' && technique === 'perdo' && effect.magnitude > 0) {
+      if (scale === 'world' && technique === 'perdo' && effect.magnitude > 0 && effect.mode === undefined) {
         out.push(
           diagnostic(
             file,
@@ -1327,7 +1327,7 @@ function checkNodes(
           ),
         );
       }
-      if (scale === 'world' && technique === 'creo' && effect.magnitude < 0) {
+      if (scale === 'world' && technique === 'creo' && effect.magnitude < 0 && effect.mode === undefined) {
         out.push(
           diagnostic(
             file,

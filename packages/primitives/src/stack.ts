@@ -31,6 +31,7 @@ import type { CapContext } from './caps.js';
 import {
   additive,
   additiveIntoMultiplier,
+  diminishing,
   maxOf,
   multiplicativeOnRemainder,
   presence,
@@ -118,6 +119,8 @@ function stackByRule(stacking: PrimitiveStacking, magnitudes: readonly Fixed[]):
       return maxOf(magnitudes);
     case 'presence':
       return presence(magnitudes);
+    case 'diminishing':
+      return diminishing(magnitudes);
   }
 }
 
@@ -155,7 +158,7 @@ export function stackMagnitudes(
   options: StackOptions = {},
 ): StackOutcome {
   const ablation = options.ablation ?? NO_ABLATION;
-  const stacking = primitive.stacking as PrimitiveStacking;
+  const stacking = primitive.stacking;
   let value = ablation.neutralizes(primitive.id)
     ? neutralizedMagnitude(stacking)
     : stackByRule(stacking, magnitudes);

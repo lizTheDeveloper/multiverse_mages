@@ -44,24 +44,14 @@
  */
 
 import type { Fixed } from '@mm/sim-core';
-import type { PrimitiveCap, PrimitiveRecord } from '@mm/content';
+import type { PrimitiveRecord } from '@mm/content';
 import { capLimit } from '@mm/primitives';
-
-/** `primitive.json`'s `floor`, once `PrimitiveRecord` declares it. Same shape as `cap`. */
-type PrimitiveRecordWithFloor = PrimitiveRecord & { readonly floor?: PrimitiveCap };
 
 /**
  * The primitive's own authored floor, in `fp`, or `undefined` for a primitive
  * with none.
- *
- * `contracts.md` §3's Floor column is `fp` or absent for every world-scale
- * rate this package stacks, but the resolution goes through `capLimit` rather
- * than reading `.value` directly so a `fraction-of-species-base` floor — none
- * shipped today, but a shape `track.schema.json` does not forbid — resolves
- * correctly rather than silently reading as "no floor".
  */
 export function primitiveFloor(primitive: PrimitiveRecord, speciesBase?: Fixed): Fixed | undefined {
-  const floor = (primitive as PrimitiveRecordWithFloor).floor;
-  if (floor === undefined) return undefined;
-  return capLimit(floor, speciesBase === undefined ? {} : { speciesBase });
+  if (primitive.floor === undefined) return undefined;
+  return capLimit(primitive.floor, speciesBase === undefined ? {} : { speciesBase });
 }
