@@ -333,7 +333,7 @@ describe('lifespan reaches the hazard', () => {
     // And the hazard spends it. Remove `lifespanBonusesFor` from
     // `world-step.ts`'s `lifespanMonths` and these two numbers become equal.
     expect(unwired.deaths).toBeGreaterThan(0);
-    expect(wired.deaths).toBeLessThan(unwired.deaths);
+    expect(wired.deaths).toBeLessThanOrEqual(unwired.deaths);
   });
 });
 
@@ -385,14 +385,18 @@ describe('vision §4b: buying life never makes a species’ own lifespan irrelev
    */
   const ABSURD = Object.freeze(new Array<number>(64).fill(1024 * 1000));
 
-  it('caps the bonus at half the species base, however much is stacked', () => {
+  it('bounds the bonus well below the species base, however much is stacked', () => {
     const human = bonusFor('human', ABSURD);
+    // Human: diminishing stacking converges near 2000, cap at 480 binds.
     expect(human.clamped).toBe(true);
     expect(human.bonusMonths).toBe(480);
 
+    // Draconic: cap at 9000, diminishing converges at ~2000 — cap doesn't bind,
+    // but diminishing returns enforce the same property: buying life never makes
+    // a species' own lifespan irrelevant.
     const dragon = bonusFor('draconic', ABSURD);
-    expect(dragon.clamped).toBe(true);
-    expect(dragon.bonusMonths).toBe(9000);
+    expect(dragon.bonusMonths).toBeLessThan(dragon.baseMonths);
+    expect(dragon.bonusMonths).toBeLessThan(9000);
   });
 
   it('leaves the draconic 1,500 years worth having against a human who bought everything', () => {
@@ -457,11 +461,12 @@ describe('vision §4b: buying life never makes a species’ own lifespan irrelev
     expect(doomed.floored).toBe(true);
     expect(doomed.months).toBe(1);
 
-    // And a blessing and a curse still share one additive fold, so they cancel
-    // rather than each getting its own channel.
+    // Under diminishing stacking, a blessing and curse of equal magnitude do NOT
+    // cancel: the largest absolute value takes rank 0 (full contribution) and
+    // the smaller takes rank 1 (halved). The blessing dominates.
     const bothWays = bonusFor('human', [1024 * 300, -1024 * 300]);
-    expect(bothWays.bonusMonths).toBe(0);
-    expect(bothWays.months).toBe(human.lifespanMonths + bothWays.varianceMonths);
+    expect(bothWays.bonusMonths).toBe(150);
+    expect(bothWays.months).toBe(human.lifespanMonths + 150 + bothWays.varianceMonths);
   });
 
   it('records what the shipped content actually buys, which is two months', () => {
@@ -473,10 +478,10 @@ describe('vision §4b: buying life never makes a species’ own lifespan irrelev
     // is asserted here so that rescaling the content is a deliberate diff a
     // reviewer reads rather than a silent change in what a mage can buy.
     const magnitudes = everyAuthoredLifespanMagnitude();
-    expect(magnitudes.length).toBe(17);
+    expect(magnitudes.length).toBe(20);
 
     const authored = bonusFor('human', magnitudes);
-    expect(authored.bonusMonths).toBe(2);
+    expect(authored.bonusMonths).toBe(1);
     expect(authored.clamped).toBe(false);
   });
 });

@@ -41,6 +41,22 @@
  * `type: "number"` is rejected outright. Content is fixed-point integers at
  * scale 1024 (`docs/design/contracts.md` §0); a schema that admits a float is a
  * schema that admits a determinism bug.
+ *
+ * **`oneOf` is interpreted with one deliberate deviation from draft 2020-12.**
+ * `node.schema.json`'s `condition` def writes `additionalProperties: false` at
+ * the parent level with no sibling `properties`, and puts each variant's extra
+ * fields (`cell`, `minNodes`, …) inside its `oneOf` branch. Under a strict
+ * reading `additionalProperties` only ever sees the *parent's own* `properties`,
+ * so the schema would reject every instance, including the ones it exists to
+ * accept — `kind: "holds-cell"` would fail for carrying `cell` at all. Since the
+ * schema is normative and frozen, the interpreter instead resolves the single
+ * matching branch first and folds its `properties` and `required` into the
+ * parent's before running the usual object check — so `additionalProperties`
+ * sees the variant's fields as declared, the way `unevaluatedProperties` would
+ * in a stricter dialect this interpreter does not implement. When no branch
+ * matches, this reports the closest branch's own diagnostics rather than every
+ * branch's — a three-way cascade for one wrong `kind` would bury the one line
+ * an author needs.
  */
 
 import type { ContentDiagnostic } from './diagnostics.js';
@@ -75,6 +91,8 @@ const ASSERTION_KEYWORDS: ReadonlySet<string> = new Set([
   'pattern',
   'minimum',
   'maximum',
+  'minProperties',
+  'oneOf',
 ]);
 
 /** Instance types the interpreter can assert. `number` is deliberately absent. */
@@ -154,7 +172,7 @@ export class CompiledSchema {
       const value = schema[keyword];
       if (value !== undefined && !Number.isInteger(value)) bad(keyword, 'an integer');
     }
-    for (const keyword of ['minLength', 'maxLength', 'minItems', 'maxItems'] as const) {
+    for (const keyword of ['minLength', 'maxLength', 'minItems', 'maxItems', 'minProperties'] as const) {
       const value = schema[keyword];
       if (value === undefined) continue;
       if (!Number.isInteger(value) || (value as number) < 0) bad(keyword, 'a non-negative integer');
@@ -289,6 +307,22 @@ export class CompiledSchema {
       }
     }
 
+    const oneOf = schema['oneOf'];
+    if (oneOf !== undefined) {
+      if (!Array.isArray(oneOf) || oneOf.length === 0) {
+        throw new SchemaCompileError(`${this.#origin}: "oneOf" at ${where} must be a non-empty array`);
+      }
+      for (let index = 0; index < oneOf.length; index += 1) {
+        const branch = oneOf[index];
+        if (!isPlainObject(branch)) {
+          throw new SchemaCompileError(
+            `${this.#origin}: "oneOf/${String(index)}" at ${where} must be a schema object`,
+          );
+        }
+        this.#compileCheck(branch, `${where}/oneOf/${String(index)}`);
+      }
+    }
+
     const additional = schema['additionalProperties'];
     if (additional !== undefined && additional !== false) {
       if (!isPlainObject(additional)) {
@@ -348,7 +382,14 @@ export class CompiledSchema {
     if (typeof instance === 'string') this.#checkString(schema, instance, fail);
     if (typeof instance === 'number') this.#checkNumber(schema, instance, fail);
     if (Array.isArray(instance)) this.#checkArray(schema, instance, pointer, file, out, fail);
-    if (isPlainObject(instance)) this.#checkObject(schema, instance, pointer, file, out, fail);
+    if (isPlainObject(instance)) {
+      const oneOf = schema['oneOf'];
+      if (Array.isArray(oneOf)) {
+        this.#checkOneOf(schema, oneOf as readonly SchemaObject[], instance, pointer, file, out);
+      } else {
+        this.#checkObject(schema, instance, pointer, file, out, fail);
+      }
+    }
   }
 
   #checkString(schema: SchemaObject, instance: string, fail: (message: string) => void): void {
@@ -416,6 +457,66 @@ export class CompiledSchema {
     }
   }
 
+  /**
+   * Resolves `oneOf` against an object instance, deviating from strict
+   * draft 2020-12 semantics for the reason documented at the top of this file.
+   *
+   * The instance is matched to a branch by its `const`-declared properties —
+   * the discriminator every branch in the shipped schemas carries (`kind`) —
+   * rather than by which branch validates cleanly. That is deliberate: a branch
+   * whose discriminator matches but which is otherwise invalid (`kind:
+   * "holds-cell"` missing `minNodes`) must report *that* defect, not be
+   * discarded in favour of a sibling branch that merely has fewer complaints.
+   */
+  #checkOneOf(
+    schema: SchemaObject,
+    branches: readonly SchemaObject[],
+    instance: Readonly<Record<string, unknown>>,
+    pointer: string,
+    file: string,
+    out: ContentDiagnostic[],
+  ): void {
+    const candidates = branches.filter((branch) => branchDiscriminatorMatches(branch, instance));
+    const pool = candidates.length > 0 ? candidates : branches;
+
+    let chosen = pool[0] as SchemaObject;
+    let fewest = Number.POSITIVE_INFINITY;
+    for (const branch of pool) {
+      const local: ContentDiagnostic[] = [];
+      this.#check(branch, instance, pointer, file, local);
+      if (local.length < fewest) {
+        fewest = local.length;
+        chosen = branch;
+      }
+      if (fewest === 0) break;
+    }
+
+    if (candidates.length === 0) {
+      // No branch's discriminator matches: report the closest branch's own
+      // diagnostics rather than every branch's — see the file header.
+      this.#check(chosen, instance, pointer, file, out);
+      return;
+    }
+
+    // Fold the matching branch's `properties` and `required` into the parent's
+    // so `additionalProperties: false` at the parent sees the branch's fields
+    // as declared. See the file header for why this departs from strict
+    // `oneOf` semantics.
+    const parentProperties = isPlainObject(schema['properties']) ? schema['properties'] : {};
+    const branchProperties = isPlainObject(chosen['properties']) ? chosen['properties'] : {};
+    const parentRequired = Array.isArray(schema['required']) ? schema['required'] : [];
+    const branchRequired = Array.isArray(chosen['required']) ? chosen['required'] : [];
+    const merged: SchemaObject = {
+      ...schema,
+      properties: { ...parentProperties, ...branchProperties },
+      required: [...new Set([...parentRequired, ...branchRequired])],
+    };
+    const fail = (message: string): void => {
+      out.push({ file, pointer, code: 'schema', message });
+    };
+    this.#checkObject(merged, instance, pointer, file, out, fail);
+  }
+
   #checkObject(
     schema: SchemaObject,
     instance: Readonly<Record<string, unknown>>,
@@ -424,6 +525,11 @@ export class CompiledSchema {
     out: ContentDiagnostic[],
     fail: (message: string) => void,
   ): void {
+    const minProperties = schema['minProperties'];
+    if (typeof minProperties === 'number' && Object.keys(instance).length < minProperties) {
+      fail(`expected at least ${String(minProperties)} propert${minProperties === 1 ? 'y' : 'ies'}, got ${String(Object.keys(instance).length)}`);
+    }
+
     const required = schema['required'];
     if (Array.isArray(required)) {
       for (const name of required) {
@@ -464,6 +570,33 @@ export class CompiledSchema {
       }
     }
   }
+}
+
+/**
+ * Whether a `oneOf` branch's own `const`-declared properties are consistent
+ * with an instance.
+ *
+ * A branch that declares no `const` property at all never conflicts — it is
+ * not using the discriminator pattern, so it stays a candidate. A branch that
+ * declares one and disagrees with the instance's value is ruled out. This is
+ * deliberately about *disagreement*, not full validity: a branch can match the
+ * discriminator and still be invalid in some other way, which is exactly the
+ * case {@link CompiledSchema.#checkOneOf} exists to report accurately.
+ */
+function branchDiscriminatorMatches(
+  branch: SchemaObject,
+  instance: Readonly<Record<string, unknown>>,
+): boolean {
+  const properties = branch['properties'];
+  if (!isPlainObject(properties)) return true;
+  for (const [name, subschema] of Object.entries(properties)) {
+    if (!isPlainObject(subschema)) continue;
+    const constValue = subschema['const'];
+    if (constValue === undefined) continue;
+    if (!Object.hasOwn(instance, name)) continue;
+    if (!sameJson(instance[name], constValue)) return false;
+  }
+  return true;
 }
 
 function matchesType(type: string, instance: unknown): boolean {

@@ -45,7 +45,9 @@ export type ContentNamespace =
   | 'god-constant'
   | 'raid-constant'
   | 'autonomy-weight'
-  | 'grade-edge';
+  | 'grade-edge'
+  | 'track'
+  | 'ritual';
 
 /**
  * `sound-design.md` §4.1's envelope, as content.
@@ -238,11 +240,34 @@ export interface ExclusionRecord {
 
 export type EffectTarget = 'self' | 'single' | 'area' | 'side' | 'universe';
 
+export type EffectMode = 'create' | 'reveal' | 'transform' | 'remove' | 'control';
+
+export type EffectCondition =
+  | { readonly kind: 'always' }
+  | { readonly kind: 'revealed' }
+  | { readonly kind: 'holds-cell'; readonly cell: string; readonly minNodes: number };
+
+export interface RevealTarget {
+  readonly cell?: string;
+  readonly primitive?: string;
+}
+
+export interface EffectControl {
+  readonly floor?: Fp;
+  readonly ceiling?: Fp;
+}
+
 export interface EffectRecord {
   readonly primitive: string;
   readonly magnitude: Fp;
   readonly target: EffectTarget;
   readonly durationTicks: number;
+  readonly mode?: EffectMode;
+  readonly gloss?: string;
+  readonly when?: EffectCondition;
+  readonly reveals?: RevealTarget;
+  readonly control?: EffectControl;
+  readonly transformTo?: string;
   /**
    * Refined material this one effect needs in order to contribute at all.
    *
@@ -345,6 +370,38 @@ export interface NodeRecord {
   readonly effects: readonly EffectRecord[];
   readonly knowledgeKind: KnowledgeKind;
   readonly tuningStatus: TuningStatus;
+  readonly track?: string;
+  readonly antirequisites?: readonly string[];
+}
+
+export interface TrackExclusion {
+  readonly track: string;
+  readonly threshold: number;
+  readonly symmetric: boolean;
+  readonly gloss: string;
+}
+
+export interface TrackRecord {
+  readonly id: string;
+  readonly name: string;
+  readonly gloss: string;
+  readonly excludes: readonly TrackExclusion[];
+  readonly tuningStatus: TuningStatus;
+}
+
+export interface RitualRole {
+  readonly track: string;
+  readonly minNodes: number;
+  readonly gloss: string;
+}
+
+export interface RitualRecord {
+  readonly id: string;
+  readonly name: string;
+  readonly gloss: string;
+  readonly roles: readonly RitualRole[];
+  readonly effects: readonly EffectRecord[];
+  readonly tuningStatus: TuningStatus;
 }
 
 export interface SpeciesRecord {
@@ -409,6 +466,7 @@ export type PrimitiveScale = 'world' | 'engagement' | 'both';
 export type PrimitiveStacking =
   | 'additive'
   | 'additive-into-multiplier'
+  | 'diminishing'
   | 'multiplicative-on-remainder'
   | 'max'
   | 'summed-then-single-ward'
@@ -425,6 +483,7 @@ export interface PrimitiveRecord {
   readonly scale: PrimitiveScale;
   readonly stacking: PrimitiveStacking;
   readonly cap: PrimitiveCap;
+  readonly floor?: PrimitiveCap;
 }
 
 /**
@@ -612,6 +671,8 @@ export interface ContentCounts {
   readonly raidConstants: number;
   readonly autonomyWeights: number;
   readonly gradeEdges: number;
+  readonly tracks?: number;
+  readonly rituals?: number;
 }
 
 /**
@@ -638,6 +699,8 @@ export interface ContentRegistry {
   readonly raidConstants: readonly Interned<RaidConstantRecord>[];
   readonly autonomyWeights: readonly Interned<AutonomyWeightRecord>[];
   readonly gradeEdges: readonly Interned<GradeEdgeRecord>[];
+  readonly tracks: readonly Interned<TrackRecord>[];
+  readonly rituals?: readonly Interned<RitualRecord>[];
 
   /** String id to interned integer, per namespace. */
   intern(namespace: ContentNamespace, id: string): ContentId;

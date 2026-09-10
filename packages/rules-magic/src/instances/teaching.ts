@@ -46,6 +46,8 @@ import type { PersonalStore } from '../traditions/store.js';
 import type { CellResolver, KnowledgeRng, NodeCatalog } from './catalog.js';
 import { requireNode } from './catalog.js';
 import { DEFAULT_TEACH_THRESHOLD, MASTERY_MAX, TEACHING_JITTER_SPAN } from './constants.js';
+import type { TrackCatalog } from './exclusion.js';
+import { acquisitionExclusion } from './exclusion.js';
 import type { KnowledgeRefusal } from './outcomes.js';
 import { personalLocationKind, personalStoreFull, unsatisfiedPrerequisite } from './research.js';
 import type { KnowledgeSubsystem } from './subsystem.js';
@@ -75,6 +77,21 @@ export interface TeachingInputs {
    * Memory's most learned mages its worst instructors.
    */
   readonly store?: PersonalStore;
+  /**
+   * The universe's track catalog, for the track-exclusion half of
+   * `exclusion.ts`'s `acquisitionExclusion`. See {@link
+   * ResearchInputs.tracks} in `research.ts` — same shape, same "omitted means
+   * nothing is excluded" default — checked here against the **student**, not
+   * the teacher: *"a teacher can only pass on what a student's own
+   * commitments permit them to receive"* (`compositional-content.md` §3.2, as
+   * corrected). A teacher who knows a track the student has already excluded
+   * herself from cannot transmit it, however willing either of them is.
+   *
+   * `| undefined` rather than merely optional — `exactOptionalPropertyTypes`
+   * is on and a caller forwards a possibly-`undefined` catalog straight
+   * through (see `research.ts`'s `ResearchInputs.tracks` for the same note).
+   */
+  readonly tracks?: TrackCatalog | undefined;
 }
 
 export interface TeachingOutcome {
@@ -177,6 +194,19 @@ export function teach(inputs: TeachingInputs): TeachingOutcome {
     node,
   );
   if (missing !== undefined) return refuse(missing, teacherMastery);
+
+  // Checked against the **student**, never the teacher — see this file's
+  // `TeachingInputs.tracks` note and `exclusion.ts`'s module note. A teacher
+  // may know both halves of an excluded pair; what she may pass on is bounded
+  // by what her student's own commitments permit.
+  const excluded = acquisitionExclusion(
+    inputs.knowledge,
+    inputs.catalog,
+    inputs.tracks,
+    inputs.student,
+    node,
+  );
+  if (excluded !== undefined) return refuse(excluded, teacherMastery);
 
   const full = personalStoreFull(inputs.knowledge, inputs.store, inputs.student, inputs.nodeId);
   if (full !== undefined) return refuse(full, teacherMastery);

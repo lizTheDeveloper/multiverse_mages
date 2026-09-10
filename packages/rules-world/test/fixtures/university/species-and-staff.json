@@ -169,8 +169,8 @@
       "contains.dominantCell": {
         "min": 0,
         "max": 66,
-        "sum": 92400,
-        "distinct": 2,
+        "sum": 92120,
+        "distinct": 3,
         "minAt": "speciesMix=human staffSize=0 roleMix=teaching-school",
         "maxAt": "speciesMix=human staffSize=1 roleMix=teaching-school"
       },
@@ -208,8 +208,8 @@
       },
       "contains.profileCells": {
         "min": 0,
-        "max": 4,
-        "sum": 2520,
+        "max": 3,
+        "sum": 2240,
         "distinct": 4,
         "minAt": "speciesMix=human staffSize=0 roleMix=teaching-school",
         "maxAt": "speciesMix=human staffSize=16 roleMix=teaching-school"

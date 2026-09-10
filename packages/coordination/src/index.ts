@@ -69,6 +69,13 @@ export type { CellNodeIndex } from './frontier-index.js';
 export { cellNodeIndex } from './frontier-index.js';
 
 export type {
+  KnowledgeEffectDeps,
+  KnowledgeEffectHooks,
+  KnowledgeWorldEffects,
+} from './knowledge-effects.js';
+export { knowledgeEffectHooks } from './knowledge-effects.js';
+
+export type {
   CompletedEffort,
   GatewayDeps,
   LivingMage,

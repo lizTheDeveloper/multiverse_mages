@@ -152,9 +152,10 @@ describe('interning', () => {
     // The count before that was 300, from pre-authoring the other 58 cells (249
     // nodes) plus `knowledge-model` task 2.5's `rn-keep-the-name-close`, the one
     // neither side of that merge shared.
-    expect(registry.intern('node', 'pn-the-wrong-true-name')).toBe(227);
-    expect(registry.intern('node', 'rn-keep-the-name-close')).toBe(286);
-    expect(registry.intern('node', 'rv-turn-the-casting')).toBe(301);
+    // w20: 57 compositional nodes shift sort order. Recounted on merge.
+    expect(registry.intern('node', 'pn-the-wrong-true-name')).toBe(261);
+    expect(registry.intern('node', 'rn-keep-the-name-close')).toBe(335);
+    expect(registry.intern('node', 'rv-turn-the-casting')).toBe(358);
     expect(registry.intern('species', 'draconic')).toBe(1);
     expect(registry.intern('tradition', 'art-of-memory')).toBe(1);
     expect(registry.intern('primitive', 'area-denial')).toBe(1);
@@ -982,7 +983,7 @@ describe('contentRevision', () => {
     // nothing outside the raid's `area-denial` fields read. Nine records move,
     // and no other file does.
     //
-    // 3343812bdf9bab44f768b440e2009a6f -> 6f7b87f56e40c3cbeb4305ff2fdfb442, on
+    // 3343812bdf9bab44f768b440e2009a6f -> cb4c1a3e43a67f81a6315c3590b749ef, on
     // `integration/all-branches`, 2026-08-17. **The combine of the three
     // entries above, and not one of the three branch literals survives it.**
     // `w/exp-yields` pinned `3343812b...` on a tree with no `grade-edge.json`
@@ -994,7 +995,7 @@ describe('contentRevision', () => {
     // literal is MEASURED with `node packages/content/bin/validate-content.mjs`
     // after `npx tsc --build --force` on the merged tree rather than chosen
     // between them.
-    expect(registry.contentRevision).toBe('6f7b87f56e40c3cbeb4305ff2fdfb442');
+    expect(registry.contentRevision).toBe('cb4c1a3e43a67f81a6315c3590b749ef');
   });
 
   it('is stable across loads of identical content', () => {

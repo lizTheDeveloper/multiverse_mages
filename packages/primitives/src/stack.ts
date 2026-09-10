@@ -31,10 +31,33 @@ import type { CapContext } from './caps.js';
 import {
   additive,
   additiveIntoMultiplier,
+  diminishing,
   maxOf,
   multiplicativeOnRemainder,
   presence,
 } from './stacking.js';
+
+export interface EffectControl {
+  readonly floor?: Fixed;
+  readonly ceiling?: Fixed;
+}
+
+export function combineControls(controls: readonly EffectControl[]): EffectControl {
+  let floor: Fixed | undefined;
+  let ceiling: Fixed | undefined;
+  for (const control of controls) {
+    if (control.floor !== undefined) {
+      floor = floor === undefined ? control.floor : Math.max(floor, control.floor);
+    }
+    if (control.ceiling !== undefined) {
+      ceiling = ceiling === undefined ? control.ceiling : Math.min(ceiling, control.ceiling);
+    }
+  }
+  const combined: { floor?: Fixed; ceiling?: Fixed } = {};
+  if (floor !== undefined) combined.floor = floor;
+  if (ceiling !== undefined) combined.ceiling = ceiling;
+  return combined;
+}
 
 export interface StackOptions extends CapContext {
   /**
@@ -49,6 +72,8 @@ export interface StackOptions extends CapContext {
    * fixture takes the path it always took.
    */
   readonly ablation?: AblationMask;
+  readonly floor?: Fixed;
+  readonly clamp?: EffectControl;
 }
 
 /** The stacked, bounded magnitude, and which of the two bounds produced it. */
@@ -94,6 +119,8 @@ function stackByRule(stacking: PrimitiveStacking, magnitudes: readonly Fixed[]):
       return maxOf(magnitudes);
     case 'presence':
       return presence(magnitudes);
+    case 'diminishing':
+      return diminishing(magnitudes);
   }
 }
 
@@ -131,30 +158,62 @@ export function stackMagnitudes(
   options: StackOptions = {},
 ): StackOutcome {
   const ablation = options.ablation ?? NO_ABLATION;
-  const stacked = ablation.neutralizes(primitive.id)
-    ? neutralizedMagnitude(primitive.stacking)
-    : stackByRule(primitive.stacking, magnitudes);
+  const stacking = primitive.stacking;
+  let value = ablation.neutralizes(primitive.id)
+    ? neutralizedMagnitude(stacking)
+    : stackByRule(stacking, magnitudes);
 
-  // Floor first, then cap. The order is forced rather than chosen: the floor is
-  // below the cap for every rule that has both, so a value raised to the floor
-  // can never then be clamped, and a value cut to the cap can never then be
-  // raised. Doing it the other way round would produce the same numbers and
-  // would leave the two bounds *able* to disagree the day a cap is authored
-  // below zero — which `primitive.schema.json` still permits structurally,
-  // since a cap value has `"minimum": 0`.
-  const floored = applyFloor(stackingFloor(primitive.stacking), stacked);
-  const capped = applyCap(
-    primitive.cap,
-    floored.value,
-    options.speciesBase === undefined ? {} : { speciesBase: options.speciesBase },
-  );
+  let clamped = false;
+  let floored = false;
 
-  if (floored.floored) {
+  // Primitive floor (from stacking rule)
+  const ruleFloor = applyFloor(stackingFloor(stacking), value);
+  if (ruleFloor.floored) {
+    value = ruleFloor.value;
+    floored = true;
     options.counters?.recordFloor(primitive.id);
   }
-  if (capped.clamped) {
+
+  // Authored floor (from options)
+  if (options.floor !== undefined && value < options.floor) {
+    value = options.floor;
+    floored = true;
     options.counters?.record(primitive.id);
   }
 
-  return { value: capped.value, clamped: capped.clamped, floored: floored.floored };
+  // Control clamp (Rego's gate)
+  if (options.clamp !== undefined) {
+    let { floor: clampFloor } = options.clamp;
+    const { ceiling } = options.clamp;
+    if (clampFloor !== undefined && ceiling !== undefined && clampFloor > ceiling) {
+      clampFloor = ceiling;
+    }
+    let stageClamped = false;
+    if (clampFloor !== undefined && value < clampFloor) {
+      value = clampFloor;
+      stageClamped = true;
+    }
+    if (ceiling !== undefined && value > ceiling) {
+      value = ceiling;
+      stageClamped = true;
+    }
+    if (stageClamped) {
+      clamped = true;
+      options.counters?.record(primitive.id);
+    }
+  }
+
+  // Cap (the primitive's authored cap)
+  const capped = applyCap(
+    primitive.cap,
+    value,
+    options.speciesBase === undefined ? {} : { speciesBase: options.speciesBase },
+  );
+
+  if (capped.clamped) {
+    clamped = true;
+    options.counters?.record(primitive.id);
+  }
+
+  return { value: capped.value, clamped, floored };
 }

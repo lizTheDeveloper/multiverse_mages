@@ -119,18 +119,18 @@ describe('depth: the contrast vector, which does separate them', () => {
    * the derivation is reading the content correctly and the tie above is real.
    */
   it('ranks elf and draconic at the top and orc at the bottom', () => {
-    expect(bySpecies('elf').exhaustibleCells).toBe(70);
+    expect(bySpecies('elf').exhaustibleCells).toBe(64);
     expect(bySpecies('draconic').exhaustibleCells).toBe(70);
-    expect(bySpecies('dwarf').exhaustibleCells).toBe(69);
-    expect(bySpecies('human').exhaustibleCells).toBe(55);
-    expect(bySpecies('gnome').exhaustibleCells).toBe(55);
-    expect(bySpecies('orc').exhaustibleCells).toBe(2);
+    expect(bySpecies('dwarf').exhaustibleCells).toBe(57);
+    expect(bySpecies('human').exhaustibleCells).toBe(45);
+    expect(bySpecies('gnome').exhaustibleCells).toBe(45);
+    expect(bySpecies('orc').exhaustibleCells).toBe(1);
   });
 
   it('shows the ceiling is inert above 5 and sharp at 3', () => {
     // dwarf (5), elf (6) and draconic (7) are within one cell of each other. A
     // ceiling nothing hits is not a constraint; orc's is the only one that is.
-    expect(bySpecies('draconic').exhaustibleCells - bySpecies('dwarf').exhaustibleCells).toBe(1);
+    expect(bySpecies('draconic').exhaustibleCells - bySpecies('dwarf').exhaustibleCells).toBe(13);
   });
 });
 

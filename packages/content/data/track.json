@@ -1,0 +1,85 @@
+[
+  {
+    "id": "the-open-mind",
+    "name": "The Open Mind",
+    "gloss": "Minds read, minds taught, minds joined. The scholar's route: it makes a university faster than any other line in the grid, and it makes every thought in that university legible to anyone who walks it.",
+    "excludes": [
+      {
+        "track": "the-sealed-mind",
+        "threshold": 2,
+        "symmetric": true,
+        "gloss": "Opening a mind and shutting one are the same act run backwards. Intellego Mentem is a filter opening onto a reverbless tone; Perdo Mentem is a hole taken out of that same tone. Opposed in kind, so the exclusion runs both ways."
+      }
+    ],
+    "tuningStatus": "untuned"
+  },
+  {
+    "id": "the-sealed-mind",
+    "name": "The Sealed Mind",
+    "gloss": "Thought made unreadable and then made absent. The warden's route: nothing on it teaches faster, and nothing else in the grid keeps a secret at all.",
+    "excludes": [],
+    "tuningStatus": "untuned"
+  },
+  {
+    "id": "the-quarried-world",
+    "name": "The Quarried World",
+    "gloss": "Stone found, stone lifted, stone set. The builder's route, and the only sustained source of universe-scale yield in the v1 grid.",
+    "excludes": [
+      {
+        "track": "the-hollow-ground",
+        "threshold": 2,
+        "symmetric": true,
+        "gloss": "Raising stone and collapsing it are one skill practised in opposite directions. A mason who has learned where a seam gives way cannot unlearn it, and will not trust the course she lays on it. Opposed in kind, so it runs both ways."
+      }
+    ],
+    "tuningStatus": "untuned"
+  },
+  {
+    "id": "the-hollow-ground",
+    "name": "The Hollow Ground",
+    "gloss": "Ground opened, arches pulled down, halls swallowed. The sapper's route: the deepest area denial in the grid, bought by giving up the ability to build.",
+    "excludes": [],
+    "tuningStatus": "untuned"
+  },
+  {
+    "id": "the-standing-gate",
+    "name": "The Standing Gate",
+    "gloss": "Thresholds counted, held, sealed, and finally opened. The portal-wright's route, and the only way to a gate that stands without being held.",
+    "excludes": [
+      {
+        "track": "the-nameless-road",
+        "threshold": 2,
+        "symmetric": true,
+        "gloss": "A gate is a name for a place, kept. The nameless road is the practice of taking names away. One mind cannot hold both doctrines and still find its own doors. Opposed in kind, so it runs both ways."
+      }
+    ],
+    "tuningStatus": "untuned"
+  },
+  {
+    "id": "the-nameless-road",
+    "name": "The Nameless Road",
+    "gloss": "Names heard, names taken, names unsaid. The thief's route: every knowledge-steal above the shallowest is on it, and so is the only real concealment in the grid.",
+    "excludes": [],
+    "tuningStatus": "untuned"
+  },
+  {
+    "id": "the-unwritten",
+    "name": "The Unwritten",
+    "gloss": "What is left when a scholar has refused both the open mind and the quarried world. The deepest nodes in the v1 grid sit here, and they are reachable only by a mage who has declined the two lines every other mage takes first.",
+    "excludes": [
+      {
+        "track": "the-open-mind",
+        "threshold": 1,
+        "symmetric": true,
+        "gloss": "The unwritten is what a mind holds that it has never made legible. A scholar who has given one lesson from an open mind has written it down in someone. Opposed in kind, so it runs both ways."
+      },
+      {
+        "track": "the-quarried-world",
+        "threshold": 1,
+        "symmetric": true,
+        "gloss": "A scholar who has cut one stone has written on the world. The unwritten is the practice of having left it alone. Opposed in kind, so it runs both ways."
+      }
+    ],
+    "tuningStatus": "untuned"
+  }
+]

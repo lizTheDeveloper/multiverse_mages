@@ -1,0 +1,74 @@
+[
+  {
+    "id": "read-the-sealed-shelf",
+    "name": "Read the Sealed Shelf",
+    "gloss": "One mind held open to every colleague in the hall; one mind held shut against every eye outside it. Neither alone builds a library — the first without the second is gossip, the second without the first is a locked box nobody can use. Together they are a shelf that is both fully public and fully secret: different walls of the same room, never one mind's work.",
+    "roles": [
+      {
+        "track": "the-open-mind",
+        "minNodes": 2,
+        "gloss": "The reader. She holds the room's knowledge open to every colleague who asks, which is the half of the working that makes the shelf usable at all."
+      },
+      {
+        "track": "the-sealed-mind",
+        "minNodes": 2,
+        "gloss": "The warden. He holds the room's knowledge shut against everyone who is not a colleague, which is the half of the working that makes the shelf worth keeping."
+      }
+    ],
+    "effects": [
+      {
+        "primitive": "research-rate",
+        "magnitude": 1024,
+        "target": "universe",
+        "durationTicks": 0,
+        "mode": "create",
+        "gloss": "The whole faculty reads faster while the shelf stands open to it — a bonus neither caster's own track produces at this scale by itself."
+      },
+      {
+        "primitive": "concealment",
+        "magnitude": 384,
+        "target": "universe",
+        "durationTicks": 0,
+        "mode": "create",
+        "gloss": "The same shelf gives nothing to a raider who was never granted the room. No single mind, however well warded, keeps a secret this deep alone."
+      }
+    ],
+    "tuningStatus": "untuned"
+  },
+  {
+    "id": "found-the-hollow-hall",
+    "name": "Found the Hollow Hall",
+    "gloss": "A hall raised over a chamber that was never filled in. The mason's line does not teach where a floor may safely be left hollow; the sapper's does not teach how to raise a course of stone above one. This working has exactly two authors — it rises faster than either doctrine manages alone, because the mason spends no effort fighting ground the sapper already left alone on purpose.",
+    "roles": [
+      {
+        "track": "the-quarried-world",
+        "minNodes": 2,
+        "gloss": "The mason. She raises the stone that becomes the hall, holding the only doctrine in the grid that still trusts a wall to stay up."
+      },
+      {
+        "track": "the-hollow-ground",
+        "minNodes": 2,
+        "gloss": "The sapper. He opens the exact chamber the hall is built over, holding the only doctrine that knows precisely where the ground will give."
+      }
+    ],
+    "effects": [
+      {
+        "primitive": "build-rate",
+        "magnitude": 1024,
+        "target": "universe",
+        "durationTicks": 0,
+        "mode": "create",
+        "gloss": "Construction across the whole university moves at a pace neither doctrine reaches alone — the mason is never waiting on ground the sapper has not already cleared."
+      },
+      {
+        "primitive": "resource-yield",
+        "magnitude": 512,
+        "target": "universe",
+        "durationTicks": 0,
+        "mode": "create",
+        "gloss": "The hollow beneath the hall is not waste; it is stock, drawn out clean because the sapper never has to fight the mason's own foundations to reach it."
+      }
+    ],
+    "tuningStatus": "untuned"
+  }
+]

@@ -35,7 +35,7 @@
  * see `stack.ts`.
  */
 
-import type { ContentId, EffectTarget, GradeRequirement } from '@mm/content';
+import type { ContentId, EffectControl, EffectMode, EffectTarget, GradeRequirement } from '@mm/content';
 import type { Fixed } from '@mm/sim-core';
 import type { Handle } from '@mm/state';
 import { LOCATION_KIND } from '@mm/state';
@@ -76,7 +76,12 @@ export interface EffectContribution {
    * before grades existed means.
    */
   readonly requires?: GradeRequirement;
+  readonly mode?: EffectMode;
+  readonly control?: EffectControl;
+  readonly transformTo?: string;
 }
+
+export type { EffectCondition, EffectControl, EffectMode, RevealTarget } from '@mm/content';
 
 /**
  * The part of a knowledge instance that effect gathering reads.

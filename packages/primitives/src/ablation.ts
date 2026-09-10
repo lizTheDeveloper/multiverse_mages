@@ -53,14 +53,15 @@
  * `contracts.md` §3 names five neutralizations; a sixth class arriving without
  * one is exactly what task 7.9's conformance check exists to catch, and a
  * mechanism that defaults cannot be caught. So the identities are declared
- * here, exhaustively over {@link PrimitiveStacking} — adding a class is a
+ * here, exhaustively over {@link PrimitiveStackingRule} — adding a class is a
  * compile error — and `test/unit/ablation.test.ts` checks the declaration
  * against each rule's own documented empty case so the two cannot drift.
  */
 
 import { FP_ONE } from '@mm/sim-core';
 import type { Fixed } from '@mm/sim-core';
-import type { PrimitiveStacking } from '@mm/content';
+
+import type { PrimitiveStackingRule } from './stacking.js';
 
 /**
  * What one arm of an ablation sweep neutralizes.
@@ -171,14 +172,18 @@ export function ablationMaskFor(primitiveIds: readonly string[]): AblationMask {
  * - **`presence`** — `0`, the gate reading as absent. `portal` is the only
  *   member, and neutralizing it removes raiding outright, which is why §7
  *   reports `portal` as `not-attributable` rather than as a win rate.
+ * - **`diminishing`** — `0`, same reasoning as `max`: it is a fold over an
+ *   empty multiset, not a rate with an implicit "no bonus" state, and the
+ *   only member (`lifespan`) already means "0 additional months" at `0`.
  */
-export const NEUTRALIZED_MAGNITUDE: Readonly<Record<PrimitiveStacking, Fixed>> = Object.freeze({
+export const NEUTRALIZED_MAGNITUDE: Readonly<Record<PrimitiveStackingRule, Fixed>> = Object.freeze({
   additive: 0,
   'summed-then-single-ward': 0,
   'additive-into-multiplier': FP_ONE,
   'multiplicative-on-remainder': 0,
   max: 0,
   presence: 0,
+  diminishing: 0,
 });
 
 /**
@@ -192,7 +197,7 @@ export const NEUTRALIZED_MAGNITUDE: Readonly<Record<PrimitiveStacking, Fixed>> =
  *
  * @throws RangeError naming the class.
  */
-export function neutralizedMagnitude(stacking: PrimitiveStacking): Fixed {
+export function neutralizedMagnitude(stacking: PrimitiveStackingRule): Fixed {
   const declared = NEUTRALIZED_MAGNITUDE[stacking] as Fixed | undefined;
   if (declared === undefined) {
     throw new RangeError(

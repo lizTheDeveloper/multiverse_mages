@@ -73,6 +73,8 @@ export interface KnowledgeNode {
    * `fidelity.ts`'s `KNOWLEDGE_KIND_STEP`.
    */
   readonly knowledgeKind: KnowledgeKind;
+  readonly trackId?: ContentId;
+  readonly antirequisites?: readonly ContentId[];
 }
 
 /** The loaded node graph, addressed by interned id. */

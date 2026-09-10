@@ -87,6 +87,8 @@ import { UNBOUNDED_SLOTS, admitToStore } from '../traditions/store.js';
 import type { CellResolver, KnowledgeNode, KnowledgeRng, NodeCatalog } from './catalog.js';
 import { requireNode } from './catalog.js';
 import { DEFAULT_INITIAL_MASTERY, RESEARCH_JITTER_SPAN } from './constants.js';
+import type { TrackCatalog } from './exclusion.js';
+import { acquisitionExclusion } from './exclusion.js';
 import type { KnowledgeRefusal } from './outcomes.js';
 import type { KnowledgeSubsystem } from './subsystem.js';
 
@@ -127,6 +129,8 @@ export interface ResearchInputs {
    * trait, and produces output identical to one that never binds.
    */
   readonly clampCounter: RediscoveryClampCounter;
+  /** w20: track exclusion catalog, if any. */
+  readonly tracks?: TrackCatalog;
   /**
    * Mastery a completed instance is created at.
    *
@@ -384,6 +388,10 @@ function refuseResearch(inputs: ResearchInputs, node: KnowledgeNode): KnowledgeR
   }
   const missing = unsatisfiedPrerequisite(inputs, node);
   if (missing !== undefined) return missing;
+  const excluded = acquisitionExclusion(
+    inputs.knowledge, inputs.catalog, inputs.tracks, inputs.subject, node,
+  );
+  if (excluded !== undefined) return excluded;
   return personalStoreFull(inputs.knowledge, inputs.store, inputs.subject, inputs.nodeId);
 }
 

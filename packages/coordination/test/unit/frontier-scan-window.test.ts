@@ -357,7 +357,7 @@ describe('the frontier scan is bounded by legality, not by a range of node ids',
     expect(rectangle.size).toBeLessThan(nodeCount);
     for (const nodeId of offered) expect(rectangle.has(nodeId)).toBe(true);
     expect([...offered].sort((a, b) => a - b)).toEqual(roots);
-    expect(roots.filter((nodeId) => nodeId > HISTORIC_SCAN_WINDOW)).toHaveLength(4);
+    expect(roots.filter((nodeId) => nodeId > HISTORIC_SCAN_WINDOW)).toHaveLength(5);
   });
 
   it('spends its result bound on the cheapest candidates, not the lowest-numbered', () => {
@@ -404,8 +404,8 @@ describe('what the window cost the shipped v1 subset', () => {
     // the lost block nor rescues anything from it. A content addition that moved
     // that second number would be the silent balance change this test exists to
     // catch.
-    expect(v1).toHaveLength(52);
-    expect(beyond).toHaveLength(18);
+    expect(v1).toHaveLength(109);
+    expect(beyond).toHaveLength(51);
 
     // And they were one contiguous block — the four `rego` cells of the v1
     // rectangle, which is why the symptom read as "a whole technique is missing"
@@ -415,7 +415,7 @@ describe('what the window cost the shipped v1 subset', () => {
         .nodes.filter((entry) => beyond.includes(entry.contentId))
         .map((entry) => entry.record.cell.split('-')[0]),
     );
-    expect([...names]).toEqual(['rego']);
+    expect([...names].sort()).toEqual(['perdo', 'rego']);
   });
 
   it('hid four v1 tier-1 roots, so the loss was not a depth or prerequisite effect', () => {
@@ -431,7 +431,7 @@ describe('what the window cost the shipped v1 subset', () => {
         entry.contentId > HISTORIC_SCAN_WINDOW,
     );
 
-    expect(roots).toHaveLength(4);
+    expect(roots).toHaveLength(5);
     for (const root of roots) expect(root.record.tier).toBe(1);
   });
 
@@ -451,7 +451,7 @@ describe('what the window cost the shipped v1 subset', () => {
       )
       .map((entry) => entry.contentId);
 
-    expect(roots).toHaveLength(4);
+    expect(roots).toHaveLength(5);
     for (const nodeId of roots) expect(offered.has(nodeId)).toBe(true);
   });
 
@@ -467,19 +467,19 @@ describe('what the window cost the shipped v1 subset', () => {
     // `pn-the-wrong-true-name` to `perdo-nomen` while `material-economy` was
     // out. A node count is a content decision and is recomputed here rather
     // than reasoned about, exactly as the historic count above it is.
-    expect(enabled).toHaveLength(301);
+    expect(enabled).toHaveLength(358);
     // 45, not 44, and by the same one node: `pn-the-wrong-true-name` interns
     // above the historic window, so it joins the block the window would have
     // lost. That it moved *this* count and not the historic one above is the
     // whole point of keeping the two separate — the historic figure is a
     // diagnosis of a subset that no longer exists and must not drift, and this
     // one is a live reading of the subset enabled now and is expected to.
-    expect(enabled.filter((nodeId) => nodeId > HISTORIC_SCAN_WINDOW)).toHaveLength(45);
+    expect(enabled.filter((nodeId) => nodeId > HISTORIC_SCAN_WINDOW)).toHaveLength(102);
 
     const enabledSet = new Set(enabled);
     const roots = prerequisiteFreeNodeIds().filter(
       (nodeId) => enabledSet.has(nodeId) && nodeId > HISTORIC_SCAN_WINDOW,
     );
-    expect(roots).toHaveLength(10);
+    expect(roots).toHaveLength(17);
   });
 });

@@ -260,6 +260,37 @@ const PROBES: Readonly<Record<string, readonly KeywordProbe[]>> = {
       without: { $defs: { fp: {} }, type: 'array', items: { $ref: '#/$defs/fp' } },
     },
   ],
+  minProperties: [
+    {
+      note: 'too few properties are reported',
+      schema: { type: 'object', minProperties: 1 },
+      violating: {},
+      satisfying: { a: 1 },
+      without: { type: 'object' },
+    },
+  ],
+  oneOf: [
+    {
+      note: 'the branch matching the discriminator is checked in full, not merely the least-wrong one',
+      schema: {
+        oneOf: [
+          { properties: { kind: { const: 'a' } }, required: ['kind'] },
+          {
+            properties: { kind: { const: 'b' }, x: { type: 'integer' } },
+            required: ['kind', 'x'],
+          },
+        ],
+      },
+      // Matches the second branch's discriminator (`kind: "b"`) but omits the
+      // field that branch additionally requires — proving the branch is
+      // chosen by its `const` and then checked in full, rather than the
+      // instance merely being tried against every branch until one is
+      // cheapest to report.
+      violating: { kind: 'b' },
+      satisfying: { kind: 'b', x: 5 },
+      without: {},
+    },
+  ],
 };
 
 function diagnosticsFor(schema: SchemaObject, instance: unknown): number {
@@ -451,7 +482,9 @@ describe('every keyword a schema uses is acted on, not merely recognised', () =>
       'maximum',
       'minItems',
       'minLength',
+      'minProperties',
       'minimum',
+      'oneOf',
       'pattern',
       'properties',
       'propertyNames',

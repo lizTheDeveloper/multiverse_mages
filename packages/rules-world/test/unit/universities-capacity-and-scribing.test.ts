@@ -23,6 +23,7 @@ import {
   BUILD_COMPLETE,
   SCRIBE_MONTHS_PER_SCRIBE,
   admitStudents,
+  primitiveFloor,
   scribeRateMultiplier,
   scribingThroughput,
 } from '../../src/index.js';
@@ -160,5 +161,27 @@ describe('the scribe-rate multiplier goes through the shared accumulator', () =>
     const asOneSum = scribingThroughput(finished(40), staffedWith(10, FP_ONE, [896]));
     expect(withLibrary).toBeGreaterThan(nodeOnly);
     expect(withLibrary).toBe(asOneSum);
+  });
+
+  it('holds the primitive floor under a Perdo-heavy stack', () => {
+    const floor = primitiveFloor(scribeRatePrimitive());
+    expect(floor).toBeDefined();
+
+    const counters = new ClampCounters();
+    const driven = scribeRateMultiplier({
+      ...staffedWith(1, FP_ONE, [-2000, -2000]),
+      counters,
+    });
+    expect(driven).toBe(floor);
+    expect(driven).toBeGreaterThan(0);
+    expect(counters.count('scribe-rate')).toBeGreaterThan(0);
+  });
+
+  it('a control clamp holds the rate within its floor and ceiling', () => {
+    const held = scribeRateMultiplier({ ...staffedWith(1), clamp: { floor: 3000 } });
+    expect(held).toBe(3000);
+
+    const capped = scribeRateMultiplier({ ...staffedWith(1, FP_ONE, [4096]), clamp: { ceiling: 1500 } });
+    expect(capped).toBe(1500);
   });
 });

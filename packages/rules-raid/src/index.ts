@@ -94,6 +94,8 @@ export {
   COMBAT_PRIMITIVES,
   CastArbiter,
   combatEffectIndex,
+  contributesMagnitude,
+  enablesGate,
   summonCount,
 } from './arbitration.js';
 

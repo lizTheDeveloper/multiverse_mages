@@ -1011,26 +1011,26 @@ Every primitive: its unit, where it applies, and how multiple sources combine. *
 the field most likely to be silently assumed differently by two implementers**, so it is stated for
 all of them.
 
-| Primitive | Unit | Scale | Stacking |
-|---|---|---|---|
-| `direct-damage` | HP per application | engagement | summed per target per tick, then **one** ward factor applied to the sum — so ten small hits equal one large hit rather than differing by rounding artefact |
-| `ward` | fraction of damage prevented | engagement | **multiplicative on the remainder**, hard cap `fp(922)` = 90% |
-| `area-denial` | HP per engagement tick, within radius (fp metres) | engagement | additive |
-| `blink` | fp metres of instantaneous displacement | engagement | max, not sum |
-| `summon` | count of combatants from a template | engagement | additive, capped per side |
-| `build-rate` | multiplier on construction progress | world | additive into `(1 + Σbonus)`, cap `fp(4096)` |
-| `resource-yield` | multiplier on materials per world tick | world | additive into `(1 + Σ)`, cap `fp(4096)` |
-| `research-rate` | multiplier on research progress | world | additive into `(1 + Σ)`, cap `fp(4096)` |
-| `teach-rate` | multiplier on teaching throughput | world | additive into `(1 + Σ)`, cap `fp(4096)` |
-| `scribe-rate` | multiplier on scribing throughput | world | additive into `(1 + Σ)`, cap `fp(4096)` |
-| `practice-rate` | multiplier on practice progress | world | additive into `(1 + Σ)`, cap `fp(4096)` |
-| `lifespan` | additive months | world | additive, cap `+50%` of species base. **Recomputed from active effects at each hazard evaluation, never accumulated into a stored field** — which is also why mortality is a per-tick hazard rather than a death date rolled at birth |
-| `fertility` | multiplier on cohort birth rate | world | additive into `(1 + Σ)`, cap `fp(3072)` |
-| `worship-yield` | multiplier on favor regeneration | world | additive into `(1 + Σ)`, cap `fp(2048)` |
-| `concealment` | fp probability of evading targeting/detection | both | multiplicative on the remainder, cap `fp(870)` = 85% |
-| `knowledge-steal` | fp probability per attempt of copying an instance | engagement | max, not sum |
-| `knowledge-corrupt` | fp probability per attempt of corrupting an instance | engagement | max, not sum |
-| `portal` | boolean gate; enables raid initiation | world | n/a — presence only |
+| Primitive | Unit | Scale | Stacking | Floor |
+|---|---|---|---|---|
+| `direct-damage` | HP per application | engagement | summed per target per tick, then **one** ward factor applied to the sum — so ten small hits equal one large hit rather than differing by rounding artefact | — |
+| `ward` | fraction of damage prevented | engagement | **multiplicative on the remainder**, hard cap `fp(922)` = 90% | — |
+| `area-denial` | HP per engagement tick, within radius (fp metres) | engagement | additive | — |
+| `blink` | fp metres of instantaneous displacement | engagement | max, not sum | — |
+| `summon` | count of combatants from a template | engagement | additive, capped per side | — |
+| `build-rate` | multiplier on construction progress | world | additive into `(1 + Σbonus)`, cap `fp(4096)` | `fp(256)` |
+| `resource-yield` | multiplier on materials per world tick | world | additive into `(1 + Σ)`, cap `fp(4096)` | `fp(256)` |
+| `research-rate` | multiplier on research progress | world | additive into `(1 + Σ)`, cap `fp(4096)` | `fp(256)` |
+| `teach-rate` | multiplier on teaching throughput | world | additive into `(1 + Σ)`, cap `fp(4096)` | `fp(256)` |
+| `scribe-rate` | multiplier on scribing throughput | world | additive into `(1 + Σ)`, cap `fp(4096)` | `fp(256)` |
+| `practice-rate` | multiplier on practice progress | world | additive into `(1 + Σ)`, cap `fp(4096)` | — |
+| `lifespan` | additive months | world | diminishing returns, cap `+50%` of species base. **Recomputed from active effects at each hazard evaluation, never accumulated into a stored field** — which is also why mortality is a per-tick hazard rather than a death date rolled at birth | — |
+| `fertility` | multiplier on cohort birth rate | world | additive into `(1 + Σ)`, cap `fp(3072)` | `fp(256)` |
+| `worship-yield` | multiplier on favor regeneration | world | additive into `(1 + Σ)`, cap `fp(2048)` | `fp(256)` |
+| `concealment` | fp probability of evading targeting/detection | both | multiplicative on the remainder, cap `fp(870)` = 85% | — |
+| `knowledge-steal` | fp probability per attempt of copying an instance | engagement | max, not sum | — |
+| `knowledge-corrupt` | fp probability per attempt of corrupting an instance | engagement | max, not sum | — |
+| `portal` | boolean gate; enables raid initiation | world | n/a — presence only | — |
 
 **Magnitudes are signed, and a negative one is a COST.** `node.schema.json` read `"minimum": 1`
 for as long as there was content, so all 407 shipped effects were positive and no node could

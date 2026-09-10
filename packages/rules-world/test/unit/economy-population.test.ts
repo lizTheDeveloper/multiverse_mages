@@ -42,6 +42,7 @@
 import { describe, expect, it } from 'vitest';
 
 import { FP_ONE, RNG_STREAM } from '@mm/sim-core';
+import { ClampCounters } from '@mm/primitives';
 
 import { OCCUPATION } from '@mm/state';
 
@@ -63,6 +64,7 @@ import {
   fertilityBrake,
   insertNewborns,
   maxCarryingCapacity,
+  primitiveFloor,
   territoryExtent,
 } from '../../src/index.js';
 import type { BirthInput } from '../../src/index.js';
@@ -250,6 +252,28 @@ describe('births scale by species fertility', () => {
   it('produces nothing from an empty cohort, which is what makes extinction absorbing', () => {
     expect(expectedBirths(births({ count: 0 }))).toBe(0);
     expect(cohortBirths(stepRng(1, 0), 3, births({ count: 0 }))).toBe(0);
+  });
+
+  it('holds the primitive floor under a Perdo-heavy stack of remove-mode bonuses', () => {
+    const floor = primitiveFloor(primitiveNamed('fertility'));
+    expect(floor).toBeDefined();
+
+    const counters = new ClampCounters();
+    const driven = expectedBirths({ ...births({ fertilityBonuses: [-2000, -2000] }), counters });
+    // A floored multiplier still produces some births rather than none or a
+    // negative expectation — the division hazard the floor exists to stop.
+    expect(driven).toBeGreaterThan(0);
+    expect(counters.count('fertility')).toBeGreaterThan(0);
+  });
+
+  it('routes a Rego control clamp: a floor raises expected births, a ceiling lowers them', () => {
+    const bare = expectedBirths(births());
+    const floored = expectedBirths({ ...births(), clamp: { floor: 3000 } });
+    expect(floored).toBeGreaterThan(bare);
+
+    const boosted = expectedBirths({ ...births(), fertilityBonuses: [4096] });
+    const ceiled = expectedBirths({ ...births(), fertilityBonuses: [4096], clamp: { ceiling: 1500 } });
+    expect(ceiled).toBeLessThan(boosted);
   });
 });
 

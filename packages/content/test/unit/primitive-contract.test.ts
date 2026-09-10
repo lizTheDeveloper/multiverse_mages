@@ -50,7 +50,15 @@ import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
 
 import { shippedDataDirectory } from '@mm/content';
-import type { PrimitiveRecord, PrimitiveStacking } from '@mm/content';
+import type { PrimitiveCap, PrimitiveRecord, PrimitiveStacking } from '@mm/content';
+
+/**
+ * `PrimitiveStacking` plus `diminishing` (`lifespan`'s W20 stacking rule,
+ * `docs/design/compositional-content.md` §3.3). `@mm/content`'s own enum does
+ * not list it yet — see the identical widening, and the identical reason,
+ * in `packages/primitives/src/stacking.ts`'s `PrimitiveStackingRule`.
+ */
+type StackingRule = PrimitiveStacking | 'diminishing';
 
 /** From packages/content/test/unit/ up to the repository root. */
 const repoRoot = new URL('../../../../', import.meta.url);
@@ -58,11 +66,20 @@ const contractsPath = fileURLToPath(new URL('docs/design/contracts.md', repoRoot
 
 const contracts = readFileSync(contractsPath, 'utf8');
 
+/**
+ * `floor` (W20, `docs/design/compositional-content.md` §3.3) is authored in
+ * `primitive.json` and stated in §3's table, but `@mm/content`'s `PrimitiveRecord`
+ * does not declare it yet — the loader passes it through untyped rather than
+ * stripping it, so this local extension reads real data without waiting on that
+ * package's own types to catch up.
+ */
+type PrimitiveRecordWithFloor = PrimitiveRecord & { readonly floor?: PrimitiveCap };
+
 /** The shipped data file itself, not the loaded registry: this check is about
  * what is written down, so it must not be filtered through the loader. */
 const registry = JSON.parse(
   readFileSync(join(shippedDataDirectory(), 'primitive.json'), 'utf8'),
-) as readonly PrimitiveRecord[];
+) as readonly PrimitiveRecordWithFloor[];
 
 /** The scale column's three permitted values, per contracts.md §3. */
 type Scale = 'world' | 'engagement' | 'both';
@@ -77,8 +94,10 @@ interface ContractRow {
   readonly id: string;
   readonly unit: string;
   readonly scale: Scale;
-  readonly stacking: PrimitiveStacking;
+  readonly stacking: StackingRule;
   readonly cap: ContractCap;
+  /** Absent when the document's Floor cell reads "—": the primitive has none. */
+  readonly floor: ContractCap | undefined;
   /** The raw stacking cell, so a failure message can show what was read. */
   readonly source: string;
 }
@@ -108,16 +127,17 @@ function slugify(prose: string): string {
  * both words and mean the multiplier form. This ordering is the only reason
  * this is a list rather than a map.
  */
-const STACKING_PHRASES: readonly (readonly [string, PrimitiveStacking])[] = [
+const STACKING_PHRASES: readonly (readonly [string, StackingRule])[] = [
   ['ward factor applied to the sum', 'summed-then-single-ward'],
   ['multiplicative on the remainder', 'multiplicative-on-remainder'],
   ['additive into', 'additive-into-multiplier'],
+  ['diminishing returns', 'diminishing'],
   ['max, not sum', 'max'],
   ['presence only', 'presence'],
   ['additive', 'additive'],
 ];
 
-function stackingOf(cell: string, id: string): PrimitiveStacking {
+function stackingOf(cell: string, id: string): StackingRule {
   const prose = cell.replaceAll('**', '');
   for (const [phrase, rule] of STACKING_PHRASES) {
     if (prose.includes(phrase)) {
@@ -168,6 +188,30 @@ function capOf(cell: string, id: string): ContractCap {
 }
 
 /**
+ * Reads the Floor column. Unlike the cap, which is always present as at least
+ * `{ kind: "none" }`, a primitive with no floor omits the field entirely in
+ * `primitive.json` — so the document's "—" parses to `undefined`, not to a
+ * `{ kind: "none" }` object, and the per-row check below compares presence
+ * directly rather than kind.
+ */
+function floorOf(cell: string, id: string): ContractCap | undefined {
+  const trimmed = cell.trim();
+  if (trimmed === '—' || trimmed.toLowerCase() === 'none') {
+    return undefined;
+  }
+
+  const fp = /`fp\((\d+)\)`/u.exec(cell);
+  if (fp?.[1] !== undefined) {
+    return { kind: 'fp', value: Number(fp[1]) };
+  }
+
+  throw new Error(
+    `contracts.md §3 gives "${id}" an unrecognised Floor cell: ${JSON.stringify(cell)}. ` +
+      'Expected "—" or a `fp(N)` value.',
+  );
+}
+
+/**
  * Extracts §3's table.
  *
  * Bounded by the section heading and the next heading of any level, so a table
@@ -187,13 +231,19 @@ function contractRows(): readonly ContractRow[] {
     if (!trimmed.startsWith('|')) continue;
 
     const cells = trimmed.slice(1, -1).split('|').map((cell) => cell.trim());
-    if (cells.length !== 4) {
+    if (cells.length !== 5) {
       throw new Error(
-        `contracts.md §3 table row has ${String(cells.length)} columns, expected 4: ${trimmed}`,
+        `contracts.md §3 table row has ${String(cells.length)} columns, expected 5: ${trimmed}`,
       );
     }
 
-    const [primitive, unit, scale, stacking] = cells as [string, string, string, string];
+    const [primitive, unit, scale, stacking, floor] = cells as [
+      string,
+      string,
+      string,
+      string,
+      string,
+    ];
     if (primitive === 'Primitive' || primitive.startsWith('---')) continue;
 
     const id = primitive.replaceAll('`', '');
@@ -207,6 +257,7 @@ function contractRows(): readonly ContractRow[] {
       scale,
       stacking: stackingOf(stacking, id),
       cap: capOf(stacking, id),
+      floor: floorOf(floor, id),
       source: stacking,
     });
   }
@@ -255,6 +306,38 @@ describe('the primitive registry matches contracts.md §3', () => {
       expect(record.cap.kind).not.toBe('fp');
     } else {
       expect(record.cap.value, `cap value for ${id}`).toBe(row.cap.value);
+    }
+
+    if (row.floor === undefined) {
+      expect(record.floor, `${id} should have no authored floor`).toBeUndefined();
+    } else {
+      expect(record.floor, `${id} should have an authored floor`).toEqual(row.floor);
+    }
+  });
+
+  it('gives every world-scale rate primitive named in W20 a floor, and no other primitive one', () => {
+    // docs/design/compositional-content.md §3.3: a Perdo `remove` (or a
+    // draining `transform`) now contributes a negative magnitude into these
+    // seven `additive-into-multiplier` folds, and an uncapped-below rate is a
+    // division hazard. This is the seven-primitive enumeration, checked by
+    // name rather than trusted to "every additive-into-multiplier row",
+    // because `build-rate` et al. sharing a stacking rule with a
+    // floor-bearing primitive is a coincidence the schema does not enforce.
+    const floored = ['build-rate', 'resource-yield', 'research-rate', 'teach-rate', 'scribe-rate', 'fertility', 'worship-yield'];
+    for (const id of floored) {
+      expect(rowById.get(id)?.floor, `${id} should be floored in contracts.md §3`).toEqual({
+        kind: 'fp',
+        value: 256,
+      });
+      expect(recordById.get(id)?.floor, `${id} should be floored in primitive.json`).toEqual({
+        kind: 'fp',
+        value: 256,
+      });
+    }
+
+    for (const row of rows) {
+      if (floored.includes(row.id)) continue;
+      expect(row.floor, `${row.id} should not carry a floor`).toBeUndefined();
     }
   });
 

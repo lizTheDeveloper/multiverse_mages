@@ -14,10 +14,11 @@
 import type { Fixed } from '@mm/sim-core';
 import { mul } from '@mm/sim-core';
 import type { PrimitiveRecord } from '@mm/content';
-import type { ClampCounters } from '@mm/primitives';
+import type { ClampCounters, EffectControl } from '@mm/primitives';
 import { stackMagnitudes } from '@mm/primitives';
 import type { UniversityRecord } from '@mm/state';
 
+import { primitiveFloor } from '../economy/primitive-floor.js';
 import { isComplete } from './construction.js';
 
 /**
@@ -61,6 +62,8 @@ export interface ScribingInput {
    */
   readonly scribeRateBonuses: readonly Fixed[];
   readonly counters?: ClampCounters | undefined;
+  /** Rego's combined clamp for `scribe-rate`. See `ProductionInput.clamp` in `economy/materials.ts`. */
+  readonly clamp?: EffectControl | undefined;
 }
 
 /** Scribe-months produced per scribe per world tick at neutral affinity, `fp`. **Untuned.** */
@@ -68,8 +71,11 @@ export const SCRIBE_MONTHS_PER_SCRIBE: Fixed = 16;
 
 /** The `(1 + Σ)` `scribe-rate` multiplier, capped once by the shared implementation. */
 export function scribeRateMultiplier(input: ScribingInput): Fixed {
+  const floor = primitiveFloor(input.scribeRate);
   return stackMagnitudes(input.scribeRate, input.scribeRateBonuses, {
     ...(input.counters === undefined ? {} : { counters: input.counters }),
+    ...(input.clamp === undefined ? {} : { clamp: input.clamp }),
+    ...(floor === undefined ? {} : { floor }),
   }).value;
 }
 
