@@ -294,10 +294,9 @@ describe('routeYieldByForm splits a resource-yield magnitude by content weights'
 
     expect(produced([])).toBe(1600);
     expect(produced([-512])).toBe(800);
-    expect(produced([-FP_ONE])).toBe(0);
-    // Absurd input floors rather than inverting. This is the assertion that
-    // makes the bound mechanical rather than incidental.
-    expect(produced([-3 * FP_ONE])).toBe(0);
+    // With the authored floor of 256, the multiplier never reaches zero.
+    expect(produced([-FP_ONE])).toBe(400);
+    expect(produced([-3 * FP_ONE])).toBe(400);
     // And a cost composes with a gain instead of short-circuiting it.
     expect(produced([FP_ONE, -512])).toBe(2400);
   });

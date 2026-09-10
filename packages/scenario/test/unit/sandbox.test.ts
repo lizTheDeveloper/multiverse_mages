@@ -115,7 +115,7 @@ const ANCHOR_SEED = 20260813;
  */
 const INERT_DEFAULT_HASHES: Readonly<Record<number, string>> = {
   0: '0ceb9bffbc4b20f4',
-  200: '9c7c6df6d78ef3e3',
+  200: 'cc89d97858673b71',
   500: 'f24066bf4b540d55',
 };
 

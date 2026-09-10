@@ -175,9 +175,9 @@ const KNOWN_SHADOWED: Readonly<Record<string, string>> = Object.freeze({
     "the `narrow-depth` half of the incident that made this file: it is the strategy whose " +
     'preference list was read by hand, months apart, and found never to ask for this verb. It ' +
     'asks now and still never gets it.',
-  // denial-warden/2: removed — no longer shadowed with 358 nodes (was shadowed at 301).
-  // forbidTechnique now reaches the wire because the wider content gives the warden
-  // more cells to interdict, leaving ticks where issueInterdiction is exhausted.
+  'denial-warden/2':
+    'forbidTechnique is listed but never submitted — something ahead of it in the preference ' +
+    'list is legal every time it is. Re-appeared after floor wiring changed the tick arithmetic.',
   'portal-rush/12':
     'encourageResearch is third, behind openPortal (unreachable, 0 legal ticks) and assignRole, ' +
     'which is legal on 599 of 600 ticks and submitted on all 599. Listed here for the second ' +

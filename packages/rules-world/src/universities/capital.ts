@@ -18,6 +18,7 @@ import type { EffectControl, PrimitiveRecord } from '@mm/content';
 import type { AblationMask, ClampCounters } from '@mm/primitives';
 import { stackMagnitudes } from '@mm/primitives';
 
+import { primitiveFloor } from '../economy/primitive-floor.js';
 import type { LibraryDepth } from './library.js';
 import { TIER_COUNT, libraryUpkeep, relevantDepth } from './library.js';
 
@@ -227,9 +228,11 @@ export function capitalRateMultiplier(
   ablation?: AblationMask,
   control?: EffectControl,
 ): CapitalRateOutcome {
+  const floor = primitiveFloor(primitive);
   const outcome = stackMagnitudes(primitive, [...nodeBonuses, contribution], {
     ...(counters === undefined ? {} : { counters }),
     ...(ablation === undefined ? {} : { ablation }),
+    ...(floor === undefined ? {} : { floor }),
   });
   let value = outcome.value;
   if (control !== undefined) {
