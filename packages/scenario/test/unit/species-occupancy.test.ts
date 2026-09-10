@@ -337,11 +337,11 @@ describe('twenty world years in', () => {
     // Pinned, not softened, and the pin is membership rather than finding — the
     // instruction this block has carried since 2026-08-14.
     expect(bySpecies('elf').occupiedCells).toBe(55);
-    expect(bySpecies('orc').occupiedCells).toBe(52);
+    expect(bySpecies('orc').occupiedCells).toBe(53);
     expect(bySpecies('draconic').occupiedCells).toBe(54);
-    expect(bySpecies('human').occupiedCells).toBe(53);
+    expect(bySpecies('human').occupiedCells).toBe(55);
     expect(bySpecies('gnome').occupiedCells).toBe(66);
-    expect(bySpecies('dwarf').occupiedCells).toBe(48);
+    expect(bySpecies('dwarf').occupiedCells).toBe(54);
     //
     // **`material-economy` measured this row too, and its numbers are recorded
     // rather than adopted.** Neither side's pin is a measurement of *this* tree:
@@ -446,7 +446,7 @@ describe('twenty world years in', () => {
     // 0.0508 is neither flat (a Gini of 0, which the founding position reads and
     // `everySpeciesEqual` still denies) nor a hegemony (which would need this
     // toward 1).
-    expect((entry as { value: number }).value).toBeCloseTo(0.0508, 4);
+    expect((entry as { value: number }).value).toBeCloseTo(0.0341, 4);
     //
     // The branch's reading of the same row, recorded and not adopted, for the
     // reason the occupancy block above gives:

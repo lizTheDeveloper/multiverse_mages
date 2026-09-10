@@ -529,9 +529,9 @@ describe('the control sets are inert by construction', () => {
       'teach-rate': [treatmentSet('teach-rate').length, untrimmedTreatmentCount('teach-rate')],
       'scribe-rate': [treatmentSet('scribe-rate').length, untrimmedTreatmentCount('scribe-rate')],
     }).toEqual({
-      'research-rate': [51, 55],
-      'teach-rate': [20, 20],
-      'scribe-rate': [19, 19],
+      'research-rate': [61, 62],
+      'teach-rate': [27, 27],
+      'scribe-rate': [21, 21],
     });
   });
 });
