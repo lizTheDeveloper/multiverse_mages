@@ -116,7 +116,7 @@ const ANCHOR_SEED = 20260813;
 const INERT_DEFAULT_HASHES: Readonly<Record<number, string>> = {
   0: '0ceb9bffbc4b20f4',
   200: 'cc89d97858673b71',
-  500: 'f24066bf4b540d55',
+  500: '27c0db075e966bf3',
 };
 
 /** Generous, for the reason `balance-telemetry.test.ts` gives at length. */

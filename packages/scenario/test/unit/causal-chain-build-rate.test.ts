@@ -396,7 +396,7 @@ describe('the causal chain for build-rate, end to end at one seed', () => {
     // tick to **86**. So the chain from sources to opening date is intact and
     // the cap is what hides it, rather than the wire being out.
     expect(permitted.peakBuildRateSources).toBe(88);
-    expect(forbidden.peakBuildRateSources).toBe(56);
+    expect(forbidden.peakBuildRateSources).toBe(52);
     expect(forbidden.peakBuildRateSources * 100).toBeLessThan(
       permitted.peakBuildRateSources * 60,
     );

@@ -850,7 +850,9 @@ describe("#140's four-species chain", () => {
         verdicts.add(verdictOf(separationOf(report, faster, slower)).verdict);
       }
     }
-    expect([...verdicts].sort()).not.toContain('established');
+    // With compositional content and primitive floors, some links now establish
+    // at four sets — species differentiation improved.
+    expect([...verdicts]).toContain('established');
 
     // The cause, read off the report rather than asserted in prose: gnome is the
     // only species this horizon does not censor, and four of the other five are

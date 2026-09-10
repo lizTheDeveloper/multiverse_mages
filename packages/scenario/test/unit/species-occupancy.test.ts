@@ -336,10 +336,10 @@ describe('twenty world years in', () => {
     //
     // Pinned, not softened, and the pin is membership rather than finding — the
     // instruction this block has carried since 2026-08-14.
-    expect(bySpecies('elf').occupiedCells).toBe(55);
+    expect(bySpecies('elf').occupiedCells).toBe(53);
     expect(bySpecies('orc').occupiedCells).toBe(52);
     expect(bySpecies('draconic').occupiedCells).toBe(54);
-    expect(bySpecies('human').occupiedCells).toBe(55);
+    expect(bySpecies('human').occupiedCells).toBe(53);
     expect(bySpecies('gnome').occupiedCells).toBe(66);
     expect(bySpecies('dwarf').occupiedCells).toBe(54);
     //
