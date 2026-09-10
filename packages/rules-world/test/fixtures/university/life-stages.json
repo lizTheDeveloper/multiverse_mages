@@ -65,16 +65,16 @@
       },
       "adds.scribeMonthsFinal": {
         "min": 240,
-        "max": 96659,
-        "sum": 7541248,
+        "max": 96315,
+        "sum": 7521176,
         "distinct": 142,
         "minAt": "stage=early staffSize=2 speciesMix=orc",
         "maxAt": "stage=late staffSize=0 speciesMix=human+elf+dwarf+gnome"
       },
       "adds.scribeMonthsTotal": {
         "min": 26640,
-        "max": 11599080,
-        "sum": 903923360,
+        "max": 11557800,
+        "sum": 901514720,
         "distinct": 160,
         "minAt": "stage=early staffSize=2 speciesMix=orc",
         "maxAt": "stage=late staffSize=0 speciesMix=human+elf+dwarf+gnome"
@@ -89,8 +89,8 @@
       },
       "adds.shelfReplacementCost": {
         "min": 0,
-        "max": 713728,
-        "sum": 101842944,
+        "max": 787052,
+        "sum": 110055232,
         "distinct": 3,
         "minAt": "stage=early staffSize=0 speciesMix=human",
         "maxAt": "stage=late staffSize=0 speciesMix=human"
@@ -170,8 +170,8 @@
       "contains.dominantCell": {
         "min": 0,
         "max": 66,
-        "sum": 6362,
-        "distinct": 3,
+        "sum": 9848,
+        "distinct": 5,
         "minAt": "stage=early staffSize=0 speciesMix=human",
         "maxAt": "stage=early staffSize=1 speciesMix=elf"
       },
@@ -209,8 +209,8 @@
       },
       "contains.profileCells": {
         "min": 0,
-        "max": 42,
-        "sum": 5762,
+        "max": 36,
+        "sum": 5148,
         "distinct": 12,
         "minAt": "stage=early staffSize=0 speciesMix=human",
         "maxAt": "stage=late staffSize=16 speciesMix=dwarf"
