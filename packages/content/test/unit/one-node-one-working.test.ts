@@ -126,7 +126,8 @@ describe('a working duration is a world-scale fact', () => {
         (effect) => effect.durationTicks !== 0 && !world.has(effect.primitive),
       ),
     );
-    expect(engagementDurable.length).toBe(38);
+    // w20: 43 after 57 compositional nodes, up from 38.
+    expect(engagementDurable.length).toBe(43);
     for (const entry of engagementDurable) {
       expect(durable.map((node) => node.record.id)).not.toContain(entry.record.id);
     }

@@ -152,7 +152,7 @@ export const V1_FORM_COUNT = 14;
  * scan and raise this number on purpose, or to author fewer nodes. It is never
  * to cap the scan again.**
  */
-export const MAX_CONTENT_NODES = 1024;
+export const MAX_CONTENT_NODES = 2048;
 
 /**
  * Authoring floor for `rediscoveryMultiplier` in v1 content.
