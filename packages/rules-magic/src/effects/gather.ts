@@ -157,6 +157,10 @@ export function gatherEffects(
         continue;
       }
 
+      // w20: mode-aware magnitude filtering. `control` applies a floor/ceiling
+      // but contributes no magnitude. `reveal` reveals but contributes nothing.
+      if (effect.mode === 'control' || effect.mode === 'reveal') continue;
+
       contributions.push({
         nodeId: instance.nodeId,
         primitiveId: primitive.id,
@@ -164,6 +168,7 @@ export function gatherEffects(
         target: effect.target,
         durationTicks: effect.durationTicks,
         effectIndex,
+        ...(effect.mode !== undefined ? { mode: effect.mode } : {}),
         // Passed through, never judged here. A material requirement is a
         // question about a stock, and this module has no stock and must not
         // acquire one — `contracts.md` §5 keeps `rules-magic` out of the

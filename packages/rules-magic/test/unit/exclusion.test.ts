@@ -440,6 +440,7 @@ describe('a commitment reopens only when she loses the blocking knowledge, never
         ruleset: interdicting(OTHER_CELL),
         progress: 4096,
         effort: 4096,
+        tracks,
       }),
     );
     expect(outcome.refusal?.reason).toBe('track-excluded');

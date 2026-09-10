@@ -496,16 +496,49 @@ export class CastArbiter {
       if (instance.mastery < activationThreshold) continue;
       if (!this.#permitsNode(instance.nodeId)) continue;
       for (const effect of this.#authored(COMBAT_PRIMITIVES.ward, instance.nodeId)) {
-        wards.push(effect.magnitude);
+        if (contributesMagnitude(effect, COMBAT_PRIMITIVES.ward)) {
+          wards.push(effect.magnitude);
+        }
       }
       for (const effect of this.#authored(COMBAT_PRIMITIVES.concealment, instance.nodeId)) {
-        concealments.push(effect.magnitude);
+        if (contributesMagnitude(effect, COMBAT_PRIMITIVES.concealment)) {
+          concealments.push(effect.magnitude);
+        }
+      }
+    }
+
+    // Apply control-mode floor/ceiling after stacking.
+    let wardResult = this.#stack(COMBAT_PRIMITIVES.ward, wards);
+    let concealmentResult = this.#stack(COMBAT_PRIMITIVES.concealment, concealments);
+
+    // Collect control effects from all held nodes.
+    for (const instance of held) {
+      if (instance.locationKind !== LOCATION_KIND.mind && instance.locationKind !== LOCATION_KIND.palace) continue;
+      if (instance.mastery < activationThreshold) continue;
+      if (!this.#permitsNode(instance.nodeId)) continue;
+      for (const effect of this.#authored(COMBAT_PRIMITIVES.ward, instance.nodeId)) {
+        if (effect.mode !== 'control' || effect.control === undefined) continue;
+        if (effect.control.ceiling !== undefined && wardResult > effect.control.ceiling) {
+          wardResult = effect.control.ceiling;
+        }
+        if (effect.control.floor !== undefined && wardResult < effect.control.floor) {
+          wardResult = effect.control.floor;
+        }
+      }
+      for (const effect of this.#authored(COMBAT_PRIMITIVES.concealment, instance.nodeId)) {
+        if (effect.mode !== 'control' || effect.control === undefined) continue;
+        if (effect.control.ceiling !== undefined && concealmentResult > effect.control.ceiling) {
+          concealmentResult = effect.control.ceiling;
+        }
+        if (effect.control.floor !== undefined && concealmentResult < effect.control.floor) {
+          concealmentResult = effect.control.floor;
+        }
       }
     }
 
     return {
-      ward: this.#stack(COMBAT_PRIMITIVES.ward, wards),
-      concealment: this.#stack(COMBAT_PRIMITIVES.concealment, concealments),
+      ward: wardResult,
+      concealment: concealmentResult,
     };
   }
 
@@ -612,14 +645,16 @@ export class CastArbiter {
    * legality check actually takes.
    */
   theftMagnitudes(nodeId: ContentId): readonly Fixed[] {
-    return this.#authored(COMBAT_PRIMITIVES.knowledgeSteal, nodeId).map((effect) => effect.magnitude);
+    return this.#authored(COMBAT_PRIMITIVES.knowledgeSteal, nodeId)
+      .filter((effect) => contributesMagnitude(effect, COMBAT_PRIMITIVES.knowledgeSteal))
+      .map((effect) => effect.magnitude);
   }
 
   /** The `knowledge-corrupt` magnitudes a node authors. The one read site. */
   corruptionMagnitudes(nodeId: ContentId): readonly Fixed[] {
-    return this.#authored(COMBAT_PRIMITIVES.knowledgeCorrupt, nodeId).map(
-      (effect) => effect.magnitude,
-    );
+    return this.#authored(COMBAT_PRIMITIVES.knowledgeCorrupt, nodeId)
+      .filter((effect) => contributesMagnitude(effect, COMBAT_PRIMITIVES.knowledgeCorrupt))
+      .map((effect) => effect.magnitude);
   }
 
   /** The `control`-mode EffectControl entries a node carries for knowledge-steal. */
@@ -772,19 +807,17 @@ export class CastArbiter {
     const cached = this.#castEffects.get(nodeId);
     if (cached !== undefined) return cached;
 
+    const mag = (prim: string) => this.#authored(prim, nodeId)
+      .filter((e) => contributesMagnitude(e, prim));
     const effects: CastEffects = {
-      directDamage: this.#authored(COMBAT_PRIMITIVES.directDamage, nodeId).map(
-        (effect) => effect.magnitude,
-      ),
-      areaDenial: this.#authored(COMBAT_PRIMITIVES.areaDenial, nodeId).map((effect) => ({
-        magnitude: effect.magnitude,
-        durationTicks: effect.durationTicks,
+      directDamage: mag(COMBAT_PRIMITIVES.directDamage).map((e) => e.magnitude),
+      areaDenial: mag(COMBAT_PRIMITIVES.areaDenial).map((e) => ({
+        magnitude: e.magnitude,
+        durationTicks: e.durationTicks,
       })),
-      blink: this.#authored(COMBAT_PRIMITIVES.blink, nodeId).map((effect) => effect.magnitude),
-      summon: this.#authored(COMBAT_PRIMITIVES.summon, nodeId).map((effect) => effect.magnitude),
-      knowledgeSteal: this.#authored(COMBAT_PRIMITIVES.knowledgeSteal, nodeId).map(
-        (effect) => effect.magnitude,
-      ),
+      blink: mag(COMBAT_PRIMITIVES.blink).map((e) => e.magnitude),
+      summon: mag(COMBAT_PRIMITIVES.summon).map((e) => e.magnitude),
+      knowledgeSteal: mag(COMBAT_PRIMITIVES.knowledgeSteal).map((e) => e.magnitude),
     };
     this.#castEffects.set(nodeId, effects);
     return effects;
@@ -804,8 +837,14 @@ export function summonCount(magnitude: Fixed): number {
 
 /** Whether an effect contributes a stacking magnitude rather than being a gate or control. */
 export function contributesMagnitude(effect: EffectRecord, primitiveId: string): boolean {
+  // Conditional effects contribute nothing until activated.
+  if (effect.when !== undefined && effect.when.kind !== 'always') return false;
+  // Transform contributes to its transformTo primitive, not its declared one.
+  if (effect.mode === 'transform') {
+    return effect.transformTo === primitiveId || effect.primitive === primitiveId;
+  }
   if (effect.primitive !== primitiveId) return false;
-  return effect.mode === undefined || effect.mode === 'create' || effect.mode === 'remove' || effect.mode === 'transform';
+  return effect.mode === undefined || effect.mode === 'create' || effect.mode === 'remove';
 }
 
 /** Whether a single effect enables a gate for the given primitive. */
