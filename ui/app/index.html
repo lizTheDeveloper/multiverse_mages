@@ -270,17 +270,17 @@ html, body { height: 100%; overflow: hidden; }
 .god-actions { display: flex; flex-direction: column; gap: 2px; }
 .god-action {
   display: flex; align-items: center; gap: .35rem;
-  padding: .25rem .4rem;
+  padding: .35rem .5rem;
   border: 1px solid var(--edge);
-  border-radius: 3px;
-  background: transparent;
+  border-radius: 4px;
+  background: var(--sunk);
   color: var(--soft);
-  font: 10px var(--mono);
+  font: 10.5px var(--mono);
   cursor: pointer;
   transition: all 120ms ease;
   user-select: none;
 }
-.god-action:hover { border-color: var(--god); }
+.god-action:hover { border-color: var(--god); background: color-mix(in srgb, var(--god) 6%, var(--sunk)); }
 .god-action:focus-visible { outline: 2px solid var(--god); outline-offset: 1px; }
 .god-action .cost {
   margin-left: auto;
@@ -785,14 +785,137 @@ html, body { height: 100%; overflow: hidden; }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation: none !important; transition: none !important; }
 }
+
+/* ================================================================ SETUP SCREEN */
+.setup-screen {
+  position: fixed; inset: 0; z-index: 1000;
+  background: var(--ground);
+  display: flex; flex-direction: column; align-items: center;
+  overflow-y: auto; padding: 2rem 1rem 4rem;
+}
+.setup-screen[hidden] { display: none !important; }
+.setup-title {
+  font: 400 2rem var(--serif); color: var(--ink);
+  margin-bottom: .3rem; text-align: center;
+}
+.setup-subtitle {
+  font: italic 1rem var(--serif); color: var(--god);
+  margin-bottom: 2rem; text-align: center;
+}
+.setup-section-label {
+  font: 9.5px var(--mono); letter-spacing: .14em;
+  text-transform: uppercase; color: var(--faint);
+  margin: 1.5rem 0 .6rem; width: 100%; max-width: 56rem;
+  padding-bottom: .3rem; border-bottom: 1px solid var(--edge);
+}
+.species-grid {
+  display: grid; grid-template-columns: repeat(3, 1fr);
+  gap: .6rem; max-width: 56rem; width: 100%;
+}
+@media (max-width: 48rem) { .species-grid { grid-template-columns: repeat(2, 1fr); } }
+.species-card {
+  padding: .8rem 1rem; border: 2px solid var(--edge);
+  border-radius: 6px; background: var(--panel);
+  cursor: pointer; transition: all 150ms ease;
+}
+.species-card:hover { border-color: var(--god); }
+.species-card.selected { border-color: var(--god); box-shadow: var(--glow-charged); background: var(--ctl-charged-bg); }
+.species-card .sp-name { font: 600 1.1rem var(--serif); color: var(--ink); }
+.species-card .sp-life { font: 10px var(--mono); color: var(--god); margin-top: .15rem; }
+.species-card .sp-desc { font: italic 12px var(--serif); color: var(--soft); margin-top: .3rem; line-height: 1.4; }
+.species-card.selected .sp-name { color: var(--ctl-charged-fg); }
+
+.tradition-row { display: flex; gap: .6rem; max-width: 56rem; width: 100%; flex-wrap: wrap; }
+.tradition-card {
+  flex: 1; min-width: 14rem;
+  padding: .7rem .9rem; border: 2px solid var(--edge);
+  border-radius: 6px; background: var(--panel);
+  cursor: pointer; transition: all 150ms ease;
+}
+.tradition-card:hover { border-color: var(--god); }
+.tradition-card.selected { border-color: var(--god); box-shadow: var(--glow-charged); background: var(--ctl-charged-bg); }
+.tradition-card .tr-name { font: 600 .95rem var(--serif); color: var(--ink); }
+.tradition-card .tr-desc { font: italic 11px var(--serif); color: var(--soft); margin-top: .2rem; line-height: 1.4; }
+.tradition-card.selected .tr-name { color: var(--ctl-charged-fg); }
+
+.setup-magic {
+  max-width: 56rem; width: 100%;
+  display: grid; grid-template-columns: 10rem 1fr; gap: 1rem;
+  align-items: start;
+}
+.setup-toggles { display: flex; flex-direction: column; gap: 3px; }
+.setup-toggle {
+  display: flex; align-items: center; gap: .4rem;
+  padding: .25rem .4rem; border: 1px solid var(--edge);
+  border-radius: 3px; background: transparent;
+  color: var(--faint); font: 11px var(--mono);
+  cursor: pointer; transition: all 120ms ease;
+}
+.setup-toggle:hover { border-color: var(--god); }
+.setup-toggle.on { background: var(--ctl-charged-bg); color: var(--ctl-charged-fg); border-color: var(--ctl-charged-border); box-shadow: var(--glow-soft); }
+.setup-toggle .dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+
+.setup-grid-preview {
+  display: grid; grid-template-columns: 2.5rem repeat(14, 1fr); gap: 2px;
+  font: 8px var(--mono);
+}
+.setup-grid-preview .rl { text-align: right; padding-right: .3rem; color: var(--faint); align-self: center; }
+.setup-grid-preview .rl.on { color: var(--ctl-charged-fg); }
+.setup-grid-preview .h { text-align: center; color: var(--faint); writing-mode: vertical-lr; transform: rotate(180deg); height: 3rem; display: flex; align-items: center; justify-content: center; }
+.setup-grid-preview .h.on { color: var(--ctl-charged-fg); text-shadow: 0 0 6px currentColor; }
+.setup-grid-preview .gc {
+  aspect-ratio: 1; border-radius: 2px;
+  background: var(--sunk); border: 1px solid transparent;
+}
+.setup-grid-preview .gc.on {
+  background: color-mix(in srgb, var(--form-hue, var(--god)) 18%, var(--panel));
+  border-color: color-mix(in srgb, var(--form-hue, var(--god)) 40%, transparent);
+  box-shadow: 0 0 8px -3px var(--form-hue, var(--god));
+}
+
+.begin-btn {
+  margin-top: 2rem; padding: .7rem 3rem;
+  font: 600 1rem var(--serif); letter-spacing: .02em;
+  color: var(--ground); background: var(--god);
+  border: none; border-radius: 4px; cursor: pointer;
+  box-shadow: 0 0 20px -4px var(--god);
+  transition: all 150ms ease;
+}
+.begin-btn:hover { box-shadow: 0 0 30px -2px var(--god); transform: scale(1.03); }
+.begin-btn:focus-visible { outline: 2px solid var(--god); outline-offset: 3px; }
+.begin-btn:disabled { opacity: .4; cursor: default; box-shadow: none; transform: none; }
 </style>
 
-<div class="app" id="app">
+<div class="setup-screen" id="setup-screen">
+  <h1 class="setup-title">Multiverse Mages</h1>
+  <p class="setup-subtitle">You are the god of magic for a universe.</p>
+
+  <div class="setup-section-label">Choose your people</div>
+  <div class="species-grid" id="species-grid"></div>
+
+  <div class="setup-section-label">Choose your tradition</div>
+  <div class="tradition-row" id="tradition-row"></div>
+
+  <div class="setup-section-label">Choose your starting magic — 2 techniques, 2 forms</div>
+  <div class="setup-magic">
+    <div>
+      <div class="setup-toggles" id="setup-techniques"></div>
+      <div style="height:.6rem"></div>
+      <div class="setup-toggles" id="setup-forms"></div>
+    </div>
+    <div class="setup-grid-preview" id="setup-grid-preview"></div>
+  </div>
+
+  <button class="begin-btn" id="begin-btn" disabled>Begin</button>
+</div>
+
+<div class="app" id="app" hidden>
   <!-- ======================== TOP BAR ======================== -->
   <div class="topbar">
     <span class="title">Multiverse Mages</span>
     <span class="sep">|</span>
     <button class="tab" data-tab="grid" aria-pressed="true">Grid</button>
+    <button class="tab" data-tab="world" aria-pressed="false">World</button>
     <button class="tab" data-tab="knowledge" aria-pressed="false">Knowledge</button>
     <button class="tab" data-tab="console" aria-pressed="false">Console</button>
     <span class="spacer"></span>
@@ -843,6 +966,9 @@ html, body { height: 100%; overflow: hidden; }
           </div>
         </div>
       </div>
+    </div>
+    <div class="center-panel" id="panel-world" style="padding:0;overflow:hidden">
+      <canvas id="world-canvas" style="width:100%;height:100%;display:block"></canvas>
     </div>
     <div class="center-panel" id="panel-knowledge">
       <div class="knowledge-panel" id="knowledge-list"></div>
@@ -910,6 +1036,178 @@ if (!session) throw new Error('no session');
 const isLive = session.controls?.live === true;
 
 const el = (id) => document.getElementById(id);
+
+// ================================================================ SETUP SCREEN
+{
+  // Skip setup if we just reset
+  if (sessionStorage.getItem('mm-skip-setup')) {
+    sessionStorage.removeItem('mm-skip-setup');
+    el('setup-screen').hidden = true;
+    el('app').hidden = false;
+  }
+  const TECHNIQUES = [
+    { id: 'creo', name: 'Creo', gloss: 'create, heal' },
+    { id: 'intellego', name: 'Intellego', gloss: 'perceive, know' },
+    { id: 'muto', name: 'Muto', gloss: 'transform' },
+    { id: 'perdo', name: 'Perdo', gloss: 'unmake, destroy' },
+    { id: 'rego', name: 'Rego', gloss: 'control, bind' },
+  ];
+  const FORMS = [
+    'animal','aquam','auram','corpus','herbam','ignem','imaginem',
+    'mentem','terram','vim','umbra','fatum','limen','nomen'
+  ];
+  const SPECIES = [
+    { id: 'human', name: 'Human', life: '~80y', desc: 'High curiosity, high fertility, broad aptitude. Wins on volume and breadth.' },
+    { id: 'elf', name: 'Elf', life: '~700y', desc: 'Deep specialist, slow to learn. Few but enduring.' },
+    { id: 'dwarf', name: 'Dwarf', life: '~250y', desc: 'Exceptional retention and scribing. The archivists.' },
+    { id: 'draconic', name: 'Draconic', life: '~1500y', desc: 'Highest depth ceiling, very few. Ancient and terrifying.' },
+    { id: 'gnome', name: 'Gnome', life: '~350y', desc: 'Highest curiosity, poor retention. Erratic geniuses.' },
+    { id: 'orc', name: 'Orc', life: '~60y', desc: 'Low magic, high build-rate, martial. The builders.' },
+  ];
+  const TRADITIONS = [
+    { id: 'vancian', name: 'Vancian Memorization', desc: 'A mage holds limited prepared spells; casting expends them until re-memorized.' },
+    { id: 'true-naming', name: 'True Naming', desc: 'The knowledge instance IS a name. Holding a thing\'s name grants power over it.' },
+    { id: 'art-of-memory', name: 'The Art of Memory', desc: 'Knowledge stored in a mental palace. Unburnable, unstealable, dies with the mage.' },
+  ];
+
+  const setup = { species: null, tradition: 0, techniques: new Set(['intellego', 'rego']), forms: new Set(['mentem', 'terram']) };
+
+  function renderSetup() {
+    // Species cards
+    const sg = el('species-grid');
+    sg.innerHTML = SPECIES.map(s =>
+      `<div class="species-card${setup.species === s.id ? ' selected' : ''}" data-sp="${s.id}">
+        <div class="sp-name">${s.name}</div>
+        <div class="sp-life">${s.life}</div>
+        <div class="sp-desc">${s.desc}</div>
+      </div>`
+    ).join('');
+    sg.querySelectorAll('.species-card').forEach(c => c.addEventListener('click', () => {
+      setup.species = c.dataset.sp;
+      renderSetup();
+    }));
+
+    // Tradition cards
+    const tr = el('tradition-row');
+    tr.innerHTML = TRADITIONS.map((t, i) =>
+      `<div class="tradition-card${setup.tradition === i ? ' selected' : ''}" data-ti="${i}">
+        <div class="tr-name">${t.name}</div>
+        <div class="tr-desc">${t.desc}</div>
+      </div>`
+    ).join('');
+    tr.querySelectorAll('.tradition-card').forEach(c => c.addEventListener('click', () => {
+      setup.tradition = Number(c.dataset.ti);
+      renderSetup();
+    }));
+
+    // Technique toggles
+    const st = el('setup-techniques');
+    st.innerHTML = TECHNIQUES.map(t =>
+      `<button class="setup-toggle${setup.techniques.has(t.id) ? ' on' : ''}" data-id="${t.id}">
+        <span class="dot"></span>${t.name}
+      </button>`
+    ).join('');
+    st.querySelectorAll('.setup-toggle').forEach(btn => btn.addEventListener('click', () => {
+      const id = btn.dataset.id;
+      if (setup.techniques.has(id)) setup.techniques.delete(id);
+      else if (setup.techniques.size < 2) setup.techniques.add(id);
+      renderSetup();
+    }));
+
+    // Form toggles
+    const sf = el('setup-forms');
+    sf.innerHTML = FORMS.map(f =>
+      `<button class="setup-toggle${setup.forms.has(f) ? ' on' : ''}" data-id="${f}" style="color:${setup.forms.has(f) ? `var(--${f})` : ''}">
+        <span class="dot"></span>${f}
+      </button>`
+    ).join('');
+    sf.querySelectorAll('.setup-toggle').forEach(btn => btn.addEventListener('click', () => {
+      const id = btn.dataset.id;
+      if (setup.forms.has(id)) setup.forms.delete(id);
+      else if (setup.forms.size < 2) setup.forms.add(id);
+      renderSetup();
+    }));
+
+    // Grid preview
+    const gp = el('setup-grid-preview');
+    let gh = '<div></div>'; // empty corner
+    for (const f of FORMS) {
+      gh += `<div class="h${setup.forms.has(f) ? ' on' : ''}" style="color:var(--${f})">${f.slice(0,3)}</div>`;
+    }
+    for (const t of TECHNIQUES) {
+      gh += `<div class="rl${setup.techniques.has(t.id) ? ' on' : ''}">${t.name}</div>`;
+      for (const f of FORMS) {
+        const on = setup.techniques.has(t.id) && setup.forms.has(f);
+        gh += `<div class="gc${on ? ' on' : ''}" style="--form-hue:var(--${f})"></div>`;
+      }
+    }
+    gp.innerHTML = gh;
+
+    // Begin button
+    el('begin-btn').disabled = !setup.species || setup.techniques.size < 1 || setup.forms.size < 1;
+  }
+
+  renderSetup();
+
+  el('begin-btn').addEventListener('click', async () => {
+    el('setup-screen').hidden = true;
+    el('app').hidden = false;
+
+    // Apply the chosen ruleset — reset, forbid, then warm up
+    if (isLive) {
+      // Reset to a fresh universe with zero warm-up (so we can forbid first)
+      const body = { seed: Date.now(), ticks: 4000, warm: 0 };
+      await fetch('/live/reset', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      });
+
+      // Forbid unselected techniques (action 2 = forbid technique, 1-based bit)
+      for (let i = 0; i < TECHNIQUES.length; i++) {
+        if (!setup.techniques.has(TECHNIQUES[i].id)) {
+          await fetch('/live/submit', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ kind: 2, params: [i + 1] }),
+          });
+        }
+      }
+      // Forbid unselected forms (action 4 = forbid form, 1-based bit)
+      for (let i = 0; i < FORMS.length; i++) {
+        if (!setup.forms.has(FORMS[i])) {
+          await fetch('/live/submit', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ kind: 4, params: [i + 1] }),
+          });
+        }
+      }
+      // Warm up 1 year so the universe has its first discoveries
+      await fetch('/live/advance', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ticks: 12 }),
+      });
+
+      // Advance 1 more tick to make the forbids take effect
+      await fetch('/live/advance', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ticks: 1 }),
+      });
+
+      // Session object is stale — reload, skipping setup
+      sessionStorage.setItem('mm-skip-setup', '1');
+      location.reload();
+      return;
+    }
+
+    // Refresh and paint
+    refreshRuleset();
+    paint();
+  });
+}
 // Read the live ruleset from the current frame
 function liveRuleset() {
   const f = session.last();
@@ -1346,6 +1644,7 @@ function paint() {
 
   // Refresh active tab content
   if (state.tab === 'knowledge') renderKnowledge(f);
+  if (state.tab === 'world') renderWorld(f);
   if (state.tab === 'console') renderConsole(f);
 }
 
@@ -1844,14 +2143,26 @@ function paintGodPanel(f) {
   let econHtml = '';
   if (fl) {
     // Material stocks with per-kind breakdown
+    const kindHues = {food:'var(--ok)',stone:'var(--terram)',vellum:'var(--warn)',labor:'var(--aquam)',essence:'var(--limen)',insight:'var(--god)',passage:'var(--nomen)'};
+    const stockMax = Math.max(...fl.kinds.map(k => fl.closing[k] ?? 0), 1);
     econHtml += '<div class="econ-section-label">material stocks</div>';
     for (const kind of fl.kinds) {
       const stock = fl.closing[kind] ?? 0;
       const inflow = (fl.faucet[kind] ?? 0);
       const outflow = (fl.sink[kind] ?? 0);
       const net = inflow - outflow;
-      const color = net >= 0 ? 'var(--ok)' : 'var(--loss)';
-      econHtml += `<div class="econ-row"><span>${kind}</span><span class="v">${stock.toFixed(0)} <span style="color:${color};font-size:8px">${net >= 0 ? '+' : ''}${net.toFixed(0)}</span></span></div>`;
+      const netColor = net > 0 ? 'var(--ok)' : net < 0 ? 'var(--loss)' : 'var(--faint)';
+      const hue = kindHues[kind] || 'var(--god)';
+      const pct = Math.min(100, (stock / stockMax) * 100);
+      econHtml += `<div style="margin-bottom:3px">
+        <div style="display:flex;justify-content:space-between;font:9px var(--mono)">
+          <span style="color:${hue};font-weight:600;letter-spacing:.04em">${kind}</span>
+          <span><span style="color:var(--ink)">${stock.toFixed(0)}</span> <span style="color:${netColor};font-size:8px">${net >= 0 ? '+' : ''}${net.toFixed(0)}</span></span>
+        </div>
+        <div style="height:5px;border-radius:3px;background:var(--sunk);overflow:hidden;margin-top:1px">
+          <div style="height:100%;width:${pct}%;background:${hue};border-radius:3px;opacity:.6"></div>
+        </div>
+      </div>`;
     }
 
     // Producers
@@ -1909,6 +2220,243 @@ function paintGodPanel(f) {
   econHtml += `<div class="econ-row"><span>tier</span><span class="v">${r.worshipTier}</span></div>`;
 
   econEl.innerHTML = econHtml;
+}
+
+// ================================================================ WORLD VIEW
+const worldCanvas = el('world-canvas');
+const wCtx = worldCanvas.getContext('2d');
+const worldMages = [];
+let worldTick = -1;
+
+const SPECIES_COLORS = ['#C85050','#C9A84C','#46A98D','#5BA0C8','#E8DCC8','#A08060'];
+const ROLE_LABELS = ['researcher','warden','professor','raider'];
+const TERRITORIES = [
+  {id:'river-delta',    name:'River Delta',     x:.08, y:.55, w:.14, h:.25, fill:'#1a3a2a', accent:'#2a5a3a'},
+  {id:'arable-lowland', name:'Arable Lowland',  x:.24, y:.35, w:.30, h:.40, fill:'#1a2a1a', accent:'#2a3a2a'},
+  {id:'upland-pasture', name:'Upland Pasture',  x:.56, y:.25, w:.20, h:.30, fill:'#2a2a1a', accent:'#3a3a2a'},
+  {id:'deep-forest',    name:'Deep Forest',     x:.08, y:.15, w:.18, h:.35, fill:'#0a1a0a', accent:'#1a2a1a'},
+  {id:'highland-waste', name:'Highland Waste',  x:.78, y:.10, w:.18, h:.50, fill:'#1a1a1e', accent:'#2a2a30'},
+];
+
+function resizeWorldCanvas() {
+  const r = worldCanvas.parentElement.getBoundingClientRect();
+  worldCanvas.width = r.width * devicePixelRatio;
+  worldCanvas.height = r.height * devicePixelRatio;
+  wCtx.scale(devicePixelRatio, devicePixelRatio);
+  worldCanvas._w = r.width;
+  worldCanvas._h = r.height;
+}
+
+function renderWorld(f) {
+  resizeWorldCanvas();
+  const W = worldCanvas._w, H = worldCanvas._h;
+  if (!W || !H) return;
+
+  const cd = f.raw.candidateDetail || {};
+  const mageData = cd.mages ? Object.values(cd.mages) : [];
+  const inst = f.institutions();
+  const kCells = f.knowledge();
+
+  // Sync world mages with data
+  if (f.raw.flow?.worldTick !== worldTick) {
+    worldTick = f.raw.flow?.worldTick ?? 0;
+    // Rebuild mage list
+    while (worldMages.length > mageData.length) worldMages.pop();
+    for (let i = 0; i < mageData.length; i++) {
+      const m = mageData[i];
+      if (!worldMages[i]) {
+        worldMages[i] = {x: W*.35 + Math.random()*W*.3, y: H*.35 + Math.random()*H*.3, tx:0, ty:0};
+      }
+      const wm = worldMages[i];
+      wm.species = m.speciesId;
+      wm.role = m.roleId;
+      wm.knows = m.nodesKnown;
+      wm.age = Math.floor(m.ageTicks / 12);
+      wm.goal = m.goal?.goalId ?? 0;
+      // Target position by role
+      const uniX = W * .42, uniY = H * .48;
+      if (m.roleId === 0) { wm.tx = uniX - 30 + (i%5)*12; wm.ty = uniY - 20 + Math.floor(i/5)*10; } // researcher near library
+      else if (m.roleId === 2) { wm.tx = uniX + 40 + (i%3)*15; wm.ty = uniY + 10 + Math.floor(i/3)*12; } // professor in hall
+      else if (m.roleId === 1) { // warden patrols
+        const a = (i * 1.2 + worldTick * 0.02);
+        wm.tx = uniX + Math.cos(a) * 80; wm.ty = uniY + Math.sin(a) * 60;
+      }
+      else if (m.roleId === 3) { wm.tx = W * .85; wm.ty = H * .55; } // raider near portal
+      else { wm.tx = uniX + (i%4)*10 - 20; wm.ty = uniY + 30; }
+    }
+  }
+
+  // Interpolate positions
+  for (const wm of worldMages) {
+    wm.x += (wm.tx - wm.x) * 0.08;
+    wm.y += (wm.ty - wm.y) * 0.08;
+    // Add slight wander
+    wm.x += (Math.random() - 0.5) * 0.5;
+    wm.y += (Math.random() - 0.5) * 0.5;
+  }
+
+  // Clear
+  const isDark = getComputedStyle(document.documentElement).getPropertyValue('--ground').trim().startsWith('#0');
+  wCtx.fillStyle = isDark ? '#060a0c' : '#e8e4dc';
+  wCtx.fillRect(0, 0, W, H);
+
+  // Draw territories as landscape patches
+  for (const t of TERRITORIES) {
+    const tx = t.x * W, ty = t.y * H, tw = t.w * W, th = t.h * H;
+    // Terrain shape — rounded organic patch
+    wCtx.save();
+    wCtx.beginPath();
+    const r = Math.min(tw, th) * 0.15;
+    wCtx.moveTo(tx + r, ty);
+    wCtx.lineTo(tx + tw - r, ty);
+    wCtx.quadraticCurveTo(tx + tw, ty, tx + tw, ty + r);
+    wCtx.lineTo(tx + tw, ty + th - r);
+    wCtx.quadraticCurveTo(tx + tw, ty + th, tx + tw - r, ty + th);
+    wCtx.lineTo(tx + r, ty + th);
+    wCtx.quadraticCurveTo(tx, ty + th, tx, ty + th - r);
+    wCtx.lineTo(tx, ty + r);
+    wCtx.quadraticCurveTo(tx, ty, tx + r, ty);
+    wCtx.closePath();
+    wCtx.fillStyle = isDark ? t.fill : t.accent;
+    wCtx.fill();
+    // Territory name
+    wCtx.fillStyle = isDark ? 'rgba(255,255,255,0.15)' : 'rgba(0,0,0,0.12)';
+    wCtx.font = '9px system-ui, sans-serif';
+    wCtx.fillText(t.name, tx + 6, ty + th - 6);
+    wCtx.restore();
+  }
+
+  // Draw trees in Deep Forest
+  const forest = TERRITORIES[3];
+  for (let i = 0; i < 20; i++) {
+    const fx = (forest.x + Math.random() * forest.w) * W;
+    const fy = (forest.y + Math.random() * forest.h) * H;
+    wCtx.fillStyle = isDark ? '#0a2a0a' : '#3a5a3a';
+    wCtx.beginPath();
+    wCtx.moveTo(fx, fy - 6);
+    wCtx.lineTo(fx - 3, fy + 2);
+    wCtx.lineTo(fx + 3, fy + 2);
+    wCtx.fill();
+  }
+
+  // Draw rocks in Highland Waste
+  const waste = TERRITORIES[4];
+  for (let i = 0; i < 12; i++) {
+    const rx = (waste.x + 0.02 + Math.random() * (waste.w - 0.04)) * W;
+    const ry = (waste.y + 0.05 + Math.random() * (waste.h - 0.1)) * H;
+    wCtx.fillStyle = isDark ? '#2a2a30' : '#8a8a90';
+    wCtx.beginPath();
+    wCtx.arc(rx, ry, 2 + Math.random() * 3, 0, Math.PI * 2);
+    wCtx.fill();
+  }
+
+  // Draw river in delta
+  const delta = TERRITORIES[0];
+  wCtx.strokeStyle = isDark ? '#1a4a5a' : '#5a8aaa';
+  wCtx.lineWidth = 2;
+  wCtx.beginPath();
+  const rx0 = (delta.x + delta.w * 0.3) * W;
+  wCtx.moveTo(rx0, delta.y * H);
+  wCtx.quadraticCurveTo(rx0 + 10, (delta.y + delta.h * 0.5) * H, rx0 - 5, (delta.y + delta.h) * H);
+  wCtx.stroke();
+
+  // Draw university building
+  const uniX = W * .38, uniY = H * .40;
+  const uniW = 60 + inst.capacity * 0.3;
+  const uniH = 40 + inst.libraryDepth * 0.5;
+  // Walls
+  wCtx.fillStyle = isDark ? '#1a2028' : '#b0a898';
+  wCtx.fillRect(uniX, uniY, uniW, uniH);
+  // Roof
+  wCtx.fillStyle = isDark ? '#2a1a18' : '#8a6a58';
+  wCtx.beginPath();
+  wCtx.moveTo(uniX - 4, uniY);
+  wCtx.lineTo(uniX + uniW / 2, uniY - 18);
+  wCtx.lineTo(uniX + uniW + 4, uniY);
+  wCtx.fill();
+  // Windows — glow with knowledge hue
+  const windowCount = Math.min(6, Math.floor(inst.libraryDepth / 5));
+  for (let i = 0; i < windowCount; i++) {
+    const wx = uniX + 8 + i * (uniW - 16) / Math.max(windowCount, 1);
+    wCtx.fillStyle = isDark ? 'rgba(18,184,198,0.4)' : 'rgba(18,100,110,0.3)';
+    wCtx.fillRect(wx, uniY + 8, 6, 8);
+  }
+  // Library shelves inside
+  const shelfFill = Math.min(1, inst.grimoires / 200);
+  wCtx.fillStyle = isDark ? 'rgba(201,168,76,0.3)' : 'rgba(120,90,40,0.2)';
+  wCtx.fillRect(uniX + 4, uniY + uniH - 12, (uniW - 8) * shelfFill, 8);
+  // Label
+  wCtx.fillStyle = isDark ? 'rgba(255,255,255,0.3)' : 'rgba(0,0,0,0.25)';
+  wCtx.font = 'italic 10px Georgia, serif';
+  wCtx.fillText('The Academy', uniX + 4, uniY + uniH + 14);
+
+  // Portal at the edge
+  wCtx.save();
+  const portalX = W * 0.88, portalY = H * 0.55;
+  const glow = isDark ? 'rgba(166,146,236,0.4)' : 'rgba(74,53,133,0.3)';
+  wCtx.fillStyle = glow;
+  wCtx.beginPath();
+  wCtx.ellipse(portalX, portalY, 8, 16, 0, 0, Math.PI * 2);
+  wCtx.fill();
+  wCtx.strokeStyle = isDark ? '#A692EC' : '#6a5a8a';
+  wCtx.lineWidth = 1.5;
+  wCtx.stroke();
+  wCtx.fillStyle = isDark ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.15)';
+  wCtx.font = '8px system-ui';
+  wCtx.fillText('portal', portalX - 10, portalY + 24);
+  wCtx.restore();
+
+  // Knowledge particles — faint dots drifting, colored by form
+  const formHues = ['#B8A866','#5BA0C8','#9AAAB4','#C87070','#6BA84E','#E89050','#A494C4','#46A98D','#CC8450','#9090A4','#7070A0','#B8A870','#A692EC','#7099D8'];
+  for (const c of kCells) {
+    if (!c.live || c.nodesKnown < 1) continue;
+    const formIdx = kCells.indexOf(c) % 14;
+    const hue = formHues[formIdx] || '#888';
+    for (let p = 0; p < Math.min(c.nodesKnown, 3); p++) {
+      const px = uniX + Math.sin(worldTick * 0.01 + formIdx + p * 2) * (40 + p * 20) + uniW / 2;
+      const py = uniY + Math.cos(worldTick * 0.013 + formIdx * 0.7 + p) * (30 + p * 15) + uniH / 2;
+      wCtx.fillStyle = hue;
+      wCtx.globalAlpha = 0.25;
+      wCtx.beginPath();
+      wCtx.arc(px, py, 1.5, 0, Math.PI * 2);
+      wCtx.fill();
+      wCtx.globalAlpha = 1;
+    }
+  }
+
+  // Draw mages as dots with trails
+  for (const wm of worldMages) {
+    const col = SPECIES_COLORS[wm.species] || '#aaa';
+    // Trail
+    wCtx.fillStyle = col;
+    wCtx.globalAlpha = 0.15;
+    wCtx.beginPath();
+    wCtx.arc(wm.x - (wm.tx - wm.x) * 0.3, wm.y - (wm.ty - wm.y) * 0.3, 2, 0, Math.PI * 2);
+    wCtx.fill();
+    // Body
+    wCtx.globalAlpha = 0.9;
+    const radius = wm.knows > 30 ? 4 : wm.knows > 10 ? 3.5 : 3;
+    wCtx.beginPath();
+    wCtx.arc(wm.x, wm.y, radius, 0, Math.PI * 2);
+    wCtx.fill();
+    // Research spark
+    if (wm.goal === 1 && Math.random() < 0.03) {
+      wCtx.fillStyle = isDark ? '#12B8C6' : '#0a8a98';
+      wCtx.globalAlpha = 0.7;
+      wCtx.beginPath();
+      wCtx.arc(wm.x + (Math.random()-0.5)*8, wm.y - 6, 1.5, 0, Math.PI * 2);
+      wCtx.fill();
+    }
+    wCtx.globalAlpha = 1;
+  }
+
+  // Stats overlay bottom-left
+  wCtx.fillStyle = isDark ? 'rgba(255,255,255,0.35)' : 'rgba(0,0,0,0.3)';
+  wCtx.font = '10px ui-monospace, monospace';
+  wCtx.fillText(`${worldMages.length} mages · ${inst.libraryDepth} nodes in the library · ${inst.grimoires} grimoires`, 10, H - 10);
+
+  // Animate
+  if (state.tab === 'world') requestAnimationFrame(() => renderWorld(f));
 }
 
 // ================================================================ INITIAL PAINT
