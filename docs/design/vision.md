@@ -557,8 +557,8 @@ agreement — that agreement is how "did the vision get built?" is answerable.
 | 0.3.0 | `knowledge-model` | `magic-grid`, `magic-primitives`, `knowledge-instances`, `magic-traditions` | released; archived |
 | 0.4.0 | `mages-and-species` | `species-traits`, `mage-lifecycle`, `mage-autonomy`, `universities`, `economy` | released |
 | 0.5.0 | `agent-interface` | `agent-api`, `mc-harness`, `balance-metrics` | released |
-| 0.7.0 | `god-agency` | `favor-economy`, `worship-loop`, `interventions`, `ascension-and-prestige` | 59/75, and it runs every world tick |
-| 0.9.0 | `raid-engagement` | `portals`, `host-ruleset-arbitration`, `raid-space`, `raid-objectives`, `raid-consequences` | 67/92; raids fire on the campaign branches, not yet on `main` |
+| 0.7.0 | `god-agency` | `favor-economy`, `worship-loop`, `interventions`, `ascension-and-prestige` | released |
+| 0.9.0 | `raid-engagement` | `portals`, `host-ruleset-arbitration`, `raid-space`, `raid-objectives`, `raid-consequences` | released |
 | 0.11.0 | `gym-bridge` | `rl-bridge` | 76/76 — tasks complete, unreleased |
 | 0.13.0 | `electron-client` | `client-shell`, `world-presentation` | proposal only — no tasks, no package |
 | 0.15.0 | `pvp-server` | `authoritative-lockstep`, `direct-challenge`, `universe-persistence`, `hetzner-deployment` | 33/41; `packages/server` exists — re-measured 2026-08-16 on `origin/main@57bcbc44`. The 2026-08-12 amendment read *"proposal only — no tasks, no package on `main`"*; see the note below |
