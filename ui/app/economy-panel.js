@@ -60,7 +60,6 @@ export function renderEconomy(frame, container) {
     html += '<span style="font:10px var(--mono);color:var(--faint)">no claimants</span>';
   } else {
     for (const c of claimants) {
-      const owedV = fmt(c.owed);
       const paidV = fmt(c.paid);
       const short = c.shortfall > 0;
       const kindM = KIND_META[c.kind] || { label: c.kind, hue: 'var(--soft)' };

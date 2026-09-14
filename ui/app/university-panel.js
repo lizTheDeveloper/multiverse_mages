@@ -16,7 +16,6 @@ export function renderUniversity(frame, container, content) {
   const species = content.species;
   const roles = content.mageRoles;
   const goals = content.goals;
-  const cells = content.cells;
   const nodes = content.nodes;
 
   let html = '';

@@ -52,11 +52,11 @@ export function renderGodActions(frame, container, onAction) {
       const targets = cands[String(id)];
       const count = Array.isArray(targets) ? targets.length : null;
 
-      let state, stateClass;
-      if (legal && affordable) { state = ''; stateClass = 'god-legal'; }
-      else if (!legal && affordable) { state = 'masked'; stateClass = 'god-masked'; }
-      else if (!affordable) { state = 'need ' + cost; stateClass = 'god-poor'; }
-      else { state = ''; stateClass = 'god-masked'; }
+      let stateClass;
+      if (legal && affordable) { stateClass = 'god-legal'; }
+      else if (!legal && affordable) { stateClass = 'god-masked'; }
+      else if (!affordable) { stateClass = 'god-poor'; }
+      else { stateClass = 'god-masked'; }
 
       html += `<button class="god-btn ${stateClass}" data-action="${id}" title="${GLOSS[id] || ''}">`;
       html += `<span class="god-name">${NAMES[id] || a?.name || id}</span>`;
