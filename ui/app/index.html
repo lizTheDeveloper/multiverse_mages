@@ -1144,15 +1144,7 @@ const el = (id) => document.getElementById(id);
   renderSetup();
 
   // Skip setup if the server already has an active session
-  try {
-    const fc = session.frameCount;
-    if (isLive && fc > 5) {
-      el('setup-screen').hidden = true;
-      el('app').hidden = false;
-      refreshRuleset();
-      paint();
-    }
-  } catch (_) {}
+  // Always show setup on fresh load — Begin transitions to the game
 
   el('begin-btn').addEventListener('click', async () => {
     el('setup-screen').hidden = true;
