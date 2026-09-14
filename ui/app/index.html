@@ -1039,12 +1039,6 @@ const el = (id) => document.getElementById(id);
 
 // ================================================================ SETUP SCREEN
 {
-  // Skip setup if we just reset
-  if (sessionStorage.getItem('mm-skip-setup')) {
-    sessionStorage.removeItem('mm-skip-setup');
-    el('setup-screen').hidden = true;
-    el('app').hidden = false;
-  }
   const TECHNIQUES = [
     { id: 'creo', name: 'Creo', gloss: 'create, heal' },
     { id: 'intellego', name: 'Intellego', gloss: 'perceive, know' },
@@ -1149,14 +1143,25 @@ const el = (id) => document.getElementById(id);
 
   renderSetup();
 
+  // Skip setup if the server already has an active session
+  try {
+    const fc = session.frameCount;
+    if (isLive && fc > 5) {
+      el('setup-screen').hidden = true;
+      el('app').hidden = false;
+      refreshRuleset();
+      paint();
+    }
+  } catch (_) {}
+
   el('begin-btn').addEventListener('click', async () => {
     el('setup-screen').hidden = true;
     el('app').hidden = false;
 
     // Apply the chosen ruleset — reset, forbid, then warm up
     if (isLive) {
-      // Reset to a fresh universe with zero warm-up (so we can forbid first)
-      const body = { seed: Date.now(), ticks: 4000, warm: 0 };
+      // Reset with a few warm-up ticks so the universe has favor to spend on forbids
+      const body = { seed: Date.now(), ticks: 4000, warm: 6 };
       await fetch('/live/reset', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -1197,13 +1202,9 @@ const el = (id) => document.getElementById(id);
         body: JSON.stringify({ ticks: 1 }),
       });
 
-      // Session object is stale — reload, skipping setup
-      sessionStorage.setItem('mm-skip-setup', '1');
-      location.reload();
-      return;
     }
 
-    // Refresh and paint
+    // Refresh ruleset from the (now reset) server and paint
     refreshRuleset();
     paint();
   });
