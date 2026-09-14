@@ -2228,7 +2228,16 @@ const worldMages = [];
 let worldTick = -1;
 const worldMotion = { started: performance.now(), lastTick: -1, pulseAt: -10, pulseKind: 'quiet', discoveries: 0, books: 0 };
 
-const SPECIES_COLORS = ['#C85050','#C9A84C','#46A98D','#5BA0C8','#E8DCC8','#A08060'];
+const spriteImages = {};
+const speciesFiles = ['human', 'elf', 'dwarf', 'draconic', 'gnome', 'orc'];
+speciesFiles.forEach((name, i) => {
+  const img = new Image();
+  img.src = 'assets/' + name + '-south.png';
+  spriteImages[i] = img;
+});
+const uniImg = new Image(); uniImg.src = 'assets/university.png';
+const portalImg = new Image(); portalImg.src = 'assets/portal.png';
+
 const ROLE_LABELS = ['researcher','warden','professor','raider'];
 const TERRITORIES = [
   {id:'river-delta', name:'THE RIVER DELTA', cx:.19, cy:.70, rx:.15, ry:.20, fill:'#779876', edge:'#4c745f'},
@@ -2444,34 +2453,18 @@ function renderWorld(f) {
   mapRoad(wCtx, [[W*.11,H*.23],[W*.29,H*.34],[uniX,uniY],[W*.67,H*.31],[W*.84,H*.38]],isDark);
   mapRoad(wCtx, [[uniX,uniY],[W*.29,H*.73],[W*.18,H*.79]],isDark);
 
-  // The university is a real compound: walls, archive, lecture hall, observatory, and a working courtyard.
-  const campus=52+Math.min(22,inst.capacity*.12), libH=28+Math.min(15,inst.libraryDepth*.16);
-  wCtx.save(); wCtx.translate(uniX,uniY); wCtx.fillStyle=isDark?'rgba(15,23,22,.76)':'rgba(62,54,41,.16)'; wCtx.beginPath(); wCtx.ellipse(0,8,campus*.86,campus*.54,0,0,Math.PI*2); wCtx.fill();
-  wCtx.fillStyle=palette.academy; wCtx.strokeStyle=isDark?'#947c59':'#6f5a42'; wCtx.lineWidth=2;
-  wCtx.fillRect(-campus*.45,-libH*.55,campus*.55,libH); wCtx.strokeRect(-campus*.45,-libH*.55,campus*.55,libH);
-  wCtx.fillRect(campus*.13,-15,campus*.30,32); wCtx.strokeRect(campus*.13,-15,campus*.30,32);
-  wCtx.fillStyle=palette.roof; wCtx.beginPath(); wCtx.moveTo(-campus*.50,-libH*.55); wCtx.lineTo(-campus*.18,-libH*.55-15); wCtx.lineTo(campus*.15,-libH*.55); wCtx.closePath(); wCtx.fill();
-  wCtx.beginPath(); wCtx.moveTo(campus*.08,-15); wCtx.lineTo(campus*.28,-31); wCtx.lineTo(campus*.48,-15); wCtx.closePath(); wCtx.fill();
-  // A lit archive is a promise that somebody is still awake with the books.
-  for(let i=0;i<5;i++) { const awake = .58 + .30 * Math.sin(time * .7 + i * 2.4); wCtx.fillStyle=isDark ? `rgba(246,190,99,${awake})` : '#2d7374'; wCtx.fillRect(-campus*.37+i*campus*.105,-libH*.32,4,7); }
-  wCtx.fillStyle=isDark?'rgba(201,168,76,.75)':'rgba(120,80,32,.65)'; const books=Math.min(8,Math.max(2,Math.floor(inst.grimoires/10))); for(let i=0;i<books;i++) wCtx.fillRect(-campus*.38+i*5,libH*.23,3,3);
-  wCtx.strokeStyle=palette.road; wCtx.lineWidth=1; wCtx.beginPath();wCtx.arc(-campus*.05,6,10,0,Math.PI*2);wCtx.stroke(); wCtx.fillStyle=palette.river;wCtx.beginPath();wCtx.arc(-campus*.05,6,2,0,Math.PI*2);wCtx.fill(); wCtx.restore();
+  // The academy sprite anchors the university compound at its established location.
+  const campus=52+Math.min(22,inst.capacity*.12);
+  const uniSize = 144;
+  wCtx.drawImage(uniImg, uniX - uniSize / 2, uniY - uniSize / 2, uniSize, uniSize);
   mapLabel(wCtx,'THE UNIVERSITY',uniX,uniY+campus*.62,isDark);
 
   // Portal at the edge
-  wCtx.save();
   const portalX = W * 0.88, portalY = H * 0.63;
-  const glow = isDark ? 'rgba(166,146,236,0.4)' : 'rgba(74,53,133,0.3)';
-  wCtx.fillStyle = glow;
-  wCtx.beginPath();
-  wCtx.ellipse(portalX, portalY, 8, 16, 0, 0, Math.PI * 2);
-  wCtx.fill();
-  wCtx.strokeStyle = isDark ? '#A692EC' : '#6a5a8a';
-  wCtx.lineWidth = 1.5;
-  wCtx.stroke();
+  const portalSize = 96;
+  wCtx.drawImage(portalImg, portalX - portalSize / 2, portalY - portalSize / 2, portalSize, portalSize);
   wCtx.fillStyle = isDark ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.15)';
   wCtx.font = '8px ui-monospace, monospace'; wCtx.fillText('THE GATE', portalX - 17, portalY + 25);
-  wCtx.restore();
 
   // Knowledge circulates around the archive rather than sitting as an icon.
   for (const light of formLight) for (let p = 0; p < Math.min(4, 1 + Math.ceil(light.nodes / 5)); p++) {
@@ -2487,22 +2480,13 @@ function renderWorld(f) {
   for (let i = 0; i + 1 < conversants.length; i += 2) { wCtx.beginPath(); wCtx.moveTo(conversants[i].x, conversants[i].y); wCtx.lineTo(conversants[i+1].x, conversants[i+1].y); wCtx.stroke(); }
   wCtx.restore();
 
-  // Draw mages as dots with trails
+  // Draw species-specific mage sprites.
   for (const wm of worldMages) {
-    const col = SPECIES_COLORS[wm.species] || '#aaa';
     const stride=Math.sin(time*1.8+wm.phase)*1.2;
-    // A thin, intentional travel mark rather than a glowing arcade trail.
-    wCtx.fillStyle = col;
-    wCtx.globalAlpha = .20;
-    wCtx.beginPath();
-    wCtx.arc(wm.x - (wm.tx - wm.x) * 0.3, wm.y - (wm.ty - wm.y) * 0.3, 2, 0, Math.PI * 2);
-    wCtx.fill();
-    // Body
     wCtx.globalAlpha = .94;
-    const radius = wm.knows > 30 ? 4 : wm.knows > 10 ? 3.5 : 3;
-    wCtx.beginPath();
-    wCtx.arc(wm.x, wm.y+stride*.25, radius, 0, Math.PI * 2);
-    wCtx.fill();
+    const img = spriteImages[wm.species];
+    const spriteSize = [20, 20, 18, 28, 14, 22][wm.species] || 20;
+    wCtx.drawImage(img, wm.x - spriteSize / 2, wm.y + stride * .25 - spriteSize / 2, spriteSize, spriteSize);
     // A working scriptorium catches the light like a pen stroke; research seeks upward.
     if (wm.goal === 5) {
       const ink = .25 + .55 * Math.max(0, Math.sin(time * 5 + wm.phase));
