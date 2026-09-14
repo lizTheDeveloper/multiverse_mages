@@ -1,0 +1,1794 @@
+<!doctype html>
+<!--
+  Multiverse Mages — the game.
+  Copyright (C) 2026 Ann Kelner
+  SPDX-License-Identifier: AGPL-3.0-or-later
+
+  A unified interface composed from the eighteen prototype studies. The grid is
+  the central object. Everything else orbits it: the sidebar for resources and
+  roster, the spine for the timeline, panels for detail.
+
+  Fed from session.js over a 400-tick recorded run. No rules computed here;
+  contracts section 5 says the client decodes. The one exception is
+  reconstructedCharge, which is named after what it does wrong.
+
+  Serve with `npm run ui`, then open /ui/app/.
+-->
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Multiverse Mages</title>
+<link rel="stylesheet" href="../shared/theme.css">
+
+<style>
+/* ================================================================ LAYOUT */
+
+html, body { height: 100%; overflow: hidden; }
+
+.app {
+  display: grid;
+  grid-template-columns: 15rem 1fr 16rem;
+  grid-template-rows: auto 1fr auto;
+  grid-template-areas:
+    "topbar topbar topbar"
+    "left   center right"
+    "spine  spine  spine";
+  height: 100vh;
+  overflow: hidden;
+}
+@media (max-width: 72rem) {
+  .app { grid-template-columns: 13rem 1fr 14rem; }
+}
+@media (max-width: 56rem) {
+  .app {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto auto 1fr auto;
+    grid-template-areas:
+      "topbar"
+      "mobiletabs"
+      "center"
+      "spine";
+  }
+  .sidebar-left, .sidebar-right { display: none !important; }
+}
+
+/* ================================================================ TOPBAR */
+
+.topbar {
+  grid-area: topbar;
+  display: flex;
+  align-items: center;
+  gap: .5rem;
+  padding: .35rem .7rem;
+  background: var(--plate);
+  border-bottom: 1px solid var(--edge);
+  min-height: 2.2rem;
+  flex-wrap: wrap;
+}
+.topbar .title {
+  font: 400 .95rem var(--serif);
+  letter-spacing: -.01em;
+  color: var(--god);
+}
+.topbar .sep { color: var(--edge); font-size: .7rem; }
+.topbar .tab {
+  font: 9.5px var(--mono);
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  padding: .25rem .45rem;
+  border: 1px solid transparent;
+  border-radius: 3px;
+  background: transparent;
+  color: var(--faint);
+  cursor: pointer;
+}
+.topbar .tab:hover { color: var(--soft); }
+.topbar .tab[aria-pressed="true"] {
+  color: var(--ctl-charged-fg);
+  background: var(--ctl-charged-bg);
+  border-color: var(--ctl-charged-border);
+}
+.topbar .spacer { flex: 1; }
+.topbar .tick-display {
+  font: 400 1.05rem var(--serif);
+  font-variant-numeric: tabular-nums;
+  color: var(--ink);
+}
+.topbar .tick-label {
+  font: 9px var(--mono);
+  color: var(--faint);
+  letter-spacing: .07em;
+  text-transform: uppercase;
+}
+.topbar .status-badge {
+  font: 9px var(--mono);
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  padding: .12rem .35rem;
+  border: 1px solid var(--edge);
+  border-radius: 2px;
+  color: var(--soft);
+}
+
+/* ================================================================ SIDEBARS */
+
+.sidebar-left {
+  grid-area: left;
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+  border-right: 1px solid var(--edge);
+  background: var(--panel);
+}
+.sidebar-right {
+  grid-area: right;
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+  border-left: 1px solid var(--edge);
+  background: var(--panel);
+}
+
+.sb-section {
+  padding: .5rem .55rem;
+  border-bottom: 1px solid var(--edge);
+}
+.sb-head {
+  font: 9.5px var(--mono);
+  letter-spacing: .11em;
+  text-transform: uppercase;
+  color: var(--faint);
+  margin-bottom: .35rem;
+  display: flex;
+  align-items: baseline;
+  gap: .35rem;
+}
+.sb-head .v {
+  margin-left: auto;
+  font-variant-numeric: tabular-nums;
+  color: var(--soft);
+}
+
+/* Resources */
+.res-row {
+  display: grid;
+  grid-template-columns: 4.2rem 1fr 2.6rem;
+  gap: .25rem;
+  align-items: center;
+  margin-bottom: .2rem;
+  font: 10px var(--mono);
+}
+.res-row .k {
+  color: var(--faint);
+  letter-spacing: .05em;
+  text-transform: uppercase;
+}
+.res-track {
+  height: 4px;
+  border-radius: 2px;
+  background: var(--sunk);
+  position: relative;
+  overflow: hidden;
+}
+.res-track i {
+  position: absolute;
+  inset: 0 auto 0 0;
+  background: var(--god);
+  border-radius: 2px;
+  box-shadow: var(--glow-soft);
+}
+.res-row .v {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  color: var(--ink);
+}
+
+/* Institutions */
+.inst-row {
+  display: flex;
+  justify-content: space-between;
+  font: 10px var(--mono);
+  color: var(--soft);
+  margin-bottom: .12rem;
+}
+.inst-row .v { color: var(--ink); font-variant-numeric: tabular-nums; }
+
+/* Mage species roster */
+.species-row {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: .25rem;
+  align-items: center;
+  padding: .15rem 0;
+  font: 10px var(--mono);
+}
+.species-row .name { color: var(--soft); }
+.species-row .count { color: var(--ink); font-variant-numeric: tabular-nums; }
+.species-row[data-dead="true"] .name { color: var(--loss); text-decoration: line-through; }
+.species-row[data-dead="true"] .count { color: var(--loss); }
+
+/* Tier grid (mini) */
+.tier-grid {
+  display: grid;
+  grid-template-columns: 3.5rem repeat(8, 1fr);
+  gap: 1px;
+  font: 8px var(--mono);
+  margin-top: .25rem;
+}
+.tier-grid .h { color: var(--faint); text-align: center; }
+.tier-grid .rl {
+  color: var(--faint);
+  text-align: right;
+  padding-right: .2rem;
+  align-self: center;
+}
+.tier-grid .tc {
+  text-align: center;
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+  background: var(--sunk);
+  border-radius: 1px;
+  padding: 1px 0;
+}
+.tier-grid .tc[data-n="0"] { color: transparent; background: transparent; }
+
+/* Axis toggles — the god's 19 switches */
+.axis-toggles { display: flex; flex-direction: column; gap: 2px; }
+.axis-toggle {
+  display: flex; align-items: center; gap: .4rem;
+  padding: .3rem .45rem;
+  border: 1px solid var(--ctl-latent-border);
+  border-radius: 3px;
+  background: var(--ctl-latent-bg);
+  color: var(--ctl-latent-fg);
+  font: 11px var(--mono);
+  cursor: pointer;
+  transition: all 120ms ease;
+  user-select: none;
+}
+.axis-toggle:hover { border-color: var(--god); }
+.axis-toggle:focus-visible { outline: 2px solid var(--god); outline-offset: 1px; }
+.axis-toggle[data-on="true"] {
+  background: var(--ctl-charged-bg);
+  color: var(--ctl-charged-fg);
+  border-color: var(--ctl-charged-border);
+  box-shadow: var(--glow-soft);
+}
+.axis-toggle .dot {
+  width: 7px; height: 7px; border-radius: 50%;
+  background: currentColor; flex-shrink: 0;
+  transition: transform 120ms ease;
+}
+.axis-toggle[data-on="true"] .dot { transform: scale(1.3); }
+.axis-toggle .gloss {
+  font: italic 9px var(--serif);
+  color: var(--faint);
+  margin-left: auto;
+}
+.axis-toggle[data-on="true"] .gloss { color: color-mix(in srgb, var(--ctl-charged-fg) 60%, transparent); }
+
+/* God actions — tiered intervention buttons */
+.god-actions { display: flex; flex-direction: column; gap: 2px; }
+.god-action {
+  display: flex; align-items: center; gap: .35rem;
+  padding: .25rem .4rem;
+  border: 1px solid var(--edge);
+  border-radius: 3px;
+  background: transparent;
+  color: var(--soft);
+  font: 10px var(--mono);
+  cursor: pointer;
+  transition: all 120ms ease;
+  user-select: none;
+}
+.god-action:hover { border-color: var(--god); }
+.god-action:focus-visible { outline: 2px solid var(--god); outline-offset: 1px; }
+.god-action .cost {
+  margin-left: auto;
+  font-variant-numeric: tabular-nums;
+  font-size: 9px;
+  color: var(--faint);
+}
+.god-action[data-state="legal"] {
+  border-color: color-mix(in srgb, var(--god) 40%, var(--edge));
+  color: var(--god);
+}
+.god-action[data-state="legal"] .cost { color: var(--god); }
+.god-action[data-state="legal"]:hover {
+  background: color-mix(in srgb, var(--god) 8%, transparent);
+  box-shadow: var(--glow-soft);
+}
+.god-action[data-state="unaffordable"] {
+  color: var(--faint);
+  border-style: dotted;
+}
+.god-action[data-state="unaffordable"] .cost { color: var(--loss); }
+.god-action[data-state="denied"] {
+  color: color-mix(in srgb, var(--faint) 50%, transparent);
+  border-color: transparent;
+  cursor: default;
+}
+.god-action.tier4 {
+  border-width: 2px;
+  font-weight: 600;
+  letter-spacing: .04em;
+}
+.god-action.tier4[data-state="legal"] {
+  border-color: var(--loss);
+  color: var(--loss);
+}
+.god-action .cand-badge {
+  font: 700 8px var(--mono);
+  background: var(--god);
+  color: var(--ground);
+  padding: 1px 4px;
+  border-radius: 6px;
+  margin-left: auto;
+}
+.god-action[data-state="denied"] .cand-badge { background: var(--edge); color: var(--faint); }
+.god-action[data-state="unaffordable"] .cand-badge { background: color-mix(in srgb, var(--loss) 40%, var(--sunk)); }
+.god-action.active-grant {
+  background: color-mix(in srgb, var(--god) 12%, transparent);
+  box-shadow: var(--glow-charged);
+  animation: god-pulse 1.5s ease-in-out infinite;
+}
+@keyframes god-pulse {
+  0%, 100% { box-shadow: var(--glow-soft); }
+  50% { box-shadow: var(--glow-charged); }
+}
+
+/* Edict slots */
+.edict-slots { display: flex; flex-wrap: wrap; gap: 3px; }
+.edict-slot {
+  flex: 1 0 calc(50% - 2px);
+  min-width: 0;
+  padding: .2rem .3rem;
+  border: 1px dashed var(--edge);
+  border-radius: 3px;
+  font: 8px var(--mono);
+  color: var(--faint);
+  text-align: center;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+}
+.edict-slot[data-kind="dispensation"] {
+  border-style: solid;
+  border-color: var(--disp, var(--ok));
+  color: var(--disp, var(--ok));
+}
+.edict-slot[data-kind="interdiction"] {
+  border-style: solid;
+  border-color: var(--inter, var(--loss));
+  color: var(--inter, var(--loss));
+}
+
+/* University card */
+.uni-card {
+  padding: .4rem;
+  border: 1px solid var(--edge);
+  border-radius: 3px;
+  background: var(--plate);
+}
+.uni-card .uni-name {
+  font: italic 11px var(--serif);
+  color: var(--ink);
+  margin-bottom: .25rem;
+}
+.uni-stat {
+  display: flex; justify-content: space-between;
+  font: 9px var(--mono); color: var(--soft);
+  padding: .1rem 0;
+}
+.uni-stat .v { color: var(--ink); font-variant-numeric: tabular-nums; }
+.uni-bar {
+  height: 4px; border-radius: 2px; background: var(--sunk);
+  overflow: hidden; margin: .2rem 0;
+}
+.uni-bar i { display: block; height: 100%; border-radius: 2px; }
+
+/* Economy breakdown */
+.econ-row {
+  display: flex; justify-content: space-between;
+  font: 9px var(--mono); color: var(--soft);
+  padding: .12rem 0;
+}
+.econ-row .v { color: var(--ink); font-variant-numeric: tabular-nums; }
+.econ-row .label-dot {
+  display: inline-block; width: 5px; height: 5px;
+  border-radius: 50%; margin-right: .3rem; vertical-align: middle;
+}
+.econ-section-label {
+  font: 8px var(--mono);
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  color: var(--faint);
+  margin-top: .3rem;
+  margin-bottom: .1rem;
+  padding-bottom: .1rem;
+  border-bottom: 1px solid var(--edge);
+}
+
+/* Ghost preview: cells that would light up on hover */
+.grid70 .c[data-grant-target="true"] {
+  border-color: var(--god) !important;
+  box-shadow: 0 0 18px -2px var(--god), inset 0 0 8px -4px var(--god) !important;
+  opacity: 1 !important;
+  animation: grant-pulse 1.5s ease-in-out infinite;
+}
+@keyframes grant-pulse {
+  0%, 100% { box-shadow: 0 0 12px -2px var(--god); }
+  50% { box-shadow: 0 0 22px -1px var(--god), inset 0 0 10px -4px var(--god); }
+}
+.grid70 .c[data-ghost="true"] {
+  border-color: color-mix(in srgb, currentColor 40%, transparent);
+  background: color-mix(in srgb, currentColor 10%, transparent);
+  border-style: dashed;
+  opacity: 0.7;
+}
+
+/* ================================================================ CENTER */
+
+.center {
+  grid-area: center;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.center-panel {
+  display: none;
+  flex: 1;
+  overflow: auto;
+  padding: .7rem;
+}
+.center-panel.active {
+  display: flex;
+  flex-direction: column;
+}
+
+/* ---------- Grid tab ---------- */
+.grid-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: .5rem;
+  flex: 1;
+}
+
+.grid70 {
+  display: grid;
+  grid-template-columns: 4.5rem repeat(14, 1fr);
+  gap: 3px;
+  font: 10px var(--mono);
+  width: 100%;
+}
+.grid70 .h-base {
+  letter-spacing: .04em;
+  text-transform: uppercase;
+  writing-mode: vertical-rl;
+  transform: rotate(180deg);
+  justify-self: center;
+  padding-bottom: .2rem;
+  font-size: 9px;
+  font-weight: 500;
+}
+.grid70 .rl {
+  color: var(--faint);
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  align-self: center;
+  text-align: right;
+  padding-right: .4rem;
+  font-size: 10px;
+  cursor: pointer;
+  transition: color 150ms ease, text-shadow 150ms ease;
+  user-select: none;
+}
+.grid70 .rl:hover { color: var(--god); }
+.grid70 .rl[data-on="true"] {
+  color: var(--god);
+  text-shadow: 0 0 8px color-mix(in srgb, var(--god) 40%, transparent);
+}
+.grid70 .h {
+  cursor: pointer;
+  transition: color 150ms ease, text-shadow 150ms ease;
+  user-select: none;
+}
+.grid70 .h:hover { text-shadow: 0 0 8px currentColor; }
+.grid70 .h[data-on="true"] { text-shadow: 0 0 10px currentColor; }
+.grid70 .h[data-on="false"] { opacity: 0.35; }
+.grid70 .c {
+  aspect-ratio: 1;
+  border-radius: 4px;
+  border: 1.5px solid color-mix(in srgb, currentColor 20%, var(--edge));
+  background: color-mix(in srgb, currentColor 6%, var(--sunk));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 150ms ease;
+  position: relative;
+  min-height: 2.8rem;
+}
+.grid70 .c:hover {
+  border-color: currentColor;
+  background: color-mix(in srgb, currentColor 16%, var(--sunk));
+  box-shadow: 0 0 12px -3px currentColor;
+}
+.grid70 .c[data-off="true"] {
+  border: 1px solid transparent;
+  background: color-mix(in srgb, var(--sunk) 40%, transparent);
+  color: var(--faint);
+  opacity: 0.3;
+  cursor: default;
+}
+.grid70 .c[data-off="true"]:hover {
+  opacity: 0.5;
+  box-shadow: none;
+}
+.grid70 .c[data-off="false"] {
+  border-color: color-mix(in srgb, currentColor 35%, var(--edge));
+  background: color-mix(in srgb, currentColor 10%, var(--panel));
+}
+.grid70 .c[data-live="true"] {
+  border-color: currentColor;
+  background: color-mix(in srgb, currentColor 28%, var(--panel));
+  box-shadow: 0 0 16px -3px currentColor;
+  font-weight: 700;
+}
+.grid70 .c[data-sel="true"] {
+  box-shadow: var(--glow-strong);
+  outline: 1px solid var(--god);
+  outline-offset: 1px;
+}
+.grid70 .c .edict-mark {
+  font-size: 7px;
+  position: absolute;
+  top: -1px;
+  right: 1px;
+  line-height: 1;
+}
+.f-animal   { color: var(--animal); }
+.f-aquam    { color: var(--aquam); }
+.f-auram    { color: var(--auram); }
+.f-corpus   { color: var(--corpus); }
+.f-herbam   { color: var(--herbam); }
+.f-ignem    { color: var(--ignem); }
+.f-imaginem { color: var(--imaginem); }
+.f-mentem   { color: var(--mentem); }
+.f-terram   { color: var(--terram); }
+.f-vim      { color: var(--vim); }
+.f-umbra    { color: var(--umbra); }
+.f-fatum    { color: var(--fatum); }
+.f-limen    { color: var(--limen); }
+.f-nomen    { color: var(--nomen); }
+
+.grid-info {
+  font: 10px var(--mono);
+  color: var(--faint);
+  text-align: center;
+  line-height: 1.5;
+}
+.grid-info b { color: var(--soft); }
+
+/* Cell detail panel */
+.cell-detail {
+  background: var(--panel);
+  border: 1px solid var(--edge);
+  border-radius: 4px;
+  padding: .5rem .65rem;
+  width: 100%;
+}
+.cell-detail .cell-name {
+  font: 400 1rem var(--serif);
+  margin: 0 0 .1rem;
+}
+.cell-detail .cell-classical {
+  font: 9.5px var(--mono);
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  color: var(--warn);
+  margin-bottom: .25rem;
+}
+.cell-detail .cell-verdict {
+  font: 9.5px var(--mono);
+  letter-spacing: .05em;
+  padding: .15rem .35rem;
+  border-radius: 2px;
+  display: inline-block;
+}
+.cell-detail .cell-verdict[data-on="true"] {
+  background: color-mix(in srgb, var(--ok) 22%, transparent);
+  color: var(--ok);
+}
+.cell-detail .cell-verdict[data-on="false"] {
+  background: color-mix(in srgb, var(--loss) 18%, transparent);
+  color: var(--loss);
+}
+.cell-detail .cell-knowledge {
+  font: 10px var(--mono);
+  color: var(--soft);
+  margin-top: .2rem;
+}
+.cell-detail .hint {
+  font: 10px var(--mono);
+  color: var(--faint);
+}
+
+/* ---------- Knowledge tab ---------- */
+.knowledge-panel { gap: .35rem; }
+.know-row {
+  display: grid;
+  grid-template-columns: 1fr 3.5rem 3rem 3rem;
+  gap: .4rem;
+  align-items: center;
+  padding: .25rem .35rem;
+  background: var(--sunk);
+  border-radius: 2px;
+  font: 10px var(--mono);
+}
+.know-row .nm { color: var(--ink); }
+.know-row .nodes { color: var(--soft); font-variant-numeric: tabular-nums; text-align: right; }
+.know-row .tier { color: var(--faint); font-variant-numeric: tabular-nums; text-align: right; }
+.know-row .red { color: var(--faint); font-variant-numeric: tabular-nums; text-align: right; }
+.know-row[data-live="true"] .nm { font-weight: 500; }
+.know-row[data-live="false"] { opacity: .4; }
+.know-head {
+  display: grid;
+  grid-template-columns: 1fr 3.5rem 3rem 3rem;
+  gap: .4rem;
+  padding: .15rem .35rem;
+  font: 8.5px var(--mono);
+  color: var(--faint);
+  letter-spacing: .07em;
+  text-transform: uppercase;
+}
+.know-head span:not(:first-child) { text-align: right; }
+.know-summary {
+  font: 10px var(--mono);
+  color: var(--faint);
+  padding: .25rem .35rem;
+}
+.know-summary b { color: var(--soft); }
+
+/* ---------- Console tab ---------- */
+.console-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: .6rem;
+  flex: 1;
+  min-height: 0;
+}
+@media (max-width: 56rem) {
+  .console-grid { grid-template-columns: 1fr; }
+}
+.console-col {
+  overflow-y: auto;
+  font: 10px var(--mono);
+  color: var(--soft);
+  line-height: 1.65;
+}
+.console-col .label {
+  color: var(--faint);
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  display: inline-block;
+  min-width: 5.5rem;
+}
+.console-col .section-head {
+  font: 9px var(--mono);
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  color: var(--god);
+  margin-top: .4rem;
+  margin-bottom: .15rem;
+  padding-bottom: .1rem;
+  border-bottom: 1px solid var(--edge);
+}
+
+/* ================================================================ SPINE */
+
+.spine-area {
+  grid-area: spine;
+  border-top: 1px solid var(--edge);
+  background: var(--panel);
+}
+.spine-area canvas {
+  display: block;
+  width: 100%;
+  height: 64px;
+  cursor: ew-resize;
+}
+.spine-controls {
+  display: flex;
+  gap: .4rem;
+  align-items: center;
+  padding: .2rem .5rem;
+  border-top: 1px solid var(--edge);
+  font: 9px var(--mono);
+  color: var(--faint);
+}
+.spine-controls .legend-item { display: flex; align-items: center; gap: .2rem; }
+.spine-controls .legend-item i { width: 10px; height: 2px; display: block; }
+.spine-controls .spacer { flex: 1; }
+.spine-controls button {
+  font: 9px var(--mono);
+  padding: .15rem .4rem;
+  border: 1px solid var(--edge);
+  border-radius: 2px;
+  background: transparent;
+  color: var(--soft);
+  cursor: pointer;
+}
+.spine-controls button[aria-pressed="true"] {
+  border-color: var(--god);
+  color: var(--god);
+}
+
+/* ================================================================ ANIMATIONS */
+@keyframes mm-flare {
+  from { box-shadow: var(--glow-strong); }
+  to   { box-shadow: var(--glow-charged); }
+}
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation: none !important; transition: none !important; }
+}
+</style>
+
+<div class="app" id="app">
+  <!-- ======================== TOP BAR ======================== -->
+  <div class="topbar">
+    <span class="title">Multiverse Mages</span>
+    <span class="sep">|</span>
+    <button class="tab" data-tab="grid" aria-pressed="true">Grid</button>
+    <button class="tab" data-tab="knowledge" aria-pressed="false">Knowledge</button>
+    <button class="tab" data-tab="console" aria-pressed="false">Console</button>
+    <span class="spacer"></span>
+    <span class="tick-label">tick</span>
+    <span class="tick-display" id="tick-val">--</span>
+    <span class="tick-label">of</span>
+    <span class="tick-display" id="tick-max">--</span>
+    <span class="status-badge" id="status-badge">--</span>
+    <span id="theme-host"></span>
+  </div>
+
+  <!-- ======================== LEFT SIDEBAR ======================== -->
+  <div class="sidebar-left">
+    <div class="sb-section">
+      <div class="sb-head">Techniques</div>
+      <div id="tech-toggles" class="axis-toggles"></div>
+    </div>
+    <div class="sb-section">
+      <div class="sb-head">Forms</div>
+      <div id="form-toggles" class="axis-toggles"></div>
+    </div>
+    <div class="sb-section">
+      <div class="sb-head">Edicts <span class="v" id="edict-count">0 / 0</span></div>
+      <div class="edict-slots" id="edict-slots"></div>
+    </div>
+    <div class="sb-section">
+      <div class="sb-head">God Actions</div>
+      <div class="god-actions" id="god-actions"></div>
+    </div>
+    <div class="sb-section">
+      <div class="sb-head">Resources</div>
+      <div id="resources"></div>
+    </div>
+  </div>
+
+  <!-- ======================== CENTER ======================== -->
+  <div class="center">
+    <div class="center-panel active" id="panel-grid">
+      <div class="grid-wrap">
+        <div class="grid70" id="grid70"></div>
+        <div class="grid-info" id="grid-info"></div>
+        <div class="cell-detail" id="cell-detail">
+          <span class="hint">Select a cell on the grid</span>
+        </div>
+      </div>
+    </div>
+    <div class="center-panel" id="panel-knowledge">
+      <div class="knowledge-panel" id="knowledge-list"></div>
+    </div>
+    <div class="center-panel" id="panel-console">
+      <div class="console-grid">
+        <div class="console-col" id="console-left"></div>
+        <div class="console-col" id="console-right"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ======================== RIGHT SIDEBAR ======================== -->
+  <div class="sidebar-right">
+    <div class="sb-section">
+      <div class="sb-head">Population <span class="v" id="pop-total"></span></div>
+      <div id="species-roster"></div>
+    </div>
+    <div class="sb-section">
+      <div class="sb-head">Species x Tier</div>
+      <div class="tier-grid" id="tier-grid"></div>
+    </div>
+    <div class="sb-section">
+      <div class="sb-head">University</div>
+      <div id="university-panel"></div>
+    </div>
+    <div class="sb-section">
+      <div class="sb-head">Economy</div>
+      <div id="economy-panel"></div>
+    </div>
+  </div>
+
+  <!-- ======================== SPINE ======================== -->
+  <div class="spine-area">
+    <canvas id="spine" width="1800" height="128" aria-label="Universe timeline — favor, cells, mages across 400 ticks"></canvas>
+    <div class="spine-controls">
+      <span class="legend-item"><i style="background:var(--god)"></i> favor</span>
+      <span class="legend-item"><i style="background:var(--mentem)"></i> cells</span>
+      <span class="legend-item"><i style="background:var(--warn)"></i> mages</span>
+      <span class="legend-item"><i style="background:var(--loss)"></i> extinction</span>
+      <span class="spacer"></span>
+      <button type="button" id="play-btn" aria-pressed="false">play</button>
+    </div>
+  </div>
+</div>
+
+<script type="module">
+/*
+ * Multiverse Mages — the unified client script.
+ * Copyright (C) 2026 Ann Kelner
+ * SPDX-License-Identifier: AGPL-3.0-or-later
+ */
+
+import { mountThemeControl } from '../shared/theme.js';
+import { openSession, reconstructedCharge, units, mageVocabulary, candidateNamer } from '../shared/session.js';
+
+// ================================================================ BOOT
+const session = await openSession({ recording: '../session.json' }).catch((e) => {
+  document.querySelector('.center').innerHTML =
+    `<div style="padding:2rem;color:var(--loss);font:13px var(--mono)">
+      No recording loaded. Serve with <code>npx http-server . -p 8200</code> from the repo root
+      and open <code>/ui/app/</code>.<br><br>${e.message}</div>`;
+  return null;
+});
+if (!session) throw new Error('no session');
+
+const el = (id) => document.getElementById(id);
+const STARTING_TECHNIQUES = new Set(['intellego', 'perdo', 'rego']);
+const STARTING_FORMS = new Set(['mentem', 'terram', 'limen', 'nomen']);
+const godRuleset = {
+  techniques: Object.fromEntries(session.content.techniques.map(t => [t.id, STARTING_TECHNIQUES.has(t.id)])),
+  forms: Object.fromEntries(session.content.forms.map(f => [f.id, STARTING_FORMS.has(f.id)])),
+};
+function godPermits(techId, formId) {
+  return godRuleset.techniques[techId] && godRuleset.forms[formId];
+}
+const state = { at: 0, tab: 'grid', selectedCell: null, selectedAction: null, selectedMage: null, playing: true, hoverAxis: null };
+
+// ================================================================ PRECOMPUTE SERIES
+const seriesData = Array.from({ length: session.frameCount }, (_, i) => {
+  const f = session.frame(i);
+  const buckets = f.mageBuckets();
+  return {
+    favor: f.resources().favor,
+    cells: f.knowledge().filter((c) => c.live).length,
+    mages: buckets.reduce((n, m) => n + m.living, 0),
+    alive: buckets.map((m) => m.living > 0),
+  };
+});
+const peak = {
+  favor: Math.max(1, ...seriesData.map((s) => s.favor)),
+  cells: Math.max(1, ...seriesData.map((s) => s.cells)),
+  mages: Math.max(1, ...seriesData.map((s) => s.mages)),
+};
+
+// Species endings — ticks at which a species count reaches zero for good
+const endings = [];
+for (let s = 0; s < 6; s++) {
+  for (let i = 1; i < seriesData.length; i++) {
+    if (seriesData[i - 1].alive[s] && !seriesData[i].alive[s]) {
+      endings.push({ at: i, name: session.frame(i).mageBuckets()[s].name });
+    }
+  }
+}
+
+// ================================================================ THEME
+mountThemeControl(el('theme-host'), () => requestAnimationFrame(drawSpine));
+
+// ================================================================ TABS
+for (const btn of document.querySelectorAll('.topbar .tab')) {
+  btn.addEventListener('click', () => {
+    state.tab = btn.dataset.tab;
+    for (const b of document.querySelectorAll('.topbar .tab')) {
+      b.setAttribute('aria-pressed', String(b.dataset.tab === state.tab));
+    }
+    for (const p of document.querySelectorAll('.center-panel')) {
+      p.classList.toggle('active', p.id === `panel-${state.tab}`);
+    }
+    paint();
+  });
+}
+
+// ================================================================ BUILD GRID (once)
+const gridEl = el('grid70');
+const forms = session.content.forms;
+const techniques = session.content.techniques;
+const cellNodes = new Map();
+
+const formHeaders = new Map();
+const techLabels = new Map();
+
+gridEl.append(Object.assign(document.createElement('span'), { className: 'rl' }));
+for (const f of forms) {
+  const h = document.createElement('span');
+  h.className = `h h-base f-${f.id}`;
+  h.textContent = f.name;
+  h.title = `Click to ${godRuleset.forms[f.id] ? 'forbid' : 'permit'} ${f.name}`;
+  h.dataset.fid = f.id;
+  h.addEventListener('click', () => {
+    godRuleset.forms[f.id] = !godRuleset.forms[f.id];
+    paint();
+  });
+  gridEl.append(h);
+  formHeaders.set(f.id, h);
+}
+for (const t of techniques) {
+  const rl = document.createElement('span');
+  rl.className = 'rl';
+  rl.textContent = t.name;
+  rl.title = `Click to ${godRuleset.techniques[t.id] ? 'forbid' : 'permit'} ${t.name}`;
+  rl.dataset.tid = t.id;
+  rl.addEventListener('click', () => {
+    godRuleset.techniques[t.id] = !godRuleset.techniques[t.id];
+    paint();
+  });
+  gridEl.append(rl);
+  techLabels.set(t.id, rl);
+  for (const f of forms) {
+    const c = document.createElement('span');
+    c.className = `c f-${f.id}`;
+    c.title = `${t.name} ${f.name}`;
+    c.addEventListener('click', () => {
+      state.selectedCell = `${t.id}-${f.id}`;
+      state.selectedAction = null;
+      state.selectedMage = null;
+      paint();
+    });
+    gridEl.append(c);
+    cellNodes.set(`${t.id}-${f.id}`, c);
+  }
+}
+
+// ================================================================ BUILD TOGGLES (once)
+const techTogglesEl = el('tech-toggles');
+const formTogglesEl = el('form-toggles');
+
+for (const t of techniques) {
+  const btn = document.createElement('button');
+  btn.className = 'axis-toggle';
+  btn.dataset.tid = t.id;
+  btn.innerHTML = `<span class="dot"></span>${t.name}<span class="gloss">${t.gloss || ''}</span>`;
+  btn.addEventListener('click', () => { godRuleset.techniques[t.id] = !godRuleset.techniques[t.id]; paint(); });
+  btn.addEventListener('mouseenter', () => { state.hoverAxis = { type: 'technique', id: t.id }; paintGrid(); });
+  btn.addEventListener('mouseleave', () => { state.hoverAxis = null; paintGrid(); });
+  techTogglesEl.append(btn);
+}
+for (const f of forms) {
+  const btn = document.createElement('button');
+  btn.className = 'axis-toggle';
+  btn.dataset.fid = f.id;
+  btn.style.color = godRuleset.forms[f.id] ? `var(--${f.id})` : '';
+  btn.innerHTML = `<span class="dot"></span>${f.name}<span class="gloss">${f.gloss || ''}</span>`;
+  btn.addEventListener('click', () => { godRuleset.forms[f.id] = !godRuleset.forms[f.id]; paint(); });
+  btn.addEventListener('mouseenter', () => { state.hoverAxis = { type: 'form', id: f.id }; paintGrid(); });
+  btn.addEventListener('mouseleave', () => { state.hoverAxis = null; paintGrid(); });
+  formTogglesEl.append(btn);
+}
+
+// ================================================================ SPINE
+const canvas = el('spine');
+const ctx2d = canvas.getContext('2d');
+const css = (name) => getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+
+function drawSpine() {
+  const w = canvas.width;
+  const h = canvas.height;
+  const pad = 8;
+  ctx2d.clearRect(0, 0, w, h);
+  const x = (i) => pad + (i / (seriesData.length - 1)) * (w - pad * 2);
+  const y = (v, max) => h - pad - (v / max) * (h - pad * 2);
+
+  // Species endings
+  ctx2d.strokeStyle = css('--loss');
+  ctx2d.lineWidth = 1.5;
+  ctx2d.setLineDash([3, 3]);
+  for (const e of endings) {
+    ctx2d.beginPath();
+    ctx2d.moveTo(x(e.at), pad);
+    ctx2d.lineTo(x(e.at), h - pad);
+    ctx2d.stroke();
+  }
+  ctx2d.setLineDash([]);
+
+  const line = (key, max, colour, lw) => {
+    ctx2d.strokeStyle = colour;
+    ctx2d.lineWidth = lw;
+    ctx2d.lineJoin = 'round';
+    ctx2d.beginPath();
+    seriesData.forEach((s, i) =>
+      i === 0 ? ctx2d.moveTo(x(i), y(s[key], max)) : ctx2d.lineTo(x(i), y(s[key], max)));
+    ctx2d.stroke();
+  };
+  line('favor', peak.favor, css('--god'), 2);
+  line('cells', peak.cells, css('--mentem'), 2);
+  line('mages', peak.mages, css('--warn'), 2);
+
+  // Plumb line
+  ctx2d.strokeStyle = css('--ink');
+  ctx2d.lineWidth = 1.5;
+  ctx2d.globalAlpha = 0.6;
+  ctx2d.beginPath();
+  ctx2d.moveTo(x(state.at), 0);
+  ctx2d.lineTo(x(state.at), h);
+  ctx2d.stroke();
+  ctx2d.globalAlpha = 1;
+}
+
+// Spine interaction
+const seek = (ev) => {
+  const r = canvas.getBoundingClientRect();
+  const frac = Math.max(0, Math.min(1, (ev.clientX - r.left) / r.width));
+  state.at = Math.round(frac * (session.frameCount - 1));
+  paint();
+};
+canvas.addEventListener('pointerdown', (ev) => {
+  canvas.setPointerCapture(ev.pointerId);
+  seek(ev);
+});
+canvas.addEventListener('pointermove', (ev) => {
+  if (ev.buttons === 1) seek(ev);
+});
+canvas.tabIndex = 0;
+canvas.addEventListener('keydown', (ev) => {
+  const step = ev.shiftKey ? 20 : 1;
+  if (ev.key === 'ArrowLeft') {
+    state.at = Math.max(0, state.at - step);
+    paint();
+    ev.preventDefault();
+  }
+  if (ev.key === 'ArrowRight') {
+    state.at = Math.min(session.frameCount - 1, state.at + step);
+    paint();
+    ev.preventDefault();
+  }
+});
+
+// Mage click delegation on university panel
+el('university-panel').addEventListener('click', (ev) => {
+  const row = ev.target.closest('.mage-click');
+  if (!row) return;
+  state.selectedMage = Number(row.dataset.handle);
+  state.selectedCell = null;
+  state.selectedAction = null;
+  paint();
+});
+
+// Play/pause
+el('play-btn').addEventListener('click', () => {
+  state.playing = !state.playing;
+  el('play-btn').setAttribute('aria-pressed', String(state.playing));
+  el('play-btn').textContent = state.playing ? 'pause' : 'play';
+  if (state.playing) animStep();
+});
+function animStep() {
+  if (!state.playing) return;
+  state.at = state.at >= session.frameCount - 1 ? 0 : state.at + 1;
+  paint();
+  setTimeout(() => requestAnimationFrame(animStep), 55);
+}
+
+// ================================================================ PAINT GRID (separated for hover preview)
+function paintGrid() {
+  const f = session.frame(state.at);
+  const knowledgeCells = f.knowledge();
+  const hover = state.hoverAxis;
+  let liveCells = 0;
+  let totalNodes = 0;
+
+  // Update technique labels and form headers
+  for (const [tid, label] of techLabels) {
+    label.dataset.on = String(godRuleset.techniques[tid]);
+  }
+  for (const [fid, header] of formHeaders) {
+    header.dataset.on = String(godRuleset.forms[fid]);
+  }
+
+  // Build grant target set if in grant mode
+  const grantTargets = new Set();
+  if (state.grantMode) {
+    const cd = session.frame(state.at).raw.candidateDetail;
+    const grants = cd?.byAction?.['8'] || [];
+    const nodes = session.content.nodes;
+    const cells = session.content.cells;
+    for (const g of grants) {
+      const nd = nodes.find(n => n.nodeId === g.nodeId);
+      if (!nd) continue;
+      const cell = cells.find(cl => cl.cellId === nd.cellId);
+      if (cell) grantTargets.add(`${cell.technique}-${cell.form}`);
+    }
+  }
+
+  for (const c of knowledgeCells) {
+    const node = cellNodes.get(`${c.technique}-${c.form}`);
+    if (!node) continue;
+    const permitted = godPermits(c.technique, c.form);
+
+    // Ghost preview: would this cell become permitted if the hovered axis were toggled?
+    let ghost = false;
+    if (hover && !permitted) {
+      if (hover.type === 'technique' && !godRuleset.techniques[hover.id]
+          && hover.id === c.technique && godRuleset.forms[c.form]) ghost = true;
+      if (hover.type === 'form' && !godRuleset.forms[hover.id]
+          && hover.id === c.form && godRuleset.techniques[c.technique]) ghost = true;
+    }
+
+    node.dataset.off = String(!permitted && !ghost);
+    node.dataset.live = String(permitted && c.live);
+    node.dataset.ghost = String(ghost);
+    node.dataset.sel = String(state.selectedCell === `${c.technique}-${c.form}`);
+    node.dataset.grantTarget = String(grantTargets.has(`${c.technique}-${c.form}`));
+    node.textContent = (permitted || ghost) ? (c.live ? String(c.nodesKnown) : '') : '';
+    node.title = `${c.technique} ${c.form}\n${permitted
+      ? (c.live ? `${c.nodesKnown} nodes, tier ${c.deepestTier}` : 'permitted, empty')
+      : ghost ? 'would be permitted' : 'forbidden'}`;
+    if (permitted && c.live) { liveCells++; totalNodes += c.nodesKnown; }
+  }
+
+  const nTech = Object.values(godRuleset.techniques).filter(Boolean).length;
+  const nForm = Object.values(godRuleset.forms).filter(Boolean).length;
+  el('grid-info').innerHTML = `<b>${liveCells}</b> cells live, <b>${totalNodes}</b> nodes known. `
+    + `<b>${nTech}</b> techniques, <b>${nForm}</b> forms permitted.`;
+}
+
+// ================================================================ PAINT
+function paint() {
+  const f = session.frame(state.at);
+  const clock = f.clock();
+
+  // Topbar
+  el('tick-val').textContent = String(clock.worldTick);
+  el('tick-max').textContent = String(session.frameCount - 1);
+  el('status-badge').textContent = clock.engaged ? 'engagement' : f.status();
+
+  // Resources
+  const r = f.resources();
+  const resBar = (k, v, max) =>
+    `<div class="res-row"><span class="k">${k}</span>`
+    + `<span class="res-track"><i style="width:${Math.min(100, (v / max) * 100)}%"></i></span>`
+    + `<span class="v">${v.toFixed(v < 10 ? 1 : 0)}</span></div>`;
+  el('resources').innerHTML =
+    resBar('favor', r.favor, peak.favor)
+    + resBar('worship', r.worship, Math.max(1, peak.favor / 10))
+    + resBar('matl', r.materials, 3200)
+    + `<div class="res-row"><span class="k">tier</span><span></span><span class="v">${r.worshipTier}</span></div>`
+    + resBar('prestige', r.prestige, 20);
+
+  // Institutions — painted by paintGodPanel into the right sidebar
+
+  // Toggle button states
+  for (const btn of techTogglesEl.children) {
+    btn.dataset.on = String(godRuleset.techniques[btn.dataset.tid]);
+    btn.title = godRuleset.techniques[btn.dataset.tid]
+      ? `Forbid ${btn.textContent.trim().split(/\s/)[0]}`
+      : `Permit ${btn.textContent.trim().split(/\s/)[0]}`;
+  }
+  for (const btn of formTogglesEl.children) {
+    const fid = btn.dataset.fid;
+    btn.dataset.on = String(godRuleset.forms[fid]);
+    btn.style.color = godRuleset.forms[fid] ? `var(--${fid})` : '';
+  }
+
+  // Grid cells — use godRuleset, not session ruleset
+  paintGrid();
+
+  // Cell detail
+  const knowledgeCells = f.knowledge();
+  const rules = f.ruleset();
+  paintCellDetail(f, knowledgeCells, rules);
+
+  // Population
+  const buckets = f.mageBuckets();
+  const rosterEl = el('species-roster');
+  rosterEl.innerHTML = '';
+  let totalMages = 0;
+  for (const b of buckets) {
+    const row = document.createElement('div');
+    row.className = 'species-row';
+    row.dataset.dead = String(b.living === 0);
+    row.innerHTML = `<span class="name">${b.name}</span><span class="count">${b.living}</span>`;
+    rosterEl.append(row);
+    totalMages += b.living;
+  }
+  el('pop-total').textContent = String(totalMages);
+
+  // Tier grid
+  const tg = el('tier-grid');
+  tg.innerHTML = '<span class="rl"></span>'
+    + Array.from({ length: 8 }, (_, i) => `<span class="h">${i === 0 ? '-' : i}</span>`).join('');
+  for (const b of buckets) {
+    const dead = b.living === 0;
+    tg.insertAdjacentHTML('beforeend',
+      `<span class="rl" style="${dead ? 'color:var(--loss)' : ''}">${b.name.slice(0, 4)}</span>`
+      + b.tiers.map((n) => `<span class="tc" data-n="${n}">${n}</span>`).join(''));
+  }
+
+  // Spine
+  drawSpine();
+
+  // God actions, edicts, university, economy
+  if (typeof paintGodPanel === 'function') paintGodPanel(f);
+
+  // Refresh active tab content
+  if (state.tab === 'knowledge') renderKnowledge(f);
+  if (state.tab === 'console') renderConsole(f);
+}
+
+// ================================================================ CELL DETAIL
+function paintCellDetail(f, knowledgeCells, rules) {
+  const detEl = el('cell-detail');
+
+  // Show mage dossier if a mage is selected
+  if (state.selectedMage != null) {
+    paintMageDossier(f, detEl, state.selectedMage);
+    return;
+  }
+
+  // Show action candidates if an action is selected
+  if (state.selectedAction != null) {
+    paintActionCandidates(f, detEl);
+    return;
+  }
+
+  if (!state.selectedCell) {
+    detEl.innerHTML = '<span class="hint">Select a cell on the grid</span>';
+    return;
+  }
+  const [tid, fid] = state.selectedCell.split('-');
+  const tech = techniques.find((t) => t.id === tid);
+  const form = forms.find((f) => f.id === fid);
+  if (!tech || !form) return;
+
+  const cell = session.content.cells.find((c) => c.technique === tid && c.form === fid);
+  const kc = knowledgeCells.find((c) => c.technique === tid && c.form === fid);
+  const techOn = godRuleset.techniques[tid];
+  const formOn = godRuleset.forms[fid];
+  const enabled = techOn && formOn;
+
+  const edict = rules.edicts.find((e) => !e.empty && e.cell
+    && e.cell.technique === tid && e.cell.form === fid);
+  const on = edict ? (edict.kindName === 'dispensation') : enabled;
+  const classical = cell?.classical?.length ? cell.classical.join(', ') : '';
+
+  let reason = '';
+  if (edict) reason = edict.kindName;
+  else if (!techOn && !formOn) reason = 'neither axis';
+  else if (!techOn) reason = 'technique forbidden';
+  else if (!formOn) reason = 'form forbidden';
+  else reason = 'both axes';
+
+  // Get the nodes in this cell from content
+  const cellObj = session.content.cells.find(c => c.technique === tid && c.form === fid);
+  const cellNodes_ = cellObj
+    ? session.content.nodes.filter(n => n.cellId === cellObj.cellId).sort((a, b) => a.tier - b.tier)
+    : [];
+  const knownCount = kc?.nodesKnown ?? 0;
+
+  let nodeListHtml = '';
+  if (cellNodes_.length > 0) {
+    nodeListHtml = '<div style="display:flex;flex-direction:column;gap:2px;margin-top:.4rem">';
+    for (const n of cellNodes_) {
+      const known = n.tier <= (kc?.deepestTier ?? 0) && knownCount > 0;
+      nodeListHtml += `<div style="padding:.2rem .4rem;border:1px solid ${known ? 'color-mix(in srgb, var(--god) 30%, var(--edge))' : 'var(--edge)'};border-radius:3px;background:${known ? 'color-mix(in srgb, var(--god) 6%, var(--plate))' : 'var(--plate)'};font:10px var(--mono)">
+        <span style="display:inline-block;font:700 8px var(--mono);padding:1px 4px;border-radius:2px;background:${known ? 'var(--god)' : 'var(--sunk)'};color:${known ? 'var(--ground)' : 'var(--faint)'};margin-right:.3rem">T${n.tier}</span>
+        <span style="font:italic 11px var(--serif);color:${known ? 'var(--ink)' : 'var(--faint)'}">${n.name}</span>
+      </div>`;
+    }
+    nodeListHtml += '</div>';
+  }
+
+  detEl.innerHTML =
+    `<div class="cell-name">${tech.name} ${form.name}</div>`
+    + (classical ? `<div class="cell-classical">${classical}</div>` : '')
+    + `<span class="cell-verdict" data-on="${on}">${on ? 'PERMITTED' : 'FORBIDDEN'} — ${reason}</span>`
+    + (kc && kc.live
+      ? `<div class="cell-knowledge">${kc.nodesKnown} of ${cellNodes_.length} nodes known, deepest tier ${kc.deepestTier}</div>`
+      : `<div class="cell-knowledge">${enabled ? `${cellNodes_.length} nodes available, none yet known` : 'Cell not enabled'}</div>`)
+    + nodeListHtml;
+}
+
+function paintMageDossier(f, detEl, handle) {
+  const cd = f.raw.candidateDetail || {};
+  const mage = cd.mages?.[String(handle)];
+  if (!mage) { detEl.innerHTML = '<span class="hint">Mage not found</span>'; return; }
+
+  const speciesNames = session.content.species.map(s => s.name);
+  const roleNames = ['researcher', 'warden', 'professor', 'raider'];
+  const sp = speciesNames[mage.speciesId] || 'unknown';
+  const age = Math.floor(mage.ageTicks / 12);
+  const role = roleNames[mage.roleId] || 'citizen';
+  const lifespans = [80, 700, 250, 1500, 350, 60]; // human, elf, dwarf, draconic, gnome, orc — but session order differs
+  const goalNames = ['idle', 'research', 'teach', 'scribe', 'affiliate', 'wander', 'cast', 'guard', 'serve'];
+
+  // Personality as bars (0–2048 range, 1024 is neutral)
+  const pBar = (label, val) => {
+    const pct = (val / 2048) * 100;
+    return `<div style="display:flex;align-items:center;gap:.3rem;font:9px var(--mono);margin-bottom:2px">
+      <span style="width:4rem;color:var(--faint)">${label}</span>
+      <div style="flex:1;height:4px;border-radius:2px;background:var(--sunk);position:relative">
+        <div style="position:absolute;inset:0 ${100-pct}% 0 0;background:var(--god);border-radius:2px;opacity:.6"></div>
+        <div style="position:absolute;left:50%;top:-1px;bottom:-1px;width:1px;background:var(--edge)"></div>
+      </div>
+      <span style="width:2rem;text-align:right;color:var(--soft)">${val}</span>
+    </div>`;
+  };
+
+  const goal = mage.goal;
+  const goalName = goalNames[goal?.goalId] || `goal-${goal?.goalId}`;
+  const targetNode = goal?.targetNodeId != null
+    ? (session.content.nodes.find(n => n.nodeId === goal.targetNodeId)?.id || `node-${goal.targetNodeId}`)
+    : '';
+  const adoptedAge = goal?.adoptedTick != null ? Math.floor(goal.adoptedTick / 12) : '?';
+
+  detEl.innerHTML =
+    `<div class="cell-name">${sp} ${role}</div>`
+    + `<div class="cell-classical">${age} years old · knows ${mage.nodesKnown} nodes · deepest tier ${mage.deepestTier}</div>`
+    + `<div style="margin:.5rem 0"><div class="econ-section-label">personality</div>`
+    + pBar('curiosity', mage.curiosity)
+    + pBar('ambition', mage.ambition)
+    + pBar('caution', mage.caution)
+    + pBar('vigor', mage.vigor)
+    + `</div>`
+    + `<div class="econ-section-label">current goal</div>`
+    + `<div style="font:11px var(--mono);color:var(--ink);padding:.2rem 0">${goalName}${targetNode ? ` → ${targetNode}` : ''}</div>`
+    + `<div style="font:9px var(--mono);color:var(--faint)">adopted year ${adoptedAge} · score ${goal?.score ?? '?'}</div>`;
+}
+
+function paintActionCandidates(f, detEl) {
+  const aid = state.selectedAction;
+  const action = GOD_COSTS.find(a => a.id === aid);
+  const cd = f.raw.candidateDetail || {};
+  const cands = f.raw.candidates?.[String(aid)] || [];
+  const byAction = cd.byAction?.[String(aid)] || [];
+  const mages = cd.mages || {};
+  const unis = cd.universities || {};
+  const speciesNames = session.content.species.map(s => s.name);
+  const roleNames = ['researcher', 'warden', 'professor', 'raider'];
+  const nodeIndex = Object.fromEntries((session.content.nodes || []).map(n => [n.nodeIndex ?? n.id, n]));
+
+  let html = `<div class="cell-name">${action?.name || `Action ${aid}`}</div>`;
+  html += `<div class="cell-knowledge">${cands.length} candidate${cands.length !== 1 ? 's' : ''} · costs ${action?.cost?.toLocaleString() || '?'} favor</div>`;
+
+  if (byAction.length > 0) {
+    html += '<div style="display:flex;flex-direction:column;gap:3px;margin-top:.4rem">';
+    for (const c of byAction.slice(0, 20)) {
+      const mage = mages[String(c.handle)];
+      const sp = mage ? (speciesNames[mage.speciesId] || `species${mage.speciesId}`) : '';
+      const age = mage ? Math.floor(mage.ageTicks / 12) : 0;
+      const role = mage ? (roleNames[mage.roleId] || '') : '';
+
+      if (c.kind === 'mage-node') {
+        const node = nodeIndex[c.nodeId] || session.content.nodes?.[c.nodeId];
+        const nodeName = node?.id || `node-${c.nodeId}`;
+        html += `<div style="padding:.25rem .4rem;border:1px solid var(--edge);border-radius:3px;background:var(--plate);font:10px var(--mono)">
+          <div style="color:var(--god)">${nodeName}</div>
+          <div style="color:var(--faint)">${sp} ${role}, ${age}y</div>
+        </div>`;
+      } else if (c.kind === 'mage') {
+        html += `<div style="padding:.25rem .4rem;border:1px solid var(--edge);border-radius:3px;background:var(--plate);font:10px var(--mono)">
+          <div style="color:var(--ink)">${sp} ${role}</div>
+          <div style="color:var(--faint)">${age}y · knows ${mage?.nodesKnown ?? '?'} · tier ${mage?.deepestTier ?? '?'}</div>
+        </div>`;
+      } else if (c.kind === 'mage-role') {
+        const toRole = roleNames[c.toRoleId] || `role-${c.toRoleId}`;
+        html += `<div style="padding:.25rem .4rem;border:1px solid var(--edge);border-radius:3px;background:var(--plate);font:10px var(--mono)">
+          <div style="color:var(--ink)">${sp} ${role} <span style="color:var(--god)">→ ${toRole}</span></div>
+          <div style="color:var(--faint)">${age}y · knows ${mage?.nodesKnown ?? '?'}</div>
+        </div>`;
+      } else if (c.kind === 'cell') {
+        const cellId = c.cellId ?? c.cell;
+        const cellObj = session.content.cells.find(cl => cl.cellId === cellId);
+        const cellName = cellObj ? `${cellObj.technique} ${cellObj.form}` : `cell-${cellId}`;
+        html += `<div style="padding:.25rem .4rem;border:1px solid var(--edge);border-radius:3px;background:var(--plate);font:10px var(--mono)">
+          <div style="color:var(--god)">${cellName}</div>
+        </div>`;
+      } else if (c.kind === 'tradition') {
+        const tradNames = session.content.traditions?.map(t => t.name) || [];
+        html += `<div style="padding:.25rem .4rem;border:1px solid var(--edge);border-radius:3px;background:var(--plate);font:10px var(--mono)">
+          <div style="color:var(--warn)">${tradNames[c.traditionId] || c.traditionId}</div>
+        </div>`;
+      } else if (c.kind === 'university' || c.kind === 'found-university') {
+        const uni = unis[String(c.handle)];
+        html += `<div style="padding:.25rem .4rem;border:1px solid var(--edge);border-radius:3px;background:var(--plate);font:10px var(--mono)">
+          <div style="color:var(--ink)">${c.kind === 'found-university' ? 'Found new university' : `University (${uni?.capacity ?? '?'} seats)`}</div>
+        </div>`;
+      } else {
+        html += `<div style="padding:.25rem .4rem;border:1px solid var(--edge);border-radius:3px;background:var(--plate);font:10px var(--mono);color:var(--soft)">${c.kind}: ${JSON.stringify(c).slice(0, 80)}</div>`;
+      }
+    }
+    if (byAction.length > 20) html += `<div style="font:9px var(--mono);color:var(--faint)">…and ${byAction.length - 20} more</div>`;
+    html += '</div>';
+  } else if (cands.length > 0) {
+    // For actions without byAction detail, try to resolve mage handles directly
+    const mageActions = new Set([9, 10]); // bless, assign role
+    if (mageActions.has(aid) && Object.keys(mages).length > 0) {
+      html += '<div style="display:flex;flex-direction:column;gap:3px;margin-top:.4rem">';
+      const shown = new Set();
+      for (const c of cands.slice(0, 20)) {
+        const handle = c.params?.[0];
+        if (!handle || shown.has(handle)) continue;
+        shown.add(handle);
+        const mage = mages[String(handle)];
+        if (!mage) continue;
+        const sp = speciesNames[mage.speciesId] || 'populace';
+        const age = Math.floor(mage.ageTicks / 12);
+        const role = roleNames[mage.roleId] || 'citizen';
+        const roleTarget = aid === 10 && c.params?.[1] != null ? ` → ${roleNames[c.params[1]] || 'role ' + c.params[1]}` : '';
+        html += `<div style="padding:.25rem .4rem;border:1px solid var(--edge);border-radius:3px;background:var(--plate);font:10px var(--mono)">
+          <div style="color:var(--ink)">${sp} ${role}${roleTarget}</div>
+          <div style="color:var(--faint)">${age}y · knows ${mage.nodesKnown ?? '?'} · tier ${mage.deepestTier ?? '?'}</div>
+        </div>`;
+      }
+      if (cands.length > 20) html += `<div style="font:9px var(--mono);color:var(--faint)">…and ${cands.length - 20} more</div>`;
+      html += '</div>';
+    } else {
+      html += `<div style="font:10px var(--mono);color:var(--faint);margin-top:.3rem">${cands.length} targets available</div>`;
+    }
+  }
+
+  detEl.innerHTML = html;
+}
+
+// ================================================================ KNOWLEDGE TAB
+function renderKnowledge(f) {
+  f = f || session.frame(state.at);
+  const kCells = f.knowledge();
+  const rules = f.ruleset();
+  const onT = new Set(rules.techniques.filter((t) => t.permitted).map((t) => t.id));
+  const onF = new Set(rules.forms.filter((x) => x.permitted).map((x) => x.id));
+
+  const listEl = el('knowledge-list');
+  let html = '<div class="know-head"><span>Cell</span><span>Nodes</span><span>Tier</span><span>Copies</span></div>';
+
+  let totalLive = 0;
+  let totalN = 0;
+  const sorted = kCells.slice().sort((a, b) => b.nodesKnown - a.nodesKnown);
+
+  for (const c of sorted) {
+    const enabled = onT.has(c.technique) && onF.has(c.form);
+    if (!enabled && !c.live) continue;
+    html += `<div class="know-row" data-live="${c.live}">`
+      + `<span class="nm f-${c.form}">${c.technique} ${c.form}</span>`
+      + `<span class="nodes">${c.nodesKnown}</span>`
+      + `<span class="tier">${c.live ? `t${c.deepestTier}` : '-'}</span>`
+      + `<span class="red">${c.redundancy || '-'}</span>`
+      + `</div>`;
+    if (c.live) { totalLive++; totalN += c.nodesKnown; }
+  }
+
+  html += `<div class="know-summary"><b>${totalLive}</b> cells live, <b>${totalN}</b> nodes known</div>`;
+  listEl.innerHTML = html;
+}
+
+// ================================================================ CONSOLE TAB
+function renderConsole(f) {
+  f = f || session.frame(state.at);
+  const r = f.resources();
+  const inst = f.institutions();
+  const clock = f.clock();
+  const buckets = f.mageBuckets();
+  const rules = f.ruleset();
+  const kCells = f.knowledge();
+  const actions = f.actions();
+
+  const leftEl = el('console-left');
+  leftEl.innerHTML = `
+    <div class="section-head">Clock</div>
+    <div><span class="label">tick</span> ${clock.worldTick}</div>
+    <div><span class="label">era</span> ${clock.era}</div>
+    <div><span class="label">status</span> ${clock.engaged ? 'engagement' : f.status()}</div>
+
+    <div class="section-head">Resources</div>
+    <div><span class="label">favor</span> ${r.favor.toFixed(1)}${r.saturated.favor ? ' (sat)' : ''}</div>
+    <div><span class="label">worship</span> ${r.worship.toFixed(1)} tier ${r.worshipTier}</div>
+    <div><span class="label">materials</span> ${r.materials.toFixed(1)}${r.saturated.materials ? ' (sat)' : ''}</div>
+    <div><span class="label">prestige</span> ${r.prestige.toFixed(1)}</div>
+
+    <div class="section-head">Institutions</div>
+    <div><span class="label">univ</span> ${inst.universities}, cap ${inst.capacity}</div>
+    <div><span class="label">library</span> depth ${inst.libraryDepth}</div>
+    <div><span class="label">grimoires</span> ${inst.grimoires}</div>
+
+    <div class="section-head">Ruleset</div>
+    <div><span class="label">tradition</span> ${rules.traditionId}</div>
+    <div><span class="label">tech</span> ${rules.techniques.filter(t => t.permitted).map(t => t.id).join(', ')}</div>
+    <div><span class="label">forms</span> ${rules.forms.filter(f => f.permitted).map(f => f.id).join(', ')}</div>
+
+    <div class="section-head">Population</div>
+    <div><span class="label">total</span> ${buckets.reduce((n, b) => n + b.living, 0)}</div>
+    ${buckets.map(b =>
+      `<div style="padding-left:1.2rem${b.living === 0 ? ';color:var(--loss)' : ''}">${b.name}: ${b.living} (${b.taught} taught)</div>`
+    ).join('')}
+
+    <div class="section-head">Knowledge</div>
+    <div><span class="label">cells</span> ${kCells.filter(c => c.live).length} live</div>
+    <div><span class="label">nodes</span> ${kCells.reduce((n, c) => n + c.nodesKnown, 0)} known</div>`;
+
+  const rightEl = el('console-right');
+  rightEl.innerHTML = `
+    <div class="section-head">Action mask</div>
+    ${actions.map(a => {
+      const { state: s } = reconstructedCharge(f, session, a.id);
+      const nameText = a.name.replace(/([a-z])([A-Z])/gu, '$1 $2').toLowerCase();
+      const color = s === 'charged' ? 'var(--ctl-charged-fg)' : s === 'denied' ? 'var(--ctl-denied-fg)' : 'var(--soft)';
+      return `<div style="color:${color}">${String(a.id).padStart(2, '0')} ${nameText} — ${s}</div>`;
+    }).join('')}
+
+    <div class="section-head" style="margin-top:.6rem">Edicts</div>
+    ${rules.edicts.map(e => e.empty
+      ? `<div style="color:var(--faint)">slot ${e.slot}: empty</div>`
+      : `<div style="color:${e.kindName === 'dispensation' ? 'var(--disp)' : 'var(--inter)'}">`
+        + `slot ${e.slot}: ${e.cell ? `${e.cell.technique} ${e.cell.form}` : `cell ${e.cellId}`} (${e.kindName})</div>`
+    ).join('')}
+
+    <div class="section-head" style="margin-top:.6rem">Provenance</div>
+    <div><span class="label">seed</span> ${session.provenance.seed}</div>
+    <div><span class="label">scenario</span> ${session.provenance.scenarioId}</div>
+    <div><span class="label">layout</span> ${session.provenance.observationLayoutDigest.slice(0, 8)}</div>`;
+}
+
+// ================================================================ GOD ACTION COSTS
+const GOD_COSTS = [
+  { id: 0,  name: 'no-op',                  cost: 0,     tier: 0 },
+  { id: 1,  name: 'permit technique',        cost: 8192,  tier: 3 },
+  { id: 2,  name: 'forbid technique',        cost: 8192,  tier: 3 },
+  { id: 3,  name: 'permit form',             cost: 4096,  tier: 3 },
+  { id: 4,  name: 'forbid form',             cost: 4096,  tier: 3 },
+  { id: 5,  name: 'dispensation',            cost: 6144,  tier: 3 },
+  { id: 6,  name: 'interdiction',            cost: 6144,  tier: 3 },
+  { id: 7,  name: 'revoke edict',            cost: 2048,  tier: 3 },
+  { id: 8,  name: 'grant founding knowledge', cost: 12288, tier: 2 },
+  { id: 9,  name: 'bless mage',              cost: 2048,  tier: 1 },
+  { id: 10, name: 'assign role',             cost: 256,   tier: 1 },
+  { id: 11, name: 'fund university',         cost: 3072,  tier: 1 },
+  { id: 12, name: 'encourage research',      cost: 1024,  tier: 1 },
+  { id: 13, name: 'change tradition',        cost: 65536, tier: 4 },
+  { id: 14, name: 'open portal',             cost: 16384, tier: 2 },
+  { id: 15, name: 'declare ascension',       cost: 0,     tier: 4 },
+  { id: 16, name: 'invite scholar',          cost: 24576, tier: 2 },
+];
+
+// Build god action buttons (skip no-op and the 4 permit/forbid which are the toggles)
+const godActionsEl = el('god-actions');
+const SKIP_IDS = new Set([0, 1, 2, 3, 4]);
+const tierLabels = { 1: 'clerical', 2: 'consequential', 3: 'edicts', 4: 'terminal' };
+let lastTier = -1;
+state.grantMode = false;
+
+// Sort: tier 2 first (grant, bless, portal), then tier 1 (assign, fund, encourage), then tier 4
+const displayOrder = GOD_COSTS.filter(a => !SKIP_IDS.has(a.id)).sort((a, b) => {
+  const order = [2, 1, 4, 3];
+  return order.indexOf(a.tier) - order.indexOf(b.tier);
+});
+
+for (const action of displayOrder) {
+  if (action.tier === 3) continue; // edicts handled separately
+  if (action.tier !== lastTier) {
+    const label = document.createElement('div');
+    label.className = 'econ-section-label';
+    label.textContent = tierLabels[action.tier] || '';
+    godActionsEl.append(label);
+    lastTier = action.tier;
+  }
+  const btn = document.createElement('button');
+  btn.className = `god-action${action.tier === 4 ? ' tier4' : ''}`;
+  btn.dataset.actionId = action.id;
+  btn.innerHTML = `<span>${action.name}</span><span class="cost">${action.cost > 0 ? action.cost.toLocaleString() : 'free'}</span>`;
+  btn.addEventListener('click', () => {
+    if (action.id === 8) {
+      state.grantMode = !state.grantMode;
+      btn.classList.toggle('active-grant', state.grantMode);
+      paintGrid();
+    }
+    // Show candidates in the detail panel
+    state.selectedCell = null;
+    state.selectedMage = null;
+    state.selectedAction = state.selectedAction === action.id ? null : action.id;
+    // Clear other active-grant states
+    godActionsEl.querySelectorAll('.god-action').forEach(b => {
+      if (Number(b.dataset.actionId) !== 8) return;
+      if (state.selectedAction !== 8) { state.grantMode = false; b.classList.remove('active-grant'); }
+    });
+    paint();
+  });
+  godActionsEl.append(btn);
+}
+
+// ================================================================ VOCABULARY
+const vocab = mageVocabulary(session.content);
+const namer = candidateNamer(session.content);
+
+// ================================================================ PAINT GOD ACTIONS + EDICTS + UNIVERSITY + ECONOMY
+function paintGodPanel(f) {
+  const r = f.resources();
+  const favor = r.favor;
+  const actions = f.actions();
+
+  // Update god action button states with candidate counts
+  const candidates = f.raw.candidates || {};
+  for (const btn of godActionsEl.querySelectorAll('.god-action')) {
+    const aid = Number(btn.dataset.actionId);
+    const action = GOD_COSTS.find(a => a.id === aid);
+    if (!action) continue;
+    const mask = actions.find(a => a.id === aid);
+    const legal = mask ? mask.legal : false;
+    const affordable = favor >= action.cost;
+
+    if (!legal) btn.dataset.state = 'denied';
+    else if (!affordable) btn.dataset.state = 'unaffordable';
+    else btn.dataset.state = 'legal';
+
+    // Show candidate count badge
+    const cands = candidates[String(aid)];
+    let badge = btn.querySelector('.cand-badge');
+    if (cands && Array.isArray(cands) && cands.length > 0) {
+      if (!badge) {
+        badge = document.createElement('span');
+        badge.className = 'cand-badge';
+        btn.append(badge);
+      }
+      badge.textContent = String(cands.length);
+      badge.style.display = '';
+    } else if (badge) {
+      badge.style.display = 'none';
+    }
+  }
+
+  // Edict slots
+  const rules = f.ruleset();
+  const edictEl = el('edict-slots');
+  const budget = 1 + r.worshipTier;
+  const usedEdicts = rules.edicts.filter(e => !e.empty).length;
+  el('edict-count').textContent = `${usedEdicts} / ${Math.min(budget, 8)}`;
+
+  edictEl.innerHTML = '';
+  for (let i = 0; i < Math.min(budget, 8); i++) {
+    const e = rules.edicts[i];
+    const slot = document.createElement('div');
+    slot.className = 'edict-slot';
+    if (e && !e.empty) {
+      slot.dataset.kind = e.kindName;
+      const cellName = e.cell ? `${e.cell.technique.slice(0,2)}·${e.cell.form.slice(0,3)}` : '?';
+      slot.textContent = `${e.kindName === 'dispensation' ? '◇' : '×'} ${cellName}`;
+      slot.title = `${e.kindName}: ${e.cell ? `${e.cell.technique} ${e.cell.form}` : 'unknown cell'}`;
+    } else {
+      slot.textContent = '—';
+      slot.title = `Edict slot ${i + 1}: empty`;
+    }
+    edictEl.append(slot);
+  }
+
+  // University panel — use academy() for rich data
+  const inst = f.institutions();
+  const acad = f.academy();
+  const uniEl = el('university-panel');
+  if (inst.universities > 0) {
+    let uniHtml = `<div class="uni-card"><div class="uni-name">The Academy</div>`;
+    uniHtml += `<div class="uni-stat"><span>capacity</span><span class="v">${inst.capacity} seats</span></div>`;
+    uniHtml += `<div class="uni-stat"><span>library</span><span class="v">${inst.libraryDepth} nodes</span></div>`;
+    const libPct = Math.min(100, (inst.libraryDepth / 70) * 100);
+    uniHtml += `<div class="uni-bar"><i style="width:${libPct}%;background:var(--ok)"></i></div>`;
+    uniHtml += `<div class="uni-stat"><span>grimoires</span><span class="v">${inst.grimoires}</span></div>`;
+
+    // Show academy roster if available
+    if (acad) {
+      for (const h of acad.handles) {
+        const u = acad.university(h);
+        if (!u) continue;
+        uniHtml += `<div class="econ-section-label">roster · ${u.roster?.length ?? 0} mages</div>`;
+        for (const entry of (u.roster ?? []).slice(0, 6)) {
+          const m = acad.mage(entry.handle);
+          if (!m) continue;
+          uniHtml += `<div class="econ-row mage-click" data-handle="${entry.handle}" style="cursor:pointer" title="Click for dossier"><span>${vocab.who(m)}</span><span class="v">${vocab.knows(m)}</span></div>`;
+        }
+        if ((u.roster?.length ?? 0) > 6) {
+          uniHtml += `<div class="econ-row" style="color:var(--faint)"><span>…and ${u.roster.length - 6} more</span></div>`;
+        }
+      }
+    }
+    uniHtml += '</div>';
+    uniEl.innerHTML = uniHtml;
+  } else {
+    uniEl.innerHTML = '<div style="font:italic 10px var(--serif);color:var(--faint)">No university founded</div>';
+  }
+
+  // Economy panel — use flow() for real material data
+  const econEl = el('economy-panel');
+  const fl = f.flow();
+  const buckets = f.mageBuckets();
+  const totalMages = buckets.reduce((n, b) => n + b.living, 0);
+
+  let econHtml = '';
+  if (fl) {
+    // Material stocks with per-kind breakdown
+    econHtml += '<div class="econ-section-label">material stocks</div>';
+    for (const kind of fl.kinds) {
+      const stock = fl.closing[kind] ?? 0;
+      const inflow = (fl.faucet[kind] ?? 0);
+      const outflow = (fl.sink[kind] ?? 0);
+      const net = inflow - outflow;
+      const color = net >= 0 ? 'var(--ok)' : 'var(--loss)';
+      econHtml += `<div class="econ-row"><span>${kind}</span><span class="v">${stock.toFixed(0)} <span style="color:${color};font-size:8px">${net >= 0 ? '+' : ''}${net.toFixed(0)}</span></span></div>`;
+    }
+
+    // Producers
+    econHtml += '<div class="econ-section-label">producers</div>';
+    if (fl.producers) {
+      for (const [k, v] of Object.entries(fl.producers)) {
+        if (v > 0) econHtml += `<div class="econ-row"><span>${k}</span><span class="v">${v}</span></div>`;
+      }
+    }
+
+    // Claimants — who is consuming materials, with proportional bars
+    const active = fl.claimants.filter(c => c.owed > 0);
+    if (active.length > 0) {
+      const maxOwed = Math.max(...active.map(c => c.owed), 1);
+      econHtml += '<div class="econ-section-label">consumers</div>';
+      for (const c of active) {
+        const short = c.shortfall > 0;
+        const paidPct = (c.paid / maxOwed) * 100;
+        const owedPct = (c.owed / maxOwed) * 100;
+        const kindColor = {food:'var(--ok)',stone:'var(--terram)',vellum:'var(--warn)',labor:'var(--aquam)',essence:'var(--limen)',insight:'var(--god)',passage:'var(--nomen)'}[c.kind] || 'var(--god)';
+        econHtml += `<div style="margin-bottom:3px">
+          <div style="display:flex;justify-content:space-between;font:9px var(--mono);color:var(--faint)">
+            <span>${c.claimant} <span style="opacity:.6">(${c.kind})</span></span>
+            <span style="color:${short ? 'var(--loss)' : 'var(--ink)'}">${c.paid.toFixed(0)}${short ? ' / ' + c.owed.toFixed(0) : ''}</span>
+          </div>
+          <div style="height:4px;border-radius:2px;background:var(--sunk);position:relative;overflow:hidden">
+            ${short ? `<div style="position:absolute;inset:0 ${100-owedPct}% 0 0;background:color-mix(in srgb,var(--loss) 30%,transparent);border-radius:2px"></div>` : ''}
+            <div style="position:absolute;inset:0 ${100-paidPct}% 0 0;background:${kindColor};border-radius:2px;opacity:.7"></div>
+          </div>
+        </div>`;
+      }
+    }
+
+    // Shortages
+    const shortKinds = Object.entries(fl.short).filter(([, v]) => v);
+    if (shortKinds.length > 0) {
+      econHtml += `<div class="econ-row" style="color:var(--loss)"><span>shortage</span><span class="v">${shortKinds.map(([k]) => k).join(', ')}</span></div>`;
+    }
+  } else {
+    // Fallback when flow() is not available
+    econHtml += '<div class="econ-section-label">materials</div>';
+    econHtml += `<div class="econ-row"><span>stock</span><span class="v">${r.materials.toFixed(0)}</span></div>`;
+  }
+
+  // Knowledge capital
+  econHtml += '<div class="econ-section-label">knowledge capital</div>';
+  econHtml += `<div class="econ-row"><span>library</span><span class="v">${inst.libraryDepth} nodes</span></div>`;
+  econHtml += `<div class="econ-row"><span>grimoires</span><span class="v">${inst.grimoires}</span></div>`;
+  econHtml += `<div class="econ-row"><span>ratio</span><span class="v">${inst.libraryDepth > 0 ? (inst.grimoires / inst.libraryDepth).toFixed(1) : '—'} books/node</span></div>`;
+
+  // Worship loop
+  econHtml += '<div class="econ-section-label">worship → favor</div>';
+  econHtml += `<div class="econ-row"><span>worship</span><span class="v">${r.worship.toFixed(1)}</span></div>`;
+  econHtml += `<div class="econ-row"><span>favor</span><span class="v">${r.favor.toFixed(0)}</span></div>`;
+  econHtml += `<div class="econ-row"><span>tier</span><span class="v">${r.worshipTier}</span></div>`;
+
+  econEl.innerHTML = econHtml;
+}
+
+// ================================================================ INITIAL PAINT
+el('play-btn').setAttribute('aria-pressed', 'true');
+el('play-btn').textContent = 'pause';
+paint();
+animStep();
+</script>
