@@ -69,6 +69,9 @@ export const CONTENT_FILES = [
   // is: `CONTENT_FILES` is a load order, and `grade-edge.json` references
   // `node.json` by id, so it must be read after the table it points into.
   'grade-edge.json',
+  // w20/compositional-content: tracks and rituals reference nodes by id.
+  'track.json',
+  'ritual.json',
 ] as const;
 
 export type ContentFileName = (typeof CONTENT_FILES)[number];

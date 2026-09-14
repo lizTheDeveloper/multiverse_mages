@@ -34,7 +34,14 @@
  * then this directory is imported by path.
  */
 
-export type { EffectContribution, EffectSourceInstance } from './contribution.js';
+export type {
+  EffectCondition,
+  EffectContribution,
+  EffectControl,
+  EffectMode,
+  EffectSourceInstance,
+  RevealTarget,
+} from './contribution.js';
 export {
   CONTRIBUTING_LOCATION_KINDS,
   MASTERY_ACTIVATION_THRESHOLD,

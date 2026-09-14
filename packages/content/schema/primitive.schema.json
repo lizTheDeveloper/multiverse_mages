@@ -23,10 +23,15 @@
             "multiplicative-on-remainder",
             "max",
             "summed-then-single-ward",
-            "presence"
+            "presence",
+            "diminishing"
           ]
         },
-        "cap": { "$ref": "#/$defs/cap" }
+        "cap": { "$ref": "#/$defs/cap" },
+        "floor": {
+          "$comment": "Optional, same shape as `cap` but a lower bound instead of an upper one. Exists so a Perdo `remove` (or a draining `transform`) can be stopped before it drives a world-scale rate to zero or negative -- an uncapped-below multiplier is a division hazard downstream and an unrecoverable state for the mage holding it. contracts.md §3 lists which primitives carry one, and its Floor column is normative.",
+          "$ref": "#/$defs/cap"
+        }
       }
     },
     "cap": {

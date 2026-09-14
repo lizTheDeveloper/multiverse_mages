@@ -78,6 +78,10 @@ function main() {
   // lands on them. Absent, behaviour is byte-identical to before.
   const sampleEveryTicks = Number(args.sample ?? ERA_TICKS);
   const masks = (args.masks ?? '').split(',').filter(Boolean).map(Number);
+  // W20's isolating arm: permit the whole 5x14 grid at founding and change
+  // nothing else, so "more content" can be told apart from "better-shaped
+  // content". Default 0 reproduces every arm recorded before it existed.
+  const fullGrid = Number(args['full-grid'] ?? 0);
   const out = args.out ?? '.w15/out';
   const tag = args.tag ?? 'arm';
 
@@ -92,8 +96,16 @@ function main() {
       const started = Date.now();
       for (const cell of CELLS) {
         for (let replicateIndex = 0; replicateIndex < replicates; replicateIndex += 1) {
-          const options =
-            mask === undefined ? { ...cell.options } : { ...cell.options, foundingSpeciesMask: mask };
+          const options = {
+            ...cell.options,
+            ...(mask === undefined ? {} : { foundingSpeciesMask: mask }),
+            // `fullGridAtFounding` was W20's own one-bit knob and it is gone: the
+            // opening square (#72/#156) says the same thing and more, so the full
+            // grid is now "the largest square the content declares" rather than a
+            // second notion of enablement. 5 × 14 is the whole 70-cell grid; `0`
+            // still means the v1 rectangle, which is what `readCount` defaults to.
+            ...(fullGrid === 0 ? {} : { openingTechniqueCount: 5, openingFormCount: 14 }),
+          };
           const run = runOne({
             content: resolved,
             strategyId,
@@ -127,6 +139,8 @@ function main() {
             rootSeed: ROOT_SEED,
             strategyId,
             foundingSpeciesMask: mask ?? null,
+            fullGridAtFounding: fullGrid,
+            openingSquare: fullGrid === 0 ? 'v1-rectangle' : '5x14',
             worldTickCap,
             sampleEveryTicks,
             replicates,

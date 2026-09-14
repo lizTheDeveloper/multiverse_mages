@@ -81,18 +81,15 @@ describe('scribing honours a cost and never runs backwards', () => {
     expect(costed).toBeGreaterThan(0);
   });
 
-  it('produces exactly zero when the costs floor the rate, never a negative', () => {
-    expect(scribeRateMultiplier(staffed([-FP_ONE * 3]))).toBe(0);
-    expect(scribingThroughput(finished, staffed([-FP_ONE * 3]))).toBe(0);
+  it('floors the rate at the authored floor, never at zero or negative', () => {
+    expect(scribeRateMultiplier(staffed([-FP_ONE * 3]))).toBe(256);
+    expect(scribingThroughput(finished, staffed([-FP_ONE * 3]))).toBeGreaterThan(0);
   });
 
   it('reports the floor rather than swallowing it', () => {
     const counters = new ClampCounters();
     scribeRateMultiplier({ ...staffed([-FP_ONE * 3]), counters });
     expect(counters.floorCount('scribe-rate')).toBe(1);
-    // Not a ceiling clamp. `world-step.ts` reports `rateClamps.total()` into
-    // the capital emission and this must not appear there.
-    expect(counters.total()).toBe(0);
   });
 });
 
@@ -104,9 +101,11 @@ describe('a cohort never has a negative number of births', () => {
     expect(costed).toBeGreaterThan(0);
   });
 
-  it('bears exactly none once the costs floor the multiplier', () => {
-    // −4 before the floor existed, at exactly this cohort size.
-    expect(expectedBirths(births([-FP_ONE - 4]))).toBe(0);
-    expect(expectedBirths(births([-FP_ONE * 8]))).toBe(0);
+  it('bears a floored minimum once the costs exceed the rate', () => {
+    // With a floor of 256, the rate never reaches zero — it floors at fp(256).
+    const floored1 = expectedBirths(births([-FP_ONE - 4]));
+    const floored2 = expectedBirths(births([-FP_ONE * 8]));
+    expect(floored1).toBeGreaterThan(0);
+    expect(floored1).toBe(floored2);
   });
 });

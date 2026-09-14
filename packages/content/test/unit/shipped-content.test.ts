@@ -148,10 +148,8 @@ describe('shipped content', () => {
       // Was 12. `material-economy` flags every cell `"v1": true`; see the
       // comment on V1_CELLS.
       v1Cells: 70,
-      // 301, not the 300 `material-economy` counted: `main` added a node while
-      // that branch was out, and the branch added none. Counted from
-      // `node.json` on the merged tree.
-      nodes: 301,
+      // 358: main's 301 plus 57 compositional nodes from w20.
+      nodes: 358,
       species: 6,
       traditions: 3,
       territories: 5,
@@ -212,6 +210,9 @@ describe('shipped content', () => {
       // reads fails the load.
       autonomyWeights: 47,
       gradeEdges: 2,
+      // w20/compositional-content: 7 tracks, 2 rituals.
+      tracks: 7,
+      rituals: 2,
     });
   });
 

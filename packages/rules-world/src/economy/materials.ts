@@ -22,6 +22,7 @@ import type { LandAptitude } from './aptitude.js';
 import { NEUTRAL_LAND_APTITUDE } from './aptitude.js';
 import type { LandMaterialKind, MaterialAmounts, MaterialKind } from './kinds.js';
 import { LAND_MATERIAL_KINDS, MATERIAL_KINDS, zeroAmounts } from './kinds.js';
+import { primitiveFloor } from './primitive-floor.js';
 
 /**
  * ## Three stocks, four claimants, and an order that is still a decision
@@ -284,9 +285,11 @@ export const NO_YIELD_BONUSES: Readonly<Record<MaterialKind, readonly Fixed[]>> 
  * from the primitive's stated unit.
  */
 export function resourceYieldMultiplier(input: ProductionInput, kind: MaterialKind): Fixed {
+  const floor = primitiveFloor(input.resourceYield);
   return stackMagnitudes(input.resourceYield, input.resourceYieldBonuses[kind], {
     ...(input.counters === undefined ? {} : { counters: input.counters }),
     ...(input.ablation === undefined ? {} : { ablation: input.ablation }),
+    ...(floor === undefined ? {} : { floor }),
   }).value;
 }
 

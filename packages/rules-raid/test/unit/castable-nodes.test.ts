@@ -108,12 +108,13 @@ describe('concealment is raid-scale only, whatever its record declares', () => {
     expect(record?.record.scale).toBe('both');
   });
 
-  it('has no cast form: of 48 carriers, the 3 castable ones are castable for something else', () => {
+  it('has no cast form: of 61 carriers, the 3 castable ones are castable for something else', () => {
     const arbiter = arbiterFor();
     const carriers = registry.nodes.filter((entry) =>
       entry.record.effects.some((effect) => effect.primitive === 'concealment'),
     );
-    expect(carriers.length).toBe(48);
+    // w20: 61 after 57 compositional nodes (was 48).
+    expect(carriers.length).toBe(61);
 
     const castable = carriers.filter((entry) => arbiter.castProfile(entry.contentId).placesEffects);
     // Three, and all three in Umbra — `cu-the-unlit-hall` and `ru-the-held-dark`

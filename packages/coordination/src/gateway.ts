@@ -147,10 +147,12 @@ import type {
   PracticeOutcome,
   StoreHook,
   StorePolicy,
+  TrackCatalog,
 } from '@mm/rules-magic';
 import {
   DEFAULT_TEACH_THRESHOLD,
   MASTERY_ACTIVATION_THRESHOLD,
+  acquisitionExclusion,
   disownGrimoire,
   fidelityOf,
   isRediscovery,
@@ -291,6 +293,8 @@ export interface GatewayDeps {
    * nothing else is `acquire`'s business.
    */
   readonly acquire: AcquirePolicy;
+  /** Track-exclusion catalog. Absent means no exclusion checks beyond node antirequisites. */
+  readonly tracks?: TrackCatalog | undefined;
   /** Where a dead mage's grimoires go. Supplied by the death path. */
   readonly onGrimoiresInherited?: ((mage: MageHandle, inheritor: UniversityHandle) => void) | undefined;
   /**
@@ -500,6 +504,7 @@ export class CoordinatingKnowledgeGateway implements KnowledgeGateway {
       if (node === undefined) continue;
       if (this.knows(mage, nodeId)) continue;
       if (!this.#prerequisitesHeld(mage, node.prerequisites)) continue;
+      if (acquisitionExclusion(this.#deps.knowledge, this.#deps.catalog, this.#deps.tracks, mage, node) !== undefined) continue;
 
       const banked =
         this.#deps.effort?.progressOf(effortKey(EFFORT_KIND.research, mage, nodeId, 0)) ?? 0;
@@ -596,6 +601,7 @@ export class CoordinatingKnowledgeGateway implements KnowledgeGateway {
       if (!permits(this.#deps.ruleset, this.#deps.cells.cellOf(nodeId))) continue;
       if (this.knows(student, nodeId)) continue;
       if (!this.#prerequisitesHeld(student, node.prerequisites)) continue;
+      if (acquisitionExclusion(this.#deps.knowledge, this.#deps.catalog, this.#deps.tracks, student, node) !== undefined) continue;
       best = nodeId;
     }
     return best;
@@ -1839,7 +1845,9 @@ export class CoordinatingKnowledgeGateway implements KnowledgeGateway {
     if (node === undefined || node.tier > rates.depthCeiling) return false;
     if (!permits(this.#deps.ruleset, this.#deps.cells.cellOf(nodeId))) return false;
     if (this.knows(student, nodeId)) return false;
-    return this.#prerequisitesHeld(student, node.prerequisites);
+    if (!this.#prerequisitesHeld(student, node.prerequisites)) return false;
+    if (acquisitionExclusion(this.#deps.knowledge, this.#deps.catalog, this.#deps.tracks, student, node) !== undefined) return false;
+    return true;
   }
 
   /** The ledger, or a refusal naming what the caller left out. */

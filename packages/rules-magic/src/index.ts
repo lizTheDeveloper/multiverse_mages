@@ -65,6 +65,7 @@ export type {
 } from './world-inputs.js';
 
 export * from './instances/index.js';
+export * from './rituals/index.js';
 // `requireNode` exists in both subsystems over different catalog shapes — the
 // instances one takes a NodeCatalog, the effects one a ContentRegistry. Exported
 // under the effects name so the barrel is unambiguous without renaming either

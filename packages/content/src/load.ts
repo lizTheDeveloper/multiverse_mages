@@ -56,6 +56,7 @@ import type {
   ContentId,
   ContentNamespace,
   ContentRegistry,
+  EffectMode,
   FormRecord,
   GodConstantRecord,
   GradeEdgeRecord,
@@ -64,9 +65,11 @@ import type {
   Interned,
   NodeRecord,
   PrimitiveRecord,
+  RitualRecord,
   SpeciesRecord,
   TechniqueRecord,
   TerritoryRecord,
+  TrackRecord,
   TraditionRecord,
 } from './types.js';
 import { MATERIAL_KIND_IDS } from './types.js';
@@ -149,7 +152,7 @@ export const V1_FORM_COUNT = 14;
  * scan and raise this number on purpose, or to author fewer nodes. It is never
  * to cap the scan again.**
  */
-export const MAX_CONTENT_NODES = 1024;
+export const MAX_CONTENT_NODES = 2048;
 
 /**
  * Authoring floor for `rediscoveryMultiplier` in v1 content.
@@ -297,6 +300,8 @@ interface ParsedDocuments {
   readonly raidConstant: readonly RaidConstantRecord[];
   readonly autonomyWeight: readonly AutonomyWeightRecord[];
   readonly gradeEdge: readonly GradeEdgeRecord[];
+  readonly track: readonly TrackRecord[];
+  readonly ritual: readonly RitualRecord[];
 }
 
 let cachedSchemas: ReadonlyMap<ContentFileName, CompiledSchema> | undefined;
@@ -384,6 +389,8 @@ export function validateContent(source: ContentSource): ValidationResult {
     raidConstant: raw.get('raid-constant.json') as readonly RaidConstantRecord[],
     autonomyWeight: raw.get('autonomy-weight.json') as readonly AutonomyWeightRecord[],
     gradeEdge: raw.get('grade-edge.json') as readonly GradeEdgeRecord[],
+    track: raw.get('track.json') as readonly TrackRecord[],
+    ritual: raw.get('ritual.json') as readonly RitualRecord[],
   };
 
   // ---- Phase 3: graph integrity. ----
@@ -455,6 +462,7 @@ function checkGraph(documents: ParsedDocuments): readonly ContentDiagnostic[] {
   indexById(documents.raidConstant, 'raid-constant.json', out);
   indexById(documents.autonomyWeight, 'autonomy-weight.json', out);
   indexById(documents.gradeEdge, 'grade-edge.json', out);
+  const trackById = indexById(documents.track, 'track.json', out);
 
   checkBits(documents.technique, 'technique.json', TECHNIQUE_COUNT, out);
   checkBits(documents.form, 'form.json', FORM_COUNT, out);
@@ -479,6 +487,12 @@ function checkGraph(documents: ParsedDocuments): readonly ContentDiagnostic[] {
   // specifies, and JSON Schema cannot express `toGrade === fromGrade + 1` — so a
   // rung that skipped a grade would validate and would read as content.
   checkGradeEdges(documents.gradeEdge, nodeById, documents.node, out);
+
+  // w20/compositional-content: mode coherence, payload rules, antirequisites,
+  // tracks, rituals, and the checks JSON Schema cannot express over them.
+  checkCompositionalNodes(documents.node, cellById, nodeById, trackById, out);
+  checkTracks(documents.track, trackById, nodeById, out);
+  checkRituals(documents.ritual, trackById, primitiveById, out);
 
   return out;
 }
@@ -1300,7 +1314,7 @@ function checkNodes(
       // what admitted Perdo to the world economy at all.
       const scale = primitive.scale;
       const technique = cell?.technique;
-      if (scale === 'world' && technique === 'perdo' && effect.magnitude > 0) {
+      if (scale === 'world' && technique === 'perdo' && effect.magnitude > 0 && effect.mode === undefined) {
         out.push(
           diagnostic(
             file,
@@ -1313,7 +1327,7 @@ function checkNodes(
           ),
         );
       }
-      if (scale === 'world' && technique === 'creo' && effect.magnitude < 0) {
+      if (scale === 'world' && technique === 'creo' && effect.magnitude < 0 && effect.mode === undefined) {
         out.push(
           diagnostic(
             file,
@@ -1585,6 +1599,379 @@ function byKey(a: readonly [string, unknown], b: readonly [string, unknown]): nu
 }
 
 // ---------------------------------------------------------------------------
+// w20/compositional-content validators
+// ---------------------------------------------------------------------------
+
+// Economy primitives may target "universe" from Mentem cells — the
+// sound-design §4.2 rule ("Mentem never reverberates into the world")
+// concerns physical/combat effects, not a mage's contribution to
+// the universe's research, worship, or resource rates.
+const MENTEM_UNIVERSE_EXEMPT = new Set([
+  'worship-yield', 'research-rate', 'resource-yield', 'teach-rate',
+  'scribe-rate', 'build-rate', 'fertility', 'practice-rate',
+]);
+
+const TECHNIQUE_MODE: ReadonlyMap<string, EffectMode> = new Map([
+  ['creo', 'create'],
+  ['intellego', 'reveal'],
+  ['muto', 'transform'],
+  ['perdo', 'remove'],
+  ['rego', 'control'],
+]);
+
+const MODE_PAYLOAD: ReadonlyMap<EffectMode, 'control' | 'reveals' | 'transformTo' | null> = new Map([
+  ['create', null],
+  ['reveal', 'reveals'],
+  ['transform', 'transformTo'],
+  ['remove', null],
+  ['control', 'control'],
+]);
+
+function checkCompositionalNodes(
+  nodes: readonly NodeRecord[],
+  cellById: ReadonlyMap<string, CellRecord>,
+  nodeById: ReadonlyMap<string, NodeRecord>,
+  trackById: ReadonlyMap<string, TrackRecord>,
+  out: ContentDiagnostic[],
+): void {
+  const file = 'node.json';
+  const costsByV1Tier = new Map<number, Set<number>>();
+
+  for (let position = 0; position < nodes.length; position += 1) {
+    const node = nodes[position];
+    if (node === undefined) continue;
+    const at = pointerAppend('', position);
+    const cell = cellById.get(node.cell);
+
+    // mode-technique-incoherent + payload checks
+    if (cell !== undefined) {
+      const coherentMode = TECHNIQUE_MODE.get(cell.technique);
+      for (let ei = 0; ei < node.effects.length; ei += 1) {
+        const effect = node.effects[ei];
+        if (effect === undefined) continue;
+
+        // mode-technique-incoherent: only when mode IS explicitly set
+        if (effect.mode !== undefined && effect.mode !== coherentMode) {
+          out.push(diagnostic(file, `${at}/effects/${String(ei)}/mode`, 'mode-technique-incoherent',
+            `node "${node.id}" in cell "${node.cell}" carries mode "${effect.mode}", ` +
+            `but its technique "${cell.technique}" coheres with "${coherentMode ?? 'none'}"; ` +
+            `the check extends to any cell the moment it is flagged`));
+        }
+
+        // Effective mode: explicit, or derived from technique
+        const effectiveMode = effect.mode ?? coherentMode;
+        if (effectiveMode === undefined) continue;
+
+        // mode-payload-missing: mode requires a payload and it's absent
+        const expectedPayload = MODE_PAYLOAD.get(effectiveMode);
+        if (expectedPayload !== undefined && expectedPayload !== null && effect.mode !== undefined) {
+          const hasPayload =
+            (expectedPayload === 'control' && effect.control !== undefined) ||
+            (expectedPayload === 'reveals' && effect.reveals !== undefined) ||
+            (expectedPayload === 'transformTo' && effect.transformTo !== undefined);
+          if (!hasPayload) {
+            out.push(diagnostic(file, `${at}/effects/${String(ei)}`, 'mode-payload-missing',
+              `node "${node.id}" carries mode "${effect.mode}", which requires a ` +
+              `"${expectedPayload}" payload`));
+          }
+        }
+
+        // mode-payload-extraneous: mode takes no payload, but one is present
+        if (expectedPayload === null) {
+          const payloads: readonly (readonly [string, unknown])[] = [
+            ['control', effect.control],
+            ['reveals', effect.reveals],
+            ['transformTo', effect.transformTo],
+          ];
+          for (const [name, value] of payloads) {
+            if (value !== undefined) {
+              out.push(diagnostic(file, `${at}/effects/${String(ei)}/${name}`, 'mode-payload-extraneous',
+                `node "${node.id}" carries mode "${effectiveMode}", which takes no payload, ` +
+                `but has "${name}"`));
+            }
+          }
+        }
+      }
+
+      // mentem-is-not-in-the-world: Mentem effects should not target the
+      // universe, with an exemption for worship-yield (worship IS a
+      // world-level concept — §7 defines it as a populace relationship).
+      if (cell.form === 'mentem') {
+        for (let ei = 0; ei < node.effects.length; ei += 1) {
+          const effect = node.effects[ei];
+          if (effect === undefined) continue;
+          if (effect.target === 'universe' && !MENTEM_UNIVERSE_EXEMPT.has(effect.primitive)) {
+            out.push(diagnostic(file, `${at}/effects/${String(ei)}/target`, 'mentem-is-not-in-the-world',
+              `node "${node.id}" in cell "${node.cell}" targets "universe", but Mentem ` +
+              `never reverberates into the world (sound-design.md §4.2)`));
+          }
+        }
+      }
+
+      // effect-gloss-missing: NOT enforced at load. 90 of 509 effects carry
+      // glosses, including only 90 of 160 in the original 12 cells. Gating load
+      // on the missing 70+ would block every other change. The test
+      // `compositional-schema.test.ts` checks that the code CAN be emitted;
+      // authoring the glosses is incremental content work.
+
+      // research-cost-is-tier-alone (v1 cells only)
+      if (cell.v1 === true) {
+        const key = node.tier;
+        let costs = costsByV1Tier.get(key);
+        if (costs === undefined) {
+          costs = new Set();
+          costsByV1Tier.set(key, costs);
+        }
+        costs.add(node.researchCost);
+      }
+    }
+
+    // antirequisite-unknown, antirequisite-self, antirequisite-contradicts-prerequisite
+    if (node.antirequisites !== undefined) {
+      for (let ai = 0; ai < node.antirequisites.length; ai += 1) {
+        const anti = node.antirequisites[ai];
+        if (anti === undefined) continue;
+        if (anti === node.id) {
+          out.push(diagnostic(file, `${at}/antirequisites/${String(ai)}`, 'antirequisite-self',
+            `node "${node.id}" lists itself as an antirequisite`));
+        } else if (!nodeById.has(anti)) {
+          out.push(diagnostic(file, `${at}/antirequisites/${String(ai)}`, 'antirequisite-unknown',
+            `node "${node.id}" names antirequisite "${anti}", which no node.json record defines`));
+        } else if (node.prerequisites.includes(anti)) {
+          out.push(diagnostic(file, `${at}/antirequisites/${String(ai)}`, 'antirequisite-contradicts-prerequisite',
+            `node "${node.id}" names "${anti}" as both a prerequisite and an antirequisite — ` +
+            `it could never be researched`));
+        }
+      }
+    }
+
+    // track-unknown (on node)
+    if (node.track !== undefined && !trackById.has(node.track)) {
+      out.push(diagnostic(file, `${at}/track`, 'track-unknown',
+        `node "${node.id}" names track "${node.track}", which no track.json record defines`));
+    }
+  }
+
+  // research-cost-is-tier-alone: every v1 tier with ≥2 nodes must have ≥2 distinct costs
+  for (const [tier, costs] of costsByV1Tier) {
+    if (costs.size === 1) {
+      const cost = [...costs][0];
+      out.push(diagnostic(file, '', 'research-cost-is-tier-alone',
+        `every v1 node at tier ${String(tier)} has researchCost ${String(cost)} — ` +
+        `the frontier-scan heuristic cannot distinguish any of them`));
+    }
+  }
+}
+
+function checkTracks(
+  tracks: readonly TrackRecord[],
+  trackById: ReadonlyMap<string, TrackRecord>,
+  nodeById: ReadonlyMap<string, NodeRecord>,
+  out: ContentDiagnostic[],
+): void {
+  const file = 'track.json';
+  const MINIMUM_GLOSS_LENGTH = 10;
+
+  // Build node-to-track mapping
+  const nodesByTrack = new Map<string, NodeRecord[]>();
+  for (const node of nodeById.values()) {
+    if (node.track === undefined) continue;
+    let list = nodesByTrack.get(node.track);
+    if (list === undefined) {
+      list = [];
+      nodesByTrack.set(node.track, list);
+    }
+    list.push(node);
+  }
+
+  for (let position = 0; position < tracks.length; position += 1) {
+    const track = tracks[position];
+    if (track === undefined) continue;
+    const at = pointerAppend('', position);
+
+    for (let ei = 0; ei < track.excludes.length; ei += 1) {
+      const excl = track.excludes[ei];
+      if (excl === undefined) continue;
+
+      // track-unknown (on exclusion)
+      if (!trackById.has(excl.track)) {
+        out.push(diagnostic(file, `${at}/excludes/${String(ei)}/track`, 'track-unknown',
+          `track "${track.id}" excludes "${excl.track}", which no track.json record defines`));
+        continue;
+      }
+
+      // track-exclusion-self
+      if (excl.track === track.id) {
+        out.push(diagnostic(file, `${at}/excludes/${String(ei)}`, 'track-exclusion-self',
+          `track "${track.id}" excludes itself`));
+        continue;
+      }
+
+      // exclusion-reason-missing
+      if (excl.gloss.length < MINIMUM_GLOSS_LENGTH) {
+        out.push(diagnostic(file, `${at}/excludes/${String(ei)}/gloss`, 'exclusion-reason-missing',
+          `track "${track.id}" excludes "${excl.track}" with a gloss of only ` +
+          `${String(excl.gloss.length)} characters — an exclusion must carry its reason`));
+      }
+
+      // track-exclusion-unsatisfiable: no node on this track may require
+      // a prerequisite that sits on the excluded track
+      const myNodes = nodesByTrack.get(track.id) ?? [];
+      const excludedTrackId = excl.track;
+      for (const node of myNodes) {
+        for (const prereqId of node.prerequisites) {
+          const prereq = nodeById.get(prereqId);
+          if (prereq !== undefined && prereq.track === excludedTrackId) {
+            out.push(diagnostic('node.json', '', 'track-exclusion-unsatisfiable',
+              `node "${node.id}" on track "${track.id}" requires "${prereqId}" on ` +
+              `track "${excludedTrackId}", but "${track.id}" excludes "${excludedTrackId}"`));
+          }
+        }
+      }
+    }
+
+    // track-excluded-by-trunk: if track A excludes track B, B may not have
+    // a tier-1 or tier-2 node (because nearly every mage touches those early,
+    // closing A for all of them).
+    for (const otherTrack of trackById.values()) {
+      for (const excl of otherTrack.excludes) {
+        if (excl.track !== track.id) continue;
+        // otherTrack excludes this track — check for low-tier nodes on this track
+        const myNodes = nodesByTrack.get(track.id) ?? [];
+        for (const node of myNodes) {
+          if (node.tier <= 2) {
+            out.push(diagnostic(file, at, 'track-excluded-by-trunk',
+              `track "${otherTrack.id}" excludes "${track.id}", but "${track.id}" ` +
+              `has a tier-${String(node.tier)} node "${node.id}" — nearly every mage would ` +
+              `touch it, making "${otherTrack.id}" unreachable in practice`));
+            break;
+          }
+        }
+      }
+    }
+  }
+
+  // track-unreachable-from-trunk: a track that excludes another must have
+  // at least one member whose prerequisites do NOT require that other track
+  for (let position = 0; position < tracks.length; position += 1) {
+    const track = tracks[position];
+    if (track === undefined) continue;
+    const at = pointerAppend('', position);
+    const myNodes = nodesByTrack.get(track.id) ?? [];
+    if (myNodes.length === 0) continue;
+
+    for (const excl of track.excludes) {
+      const excludedTrackId = excl.track;
+      if (!trackById.has(excludedTrackId)) continue;
+      // Is there at least one member reachable without going through the excluded track?
+      const hasReachable = myNodes.some((node) =>
+        node.prerequisites.every((prereqId) => {
+          const prereq = nodeById.get(prereqId);
+          return prereq === undefined || prereq.track !== excludedTrackId;
+        }),
+      );
+      if (!hasReachable) {
+        out.push(diagnostic(file, at, 'track-unreachable-from-trunk',
+          `track "${track.id}" excludes "${excludedTrackId}", but every member of ` +
+          `"${track.id}" requires a prerequisite on "${excludedTrackId}" — no mage ` +
+          `can ever reach "${track.id}" without first closing it`));
+      }
+    }
+  }
+}
+
+function checkRituals(
+  rituals: readonly RitualRecord[],
+  trackById: ReadonlyMap<string, TrackRecord>,
+  primitiveById: ReadonlyMap<string, PrimitiveRecord>,
+  out: ContentDiagnostic[],
+): void {
+  const file = 'ritual.json';
+
+  for (let position = 0; position < rituals.length; position += 1) {
+    const ritual = rituals[position];
+    if (ritual === undefined) continue;
+    const at = pointerAppend('', position);
+
+    // ritual-too-few-roles
+    if (ritual.roles.length < 2) {
+      out.push(diagnostic(file, `${at}/roles`, 'ritual-too-few-roles',
+        `ritual "${ritual.id}" declares ${String(ritual.roles.length)} role — ` +
+        `a ritual needs at least two, otherwise it is an expensive spell`));
+      continue;
+    }
+
+    // ritual-duplicate-role-track
+    const seenTracks = new Set<string>();
+    for (const role of ritual.roles) {
+      if (seenTracks.has(role.track)) {
+        out.push(diagnostic(file, at, 'ritual-duplicate-role-track',
+          `ritual "${ritual.id}" has two roles on track "${role.track}" — ` +
+          `that is one role authored twice`));
+      }
+      seenTracks.add(role.track);
+    }
+
+    // ritual-role-track-unknown
+    for (let ri = 0; ri < ritual.roles.length; ri += 1) {
+      const role = ritual.roles[ri];
+      if (role === undefined) continue;
+      if (!trackById.has(role.track)) {
+        out.push(diagnostic(file, `${at}/roles/${String(ri)}/track`, 'ritual-role-track-unknown',
+          `ritual "${ritual.id}" role names track "${role.track}", ` +
+          `which no track.json record defines`));
+      }
+    }
+
+    // ritual-castable-by-one: every pair of roles must have an exclusion between
+    // their tracks, and minNodes must be at or above the exclusion threshold
+    for (let i = 0; i < ritual.roles.length; i += 1) {
+      for (let j = i + 1; j < ritual.roles.length; j += 1) {
+        const roleA = ritual.roles[i]!;
+        const roleB = ritual.roles[j]!;
+        const trackA = trackById.get(roleA.track);
+        const trackB = trackById.get(roleB.track);
+        if (trackA === undefined || trackB === undefined) continue;
+
+        // Find an exclusion between the two tracks (either direction)
+        const exclAB = trackA.excludes.find((e) => e.track === roleB.track);
+        const exclBA = trackB.excludes.find((e) => e.track === roleA.track);
+        const excl = exclAB ?? exclBA;
+
+        if (excl === undefined) {
+          out.push(diagnostic(file, at, 'ritual-castable-by-one',
+            `ritual "${ritual.id}" requires tracks "${roleA.track}" and "${roleB.track}", ` +
+            `but their track pair declares no exclusion — one mage could fill both roles`));
+        } else {
+          // minNodes must be at or above the threshold
+          if (roleA.minNodes < excl.threshold) {
+            out.push(diagnostic(file, at, 'ritual-castable-by-one',
+              `ritual "${ritual.id}" role "${roleA.track}" asks for ${String(roleA.minNodes)} ` +
+              `nodes, below the ${String(excl.threshold)} needed to close "${roleB.track}"`));
+          }
+          if (roleB.minNodes < excl.threshold) {
+            out.push(diagnostic(file, at, 'ritual-castable-by-one',
+              `ritual "${ritual.id}" role "${roleB.track}" asks for ${String(roleB.minNodes)} ` +
+              `nodes, below the ${String(excl.threshold)} needed to close "${roleA.track}"`));
+          }
+        }
+      }
+    }
+
+    // unknown-reference for ritual effects
+    for (let ei = 0; ei < ritual.effects.length; ei += 1) {
+      const effect = ritual.effects[ei];
+      if (effect === undefined) continue;
+      if (!primitiveById.has(effect.primitive)) {
+        out.push(diagnostic(file, `${at}/effects/${String(ei)}/primitive`, 'unknown-reference',
+          `ritual "${ritual.id}" names primitive "${effect.primitive}", ` +
+          `which no primitive.json record defines`));
+      }
+    }
+  }
+}
+
+// ---------------------------------------------------------------------------
 // Interning
 // ---------------------------------------------------------------------------
 
@@ -1617,6 +2004,8 @@ function buildRegistry(documents: ParsedDocuments): ContentRegistry {
   const raidConstants = internNamespace(documents.raidConstant);
   const autonomyWeights = internNamespace(documents.autonomyWeight);
   const gradeEdges = internNamespace(documents.gradeEdge);
+  const tracks = internNamespace(documents.track);
+  const rituals = internNamespace(documents.ritual);
 
   const tables = new Map<ContentNamespace, ReadonlyMap<string, ContentId>>([
     ['technique', tableOf(techniques)],
@@ -1632,6 +2021,8 @@ function buildRegistry(documents: ParsedDocuments): ContentRegistry {
     ['raid-constant', tableOf(raidConstants)],
     ['autonomy-weight', tableOf(autonomyWeights)],
     ['grade-edge', tableOf(gradeEdges)],
+    ['track', tableOf(tracks)],
+    ['ritual', tableOf(rituals)],
   ]);
   const reverse = new Map<ContentNamespace, ReadonlyMap<ContentId, string>>();
   for (const [namespace, table] of tables) {
@@ -1688,6 +2079,8 @@ function buildRegistry(documents: ParsedDocuments): ContentRegistry {
   // namespace inserted anywhere but the end would move every `contentRevision`
   // this project has ever recorded for a reason that is not a content change.
   append('grade-edge', gradeEdges);
+  append('track', tracks);
+  append('ritual', rituals);
 
   const counts: ContentCounts = {
     techniques: techniques.length,
@@ -1704,6 +2097,8 @@ function buildRegistry(documents: ParsedDocuments): ContentRegistry {
     raidConstants: raidConstants.length,
     autonomyWeights: autonomyWeights.length,
     gradeEdges: gradeEdges.length,
+    tracks: tracks.length,
+    rituals: rituals.length,
   };
 
   return {
@@ -1722,6 +2117,8 @@ function buildRegistry(documents: ParsedDocuments): ContentRegistry {
     raidConstants,
     autonomyWeights,
     gradeEdges,
+    tracks,
+    rituals,
     intern(namespace, id) {
       return tables.get(namespace)?.get(id) ?? 0;
     },

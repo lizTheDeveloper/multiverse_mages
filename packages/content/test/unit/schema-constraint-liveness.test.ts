@@ -127,6 +127,8 @@ const SHADOWED: readonly { readonly constraint: string; readonly why: string }[]
     'raid-constant',
     'autonomy-weight',
     'grade-edge',
+    'track',
+    'ritual',
   ] as const).map(
     (name) => ({
       constraint: `${name}.schema.json#/$defs/contentId minLength`,
@@ -178,6 +180,12 @@ const SHADOWED: readonly { readonly constraint: string; readonly why: string }[]
     'node.schema.json#/$defs/gradeRequirement/properties/kind',
     'grade-edge.schema.json#/$defs/gradeEdge/properties/tuningStatus',
     'grade-edge.schema.json#/$defs/gradedKind',
+    'node.schema.json#/$defs/effect/properties/mode',
+    'node.schema.json#/$defs/condition/properties/kind',
+    'track.schema.json#/$defs/track/properties/tuningStatus',
+    'ritual.schema.json#/$defs/ritual/properties/tuningStatus',
+    'ritual.schema.json#/$defs/effect/properties/target',
+    'ritual.schema.json#/$defs/effect/properties/mode',
   ].map((pointer) => ({
     constraint: `${pointer} type`,
     why:

@@ -1,0 +1,69 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://multiverse-mages.invalid/schema/ritual.schema.json",
+  "title": "ritual.json",
+  "description": "A spell that requires more than one mage to cast (contracts.md §2.13). `roles` names at least two mutually exclusive tracks — the loader's `ritual-castable-by-one` check reads track.json's exclusion graph and refuses a ritual whose roles are not mutually exclusive at a threshold each role's `minNodes` actually reaches, because a ritual any one mage could eventually satisfy alone is an expensive spell wearing this shape for no reason. `effects` reuses node.json's effect shape for `primitive`, `magnitude`, `target`, `durationTicks` and `mode` — `gloss` is required here, unlike node.json, because a ritual has no cell or `v1` flag to make it conditional the way `effect-gloss-missing` does. Deliberately omits `when`, `reveals`, `control` and `transformTo`: v1 ships only `create`/`remove` rituals, and node.json's mode-payload coherence checks are tied to a cell's technique, which a ritual does not have. No ritual state is stored anywhere in the simulation — availability is derived at cast time from the living, affiliated mages of one university (`@mm/rules-magic`'s `rituals/` module); this record only declares what a valid combination of casters looks like.",
+  "type": "array",
+  "minItems": 1,
+  "items": { "$ref": "#/$defs/ritual" },
+  "$defs": {
+    "ritual": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "name", "gloss", "roles", "effects", "tuningStatus"],
+      "properties": {
+        "id": { "$ref": "#/$defs/contentId" },
+        "name": { "type": "string", "minLength": 1, "maxLength": 64 },
+        "gloss": { "type": "string", "minLength": 1, "maxLength": 400 },
+        "roles": {
+          "description": "Caster roles, each pinned to a track. The schema's own floor is 1 so that a single-role record is a load failure the loader's own `ritual-too-few-roles` diagnostic explains (at least 2, per contracts.md §2.13) rather than one the schema silently forecloses before that check ever runs.",
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 4,
+          "items": { "$ref": "#/$defs/role" }
+        },
+        "effects": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 4,
+          "items": { "$ref": "#/$defs/effect" }
+        },
+        "tuningStatus": { "type": "string", "enum": ["untuned", "tuned"] }
+      }
+    },
+    "role": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["track", "minNodes", "gloss"],
+      "properties": {
+        "track": { "$ref": "#/$defs/contentId" },
+        "minNodes": {
+          "description": "Distinct nodes of `track` this caster must hold. Must be at least the threshold at which this ritual's other role(s) close this track, or a mage below that threshold could dabble in both roles' tracks at once — see the loader's ritual-castable-by-one.",
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 64
+        },
+        "gloss": { "type": "string", "minLength": 1, "maxLength": 240 }
+      }
+    },
+    "effect": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["primitive", "magnitude", "target", "durationTicks", "mode", "gloss"],
+      "properties": {
+        "primitive": { "$ref": "#/$defs/contentId" },
+        "magnitude": { "type": "integer", "minimum": 1, "maximum": 1073741823 },
+        "target": { "type": "string", "enum": ["self", "single", "area", "side", "universe"] },
+        "durationTicks": { "type": "integer", "minimum": 0, "maximum": 1073741823 },
+        "mode": { "type": "string", "enum": ["create", "reveal", "transform", "remove", "control"] },
+        "gloss": { "type": "string", "minLength": 1, "maxLength": 240 }
+      }
+    },
+    "contentId": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 64,
+      "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$"
+    }
+  }
+}

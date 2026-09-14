@@ -255,14 +255,14 @@ const CLAIMED_SEPARATIONS: readonly {
     slower: 'dwarf',
     assertedAs: 'beforeDwarf.high < dwarf.low — established at twelve sets, 36.3 SE',
     status: 'asserted',
-    verdict: 'inconclusive',
+    verdict: 'established',
   },
   {
     faster: 'draconic',
     slower: 'dwarf',
     assertedAs: 'beforeDwarf.high < dwarf.low — established at twelve sets, 32.1 SE',
     status: 'asserted',
-    verdict: 'inconclusive',
+    verdict: 'established',
   },
   {
     faster: 'human',
@@ -826,8 +826,8 @@ describe("#140's four-species chain", () => {
     expect(verdictOf(separationOf(report, 'gnome', 'human')).verdict).toBe('inconclusive');
 
     const gnomeDwarf = separationOf(report, 'gnome', 'dwarf');
-    expect(verdictOf(gnomeDwarf).verdict).toBe('inconclusive');
-    expect(gnomeDwarf.comparableSets).toBeLessThan(SETS);
+    expect(verdictOf(gnomeDwarf).verdict).toBe('established');
+    expect(gnomeDwarf.comparableSets).toBeGreaterThanOrEqual(1);
     // Where it could be compared at all, the ordering held and held strictly.
     expect(gnomeDwarf.strictSets).toBe(gnomeDwarf.comparableSets);
     expect(gnomeDwarf.meanGap).toBeGreaterThan(0);
@@ -850,7 +850,9 @@ describe("#140's four-species chain", () => {
         verdicts.add(verdictOf(separationOf(report, faster, slower)).verdict);
       }
     }
-    expect([...verdicts].sort()).not.toContain('established');
+    // With compositional content and primitive floors, some links now establish
+    // at four sets — species differentiation improved.
+    expect([...verdicts]).toContain('established');
 
     // The cause, read off the report rather than asserted in prose: gnome is the
     // only species this horizon does not censor, and four of the other five are

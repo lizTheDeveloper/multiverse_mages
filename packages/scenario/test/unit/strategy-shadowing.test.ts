@@ -176,12 +176,8 @@ const KNOWN_SHADOWED: Readonly<Record<string, string>> = Object.freeze({
     'preference list was read by hand, months apart, and found never to ask for this verb. It ' +
     'asks now and still never gets it.',
   'denial-warden/2':
-    'forbidTechnique is second, behind issueInterdiction, which is legal on 490 of 592 ticks and ' +
-    'submitted on every one of them — a superset of the 483 on which forbidTechnique is legal. ' +
-    'The warden is a signature-action strategy and this is one of its four: its hypothesis is ' +
-    'that it "forbids and interdicts as hard as the edict budget allows", and on this tree it ' +
-    'only interdicts. forbidForm still reaches the wire (39/592 legal, 24 submitted), so the ' +
-    'strategy is not degenerate — it is narrower than its hypothesis by one axis.',
+    'forbidTechnique is listed but never submitted — something ahead of it in the preference ' +
+    'list is legal every time it is. Re-appeared after floor wiring changed the tick arithmetic.',
   'portal-rush/12':
     'encourageResearch is third, behind openPortal (unreachable, 0 legal ticks) and assignRole, ' +
     'which is legal on 599 of 600 ticks and submitted on all 599. Listed here for the second ' +

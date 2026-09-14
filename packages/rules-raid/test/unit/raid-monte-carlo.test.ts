@@ -308,7 +308,6 @@ describe.skipIf(!process.env['RUN_MONTE_CARLO'])(
 
       // Informational: mean resolution tick, so the output tells you something.
       const meanTick = totalResolutionTick / TOTAL_RAIDS;
-      // eslint-disable-next-line no-console
       console.log(
         `Monte Carlo sweep: ${String(TOTAL_RAIDS)} raids, ` +
           `mean resolution tick ${meanTick.toFixed(1)}, ` +

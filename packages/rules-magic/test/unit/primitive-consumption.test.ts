@@ -135,8 +135,8 @@ describe('the accessor records the fetch, because that is the whole mechanism', 
 
   it('scans the whole grid, exactly as the wiring it replaced did', () => {
     // `lifespan` is a declared *coverage* exclusion — no **v1** node carries it —
-    // and seventeen non-v1 nodes in the pre-authored grid do. The accessor must
-    // still find those seventeen, because the production helper it replaced
+    // and twenty non-v1 nodes in the pre-authored grid do (was 17; w20 added 3).
+    // The accessor must still find all of them, because the production helper it replaced
     // (`scenario`'s `nodesCarrying`) scanned every node and legality is decided
     // later, per node, by `permits()`. Filtering to v1 here would be a silent
     // behaviour change dressed up as a check.
@@ -146,7 +146,7 @@ describe('the accessor records the fetch, because that is the whole mechanism', 
       'test.sink',
       createConsumptionRecorder(),
     );
-    expect(found.size).toBe(17);
+    expect(found.size).toBe(20);
   });
 
   it('keeps two consumers of one primitive rather than deduplicating them away', () => {

@@ -64,16 +64,16 @@
       },
       "adds.scribeMonthsFinal": {
         "min": 640,
-        "max": 20837,
-        "sum": 308868,
+        "max": 20725,
+        "sum": 307524,
         "distinct": 3,
         "minAt": "scribeQueue=pinned-zero staffSize=0 stage=early",
         "maxAt": "scribeQueue=pinned-zero staffSize=0 stage=late"
       },
       "adds.scribeMonthsTotal": {
         "min": 68480,
-        "max": 2500440,
-        "sum": 36964320,
+        "max": 2487000,
+        "sum": 36803040,
         "distinct": 3,
         "minAt": "scribeQueue=pinned-zero staffSize=0 stage=early",
         "maxAt": "scribeQueue=pinned-zero staffSize=0 stage=late"
@@ -88,8 +88,8 @@
       },
       "adds.shelfReplacementCost": {
         "min": 0,
-        "max": 713728,
-        "sum": 10911744,
+        "max": 787052,
+        "sum": 11791632,
         "distinct": 3,
         "minAt": "scribeQueue=pinned-zero staffSize=0 stage=early",
         "maxAt": "scribeQueue=pinned-zero staffSize=0 stage=late"
@@ -169,8 +169,8 @@
       "contains.dominantCell": {
         "min": 0,
         "max": 66,
-        "sum": 684,
-        "distinct": 3,
+        "sum": 1062,
+        "distinct": 5,
         "minAt": "scribeQueue=pinned-zero staffSize=0 stage=early",
         "maxAt": "scribeQueue=pinned-zero staffSize=1 stage=early"
       },
@@ -208,8 +208,8 @@
       },
       "contains.profileCells": {
         "min": 0,
-        "max": 42,
-        "sum": 618,
+        "max": 36,
+        "sum": 552,
         "distinct": 12,
         "minAt": "scribeQueue=pinned-zero staffSize=0 stage=early",
         "maxAt": "scribeQueue=pinned-zero staffSize=16 stage=late"

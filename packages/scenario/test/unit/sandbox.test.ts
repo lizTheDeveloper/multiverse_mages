@@ -114,9 +114,9 @@ const ANCHOR_SEED = 20260813;
  * here so the size of the move is readable rather than only its fact.
  */
 const INERT_DEFAULT_HASHES: Readonly<Record<number, string>> = {
-  0: '8d469da1580f04dd',
-  200: 'c7f1cb92d46363cd',
-  500: '1f0ecc854f46abab',
+  0: '0ceb9bffbc4b20f4',
+  200: 'cc89d97858673b71',
+  500: '27c0db075e966bf3',
 };
 
 /** Generous, for the reason `balance-telemetry.test.ts` gives at length. */

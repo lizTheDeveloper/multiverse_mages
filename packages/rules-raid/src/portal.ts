@@ -53,7 +53,7 @@ import { COMBATANT_SOURCE_KIND, MAGE, RAID_SIDE, collectRecords, permits } from 
 import type { MagicGrid } from '@mm/rules-magic';
 import { costSplit, prepare } from '@mm/rules-magic';
 
-import { COMBAT_PRIMITIVES } from './arbitration.js';
+import { COMBAT_PRIMITIVES, enablesGate } from './arbitration.js';
 import type { EligibleMage, SideRoster } from './combatants.js';
 import {
   DEFENDING_ROLES,
@@ -153,7 +153,7 @@ function hasPortalKnowledge(options: {
       if (instance.mastery < CASTABLE_MASTERY) continue;
       const node = options.registry.node(instance.nodeId);
       if (node === undefined) continue;
-      if (node.effects.some((effect) => effect.primitive === COMBAT_PRIMITIVES.portal)) return true;
+      if (node.effects.some((effect) => enablesGate(effect, COMBAT_PRIMITIVES.portal))) return true;
     }
   }
   return false;

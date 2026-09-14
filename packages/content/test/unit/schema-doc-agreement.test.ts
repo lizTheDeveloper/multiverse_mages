@@ -252,6 +252,22 @@ const PENDING_DOC_AMENDMENTS: readonly PendingAmendment[] = [
       'the §2.7 territory example predates yieldPerLandUnit and is missing it, so it fails the ' +
       "loader's required-property check until §2.7 is amended",
   },
+  {
+    contentFile: 'node.json',
+    kind: 'undocumented',
+    at: 'antirequisites',
+    why:
+      'w20/compositional-content added optional antirequisites to node.json ahead of a ' +
+      'contracts.md §2.3 amendment',
+  },
+  {
+    contentFile: 'node.json',
+    kind: 'undocumented',
+    at: 'track',
+    why:
+      'w20/compositional-content added an optional track field to node.json ahead of a ' +
+      'contracts.md §2.3 amendment',
+  },
 ];
 
 function pendingFor(contentFile: ContentFileName, kind: PendingAmendment['kind']): string[] {
@@ -303,7 +319,9 @@ for (const section of SECTIONS) {
 describe('the §2 examples were really extracted, so the comparisons are not vacuous', () => {
   it('found one example per documented section', () => {
     expect(examples.size).toBe(SECTIONS.length);
-    expect(SECTIONS.length + 1).toBe(schemas.size);
+    // +3: primitive.json (no copyable example), track.json, ritual.json
+    // (both added by w20, contracts.md §2.12/§2.13 not yet written).
+    expect(SECTIONS.length + 3).toBe(schemas.size);
   });
 
   it('split §2.1 into a technique and a form, not one blurred record', () => {
