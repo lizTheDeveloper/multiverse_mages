@@ -820,14 +820,13 @@ html, body { height: 100%; overflow: hidden; }
 
   <!-- ======================== SPINE ======================== -->
   <div class="spine-area">
-    <canvas id="spine" width="1800" height="128" aria-label="Universe timeline — favor, cells, mages across 400 ticks"></canvas>
-    <div class="spine-controls">
-      <span class="legend-item"><i style="background:var(--god)"></i> favor</span>
-      <span class="legend-item"><i style="background:var(--mentem)"></i> cells</span>
-      <span class="legend-item"><i style="background:var(--warn)"></i> mages</span>
-      <span class="legend-item"><i style="background:var(--loss)"></i> extinction</span>
+    <div class="spine-controls" style="justify-content:center;gap:.5rem;padding:.5rem">
+      <button type="button" class="advance-btn" data-ticks="1">+1 month</button>
+      <button type="button" class="advance-btn" data-ticks="12">+1 year</button>
+      <button type="button" class="advance-btn" data-ticks="60">+5 years</button>
+      <button type="button" class="advance-btn" data-ticks="240">+20 years</button>
       <span class="spacer"></span>
-      <button type="button" id="play-btn" aria-pressed="false">play</button>
+      <button type="button" id="restart-btn">restart</button>
     </div>
   </div>
 </div>
@@ -843,53 +842,37 @@ import { mountThemeControl } from '../shared/theme.js';
 import { openSession, reconstructedCharge, units, mageVocabulary, candidateNamer } from '../shared/session.js';
 
 // ================================================================ BOOT
-const session = await openSession({ recording: '../session.json' }).catch((e) => {
+const session = await openSession({ live: '' }).catch((e) => {
   document.querySelector('.center').innerHTML =
     `<div style="padding:2rem;color:var(--loss);font:13px var(--mono)">
-      No recording loaded. Serve with <code>npx http-server . -p 8200</code> from the repo root
-      and open <code>/ui/app/</code>.<br><br>${e.message}</div>`;
+      No live universe. Start one with <code>npm run play</code> and open
+      <code>http://localhost:8300/ui/app/</code>.<br><br>${e.message}</div>`;
   return null;
 });
 if (!session) throw new Error('no session');
+const isLive = session.controls?.live === true;
 
 const el = (id) => document.getElementById(id);
-const STARTING_TECHNIQUES = new Set(['intellego', 'perdo', 'rego']);
-const STARTING_FORMS = new Set(['mentem', 'terram', 'limen', 'nomen']);
-const godRuleset = {
-  techniques: Object.fromEntries(session.content.techniques.map(t => [t.id, STARTING_TECHNIQUES.has(t.id)])),
-  forms: Object.fromEntries(session.content.forms.map(f => [f.id, STARTING_FORMS.has(f.id)])),
-};
+// Read the live ruleset from the current frame
+function liveRuleset() {
+  const f = session.last();
+  const rs = f.ruleset();
+  const techs = {};
+  for (const t of rs.techniques) techs[t.id] = t.permitted;
+  const frms = {};
+  for (const fm of rs.forms) frms[fm.id] = fm.permitted;
+  return { techniques: techs, forms: frms };
+}
+let godRuleset = liveRuleset();
 function godPermits(techId, formId) {
   return godRuleset.techniques[techId] && godRuleset.forms[formId];
 }
-const state = { at: 0, tab: 'grid', selectedCell: null, selectedAction: null, selectedMage: null, playing: true, hoverAxis: null };
+function refreshRuleset() { godRuleset = liveRuleset(); }
+const state = { tab: 'grid', selectedCell: null, selectedAction: null, selectedMage: null, hoverAxis: null, busy: false };
 
-// ================================================================ PRECOMPUTE SERIES
-const seriesData = Array.from({ length: session.frameCount }, (_, i) => {
-  const f = session.frame(i);
-  const buckets = f.mageBuckets();
-  return {
-    favor: f.resources().favor,
-    cells: f.knowledge().filter((c) => c.live).length,
-    mages: buckets.reduce((n, m) => n + m.living, 0),
-    alive: buckets.map((m) => m.living > 0),
-  };
-});
-const peak = {
-  favor: Math.max(1, ...seriesData.map((s) => s.favor)),
-  cells: Math.max(1, ...seriesData.map((s) => s.cells)),
-  mages: Math.max(1, ...seriesData.map((s) => s.mages)),
-};
-
-// Species endings — ticks at which a species count reaches zero for good
-const endings = [];
-for (let s = 0; s < 6; s++) {
-  for (let i = 1; i < seriesData.length; i++) {
-    if (seriesData[i - 1].alive[s] && !seriesData[i].alive[s]) {
-      endings.push({ at: i, name: session.frame(i).mageBuckets()[s].name });
-    }
-  }
-}
+// ================================================================ LIVE STATE
+// No precomputed series in live mode — we only have the current frame
+const peak = { favor: 100, cells: 70, mages: 100 };
 
 // ================================================================ THEME
 mountThemeControl(el('theme-host'), () => requestAnimationFrame(drawSpine));
@@ -967,7 +950,18 @@ for (const t of techniques) {
   btn.className = 'axis-toggle';
   btn.dataset.tid = t.id;
   btn.innerHTML = `<span class="dot"></span>${t.name}<span class="gloss">${t.gloss || ''}</span>`;
-  btn.addEventListener('click', () => { godRuleset.techniques[t.id] = !godRuleset.techniques[t.id]; paint(); });
+  btn.addEventListener('click', async () => {
+    if (state.busy) return;
+    const tBit = session.content.techniques.find(ct => ct.id === t.id)?.bit ?? techniques.indexOf(t);
+    const on = godRuleset.techniques[t.id];
+    state.busy = true;
+    try {
+      await session.submit(on ? 2 : 1, [tBit + 1]); // 1=permit, 2=forbid; 1-based
+      refreshRuleset();
+      paint();
+    } catch (e) { console.error('submit failed', e); }
+    state.busy = false;
+  });
   btn.addEventListener('mouseenter', () => { state.hoverAxis = { type: 'technique', id: t.id }; paintGrid(); });
   btn.addEventListener('mouseleave', () => { state.hoverAxis = null; paintGrid(); });
   techTogglesEl.append(btn);
@@ -978,89 +972,54 @@ for (const f of forms) {
   btn.dataset.fid = f.id;
   btn.style.color = godRuleset.forms[f.id] ? `var(--${f.id})` : '';
   btn.innerHTML = `<span class="dot"></span>${f.name}<span class="gloss">${f.gloss || ''}</span>`;
-  btn.addEventListener('click', () => { godRuleset.forms[f.id] = !godRuleset.forms[f.id]; paint(); });
+  btn.addEventListener('click', async () => {
+    if (state.busy) return;
+    const fBit = session.content.forms.find(cf => cf.id === f.id)?.bit ?? forms.indexOf(f);
+    const on = godRuleset.forms[f.id];
+    state.busy = true;
+    try {
+      await session.submit(on ? 4 : 3, [fBit + 1]); // 3=permit, 4=forbid; 1-based
+      refreshRuleset();
+      paint();
+    } catch (e) { console.error('submit failed', e); }
+    state.busy = false;
+  });
   btn.addEventListener('mouseenter', () => { state.hoverAxis = { type: 'form', id: f.id }; paintGrid(); });
   btn.addEventListener('mouseleave', () => { state.hoverAxis = null; paintGrid(); });
   formTogglesEl.append(btn);
 }
 
-// ================================================================ SPINE
-const canvas = el('spine');
-const ctx2d = canvas.getContext('2d');
-const css = (name) => getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+// ================================================================ ADVANCE CONTROLS (live mode)
+function drawSpine() {} // no-op in live mode
 
-function drawSpine() {
-  const w = canvas.width;
-  const h = canvas.height;
-  const pad = 8;
-  ctx2d.clearRect(0, 0, w, h);
-  const x = (i) => pad + (i / (seriesData.length - 1)) * (w - pad * 2);
-  const y = (v, max) => h - pad - (v / max) * (h - pad * 2);
-
-  // Species endings
-  ctx2d.strokeStyle = css('--loss');
-  ctx2d.lineWidth = 1.5;
-  ctx2d.setLineDash([3, 3]);
-  for (const e of endings) {
-    ctx2d.beginPath();
-    ctx2d.moveTo(x(e.at), pad);
-    ctx2d.lineTo(x(e.at), h - pad);
-    ctx2d.stroke();
-  }
-  ctx2d.setLineDash([]);
-
-  const line = (key, max, colour, lw) => {
-    ctx2d.strokeStyle = colour;
-    ctx2d.lineWidth = lw;
-    ctx2d.lineJoin = 'round';
-    ctx2d.beginPath();
-    seriesData.forEach((s, i) =>
-      i === 0 ? ctx2d.moveTo(x(i), y(s[key], max)) : ctx2d.lineTo(x(i), y(s[key], max)));
-    ctx2d.stroke();
-  };
-  line('favor', peak.favor, css('--god'), 2);
-  line('cells', peak.cells, css('--mentem'), 2);
-  line('mages', peak.mages, css('--warn'), 2);
-
-  // Plumb line
-  ctx2d.strokeStyle = css('--ink');
-  ctx2d.lineWidth = 1.5;
-  ctx2d.globalAlpha = 0.6;
-  ctx2d.beginPath();
-  ctx2d.moveTo(x(state.at), 0);
-  ctx2d.lineTo(x(state.at), h);
-  ctx2d.stroke();
-  ctx2d.globalAlpha = 1;
+for (const btn of document.querySelectorAll('.advance-btn')) {
+  btn.addEventListener('click', async () => {
+    if (state.busy) return;
+    state.busy = true;
+    btn.disabled = true;
+    try {
+      await session.advance(Number(btn.dataset.ticks));
+      refreshRuleset();
+      paint();
+    } catch (e) { console.error('advance failed', e); }
+    btn.disabled = false;
+    state.busy = false;
+  });
 }
 
-// Spine interaction
-const seek = (ev) => {
-  const r = canvas.getBoundingClientRect();
-  const frac = Math.max(0, Math.min(1, (ev.clientX - r.left) / r.width));
-  state.at = Math.round(frac * (session.frameCount - 1));
-  paint();
-};
-canvas.addEventListener('pointerdown', (ev) => {
-  canvas.setPointerCapture(ev.pointerId);
-  seek(ev);
-});
-canvas.addEventListener('pointermove', (ev) => {
-  if (ev.buttons === 1) seek(ev);
-});
-canvas.tabIndex = 0;
-canvas.addEventListener('keydown', (ev) => {
-  const step = ev.shiftKey ? 20 : 1;
-  if (ev.key === 'ArrowLeft') {
-    state.at = Math.max(0, state.at - step);
-    paint();
-    ev.preventDefault();
-  }
-  if (ev.key === 'ArrowRight') {
-    state.at = Math.min(session.frameCount - 1, state.at + step);
-    paint();
-    ev.preventDefault();
-  }
-});
+const restartBtn = el('restart-btn');
+if (restartBtn) {
+  restartBtn.addEventListener('click', async () => {
+    if (state.busy) return;
+    state.busy = true;
+    try {
+      await session.restart(Date.now(), 0);
+      refreshRuleset();
+      paint();
+    } catch (e) { console.error('restart failed', e); }
+    state.busy = false;
+  });
+}
 
 // Mage click delegation on university panel
 el('university-panel').addEventListener('click', (ev) => {
@@ -1072,23 +1031,32 @@ el('university-panel').addEventListener('click', (ev) => {
   paint();
 });
 
-// Play/pause
-el('play-btn').addEventListener('click', () => {
-  state.playing = !state.playing;
-  el('play-btn').setAttribute('aria-pressed', String(state.playing));
-  el('play-btn').textContent = state.playing ? 'pause' : 'play';
-  if (state.playing) animStep();
+// Click-to-execute on candidate items in the detail panel
+el('cell-detail').addEventListener('click', async (ev) => {
+  const item = ev.target.closest('.cand-item');
+  if (!item || state.busy) return;
+  const detEl = el('cell-detail');
+  const slot = Number(item.dataset.slot);
+  const cands = detEl._liveCands;
+  const aid = detEl._liveActionId;
+  if (!cands || !cands[slot]) return;
+  state.busy = true;
+  item.style.opacity = '0.5';
+  try {
+    await session.submit(aid, cands[slot].params);
+    refreshRuleset();
+    state.selectedAction = null;
+    paint();
+  } catch (e) {
+    console.error('action failed', e);
+    item.style.opacity = '1';
+  }
+  state.busy = false;
 });
-function animStep() {
-  if (!state.playing) return;
-  state.at = state.at >= session.frameCount - 1 ? 0 : state.at + 1;
-  paint();
-  setTimeout(() => requestAnimationFrame(animStep), 55);
-}
 
 // ================================================================ PAINT GRID (separated for hover preview)
 function paintGrid() {
-  const f = session.frame(state.at);
+  const f = session.last();
   const knowledgeCells = f.knowledge();
   const hover = state.hoverAxis;
   let liveCells = 0;
@@ -1105,7 +1073,7 @@ function paintGrid() {
   // Build grant target set if in grant mode
   const grantTargets = new Set();
   if (state.grantMode) {
-    const cd = session.frame(state.at).raw.candidateDetail;
+    const cd = session.last().raw.candidateDetail;
     const grants = cd?.byAction?.['8'] || [];
     const nodes = session.content.nodes;
     const cells = session.content.cells;
@@ -1151,13 +1119,13 @@ function paintGrid() {
 
 // ================================================================ PAINT
 function paint() {
-  const f = session.frame(state.at);
+  const f = session.last();
   const clock = f.clock();
 
   // Topbar
   el('tick-val').textContent = String(clock.worldTick);
-  el('tick-max').textContent = String(session.frameCount - 1);
-  el('status-badge').textContent = clock.engaged ? 'engagement' : f.status();
+  el('tick-max').textContent = String(session.provenance?.tickCap ?? '∞');
+  el('status-badge').textContent = clock.engaged ? 'engagement' : (isLive ? 'LIVE' : f.status());
 
   // Resources
   const r = f.resources();
@@ -1364,26 +1332,33 @@ function paintActionCandidates(f, detEl) {
   const roleNames = ['researcher', 'warden', 'professor', 'raider'];
   const nodeIndex = Object.fromEntries((session.content.nodes || []).map(n => [n.nodeIndex ?? n.id, n]));
 
+  // Store candidates for click-to-execute
+  detEl._liveCands = cands;
+  detEl._liveActionId = aid;
+
   let html = `<div class="cell-name">${action?.name || `Action ${aid}`}</div>`;
   html += `<div class="cell-knowledge">${cands.length} candidate${cands.length !== 1 ? 's' : ''} · costs ${action?.cost?.toLocaleString() || '?'} favor</div>`;
+  html += `<div style="font:9px var(--mono);color:var(--god);margin-bottom:.3rem">Click a candidate to execute</div>`;
 
   if (byAction.length > 0) {
     html += '<div style="display:flex;flex-direction:column;gap:3px;margin-top:.4rem">';
-    for (const c of byAction.slice(0, 20)) {
+    for (let ci = 0; ci < Math.min(byAction.length, 20); ci++) {
+      const c = byAction[ci];
       const mage = mages[String(c.handle)];
       const sp = mage ? (speciesNames[mage.speciesId] || `species${mage.speciesId}`) : '';
       const age = mage ? Math.floor(mage.ageTicks / 12) : 0;
       const role = mage ? (roleNames[mage.roleId] || '') : '';
+      const slotAttr = `class="cand-item" data-slot="${ci}" style="cursor:pointer;`;
 
       if (c.kind === 'mage-node') {
         const node = nodeIndex[c.nodeId] || session.content.nodes?.[c.nodeId];
         const nodeName = node?.id || `node-${c.nodeId}`;
-        html += `<div style="padding:.25rem .4rem;border:1px solid var(--edge);border-radius:3px;background:var(--plate);font:10px var(--mono)">
+        html += `<div ${slotAttr}padding:.25rem .4rem;border:1px solid var(--edge);border-radius:3px;background:var(--plate);font:10px var(--mono)">
           <div style="color:var(--god)">${nodeName}</div>
           <div style="color:var(--faint)">${sp} ${role}, ${age}y</div>
         </div>`;
       } else if (c.kind === 'mage') {
-        html += `<div style="padding:.25rem .4rem;border:1px solid var(--edge);border-radius:3px;background:var(--plate);font:10px var(--mono)">
+        html += `<div ${slotAttr}padding:.25rem .4rem;border:1px solid var(--edge);border-radius:3px;background:var(--plate);font:10px var(--mono)">
           <div style="color:var(--ink)">${sp} ${role}</div>
           <div style="color:var(--faint)">${age}y · knows ${mage?.nodesKnown ?? '?'} · tier ${mage?.deepestTier ?? '?'}</div>
         </div>`;
@@ -1449,7 +1424,7 @@ function paintActionCandidates(f, detEl) {
 
 // ================================================================ KNOWLEDGE TAB
 function renderKnowledge(f) {
-  f = f || session.frame(state.at);
+  f = f || session.last();
   const kCells = f.knowledge();
   const rules = f.ruleset();
   const onT = new Set(rules.techniques.filter((t) => t.permitted).map((t) => t.id));
@@ -1480,7 +1455,7 @@ function renderKnowledge(f) {
 
 // ================================================================ CONSOLE TAB
 function renderConsole(f) {
-  f = f || session.frame(state.at);
+  f = f || session.last();
   const r = f.resources();
   const inst = f.institutions();
   const clock = f.clock();
@@ -1787,8 +1762,5 @@ function paintGodPanel(f) {
 }
 
 // ================================================================ INITIAL PAINT
-el('play-btn').setAttribute('aria-pressed', 'true');
-el('play-btn').textContent = 'pause';
 paint();
-animStep();
 </script>
