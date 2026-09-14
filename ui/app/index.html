@@ -1203,8 +1203,10 @@ const el = (id) => document.getElementById(id);
 }
 // Read the live ruleset from the current frame
 function liveRuleset() {
-  const f = session.last();
-  const rs = f.ruleset();
+  const f = session.last?.() ?? session.frame?.(0);
+  if (!f) return { techniques: {}, forms: {} };
+  let rs;
+  try { rs = f.ruleset(); } catch { return { techniques: {}, forms: {} }; }
   const techs = {};
   for (const t of rs.techniques) techs[t.id] = t.permitted;
   const frms = {};
