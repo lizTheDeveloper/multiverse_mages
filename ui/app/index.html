@@ -617,6 +617,56 @@ html, body { height: 100%; overflow: hidden; }
   color: var(--faint);
 }
 
+/* Activity feed — the civilization's pulse */
+.feed-wrap {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: .5rem;
+  width: 100%;
+  min-height: 0;
+}
+.activity-feed {
+  background: var(--panel);
+  border: 1px solid var(--edge);
+  border-radius: 4px;
+  padding: .4rem .5rem;
+  max-height: 12rem;
+  overflow-y: auto;
+  scroll-behavior: smooth;
+}
+.activity-feed .feed-head {
+  font: 9.5px var(--mono);
+  letter-spacing: .11em;
+  text-transform: uppercase;
+  color: var(--faint);
+  margin-bottom: .3rem;
+  position: sticky;
+  top: 0;
+  background: var(--panel);
+  padding-bottom: .15rem;
+}
+.feed-entry {
+  font: italic 10.5px/1.5 var(--serif);
+  padding: .1rem 0;
+  border-bottom: 1px solid color-mix(in srgb, var(--edge) 50%, transparent);
+  display: flex;
+  gap: .35rem;
+  align-items: baseline;
+}
+.feed-entry:last-child { border-bottom: none; }
+.feed-entry .fe-icon { font-style: normal; flex-shrink: 0; width: 1.1rem; text-align: center; }
+.feed-entry .fe-tick { font: 8px var(--mono); color: var(--faint); margin-left: auto; flex-shrink: 0; font-style: normal; font-variant-numeric: tabular-nums; }
+.feed-entry.fe-discovery { color: var(--god); }
+.feed-entry.fe-death { color: var(--loss); }
+.feed-entry.fe-birth { color: var(--ok); }
+.feed-entry.fe-library { color: var(--warn); }
+.feed-entry.fe-scribed { color: var(--warn); }
+.feed-entry.fe-knowledge-loss { color: var(--loss); font-weight: 600; }
+.feed-entry.fe-action { color: var(--god); }
+@media (max-width: 56rem) {
+  .feed-wrap { grid-template-columns: 1fr; }
+}
+
 /* ---------- Knowledge tab ---------- */
 .knowledge-panel { gap: .35rem; }
 .know-row {
@@ -784,8 +834,13 @@ html, body { height: 100%; overflow: hidden; }
       <div class="grid-wrap">
         <div class="grid70" id="grid70"></div>
         <div class="grid-info" id="grid-info"></div>
-        <div class="cell-detail" id="cell-detail">
-          <span class="hint">Select a cell on the grid</span>
+        <div class="feed-wrap">
+          <div class="activity-feed" id="activity-feed">
+            <div class="feed-head">Activity</div>
+          </div>
+          <div class="cell-detail" id="cell-detail">
+            <span class="hint">Select a cell on the grid</span>
+          </div>
         </div>
       </div>
     </div>
@@ -1119,10 +1174,102 @@ function paintGrid() {
     + `<b>${nTech}</b> techniques, <b>${nForm}</b> forms permitted.`;
 }
 
+// ================================================================ ACTIVITY FEED
+const feedLog = [];
+const FEED_MAX = 100;
+let prevSnapshot = null;
+
+function snapshotFrame(f) {
+  const k = f.knowledge();
+  const b = f.mageBuckets();
+  const inst = f.institutions();
+  return {
+    tick: f.clock().worldTick,
+    cells: k.map(c => ({ t: c.technique, f: c.form, n: c.nodesKnown, tier: c.deepestTier, live: c.live })),
+    species: b.map(s => ({ name: s.name, living: s.living })),
+    library: inst.libraryDepth,
+    grimoires: inst.grimoires,
+    universities: inst.universities,
+  };
+}
+
+function diffAndLog(curr) {
+  const snap = snapshotFrame(curr);
+  if (!prevSnapshot) { prevSnapshot = snap; return; }
+  const prev = prevSnapshot;
+  const tick = snap.tick;
+
+  // Knowledge discoveries
+  for (let i = 0; i < snap.cells.length && i < prev.cells.length; i++) {
+    const c = snap.cells[i], p = prev.cells[i];
+    if (c.n > p.n) {
+      feedLog.push({ tick, type: 'discovery', text: `New node in ${c.t} ${c.f}`, count: c.n - p.n });
+    }
+    if (c.n < p.n) {
+      feedLog.push({ tick, type: 'knowledge-loss', text: `Knowledge lost in ${c.t} ${c.f}` });
+    }
+  }
+
+  // Population
+  for (let i = 0; i < snap.species.length && i < prev.species.length; i++) {
+    const c = snap.species[i], p = prev.species[i];
+    if (c.living < p.living) {
+      feedLog.push({ tick, type: 'death', text: `${p.living - c.living} ${c.name} mage${p.living - c.living > 1 ? 's' : ''} died` });
+    }
+    if (c.living > p.living) {
+      feedLog.push({ tick, type: 'birth', text: `${c.living - p.living} new ${c.name} mage${c.living - p.living > 1 ? 's' : ''}` });
+    }
+  }
+
+  // Library
+  if (snap.library > prev.library) {
+    feedLog.push({ tick, type: 'library', text: `Library grew to ${snap.library} nodes` });
+  }
+
+  // Grimoires
+  if (snap.grimoires > prev.grimoires) {
+    feedLog.push({ tick, type: 'scribed', text: `Grimoire written (${snap.grimoires} total)` });
+  }
+
+  // Universities
+  if (snap.universities > prev.universities) {
+    feedLog.push({ tick, type: 'action', text: `University founded (${snap.universities} total)` });
+  }
+
+  // Trim
+  while (feedLog.length > FEED_MAX) feedLog.shift();
+  prevSnapshot = snap;
+}
+
+const FEED_ICONS = {
+  discovery: '✦', death: '†', birth: '↑', library: '📖',
+  scribed: '✎', 'knowledge-loss': '✕', action: '⚡',
+};
+
+function renderFeed() {
+  const feedEl = el('activity-feed');
+  const entries = feedLog.slice(-30);
+  let html = '<div class="feed-head">Activity</div>';
+  if (entries.length === 0) {
+    html += '<div style="font:italic 10px var(--serif);color:var(--faint);padding:.3rem 0">Advance time to see your civilization grow.</div>';
+  } else {
+    for (const e of entries) {
+      const yr = Math.floor(e.tick / 12) + 1;
+      html += `<div class="feed-entry fe-${e.type}"><span class="fe-icon">${FEED_ICONS[e.type] || '·'}</span>${e.text}<span class="fe-tick">yr ${yr}</span></div>`;
+    }
+  }
+  feedEl.innerHTML = html;
+  feedEl.scrollTop = feedEl.scrollHeight;
+}
+
 // ================================================================ PAINT
 function paint() {
   const f = session.last();
   const clock = f.clock();
+
+  // Activity feed — diff this frame against the previous
+  diffAndLog(f);
+  renderFeed();
 
   // Topbar
   el('tick-val').textContent = String(clock.worldTick);
