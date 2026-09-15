@@ -5,6 +5,7 @@
  * SPDX-License-Identifier: AGPL-3.0-or-later
  */
 
+import process from 'node:process';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { Lobby } from '../dist/index.js';
