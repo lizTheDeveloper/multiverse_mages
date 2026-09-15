@@ -1,0 +1,32 @@
+{
+  "name": "@mm/universe-host",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Universe server for the MMO layer: one AgentSession on a wall clock, one god over WebSocket, one bubble coordinator over TCP.",
+  "license": "AGPL-3.0-or-later",
+  "author": "Ann Kelner",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist",
+    "bin"
+  ],
+  "engines": {
+    "node": ">=22.0.0 <23"
+  },
+  "dependencies": {
+    "@mm/agent-api": "*",
+    "@mm/scenario": "*",
+    "@mm/server": "*"
+  },
+  "scripts": {
+    "build": "tsc --build"
+  }
+}
