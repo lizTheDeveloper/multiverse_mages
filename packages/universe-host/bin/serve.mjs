@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-/* global console, setTimeout */
+/* global console */
 /*
  * Multiverse Mages — universe server binary.
  * Copyright (C) 2026 Ann Kelner
