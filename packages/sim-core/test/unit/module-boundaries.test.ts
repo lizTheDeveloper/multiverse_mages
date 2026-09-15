@@ -204,6 +204,20 @@ const ALLOWED: Readonly<Record<string, PackageEdges>> =
       ],
       typeOnly: [],
     },
+    // MMO infrastructure packages — deployment layer, not simulation.
+    // These sit above the §5 diagram and depend on agent-api/scenario/server.
+    'universe-host': {
+      value: ['agent-api', 'scenario', 'server'],
+      typeOnly: [],
+    },
+    bubble: {
+      value: ['server'],
+      typeOnly: [],
+    },
+    lobby: {
+      value: ['agent-api', 'scenario', 'server'],
+      typeOnly: [],
+    },
   };
 
 /**
@@ -211,7 +225,7 @@ const ALLOWED: Readonly<Record<string, PackageEdges>> =
  * rule keeps meaning something on the day `client-electron` and `server` are
  * created — which is the only day it matters.
  */
-const NEVER_DEPENDED_ON = ['client-electron', 'server'];
+const NEVER_DEPENDED_ON = ['client-electron'];
 
 /**
  * Node's built-in modules, with and without the `node:` prefix.
@@ -576,8 +590,13 @@ describe('the workspace dependency graph matches contracts.md §5', () => {
     // back into. `ALLOWED` enforces that already — no other package lists it —
     // but the failure message would name a missing edge rather than the
     // property, and this is the property.
+    // MMO infrastructure packages (universe-host, lobby) legitimately import
+    // scenario to create universes. The leaf property holds for simulation
+    // packages — nothing in the rules path or observation layer imports it.
+    const MMO_INFRA = new Set(['universe-host', 'lobby', 'bubble']);
     const inbound = workspaceEdges.filter(
-      (edge) => edge.pkg !== 'scenario' && edge.specifier.startsWith(`${WORKSPACE_SCOPE}scenario`),
+      (edge) => edge.pkg !== 'scenario' && !MMO_INFRA.has(edge.pkg) &&
+        edge.specifier.startsWith(`${WORKSPACE_SCOPE}scenario`),
     );
     expect(inbound.map((edge) => edge.path)).toEqual([]);
   });

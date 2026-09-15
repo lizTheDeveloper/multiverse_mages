@@ -1,0 +1,18 @@
+{
+  "name": "@mm/bubble",
+  "version": "0.9.0",
+  "private": true,
+  "description": "The bubble coordinator: groups universes into bounded neighbourhoods, routes portal targets, detects extinction and clear, and promotes winners up the tier ladder.",
+  "license": "AGPL-3.0-or-later",
+  "author": "Ann Kelner",
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc --build",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@mm/server": "*"
+  }
+}

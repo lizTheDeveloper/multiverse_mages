@@ -1,0 +1,23 @@
+# Multiverse Mages — MMO compose (v1: single process)
+# Copyright (C) 2026 Ann Kelner
+# SPDX-License-Identifier: AGPL-3.0-or-later
+#
+# For v1, the lobby spawns universe hosts and bubble coordinators
+# in-process. Cross-VM distribution is a later concern.
+#
+# Run with: docker compose -f deploy/mmo-compose.yml up -d --build
+
+services:
+  lobby:
+    build: ..
+    command: node packages/lobby/bin/lobby.mjs --port 8300 --bubble-size 4
+    ports:
+      - "8300:8300"
+    restart: unless-stopped
+    environment:
+      - NODE_ENV=production
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://localhost:8300/ui/app/').then(r => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))"]
+      interval: 30s
+      timeout: 5s
+      retries: 3

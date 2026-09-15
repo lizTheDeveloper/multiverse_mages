@@ -471,11 +471,14 @@ describe('every package under packages/ is on one side of the float ban', () => 
   /** The deliberate exclusions, with the reason each one is out in the config. */
   const FLOAT_PERMITTED = [
     'agent-api',
+    'bubble',
     'content',
     'gym-bridge',
+    'lobby',
     'mc-harness',
     'scenario',
     'server',
+    'universe-host',
   ];
 
   const packagesOnDisk = readdirSync(new URL('packages/', pathToFileURL(repoRoot)), {
