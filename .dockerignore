@@ -1,0 +1,9 @@
+.git
+.claude
+node_modules
+dist
+balance/out
+tools
+*.md
+!README.md
+!deploy/README.md
