@@ -204,6 +204,20 @@ const ALLOWED: Readonly<Record<string, PackageEdges>> =
       ],
       typeOnly: [],
     },
+    // MMO infrastructure packages — deployment layer, not simulation.
+    // These sit above the §5 diagram and depend on agent-api/scenario/server.
+    'universe-host': {
+      value: ['agent-api', 'scenario', 'server'],
+      typeOnly: [],
+    },
+    bubble: {
+      value: ['server'],
+      typeOnly: [],
+    },
+    lobby: {
+      value: ['agent-api', 'scenario', 'server'],
+      typeOnly: [],
+    },
   };
 
 /**
@@ -211,7 +225,7 @@ const ALLOWED: Readonly<Record<string, PackageEdges>> =
  * rule keeps meaning something on the day `client-electron` and `server` are
  * created — which is the only day it matters.
  */
-const NEVER_DEPENDED_ON = ['client-electron', 'server'];
+const NEVER_DEPENDED_ON = ['client-electron'];
 
 /**
  * Node's built-in modules, with and without the `node:` prefix.
