@@ -667,39 +667,24 @@ html, body { height: 100%; overflow: hidden; }
   .feed-wrap { grid-template-columns: 1fr; }
 }
 
-/* ---------- Knowledge tab ---------- */
-.knowledge-panel { gap: .35rem; }
-.know-row {
-  display: grid;
-  grid-template-columns: 1fr 3.5rem 3rem 3rem;
-  gap: .4rem;
-  align-items: center;
-  padding: .25rem .35rem;
-  background: var(--sunk);
-  border-radius: 2px;
-  font: 10px var(--mono);
+/* ---------- Knowledge tab (tech tree) ---------- */
+.knowledge-panel { position: relative; overflow: hidden; }
+.knowledge-panel canvas { display: block; width: 100%; height: 100%; cursor: grab; }
+.knowledge-panel canvas:active { cursor: grabbing; }
+.know-tooltip {
+  position: absolute; pointer-events: none; z-index: 10;
+  background: var(--plate); border: 1px solid var(--edge); border-radius: 4px;
+  padding: .3rem .5rem; font: 10px var(--mono); color: var(--ink);
+  max-width: 220px; box-shadow: 0 2px 8px rgba(0,0,0,.3);
 }
-.know-row .nm { color: var(--ink); }
-.know-row .nodes { color: var(--soft); font-variant-numeric: tabular-nums; text-align: right; }
-.know-row .tier { color: var(--faint); font-variant-numeric: tabular-nums; text-align: right; }
-.know-row .red { color: var(--faint); font-variant-numeric: tabular-nums; text-align: right; }
-.know-row[data-live="true"] .nm { font-weight: 500; }
-.know-row[data-live="false"] { opacity: .4; }
-.know-head {
-  display: grid;
-  grid-template-columns: 1fr 3.5rem 3rem 3rem;
-  gap: .4rem;
-  padding: .15rem .35rem;
-  font: 8.5px var(--mono);
-  color: var(--faint);
-  letter-spacing: .07em;
-  text-transform: uppercase;
-}
-.know-head span:not(:first-child) { text-align: right; }
+.know-tooltip .tt-name { font: italic 11px var(--serif); color: var(--god); margin-bottom: .15rem; }
+.know-tooltip .tt-cell { font: 9px var(--mono); color: var(--faint); }
+.know-tooltip .tt-gloss { font: 10px var(--sans); color: var(--soft); margin-top: .2rem; }
 .know-summary {
-  font: 10px var(--mono);
-  color: var(--faint);
-  padding: .25rem .35rem;
+  position: absolute; bottom: .5rem; left: .5rem;
+  font: 10px var(--mono); color: var(--faint);
+  background: color-mix(in srgb, var(--ground) 85%, transparent);
+  padding: .2rem .4rem; border-radius: 3px;
 }
 .know-summary b { color: var(--soft); }
 
@@ -971,7 +956,11 @@ html, body { height: 100%; overflow: hidden; }
       <canvas id="world-canvas" style="width:100%;height:100%;display:block"></canvas>
     </div>
     <div class="center-panel" id="panel-knowledge">
-      <div class="knowledge-panel" id="knowledge-list"></div>
+      <div class="knowledge-panel" id="knowledge-list">
+        <canvas id="tech-tree-canvas"></canvas>
+        <div class="know-tooltip" id="tt" hidden></div>
+        <div class="know-summary" id="know-summary"></div>
+      </div>
     </div>
     <div class="center-panel" id="panel-console">
       <div class="console-grid">
@@ -1025,15 +1014,43 @@ import { mountThemeControl } from '../shared/theme.js';
 import { openSession, reconstructedCharge, units, mageVocabulary, candidateNamer } from '../shared/session.js';
 
 // ================================================================ BOOT
-const session = await openSession({ live: '' }).catch((e) => {
+// Try the live play-server first (/live/session.json); fall back to static recording.
+const liveProbe = await fetch('/live/session.json').catch(() => null);
+const isLive = liveProbe?.ok === true;
+const sessionSource = isLive ? { recording: '/live/session.json' } : {};
+
+let session;
+try {
+  session = await openSession(sessionSource);
+} catch (e) {
   document.querySelector('.center').innerHTML =
     `<div style="padding:2rem;color:var(--loss);font:13px var(--mono)">
-      No live universe. Start one with <code>npm run play</code> and open
+      No universe. Start one with <code>npm run play</code> and open
       <code>http://localhost:8300/ui/app/</code>.<br><br>${e.message}</div>`;
-  return null;
-});
-if (!session) throw new Error('no session');
-const isLive = session.controls?.live === true;
+  throw new Error('no session');
+}
+
+// Live-server actions: submit, advance, restart, then reload the session.
+if (isLive) {
+  const post = async (path, body) => {
+    const res = await fetch(path, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    });
+    if (!res.ok) throw new Error(`${path} ${res.status}: ${await res.text()}`);
+  };
+  const reload = async () => {
+    const fresh = await openSession({ recording: '/live/session.json' });
+    for (const k of ['provenance','content','actionNames','frameCount','frame','last','actionCost','capabilities']) {
+      session[k] = fresh[k];
+    }
+  };
+  session.submit = async (kind, params) => { await post('/live/submit', { kind, params }); await reload(); };
+  session.advance = async (ticks) => { await post('/live/advance', { ticks }); await reload(); };
+  session.restart = async (seed, ticks) => { await post('/live/reset', { seed, ticks: ticks || 4000 }); await reload(); };
+  session.controls = { live: true };
+}
 
 const el = (id) => document.getElementById(id);
 
@@ -1143,11 +1160,12 @@ const el = (id) => document.getElementById(id);
 
   renderSetup();
 
-  // Skip setup with ?play in URL — deferred until godRuleset exists
-  if (location.search.includes('play')) {
+  // Skip setup with ?play in URL — go straight to the game
+  if (new URLSearchParams(location.search).has('play')) {
     el('setup-screen').hidden = true;
     el('app').hidden = false;
-    setTimeout(() => { try { refreshRuleset(); paint(); } catch(e) { console.warn('skip-setup deferred:', e.message); } }, 500);
+    // godRuleset may not exist yet; defer paint to after initialization
+    setTimeout(() => { try { refreshRuleset(); paint(); } catch(e) { console.warn('deferred paint:', e.message); } }, 200);
   }
 
   el('begin-btn').addEventListener('click', async () => {
@@ -1261,8 +1279,20 @@ for (const f of forms) {
   h.textContent = f.name;
   h.title = `Click to ${godRuleset.forms[f.id] ? 'forbid' : 'permit'} ${f.name}`;
   h.dataset.fid = f.id;
-  h.addEventListener('click', () => {
-    godRuleset.forms[f.id] = !godRuleset.forms[f.id];
+  h.addEventListener('click', async () => {
+    if (state.busy) return;
+    if (isLive) {
+      const fBit = session.content.forms.find(cf => cf.id === f.id)?.bit ?? forms.indexOf(f);
+      const on = godRuleset.forms[f.id];
+      state.busy = true;
+      try {
+        await session.submit(on ? 4 : 3, [fBit + 1]);
+        refreshRuleset();
+      } catch (e) { console.error('submit failed', e); }
+      state.busy = false;
+    } else {
+      godRuleset.forms[f.id] = !godRuleset.forms[f.id];
+    }
     paint();
   });
   gridEl.append(h);
@@ -1274,8 +1304,20 @@ for (const t of techniques) {
   rl.textContent = t.name;
   rl.title = `Click to ${godRuleset.techniques[t.id] ? 'forbid' : 'permit'} ${t.name}`;
   rl.dataset.tid = t.id;
-  rl.addEventListener('click', () => {
-    godRuleset.techniques[t.id] = !godRuleset.techniques[t.id];
+  rl.addEventListener('click', async () => {
+    if (state.busy) return;
+    if (isLive) {
+      const tBit = session.content.techniques.find(ct => ct.id === t.id)?.bit ?? techniques.indexOf(t);
+      const on = godRuleset.techniques[t.id];
+      state.busy = true;
+      try {
+        await session.submit(on ? 2 : 1, [tBit + 1]);
+        refreshRuleset();
+      } catch (e) { console.error('submit failed', e); }
+      state.busy = false;
+    } else {
+      godRuleset.techniques[t.id] = !godRuleset.techniques[t.id];
+    }
     paint();
   });
   gridEl.append(rl);
@@ -1871,35 +1913,241 @@ function paintActionCandidates(f, detEl) {
 }
 
 // ================================================================ KNOWLEDGE TAB
+// ================================================================ TECH TREE
+const ttCanvas = el('tech-tree-canvas');
+const ttCtx = ttCanvas.getContext('2d');
+const ttTip = el('tt');
+const ttState = { panX: 40, panY: 40, zoom: 1, dragging: false, lastX: 0, lastY: 0 };
+
+// Build the node layout once from content
+let ttNodes = null; // [{nodeId, id, name, cell, cellId, technique, form, tier, prereqs, x, y}]
+let ttNodeMap = null; // nodeId → index
+
+function buildTechTree() {
+  if (ttNodes) return;
+  const nodes = session.content.nodes;
+  const cells = session.content.cells;
+  if (!nodes || !cells) return;
+
+  const cellMap = {};
+  cells.forEach(c => { cellMap[c.cellId] = c; });
+
+  // Group nodes by cell, sort by tier within cell
+  const byCellTech = {}; // "technique" → [{cell, nodes}]
+  cells.forEach(c => {
+    const key = c.technique;
+    if (!byCellTech[key]) byCellTech[key] = [];
+    const cellNodes = nodes.filter(n => n.cellId === c.cellId).sort((a,b) => a.tier - b.tier);
+    byCellTech[key].push({ cell: c, nodes: cellNodes });
+  });
+
+  // Layout: X = tier * spacing, Y = cell group offset
+  const TIER_W = 120;
+  const NODE_H = 28;
+  const CELL_GAP = 16;
+  const TECH_GAP = 40;
+
+  ttNodes = [];
+  ttNodeMap = {};
+  let globalY = 0;
+  const techOrder = ['intellego','creo','muto','perdo','rego'];
+
+  for (const tech of techOrder) {
+    const cellGroups = (byCellTech[tech] || []).sort((a,b) => a.cell.form < b.cell.form ? -1 : 1);
+    for (const g of cellGroups) {
+      const tierSlots = {}; // tier → count within this cell at this tier
+      for (const n of g.nodes) {
+        const slot = tierSlots[n.tier] || 0;
+        tierSlots[n.tier] = slot + 1;
+        const x = (n.tier - 1) * TIER_W;
+        const y = globalY + slot * NODE_H;
+        const idx = ttNodes.length;
+        ttNodes.push({
+          nodeId: n.nodeId, id: n.id, name: n.name,
+          cellId: n.cellId, technique: g.cell.technique, form: g.cell.form,
+          tier: n.tier, prereqs: n.prerequisites || [],
+          x, y, gloss: n.gloss || ''
+        });
+        ttNodeMap[n.nodeId] = idx;
+      }
+      const maxSlots = Math.max(...Object.values(tierSlots), 1);
+      globalY += maxSlots * NODE_H + CELL_GAP;
+    }
+    globalY += TECH_GAP;
+  }
+}
+
+// Form hue lookup for canvas drawing
+const FORM_COLORS_LIGHT = {
+  animal:'#7A6B3E',aquam:'#2B5E7A',auram:'#6E7A82',corpus:'#7A3E3E',
+  herbam:'#3E6B2B',ignem:'#B85C2A',imaginem:'#6B5B8A',mentem:'#1B5745',
+  terram:'#7A4322',vim:'#5A5A6A',umbra:'#3A3A50',fatum:'#6A5A3A',
+  limen:'#4A3585',nomen:'#2C4C7C'
+};
+const FORM_COLORS_DARK = {
+  animal:'#B8A866',aquam:'#5BA0C8',auram:'#9AAAB4',corpus:'#C87070',
+  herbam:'#6BA84E',ignem:'#E89050',imaginem:'#A494C4',mentem:'#46A98D',
+  terram:'#CC8450',vim:'#9090A4',umbra:'#7070A0',fatum:'#B8A870',
+  limen:'#A692EC',nomen:'#7099D8'
+};
+
 function renderKnowledge(f) {
+  buildTechTree();
+  if (!ttNodes) return;
+
   f = f || session.last();
   const kCells = f.knowledge();
-  const rules = f.ruleset();
-  const onT = new Set(rules.techniques.filter((t) => t.permitted).map((t) => t.id));
-  const onF = new Set(rules.forms.filter((x) => x.permitted).map((x) => x.id));
+  const isDark = document.documentElement.getAttribute('data-theme') === 'dark' ||
+    (!document.documentElement.getAttribute('data-theme') && matchMedia('(prefers-color-scheme:dark)').matches);
+  const formColors = isDark ? FORM_COLORS_DARK : FORM_COLORS_LIGHT;
 
-  const listEl = el('knowledge-list');
-  let html = '<div class="know-head"><span>Cell</span><span>Nodes</span><span>Tier</span><span>Copies</span></div>';
+  // Build known set: a node is "known" if its cell has knowledge and its tier <= deepestTier
+  const cellKnowledge = {};
+  kCells.forEach(c => {
+    const key = `${c.technique}-${c.form}`;
+    cellKnowledge[key] = { known: c.live, deepest: c.deepestTier, nodesKnown: c.nodesKnown };
+  });
 
-  let totalLive = 0;
-  let totalN = 0;
-  const sorted = kCells.slice().sort((a, b) => b.nodesKnown - a.nodesKnown);
+  // Canvas sizing
+  const panel = el('knowledge-list');
+  const W = panel.clientWidth;
+  const H = panel.clientHeight;
+  const dpr = devicePixelRatio || 1;
+  ttCanvas.width = W * dpr;
+  ttCanvas.height = H * dpr;
+  ttCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
 
-  for (const c of sorted) {
-    const enabled = onT.has(c.technique) && onF.has(c.form);
-    if (!enabled && !c.live) continue;
-    html += `<div class="know-row" data-live="${c.live}">`
-      + `<span class="nm f-${c.form}">${c.technique} ${c.form}</span>`
-      + `<span class="nodes">${c.nodesKnown}</span>`
-      + `<span class="tier">${c.live ? `t${c.deepestTier}` : '-'}</span>`
-      + `<span class="red">${c.redundancy || '-'}</span>`
-      + `</div>`;
-    if (c.live) { totalLive++; totalN += c.nodesKnown; }
+  const ctx = ttCtx;
+  const bg = isDark ? '#0A0D0F' : '#E4DECD';
+  ctx.fillStyle = bg;
+  ctx.fillRect(0, 0, W, H);
+
+  ctx.save();
+  ctx.translate(ttState.panX, ttState.panY);
+  ctx.scale(ttState.zoom, ttState.zoom);
+
+  const R = 7;
+
+  // Draw edges first (behind nodes)
+  ctx.lineWidth = 1;
+  for (const n of ttNodes) {
+    for (const pid of n.prereqs) {
+      const pi = ttNodeMap[pid];
+      if (pi == null) continue;
+      const p = ttNodes[pi];
+      const crossCell = p.cellId !== n.cellId;
+      ctx.strokeStyle = crossCell
+        ? (isDark ? 'rgba(18,184,198,0.5)' : 'rgba(11,75,81,0.4)')
+        : (isDark ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.12)');
+      ctx.lineWidth = crossCell ? 1.5 : 0.8;
+      ctx.beginPath();
+      ctx.moveTo(p.x + R, p.y);
+      // Bezier curve for cross-cell, straight for same-cell
+      if (crossCell) {
+        const mx = (p.x + n.x) / 2;
+        ctx.bezierCurveTo(mx, p.y, mx, n.y, n.x - R, n.y);
+      } else {
+        ctx.lineTo(n.x - R, n.y);
+      }
+      ctx.stroke();
+    }
   }
 
-  html += `<div class="know-summary"><b>${totalLive}</b> cells live, <b>${totalN}</b> nodes known</div>`;
-  listEl.innerHTML = html;
+  // Draw nodes
+  for (const n of ttNodes) {
+    const ck = `${n.technique}-${n.form}`;
+    const cellK = cellKnowledge[ck];
+    const known = cellK && cellK.known && n.tier <= cellK.deepest;
+    const color = formColors[n.form] || '#888';
+
+    ctx.beginPath();
+    ctx.arc(n.x, n.y, R, 0, Math.PI * 2);
+
+    if (known) {
+      ctx.fillStyle = color;
+      ctx.fill();
+      ctx.strokeStyle = isDark ? 'rgba(255,255,255,0.3)' : 'rgba(0,0,0,0.2)';
+      ctx.lineWidth = 1;
+      ctx.stroke();
+    } else {
+      ctx.fillStyle = isDark ? 'rgba(30,35,40,0.6)' : 'rgba(200,195,185,0.5)';
+      ctx.fill();
+      ctx.strokeStyle = color;
+      ctx.globalAlpha = 0.35;
+      ctx.lineWidth = 1;
+      ctx.stroke();
+      ctx.globalAlpha = 1;
+    }
+
+    // Tier label inside for known nodes
+    if (known) {
+      ctx.fillStyle = isDark ? '#000' : '#fff';
+      ctx.font = '7px ' + getComputedStyle(document.body).getPropertyValue('--mono');
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(String(n.tier), n.x, n.y);
+    }
+  }
+
+  ctx.restore();
+
+  // Summary
+  let totalLive = 0, totalN = 0;
+  kCells.forEach(c => { if (c.live) { totalLive++; totalN += c.nodesKnown; } });
+  el('know-summary').innerHTML = `<b>${totalLive}</b> cells · <b>${totalN}</b> nodes known · scroll to zoom · drag to pan`;
 }
+
+// Tech tree pan/zoom
+ttCanvas.addEventListener('wheel', (e) => {
+  e.preventDefault();
+  const factor = e.deltaY < 0 ? 1.1 : 0.9;
+  const rect = ttCanvas.getBoundingClientRect();
+  const mx = e.clientX - rect.left;
+  const my = e.clientY - rect.top;
+  ttState.panX = mx - (mx - ttState.panX) * factor;
+  ttState.panY = my - (my - ttState.panY) * factor;
+  ttState.zoom *= factor;
+  ttState.zoom = Math.max(0.2, Math.min(4, ttState.zoom));
+  if (state.tab === 'knowledge') renderKnowledge();
+}, { passive: false });
+
+ttCanvas.addEventListener('pointerdown', (e) => {
+  ttState.dragging = true;
+  ttState.lastX = e.clientX;
+  ttState.lastY = e.clientY;
+  ttCanvas.setPointerCapture(e.pointerId);
+});
+ttCanvas.addEventListener('pointermove', (e) => {
+  if (ttState.dragging) {
+    ttState.panX += e.clientX - ttState.lastX;
+    ttState.panY += e.clientY - ttState.lastY;
+    ttState.lastX = e.clientX;
+    ttState.lastY = e.clientY;
+    if (state.tab === 'knowledge') renderKnowledge();
+  } else {
+    // Tooltip on hover
+    const rect = ttCanvas.getBoundingClientRect();
+    const mx = (e.clientX - rect.left - ttState.panX) / ttState.zoom;
+    const my = (e.clientY - rect.top - ttState.panY) / ttState.zoom;
+    let hit = null;
+    if (ttNodes) {
+      for (const n of ttNodes) {
+        if (Math.hypot(n.x - mx, n.y - my) < 10) { hit = n; break; }
+      }
+    }
+    if (hit) {
+      ttTip.hidden = false;
+      ttTip.style.left = (e.clientX - ttCanvas.getBoundingClientRect().left + 12) + 'px';
+      ttTip.style.top = (e.clientY - ttCanvas.getBoundingClientRect().top - 10) + 'px';
+      ttTip.innerHTML = `<div class="tt-name">${hit.name}</div>`
+        + `<div class="tt-cell">${hit.technique} ${hit.form} · tier ${hit.tier}</div>`
+        + (hit.gloss ? `<div class="tt-gloss">${hit.gloss}</div>` : '');
+    } else {
+      ttTip.hidden = true;
+    }
+  }
+});
+ttCanvas.addEventListener('pointerup', () => { ttState.dragging = false; });
 
 // ================================================================ CONSOLE TAB
 function renderConsole(f) {
@@ -2226,302 +2474,233 @@ const worldCanvas = el('world-canvas');
 const wCtx = worldCanvas.getContext('2d');
 const worldMages = [];
 let worldTick = -1;
-const worldMotion = { started: performance.now(), lastTick: -1, pulseAt: -10, pulseKind: 'quiet', discoveries: 0, books: 0 };
 
-const spriteImages = {};
-const speciesFiles = ['human', 'elf', 'dwarf', 'draconic', 'gnome', 'orc'];
-speciesFiles.forEach((name, i) => {
-  const img = new Image();
-  img.src = 'assets/' + name + '-south.png';
-  spriteImages[i] = img;
-});
-const uniImg = new Image(); uniImg.src = 'assets/university.png';
-const portalImg = new Image(); portalImg.src = 'assets/portal.png';
-
+const SPECIES_COLORS = ['#C85050','#C9A84C','#46A98D','#5BA0C8','#E8DCC8','#A08060'];
 const ROLE_LABELS = ['researcher','warden','professor','raider'];
 const TERRITORIES = [
-  {id:'river-delta', name:'THE RIVER DELTA', cx:.19, cy:.70, rx:.15, ry:.20, fill:'#779876', edge:'#4c745f'},
-  {id:'arable-lowland', name:'THE ARABLE LOWLAND', cx:.45, cy:.56, rx:.27, ry:.27, fill:'#9da66b', edge:'#72864d'},
-  {id:'upland-pasture', name:'UPLAND PASTURE', cx:.67, cy:.31, rx:.19, ry:.22, fill:'#a99d70', edge:'#786d51'},
-  {id:'deep-forest', name:'THE DEEP FOREST', cx:.20, cy:.27, rx:.17, ry:.25, fill:'#496e57', edge:'#315240'},
-  {id:'highland-waste', name:'THE HIGHLAND WASTE', cx:.86, cy:.32, rx:.16, ry:.30, fill:'#847d78', edge:'#635d5c'},
+  {id:'river-delta',    name:'River Delta',     x:.08, y:.55, w:.14, h:.25, fill:'#1a3a2a', accent:'#2a5a3a'},
+  {id:'arable-lowland', name:'Arable Lowland',  x:.24, y:.35, w:.30, h:.40, fill:'#1a2a1a', accent:'#2a3a2a'},
+  {id:'upland-pasture', name:'Upland Pasture',  x:.56, y:.25, w:.20, h:.30, fill:'#2a2a1a', accent:'#3a3a2a'},
+  {id:'deep-forest',    name:'Deep Forest',     x:.08, y:.15, w:.18, h:.35, fill:'#0a1a0a', accent:'#1a2a1a'},
+  {id:'highland-waste', name:'Highland Waste',  x:.78, y:.10, w:.18, h:.50, fill:'#1a1a1e', accent:'#2a2a30'},
 ];
-
-// A map must be stable: its variation is a property of the place, not of the frame.
-function mapNoise(n) { const x = Math.sin(n * 127.1 + 311.7) * 43758.5453123; return x - Math.floor(x); }
-function mapPoint(t, i, count, W, H, jitter = .13) {
-  const a = (i / count) * Math.PI * 2;
-  const r = 1 + (mapNoise(i + t.cx * 91 + t.cy * 37) - .5) * jitter;
-  return [W * (t.cx + Math.cos(a) * t.rx * r), H * (t.cy + Math.sin(a) * t.ry * r)];
-}
-function organicTerritory(ctx, t, W, H) {
-  const count = 18;
-  ctx.beginPath();
-  for (let i = 0; i <= count; i++) {
-    const p = mapPoint(t, i % count, count, W, H);
-    if (!i) ctx.moveTo(...p); else ctx.lineTo(...p);
-  }
-  ctx.closePath();
-}
 
 function resizeWorldCanvas() {
   const r = worldCanvas.parentElement.getBoundingClientRect();
-  const pw = Math.max(1, Math.floor(r.width * devicePixelRatio));
-  const ph = Math.max(1, Math.floor(r.height * devicePixelRatio));
-  if (worldCanvas.width !== pw || worldCanvas.height !== ph) {
-    worldCanvas.width = pw;
-    worldCanvas.height = ph;
-    wCtx.setTransform(devicePixelRatio, 0, 0, devicePixelRatio, 0, 0);
-  }
+  worldCanvas.width = r.width * devicePixelRatio;
+  worldCanvas.height = r.height * devicePixelRatio;
+  wCtx.scale(devicePixelRatio, devicePixelRatio);
   worldCanvas._w = r.width;
   worldCanvas._h = r.height;
-}
-
-function mapLabel(ctx, text, x, y, dark) {
-  ctx.save();
-  ctx.font = '600 8px ui-monospace, monospace';
-  ctx.textAlign = 'center';
-  ctx.letterSpacing = '1px';
-  ctx.fillStyle = dark ? 'rgba(239,232,205,.52)' : 'rgba(45,48,31,.57)';
-  ctx.fillText(text, x, y);
-  ctx.restore();
-}
-
-function mapRoad(ctx, points, dark) {
-  ctx.save();
-  ctx.lineCap = 'round'; ctx.lineJoin = 'round';
-  ctx.strokeStyle = dark ? 'rgba(34,28,21,.76)' : 'rgba(245,235,199,.78)';
-  ctx.lineWidth = 4; ctx.beginPath(); ctx.moveTo(...points[0]);
-  for (let i = 1; i < points.length; i++) ctx.lineTo(...points[i]); ctx.stroke();
-  ctx.strokeStyle = dark ? 'rgba(191,157,92,.42)' : 'rgba(120,91,48,.45)';
-  ctx.lineWidth = 1; ctx.setLineDash([2, 5]); ctx.beginPath(); ctx.moveTo(...points[0]);
-  for (let i = 1; i < points.length; i++) ctx.lineTo(...points[i]); ctx.stroke();
-  ctx.restore();
-}
-
-function worldFormLight(cells) {
-  const hues = {animal:'#b8a866', aquam:'#5ba0c8', auram:'#9aaab4', corpus:'#c87070', herbam:'#6ba84e', ignem:'#e89050', imaginem:'#a494c4', mentem:'#46a98d', terram:'#cc8450', vim:'#9090a4', umbra:'#7070a0', fatum:'#b8a870', limen:'#a692ec', nomen:'#7099d8'};
-  const known = new Map();
-  for (const cell of cells) if (cell.live) known.set(cell.form, (known.get(cell.form) || 0) + cell.nodesKnown);
-  const total = [...known.values()].reduce((sum, n) => sum + n, 0);
-  return [...known].map(([form, nodes]) => ({ hue: hues[form] || '#888', form, share: nodes / Math.max(1, total), nodes }));
-}
-
-function drawFlowingRiver(ctx, W, H, palette, time) {
-  ctx.save();
-  ctx.strokeStyle = palette.river; ctx.lineCap='round'; ctx.lineJoin='round'; ctx.lineWidth = 5;
-  ctx.beginPath();
-  ctx.moveTo(W*.74,H*.02); ctx.bezierCurveTo(W*.70,H*.22,W*.60,H*.36,W*.53,H*.47); ctx.bezierCurveTo(W*.43,H*.61,W*.38,H*.67,W*.28,H*.76); ctx.bezierCurveTo(W*.21,H*.82,W*.18,H*.94,W*.11,H*1.04);
-  ctx.stroke();
-  ctx.lineWidth=2.1;
-  [[.28,.76,.27,.98],[.25,.78,.17,.95],[.22,.80,.06,.88]].forEach(p=>{ctx.beginPath();ctx.moveTo(W*p[0],H*p[1]);ctx.quadraticCurveTo(W*p[0],H*(p[1]+.08),W*p[2],H*p[3]);ctx.stroke();});
-  // The moving flecks are deliberately sparse: a current, not a conveyor belt.
-  ctx.strokeStyle = 'rgba(224,246,232,.38)'; ctx.lineWidth = 1; ctx.setLineDash([2, 15]); ctx.lineDashOffset = -(time * 18);
-  ctx.beginPath(); ctx.moveTo(W*.74,H*.02); ctx.bezierCurveTo(W*.70,H*.22,W*.60,H*.36,W*.53,H*.47); ctx.bezierCurveTo(W*.43,H*.61,W*.38,H*.67,W*.28,H*.76); ctx.bezierCurveTo(W*.21,H*.82,W*.18,H*.94,W*.11,H*1.04); ctx.stroke();
-  ctx.restore();
 }
 
 function renderWorld(f) {
   resizeWorldCanvas();
   const W = worldCanvas._w, H = worldCanvas._h;
   if (!W || !H) return;
-  const time = (performance.now() - worldMotion.started) / 1000;
 
   const cd = f.raw.candidateDetail || {};
   const mageData = cd.mages ? Object.values(cd.mages) : [];
   const inst = f.institutions();
   const kCells = f.knowledge();
-  const formLight = worldFormLight(kCells);
 
   // Sync world mages with data
   if (f.raw.flow?.worldTick !== worldTick) {
     worldTick = f.raw.flow?.worldTick ?? 0;
-    const known = kCells.reduce((sum, c) => sum + c.nodesKnown, 0);
-    if (worldMotion.lastTick >= 0) {
-      worldMotion.pulseAt = time;
-      worldMotion.pulseKind = known > worldMotion.discoveries || inst.grimoires > worldMotion.books ? 'completion' : 'quiet';
-    }
-    worldMotion.lastTick = worldTick; worldMotion.discoveries = known; worldMotion.books = inst.grimoires;
     // Rebuild mage list
     while (worldMages.length > mageData.length) worldMages.pop();
     for (let i = 0; i < mageData.length; i++) {
       const m = mageData[i];
-      if (!worldMages[i]) worldMages[i] = {x: W*(.42 + (mapNoise(i*11)-.5)*.08), y:H*(.51 + (mapNoise(i*17)-.5)*.08), tx:0, ty:0, phase:mapNoise(i*29)*Math.PI*2};
+      if (!worldMages[i]) {
+        worldMages[i] = {x: W*.35 + Math.random()*W*.3, y: H*.35 + Math.random()*H*.3, tx:0, ty:0};
+      }
       const wm = worldMages[i];
       wm.species = m.speciesId;
       wm.role = m.roleId;
       wm.knows = m.nodesKnown;
       wm.age = Math.floor(m.ageTicks / 12);
       wm.goal = m.goal?.goalId ?? 0;
+      // Target position by role
+      const uniX = W * .42, uniY = H * .48;
+      if (m.roleId === 0) { wm.tx = uniX - 30 + (i%5)*12; wm.ty = uniY - 20 + Math.floor(i/5)*10; } // researcher near library
+      else if (m.roleId === 2) { wm.tx = uniX + 40 + (i%3)*15; wm.ty = uniY + 10 + Math.floor(i/3)*12; } // professor in hall
+      else if (m.roleId === 1) { // warden patrols
+        const a = (i * 1.2 + worldTick * 0.02);
+        wm.tx = uniX + Math.cos(a) * 80; wm.ty = uniY + Math.sin(a) * 60;
+      }
+      else if (m.roleId === 3) { wm.tx = W * .85; wm.ty = H * .55; } // raider near portal
+      else { wm.tx = uniX + (i%4)*10 - 20; wm.ty = uniY + 30; }
     }
   }
 
-  // A role is a pattern of life, not a parking space. These are visual-only paths;
-  // the snapshot remains the authority for where the civilization stands.
-  const uniX = W*.44, uniY=H*.50;
-  for (let i = 0; i < worldMages.length; i++) {
-    const wm = worldMages[i], cadence = time * .16 + wm.phase;
-    if (wm.role === 0) { // Researchers make the slow circuit: archive, desk, archive.
-      const deskX = uniX - 18 + (i % 5) * 9, deskY = uniY - 9 + (Math.floor(i / 5) % 3) * 8;
-      const library = Math.sin(cadence) > 0;
-      wm.tx = library ? uniX - 31 : deskX; wm.ty = library ? uniY - 19 + (i % 4) * 5 : deskY;
-    } else if (wm.role === 2) { // Professors are almost always in conversation.
-      const pair = i - (i % 2), a = cadence * .45 + pair;
-      wm.tx = uniX + 29 + (i % 2 ? 5 : -5) + Math.cos(a) * 5;
-      wm.ty = uniY + 6 + Math.sin(a) * 4;
-    } else if (wm.role === 1) { // Wardens take the long way around the precinct.
-      const a = time * .19 + i * 1.71; wm.tx = uniX + Math.cos(a) * 78; wm.ty = uniY + Math.sin(a) * 54;
-    } else if (wm.role === 3) { wm.tx = W*.84 + Math.cos(cadence)*8; wm.ty = H*.59 + Math.sin(cadence)*9; }
-    else { wm.tx = uniX - 4 + Math.cos(cadence) * 22; wm.ty = uniY + 25 + Math.sin(cadence * .7) * 8; }
-    wm.x += (wm.tx - wm.x) * .018;
-    wm.y += (wm.ty - wm.y) * .018;
+  // Interpolate positions
+  for (const wm of worldMages) {
+    wm.x += (wm.tx - wm.x) * 0.08;
+    wm.y += (wm.ty - wm.y) * 0.08;
+    // Add slight wander
+    wm.x += (Math.random() - 0.5) * 0.5;
+    wm.y += (Math.random() - 0.5) * 0.5;
   }
 
-  // Ground: a surveyed world on vellum, not tiles floating in a void.
+  // Clear
   const isDark = getComputedStyle(document.documentElement).getPropertyValue('--ground').trim().startsWith('#0');
-  const palette = isDark
-    ? {paper:'#101817', sea:'#142423', coast:'#466158', ink:'#e6dac0', rule:'rgba(232,216,181,.13)', river:'#4f99a0', road:'#c49c5c', academy:'#d6c99e', roof:'#714a3d'}
-    : {paper:'#dcd2b6', sea:'#b8cec7', coast:'#789887', ink:'#383629', rule:'rgba(61,58,40,.12)', river:'#4b8e9b', road:'#98713c', academy:'#e8dfc8', roof:'#8d5544'};
-  wCtx.fillStyle = palette.sea;
+  wCtx.fillStyle = isDark ? '#060a0c' : '#e8e4dc';
   wCtx.fillRect(0, 0, W, H);
-  const wash = wCtx.createRadialGradient(W*.48,H*.5,20,W*.48,H*.5,Math.max(W,H)*.78);
-  wash.addColorStop(0, isDark ? 'rgba(55,82,69,.30)' : 'rgba(255,249,222,.38)'); wash.addColorStop(1, 'rgba(0,0,0,.10)');
-  wCtx.fillStyle = wash; wCtx.fillRect(0,0,W,H);
-  // Knowledge is weather here. A form with deep roots in the library quietly
-  // recolours the country; Mentem, for example, makes the whole place think teal.
-  for (const light of formLight) {
-    const strength = Math.min(.18, .025 + Math.sqrt(light.share) * .11);
-    const glow = wCtx.createRadialGradient(uniX, uniY, 8, uniX, uniY, Math.max(W,H) * (.45 + light.share * .18));
-    glow.addColorStop(0, light.hue + Math.round(strength * 255).toString(16).padStart(2, '0'));
-    glow.addColorStop(1, light.hue + '00');
-    wCtx.fillStyle = glow; wCtx.fillRect(0, 0, W, H);
-  }
-  // Fine cartographic grain, deterministically placed.
-  wCtx.fillStyle = isDark ? 'rgba(236,223,184,.045)' : 'rgba(63,55,34,.055)';
-  for (let i=0;i<340;i++) wCtx.fillRect(mapNoise(i*3)*W, mapNoise(i*3+1)*H, 1, 1);
 
-  // Territory silhouettes and their hairline borders.
+  // Draw territories as landscape patches
   for (const t of TERRITORIES) {
+    const tx = t.x * W, ty = t.y * H, tw = t.w * W, th = t.h * H;
+    // Terrain shape — rounded organic patch
     wCtx.save();
-    organicTerritory(wCtx,t,W,H); wCtx.fillStyle = t.fill;
-    if (isDark) wCtx.globalAlpha=.60;
+    wCtx.beginPath();
+    const r = Math.min(tw, th) * 0.15;
+    wCtx.moveTo(tx + r, ty);
+    wCtx.lineTo(tx + tw - r, ty);
+    wCtx.quadraticCurveTo(tx + tw, ty, tx + tw, ty + r);
+    wCtx.lineTo(tx + tw, ty + th - r);
+    wCtx.quadraticCurveTo(tx + tw, ty + th, tx + tw - r, ty + th);
+    wCtx.lineTo(tx + r, ty + th);
+    wCtx.quadraticCurveTo(tx, ty + th, tx, ty + th - r);
+    wCtx.lineTo(tx, ty + r);
+    wCtx.quadraticCurveTo(tx, ty, tx + r, ty);
+    wCtx.closePath();
+    wCtx.fillStyle = isDark ? t.fill : t.accent;
     wCtx.fill();
-    wCtx.globalAlpha=1; organicTerritory(wCtx,t,W,H); wCtx.strokeStyle = isDark ? 'rgba(223,209,171,.34)' : 'rgba(55,70,48,.48)'; wCtx.lineWidth=1; wCtx.stroke();
+    // Territory name
+    wCtx.fillStyle = isDark ? 'rgba(255,255,255,0.15)' : 'rgba(0,0,0,0.12)';
+    wCtx.font = '9px system-ui, sans-serif';
+    wCtx.fillText(t.name, tx + 6, ty + th - 6);
     wCtx.restore();
   }
 
-  // Lowland fields: rounded, imperfect parcels in the most populous territory.
-  wCtx.save(); organicTerritory(wCtx,TERRITORIES[1],W,H); wCtx.clip();
-  for (let i=0;i<30;i++) { const x=W*(.24+mapNoise(i*7)*.43), y=H*(.34+mapNoise(i*7+2)*.43); const fw=12+mapNoise(i+81)*25, fh=7+mapNoise(i+93)*17;
-    wCtx.save(); wCtx.translate(x,y); wCtx.rotate((mapNoise(i+112)-.5)*.35); wCtx.fillStyle=['#c3bd79','#879b5e','#b6a86b','#d0c58b'][i%4]; wCtx.globalAlpha=isDark?.34:.48; wCtx.fillRect(-fw/2,-fh/2,fw,fh); wCtx.strokeStyle=palette.rule; wCtx.strokeRect(-fw/2,-fh/2,fw,fh);
-    wCtx.strokeStyle=isDark?'rgba(235,221,151,.20)':'rgba(78,93,44,.25)'; wCtx.lineWidth=.55;
-    for(let row=-fh/2+2;row<fh/2;row+=3){ wCtx.beginPath(); wCtx.moveTo(-fw/2+2,row); wCtx.lineTo(fw/2-2,row); wCtx.stroke(); } wCtx.restore(); }
-  wCtx.restore();
-
-  // Forest canopy: consistent clusters, with a few visible paths beneath.
+  // Draw trees in Deep Forest
   const forest = TERRITORIES[3];
-  for (let i = 0; i < 80; i++) {
-    const fx = W*(forest.cx-forest.rx*.78+mapNoise(i*5)*forest.rx*1.56), fy=H*(forest.cy-forest.ry*.82+mapNoise(i*5+1)*forest.ry*1.62);
-    const sway = Math.sin(time * .72 + i * 1.9) * (.45 + mapNoise(i+72) * .8);
-    wCtx.fillStyle = i%3 ? (isDark ? '#234a3a' : '#3e654a') : (isDark ? '#315c45' : '#547654');
+  for (let i = 0; i < 20; i++) {
+    const fx = (forest.x + Math.random() * forest.w) * W;
+    const fy = (forest.y + Math.random() * forest.h) * H;
+    wCtx.fillStyle = isDark ? '#0a2a0a' : '#3a5a3a';
     wCtx.beginPath();
-    const r=2+mapNoise(i+22)*3; wCtx.ellipse(fx+sway,fy,r,r*.86,0,0,Math.PI*2);
+    wCtx.moveTo(fx, fy - 6);
+    wCtx.lineTo(fx - 3, fy + 2);
+    wCtx.lineTo(fx + 3, fy + 2);
     wCtx.fill();
   }
 
-  // Uplands get long grazing contours; the highlands get dry stone and escarpments.
-  wCtx.strokeStyle=isDark?'rgba(232,218,177,.17)':'rgba(82,70,49,.24)'; wCtx.lineWidth=1;
-  for(let i=0;i<8;i++){ const y=H*(.18+i*.045); wCtx.beginPath(); wCtx.moveTo(W*.53,y); wCtx.quadraticCurveTo(W*.66,y-12,W*.80,y+3); wCtx.stroke(); }
+  // Draw rocks in Highland Waste
   const waste = TERRITORIES[4];
-  for (let i = 0; i < 34; i++) {
-    const rx=W*(waste.cx-waste.rx*.72+mapNoise(i*9)*waste.rx*1.45), ry=H*(waste.cy-waste.ry*.82+mapNoise(i*9+3)*waste.ry*1.62);
-    wCtx.fillStyle = isDark ? '#5f625f' : '#716b64';
+  for (let i = 0; i < 12; i++) {
+    const rx = (waste.x + 0.02 + Math.random() * (waste.w - 0.04)) * W;
+    const ry = (waste.y + 0.05 + Math.random() * (waste.h - 0.1)) * H;
+    wCtx.fillStyle = isDark ? '#2a2a30' : '#8a8a90';
     wCtx.beginPath();
-    wCtx.arc(rx, ry, 1 + mapNoise(i+33)*3, 0, Math.PI * 2);
+    wCtx.arc(rx, ry, 2 + Math.random() * 3, 0, Math.PI * 2);
     wCtx.fill();
   }
 
-  drawFlowingRiver(wCtx, W, H, palette, time);
+  // Draw river in delta
+  const delta = TERRITORIES[0];
+  wCtx.strokeStyle = isDark ? '#1a4a5a' : '#5a8aaa';
+  wCtx.lineWidth = 2;
+  wCtx.beginPath();
+  const rx0 = (delta.x + delta.w * 0.3) * W;
+  wCtx.moveTo(rx0, delta.y * H);
+  wCtx.quadraticCurveTo(rx0 + 10, (delta.y + delta.h * 0.5) * H, rx0 - 5, (delta.y + delta.h) * H);
+  wCtx.stroke();
 
-  // Names are restrained survey marks: present for orientation, never UI labels pasted on top.
-  mapLabel(wCtx,TERRITORIES[3].name,W*.18,H*.12,isDark);
-  mapLabel(wCtx,TERRITORIES[2].name,W*.66,H*.16,isDark);
-  mapLabel(wCtx,TERRITORIES[4].name,W*.86,H*.10,isDark);
-  mapLabel(wCtx,TERRITORIES[1].name,W*.43,H*.77,isDark);
-  mapLabel(wCtx,TERRITORIES[0].name,W*.16,H*.88,isDark);
-
-  mapRoad(wCtx, [[W*.11,H*.23],[W*.29,H*.34],[uniX,uniY],[W*.67,H*.31],[W*.84,H*.38]],isDark);
-  mapRoad(wCtx, [[uniX,uniY],[W*.29,H*.73],[W*.18,H*.79]],isDark);
-
-  // The academy sprite anchors the university compound at its established location.
-  const campus=52+Math.min(22,inst.capacity*.12);
-  const uniSize = 144;
-  wCtx.drawImage(uniImg, uniX - uniSize / 2, uniY - uniSize / 2, uniSize, uniSize);
-  mapLabel(wCtx,'THE UNIVERSITY',uniX,uniY+campus*.62,isDark);
+  // Draw university building
+  const uniX = W * .38, uniY = H * .40;
+  const uniW = 60 + inst.capacity * 0.3;
+  const uniH = 40 + inst.libraryDepth * 0.5;
+  // Walls
+  wCtx.fillStyle = isDark ? '#1a2028' : '#b0a898';
+  wCtx.fillRect(uniX, uniY, uniW, uniH);
+  // Roof
+  wCtx.fillStyle = isDark ? '#2a1a18' : '#8a6a58';
+  wCtx.beginPath();
+  wCtx.moveTo(uniX - 4, uniY);
+  wCtx.lineTo(uniX + uniW / 2, uniY - 18);
+  wCtx.lineTo(uniX + uniW + 4, uniY);
+  wCtx.fill();
+  // Windows — glow with knowledge hue
+  const windowCount = Math.min(6, Math.floor(inst.libraryDepth / 5));
+  for (let i = 0; i < windowCount; i++) {
+    const wx = uniX + 8 + i * (uniW - 16) / Math.max(windowCount, 1);
+    wCtx.fillStyle = isDark ? 'rgba(18,184,198,0.4)' : 'rgba(18,100,110,0.3)';
+    wCtx.fillRect(wx, uniY + 8, 6, 8);
+  }
+  // Library shelves inside
+  const shelfFill = Math.min(1, inst.grimoires / 200);
+  wCtx.fillStyle = isDark ? 'rgba(201,168,76,0.3)' : 'rgba(120,90,40,0.2)';
+  wCtx.fillRect(uniX + 4, uniY + uniH - 12, (uniW - 8) * shelfFill, 8);
+  // Label
+  wCtx.fillStyle = isDark ? 'rgba(255,255,255,0.3)' : 'rgba(0,0,0,0.25)';
+  wCtx.font = 'italic 10px Georgia, serif';
+  wCtx.fillText('The Academy', uniX + 4, uniY + uniH + 14);
 
   // Portal at the edge
-  const portalX = W * 0.88, portalY = H * 0.63;
-  const portalSize = 96;
-  wCtx.drawImage(portalImg, portalX - portalSize / 2, portalY - portalSize / 2, portalSize, portalSize);
+  wCtx.save();
+  const portalX = W * 0.88, portalY = H * 0.55;
+  const glow = isDark ? 'rgba(166,146,236,0.4)' : 'rgba(74,53,133,0.3)';
+  wCtx.fillStyle = glow;
+  wCtx.beginPath();
+  wCtx.ellipse(portalX, portalY, 8, 16, 0, 0, Math.PI * 2);
+  wCtx.fill();
+  wCtx.strokeStyle = isDark ? '#A692EC' : '#6a5a8a';
+  wCtx.lineWidth = 1.5;
+  wCtx.stroke();
   wCtx.fillStyle = isDark ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.15)';
-  wCtx.font = '8px ui-monospace, monospace'; wCtx.fillText('THE GATE', portalX - 17, portalY + 25);
-
-  // Knowledge circulates around the archive rather than sitting as an icon.
-  for (const light of formLight) for (let p = 0; p < Math.min(4, 1 + Math.ceil(light.nodes / 5)); p++) {
-    const orbit = time * (.18 + p * .025) + p * 2.1 + light.form.length;
-    const px = uniX + Math.sin(orbit) * (22 + p * 12), py = uniY + Math.cos(orbit * 1.19) * (15 + p * 9);
-    wCtx.fillStyle = light.hue; wCtx.globalAlpha = .12 + light.share * .28;
-    wCtx.beginPath(); wCtx.arc(px, py, 1 + light.share * 2, 0, Math.PI * 2); wCtx.fill();
-  }
-
-  // Professors (and active teachers) make a small, legible social geometry.
-  const conversants = worldMages.filter(wm => wm.role === 2 || wm.goal === 3 || wm.goal === 4);
-  wCtx.save(); wCtx.strokeStyle = isDark ? 'rgba(223,192,120,.34)' : 'rgba(111,82,39,.28)'; wCtx.lineWidth = .65;
-  for (let i = 0; i + 1 < conversants.length; i += 2) { wCtx.beginPath(); wCtx.moveTo(conversants[i].x, conversants[i].y); wCtx.lineTo(conversants[i+1].x, conversants[i+1].y); wCtx.stroke(); }
+  wCtx.font = '8px system-ui';
+  wCtx.fillText('portal', portalX - 10, portalY + 24);
   wCtx.restore();
 
-  // Draw species-specific mage sprites.
-  for (const wm of worldMages) {
-    const stride=Math.sin(time*1.8+wm.phase)*1.2;
-    wCtx.globalAlpha = .94;
-    const img = spriteImages[wm.species];
-    const spriteSize = [20, 20, 18, 28, 14, 22][wm.species] || 20;
-    wCtx.drawImage(img, wm.x - spriteSize / 2, wm.y + stride * .25 - spriteSize / 2, spriteSize, spriteSize);
-    // A working scriptorium catches the light like a pen stroke; research seeks upward.
-    if (wm.goal === 5) {
-      const ink = .25 + .55 * Math.max(0, Math.sin(time * 5 + wm.phase));
-      wCtx.strokeStyle = isDark ? `rgba(235,218,160,${ink})` : `rgba(92,66,33,${ink})`; wCtx.lineWidth = .7;
-      wCtx.beginPath(); wCtx.moveTo(wm.x-4,wm.y+2); wCtx.quadraticCurveTo(wm.x,wm.y-3,wm.x+4,wm.y+1); wCtx.stroke();
+  // Knowledge particles — faint dots drifting, colored by form
+  const formHues = ['#B8A866','#5BA0C8','#9AAAB4','#C87070','#6BA84E','#E89050','#A494C4','#46A98D','#CC8450','#9090A4','#7070A0','#B8A870','#A692EC','#7099D8'];
+  for (const c of kCells) {
+    if (!c.live || c.nodesKnown < 1) continue;
+    const formIdx = kCells.indexOf(c) % 14;
+    const hue = formHues[formIdx] || '#888';
+    for (let p = 0; p < Math.min(c.nodesKnown, 3); p++) {
+      const px = uniX + Math.sin(worldTick * 0.01 + formIdx + p * 2) * (40 + p * 20) + uniW / 2;
+      const py = uniY + Math.cos(worldTick * 0.013 + formIdx * 0.7 + p) * (30 + p * 15) + uniH / 2;
+      wCtx.fillStyle = hue;
+      wCtx.globalAlpha = 0.25;
+      wCtx.beginPath();
+      wCtx.arc(px, py, 1.5, 0, Math.PI * 2);
+      wCtx.fill();
+      wCtx.globalAlpha = 1;
     }
-    if ((wm.goal === 1 || wm.goal === 2) && Math.sin(time*2.7+wm.phase)>.76) {
+  }
+
+  // Draw mages as dots with trails
+  for (const wm of worldMages) {
+    const col = SPECIES_COLORS[wm.species] || '#aaa';
+    // Trail
+    wCtx.fillStyle = col;
+    wCtx.globalAlpha = 0.15;
+    wCtx.beginPath();
+    wCtx.arc(wm.x - (wm.tx - wm.x) * 0.3, wm.y - (wm.ty - wm.y) * 0.3, 2, 0, Math.PI * 2);
+    wCtx.fill();
+    // Body
+    wCtx.globalAlpha = 0.9;
+    const radius = wm.knows > 30 ? 4 : wm.knows > 10 ? 3.5 : 3;
+    wCtx.beginPath();
+    wCtx.arc(wm.x, wm.y, radius, 0, Math.PI * 2);
+    wCtx.fill();
+    // Research spark
+    if (wm.goal === 1 && Math.random() < 0.03) {
       wCtx.fillStyle = isDark ? '#12B8C6' : '#0a8a98';
       wCtx.globalAlpha = 0.7;
       wCtx.beginPath();
-      wCtx.arc(wm.x + Math.cos(time*1.4+wm.phase)*5, wm.y - 5, 1.2, 0, Math.PI * 2);
+      wCtx.arc(wm.x + (Math.random()-0.5)*8, wm.y - 6, 1.5, 0, Math.PI * 2);
       wCtx.fill();
     }
     wCtx.globalAlpha = 1;
   }
 
-  // Every advancing month has a visible downbeat. Real completions make it ring brighter.
-  const pulseAge = time - worldMotion.pulseAt;
-  if (pulseAge >= 0 && pulseAge < 1.2) {
-    const t = pulseAge / 1.2, r = 18 + t * Math.max(68, campus * 1.5);
-    const completion = worldMotion.pulseKind === 'completion';
-    wCtx.save(); wCtx.globalAlpha = (1-t) * (completion ? .34 : .15); wCtx.strokeStyle = completion ? '#d8c36d' : palette.river; wCtx.lineWidth = 1.2;
-    wCtx.beginPath(); wCtx.arc(uniX,uniY,r,0,Math.PI*2); wCtx.stroke(); wCtx.restore();
-    if (pulseAge < .32 && completion) {
-      wCtx.save(); wCtx.globalAlpha = (1-pulseAge/.32)*.8; wCtx.fillStyle='#f3d37a';
-      for(let i=0;i<8;i++){ const a=i*Math.PI/4+time; wCtx.fillRect(uniX+Math.cos(a)*22,uniY+Math.sin(a)*16,1.5,1.5); } wCtx.restore();
-    }
-  }
-
-  // Cartouche: the map's factual complement, without dashboard clutter.
-  wCtx.fillStyle=isDark?'rgba(10,16,15,.72)':'rgba(244,237,213,.72)'; wCtx.fillRect(10,H-31,Math.min(310,W-20),21);
-  wCtx.strokeStyle=isDark?'rgba(224,207,164,.30)':'rgba(71,60,39,.28)'; wCtx.strokeRect(10.5,H-30.5,Math.min(310,W-20)-1,20);
-  wCtx.fillStyle=palette.ink; wCtx.font='9px ui-monospace, monospace';
-  wCtx.fillText(`${worldMages.length} MAGES  ·  ${inst.libraryDepth} NODES  ·  ${inst.grimoires} GRIMOIRES`,17,H-17);
-  mapLabel(wCtx,'FIVE TERRITORIES · ONE CIVILIZATION',W*.50,H-12,isDark);
+  // Stats overlay bottom-left
+  wCtx.fillStyle = isDark ? 'rgba(255,255,255,0.35)' : 'rgba(0,0,0,0.3)';
+  wCtx.font = '10px ui-monospace, monospace';
+  wCtx.fillText(`${worldMages.length} mages · ${inst.libraryDepth} nodes in the library · ${inst.grimoires} grimoires`, 10, H - 10);
 
   // Animate
   if (state.tab === 'world') requestAnimationFrame(() => renderWorld(f));
