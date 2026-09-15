@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-/* eslint-env node */
+/* global console, setTimeout */
 /*
  * Multiverse Mages — universe server binary.
  * Copyright (C) 2026 Ann Kelner
