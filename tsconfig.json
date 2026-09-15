@@ -29,6 +29,7 @@
     { "path": "./packages/gym-bridge/tsconfig.test.json" },
     { "path": "./packages/server" },
     { "path": "./packages/server/tsconfig.test.json" },
+    { "path": "./packages/bubble" },
     { "path": "./tsconfig.tools.json" }
   ]
 }
