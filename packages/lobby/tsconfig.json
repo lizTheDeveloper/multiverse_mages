@@ -7,6 +7,7 @@
   "include": ["src"],
   "references": [
     { "path": "../agent-api" },
-    { "path": "../scenario" }
+    { "path": "../scenario" },
+    { "path": "../server" }
   ]
 }

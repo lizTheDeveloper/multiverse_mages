@@ -6,7 +6,13 @@
 
 import { createSession, type AgentSession } from '@mm/agent-api';
 import { referenceContent, referenceScenario } from '@mm/scenario';
+import type { UniverseRef as ServerUniverseRef } from '@mm/server';
 import { randomUUID } from 'node:crypto';
+
+export interface UniverseRef extends Omit<ServerUniverseRef, 'universeId' | 'bubbleId'> {
+  universeId: string;
+  bubbleId: string;
+}
 
 export interface UniverseConfig {
   species?: string;
@@ -15,12 +21,6 @@ export interface UniverseConfig {
   forms?: string[];
   seed?: number;
   tickCap?: number;
-}
-
-export interface UniverseRef {
-  universeId: string;
-  bubbleId: string;
-  prestige: number;
 }
 
 export class UniverseHost {

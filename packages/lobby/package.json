@@ -15,6 +15,7 @@
   },
   "dependencies": {
     "@mm/agent-api": "*",
-    "@mm/scenario": "*"
+    "@mm/scenario": "*",
+    "@mm/server": "*"
   }
 }
