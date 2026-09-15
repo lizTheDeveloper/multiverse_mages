@@ -590,8 +590,13 @@ describe('the workspace dependency graph matches contracts.md §5', () => {
     // back into. `ALLOWED` enforces that already — no other package lists it —
     // but the failure message would name a missing edge rather than the
     // property, and this is the property.
+    // MMO infrastructure packages (universe-host, lobby) legitimately import
+    // scenario to create universes. The leaf property holds for simulation
+    // packages — nothing in the rules path or observation layer imports it.
+    const MMO_INFRA = new Set(['universe-host', 'lobby', 'bubble']);
     const inbound = workspaceEdges.filter(
-      (edge) => edge.pkg !== 'scenario' && edge.specifier.startsWith(`${WORKSPACE_SCOPE}scenario`),
+      (edge) => edge.pkg !== 'scenario' && !MMO_INFRA.has(edge.pkg) &&
+        edge.specifier.startsWith(`${WORKSPACE_SCOPE}scenario`),
     );
     expect(inbound.map((edge) => edge.path)).toEqual([]);
   });
