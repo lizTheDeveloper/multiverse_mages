@@ -1,0 +1,9 @@
+# Multiverse Mages — reverse proxy
+# Put this on the Hetzner box alongside the docker-compose.
+# Caddy handles HTTPS automatically via Let's Encrypt.
+#
+# Adjust the domain to whatever subdomain is configured in DNS.
+
+mages.multiversestudios.xyz {
+    reverse_proxy play:8300
+}
