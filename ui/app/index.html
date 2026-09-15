@@ -1,0 +1,2532 @@
+<!doctype html>
+<!--
+  Multiverse Mages — the game.
+  Copyright (C) 2026 Ann Kelner
+  SPDX-License-Identifier: AGPL-3.0-or-later
+
+  A unified interface composed from the eighteen prototype studies. The grid is
+  the central object. Everything else orbits it: the sidebar for resources and
+  roster, the spine for the timeline, panels for detail.
+
+  Fed from session.js over a 400-tick recorded run. No rules computed here;
+  contracts section 5 says the client decodes. The one exception is
+  reconstructedCharge, which is named after what it does wrong.
+
+  Serve with `npm run ui`, then open /ui/app/.
+-->
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Multiverse Mages</title>
+<link rel="stylesheet" href="../shared/theme.css">
+
+<style>
+/* ================================================================ LAYOUT */
+
+html, body { height: 100%; overflow: hidden; }
+
+.app {
+  display: grid;
+  grid-template-columns: 15rem 1fr 16rem;
+  grid-template-rows: auto 1fr auto;
+  grid-template-areas:
+    "topbar topbar topbar"
+    "left   center right"
+    "spine  spine  spine";
+  height: 100vh;
+  overflow: hidden;
+}
+@media (max-width: 72rem) {
+  .app { grid-template-columns: 13rem 1fr 14rem; }
+}
+@media (max-width: 56rem) {
+  .app {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto auto 1fr auto;
+    grid-template-areas:
+      "topbar"
+      "mobiletabs"
+      "center"
+      "spine";
+  }
+  .sidebar-left, .sidebar-right { display: none !important; }
+}
+
+/* ================================================================ TOPBAR */
+
+.topbar {
+  grid-area: topbar;
+  display: flex;
+  align-items: center;
+  gap: .5rem;
+  padding: .35rem .7rem;
+  background: var(--plate);
+  border-bottom: 1px solid var(--edge);
+  min-height: 2.2rem;
+  flex-wrap: wrap;
+}
+.topbar .title {
+  font: 400 .95rem var(--serif);
+  letter-spacing: -.01em;
+  color: var(--god);
+}
+.topbar .sep { color: var(--edge); font-size: .7rem; }
+.topbar .tab {
+  font: 9.5px var(--mono);
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  padding: .25rem .45rem;
+  border: 1px solid transparent;
+  border-radius: 3px;
+  background: transparent;
+  color: var(--faint);
+  cursor: pointer;
+}
+.topbar .tab:hover { color: var(--soft); }
+.topbar .tab[aria-pressed="true"] {
+  color: var(--ctl-charged-fg);
+  background: var(--ctl-charged-bg);
+  border-color: var(--ctl-charged-border);
+}
+.topbar .spacer { flex: 1; }
+.topbar .tick-display {
+  font: 400 1.05rem var(--serif);
+  font-variant-numeric: tabular-nums;
+  color: var(--ink);
+}
+.topbar .tick-label {
+  font: 9px var(--mono);
+  color: var(--faint);
+  letter-spacing: .07em;
+  text-transform: uppercase;
+}
+.topbar .status-badge {
+  font: 9px var(--mono);
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  padding: .12rem .35rem;
+  border: 1px solid var(--edge);
+  border-radius: 2px;
+  color: var(--soft);
+}
+
+/* ================================================================ SIDEBARS */
+
+.sidebar-left {
+  grid-area: left;
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+  border-right: 1px solid var(--edge);
+  background: var(--panel);
+}
+.sidebar-right {
+  grid-area: right;
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+  border-left: 1px solid var(--edge);
+  background: var(--panel);
+}
+
+.sb-section {
+  padding: .5rem .55rem;
+  border-bottom: 1px solid var(--edge);
+}
+.sb-head {
+  font: 9.5px var(--mono);
+  letter-spacing: .11em;
+  text-transform: uppercase;
+  color: var(--faint);
+  margin-bottom: .35rem;
+  display: flex;
+  align-items: baseline;
+  gap: .35rem;
+}
+.sb-head .v {
+  margin-left: auto;
+  font-variant-numeric: tabular-nums;
+  color: var(--soft);
+}
+
+/* Resources */
+.res-row {
+  display: grid;
+  grid-template-columns: 4.2rem 1fr 2.6rem;
+  gap: .25rem;
+  align-items: center;
+  margin-bottom: .2rem;
+  font: 10px var(--mono);
+}
+.res-row .k {
+  color: var(--faint);
+  letter-spacing: .05em;
+  text-transform: uppercase;
+}
+.res-track {
+  height: 4px;
+  border-radius: 2px;
+  background: var(--sunk);
+  position: relative;
+  overflow: hidden;
+}
+.res-track i {
+  position: absolute;
+  inset: 0 auto 0 0;
+  background: var(--god);
+  border-radius: 2px;
+  box-shadow: var(--glow-soft);
+}
+.res-row .v {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  color: var(--ink);
+}
+
+/* Institutions */
+.inst-row {
+  display: flex;
+  justify-content: space-between;
+  font: 10px var(--mono);
+  color: var(--soft);
+  margin-bottom: .12rem;
+}
+.inst-row .v { color: var(--ink); font-variant-numeric: tabular-nums; }
+
+/* Mage species roster */
+.species-row {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: .25rem;
+  align-items: center;
+  padding: .15rem 0;
+  font: 10px var(--mono);
+}
+.species-row .name { color: var(--soft); }
+.species-row .count { color: var(--ink); font-variant-numeric: tabular-nums; }
+.species-row[data-dead="true"] .name { color: var(--loss); text-decoration: line-through; }
+.species-row[data-dead="true"] .count { color: var(--loss); }
+
+/* Tier grid (mini) */
+.tier-grid {
+  display: grid;
+  grid-template-columns: 3.5rem repeat(8, 1fr);
+  gap: 1px;
+  font: 8px var(--mono);
+  margin-top: .25rem;
+}
+.tier-grid .h { color: var(--faint); text-align: center; }
+.tier-grid .rl {
+  color: var(--faint);
+  text-align: right;
+  padding-right: .2rem;
+  align-self: center;
+}
+.tier-grid .tc {
+  text-align: center;
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+  background: var(--sunk);
+  border-radius: 1px;
+  padding: 1px 0;
+}
+.tier-grid .tc[data-n="0"] { color: transparent; background: transparent; }
+
+/* Axis toggles — the god's 19 switches */
+.axis-toggles { display: flex; flex-direction: column; gap: 2px; }
+.axis-toggle {
+  display: flex; align-items: center; gap: .4rem;
+  padding: .3rem .45rem;
+  border: 1px solid var(--ctl-latent-border);
+  border-radius: 3px;
+  background: var(--ctl-latent-bg);
+  color: var(--ctl-latent-fg);
+  font: 11px var(--mono);
+  cursor: pointer;
+  transition: all 120ms ease;
+  user-select: none;
+}
+.axis-toggle:hover { border-color: var(--god); }
+.axis-toggle:focus-visible { outline: 2px solid var(--god); outline-offset: 1px; }
+.axis-toggle[data-on="true"] {
+  background: var(--ctl-charged-bg);
+  color: var(--ctl-charged-fg);
+  border-color: var(--ctl-charged-border);
+  box-shadow: var(--glow-soft);
+}
+.axis-toggle .dot {
+  width: 7px; height: 7px; border-radius: 50%;
+  background: currentColor; flex-shrink: 0;
+  transition: transform 120ms ease;
+}
+.axis-toggle[data-on="true"] .dot { transform: scale(1.3); }
+.axis-toggle .gloss {
+  font: italic 9px var(--serif);
+  color: var(--faint);
+  margin-left: auto;
+}
+.axis-toggle[data-on="true"] .gloss { color: color-mix(in srgb, var(--ctl-charged-fg) 60%, transparent); }
+
+/* God actions — tiered intervention buttons */
+.god-actions { display: flex; flex-direction: column; gap: 2px; }
+.god-action {
+  display: flex; align-items: center; gap: .35rem;
+  padding: .35rem .5rem;
+  border: 1px solid var(--edge);
+  border-radius: 4px;
+  background: var(--sunk);
+  color: var(--soft);
+  font: 10.5px var(--mono);
+  cursor: pointer;
+  transition: all 120ms ease;
+  user-select: none;
+}
+.god-action:hover { border-color: var(--god); background: color-mix(in srgb, var(--god) 6%, var(--sunk)); }
+.god-action:focus-visible { outline: 2px solid var(--god); outline-offset: 1px; }
+.god-action .cost {
+  margin-left: auto;
+  font-variant-numeric: tabular-nums;
+  font-size: 9px;
+  color: var(--faint);
+}
+.god-action[data-state="legal"] {
+  border-color: color-mix(in srgb, var(--god) 40%, var(--edge));
+  color: var(--god);
+}
+.god-action[data-state="legal"] .cost { color: var(--god); }
+.god-action[data-state="legal"]:hover {
+  background: color-mix(in srgb, var(--god) 8%, transparent);
+  box-shadow: var(--glow-soft);
+}
+.god-action[data-state="unaffordable"] {
+  color: var(--faint);
+  border-style: dotted;
+}
+.god-action[data-state="unaffordable"] .cost { color: var(--loss); }
+.god-action[data-state="denied"] {
+  color: color-mix(in srgb, var(--faint) 50%, transparent);
+  border-color: transparent;
+  cursor: default;
+}
+.god-action.tier4 {
+  border-width: 2px;
+  font-weight: 600;
+  letter-spacing: .04em;
+}
+.god-action.tier4[data-state="legal"] {
+  border-color: var(--loss);
+  color: var(--loss);
+}
+.god-action .cand-badge {
+  font: 700 8px var(--mono);
+  background: var(--god);
+  color: var(--ground);
+  padding: 1px 4px;
+  border-radius: 6px;
+  margin-left: auto;
+}
+.god-action[data-state="denied"] .cand-badge { background: var(--edge); color: var(--faint); }
+.god-action[data-state="unaffordable"] .cand-badge { background: color-mix(in srgb, var(--loss) 40%, var(--sunk)); }
+.cand-item:hover { border-color: var(--god) !important; box-shadow: var(--glow-soft); }
+.cand-item:active { opacity: 0.6; }
+.god-action.active-grant {
+  background: color-mix(in srgb, var(--god) 12%, transparent);
+  box-shadow: var(--glow-charged);
+  animation: god-pulse 1.5s ease-in-out infinite;
+}
+@keyframes god-pulse {
+  0%, 100% { box-shadow: var(--glow-soft); }
+  50% { box-shadow: var(--glow-charged); }
+}
+
+/* Edict slots */
+.edict-slots { display: flex; flex-wrap: wrap; gap: 3px; }
+.edict-slot {
+  flex: 1 0 calc(50% - 2px);
+  min-width: 0;
+  padding: .2rem .3rem;
+  border: 1px dashed var(--edge);
+  border-radius: 3px;
+  font: 8px var(--mono);
+  color: var(--faint);
+  text-align: center;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+}
+.edict-slot[data-kind="dispensation"] {
+  border-style: solid;
+  border-color: var(--disp, var(--ok));
+  color: var(--disp, var(--ok));
+}
+.edict-slot[data-kind="interdiction"] {
+  border-style: solid;
+  border-color: var(--inter, var(--loss));
+  color: var(--inter, var(--loss));
+}
+
+/* University card */
+.uni-card {
+  padding: .4rem;
+  border: 1px solid var(--edge);
+  border-radius: 3px;
+  background: var(--plate);
+}
+.uni-card .uni-name {
+  font: italic 11px var(--serif);
+  color: var(--ink);
+  margin-bottom: .25rem;
+}
+.uni-stat {
+  display: flex; justify-content: space-between;
+  font: 9px var(--mono); color: var(--soft);
+  padding: .1rem 0;
+}
+.uni-stat .v { color: var(--ink); font-variant-numeric: tabular-nums; }
+.uni-bar {
+  height: 4px; border-radius: 2px; background: var(--sunk);
+  overflow: hidden; margin: .2rem 0;
+}
+.uni-bar i { display: block; height: 100%; border-radius: 2px; }
+
+/* Economy breakdown */
+.econ-row {
+  display: flex; justify-content: space-between;
+  font: 9px var(--mono); color: var(--soft);
+  padding: .12rem 0;
+}
+.econ-row .v { color: var(--ink); font-variant-numeric: tabular-nums; }
+.econ-row .label-dot {
+  display: inline-block; width: 5px; height: 5px;
+  border-radius: 50%; margin-right: .3rem; vertical-align: middle;
+}
+.econ-section-label {
+  font: 8px var(--mono);
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  color: var(--faint);
+  margin-top: .3rem;
+  margin-bottom: .1rem;
+  padding-bottom: .1rem;
+  border-bottom: 1px solid var(--edge);
+}
+
+/* Ghost preview: cells that would light up on hover */
+.grid70 .c[data-grant-target="true"] {
+  border-color: var(--god) !important;
+  box-shadow: 0 0 18px -2px var(--god), inset 0 0 8px -4px var(--god) !important;
+  opacity: 1 !important;
+  animation: grant-pulse 1.5s ease-in-out infinite;
+}
+@keyframes grant-pulse {
+  0%, 100% { box-shadow: 0 0 12px -2px var(--god); }
+  50% { box-shadow: 0 0 22px -1px var(--god), inset 0 0 10px -4px var(--god); }
+}
+.grid70 .c[data-ghost="true"] {
+  border-color: color-mix(in srgb, currentColor 40%, transparent);
+  background: color-mix(in srgb, currentColor 10%, transparent);
+  border-style: dashed;
+  opacity: 0.7;
+}
+
+/* ================================================================ CENTER */
+
+.center {
+  grid-area: center;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.center-panel {
+  display: none;
+  flex: 1;
+  overflow: auto;
+  padding: .7rem;
+}
+.center-panel.active {
+  display: flex;
+  flex-direction: column;
+}
+
+/* ---------- Grid tab ---------- */
+.grid-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: .5rem;
+  flex: 1;
+}
+
+.grid70 {
+  display: grid;
+  grid-template-columns: 4.5rem repeat(14, 1fr);
+  gap: 3px;
+  font: 10px var(--mono);
+  width: 100%;
+}
+.grid70 .h-base {
+  letter-spacing: .04em;
+  text-transform: uppercase;
+  writing-mode: vertical-rl;
+  transform: rotate(180deg);
+  justify-self: center;
+  padding-bottom: .2rem;
+  font-size: 9px;
+  font-weight: 500;
+}
+.grid70 .rl {
+  color: var(--faint);
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  align-self: center;
+  text-align: right;
+  padding-right: .4rem;
+  font-size: 10px;
+  cursor: pointer;
+  transition: color 150ms ease, text-shadow 150ms ease;
+  user-select: none;
+}
+.grid70 .rl:hover { color: var(--god); }
+.grid70 .rl[data-on="true"] {
+  color: var(--god);
+  text-shadow: 0 0 8px color-mix(in srgb, var(--god) 40%, transparent);
+}
+.grid70 .h {
+  cursor: pointer;
+  transition: color 150ms ease, text-shadow 150ms ease;
+  user-select: none;
+}
+.grid70 .h:hover { text-shadow: 0 0 8px currentColor; }
+.grid70 .h[data-on="true"] { text-shadow: 0 0 10px currentColor; }
+.grid70 .h[data-on="false"] { opacity: 0.35; }
+.grid70 .c {
+  aspect-ratio: 1;
+  border-radius: 4px;
+  border: 1.5px solid color-mix(in srgb, currentColor 20%, var(--edge));
+  background: color-mix(in srgb, currentColor 6%, var(--sunk));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 150ms ease;
+  position: relative;
+  min-height: 2.8rem;
+}
+.grid70 .c:hover {
+  border-color: currentColor;
+  background: color-mix(in srgb, currentColor 16%, var(--sunk));
+  box-shadow: 0 0 12px -3px currentColor;
+}
+.grid70 .c[data-off="true"] {
+  border: 1px solid transparent;
+  background: color-mix(in srgb, var(--sunk) 40%, transparent);
+  color: var(--faint);
+  opacity: 0.3;
+  cursor: default;
+}
+.grid70 .c[data-off="true"]:hover {
+  opacity: 0.5;
+  box-shadow: none;
+}
+.grid70 .c[data-off="false"] {
+  border-color: color-mix(in srgb, currentColor 35%, var(--edge));
+  background: color-mix(in srgb, currentColor 10%, var(--panel));
+}
+.grid70 .c[data-live="true"] {
+  border-color: currentColor;
+  background: color-mix(in srgb, currentColor 28%, var(--panel));
+  box-shadow: 0 0 16px -3px currentColor;
+  font-weight: 700;
+}
+.grid70 .c[data-sel="true"] {
+  box-shadow: var(--glow-strong);
+  outline: 1px solid var(--god);
+  outline-offset: 1px;
+}
+.grid70 .c .edict-mark {
+  font-size: 7px;
+  position: absolute;
+  top: -1px;
+  right: 1px;
+  line-height: 1;
+}
+.f-animal   { color: var(--animal); }
+.f-aquam    { color: var(--aquam); }
+.f-auram    { color: var(--auram); }
+.f-corpus   { color: var(--corpus); }
+.f-herbam   { color: var(--herbam); }
+.f-ignem    { color: var(--ignem); }
+.f-imaginem { color: var(--imaginem); }
+.f-mentem   { color: var(--mentem); }
+.f-terram   { color: var(--terram); }
+.f-vim      { color: var(--vim); }
+.f-umbra    { color: var(--umbra); }
+.f-fatum    { color: var(--fatum); }
+.f-limen    { color: var(--limen); }
+.f-nomen    { color: var(--nomen); }
+
+.grid-info {
+  font: 10px var(--mono);
+  color: var(--faint);
+  text-align: center;
+  line-height: 1.5;
+}
+.grid-info b { color: var(--soft); }
+
+/* Cell detail panel */
+.cell-detail {
+  background: var(--panel);
+  border: 1px solid var(--edge);
+  border-radius: 4px;
+  padding: .5rem .65rem;
+  width: 100%;
+}
+.cell-detail .cell-name {
+  font: 400 1rem var(--serif);
+  margin: 0 0 .1rem;
+}
+.cell-detail .cell-classical {
+  font: 9.5px var(--mono);
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  color: var(--warn);
+  margin-bottom: .25rem;
+}
+.cell-detail .cell-verdict {
+  font: 9.5px var(--mono);
+  letter-spacing: .05em;
+  padding: .15rem .35rem;
+  border-radius: 2px;
+  display: inline-block;
+}
+.cell-detail .cell-verdict[data-on="true"] {
+  background: color-mix(in srgb, var(--ok) 22%, transparent);
+  color: var(--ok);
+}
+.cell-detail .cell-verdict[data-on="false"] {
+  background: color-mix(in srgb, var(--loss) 18%, transparent);
+  color: var(--loss);
+}
+.cell-detail .cell-knowledge {
+  font: 10px var(--mono);
+  color: var(--soft);
+  margin-top: .2rem;
+}
+.cell-detail .hint {
+  font: 10px var(--mono);
+  color: var(--faint);
+}
+
+/* Activity feed — the civilization's pulse */
+.feed-wrap {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: .5rem;
+  width: 100%;
+  min-height: 0;
+}
+.activity-feed {
+  background: var(--panel);
+  border: 1px solid var(--edge);
+  border-radius: 4px;
+  padding: .4rem .5rem;
+  max-height: 12rem;
+  overflow-y: auto;
+  scroll-behavior: smooth;
+}
+.activity-feed .feed-head {
+  font: 9.5px var(--mono);
+  letter-spacing: .11em;
+  text-transform: uppercase;
+  color: var(--faint);
+  margin-bottom: .3rem;
+  position: sticky;
+  top: 0;
+  background: var(--panel);
+  padding-bottom: .15rem;
+}
+.feed-entry {
+  font: italic 10.5px/1.5 var(--serif);
+  padding: .1rem 0;
+  border-bottom: 1px solid color-mix(in srgb, var(--edge) 50%, transparent);
+  display: flex;
+  gap: .35rem;
+  align-items: baseline;
+}
+.feed-entry:last-child { border-bottom: none; }
+.feed-entry .fe-icon { font-style: normal; flex-shrink: 0; width: 1.1rem; text-align: center; }
+.feed-entry .fe-tick { font: 8px var(--mono); color: var(--faint); margin-left: auto; flex-shrink: 0; font-style: normal; font-variant-numeric: tabular-nums; }
+.feed-entry.fe-discovery { color: var(--god); }
+.feed-entry.fe-death { color: var(--loss); }
+.feed-entry.fe-birth { color: var(--ok); }
+.feed-entry.fe-library { color: var(--warn); }
+.feed-entry.fe-scribed { color: var(--warn); }
+.feed-entry.fe-knowledge-loss { color: var(--loss); font-weight: 600; }
+.feed-entry.fe-action { color: var(--god); }
+@media (max-width: 56rem) {
+  .feed-wrap { grid-template-columns: 1fr; }
+}
+
+/* ---------- Knowledge tab ---------- */
+.knowledge-panel { gap: .35rem; }
+.know-row {
+  display: grid;
+  grid-template-columns: 1fr 3.5rem 3rem 3rem;
+  gap: .4rem;
+  align-items: center;
+  padding: .25rem .35rem;
+  background: var(--sunk);
+  border-radius: 2px;
+  font: 10px var(--mono);
+}
+.know-row .nm { color: var(--ink); }
+.know-row .nodes { color: var(--soft); font-variant-numeric: tabular-nums; text-align: right; }
+.know-row .tier { color: var(--faint); font-variant-numeric: tabular-nums; text-align: right; }
+.know-row .red { color: var(--faint); font-variant-numeric: tabular-nums; text-align: right; }
+.know-row[data-live="true"] .nm { font-weight: 500; }
+.know-row[data-live="false"] { opacity: .4; }
+.know-head {
+  display: grid;
+  grid-template-columns: 1fr 3.5rem 3rem 3rem;
+  gap: .4rem;
+  padding: .15rem .35rem;
+  font: 8.5px var(--mono);
+  color: var(--faint);
+  letter-spacing: .07em;
+  text-transform: uppercase;
+}
+.know-head span:not(:first-child) { text-align: right; }
+.know-summary {
+  font: 10px var(--mono);
+  color: var(--faint);
+  padding: .25rem .35rem;
+}
+.know-summary b { color: var(--soft); }
+
+/* ---------- Console tab ---------- */
+.console-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: .6rem;
+  flex: 1;
+  min-height: 0;
+}
+@media (max-width: 56rem) {
+  .console-grid { grid-template-columns: 1fr; }
+}
+.console-col {
+  overflow-y: auto;
+  font: 10px var(--mono);
+  color: var(--soft);
+  line-height: 1.65;
+}
+.console-col .label {
+  color: var(--faint);
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  display: inline-block;
+  min-width: 5.5rem;
+}
+.console-col .section-head {
+  font: 9px var(--mono);
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  color: var(--god);
+  margin-top: .4rem;
+  margin-bottom: .15rem;
+  padding-bottom: .1rem;
+  border-bottom: 1px solid var(--edge);
+}
+
+/* ================================================================ SPINE */
+
+.spine-area {
+  grid-area: spine;
+  border-top: 1px solid var(--edge);
+  background: var(--panel);
+}
+.spine-area canvas {
+  display: block;
+  width: 100%;
+  height: 64px;
+  cursor: ew-resize;
+}
+.spine-controls {
+  display: flex;
+  gap: .4rem;
+  align-items: center;
+  padding: .2rem .5rem;
+  border-top: 1px solid var(--edge);
+  font: 9px var(--mono);
+  color: var(--faint);
+}
+.spine-controls .legend-item { display: flex; align-items: center; gap: .2rem; }
+.spine-controls .legend-item i { width: 10px; height: 2px; display: block; }
+.spine-controls .spacer { flex: 1; }
+.spine-controls button {
+  font: 9px var(--mono);
+  padding: .15rem .4rem;
+  border: 1px solid var(--edge);
+  border-radius: 2px;
+  background: transparent;
+  color: var(--soft);
+  cursor: pointer;
+}
+.spine-controls button[aria-pressed="true"] {
+  border-color: var(--god);
+  color: var(--god);
+}
+
+/* ================================================================ ANIMATIONS */
+@keyframes mm-flare {
+  from { box-shadow: var(--glow-strong); }
+  to   { box-shadow: var(--glow-charged); }
+}
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation: none !important; transition: none !important; }
+}
+
+/* ================================================================ SETUP SCREEN */
+.setup-screen {
+  position: fixed; inset: 0; z-index: 1000;
+  background: var(--ground);
+  display: flex; flex-direction: column; align-items: center;
+  overflow-y: auto; padding: 2rem 1rem 4rem;
+}
+.setup-screen[hidden] { display: none !important; }
+.setup-title {
+  font: 400 2rem var(--serif); color: var(--ink);
+  margin-bottom: .3rem; text-align: center;
+}
+.setup-subtitle {
+  font: italic 1rem var(--serif); color: var(--god);
+  margin-bottom: 2rem; text-align: center;
+}
+.setup-section-label {
+  font: 9.5px var(--mono); letter-spacing: .14em;
+  text-transform: uppercase; color: var(--faint);
+  margin: 1.5rem 0 .6rem; width: 100%; max-width: 56rem;
+  padding-bottom: .3rem; border-bottom: 1px solid var(--edge);
+}
+.species-grid {
+  display: grid; grid-template-columns: repeat(3, 1fr);
+  gap: .6rem; max-width: 56rem; width: 100%;
+}
+@media (max-width: 48rem) { .species-grid { grid-template-columns: repeat(2, 1fr); } }
+.species-card {
+  padding: .8rem 1rem; border: 2px solid var(--edge);
+  border-radius: 6px; background: var(--panel);
+  cursor: pointer; transition: all 150ms ease;
+}
+.species-card:hover { border-color: var(--god); }
+.species-card.selected { border-color: var(--god); box-shadow: var(--glow-charged); background: var(--ctl-charged-bg); }
+.species-card .sp-name { font: 600 1.1rem var(--serif); color: var(--ink); }
+.species-card .sp-life { font: 10px var(--mono); color: var(--god); margin-top: .15rem; }
+.species-card .sp-desc { font: italic 12px var(--serif); color: var(--soft); margin-top: .3rem; line-height: 1.4; }
+.species-card.selected .sp-name { color: var(--ctl-charged-fg); }
+
+.tradition-row { display: flex; gap: .6rem; max-width: 56rem; width: 100%; flex-wrap: wrap; }
+.tradition-card {
+  flex: 1; min-width: 14rem;
+  padding: .7rem .9rem; border: 2px solid var(--edge);
+  border-radius: 6px; background: var(--panel);
+  cursor: pointer; transition: all 150ms ease;
+}
+.tradition-card:hover { border-color: var(--god); }
+.tradition-card.selected { border-color: var(--god); box-shadow: var(--glow-charged); background: var(--ctl-charged-bg); }
+.tradition-card .tr-name { font: 600 .95rem var(--serif); color: var(--ink); }
+.tradition-card .tr-desc { font: italic 11px var(--serif); color: var(--soft); margin-top: .2rem; line-height: 1.4; }
+.tradition-card.selected .tr-name { color: var(--ctl-charged-fg); }
+
+.setup-magic {
+  max-width: 56rem; width: 100%;
+  display: grid; grid-template-columns: 10rem 1fr; gap: 1rem;
+  align-items: start;
+}
+.setup-toggles { display: flex; flex-direction: column; gap: 3px; }
+.setup-toggle {
+  display: flex; align-items: center; gap: .4rem;
+  padding: .25rem .4rem; border: 1px solid var(--edge);
+  border-radius: 3px; background: transparent;
+  color: var(--faint); font: 11px var(--mono);
+  cursor: pointer; transition: all 120ms ease;
+}
+.setup-toggle:hover { border-color: var(--god); }
+.setup-toggle.on { background: var(--ctl-charged-bg); color: var(--ctl-charged-fg); border-color: var(--ctl-charged-border); box-shadow: var(--glow-soft); }
+.setup-toggle .dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+
+.setup-grid-preview {
+  display: grid; grid-template-columns: 2.5rem repeat(14, 1fr); gap: 2px;
+  font: 8px var(--mono);
+}
+.setup-grid-preview .rl { text-align: right; padding-right: .3rem; color: var(--faint); align-self: center; }
+.setup-grid-preview .rl.on { color: var(--ctl-charged-fg); }
+.setup-grid-preview .h { text-align: center; color: var(--faint); writing-mode: vertical-lr; transform: rotate(180deg); height: 3rem; display: flex; align-items: center; justify-content: center; }
+.setup-grid-preview .h.on { color: var(--ctl-charged-fg); text-shadow: 0 0 6px currentColor; }
+.setup-grid-preview .gc {
+  aspect-ratio: 1; border-radius: 2px;
+  background: var(--sunk); border: 1px solid transparent;
+}
+.setup-grid-preview .gc.on {
+  background: color-mix(in srgb, var(--form-hue, var(--god)) 18%, var(--panel));
+  border-color: color-mix(in srgb, var(--form-hue, var(--god)) 40%, transparent);
+  box-shadow: 0 0 8px -3px var(--form-hue, var(--god));
+}
+
+.begin-btn {
+  margin-top: 2rem; padding: .7rem 3rem;
+  font: 600 1rem var(--serif); letter-spacing: .02em;
+  color: var(--ground); background: var(--god);
+  border: none; border-radius: 4px; cursor: pointer;
+  box-shadow: 0 0 20px -4px var(--god);
+  transition: all 150ms ease;
+}
+.begin-btn:hover { box-shadow: 0 0 30px -2px var(--god); transform: scale(1.03); }
+.begin-btn:focus-visible { outline: 2px solid var(--god); outline-offset: 3px; }
+.begin-btn:disabled { opacity: .4; cursor: default; box-shadow: none; transform: none; }
+</style>
+
+<div class="setup-screen" id="setup-screen">
+  <h1 class="setup-title">Multiverse Mages</h1>
+  <p class="setup-subtitle">You are the god of magic for a universe.</p>
+
+  <div class="setup-section-label">Choose your people</div>
+  <div class="species-grid" id="species-grid"></div>
+
+  <div class="setup-section-label">Choose your tradition</div>
+  <div class="tradition-row" id="tradition-row"></div>
+
+  <div class="setup-section-label">Choose your starting magic — 2 techniques, 2 forms</div>
+  <div class="setup-magic">
+    <div>
+      <div class="setup-toggles" id="setup-techniques"></div>
+      <div style="height:.6rem"></div>
+      <div class="setup-toggles" id="setup-forms"></div>
+    </div>
+    <div class="setup-grid-preview" id="setup-grid-preview"></div>
+  </div>
+
+  <button class="begin-btn" id="begin-btn" disabled>Begin</button>
+</div>
+
+<div class="app" id="app" hidden>
+  <!-- ======================== TOP BAR ======================== -->
+  <div class="topbar">
+    <span class="title">Multiverse Mages</span>
+    <span class="sep">|</span>
+    <button class="tab" data-tab="grid" aria-pressed="true">Grid</button>
+    <button class="tab" data-tab="world" aria-pressed="false">World</button>
+    <button class="tab" data-tab="knowledge" aria-pressed="false">Knowledge</button>
+    <button class="tab" data-tab="console" aria-pressed="false">Console</button>
+    <span class="spacer"></span>
+    <span class="tick-label">tick</span>
+    <span class="tick-display" id="tick-val">--</span>
+    <span class="tick-label">of</span>
+    <span class="tick-display" id="tick-max">--</span>
+    <span class="status-badge" id="status-badge">--</span>
+    <span id="theme-host"></span>
+  </div>
+
+  <!-- ======================== LEFT SIDEBAR ======================== -->
+  <div class="sidebar-left">
+    <div class="sb-section">
+      <div class="sb-head">Techniques</div>
+      <div id="tech-toggles" class="axis-toggles"></div>
+    </div>
+    <div class="sb-section">
+      <div class="sb-head">Forms</div>
+      <div id="form-toggles" class="axis-toggles"></div>
+    </div>
+    <div class="sb-section">
+      <div class="sb-head">Edicts <span class="v" id="edict-count">0 / 0</span></div>
+      <div class="edict-slots" id="edict-slots"></div>
+    </div>
+    <div class="sb-section">
+      <div class="sb-head">God Actions</div>
+      <div class="god-actions" id="god-actions"></div>
+    </div>
+    <div class="sb-section">
+      <div class="sb-head">Resources</div>
+      <div id="resources"></div>
+    </div>
+  </div>
+
+  <!-- ======================== CENTER ======================== -->
+  <div class="center">
+    <div class="center-panel active" id="panel-grid">
+      <div class="grid-wrap">
+        <div class="grid70" id="grid70"></div>
+        <div class="grid-info" id="grid-info"></div>
+        <div class="feed-wrap">
+          <div class="activity-feed" id="activity-feed">
+            <div class="feed-head">Activity</div>
+          </div>
+          <div class="cell-detail" id="cell-detail">
+            <span class="hint">Select a cell on the grid</span>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="center-panel" id="panel-world" style="padding:0;overflow:hidden">
+      <canvas id="world-canvas" style="width:100%;height:100%;display:block"></canvas>
+    </div>
+    <div class="center-panel" id="panel-knowledge">
+      <div class="knowledge-panel" id="knowledge-list"></div>
+    </div>
+    <div class="center-panel" id="panel-console">
+      <div class="console-grid">
+        <div class="console-col" id="console-left"></div>
+        <div class="console-col" id="console-right"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ======================== RIGHT SIDEBAR ======================== -->
+  <div class="sidebar-right">
+    <div class="sb-section">
+      <div class="sb-head">Population <span class="v" id="pop-total"></span></div>
+      <div id="species-roster"></div>
+    </div>
+    <div class="sb-section">
+      <div class="sb-head">Species x Tier</div>
+      <div class="tier-grid" id="tier-grid"></div>
+    </div>
+    <div class="sb-section">
+      <div class="sb-head">University</div>
+      <div id="university-panel"></div>
+    </div>
+    <div class="sb-section">
+      <div class="sb-head">Economy</div>
+      <div id="economy-panel"></div>
+    </div>
+  </div>
+
+  <!-- ======================== SPINE ======================== -->
+  <div class="spine-area">
+    <div class="spine-controls" style="justify-content:center;gap:.5rem;padding:.5rem">
+      <button type="button" class="advance-btn" data-ticks="1">+1 month</button>
+      <button type="button" class="advance-btn" data-ticks="12">+1 year</button>
+      <button type="button" class="advance-btn" data-ticks="60">+5 years</button>
+      <button type="button" class="advance-btn" data-ticks="240">+20 years</button>
+      <span class="spacer"></span>
+      <button type="button" id="restart-btn">restart</button>
+    </div>
+  </div>
+</div>
+
+<script type="module">
+/*
+ * Multiverse Mages — the unified client script.
+ * Copyright (C) 2026 Ann Kelner
+ * SPDX-License-Identifier: AGPL-3.0-or-later
+ */
+
+import { mountThemeControl } from '../shared/theme.js';
+import { openSession, reconstructedCharge, units, mageVocabulary, candidateNamer } from '../shared/session.js';
+
+// ================================================================ BOOT
+const session = await openSession({ live: '' }).catch((e) => {
+  document.querySelector('.center').innerHTML =
+    `<div style="padding:2rem;color:var(--loss);font:13px var(--mono)">
+      No live universe. Start one with <code>npm run play</code> and open
+      <code>http://localhost:8300/ui/app/</code>.<br><br>${e.message}</div>`;
+  return null;
+});
+if (!session) throw new Error('no session');
+const isLive = session.controls?.live === true;
+
+const el = (id) => document.getElementById(id);
+
+// ================================================================ SETUP SCREEN
+{
+  const TECHNIQUES = [
+    { id: 'creo', name: 'Creo', gloss: 'create, heal' },
+    { id: 'intellego', name: 'Intellego', gloss: 'perceive, know' },
+    { id: 'muto', name: 'Muto', gloss: 'transform' },
+    { id: 'perdo', name: 'Perdo', gloss: 'unmake, destroy' },
+    { id: 'rego', name: 'Rego', gloss: 'control, bind' },
+  ];
+  const FORMS = [
+    'animal','aquam','auram','corpus','herbam','ignem','imaginem',
+    'mentem','terram','vim','umbra','fatum','limen','nomen'
+  ];
+  const SPECIES = [
+    { id: 'human', name: 'Human', life: '~80y', desc: 'High curiosity, high fertility, broad aptitude. Wins on volume and breadth.' },
+    { id: 'elf', name: 'Elf', life: '~700y', desc: 'Deep specialist, slow to learn. Few but enduring.' },
+    { id: 'dwarf', name: 'Dwarf', life: '~250y', desc: 'Exceptional retention and scribing. The archivists.' },
+    { id: 'draconic', name: 'Draconic', life: '~1500y', desc: 'Highest depth ceiling, very few. Ancient and terrifying.' },
+    { id: 'gnome', name: 'Gnome', life: '~350y', desc: 'Highest curiosity, poor retention. Erratic geniuses.' },
+    { id: 'orc', name: 'Orc', life: '~60y', desc: 'Low magic, high build-rate, martial. The builders.' },
+  ];
+  const TRADITIONS = [
+    { id: 'vancian', name: 'Vancian Memorization', desc: 'A mage holds limited prepared spells; casting expends them until re-memorized.' },
+    { id: 'true-naming', name: 'True Naming', desc: 'The knowledge instance IS a name. Holding a thing\'s name grants power over it.' },
+    { id: 'art-of-memory', name: 'The Art of Memory', desc: 'Knowledge stored in a mental palace. Unburnable, unstealable, dies with the mage.' },
+  ];
+
+  const setup = { species: null, tradition: 0, techniques: new Set(['intellego', 'rego']), forms: new Set(['mentem', 'terram']) };
+
+  function renderSetup() {
+    // Species cards
+    const sg = el('species-grid');
+    sg.innerHTML = SPECIES.map(s =>
+      `<div class="species-card${setup.species === s.id ? ' selected' : ''}" data-sp="${s.id}">
+        <div class="sp-name">${s.name}</div>
+        <div class="sp-life">${s.life}</div>
+        <div class="sp-desc">${s.desc}</div>
+      </div>`
+    ).join('');
+    sg.querySelectorAll('.species-card').forEach(c => c.addEventListener('click', () => {
+      setup.species = c.dataset.sp;
+      renderSetup();
+    }));
+
+    // Tradition cards
+    const tr = el('tradition-row');
+    tr.innerHTML = TRADITIONS.map((t, i) =>
+      `<div class="tradition-card${setup.tradition === i ? ' selected' : ''}" data-ti="${i}">
+        <div class="tr-name">${t.name}</div>
+        <div class="tr-desc">${t.desc}</div>
+      </div>`
+    ).join('');
+    tr.querySelectorAll('.tradition-card').forEach(c => c.addEventListener('click', () => {
+      setup.tradition = Number(c.dataset.ti);
+      renderSetup();
+    }));
+
+    // Technique toggles
+    const st = el('setup-techniques');
+    st.innerHTML = TECHNIQUES.map(t =>
+      `<button class="setup-toggle${setup.techniques.has(t.id) ? ' on' : ''}" data-id="${t.id}">
+        <span class="dot"></span>${t.name}
+      </button>`
+    ).join('');
+    st.querySelectorAll('.setup-toggle').forEach(btn => btn.addEventListener('click', () => {
+      const id = btn.dataset.id;
+      if (setup.techniques.has(id)) setup.techniques.delete(id);
+      else if (setup.techniques.size < 2) setup.techniques.add(id);
+      renderSetup();
+    }));
+
+    // Form toggles
+    const sf = el('setup-forms');
+    sf.innerHTML = FORMS.map(f =>
+      `<button class="setup-toggle${setup.forms.has(f) ? ' on' : ''}" data-id="${f}" style="color:${setup.forms.has(f) ? `var(--${f})` : ''}">
+        <span class="dot"></span>${f}
+      </button>`
+    ).join('');
+    sf.querySelectorAll('.setup-toggle').forEach(btn => btn.addEventListener('click', () => {
+      const id = btn.dataset.id;
+      if (setup.forms.has(id)) setup.forms.delete(id);
+      else if (setup.forms.size < 2) setup.forms.add(id);
+      renderSetup();
+    }));
+
+    // Grid preview
+    const gp = el('setup-grid-preview');
+    let gh = '<div></div>'; // empty corner
+    for (const f of FORMS) {
+      gh += `<div class="h${setup.forms.has(f) ? ' on' : ''}" style="color:var(--${f})">${f.slice(0,3)}</div>`;
+    }
+    for (const t of TECHNIQUES) {
+      gh += `<div class="rl${setup.techniques.has(t.id) ? ' on' : ''}">${t.name}</div>`;
+      for (const f of FORMS) {
+        const on = setup.techniques.has(t.id) && setup.forms.has(f);
+        gh += `<div class="gc${on ? ' on' : ''}" style="--form-hue:var(--${f})"></div>`;
+      }
+    }
+    gp.innerHTML = gh;
+
+    // Begin button
+    el('begin-btn').disabled = !setup.species || setup.techniques.size < 1 || setup.forms.size < 1;
+  }
+
+  renderSetup();
+
+  // Skip setup with ?play in URL — deferred until godRuleset exists
+  if (location.search.includes('play')) {
+    el('setup-screen').hidden = true;
+    el('app').hidden = false;
+    setTimeout(() => { try { refreshRuleset(); paint(); } catch(e) { console.warn('skip-setup deferred:', e.message); } }, 500);
+  }
+
+  el('begin-btn').addEventListener('click', async () => {
+    el('setup-screen').hidden = true;
+    el('app').hidden = false;
+
+    // Apply the chosen ruleset — reset, forbid, then warm up
+    if (isLive) {
+      // Reset with a few warm-up ticks so the universe has favor to spend on forbids
+      const body = { seed: Date.now(), ticks: 4000, warm: 6 };
+      await fetch('/live/reset', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      });
+
+      // Forbid unselected techniques (action 2 = forbid technique, 1-based bit)
+      for (let i = 0; i < TECHNIQUES.length; i++) {
+        if (!setup.techniques.has(TECHNIQUES[i].id)) {
+          await fetch('/live/submit', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ kind: 2, params: [i + 1] }),
+          });
+        }
+      }
+      // Forbid unselected forms (action 4 = forbid form, 1-based bit)
+      for (let i = 0; i < FORMS.length; i++) {
+        if (!setup.forms.has(FORMS[i])) {
+          await fetch('/live/submit', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ kind: 4, params: [i + 1] }),
+          });
+        }
+      }
+      // Warm up 1 year so the universe has its first discoveries
+      await fetch('/live/advance', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ticks: 12 }),
+      });
+
+      // Advance 1 more tick to make the forbids take effect
+      await fetch('/live/advance', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ticks: 1 }),
+      });
+
+    }
+
+    // Refresh ruleset from the (now reset) server and paint
+    refreshRuleset();
+    paint();
+  });
+}
+// Read the live ruleset from the current frame
+function liveRuleset() {
+  const f = session.last?.() ?? session.frame?.(0);
+  if (!f) return { techniques: {}, forms: {} };
+  let rs;
+  try { rs = f.ruleset(); } catch { return { techniques: {}, forms: {} }; }
+  const techs = {};
+  for (const t of rs.techniques) techs[t.id] = t.permitted;
+  const frms = {};
+  for (const fm of rs.forms) frms[fm.id] = fm.permitted;
+  return { techniques: techs, forms: frms };
+}
+let godRuleset = liveRuleset();
+function godPermits(techId, formId) {
+  return godRuleset.techniques[techId] && godRuleset.forms[formId];
+}
+function refreshRuleset() { godRuleset = liveRuleset(); }
+const state = { tab: 'grid', selectedCell: null, selectedAction: null, selectedMage: null, hoverAxis: null, busy: false };
+
+// ================================================================ LIVE STATE
+// No precomputed series in live mode — we only have the current frame
+const peak = { favor: 100, cells: 70, mages: 100 };
+
+// ================================================================ THEME
+mountThemeControl(el('theme-host'), () => requestAnimationFrame(drawSpine));
+
+// ================================================================ TABS
+for (const btn of document.querySelectorAll('.topbar .tab')) {
+  btn.addEventListener('click', () => {
+    state.tab = btn.dataset.tab;
+    for (const b of document.querySelectorAll('.topbar .tab')) {
+      b.setAttribute('aria-pressed', String(b.dataset.tab === state.tab));
+    }
+    for (const p of document.querySelectorAll('.center-panel')) {
+      p.classList.toggle('active', p.id === `panel-${state.tab}`);
+    }
+    paint();
+  });
+}
+
+// ================================================================ BUILD GRID (once)
+const gridEl = el('grid70');
+const forms = session.content.forms;
+const techniques = session.content.techniques;
+const cellNodes = new Map();
+
+const formHeaders = new Map();
+const techLabels = new Map();
+
+gridEl.append(Object.assign(document.createElement('span'), { className: 'rl' }));
+for (const f of forms) {
+  const h = document.createElement('span');
+  h.className = `h h-base f-${f.id}`;
+  h.textContent = f.name;
+  h.title = `Click to ${godRuleset.forms[f.id] ? 'forbid' : 'permit'} ${f.name}`;
+  h.dataset.fid = f.id;
+  h.addEventListener('click', () => {
+    godRuleset.forms[f.id] = !godRuleset.forms[f.id];
+    paint();
+  });
+  gridEl.append(h);
+  formHeaders.set(f.id, h);
+}
+for (const t of techniques) {
+  const rl = document.createElement('span');
+  rl.className = 'rl';
+  rl.textContent = t.name;
+  rl.title = `Click to ${godRuleset.techniques[t.id] ? 'forbid' : 'permit'} ${t.name}`;
+  rl.dataset.tid = t.id;
+  rl.addEventListener('click', () => {
+    godRuleset.techniques[t.id] = !godRuleset.techniques[t.id];
+    paint();
+  });
+  gridEl.append(rl);
+  techLabels.set(t.id, rl);
+  for (const f of forms) {
+    const c = document.createElement('span');
+    c.className = `c f-${f.id}`;
+    c.title = `${t.name} ${f.name}`;
+    c.addEventListener('click', () => {
+      state.selectedCell = `${t.id}-${f.id}`;
+      state.selectedAction = null;
+      state.selectedMage = null;
+      paint();
+    });
+    gridEl.append(c);
+    cellNodes.set(`${t.id}-${f.id}`, c);
+  }
+}
+
+// ================================================================ BUILD TOGGLES (once)
+const techTogglesEl = el('tech-toggles');
+const formTogglesEl = el('form-toggles');
+
+for (const t of techniques) {
+  const btn = document.createElement('button');
+  btn.className = 'axis-toggle';
+  btn.dataset.tid = t.id;
+  btn.innerHTML = `<span class="dot"></span>${t.name}<span class="gloss">${t.gloss || ''}</span>`;
+  btn.addEventListener('click', async () => {
+    if (state.busy) return;
+    const tBit = session.content.techniques.find(ct => ct.id === t.id)?.bit ?? techniques.indexOf(t);
+    const on = godRuleset.techniques[t.id];
+    state.busy = true;
+    try {
+      await session.submit(on ? 2 : 1, [tBit + 1]); // 1=permit, 2=forbid; 1-based
+      refreshRuleset();
+      paint();
+    } catch (e) { console.error('submit failed', e); }
+    state.busy = false;
+  });
+  btn.addEventListener('mouseenter', () => { state.hoverAxis = { type: 'technique', id: t.id }; paintGrid(); });
+  btn.addEventListener('mouseleave', () => { state.hoverAxis = null; paintGrid(); });
+  techTogglesEl.append(btn);
+}
+for (const f of forms) {
+  const btn = document.createElement('button');
+  btn.className = 'axis-toggle';
+  btn.dataset.fid = f.id;
+  btn.style.color = godRuleset.forms[f.id] ? `var(--${f.id})` : '';
+  btn.innerHTML = `<span class="dot"></span>${f.name}<span class="gloss">${f.gloss || ''}</span>`;
+  btn.addEventListener('click', async () => {
+    if (state.busy) return;
+    const fBit = session.content.forms.find(cf => cf.id === f.id)?.bit ?? forms.indexOf(f);
+    const on = godRuleset.forms[f.id];
+    state.busy = true;
+    try {
+      await session.submit(on ? 4 : 3, [fBit + 1]); // 3=permit, 4=forbid; 1-based
+      refreshRuleset();
+      paint();
+    } catch (e) { console.error('submit failed', e); }
+    state.busy = false;
+  });
+  btn.addEventListener('mouseenter', () => { state.hoverAxis = { type: 'form', id: f.id }; paintGrid(); });
+  btn.addEventListener('mouseleave', () => { state.hoverAxis = null; paintGrid(); });
+  formTogglesEl.append(btn);
+}
+
+// ================================================================ ADVANCE CONTROLS (live mode)
+function drawSpine() {} // no-op in live mode
+
+for (const btn of document.querySelectorAll('.advance-btn')) {
+  btn.addEventListener('click', async () => {
+    if (state.busy) return;
+    state.busy = true;
+    btn.disabled = true;
+    try {
+      await session.advance(Number(btn.dataset.ticks));
+      refreshRuleset();
+      paint();
+    } catch (e) { console.error('advance failed', e); }
+    btn.disabled = false;
+    state.busy = false;
+  });
+}
+
+const restartBtn = el('restart-btn');
+if (restartBtn) {
+  restartBtn.addEventListener('click', async () => {
+    if (state.busy) return;
+    state.busy = true;
+    try {
+      await session.restart(Date.now(), 0);
+      refreshRuleset();
+      paint();
+    } catch (e) { console.error('restart failed', e); }
+    state.busy = false;
+  });
+}
+
+// Mage click delegation on university panel
+el('university-panel').addEventListener('click', (ev) => {
+  const row = ev.target.closest('.mage-click');
+  if (!row) return;
+  state.selectedMage = Number(row.dataset.handle);
+  state.selectedCell = null;
+  state.selectedAction = null;
+  paint();
+});
+
+// Click-to-execute on candidate items in the detail panel
+el('cell-detail').addEventListener('click', async (ev) => {
+  const item = ev.target.closest('.cand-item');
+  if (!item || state.busy) return;
+  const detEl = el('cell-detail');
+  const slot = Number(item.dataset.slot);
+  const cands = detEl._liveCands;
+  const aid = detEl._liveActionId;
+  if (!cands || !cands[slot]) return;
+  state.busy = true;
+  item.style.opacity = '0.5';
+  try {
+    await session.submit(aid, cands[slot].params);
+    refreshRuleset();
+    state.selectedAction = null;
+    paint();
+  } catch (e) {
+    console.error('action failed', e);
+    item.style.opacity = '1';
+  }
+  state.busy = false;
+});
+
+// ================================================================ PAINT GRID (separated for hover preview)
+function paintGrid() {
+  const f = session.last();
+  const knowledgeCells = f.knowledge();
+  const hover = state.hoverAxis;
+  let liveCells = 0;
+  let totalNodes = 0;
+
+  // Update technique labels and form headers
+  for (const [tid, label] of techLabels) {
+    label.dataset.on = String(godRuleset.techniques[tid]);
+  }
+  for (const [fid, header] of formHeaders) {
+    header.dataset.on = String(godRuleset.forms[fid]);
+  }
+
+  // Build grant target set if in grant mode
+  const grantTargets = new Set();
+  if (state.grantMode) {
+    const cd = session.last().raw.candidateDetail;
+    const grants = cd?.byAction?.['8'] || [];
+    const nodes = session.content.nodes;
+    const cells = session.content.cells;
+    for (const g of grants) {
+      const nd = nodes.find(n => n.nodeId === g.nodeId);
+      if (!nd) continue;
+      const cell = cells.find(cl => cl.cellId === nd.cellId);
+      if (cell) grantTargets.add(`${cell.technique}-${cell.form}`);
+    }
+  }
+
+  for (const c of knowledgeCells) {
+    const node = cellNodes.get(`${c.technique}-${c.form}`);
+    if (!node) continue;
+    const permitted = godPermits(c.technique, c.form);
+
+    // Ghost preview: would this cell become permitted if the hovered axis were toggled?
+    let ghost = false;
+    if (hover && !permitted) {
+      if (hover.type === 'technique' && !godRuleset.techniques[hover.id]
+          && hover.id === c.technique && godRuleset.forms[c.form]) ghost = true;
+      if (hover.type === 'form' && !godRuleset.forms[hover.id]
+          && hover.id === c.form && godRuleset.techniques[c.technique]) ghost = true;
+    }
+
+    node.dataset.off = String(!permitted && !ghost);
+    node.dataset.live = String(permitted && c.live);
+    node.dataset.ghost = String(ghost);
+    node.dataset.sel = String(state.selectedCell === `${c.technique}-${c.form}`);
+    node.dataset.grantTarget = String(grantTargets.has(`${c.technique}-${c.form}`));
+    node.textContent = (permitted || ghost) ? (c.live ? String(c.nodesKnown) : '') : '';
+    node.title = `${c.technique} ${c.form}\n${permitted
+      ? (c.live ? `${c.nodesKnown} nodes, tier ${c.deepestTier}` : 'permitted, empty')
+      : ghost ? 'would be permitted' : 'forbidden'}`;
+    if (permitted && c.live) { liveCells++; totalNodes += c.nodesKnown; }
+  }
+
+  const nTech = Object.values(godRuleset.techniques).filter(Boolean).length;
+  const nForm = Object.values(godRuleset.forms).filter(Boolean).length;
+  el('grid-info').innerHTML = `<b>${liveCells}</b> cells live, <b>${totalNodes}</b> nodes known. `
+    + `<b>${nTech}</b> techniques, <b>${nForm}</b> forms permitted.`;
+}
+
+// ================================================================ ACTIVITY FEED
+const feedLog = [];
+const FEED_MAX = 100;
+let prevSnapshot = null;
+
+function snapshotFrame(f) {
+  const k = f.knowledge();
+  const b = f.mageBuckets();
+  const inst = f.institutions();
+  return {
+    tick: f.clock().worldTick,
+    cells: k.map(c => ({ t: c.technique, f: c.form, n: c.nodesKnown, tier: c.deepestTier, live: c.live })),
+    species: b.map(s => ({ name: s.name, living: s.living })),
+    library: inst.libraryDepth,
+    grimoires: inst.grimoires,
+    universities: inst.universities,
+  };
+}
+
+function diffAndLog(curr) {
+  const snap = snapshotFrame(curr);
+  if (!prevSnapshot) { prevSnapshot = snap; return; }
+  const prev = prevSnapshot;
+  const tick = snap.tick;
+
+  // Knowledge discoveries
+  for (let i = 0; i < snap.cells.length && i < prev.cells.length; i++) {
+    const c = snap.cells[i], p = prev.cells[i];
+    if (c.n > p.n) {
+      feedLog.push({ tick, type: 'discovery', text: `New node in ${c.t} ${c.f}`, count: c.n - p.n });
+    }
+    if (c.n < p.n) {
+      feedLog.push({ tick, type: 'knowledge-loss', text: `Knowledge lost in ${c.t} ${c.f}` });
+    }
+  }
+
+  // Population
+  for (let i = 0; i < snap.species.length && i < prev.species.length; i++) {
+    const c = snap.species[i], p = prev.species[i];
+    if (c.living < p.living) {
+      feedLog.push({ tick, type: 'death', text: `${p.living - c.living} ${c.name} mage${p.living - c.living > 1 ? 's' : ''} died` });
+    }
+    if (c.living > p.living) {
+      feedLog.push({ tick, type: 'birth', text: `${c.living - p.living} new ${c.name} mage${c.living - p.living > 1 ? 's' : ''}` });
+    }
+  }
+
+  // Library
+  if (snap.library > prev.library) {
+    feedLog.push({ tick, type: 'library', text: `Library grew to ${snap.library} nodes` });
+  }
+
+  // Grimoires
+  if (snap.grimoires > prev.grimoires) {
+    feedLog.push({ tick, type: 'scribed', text: `Grimoire written (${snap.grimoires} total)` });
+  }
+
+  // Universities
+  if (snap.universities > prev.universities) {
+    feedLog.push({ tick, type: 'action', text: `University founded (${snap.universities} total)` });
+  }
+
+  // Trim
+  while (feedLog.length > FEED_MAX) feedLog.shift();
+  prevSnapshot = snap;
+}
+
+const FEED_ICONS = {
+  discovery: '✦', death: '†', birth: '↑', library: '📖',
+  scribed: '✎', 'knowledge-loss': '✕', action: '⚡',
+};
+
+function renderFeed() {
+  const feedEl = el('activity-feed');
+  const entries = feedLog.slice(-30);
+  let html = '<div class="feed-head">Activity</div>';
+  if (entries.length === 0) {
+    html += '<div style="font:italic 10px var(--serif);color:var(--faint);padding:.3rem 0">Advance time to see your civilization grow.</div>';
+  } else {
+    for (const e of entries) {
+      const yr = Math.floor(e.tick / 12) + 1;
+      html += `<div class="feed-entry fe-${e.type}"><span class="fe-icon">${FEED_ICONS[e.type] || '·'}</span>${e.text}<span class="fe-tick">yr ${yr}</span></div>`;
+    }
+  }
+  feedEl.innerHTML = html;
+  feedEl.scrollTop = feedEl.scrollHeight;
+}
+
+// ================================================================ PAINT
+function paint() {
+  const f = session.last();
+  const clock = f.clock();
+
+  // Activity feed — diff this frame against the previous
+  diffAndLog(f);
+  renderFeed();
+
+  // Topbar
+  el('tick-val').textContent = String(clock.worldTick);
+  el('tick-max').textContent = String(session.provenance?.tickCap ?? '∞');
+  el('status-badge').textContent = clock.engaged ? 'engagement' : (isLive ? 'LIVE' : f.status());
+
+  // Resources
+  const r = f.resources();
+  const resBar = (k, v, max) =>
+    `<div class="res-row"><span class="k">${k}</span>`
+    + `<span class="res-track"><i style="width:${Math.min(100, (v / max) * 100)}%"></i></span>`
+    + `<span class="v">${v.toFixed(v < 10 ? 1 : 0)}</span></div>`;
+  el('resources').innerHTML =
+    resBar('favor', r.favor, peak.favor)
+    + resBar('worship', r.worship, Math.max(1, peak.favor / 10))
+    + resBar('matl', r.materials, 3200)
+    + `<div class="res-row"><span class="k">tier</span><span></span><span class="v">${r.worshipTier}</span></div>`
+    + resBar('prestige', r.prestige, 20);
+
+  // Institutions — painted by paintGodPanel into the right sidebar
+
+  // Toggle button states
+  for (const btn of techTogglesEl.children) {
+    btn.dataset.on = String(godRuleset.techniques[btn.dataset.tid]);
+    btn.title = godRuleset.techniques[btn.dataset.tid]
+      ? `Forbid ${btn.textContent.trim().split(/\s/)[0]}`
+      : `Permit ${btn.textContent.trim().split(/\s/)[0]}`;
+  }
+  for (const btn of formTogglesEl.children) {
+    const fid = btn.dataset.fid;
+    btn.dataset.on = String(godRuleset.forms[fid]);
+    btn.style.color = godRuleset.forms[fid] ? `var(--${fid})` : '';
+  }
+
+  // Grid cells — use godRuleset, not session ruleset
+  paintGrid();
+
+  // Cell detail
+  const knowledgeCells = f.knowledge();
+  const rules = f.ruleset();
+  paintCellDetail(f, knowledgeCells, rules);
+
+  // Population
+  const buckets = f.mageBuckets();
+  const rosterEl = el('species-roster');
+  rosterEl.innerHTML = '';
+  let totalMages = 0;
+  for (const b of buckets) {
+    const row = document.createElement('div');
+    row.className = 'species-row';
+    row.dataset.dead = String(b.living === 0);
+    row.innerHTML = `<span class="name">${b.name}</span><span class="count">${b.living}</span>`;
+    rosterEl.append(row);
+    totalMages += b.living;
+  }
+  el('pop-total').textContent = String(totalMages);
+
+  // Tier grid
+  const tg = el('tier-grid');
+  tg.innerHTML = '<span class="rl"></span>'
+    + Array.from({ length: 8 }, (_, i) => `<span class="h">${i === 0 ? '-' : i}</span>`).join('');
+  for (const b of buckets) {
+    const dead = b.living === 0;
+    tg.insertAdjacentHTML('beforeend',
+      `<span class="rl" style="${dead ? 'color:var(--loss)' : ''}">${b.name.slice(0, 4)}</span>`
+      + b.tiers.map((n) => `<span class="tc" data-n="${n}">${n}</span>`).join(''));
+  }
+
+  // Spine
+  drawSpine();
+
+  // God actions, edicts, university, economy
+  if (typeof paintGodPanel === 'function') paintGodPanel(f);
+
+  // Refresh active tab content
+  if (state.tab === 'knowledge') renderKnowledge(f);
+  if (state.tab === 'world') renderWorld(f);
+  if (state.tab === 'console') renderConsole(f);
+}
+
+// ================================================================ CELL DETAIL
+function paintCellDetail(f, knowledgeCells, rules) {
+  const detEl = el('cell-detail');
+
+  // Show mage dossier if a mage is selected
+  if (state.selectedMage != null) {
+    paintMageDossier(f, detEl, state.selectedMage);
+    return;
+  }
+
+  // Show action candidates if an action is selected
+  if (state.selectedAction != null) {
+    paintActionCandidates(f, detEl);
+    return;
+  }
+
+  if (!state.selectedCell) {
+    detEl.innerHTML = '<span class="hint">Select a cell on the grid</span>';
+    return;
+  }
+  const [tid, fid] = state.selectedCell.split('-');
+  const tech = techniques.find((t) => t.id === tid);
+  const form = forms.find((f) => f.id === fid);
+  if (!tech || !form) return;
+
+  const cell = session.content.cells.find((c) => c.technique === tid && c.form === fid);
+  const kc = knowledgeCells.find((c) => c.technique === tid && c.form === fid);
+  const techOn = godRuleset.techniques[tid];
+  const formOn = godRuleset.forms[fid];
+  const enabled = techOn && formOn;
+
+  const edict = rules.edicts.find((e) => !e.empty && e.cell
+    && e.cell.technique === tid && e.cell.form === fid);
+  const on = edict ? (edict.kindName === 'dispensation') : enabled;
+  const classical = cell?.classical?.length ? cell.classical.join(', ') : '';
+
+  let reason = '';
+  if (edict) reason = edict.kindName;
+  else if (!techOn && !formOn) reason = 'neither axis';
+  else if (!techOn) reason = 'technique forbidden';
+  else if (!formOn) reason = 'form forbidden';
+  else reason = 'both axes';
+
+  // Get the nodes in this cell from content
+  const cellObj = session.content.cells.find(c => c.technique === tid && c.form === fid);
+  const cellNodes_ = cellObj
+    ? session.content.nodes.filter(n => n.cellId === cellObj.cellId).sort((a, b) => a.tier - b.tier)
+    : [];
+  const knownCount = kc?.nodesKnown ?? 0;
+
+  let nodeListHtml = '';
+  if (cellNodes_.length > 0) {
+    nodeListHtml = '<div style="display:flex;flex-direction:column;gap:2px;margin-top:.4rem">';
+    for (const n of cellNodes_) {
+      const known = n.tier <= (kc?.deepestTier ?? 0) && knownCount > 0;
+      nodeListHtml += `<div style="padding:.2rem .4rem;border:1px solid ${known ? 'color-mix(in srgb, var(--god) 30%, var(--edge))' : 'var(--edge)'};border-radius:3px;background:${known ? 'color-mix(in srgb, var(--god) 6%, var(--plate))' : 'var(--plate)'};font:10px var(--mono)">
+        <span style="display:inline-block;font:700 8px var(--mono);padding:1px 4px;border-radius:2px;background:${known ? 'var(--god)' : 'var(--sunk)'};color:${known ? 'var(--ground)' : 'var(--faint)'};margin-right:.3rem">T${n.tier}</span>
+        <span style="font:italic 11px var(--serif);color:${known ? 'var(--ink)' : 'var(--faint)'}">${n.name}</span>
+      </div>`;
+    }
+    nodeListHtml += '</div>';
+  }
+
+  detEl.innerHTML =
+    `<div class="cell-name">${tech.name} ${form.name}</div>`
+    + (classical ? `<div class="cell-classical">${classical}</div>` : '')
+    + `<span class="cell-verdict" data-on="${on}">${on ? 'PERMITTED' : 'FORBIDDEN'} — ${reason}</span>`
+    + (kc && kc.live
+      ? `<div class="cell-knowledge">${kc.nodesKnown} of ${cellNodes_.length} nodes known, deepest tier ${kc.deepestTier}</div>`
+      : `<div class="cell-knowledge">${enabled ? `${cellNodes_.length} nodes available, none yet known` : 'Cell not enabled'}</div>`)
+    + nodeListHtml;
+}
+
+function paintMageDossier(f, detEl, handle) {
+  const cd = f.raw.candidateDetail || {};
+  const mage = cd.mages?.[String(handle)];
+  if (!mage) { detEl.innerHTML = '<span class="hint">Mage not found</span>'; return; }
+
+  const speciesNames = session.content.species.map(s => s.name);
+  const roleNames = ['researcher', 'warden', 'professor', 'raider'];
+  const sp = speciesNames[mage.speciesId] || 'unknown';
+  const age = Math.floor(mage.ageTicks / 12);
+  const role = roleNames[mage.roleId] || 'citizen';
+  const lifespans = [80, 700, 250, 1500, 350, 60]; // human, elf, dwarf, draconic, gnome, orc — but session order differs
+  const goalNames = ['idle', 'research', 'teach', 'scribe', 'affiliate', 'wander', 'cast', 'guard', 'serve'];
+
+  // Personality as bars (0–2048 range, 1024 is neutral)
+  const pBar = (label, val) => {
+    const pct = (val / 2048) * 100;
+    return `<div style="display:flex;align-items:center;gap:.3rem;font:9px var(--mono);margin-bottom:2px">
+      <span style="width:4rem;color:var(--faint)">${label}</span>
+      <div style="flex:1;height:4px;border-radius:2px;background:var(--sunk);position:relative">
+        <div style="position:absolute;inset:0 ${100-pct}% 0 0;background:var(--god);border-radius:2px;opacity:.6"></div>
+        <div style="position:absolute;left:50%;top:-1px;bottom:-1px;width:1px;background:var(--edge)"></div>
+      </div>
+      <span style="width:2rem;text-align:right;color:var(--soft)">${val}</span>
+    </div>`;
+  };
+
+  const goal = mage.goal;
+  const goalName = goalNames[goal?.goalId] || `goal-${goal?.goalId}`;
+  const targetNode = goal?.targetNodeId != null
+    ? (session.content.nodes.find(n => n.nodeId === goal.targetNodeId)?.id || `node-${goal.targetNodeId}`)
+    : '';
+  const adoptedAge = goal?.adoptedTick != null ? Math.floor(goal.adoptedTick / 12) : '?';
+
+  detEl.innerHTML =
+    `<div class="cell-name">${sp} ${role}</div>`
+    + `<div class="cell-classical">${age} years old · knows ${mage.nodesKnown} nodes · deepest tier ${mage.deepestTier}</div>`
+    + `<div style="margin:.5rem 0"><div class="econ-section-label">personality</div>`
+    + pBar('curiosity', mage.curiosity)
+    + pBar('ambition', mage.ambition)
+    + pBar('caution', mage.caution)
+    + pBar('vigor', mage.vigor)
+    + `</div>`
+    + `<div class="econ-section-label">current goal</div>`
+    + `<div style="font:11px var(--mono);color:var(--ink);padding:.2rem 0">${goalName}${targetNode ? ` → ${targetNode}` : ''}</div>`
+    + `<div style="font:9px var(--mono);color:var(--faint)">adopted year ${adoptedAge} · score ${goal?.score ?? '?'}</div>`;
+}
+
+function paintActionCandidates(f, detEl) {
+  const aid = state.selectedAction;
+  const action = GOD_COSTS.find(a => a.id === aid);
+  const cd = f.raw.candidateDetail || {};
+  const cands = f.raw.candidates?.[String(aid)] || [];
+  const byAction = cd.byAction?.[String(aid)] || [];
+  const mages = cd.mages || {};
+  const unis = cd.universities || {};
+  const speciesNames = session.content.species.map(s => s.name);
+  const roleNames = ['researcher', 'warden', 'professor', 'raider'];
+  const nodeIndex = Object.fromEntries((session.content.nodes || []).map(n => [n.nodeIndex ?? n.id, n]));
+
+  // Store candidates for click-to-execute
+  detEl._liveCands = cands;
+  detEl._liveActionId = aid;
+
+  let html = `<div class="cell-name">${action?.name || `Action ${aid}`}</div>`;
+  html += `<div class="cell-knowledge">${cands.length} candidate${cands.length !== 1 ? 's' : ''} · costs ${action?.cost?.toLocaleString() || '?'} favor</div>`;
+  html += `<div style="font:9px var(--mono);color:var(--god);margin-bottom:.3rem">Click a candidate to execute</div>`;
+
+  if (byAction.length > 0) {
+    html += '<div style="display:flex;flex-direction:column;gap:3px;margin-top:.4rem">';
+    for (let ci = 0; ci < Math.min(byAction.length, 20); ci++) {
+      const c = byAction[ci];
+      const mage = mages[String(c.handle)];
+      const sp = mage ? (speciesNames[mage.speciesId] || `species${mage.speciesId}`) : '';
+      const age = mage ? Math.floor(mage.ageTicks / 12) : 0;
+      const role = mage ? (roleNames[mage.roleId] || '') : '';
+      const slotAttr = `class="cand-item" data-slot="${ci}" style="cursor:pointer;`;
+
+      if (c.kind === 'mage-node') {
+        const node = nodeIndex[c.nodeId] || session.content.nodes?.[c.nodeId];
+        const nodeName = node?.id || `node-${c.nodeId}`;
+        html += `<div ${slotAttr}padding:.25rem .4rem;border:1px solid var(--edge);border-radius:3px;background:var(--plate);font:10px var(--mono)">
+          <div style="color:var(--god)">${nodeName}</div>
+          <div style="color:var(--faint)">${sp} ${role}, ${age}y</div>
+        </div>`;
+      } else if (c.kind === 'mage') {
+        html += `<div ${slotAttr}padding:.25rem .4rem;border:1px solid var(--edge);border-radius:3px;background:var(--plate);font:10px var(--mono)">
+          <div style="color:var(--ink)">${sp} ${role}</div>
+          <div style="color:var(--faint)">${age}y · knows ${mage?.nodesKnown ?? '?'} · tier ${mage?.deepestTier ?? '?'}</div>
+        </div>`;
+      } else if (c.kind === 'mage-role') {
+        const toRole = roleNames[c.toRoleId] || `role-${c.toRoleId}`;
+        html += `<div ${slotAttr}padding:.25rem .4rem;border:1px solid var(--edge);border-radius:3px;background:var(--plate);font:10px var(--mono)">
+          <div style="color:var(--ink)">${sp} ${role} <span style="color:var(--god)">→ ${toRole}</span></div>
+          <div style="color:var(--faint)">${age}y · knows ${mage?.nodesKnown ?? '?'}</div>
+        </div>`;
+      } else if (c.kind === 'cell') {
+        const cellId = c.cellId ?? c.cell;
+        const cellObj = session.content.cells.find(cl => cl.cellId === cellId);
+        const cellName = cellObj ? `${cellObj.technique} ${cellObj.form}` : `cell-${cellId}`;
+        html += `<div ${slotAttr}padding:.25rem .4rem;border:1px solid var(--edge);border-radius:3px;background:var(--plate);font:10px var(--mono)">
+          <div style="color:var(--god)">${cellName}</div>
+        </div>`;
+      } else if (c.kind === 'tradition') {
+        const tradNames = session.content.traditions?.map(t => t.name) || [];
+        html += `<div ${slotAttr}padding:.25rem .4rem;border:1px solid var(--edge);border-radius:3px;background:var(--plate);font:10px var(--mono)">
+          <div style="color:var(--warn)">${tradNames[c.traditionId] || c.traditionId}</div>
+        </div>`;
+      } else if (c.kind === 'university' || c.kind === 'found-university') {
+        const uni = unis[String(c.handle)];
+        html += `<div ${slotAttr}padding:.25rem .4rem;border:1px solid var(--edge);border-radius:3px;background:var(--plate);font:10px var(--mono)">
+          <div style="color:var(--ink)">${c.kind === 'found-university' ? 'Found new university' : `University (${uni?.capacity ?? '?'} seats)`}</div>
+        </div>`;
+      } else {
+        html += `<div ${slotAttr}padding:.25rem .4rem;border:1px solid var(--edge);border-radius:3px;background:var(--plate);font:10px var(--mono);color:var(--soft)">${c.kind}: ${JSON.stringify(c).slice(0, 80)}</div>`;
+      }
+    }
+    if (byAction.length > 20) html += `<div style="font:9px var(--mono);color:var(--faint)">…and ${byAction.length - 20} more</div>`;
+    html += '</div>';
+  } else if (cands.length > 0) {
+    // For actions without byAction detail, try to resolve mage handles directly
+    const mageActions = new Set([9, 10]); // bless, assign role
+    if (mageActions.has(aid) && Object.keys(mages).length > 0) {
+      html += '<div style="display:flex;flex-direction:column;gap:3px;margin-top:.4rem">';
+      let rendered = 0;
+      for (let ci = 0; ci < cands.length && rendered < 20; ci++) {
+        const c = cands[ci];
+        const handle = c.params?.[0];
+        if (!handle) continue;
+        const mage = mages[String(handle)];
+        if (!mage) continue;
+        const sp = speciesNames[mage.speciesId] || 'populace';
+        const age = Math.floor(mage.ageTicks / 12);
+        const role = roleNames[mage.roleId] || 'citizen';
+        const roleTarget = aid === 10 && c.params?.[1] != null ? ` → ${roleNames[c.params[1]] || 'role ' + c.params[1]}` : '';
+        html += `<div class="cand-item" data-slot="${ci}" style="cursor:pointer;padding:.25rem .4rem;border:1px solid var(--edge);border-radius:3px;background:var(--plate);font:10px var(--mono)">
+          <div style="color:var(--ink)">${sp} ${role}${roleTarget}</div>
+          <div style="color:var(--faint)">${age}y · knows ${mage.nodesKnown ?? '?'} · tier ${mage.deepestTier ?? '?'}</div>
+        </div>`;
+        rendered++;
+      }
+      if (cands.length > 20) html += `<div style="font:9px var(--mono);color:var(--faint)">…and ${cands.length - 20} more</div>`;
+      html += '</div>';
+    } else {
+      html += `<div style="font:10px var(--mono);color:var(--faint);margin-top:.3rem">${cands.length} targets available</div>`;
+    }
+  }
+
+  detEl.innerHTML = html;
+}
+
+// ================================================================ KNOWLEDGE TAB
+function renderKnowledge(f) {
+  f = f || session.last();
+  const kCells = f.knowledge();
+  const rules = f.ruleset();
+  const onT = new Set(rules.techniques.filter((t) => t.permitted).map((t) => t.id));
+  const onF = new Set(rules.forms.filter((x) => x.permitted).map((x) => x.id));
+
+  const listEl = el('knowledge-list');
+  let html = '<div class="know-head"><span>Cell</span><span>Nodes</span><span>Tier</span><span>Copies</span></div>';
+
+  let totalLive = 0;
+  let totalN = 0;
+  const sorted = kCells.slice().sort((a, b) => b.nodesKnown - a.nodesKnown);
+
+  for (const c of sorted) {
+    const enabled = onT.has(c.technique) && onF.has(c.form);
+    if (!enabled && !c.live) continue;
+    html += `<div class="know-row" data-live="${c.live}">`
+      + `<span class="nm f-${c.form}">${c.technique} ${c.form}</span>`
+      + `<span class="nodes">${c.nodesKnown}</span>`
+      + `<span class="tier">${c.live ? `t${c.deepestTier}` : '-'}</span>`
+      + `<span class="red">${c.redundancy || '-'}</span>`
+      + `</div>`;
+    if (c.live) { totalLive++; totalN += c.nodesKnown; }
+  }
+
+  html += `<div class="know-summary"><b>${totalLive}</b> cells live, <b>${totalN}</b> nodes known</div>`;
+  listEl.innerHTML = html;
+}
+
+// ================================================================ CONSOLE TAB
+function renderConsole(f) {
+  f = f || session.last();
+  const r = f.resources();
+  const inst = f.institutions();
+  const clock = f.clock();
+  const buckets = f.mageBuckets();
+  const rules = f.ruleset();
+  const kCells = f.knowledge();
+  const actions = f.actions();
+
+  const leftEl = el('console-left');
+  leftEl.innerHTML = `
+    <div class="section-head">Clock</div>
+    <div><span class="label">tick</span> ${clock.worldTick}</div>
+    <div><span class="label">era</span> ${clock.era}</div>
+    <div><span class="label">status</span> ${clock.engaged ? 'engagement' : f.status()}</div>
+
+    <div class="section-head">Resources</div>
+    <div><span class="label">favor</span> ${r.favor.toFixed(1)}${r.saturated.favor ? ' (sat)' : ''}</div>
+    <div><span class="label">worship</span> ${r.worship.toFixed(1)} tier ${r.worshipTier}</div>
+    <div><span class="label">materials</span> ${r.materials.toFixed(1)}${r.saturated.materials ? ' (sat)' : ''}</div>
+    <div><span class="label">prestige</span> ${r.prestige.toFixed(1)}</div>
+
+    <div class="section-head">Institutions</div>
+    <div><span class="label">univ</span> ${inst.universities}, cap ${inst.capacity}</div>
+    <div><span class="label">library</span> depth ${inst.libraryDepth}</div>
+    <div><span class="label">grimoires</span> ${inst.grimoires}</div>
+
+    <div class="section-head">Ruleset</div>
+    <div><span class="label">tradition</span> ${rules.traditionId}</div>
+    <div><span class="label">tech</span> ${rules.techniques.filter(t => t.permitted).map(t => t.id).join(', ')}</div>
+    <div><span class="label">forms</span> ${rules.forms.filter(f => f.permitted).map(f => f.id).join(', ')}</div>
+
+    <div class="section-head">Population</div>
+    <div><span class="label">total</span> ${buckets.reduce((n, b) => n + b.living, 0)}</div>
+    ${buckets.map(b =>
+      `<div style="padding-left:1.2rem${b.living === 0 ? ';color:var(--loss)' : ''}">${b.name}: ${b.living} (${b.taught} taught)</div>`
+    ).join('')}
+
+    <div class="section-head">Knowledge</div>
+    <div><span class="label">cells</span> ${kCells.filter(c => c.live).length} live</div>
+    <div><span class="label">nodes</span> ${kCells.reduce((n, c) => n + c.nodesKnown, 0)} known</div>`;
+
+  const rightEl = el('console-right');
+  rightEl.innerHTML = `
+    <div class="section-head">Action mask</div>
+    ${actions.map(a => {
+      const { state: s } = reconstructedCharge(f, session, a.id);
+      const nameText = a.name.replace(/([a-z])([A-Z])/gu, '$1 $2').toLowerCase();
+      const color = s === 'charged' ? 'var(--ctl-charged-fg)' : s === 'denied' ? 'var(--ctl-denied-fg)' : 'var(--soft)';
+      return `<div style="color:${color}">${String(a.id).padStart(2, '0')} ${nameText} — ${s}</div>`;
+    }).join('')}
+
+    <div class="section-head" style="margin-top:.6rem">Edicts</div>
+    ${rules.edicts.map(e => e.empty
+      ? `<div style="color:var(--faint)">slot ${e.slot}: empty</div>`
+      : `<div style="color:${e.kindName === 'dispensation' ? 'var(--disp)' : 'var(--inter)'}">`
+        + `slot ${e.slot}: ${e.cell ? `${e.cell.technique} ${e.cell.form}` : `cell ${e.cellId}`} (${e.kindName})</div>`
+    ).join('')}
+
+    <div class="section-head" style="margin-top:.6rem">Provenance</div>
+    <div><span class="label">seed</span> ${session.provenance.seed}</div>
+    <div><span class="label">scenario</span> ${session.provenance.scenarioId}</div>
+    <div><span class="label">layout</span> ${session.provenance.observationLayoutDigest.slice(0, 8)}</div>`;
+}
+
+// ================================================================ GOD ACTION COSTS
+const GOD_COSTS = [
+  { id: 0,  name: 'no-op',                  cost: 0,     tier: 0 },
+  { id: 1,  name: 'permit technique',        cost: 8192,  tier: 3 },
+  { id: 2,  name: 'forbid technique',        cost: 8192,  tier: 3 },
+  { id: 3,  name: 'permit form',             cost: 4096,  tier: 3 },
+  { id: 4,  name: 'forbid form',             cost: 4096,  tier: 3 },
+  { id: 5,  name: 'dispensation',            cost: 6144,  tier: 3 },
+  { id: 6,  name: 'interdiction',            cost: 6144,  tier: 3 },
+  { id: 7,  name: 'revoke edict',            cost: 2048,  tier: 3 },
+  { id: 8,  name: 'grant founding knowledge', cost: 12288, tier: 2 },
+  { id: 9,  name: 'bless mage',              cost: 2048,  tier: 1 },
+  { id: 10, name: 'assign role',             cost: 256,   tier: 1 },
+  { id: 11, name: 'fund university',         cost: 3072,  tier: 1 },
+  { id: 12, name: 'encourage research',      cost: 1024,  tier: 1 },
+  { id: 13, name: 'change tradition',        cost: 65536, tier: 4 },
+  { id: 14, name: 'open portal',             cost: 16384, tier: 2 },
+  { id: 15, name: 'declare ascension',       cost: 0,     tier: 4 },
+  { id: 16, name: 'invite scholar',          cost: 24576, tier: 2 },
+];
+
+// Build god action buttons (skip no-op and the 4 permit/forbid which are the toggles)
+const godActionsEl = el('god-actions');
+const SKIP_IDS = new Set([0, 1, 2, 3, 4]);
+const tierLabels = { 1: 'clerical', 2: 'consequential', 3: 'edicts', 4: 'terminal' };
+let lastTier = -1;
+state.grantMode = false;
+
+// Sort: tier 2 first (grant, bless, portal), then tier 1 (assign, fund, encourage), then tier 4
+const displayOrder = GOD_COSTS.filter(a => !SKIP_IDS.has(a.id)).sort((a, b) => {
+  const order = [2, 1, 4, 3];
+  return order.indexOf(a.tier) - order.indexOf(b.tier);
+});
+
+for (const action of displayOrder) {
+  if (action.tier === 3) continue; // edicts handled separately
+  if (action.tier !== lastTier) {
+    const label = document.createElement('div');
+    label.className = 'econ-section-label';
+    label.textContent = tierLabels[action.tier] || '';
+    godActionsEl.append(label);
+    lastTier = action.tier;
+  }
+  const btn = document.createElement('button');
+  btn.className = `god-action${action.tier === 4 ? ' tier4' : ''}`;
+  btn.dataset.actionId = action.id;
+  btn.innerHTML = `<span>${action.name}</span><span class="cost">${action.cost > 0 ? action.cost.toLocaleString() : 'free'}</span>`;
+  btn.addEventListener('click', () => {
+    if (action.id === 8) {
+      state.grantMode = !state.grantMode;
+      btn.classList.toggle('active-grant', state.grantMode);
+      paintGrid();
+    }
+    // Show candidates in the detail panel
+    state.selectedCell = null;
+    state.selectedMage = null;
+    state.selectedAction = state.selectedAction === action.id ? null : action.id;
+    // Clear other active-grant states
+    godActionsEl.querySelectorAll('.god-action').forEach(b => {
+      if (Number(b.dataset.actionId) !== 8) return;
+      if (state.selectedAction !== 8) { state.grantMode = false; b.classList.remove('active-grant'); }
+    });
+    paint();
+  });
+  godActionsEl.append(btn);
+}
+
+// ================================================================ VOCABULARY
+const vocab = mageVocabulary(session.content);
+const namer = candidateNamer(session.content);
+
+// ================================================================ PAINT GOD ACTIONS + EDICTS + UNIVERSITY + ECONOMY
+function paintGodPanel(f) {
+  const r = f.resources();
+  const favor = r.favor;
+  const actions = f.actions();
+
+  // Update god action button states with candidate counts
+  const candidates = f.raw.candidates || {};
+  for (const btn of godActionsEl.querySelectorAll('.god-action')) {
+    const aid = Number(btn.dataset.actionId);
+    const action = GOD_COSTS.find(a => a.id === aid);
+    if (!action) continue;
+    const mask = actions.find(a => a.id === aid);
+    const legal = mask ? mask.legal : false;
+    const affordable = favor >= action.cost;
+
+    if (!legal) btn.dataset.state = 'denied';
+    else if (!affordable) btn.dataset.state = 'unaffordable';
+    else btn.dataset.state = 'legal';
+
+    // Show candidate count badge
+    const cands = candidates[String(aid)];
+    let badge = btn.querySelector('.cand-badge');
+    if (cands && Array.isArray(cands) && cands.length > 0) {
+      if (!badge) {
+        badge = document.createElement('span');
+        badge.className = 'cand-badge';
+        btn.append(badge);
+      }
+      badge.textContent = String(cands.length);
+      badge.style.display = '';
+    } else if (badge) {
+      badge.style.display = 'none';
+    }
+  }
+
+  // Edict slots
+  const rules = f.ruleset();
+  const edictEl = el('edict-slots');
+  const budget = 1 + r.worshipTier;
+  const usedEdicts = rules.edicts.filter(e => !e.empty).length;
+  el('edict-count').textContent = `${usedEdicts} / ${Math.min(budget, 8)}`;
+
+  edictEl.innerHTML = '';
+  for (let i = 0; i < Math.min(budget, 8); i++) {
+    const e = rules.edicts[i];
+    const slot = document.createElement('div');
+    slot.className = 'edict-slot';
+    if (e && !e.empty) {
+      slot.dataset.kind = e.kindName;
+      const cellName = e.cell ? `${e.cell.technique.slice(0,2)}·${e.cell.form.slice(0,3)}` : '?';
+      slot.textContent = `${e.kindName === 'dispensation' ? '◇' : '×'} ${cellName}`;
+      slot.title = `${e.kindName}: ${e.cell ? `${e.cell.technique} ${e.cell.form}` : 'unknown cell'}`;
+    } else {
+      slot.textContent = '—';
+      slot.title = `Edict slot ${i + 1}: empty`;
+    }
+    edictEl.append(slot);
+  }
+
+  // University panel — use academy() for rich data
+  const inst = f.institutions();
+  const acad = f.academy();
+  const uniEl = el('university-panel');
+  if (inst.universities > 0) {
+    let uniHtml = `<div class="uni-card"><div class="uni-name">The Academy</div>`;
+    uniHtml += `<div class="uni-stat"><span>capacity</span><span class="v">${inst.capacity} seats</span></div>`;
+    uniHtml += `<div class="uni-stat"><span>library</span><span class="v">${inst.libraryDepth} nodes</span></div>`;
+    const libPct = Math.min(100, (inst.libraryDepth / 70) * 100);
+    uniHtml += `<div class="uni-bar"><i style="width:${libPct}%;background:var(--ok)"></i></div>`;
+    uniHtml += `<div class="uni-stat"><span>grimoires</span><span class="v">${inst.grimoires}</span></div>`;
+
+    // Show academy roster if available
+    if (acad) {
+      for (const h of acad.handles) {
+        const u = acad.university(h);
+        if (!u) continue;
+        uniHtml += `<div class="econ-section-label">roster · ${u.roster?.length ?? 0} mages</div>`;
+        for (const entry of (u.roster ?? []).slice(0, 6)) {
+          const m = acad.mage(entry.handle);
+          if (!m) continue;
+          uniHtml += `<div class="econ-row mage-click" data-handle="${entry.handle}" style="cursor:pointer" title="Click for dossier"><span>${vocab.who(m)}</span><span class="v">${vocab.knows(m)}</span></div>`;
+        }
+        if ((u.roster?.length ?? 0) > 6) {
+          uniHtml += `<div class="econ-row" style="color:var(--faint)"><span>…and ${u.roster.length - 6} more</span></div>`;
+        }
+      }
+    }
+    uniHtml += '</div>';
+    uniEl.innerHTML = uniHtml;
+  } else {
+    uniEl.innerHTML = '<div style="font:italic 10px var(--serif);color:var(--faint)">No university founded</div>';
+  }
+
+  // Economy panel — use flow() for real material data
+  const econEl = el('economy-panel');
+  const fl = f.flow();
+  const buckets = f.mageBuckets();
+  const totalMages = buckets.reduce((n, b) => n + b.living, 0);
+
+  let econHtml = '';
+  if (fl) {
+    // Material stocks with per-kind breakdown
+    const kindHues = {food:'var(--ok)',stone:'var(--terram)',vellum:'var(--warn)',labor:'var(--aquam)',essence:'var(--limen)',insight:'var(--god)',passage:'var(--nomen)'};
+    const stockMax = Math.max(...fl.kinds.map(k => fl.closing[k] ?? 0), 1);
+    econHtml += '<div class="econ-section-label">material stocks</div>';
+    for (const kind of fl.kinds) {
+      const stock = fl.closing[kind] ?? 0;
+      const inflow = (fl.faucet[kind] ?? 0);
+      const outflow = (fl.sink[kind] ?? 0);
+      const net = inflow - outflow;
+      const netColor = net > 0 ? 'var(--ok)' : net < 0 ? 'var(--loss)' : 'var(--faint)';
+      const hue = kindHues[kind] || 'var(--god)';
+      const pct = Math.min(100, (stock / stockMax) * 100);
+      econHtml += `<div style="margin-bottom:3px">
+        <div style="display:flex;justify-content:space-between;font:9px var(--mono)">
+          <span style="color:${hue};font-weight:600;letter-spacing:.04em">${kind}</span>
+          <span><span style="color:var(--ink)">${stock.toFixed(0)}</span> <span style="color:${netColor};font-size:8px">${net >= 0 ? '+' : ''}${net.toFixed(0)}</span></span>
+        </div>
+        <div style="height:5px;border-radius:3px;background:var(--sunk);overflow:hidden;margin-top:1px">
+          <div style="height:100%;width:${pct}%;background:${hue};border-radius:3px;opacity:.6"></div>
+        </div>
+      </div>`;
+    }
+
+    // Producers
+    econHtml += '<div class="econ-section-label">producers</div>';
+    if (fl.producers) {
+      for (const [k, v] of Object.entries(fl.producers)) {
+        if (v > 0) econHtml += `<div class="econ-row"><span>${k}</span><span class="v">${v}</span></div>`;
+      }
+    }
+
+    // Claimants — who is consuming materials, with proportional bars
+    const active = fl.claimants.filter(c => c.owed > 0);
+    if (active.length > 0) {
+      const maxOwed = Math.max(...active.map(c => c.owed), 1);
+      econHtml += '<div class="econ-section-label">consumers</div>';
+      for (const c of active) {
+        const short = c.shortfall > 0;
+        const paidPct = (c.paid / maxOwed) * 100;
+        const owedPct = (c.owed / maxOwed) * 100;
+        const kindColor = {food:'var(--ok)',stone:'var(--terram)',vellum:'var(--warn)',labor:'var(--aquam)',essence:'var(--limen)',insight:'var(--god)',passage:'var(--nomen)'}[c.kind] || 'var(--god)';
+        econHtml += `<div style="margin-bottom:3px">
+          <div style="display:flex;justify-content:space-between;font:9px var(--mono);color:var(--faint)">
+            <span>${c.claimant} <span style="opacity:.6">(${c.kind})</span></span>
+            <span style="color:${short ? 'var(--loss)' : 'var(--ink)'}">${c.paid.toFixed(0)}${short ? ' / ' + c.owed.toFixed(0) : ''}</span>
+          </div>
+          <div style="height:4px;border-radius:2px;background:var(--sunk);position:relative;overflow:hidden">
+            ${short ? `<div style="position:absolute;inset:0 ${100-owedPct}% 0 0;background:color-mix(in srgb,var(--loss) 30%,transparent);border-radius:2px"></div>` : ''}
+            <div style="position:absolute;inset:0 ${100-paidPct}% 0 0;background:${kindColor};border-radius:2px;opacity:.7"></div>
+          </div>
+        </div>`;
+      }
+    }
+
+    // Shortages
+    const shortKinds = Object.entries(fl.short).filter(([, v]) => v);
+    if (shortKinds.length > 0) {
+      econHtml += `<div class="econ-row" style="color:var(--loss)"><span>shortage</span><span class="v">${shortKinds.map(([k]) => k).join(', ')}</span></div>`;
+    }
+  } else {
+    // Fallback when flow() is not available
+    econHtml += '<div class="econ-section-label">materials</div>';
+    econHtml += `<div class="econ-row"><span>stock</span><span class="v">${r.materials.toFixed(0)}</span></div>`;
+  }
+
+  // Knowledge capital
+  econHtml += '<div class="econ-section-label">knowledge capital</div>';
+  econHtml += `<div class="econ-row"><span>library</span><span class="v">${inst.libraryDepth} nodes</span></div>`;
+  econHtml += `<div class="econ-row"><span>grimoires</span><span class="v">${inst.grimoires}</span></div>`;
+  econHtml += `<div class="econ-row"><span>ratio</span><span class="v">${inst.libraryDepth > 0 ? (inst.grimoires / inst.libraryDepth).toFixed(1) : '—'} books/node</span></div>`;
+
+  // Worship loop
+  econHtml += '<div class="econ-section-label">worship → favor</div>';
+  econHtml += `<div class="econ-row"><span>worship</span><span class="v">${r.worship.toFixed(1)}</span></div>`;
+  econHtml += `<div class="econ-row"><span>favor</span><span class="v">${r.favor.toFixed(0)}</span></div>`;
+  econHtml += `<div class="econ-row"><span>tier</span><span class="v">${r.worshipTier}</span></div>`;
+
+  econEl.innerHTML = econHtml;
+}
+
+// ================================================================ WORLD VIEW
+const worldCanvas = el('world-canvas');
+const wCtx = worldCanvas.getContext('2d');
+const worldMages = [];
+let worldTick = -1;
+const worldMotion = { started: performance.now(), lastTick: -1, pulseAt: -10, pulseKind: 'quiet', discoveries: 0, books: 0 };
+
+const spriteImages = {};
+const speciesFiles = ['human', 'elf', 'dwarf', 'draconic', 'gnome', 'orc'];
+speciesFiles.forEach((name, i) => {
+  const img = new Image();
+  img.src = 'assets/' + name + '-south.png';
+  spriteImages[i] = img;
+});
+const uniImg = new Image(); uniImg.src = 'assets/university.png';
+const portalImg = new Image(); portalImg.src = 'assets/portal.png';
+
+const ROLE_LABELS = ['researcher','warden','professor','raider'];
+const TERRITORIES = [
+  {id:'river-delta', name:'THE RIVER DELTA', cx:.19, cy:.70, rx:.15, ry:.20, fill:'#779876', edge:'#4c745f'},
+  {id:'arable-lowland', name:'THE ARABLE LOWLAND', cx:.45, cy:.56, rx:.27, ry:.27, fill:'#9da66b', edge:'#72864d'},
+  {id:'upland-pasture', name:'UPLAND PASTURE', cx:.67, cy:.31, rx:.19, ry:.22, fill:'#a99d70', edge:'#786d51'},
+  {id:'deep-forest', name:'THE DEEP FOREST', cx:.20, cy:.27, rx:.17, ry:.25, fill:'#496e57', edge:'#315240'},
+  {id:'highland-waste', name:'THE HIGHLAND WASTE', cx:.86, cy:.32, rx:.16, ry:.30, fill:'#847d78', edge:'#635d5c'},
+];
+
+// A map must be stable: its variation is a property of the place, not of the frame.
+function mapNoise(n) { const x = Math.sin(n * 127.1 + 311.7) * 43758.5453123; return x - Math.floor(x); }
+function mapPoint(t, i, count, W, H, jitter = .13) {
+  const a = (i / count) * Math.PI * 2;
+  const r = 1 + (mapNoise(i + t.cx * 91 + t.cy * 37) - .5) * jitter;
+  return [W * (t.cx + Math.cos(a) * t.rx * r), H * (t.cy + Math.sin(a) * t.ry * r)];
+}
+function organicTerritory(ctx, t, W, H) {
+  const count = 18;
+  ctx.beginPath();
+  for (let i = 0; i <= count; i++) {
+    const p = mapPoint(t, i % count, count, W, H);
+    if (!i) ctx.moveTo(...p); else ctx.lineTo(...p);
+  }
+  ctx.closePath();
+}
+
+function resizeWorldCanvas() {
+  const r = worldCanvas.parentElement.getBoundingClientRect();
+  const pw = Math.max(1, Math.floor(r.width * devicePixelRatio));
+  const ph = Math.max(1, Math.floor(r.height * devicePixelRatio));
+  if (worldCanvas.width !== pw || worldCanvas.height !== ph) {
+    worldCanvas.width = pw;
+    worldCanvas.height = ph;
+    wCtx.setTransform(devicePixelRatio, 0, 0, devicePixelRatio, 0, 0);
+  }
+  worldCanvas._w = r.width;
+  worldCanvas._h = r.height;
+}
+
+function mapLabel(ctx, text, x, y, dark) {
+  ctx.save();
+  ctx.font = '600 8px ui-monospace, monospace';
+  ctx.textAlign = 'center';
+  ctx.letterSpacing = '1px';
+  ctx.fillStyle = dark ? 'rgba(239,232,205,.52)' : 'rgba(45,48,31,.57)';
+  ctx.fillText(text, x, y);
+  ctx.restore();
+}
+
+function mapRoad(ctx, points, dark) {
+  ctx.save();
+  ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+  ctx.strokeStyle = dark ? 'rgba(34,28,21,.76)' : 'rgba(245,235,199,.78)';
+  ctx.lineWidth = 4; ctx.beginPath(); ctx.moveTo(...points[0]);
+  for (let i = 1; i < points.length; i++) ctx.lineTo(...points[i]); ctx.stroke();
+  ctx.strokeStyle = dark ? 'rgba(191,157,92,.42)' : 'rgba(120,91,48,.45)';
+  ctx.lineWidth = 1; ctx.setLineDash([2, 5]); ctx.beginPath(); ctx.moveTo(...points[0]);
+  for (let i = 1; i < points.length; i++) ctx.lineTo(...points[i]); ctx.stroke();
+  ctx.restore();
+}
+
+function worldFormLight(cells) {
+  const hues = {animal:'#b8a866', aquam:'#5ba0c8', auram:'#9aaab4', corpus:'#c87070', herbam:'#6ba84e', ignem:'#e89050', imaginem:'#a494c4', mentem:'#46a98d', terram:'#cc8450', vim:'#9090a4', umbra:'#7070a0', fatum:'#b8a870', limen:'#a692ec', nomen:'#7099d8'};
+  const known = new Map();
+  for (const cell of cells) if (cell.live) known.set(cell.form, (known.get(cell.form) || 0) + cell.nodesKnown);
+  const total = [...known.values()].reduce((sum, n) => sum + n, 0);
+  return [...known].map(([form, nodes]) => ({ hue: hues[form] || '#888', form, share: nodes / Math.max(1, total), nodes }));
+}
+
+function drawFlowingRiver(ctx, W, H, palette, time) {
+  ctx.save();
+  ctx.strokeStyle = palette.river; ctx.lineCap='round'; ctx.lineJoin='round'; ctx.lineWidth = 5;
+  ctx.beginPath();
+  ctx.moveTo(W*.74,H*.02); ctx.bezierCurveTo(W*.70,H*.22,W*.60,H*.36,W*.53,H*.47); ctx.bezierCurveTo(W*.43,H*.61,W*.38,H*.67,W*.28,H*.76); ctx.bezierCurveTo(W*.21,H*.82,W*.18,H*.94,W*.11,H*1.04);
+  ctx.stroke();
+  ctx.lineWidth=2.1;
+  [[.28,.76,.27,.98],[.25,.78,.17,.95],[.22,.80,.06,.88]].forEach(p=>{ctx.beginPath();ctx.moveTo(W*p[0],H*p[1]);ctx.quadraticCurveTo(W*p[0],H*(p[1]+.08),W*p[2],H*p[3]);ctx.stroke();});
+  // The moving flecks are deliberately sparse: a current, not a conveyor belt.
+  ctx.strokeStyle = 'rgba(224,246,232,.38)'; ctx.lineWidth = 1; ctx.setLineDash([2, 15]); ctx.lineDashOffset = -(time * 18);
+  ctx.beginPath(); ctx.moveTo(W*.74,H*.02); ctx.bezierCurveTo(W*.70,H*.22,W*.60,H*.36,W*.53,H*.47); ctx.bezierCurveTo(W*.43,H*.61,W*.38,H*.67,W*.28,H*.76); ctx.bezierCurveTo(W*.21,H*.82,W*.18,H*.94,W*.11,H*1.04); ctx.stroke();
+  ctx.restore();
+}
+
+function renderWorld(f) {
+  resizeWorldCanvas();
+  const W = worldCanvas._w, H = worldCanvas._h;
+  if (!W || !H) return;
+  const time = (performance.now() - worldMotion.started) / 1000;
+
+  const cd = f.raw.candidateDetail || {};
+  const mageData = cd.mages ? Object.values(cd.mages) : [];
+  const inst = f.institutions();
+  const kCells = f.knowledge();
+  const formLight = worldFormLight(kCells);
+
+  // Sync world mages with data
+  if (f.raw.flow?.worldTick !== worldTick) {
+    worldTick = f.raw.flow?.worldTick ?? 0;
+    const known = kCells.reduce((sum, c) => sum + c.nodesKnown, 0);
+    if (worldMotion.lastTick >= 0) {
+      worldMotion.pulseAt = time;
+      worldMotion.pulseKind = known > worldMotion.discoveries || inst.grimoires > worldMotion.books ? 'completion' : 'quiet';
+    }
+    worldMotion.lastTick = worldTick; worldMotion.discoveries = known; worldMotion.books = inst.grimoires;
+    // Rebuild mage list
+    while (worldMages.length > mageData.length) worldMages.pop();
+    for (let i = 0; i < mageData.length; i++) {
+      const m = mageData[i];
+      if (!worldMages[i]) worldMages[i] = {x: W*(.42 + (mapNoise(i*11)-.5)*.08), y:H*(.51 + (mapNoise(i*17)-.5)*.08), tx:0, ty:0, phase:mapNoise(i*29)*Math.PI*2};
+      const wm = worldMages[i];
+      wm.species = m.speciesId;
+      wm.role = m.roleId;
+      wm.knows = m.nodesKnown;
+      wm.age = Math.floor(m.ageTicks / 12);
+      wm.goal = m.goal?.goalId ?? 0;
+    }
+  }
+
+  // A role is a pattern of life, not a parking space. These are visual-only paths;
+  // the snapshot remains the authority for where the civilization stands.
+  const uniX = W*.44, uniY=H*.50;
+  for (let i = 0; i < worldMages.length; i++) {
+    const wm = worldMages[i], cadence = time * .16 + wm.phase;
+    if (wm.role === 0) { // Researchers make the slow circuit: archive, desk, archive.
+      const deskX = uniX - 18 + (i % 5) * 9, deskY = uniY - 9 + (Math.floor(i / 5) % 3) * 8;
+      const library = Math.sin(cadence) > 0;
+      wm.tx = library ? uniX - 31 : deskX; wm.ty = library ? uniY - 19 + (i % 4) * 5 : deskY;
+    } else if (wm.role === 2) { // Professors are almost always in conversation.
+      const pair = i - (i % 2), a = cadence * .45 + pair;
+      wm.tx = uniX + 29 + (i % 2 ? 5 : -5) + Math.cos(a) * 5;
+      wm.ty = uniY + 6 + Math.sin(a) * 4;
+    } else if (wm.role === 1) { // Wardens take the long way around the precinct.
+      const a = time * .19 + i * 1.71; wm.tx = uniX + Math.cos(a) * 78; wm.ty = uniY + Math.sin(a) * 54;
+    } else if (wm.role === 3) { wm.tx = W*.84 + Math.cos(cadence)*8; wm.ty = H*.59 + Math.sin(cadence)*9; }
+    else { wm.tx = uniX - 4 + Math.cos(cadence) * 22; wm.ty = uniY + 25 + Math.sin(cadence * .7) * 8; }
+    wm.x += (wm.tx - wm.x) * .018;
+    wm.y += (wm.ty - wm.y) * .018;
+  }
+
+  // Ground: a surveyed world on vellum, not tiles floating in a void.
+  const isDark = getComputedStyle(document.documentElement).getPropertyValue('--ground').trim().startsWith('#0');
+  const palette = isDark
+    ? {paper:'#101817', sea:'#142423', coast:'#466158', ink:'#e6dac0', rule:'rgba(232,216,181,.13)', river:'#4f99a0', road:'#c49c5c', academy:'#d6c99e', roof:'#714a3d'}
+    : {paper:'#dcd2b6', sea:'#b8cec7', coast:'#789887', ink:'#383629', rule:'rgba(61,58,40,.12)', river:'#4b8e9b', road:'#98713c', academy:'#e8dfc8', roof:'#8d5544'};
+  wCtx.fillStyle = palette.sea;
+  wCtx.fillRect(0, 0, W, H);
+  const wash = wCtx.createRadialGradient(W*.48,H*.5,20,W*.48,H*.5,Math.max(W,H)*.78);
+  wash.addColorStop(0, isDark ? 'rgba(55,82,69,.30)' : 'rgba(255,249,222,.38)'); wash.addColorStop(1, 'rgba(0,0,0,.10)');
+  wCtx.fillStyle = wash; wCtx.fillRect(0,0,W,H);
+  // Knowledge is weather here. A form with deep roots in the library quietly
+  // recolours the country; Mentem, for example, makes the whole place think teal.
+  for (const light of formLight) {
+    const strength = Math.min(.18, .025 + Math.sqrt(light.share) * .11);
+    const glow = wCtx.createRadialGradient(uniX, uniY, 8, uniX, uniY, Math.max(W,H) * (.45 + light.share * .18));
+    glow.addColorStop(0, light.hue + Math.round(strength * 255).toString(16).padStart(2, '0'));
+    glow.addColorStop(1, light.hue + '00');
+    wCtx.fillStyle = glow; wCtx.fillRect(0, 0, W, H);
+  }
+  // Fine cartographic grain, deterministically placed.
+  wCtx.fillStyle = isDark ? 'rgba(236,223,184,.045)' : 'rgba(63,55,34,.055)';
+  for (let i=0;i<340;i++) wCtx.fillRect(mapNoise(i*3)*W, mapNoise(i*3+1)*H, 1, 1);
+
+  // Territory silhouettes and their hairline borders.
+  for (const t of TERRITORIES) {
+    wCtx.save();
+    organicTerritory(wCtx,t,W,H); wCtx.fillStyle = t.fill;
+    if (isDark) wCtx.globalAlpha=.60;
+    wCtx.fill();
+    wCtx.globalAlpha=1; organicTerritory(wCtx,t,W,H); wCtx.strokeStyle = isDark ? 'rgba(223,209,171,.34)' : 'rgba(55,70,48,.48)'; wCtx.lineWidth=1; wCtx.stroke();
+    wCtx.restore();
+  }
+
+  // Lowland fields: rounded, imperfect parcels in the most populous territory.
+  wCtx.save(); organicTerritory(wCtx,TERRITORIES[1],W,H); wCtx.clip();
+  for (let i=0;i<30;i++) { const x=W*(.24+mapNoise(i*7)*.43), y=H*(.34+mapNoise(i*7+2)*.43); const fw=12+mapNoise(i+81)*25, fh=7+mapNoise(i+93)*17;
+    wCtx.save(); wCtx.translate(x,y); wCtx.rotate((mapNoise(i+112)-.5)*.35); wCtx.fillStyle=['#c3bd79','#879b5e','#b6a86b','#d0c58b'][i%4]; wCtx.globalAlpha=isDark?.34:.48; wCtx.fillRect(-fw/2,-fh/2,fw,fh); wCtx.strokeStyle=palette.rule; wCtx.strokeRect(-fw/2,-fh/2,fw,fh);
+    wCtx.strokeStyle=isDark?'rgba(235,221,151,.20)':'rgba(78,93,44,.25)'; wCtx.lineWidth=.55;
+    for(let row=-fh/2+2;row<fh/2;row+=3){ wCtx.beginPath(); wCtx.moveTo(-fw/2+2,row); wCtx.lineTo(fw/2-2,row); wCtx.stroke(); } wCtx.restore(); }
+  wCtx.restore();
+
+  // Forest canopy: consistent clusters, with a few visible paths beneath.
+  const forest = TERRITORIES[3];
+  for (let i = 0; i < 80; i++) {
+    const fx = W*(forest.cx-forest.rx*.78+mapNoise(i*5)*forest.rx*1.56), fy=H*(forest.cy-forest.ry*.82+mapNoise(i*5+1)*forest.ry*1.62);
+    const sway = Math.sin(time * .72 + i * 1.9) * (.45 + mapNoise(i+72) * .8);
+    wCtx.fillStyle = i%3 ? (isDark ? '#234a3a' : '#3e654a') : (isDark ? '#315c45' : '#547654');
+    wCtx.beginPath();
+    const r=2+mapNoise(i+22)*3; wCtx.ellipse(fx+sway,fy,r,r*.86,0,0,Math.PI*2);
+    wCtx.fill();
+  }
+
+  // Uplands get long grazing contours; the highlands get dry stone and escarpments.
+  wCtx.strokeStyle=isDark?'rgba(232,218,177,.17)':'rgba(82,70,49,.24)'; wCtx.lineWidth=1;
+  for(let i=0;i<8;i++){ const y=H*(.18+i*.045); wCtx.beginPath(); wCtx.moveTo(W*.53,y); wCtx.quadraticCurveTo(W*.66,y-12,W*.80,y+3); wCtx.stroke(); }
+  const waste = TERRITORIES[4];
+  for (let i = 0; i < 34; i++) {
+    const rx=W*(waste.cx-waste.rx*.72+mapNoise(i*9)*waste.rx*1.45), ry=H*(waste.cy-waste.ry*.82+mapNoise(i*9+3)*waste.ry*1.62);
+    wCtx.fillStyle = isDark ? '#5f625f' : '#716b64';
+    wCtx.beginPath();
+    wCtx.arc(rx, ry, 1 + mapNoise(i+33)*3, 0, Math.PI * 2);
+    wCtx.fill();
+  }
+
+  drawFlowingRiver(wCtx, W, H, palette, time);
+
+  // Names are restrained survey marks: present for orientation, never UI labels pasted on top.
+  mapLabel(wCtx,TERRITORIES[3].name,W*.18,H*.12,isDark);
+  mapLabel(wCtx,TERRITORIES[2].name,W*.66,H*.16,isDark);
+  mapLabel(wCtx,TERRITORIES[4].name,W*.86,H*.10,isDark);
+  mapLabel(wCtx,TERRITORIES[1].name,W*.43,H*.77,isDark);
+  mapLabel(wCtx,TERRITORIES[0].name,W*.16,H*.88,isDark);
+
+  mapRoad(wCtx, [[W*.11,H*.23],[W*.29,H*.34],[uniX,uniY],[W*.67,H*.31],[W*.84,H*.38]],isDark);
+  mapRoad(wCtx, [[uniX,uniY],[W*.29,H*.73],[W*.18,H*.79]],isDark);
+
+  // The academy sprite anchors the university compound at its established location.
+  const campus=52+Math.min(22,inst.capacity*.12);
+  const uniSize = 144;
+  wCtx.drawImage(uniImg, uniX - uniSize / 2, uniY - uniSize / 2, uniSize, uniSize);
+  mapLabel(wCtx,'THE UNIVERSITY',uniX,uniY+campus*.62,isDark);
+
+  // Portal at the edge
+  const portalX = W * 0.88, portalY = H * 0.63;
+  const portalSize = 96;
+  wCtx.drawImage(portalImg, portalX - portalSize / 2, portalY - portalSize / 2, portalSize, portalSize);
+  wCtx.fillStyle = isDark ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.15)';
+  wCtx.font = '8px ui-monospace, monospace'; wCtx.fillText('THE GATE', portalX - 17, portalY + 25);
+
+  // Knowledge circulates around the archive rather than sitting as an icon.
+  for (const light of formLight) for (let p = 0; p < Math.min(4, 1 + Math.ceil(light.nodes / 5)); p++) {
+    const orbit = time * (.18 + p * .025) + p * 2.1 + light.form.length;
+    const px = uniX + Math.sin(orbit) * (22 + p * 12), py = uniY + Math.cos(orbit * 1.19) * (15 + p * 9);
+    wCtx.fillStyle = light.hue; wCtx.globalAlpha = .12 + light.share * .28;
+    wCtx.beginPath(); wCtx.arc(px, py, 1 + light.share * 2, 0, Math.PI * 2); wCtx.fill();
+  }
+
+  // Professors (and active teachers) make a small, legible social geometry.
+  const conversants = worldMages.filter(wm => wm.role === 2 || wm.goal === 3 || wm.goal === 4);
+  wCtx.save(); wCtx.strokeStyle = isDark ? 'rgba(223,192,120,.34)' : 'rgba(111,82,39,.28)'; wCtx.lineWidth = .65;
+  for (let i = 0; i + 1 < conversants.length; i += 2) { wCtx.beginPath(); wCtx.moveTo(conversants[i].x, conversants[i].y); wCtx.lineTo(conversants[i+1].x, conversants[i+1].y); wCtx.stroke(); }
+  wCtx.restore();
+
+  // Draw species-specific mage sprites.
+  for (const wm of worldMages) {
+    const stride=Math.sin(time*1.8+wm.phase)*1.2;
+    wCtx.globalAlpha = .94;
+    const img = spriteImages[wm.species];
+    const spriteSize = [20, 20, 18, 28, 14, 22][wm.species] || 20;
+    wCtx.drawImage(img, wm.x - spriteSize / 2, wm.y + stride * .25 - spriteSize / 2, spriteSize, spriteSize);
+    // A working scriptorium catches the light like a pen stroke; research seeks upward.
+    if (wm.goal === 5) {
+      const ink = .25 + .55 * Math.max(0, Math.sin(time * 5 + wm.phase));
+      wCtx.strokeStyle = isDark ? `rgba(235,218,160,${ink})` : `rgba(92,66,33,${ink})`; wCtx.lineWidth = .7;
+      wCtx.beginPath(); wCtx.moveTo(wm.x-4,wm.y+2); wCtx.quadraticCurveTo(wm.x,wm.y-3,wm.x+4,wm.y+1); wCtx.stroke();
+    }
+    if ((wm.goal === 1 || wm.goal === 2) && Math.sin(time*2.7+wm.phase)>.76) {
+      wCtx.fillStyle = isDark ? '#12B8C6' : '#0a8a98';
+      wCtx.globalAlpha = 0.7;
+      wCtx.beginPath();
+      wCtx.arc(wm.x + Math.cos(time*1.4+wm.phase)*5, wm.y - 5, 1.2, 0, Math.PI * 2);
+      wCtx.fill();
+    }
+    wCtx.globalAlpha = 1;
+  }
+
+  // Every advancing month has a visible downbeat. Real completions make it ring brighter.
+  const pulseAge = time - worldMotion.pulseAt;
+  if (pulseAge >= 0 && pulseAge < 1.2) {
+    const t = pulseAge / 1.2, r = 18 + t * Math.max(68, campus * 1.5);
+    const completion = worldMotion.pulseKind === 'completion';
+    wCtx.save(); wCtx.globalAlpha = (1-t) * (completion ? .34 : .15); wCtx.strokeStyle = completion ? '#d8c36d' : palette.river; wCtx.lineWidth = 1.2;
+    wCtx.beginPath(); wCtx.arc(uniX,uniY,r,0,Math.PI*2); wCtx.stroke(); wCtx.restore();
+    if (pulseAge < .32 && completion) {
+      wCtx.save(); wCtx.globalAlpha = (1-pulseAge/.32)*.8; wCtx.fillStyle='#f3d37a';
+      for(let i=0;i<8;i++){ const a=i*Math.PI/4+time; wCtx.fillRect(uniX+Math.cos(a)*22,uniY+Math.sin(a)*16,1.5,1.5); } wCtx.restore();
+    }
+  }
+
+  // Cartouche: the map's factual complement, without dashboard clutter.
+  wCtx.fillStyle=isDark?'rgba(10,16,15,.72)':'rgba(244,237,213,.72)'; wCtx.fillRect(10,H-31,Math.min(310,W-20),21);
+  wCtx.strokeStyle=isDark?'rgba(224,207,164,.30)':'rgba(71,60,39,.28)'; wCtx.strokeRect(10.5,H-30.5,Math.min(310,W-20)-1,20);
+  wCtx.fillStyle=palette.ink; wCtx.font='9px ui-monospace, monospace';
+  wCtx.fillText(`${worldMages.length} MAGES  ·  ${inst.libraryDepth} NODES  ·  ${inst.grimoires} GRIMOIRES`,17,H-17);
+  mapLabel(wCtx,'FIVE TERRITORIES · ONE CIVILIZATION',W*.50,H-12,isDark);
+
+  // Animate
+  if (state.tab === 'world') requestAnimationFrame(() => renderWorld(f));
+}
+
+// ================================================================ INITIAL PAINT
+paint();
+</script>

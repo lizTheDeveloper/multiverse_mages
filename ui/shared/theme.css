@@ -84,11 +84,12 @@
   --glow-soft:    0 0 0 2px color-mix(in srgb, #12B8C6 16%, transparent);
   --glow-form:    none;
 
-  /* the four v1 form hues, darkened to hold on paper */
-  --limen:  #4A3585;
-  --mentem: #1B5745;
-  --nomen:  #2C4C7C;
-  --terram: #7A4322;
+  /* form hues, darkened to hold on paper */
+  --animal:   #7A6B3E; --aquam:    #2B5E7A; --auram:    #6E7A82;
+  --corpus:   #7A3E3E; --herbam:   #3E6B2B; --ignem:    #B85C2A;
+  --imaginem: #6B5B8A; --mentem:   #1B5745; --terram:   #7A4322;
+  --vim:      #5A5A6A; --umbra:    #3A3A50; --fatum:    #6A5A3A;
+  --limen:    #4A3585; --nomen:    #2C4C7C;
 
   /* semantic. Separate from the accent on purpose. */
   --loss:   #8C2B19;
@@ -165,10 +166,11 @@
     --glow-soft:    0 0 12px -3px color-mix(in srgb, #12B8C6 60%, transparent);
     --glow-form:    0 0 13px -3px currentColor;
 
-    --limen:  #A692EC;
-    --mentem: #46A98D;
-    --nomen:  #7099D8;
-    --terram: #CC8450;
+    --animal: #B8A866; --aquam:  #5BA0C8; --auram:    #9AAAB4;
+    --corpus: #C87070; --herbam: #6BA84E; --ignem:    #E89050;
+    --imaginem:#A494C4;--mentem: #46A98D; --terram:   #CC8450;
+    --vim:    #9090A4; --umbra:  #7070A0; --fatum:    #B8A870;
+    --limen:  #A692EC; --nomen:  #7099D8;
 
     --loss:   #DE7059;
     --loss-bg:#30150F;
@@ -231,10 +233,11 @@
   --glow-soft:    0 0 12px -3px color-mix(in srgb, #12B8C6 60%, transparent);
   --glow-form:    0 0 13px -3px currentColor;
 
-  --limen:  #A692EC;
-  --mentem: #46A98D;
-  --nomen:  #7099D8;
-  --terram: #CC8450;
+  --animal: #B8A866; --aquam:  #5BA0C8; --auram:    #9AAAB4;
+  --corpus: #C87070; --herbam: #6BA84E; --ignem:    #E89050;
+  --imaginem:#A494C4;--mentem: #46A98D; --terram:   #CC8450;
+  --vim:    #9090A4; --umbra:  #7070A0; --fatum:    #B8A870;
+  --limen:  #A692EC; --nomen:  #7099D8;
 
   --loss:   #DE7059;
   --loss-bg:#30150F;
