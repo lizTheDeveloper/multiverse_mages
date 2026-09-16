@@ -1556,11 +1556,12 @@ function diffAndLog(curr) {
   // Knowledge discoveries
   for (let i = 0; i < snap.cells.length && i < prev.cells.length; i++) {
     const c = snap.cells[i], p = prev.cells[i];
+    const cellPermitted = godRuleset?.techniques?.[c.t] && godRuleset?.forms?.[c.f];
     if (c.n > p.n) {
-      feedLog.push({ tick, type: 'discovery', text: `New node in ${c.t} ${c.f}`, count: c.n - p.n });
+      feedLog.push({ tick, type: 'discovery', text: `New node in ${c.t} ${c.f}`, count: c.n - p.n, dim: !cellPermitted });
     }
     if (c.n < p.n) {
-      feedLog.push({ tick, type: 'knowledge-loss', text: `Knowledge lost in ${c.t} ${c.f}` });
+      feedLog.push({ tick, type: 'knowledge-loss', text: `Knowledge lost in ${c.t} ${c.f}`, dim: !cellPermitted });
     }
   }
 
@@ -1609,7 +1610,7 @@ function renderFeed() {
   } else {
     for (const e of entries) {
       const yr = Math.floor(e.tick / 12) + 1;
-      html += `<div class="feed-entry fe-${e.type}"><span class="fe-icon">${FEED_ICONS[e.type] || '·'}</span>${e.text}<span class="fe-tick">yr ${yr}</span></div>`;
+      html += `<div class="feed-entry fe-${e.type}"${e.dim ? ' style="opacity:0.35"' : ''}><span class="fe-icon">${FEED_ICONS[e.type] || '·'}</span>${e.text}<span class="fe-tick">yr ${yr}</span></div>`;
     }
   }
   feedEl.innerHTML = html;
