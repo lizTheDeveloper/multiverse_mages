@@ -24,7 +24,7 @@
     "id": "worship-mage-half",
     "value": 51200,
     "unit": "fp",
-    "gloss": "Raw mage input at which the class yields half its cap — about fifty mages. Raised second in the worshipSnowball retune order.",
+    "gloss": "Raw mage input at which the class yields half its cap \u2014 about fifty mages. Raised second in the worshipSnowball retune order.",
     "tuningStatus": "untuned"
   },
   {
@@ -45,7 +45,7 @@
     "id": "worship-university-half",
     "value": 20480,
     "unit": "fp",
-    "gloss": "Raw university input at which the class yields half its cap — about ten completed universities.",
+    "gloss": "Raw university input at which the class yields half its cap \u2014 about ten completed universities.",
     "tuningStatus": "untuned"
   },
   {
@@ -66,7 +66,7 @@
     "id": "worship-populace-half",
     "value": 16384,
     "unit": "fp",
-    "gloss": "Raw populace input at which the class yields half its cap — about a thousand heads.",
+    "gloss": "Raw populace input at which the class yields half its cap \u2014 about a thousand heads.",
     "tuningStatus": "untuned"
   },
   {
@@ -80,28 +80,28 @@
     "id": "worship-lag-rise",
     "value": 51,
     "unit": "fp",
-    "gloss": "Fraction of the gap to the target closed per world tick while worship is rising — about 5%, so devotion takes about twenty years to settle.",
+    "gloss": "Fraction of the gap to the target closed per world tick while worship is rising \u2014 about 5%, so devotion takes about twenty years to settle.",
     "tuningStatus": "untuned"
   },
   {
     "id": "worship-lag-fall",
     "value": 154,
     "unit": "fp",
-    "gloss": "The same while worship is falling — about 15%. Strictly greater than the rise rate: a setback is felt in about five ticks and takes about twenty to earn back, and that asymmetry is the loop's damping.",
+    "gloss": "The same while worship is falling \u2014 about 15%. Strictly greater than the rise rate: a setback is felt in about five ticks and takes about twenty to earn back, and that asymmetry is the loop's damping.",
     "tuningStatus": "untuned"
   },
   {
     "id": "worship-tier-base",
     "value": 512,
     "unit": "fp",
-    "gloss": "The first geometric tier threshold. Tier t is reached at base × 2^t, so the thresholds are 512, 1024, 2048, 4096, 8192 against a ceiling of 9216.",
+    "gloss": "The first geometric tier threshold. Tier t is reached at base \u00d7 2^t, so the thresholds are 512, 1024, 2048, 4096, 8192 against a ceiling of 9216.",
     "tuningStatus": "untuned"
   },
   {
     "id": "worship-tier-count",
     "value": 5,
     "unit": "count",
-    "gloss": "How many thresholds exist, giving tiers 0 through 5 and an edict budget of 1 + tier that reaches 6 against EDICT_BUDGET_MAX = 8. The count is NOT a tuning knob — the observation's shape depends on it.",
+    "gloss": "How many thresholds exist, giving tiers 0 through 5 and an edict budget of 1 + tier that reaches 6 against EDICT_BUDGET_MAX = 8. The count is NOT a tuning knob \u2014 the observation's shape depends on it.",
     "tuningStatus": "untuned"
   },
   {
@@ -115,14 +115,14 @@
     "id": "favor-per-worship",
     "value": 512,
     "unit": "fp",
-    "gloss": "Favor per unit of worship per world tick. With the ceiling above, a maximally worshipped universe regenerates 5.5× a bare one. Lowered third in the worshipSnowball retune order.",
+    "gloss": "Favor per unit of worship per world tick. With the ceiling above, a maximally worshipped universe regenerates 5.5\u00d7 a bare one. Lowered third in the worshipSnowball retune order.",
     "tuningStatus": "untuned"
   },
   {
     "id": "favor-cap-base",
     "value": 20480,
     "unit": "fp",
-    "gloss": "The favor pool's ceiling at worship tier 0. The cap is what converts a worship lead from power into tempo — a high-worship god cannot do more things, only sooner.",
+    "gloss": "The favor pool's ceiling at worship tier 0. The cap is what converts a worship lead from power into tempo \u2014 a high-worship god cannot do more things, only sooner.",
     "tuningStatus": "untuned"
   },
   {
@@ -136,7 +136,7 @@
     "id": "hysteresis-decay-ticks",
     "value": 60,
     "unit": "ticks",
-    "gloss": "World ticks between decrements of an axis's recent-change counter — five world years.",
+    "gloss": "World ticks between decrements of an axis's recent-change counter \u2014 five world years.",
     "tuningStatus": "untuned"
   },
   {
@@ -150,7 +150,7 @@
     "id": "upheaval-ticks",
     "value": 24,
     "unit": "ticks",
-    "gloss": "How long a forbidding shock holds the worship target down — two world years.",
+    "gloss": "How long a forbidding shock holds the worship target down \u2014 two world years.",
     "tuningStatus": "untuned"
   },
   {
@@ -164,14 +164,14 @@
     "id": "tradition-shock",
     "value": 256,
     "unit": "fp",
-    "gloss": "The tradition-change shock factor — the worship target quartered. A decade of ruin is the mechanical form of vision §4a's 'throws the civilization into upheaval'.",
+    "gloss": "The tradition-change shock factor \u2014 the worship target quartered. A decade of ruin is the mechanical form of vision \u00a74a's 'throws the civilization into upheaval'.",
     "tuningStatus": "untuned"
   },
   {
     "id": "tradition-shock-ticks",
     "value": 120,
     "unit": "ticks",
-    "gloss": "How long the tradition shock holds — ten world years, five times a forbidding.",
+    "gloss": "How long the tradition shock holds \u2014 ten world years, five times a forbidding.",
     "tuningStatus": "untuned"
   },
   {
@@ -213,7 +213,7 @@
     "id": "encourage-magnitude",
     "value": 256,
     "unit": "fp",
-    "gloss": "A fresh encouragement's contribution to one cell's research-rate, into the same (1 + Σ) channel and the same cap as every other source.",
+    "gloss": "A fresh encouragement's contribution to one cell's research-rate, into the same (1 + \u03a3) channel and the same cap as every other source.",
     "tuningStatus": "untuned"
   },
   {
@@ -234,21 +234,21 @@
     "id": "grant-mastery",
     "value": 1024,
     "unit": "fp",
-    "gloss": "Mastery a founding grant arrives at — full, so the recipient can teach it without loss. A grant at the research default would sit below the teach threshold and never leave the founder's head.",
+    "gloss": "Mastery a founding grant arrives at \u2014 full, so the recipient can teach it without loss. A grant at the research default would sit below the teach threshold and never leave the founder's head.",
     "tuningStatus": "untuned"
   },
   {
     "id": "fund-progress",
     "value": 256,
     "unit": "fp",
-    "gloss": "buildProgress one funding action buys, so four fundings complete a university. Invented here: §1.4 gives a university buildProgress and no content field supplied a rate, because funding is god action 11 and the god had no verbs.",
+    "gloss": "buildProgress one funding action buys, so four fundings complete a university. Invented here: \u00a71.4 gives a university buildProgress and no content field supplied a rate, because funding is god action 11 and the god had no verbs.",
     "tuningStatus": "untuned"
   },
   {
     "id": "found-university-cost",
     "value": 10240,
     "unit": "fp",
-    "gloss": "What action 11 costs with a target of 0. Separate from the fund cost because §4.2 gives founding and funding one action id and they are not the same purchase.",
+    "gloss": "What action 11 costs with a target of 0. Separate from the fund cost because \u00a74.2 gives founding and funding one action id and they are not the same purchase.",
     "tuningStatus": "untuned"
   },
   {
@@ -262,14 +262,14 @@
     "id": "ascension-min-tick",
     "value": 600,
     "unit": "ticks",
-    "gloss": "No ascension may be declared before this — fifty world years. The floor against a rush that would make the ascension band measure content rather than play.",
+    "gloss": "No ascension may be declared before this \u2014 fifty world years. The floor against a rush that would make the ascension band measure content rather than play.",
     "tuningStatus": "untuned"
   },
   {
     "id": "ascension-tier-gate",
     "value": 4,
     "unit": "tier",
-    "gloss": "Worship tier Path A requires. The first knob turned when ascensionRate leaves its 5–20% band.",
+    "gloss": "Worship tier Path A requires. The first knob turned when ascensionRate leaves its 5\u201320% band.",
     "tuningStatus": "untuned"
   },
   {
@@ -283,7 +283,7 @@
     "id": "ascension-dependence-max",
     "value": 256,
     "unit": "fp",
-    "gloss": "The libraryDependence a passing era boundary must be at or below — 25%. The third and last knob in the ascension retune order.",
+    "gloss": "The libraryDependence a passing era boundary must be at or below \u2014 25%. The third and last knob in the ascension retune order.",
     "tuningStatus": "untuned"
   },
   {
@@ -297,7 +297,7 @@
     "id": "ascension-summit-cells",
     "value": 13,
     "unit": "count",
-    "gloss": "Permitted cells that must stand at their floor for Path A — deepest node held by a living mage. §8a's summit is 'the deepest node of a cell'; this is how many at once, and it is the conjunct that reads play. Calibrated, not guessed: the v1 rectangle is twelve cells and an unattended universe masters all twelve, so the tuner measures 12 infeasible (exploit −0.542) and 13 feasible (+0.167) — the first value needing an axis the universe did not start with. Set to 1 to recover the shipped rule.",
+    "gloss": "Permitted cells that must stand at their floor for Path A \u2014 deepest node held by a living mage. \u00a78a's summit is 'the deepest node of a cell'; this is how many at once, and it is the conjunct that reads play. Calibrated, not guessed: the v1 rectangle is twelve cells and an unattended universe masters all twelve, so the tuner measures 12 infeasible (exploit \u22120.542) and 13 feasible (+0.167) \u2014 the first value needing an axis the universe did not start with. Set to 1 to recover the shipped rule.",
     "tuningStatus": "untuned"
   },
   {
@@ -311,7 +311,7 @@
     "id": "ascension-canon-breadth",
     "value": 77,
     "unit": "count",
-    "gloss": "Nodes a passing era boundary must hold — the 'knowledge' in §8a's 'held its knowledge intact across enough eras'. Before this the predicate asked only that nothing had gone wrong, so a universe nobody touches was a perfect custodian. Anchored to the passive baseline: the v1 rectangle holds exactly 51 nodes and an unattended universe learns all 51, so 51 is content exhaustion. 77 is 1.5x it. A count, not a fraction of the graph, so the summit cannot recede as content grows.",
+    "gloss": "Nodes a passing era boundary must hold \u2014 the 'knowledge' in \u00a78a's 'held its knowledge intact across enough eras'. Before this the predicate asked only that nothing had gone wrong, so a universe nobody touches was a perfect custodian. Anchored to the passive baseline: the v1 rectangle holds exactly 51 nodes and an unattended universe learns all 51, so 51 is content exhaustion. 77 is 1.5x it. A count, not a fraction of the graph, so the summit cannot recede as content grows.",
     "tuningStatus": "untuned"
   },
   {
@@ -332,7 +332,7 @@
     "id": "ascension-loss-fraction",
     "value": 51,
     "unit": "fp",
-    "gloss": "Share of the canon a passing era may lose — 5% — floored by ascension-loss-max. An absolute cap over a quantity that scales measures scale rather than custodianship: measured on this build, a passive universe holds 51 nodes and loses none while a broad one holds 220 and loses seven, so a flat allowance of two disqualified the civilization that was doing something and waved through the one in stasis. Set it to 0 to recover the predicate exactly as it shipped.",
+    "gloss": "Share of the canon a passing era may lose \u2014 5% \u2014 floored by ascension-loss-max. An absolute cap over a quantity that scales measures scale rather than custodianship: measured on this build, a passive universe holds 51 nodes and loses none while a broad one holds 220 and loses seven, so a flat allowance of two disqualified the civilization that was doing something and waved through the one in stasis. Set it to 0 to recover the predicate exactly as it shipped.",
     "tuningStatus": "untuned"
   },
   {
@@ -353,14 +353,14 @@
     "id": "stagnation-worship-ticks",
     "value": 240,
     "unit": "ticks",
-    "gloss": "Consecutive world ticks below that floor before the run ends as stagnated — twenty world years.",
+    "gloss": "Consecutive world ticks below that floor before the run ends as stagnated \u2014 twenty world years.",
     "tuningStatus": "untuned"
   },
   {
     "id": "stagnation-stasis-ticks",
     "value": 480,
     "unit": "ticks",
-    "gloss": "Consecutive world ticks with no node newly entering the universe before the stasis trigger fires — but only while worship is simultaneously below the health floor.",
+    "gloss": "Consecutive world ticks with no node newly entering the universe before the stasis trigger fires \u2014 but only while worship is simultaneously below the health floor.",
     "tuningStatus": "untuned"
   },
   {
@@ -381,14 +381,14 @@
     "id": "prestige-retention",
     "value": 768,
     "unit": "fp",
-    "gloss": "The fraction of carried prestige that survives into the next run — 75%. The recurrence prestige' = prestige × retention + earned converges, and its limit is the cap below.",
+    "gloss": "The fraction of carried prestige that survives into the next run \u2014 75%. The recurrence prestige' = prestige \u00d7 retention + earned converges, and its limit is the cap below.",
     "tuningStatus": "untuned"
   },
   {
     "id": "prestige-cap",
     "value": 8192,
     "unit": "fp",
-    "gloss": "earn-max ÷ (1 − retention). A property of the arithmetic, not an arbitrary clamp: an infinite streak of perfect runs approaches it and never exceeds it. The loader asserts the identity, so a retune that breaks the relationship fails the load.",
+    "gloss": "earn-max \u00f7 (1 \u2212 retention). A property of the arithmetic, not an arbitrary clamp: an infinite streak of perfect runs approaches it and never exceeds it. The loader asserts the identity, so a retune that breaks the relationship fails the load.",
     "tuningStatus": "untuned"
   },
   {
@@ -437,7 +437,7 @@
     "id": "legacy-cap",
     "value": 1024,
     "unit": "fp",
-    "gloss": "The ceiling of the saturating prestige-to-legacy conversion. Half the maximum prestige already buys 83% of the attainable head start, so the back half of the prestige range is nearly worthless — the second damping stage in series.",
+    "gloss": "The ceiling of the saturating prestige-to-legacy conversion. Half the maximum prestige already buys 83% of the attainable head start, so the back half of the prestige range is nearly worthless \u2014 the second damping stage in series.",
     "tuningStatus": "untuned"
   },
   {
@@ -465,14 +465,14 @@
     "id": "legacy-headstart-fraction",
     "value": 256,
     "unit": "fp",
-    "gloss": "25% of the median unaided universe's value at the reference tick. THE single knob prestigeAdvantage turns — if it reaches zero and the metric still fails, the model is wrong and gets redesigned rather than retuned.",
+    "gloss": "25% of the median unaided universe's value at the reference tick. THE single knob prestigeAdvantage turns \u2014 if it reaches zero and the metric still fails, the model is wrong and gets redesigned rather than retuned.",
     "tuningStatus": "untuned"
   },
   {
     "id": "legacy-reference-tick",
     "value": 120,
     "unit": "ticks",
-    "gloss": "The world tick the unaided baselines below are measured at — ten world years.",
+    "gloss": "The world tick the unaided baselines below are measured at \u2014 ten world years.",
     "tuningStatus": "untuned"
   },
   {
@@ -486,21 +486,21 @@
     "id": "legacy-baseline-materials",
     "value": 1024000,
     "unit": "fp",
-    "gloss": "Placeholder for the median unaided universe's materials stock at the reference tick — the reference scenario's starting stock, which the first sweep replaces with a measured median.",
+    "gloss": "Placeholder for the median unaided universe's materials stock at the reference tick \u2014 the reference scenario's starting stock, which the first sweep replaces with a measured median.",
     "tuningStatus": "untuned"
   },
   {
     "id": "legacy-baseline-populace",
     "value": 72,
     "unit": "count",
-    "gloss": "Placeholder for the median unaided universe's headcount at the reference tick — the reference scenario's founding population, which the first sweep replaces with a measured median.",
+    "gloss": "Placeholder for the median unaided universe's headcount at the reference tick \u2014 the reference scenario's founding population, which the first sweep replaces with a measured median.",
     "tuningStatus": "untuned"
   },
   {
     "id": "founding-grant-budget-start",
     "value": 4096,
     "unit": "count",
-    "gloss": "Founding grants a god may make before the universe has discovered anything. 4096 is unreachable — the grid holds 300 nodes and only prerequisite-free ones in permitted cells are grantable — so at this build no budget is in force and action 8 behaves exactly as it always has. The number is deliberately inert: the balance sweep varies it per arm through the scenario, and the value that ships here changes only once a curve says which one to ship.",
+    "gloss": "Founding grants a god may make before the universe has discovered anything. 4096 is unreachable \u2014 the grid holds 300 nodes and only prerequisite-free ones in permitted cells are grantable \u2014 so at this build no budget is in force and action 8 behaves exactly as it always has. The number is deliberately inert: the balance sweep varies it per arm through the scenario, and the value that ships here changes only once a curve says which one to ship.",
     "tuningStatus": "untuned"
   },
   {
@@ -514,21 +514,21 @@
     "id": "founding-grant-budget-cap",
     "value": 4096,
     "unit": "count",
-    "gloss": "Ceiling on grants ever authorized — starting allowance plus everything accrued. A ceiling on what may be granted, never on what is held, so a frugal god keeps earning and a spent one is not refunded. Unreachable at this build for the same reason the starting allowance is.",
+    "gloss": "Ceiling on grants ever authorized \u2014 starting allowance plus everything accrued. A ceiling on what may be granted, never on what is held, so a frugal god keeps earning and a spent one is not refunded. Unreachable at this build for the same reason the starting allowance is.",
     "tuningStatus": "untuned"
   },
   {
     "id": "unease-bars",
     "value": 8,
     "unit": "ticks",
-    "gloss": "sound-design.md §5.2: the permit chord's low partial 'decays over about eight bars', and §3.1 makes one world tick one bar. The only duration the design attaches to a constitutional act, taken literally.",
+    "gloss": "sound-design.md \u00a75.2: the permit chord's low partial 'decays over about eight bars', and \u00a73.1 makes one world tick one bar. The only duration the design attaches to a constitutional act, taken literally.",
     "tuningStatus": "untuned"
   },
   {
     "id": "unease-step",
     "value": 256,
     "unit": "fp",
-    "gloss": "Surcharge per bar of §5.2's unease still ringing when another constitutional act lands. A quarter again per bar, so an act on the very next tick pays 2.75x and one eight bars later pays nothing. Prices churning the constitution, which §1.1's axisChangeCounters does not: that counter needs one axis flipped twice, and a god who permits nineteen different things once each never trips it.",
+    "gloss": "Surcharge per bar of \u00a75.2's unease still ringing when another constitutional act lands. A quarter again per bar, so an act on the very next tick pays 2.75x and one eight bars later pays nothing. Prices churning the constitution, which \u00a71.1's axisChangeCounters does not: that counter needs one axis flipped twice, and a god who permits nineteen different things once each never trips it.",
     "tuningStatus": "untuned"
   },
   {

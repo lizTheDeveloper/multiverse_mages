@@ -667,26 +667,43 @@ html, body { height: 100%; overflow: hidden; }
   .feed-wrap { grid-template-columns: 1fr; }
 }
 
-/* ---------- Knowledge tab (tech tree) ---------- */
-.knowledge-panel { position: relative; overflow: hidden; }
-.knowledge-panel canvas { display: block; width: 100%; height: 100%; cursor: grab; }
-.knowledge-panel canvas:active { cursor: grabbing; }
-.know-tooltip {
-  position: absolute; pointer-events: none; z-index: 10;
-  background: var(--plate); border: 1px solid var(--edge); border-radius: 4px;
-  padding: .3rem .5rem; font: 10px var(--mono); color: var(--ink);
-  max-width: 220px; box-shadow: 0 2px 8px rgba(0,0,0,.3);
-}
-.know-tooltip .tt-name { font: italic 11px var(--serif); color: var(--god); margin-bottom: .15rem; }
-.know-tooltip .tt-cell { font: 9px var(--mono); color: var(--faint); }
-.know-tooltip .tt-gloss { font: 10px var(--sans); color: var(--soft); margin-top: .2rem; }
-.know-summary {
-  position: absolute; bottom: .5rem; left: .5rem;
-  font: 10px var(--mono); color: var(--faint);
-  background: color-mix(in srgb, var(--ground) 85%, transparent);
-  padding: .2rem .4rem; border-radius: 3px;
-}
-.know-summary b { color: var(--soft); }
+/* ---------- Knowledge tab (the research frontier) ---------- */
+.knowledge-panel { height: 100%; overflow-y: auto; background: var(--ground); }
+.knowledge-tree { max-width: 68rem; margin: 0 auto; padding: 1rem; }
+.knowledge-intro { padding: .15rem 0 .9rem; border-bottom: 1px solid var(--edge); }
+.knowledge-intro h2 { margin: 0 0 .2rem; font: 400 1.35rem var(--serif); color: var(--god); }
+.knowledge-intro p { margin: 0; font: italic .9rem/1.4 var(--serif); color: var(--soft); }
+.knowledge-layout { display: grid; grid-template-columns: minmax(0, 1fr) minmax(15rem, 22rem); gap: 1rem; padding-top: .8rem; align-items: start; }
+.school-list { display: flex; flex-direction: column; gap: .45rem; }
+.school { border: 1px solid var(--edge); background: var(--panel); }
+.school > summary { display: flex; align-items: center; gap: .5rem; padding: .6rem .7rem; cursor: pointer; list-style: none; }
+.school > summary::-webkit-details-marker { display: none; }
+.school > summary::before { content: '›'; color: var(--faint); font: 1rem var(--serif); transition: transform .15s ease; }
+.school[open] > summary::before { transform: rotate(90deg); }
+.school-name { font: 400 1.05rem var(--serif); color: var(--ink); }
+.school-count { margin-left: auto; font: 9px var(--mono); letter-spacing: .06em; text-transform: uppercase; color: var(--faint); }
+.school-frontier { color: var(--god); }
+.school-body { padding: 0 .7rem .7rem; border-top: 1px solid var(--edge); }
+.school-nodes { display: grid; grid-template-columns: repeat(auto-fill, minmax(12rem, 1fr)); gap: .4rem; padding: .65rem 0 .45rem; }
+.knowledge-node { appearance: none; width: 100%; min-height: 4.4rem; text-align: left; cursor: pointer; padding: .5rem .55rem; border-radius: 3px; background: var(--plate); border: 1px solid var(--edge); color: var(--ink); }
+.knowledge-node:hover, .knowledge-node:focus-visible { border-color: var(--node-color, var(--god)); outline: none; box-shadow: 0 0 0 1px color-mix(in srgb, var(--node-color, var(--god)) 38%, transparent); }
+.knowledge-node .node-tier { display: block; margin-bottom: .18rem; font: 9px var(--mono); letter-spacing: .08em; text-transform: uppercase; opacity: .75; }
+.knowledge-node .node-name { display: block; font: 400 1rem/1.08 var(--serif); }
+.knowledge-node.known { color: var(--node-color, var(--god)); background: color-mix(in srgb, var(--node-color, var(--god)) 13%, var(--plate)); border-color: color-mix(in srgb, var(--node-color, var(--god)) 62%, var(--edge)); }
+.knowledge-node.researchable { color: var(--node-color, var(--god)); background: var(--panel); border: 1px dashed var(--node-color, var(--god)); animation: knowledge-frontier 2.6s ease-in-out infinite; }
+.knowledge-node.researchable .node-tier::after { content: ' · researchable'; }
+.knowledge-more { margin: .05rem 0 0; font: italic .85rem var(--serif); color: var(--faint); }
+.knowledge-detail { position: sticky; top: .7rem; min-height: 10rem; box-sizing: border-box; padding: .8rem; background: var(--plate); border: 1px solid var(--edge); border-top: 2px solid var(--god); }
+.knowledge-detail .detail-kicker { font: 9px var(--mono); letter-spacing: .1em; text-transform: uppercase; color: var(--faint); }
+.knowledge-detail h3 { margin: .18rem 0 .45rem; font: 400 1.28rem/1.05 var(--serif); color: var(--detail-color, var(--god)); }
+.knowledge-detail .detail-gloss { margin: 0 0 .7rem; font: italic .9rem/1.4 var(--serif); color: var(--soft); }
+.knowledge-detail dl { margin: 0; display: grid; grid-template-columns: 5.5rem 1fr; gap: .35rem .55rem; font: 10px/1.4 var(--mono); }
+.knowledge-detail dt { color: var(--faint); text-transform: uppercase; letter-spacing: .05em; }
+.knowledge-detail dd { margin: 0; color: var(--ink); }
+.knowledge-detail .detail-prereqs { display: flex; flex-wrap: wrap; gap: .25rem; }
+.knowledge-detail .detail-prereqs span { padding: .1rem .25rem; border: 1px solid var(--edge); color: var(--soft); }
+@keyframes knowledge-frontier { 0%, 100% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--node-color) 0%, transparent); } 50% { box-shadow: 0 0 .7rem .05rem color-mix(in srgb, var(--node-color) 32%, transparent); } }
+@media (max-width: 56rem) { .knowledge-layout { grid-template-columns: 1fr; } .knowledge-detail { position: static; } }
 
 /* ---------- Console tab ---------- */
 .console-grid {
@@ -957,9 +974,7 @@ html, body { height: 100%; overflow: hidden; }
     </div>
     <div class="center-panel" id="panel-knowledge">
       <div class="knowledge-panel" id="knowledge-list">
-        <canvas id="tech-tree-canvas"></canvas>
-        <div class="know-tooltip" id="tt" hidden></div>
-        <div class="know-summary" id="know-summary"></div>
+        <div class="knowledge-tree"></div>
       </div>
     </div>
     <div class="center-panel" id="panel-console">
@@ -1043,9 +1058,10 @@ if (isLive) {
   const reload = async () => {
     const fresh = await openSession({ recording: '/live/session.json' });
     for (const k of ['provenance','content','actionNames','frameCount','frame','last','actionCost','capabilities']) {
-      session[k] = fresh[k];
+      try { session[k] = fresh[k]; } catch { /* getter-only property, skip */ }
     }
   };
+  session.reload = reload;
   session.submit = async (kind, params) => { await post('/live/submit', { kind, params }); await reload(); };
   session.advance = async (ticks) => { await post('/live/advance', { ticks }); await reload(); };
   session.restart = async (seed, ticks) => { await post('/live/reset', { seed, ticks: ticks || 4000 }); await reload(); };
@@ -1174,47 +1190,28 @@ const el = (id) => document.getElementById(id);
 
     // Apply the chosen ruleset — reset, forbid, then warm up
     if (isLive) {
-      // Reset with a few warm-up ticks so the universe has favor to spend on forbids
-      const body = { seed: Date.now(), ticks: 4000, warm: 6 };
+      // Reset and warm up. Each forbid submit costs one tick, so the forbids
+      // themselves generate favor. But forbids cost 4096-8192 each, and early
+      // favor regen is ~2-40/tick. We advance between forbids to let favor
+      // accumulate. The warm param runs no-op ticks before any user action.
+      // Build the forbid lists — the server handles favor regeneration internally.
+      const forbidTechniques = [];
+      for (let i = 0; i < TECHNIQUES.length; i++) {
+        if (!setup.techniques.has(TECHNIQUES[i].id)) forbidTechniques.push(i + 1);
+      }
+      const forbidForms = [];
+      for (let i = 0; i < FORMS.length; i++) {
+        if (!setup.forms.has(FORMS[i])) forbidForms.push(i + 1);
+      }
+      const body = { seed: Date.now(), ticks: 4000, warm: 40, forbidTechniques, forbidForms };
+      console.log('[BEGIN] setup.techniques:', [...setup.techniques], 'setup.forms:', [...setup.forms]);
+      console.log('[BEGIN] forbidTechniques:', forbidTechniques, 'forbidForms:', forbidForms);
       await fetch('/live/reset', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(body),
       });
-
-      // Forbid unselected techniques (action 2 = forbid technique, 1-based bit)
-      for (let i = 0; i < TECHNIQUES.length; i++) {
-        if (!setup.techniques.has(TECHNIQUES[i].id)) {
-          await fetch('/live/submit', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ kind: 2, params: [i + 1] }),
-          });
-        }
-      }
-      // Forbid unselected forms (action 4 = forbid form, 1-based bit)
-      for (let i = 0; i < FORMS.length; i++) {
-        if (!setup.forms.has(FORMS[i])) {
-          await fetch('/live/submit', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ kind: 4, params: [i + 1] }),
-          });
-        }
-      }
-      // Warm up 1 year so the universe has its first discoveries
-      await fetch('/live/advance', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ticks: 12 }),
-      });
-
-      // Advance 1 more tick to make the forbids take effect
-      await fetch('/live/advance', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ticks: 1 }),
-      });
+      await session.reload();
 
     }
 
@@ -1826,7 +1823,8 @@ function paintActionCandidates(f, detEl) {
   detEl._liveActionId = aid;
 
   let html = `<div class="cell-name">${action?.name || `Action ${aid}`}</div>`;
-  html += `<div class="cell-knowledge">${cands.length} candidate${cands.length !== 1 ? 's' : ''} · costs ${action?.cost?.toLocaleString() || '?'} favor</div>`;
+  const detailCost = action?.cost ? (action.cost / 1024).toFixed(action.cost >= 1024 ? 0 : 1) : '?';
+  html += `<div class="cell-knowledge">${cands.length} candidate${cands.length !== 1 ? 's' : ''} · costs ${detailCost} favor</div>`;
   html += `<div style="font:9px var(--mono);color:var(--god);margin-bottom:.3rem">Click a candidate to execute</div>`;
 
   if (byAction.length > 0) {
@@ -1913,241 +1911,115 @@ function paintActionCandidates(f, detEl) {
 }
 
 // ================================================================ KNOWLEDGE TAB
-// ================================================================ TECH TREE
-const ttCanvas = el('tech-tree-canvas');
-const ttCtx = ttCanvas.getContext('2d');
-const ttTip = el('tt');
-const ttState = { panX: 40, panY: 40, zoom: 1, dragging: false, lastX: 0, lastY: 0 };
-
-// Build the node layout once from content
-let ttNodes = null; // [{nodeId, id, name, cell, cellId, technique, form, tier, prereqs, x, y}]
-let ttNodeMap = null; // nodeId → index
-
-function buildTechTree() {
-  if (ttNodes) return;
-  const nodes = session.content.nodes;
-  const cells = session.content.cells;
-  if (!nodes || !cells) return;
-
-  const cellMap = {};
-  cells.forEach(c => { cellMap[c.cellId] = c; });
-
-  // Group nodes by cell, sort by tier within cell
-  const byCellTech = {}; // "technique" → [{cell, nodes}]
-  cells.forEach(c => {
-    const key = c.technique;
-    if (!byCellTech[key]) byCellTech[key] = [];
-    const cellNodes = nodes.filter(n => n.cellId === c.cellId).sort((a,b) => a.tier - b.tier);
-    byCellTech[key].push({ cell: c, nodes: cellNodes });
-  });
-
-  // Layout: X = tier * spacing, Y = cell group offset
-  const TIER_W = 120;
-  const NODE_H = 28;
-  const CELL_GAP = 16;
-  const TECH_GAP = 40;
-
-  ttNodes = [];
-  ttNodeMap = {};
-  let globalY = 0;
-  const techOrder = ['intellego','creo','muto','perdo','rego'];
-
-  for (const tech of techOrder) {
-    const cellGroups = (byCellTech[tech] || []).sort((a,b) => a.cell.form < b.cell.form ? -1 : 1);
-    for (const g of cellGroups) {
-      const tierSlots = {}; // tier → count within this cell at this tier
-      for (const n of g.nodes) {
-        const slot = tierSlots[n.tier] || 0;
-        tierSlots[n.tier] = slot + 1;
-        const x = (n.tier - 1) * TIER_W;
-        const y = globalY + slot * NODE_H;
-        const idx = ttNodes.length;
-        ttNodes.push({
-          nodeId: n.nodeId, id: n.id, name: n.name,
-          cellId: n.cellId, technique: g.cell.technique, form: g.cell.form,
-          tier: n.tier, prereqs: n.prerequisites || [],
-          x, y, gloss: n.gloss || ''
-        });
-        ttNodeMap[n.nodeId] = idx;
-      }
-      const maxSlots = Math.max(...Object.values(tierSlots), 1);
-      globalY += maxSlots * NODE_H + CELL_GAP;
-    }
-    globalY += TECH_GAP;
-  }
-}
-
-// Form hue lookup for canvas drawing
-const FORM_COLORS_LIGHT = {
-  animal:'#7A6B3E',aquam:'#2B5E7A',auram:'#6E7A82',corpus:'#7A3E3E',
-  herbam:'#3E6B2B',ignem:'#B85C2A',imaginem:'#6B5B8A',mentem:'#1B5745',
-  terram:'#7A4322',vim:'#5A5A6A',umbra:'#3A3A50',fatum:'#6A5A3A',
-  limen:'#4A3585',nomen:'#2C4C7C'
-};
-const FORM_COLORS_DARK = {
-  animal:'#B8A866',aquam:'#5BA0C8',auram:'#9AAAB4',corpus:'#C87070',
-  herbam:'#6BA84E',ignem:'#E89050',imaginem:'#A494C4',mentem:'#46A98D',
-  terram:'#CC8450',vim:'#9090A4',umbra:'#7070A0',fatum:'#B8A870',
-  limen:'#A692EC',nomen:'#7099D8'
-};
+const knowledgeUI = { selectedId: null, openSchools: new Set() };
+const escapeKnowledge = (value) => String(value ?? '').replace(/[&<>"']/g, (c) => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' })[c]);
 
 function renderKnowledge(f) {
-  buildTechTree();
-  if (!ttNodes) return;
-
   f = f || session.last();
-  const kCells = f.knowledge();
-  const isDark = document.documentElement.getAttribute('data-theme') === 'dark' ||
-    (!document.documentElement.getAttribute('data-theme') && matchMedia('(prefers-color-scheme:dark)').matches);
-  const formColors = isDark ? FORM_COLORS_DARK : FORM_COLORS_LIGHT;
+  const host = document.querySelector('#knowledge-list .knowledge-tree');
+  const nodes = session.content.nodes || [];
+  const cells = session.content.cells || [];
+  if (!host || nodes.length === 0) return;
 
-  // Build known set: a node is "known" if its cell has knowledge and its tier <= deepestTier
-  const cellKnowledge = {};
-  kCells.forEach(c => {
-    const key = `${c.technique}-${c.form}`;
-    cellKnowledge[key] = { known: c.live, deepest: c.deepestTier, nodesKnown: c.nodesKnown };
-  });
-
-  // Canvas sizing
-  const panel = el('knowledge-list');
-  const W = panel.clientWidth;
-  const H = panel.clientHeight;
-  const dpr = devicePixelRatio || 1;
-  ttCanvas.width = W * dpr;
-  ttCanvas.height = H * dpr;
-  ttCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
-
-  const ctx = ttCtx;
-  const bg = isDark ? '#0A0D0F' : '#E4DECD';
-  ctx.fillStyle = bg;
-  ctx.fillRect(0, 0, W, H);
-
-  ctx.save();
-  ctx.translate(ttState.panX, ttState.panY);
-  ctx.scale(ttState.zoom, ttState.zoom);
-
-  const R = 7;
-
-  // Draw edges first (behind nodes)
-  ctx.lineWidth = 1;
-  for (const n of ttNodes) {
-    for (const pid of n.prereqs) {
-      const pi = ttNodeMap[pid];
-      if (pi == null) continue;
-      const p = ttNodes[pi];
-      const crossCell = p.cellId !== n.cellId;
-      ctx.strokeStyle = crossCell
-        ? (isDark ? 'rgba(18,184,198,0.5)' : 'rgba(11,75,81,0.4)')
-        : (isDark ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.12)');
-      ctx.lineWidth = crossCell ? 1.5 : 0.8;
-      ctx.beginPath();
-      ctx.moveTo(p.x + R, p.y);
-      // Bezier curve for cross-cell, straight for same-cell
-      if (crossCell) {
-        const mx = (p.x + n.x) / 2;
-        ctx.bezierCurveTo(mx, p.y, mx, n.y, n.x - R, n.y);
-      } else {
-        ctx.lineTo(n.x - R, n.y);
+  const nodeKey = (node) => node.nodeId ?? node.id;
+  const cellKey = (cell) => cell.cellId ?? cell.id;
+  const nodeById = new Map(nodes.map((node) => [nodeKey(node), node]));
+  const cellById = new Map(cells.map((cell) => [cellKey(cell), cell]));
+  const knowledgeByCell = new Map(f.knowledge().map((cell) => [`${cell.technique}-${cell.form}`, cell]));
+  const academy = f.academy?.();
+  const held = new Set();
+  const holders = new Map();
+  const rawAcademy = f.raw?.academy;
+  for (const university of Object.values(rawAcademy?.universities || {})) {
+    for (const mage of university.roster || []) {
+      for (const id of mage.nodeIds || []) {
+        held.add(id);
+        const list = holders.get(id) || [];
+        list.push(`Mage #${mage.handle}`);
+        holders.set(id, list);
       }
-      ctx.stroke();
     }
   }
 
-  // Draw nodes
-  for (const n of ttNodes) {
-    const ck = `${n.technique}-${n.form}`;
-    const cellK = cellKnowledge[ck];
-    const known = cellK && cellK.known && n.tier <= cellK.deepest;
-    const color = formColors[n.form] || '#888';
+  const cellFor = (node) => cellById.get(node.cellId ?? node.cell) || {};
+  const isKnown = (node) => {
+    if (!node) return false;
+    const id = nodeKey(node);
+    if (held.size > 0) return held.has(id);
+    const cell = cellFor(node);
+    const observed = knowledgeByCell.get(`${cell.technique}-${cell.form}`);
+    return Boolean(observed?.live && node.tier <= observed.deepestTier);
+  };
+  const permitted = (node) => {
+    const cell = cellFor(node);
+    const id = node.cellId ?? node.cell;
+    if (academy) return academy.permittedCells.has(id);
+    const rules = f.ruleset();
+    return Boolean(rules.techniques.find((x) => x.id === cell.technique)?.permitted && rules.forms.find((x) => x.id === cell.form)?.permitted);
+  };
+  const prerequisites = (node) => node.prerequisites || [];
+  const isResearchable = (node) => !isKnown(node) && permitted(node) && prerequisites(node).every((id) => isKnown(nodeById.get(id)));
 
-    ctx.beginPath();
-    ctx.arc(n.x, n.y, R, 0, Math.PI * 2);
-
-    if (known) {
-      ctx.fillStyle = color;
-      ctx.fill();
-      ctx.strokeStyle = isDark ? 'rgba(255,255,255,0.3)' : 'rgba(0,0,0,0.2)';
-      ctx.lineWidth = 1;
-      ctx.stroke();
-    } else {
-      ctx.fillStyle = isDark ? 'rgba(30,35,40,0.6)' : 'rgba(200,195,185,0.5)';
-      ctx.fill();
-      ctx.strokeStyle = color;
-      ctx.globalAlpha = 0.35;
-      ctx.lineWidth = 1;
-      ctx.stroke();
-      ctx.globalAlpha = 1;
-    }
-
-    // Tier label inside for known nodes
-    if (known) {
-      ctx.fillStyle = isDark ? '#000' : '#fff';
-      ctx.font = '7px ' + getComputedStyle(document.body).getPropertyValue('--mono');
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'middle';
-      ctx.fillText(String(n.tier), n.x, n.y);
+  const schoolMap = new Map();
+  for (const node of nodes) {
+    const cell = cellFor(node);
+    const schools = cell.classicalLabels || cell.classical || ['unclassified'];
+    for (const school of schools) {
+      if (!schoolMap.has(school)) schoolMap.set(school, []);
+      schoolMap.get(school).push(node);
     }
   }
-
-  ctx.restore();
-
-  // Summary
-  let totalLive = 0, totalN = 0;
-  kCells.forEach(c => { if (c.live) { totalLive++; totalN += c.nodesKnown; } });
-  el('know-summary').innerHTML = `<b>${totalLive}</b> cells · <b>${totalN}</b> nodes known · scroll to zoom · drag to pan`;
+  const titleCase = (s) => String(s).replace(/\b\w/g, (c) => c.toUpperCase());
+  const orderedSchools = [...schoolMap.entries()].sort(([a], [b]) => a.localeCompare(b));
+  const selected = nodes.find((node) => String(nodeKey(node)) === String(knowledgeUI.selectedId)) || null;
+  const nodeButton = (node, status) => {
+    const cell = cellFor(node);
+    return `<button class="knowledge-node ${status}" style="--node-color:var(--${escapeKnowledge(cell.form)})" data-node-id="${escapeKnowledge(nodeKey(node))}" type="button">`
+      + `<span class="node-tier">Tier ${node.tier}</span><span class="node-name">${escapeKnowledge(node.name)}</span></button>`;
+  };
+  const schoolsHtml = orderedSchools.map(([school, schoolNodes]) => {
+    const visible = schoolNodes.filter((node) => isKnown(node) || isResearchable(node));
+    const knownCount = visible.filter(isKnown).length;
+    const frontierCount = visible.length - knownCount;
+    const hiddenCount = schoolNodes.length - visible.length;
+    const open = knowledgeUI.openSchools.has(school) ? ' open' : '';
+    return `<details class="school" data-school="${escapeKnowledge(school)}"${open}><summary><span class="school-name">${escapeKnowledge(titleCase(school))}</span>`
+      + `<span class="school-count">${knownCount} known${frontierCount ? `<span class="school-frontier"> · ${frontierCount} researchable</span>` : ''}</span></summary>`
+      + `<div class="school-body"><div class="school-nodes">${visible.map((node) => nodeButton(node, isKnown(node) ? 'known' : 'researchable')).join('')}</div>`
+      + (hiddenCount ? `<p class="knowledge-more">${hiddenCount} more in this school</p>` : '') + `</div></details>`;
+  }).join('');
+  const detail = selected ? (() => {
+    const cell = cellFor(selected);
+    const observed = knowledgeByCell.get(`${cell.technique}-${cell.form}`);
+    const nodeHolders = holders.get(nodeKey(selected)) || [];
+    const copyText = nodeHolders.length ? `${nodeHolders.length} recorded ${nodeHolders.length === 1 ? 'copy' : 'copies'}` : `${observed?.redundancy ?? 0} copies in this cell`;
+    const prereqHtml = prerequisites(selected).length
+      ? prerequisites(selected).map((id) => `<span>${escapeKnowledge(nodeById.get(id)?.name || id)}</span>`).join('')
+      : '<span>None — a first principle</span>';
+    return `<aside class="knowledge-detail" style="--detail-color:var(--${escapeKnowledge(cell.form)})"><div class="detail-kicker">${isKnown(selected) ? 'Known magic' : 'Research frontier'} · ${escapeKnowledge(cell.technique)} ${escapeKnowledge(cell.form)}</div>`
+      + `<h3>${escapeKnowledge(selected.name)}</h3><p class="detail-gloss">${escapeKnowledge(selected.gloss || 'No gloss has been recorded.')}</p><dl>`
+      + `<dt>Copies</dt><dd>${copyText}</dd><dt>Holders</dt><dd>${nodeHolders.length ? escapeKnowledge(nodeHolders.join(', ')) : 'No individual holder record available'}</dd>`
+      + `<dt>Prerequisites</dt><dd class="detail-prereqs">${prereqHtml}</dd></dl></aside>`;
+  })() : `<aside class="knowledge-detail"><div class="detail-kicker">The frontier</div><h3>Choose a named discovery</h3><p class="detail-gloss">Bright tiles are knowledge your civilization holds. The breathing outlines are the next secrets its scholars can reach.</p></aside>`;
+  const knownTotal = nodes.filter(isKnown).length;
+  const frontierTotal = nodes.filter(isResearchable).length;
+  host.innerHTML = `<div class="knowledge-intro"><h2>The Book of What Is Known</h2><p>${knownTotal} known discoveries · ${frontierTotal} secrets ready to pursue. The deeper art remains in fog.</p></div><div class="knowledge-layout"><div class="school-list">${schoolsHtml}</div>${detail}</div>`;
 }
 
-// Tech tree pan/zoom
-ttCanvas.addEventListener('wheel', (e) => {
-  e.preventDefault();
-  const factor = e.deltaY < 0 ? 1.1 : 0.9;
-  const rect = ttCanvas.getBoundingClientRect();
-  const mx = e.clientX - rect.left;
-  const my = e.clientY - rect.top;
-  ttState.panX = mx - (mx - ttState.panX) * factor;
-  ttState.panY = my - (my - ttState.panY) * factor;
-  ttState.zoom *= factor;
-  ttState.zoom = Math.max(0.2, Math.min(4, ttState.zoom));
-  if (state.tab === 'knowledge') renderKnowledge();
-}, { passive: false });
-
-ttCanvas.addEventListener('pointerdown', (e) => {
-  ttState.dragging = true;
-  ttState.lastX = e.clientX;
-  ttState.lastY = e.clientY;
-  ttCanvas.setPointerCapture(e.pointerId);
+el('knowledge-list').addEventListener('click', (event) => {
+  const node = event.target.closest('[data-node-id]');
+  if (!node) return;
+  knowledgeUI.selectedId = node.dataset.nodeId;
+  renderKnowledge();
 });
-ttCanvas.addEventListener('pointermove', (e) => {
-  if (ttState.dragging) {
-    ttState.panX += e.clientX - ttState.lastX;
-    ttState.panY += e.clientY - ttState.lastY;
-    ttState.lastX = e.clientX;
-    ttState.lastY = e.clientY;
-    if (state.tab === 'knowledge') renderKnowledge();
-  } else {
-    // Tooltip on hover
-    const rect = ttCanvas.getBoundingClientRect();
-    const mx = (e.clientX - rect.left - ttState.panX) / ttState.zoom;
-    const my = (e.clientY - rect.top - ttState.panY) / ttState.zoom;
-    let hit = null;
-    if (ttNodes) {
-      for (const n of ttNodes) {
-        if (Math.hypot(n.x - mx, n.y - my) < 10) { hit = n; break; }
-      }
-    }
-    if (hit) {
-      ttTip.hidden = false;
-      ttTip.style.left = (e.clientX - ttCanvas.getBoundingClientRect().left + 12) + 'px';
-      ttTip.style.top = (e.clientY - ttCanvas.getBoundingClientRect().top - 10) + 'px';
-      ttTip.innerHTML = `<div class="tt-name">${hit.name}</div>`
-        + `<div class="tt-cell">${hit.technique} ${hit.form} · tier ${hit.tier}</div>`
-        + (hit.gloss ? `<div class="tt-gloss">${hit.gloss}</div>` : '');
-    } else {
-      ttTip.hidden = true;
-    }
-  }
-});
-ttCanvas.addEventListener('pointerup', () => { ttState.dragging = false; });
+el('knowledge-list').addEventListener('toggle', (event) => {
+  const school = event.target;
+  if (!school.matches?.('.school')) return;
+  const key = school.dataset.school;
+  if (!key) return;
+  if (school.open) knowledgeUI.openSchools.add(key);
+  else knowledgeUI.openSchools.delete(key);
+}, true);
 
 // ================================================================ CONSOLE TAB
 function renderConsole(f) {
@@ -2262,7 +2134,8 @@ for (const action of displayOrder) {
   const btn = document.createElement('button');
   btn.className = `god-action${action.tier === 4 ? ' tier4' : ''}`;
   btn.dataset.actionId = action.id;
-  btn.innerHTML = `<span>${action.name}</span><span class="cost">${action.cost > 0 ? action.cost.toLocaleString() : 'free'}</span>`;
+  const displayCost = action.cost > 0 ? (action.cost / 1024).toFixed(action.cost >= 1024 ? 0 : 1) : 'free';
+  btn.innerHTML = `<span>${action.name}</span><span class="cost">${displayCost}</span>`;
   btn.addEventListener('click', () => {
     if (action.id === 8) {
       state.grantMode = !state.grantMode;
@@ -2301,7 +2174,7 @@ function paintGodPanel(f) {
     if (!action) continue;
     const mask = actions.find(a => a.id === aid);
     const legal = mask ? mask.legal : false;
-    const affordable = favor >= action.cost;
+    const affordable = favor >= action.cost / 1024;
 
     if (!legal) btn.dataset.state = 'denied';
     else if (!affordable) btn.dataset.state = 'unaffordable';
@@ -2476,6 +2349,12 @@ const worldMages = [];
 let worldTick = -1;
 
 const SPECIES_COLORS = ['#C85050','#C9A84C','#46A98D','#5BA0C8','#E8DCC8','#A08060'];
+const SPRITE_NAMES = ['human','elf','dwarf','draconic','gnome','orc'];
+const spriteImages = {};
+const loadSprite = (name) => { const img = new Image(); img.src = `assets/${name}.png`; spriteImages[name] = img; };
+SPRITE_NAMES.forEach(s => loadSprite(s + '-south'));
+loadSprite('university');
+loadSprite('portal');
 const ROLE_LABELS = ['researcher','warden','professor','raider'];
 const TERRITORIES = [
   {id:'river-delta',    name:'River Delta',     x:.08, y:.55, w:.14, h:.25, fill:'#1a3a2a', accent:'#2a5a3a'},
@@ -2512,7 +2391,7 @@ function renderWorld(f) {
     for (let i = 0; i < mageData.length; i++) {
       const m = mageData[i];
       if (!worldMages[i]) {
-        worldMages[i] = {x: W*.35 + Math.random()*W*.3, y: H*.35 + Math.random()*H*.3, tx:0, ty:0};
+        worldMages[i] = {x: W*.35 + ((i*7919)%1000)/1000*W*.3, y: H*.35 + ((i*6271)%1000)/1000*H*.3, tx:0, ty:0};
       }
       const wm = worldMages[i];
       wm.species = m.speciesId;
@@ -2537,9 +2416,10 @@ function renderWorld(f) {
   for (const wm of worldMages) {
     wm.x += (wm.tx - wm.x) * 0.08;
     wm.y += (wm.ty - wm.y) * 0.08;
-    // Add slight wander
-    wm.x += (Math.random() - 0.5) * 0.5;
-    wm.y += (Math.random() - 0.5) * 0.5;
+    // Deterministic wander based on index and tick
+    const wi = worldMages.indexOf(wm);
+    wm.x += Math.sin(worldTick * 0.03 + wi * 2.1) * 0.3;
+    wm.y += Math.cos(worldTick * 0.025 + wi * 1.7) * 0.3;
   }
 
   // Clear
@@ -2573,11 +2453,11 @@ function renderWorld(f) {
     wCtx.restore();
   }
 
-  // Draw trees in Deep Forest
+  // Draw trees in Deep Forest (deterministic positions)
   const forest = TERRITORIES[3];
   for (let i = 0; i < 20; i++) {
-    const fx = (forest.x + Math.random() * forest.w) * W;
-    const fy = (forest.y + Math.random() * forest.h) * H;
+    const fx = (forest.x + ((i*7919)%1000)/1000 * forest.w) * W;
+    const fy = (forest.y + ((i*6271)%1000)/1000 * forest.h) * H;
     wCtx.fillStyle = isDark ? '#0a2a0a' : '#3a5a3a';
     wCtx.beginPath();
     wCtx.moveTo(fx, fy - 6);
@@ -2586,14 +2466,14 @@ function renderWorld(f) {
     wCtx.fill();
   }
 
-  // Draw rocks in Highland Waste
+  // Draw rocks in Highland Waste (deterministic positions)
   const waste = TERRITORIES[4];
   for (let i = 0; i < 12; i++) {
-    const rx = (waste.x + 0.02 + Math.random() * (waste.w - 0.04)) * W;
-    const ry = (waste.y + 0.05 + Math.random() * (waste.h - 0.1)) * H;
+    const rx = (waste.x + 0.02 + ((i*4967)%1000)/1000 * (waste.w - 0.04)) * W;
+    const ry = (waste.y + 0.05 + ((i*3571)%1000)/1000 * (waste.h - 0.1)) * H;
     wCtx.fillStyle = isDark ? '#2a2a30' : '#8a8a90';
     wCtx.beginPath();
-    wCtx.arc(rx, ry, 2 + Math.random() * 3, 0, Math.PI * 2);
+    wCtx.arc(rx, ry, 2 + ((i*2137)%1000)/1000 * 3, 0, Math.PI * 2);
     wCtx.fill();
   }
 
@@ -2609,49 +2489,45 @@ function renderWorld(f) {
 
   // Draw university building
   const uniX = W * .38, uniY = H * .40;
-  const uniW = 60 + inst.capacity * 0.3;
-  const uniH = 40 + inst.libraryDepth * 0.5;
-  // Walls
-  wCtx.fillStyle = isDark ? '#1a2028' : '#b0a898';
-  wCtx.fillRect(uniX, uniY, uniW, uniH);
-  // Roof
-  wCtx.fillStyle = isDark ? '#2a1a18' : '#8a6a58';
-  wCtx.beginPath();
-  wCtx.moveTo(uniX - 4, uniY);
-  wCtx.lineTo(uniX + uniW / 2, uniY - 18);
-  wCtx.lineTo(uniX + uniW + 4, uniY);
-  wCtx.fill();
-  // Windows — glow with knowledge hue
-  const windowCount = Math.min(6, Math.floor(inst.libraryDepth / 5));
-  for (let i = 0; i < windowCount; i++) {
-    const wx = uniX + 8 + i * (uniW - 16) / Math.max(windowCount, 1);
-    wCtx.fillStyle = isDark ? 'rgba(18,184,198,0.4)' : 'rgba(18,100,110,0.3)';
-    wCtx.fillRect(wx, uniY + 8, 6, 8);
+  const uniW = 72, uniH = 72;
+  const uniSprite = spriteImages['university'];
+  if (uniSprite?.complete && uniSprite.naturalWidth > 0) {
+    wCtx.drawImage(uniSprite, uniX, uniY - 12, uniW, uniH);
+  } else {
+    wCtx.fillStyle = isDark ? '#1a2028' : '#b0a898';
+    wCtx.fillRect(uniX, uniY, 60, 40);
+    wCtx.fillStyle = isDark ? '#2a1a18' : '#8a6a58';
+    wCtx.beginPath();
+    wCtx.moveTo(uniX - 4, uniY);
+    wCtx.lineTo(uniX + 30, uniY - 18);
+    wCtx.lineTo(uniX + 64, uniY);
+    wCtx.fill();
   }
-  // Library shelves inside
-  const shelfFill = Math.min(1, inst.grimoires / 200);
-  wCtx.fillStyle = isDark ? 'rgba(201,168,76,0.3)' : 'rgba(120,90,40,0.2)';
-  wCtx.fillRect(uniX + 4, uniY + uniH - 12, (uniW - 8) * shelfFill, 8);
   // Label
   wCtx.fillStyle = isDark ? 'rgba(255,255,255,0.3)' : 'rgba(0,0,0,0.25)';
   wCtx.font = 'italic 10px Georgia, serif';
-  wCtx.fillText('The Academy', uniX + 4, uniY + uniH + 14);
+  wCtx.fillText('The Academy', uniX + 4, uniY + uniH + 2);
 
   // Portal at the edge
-  wCtx.save();
   const portalX = W * 0.88, portalY = H * 0.55;
-  const glow = isDark ? 'rgba(166,146,236,0.4)' : 'rgba(74,53,133,0.3)';
-  wCtx.fillStyle = glow;
-  wCtx.beginPath();
-  wCtx.ellipse(portalX, portalY, 8, 16, 0, 0, Math.PI * 2);
-  wCtx.fill();
-  wCtx.strokeStyle = isDark ? '#A692EC' : '#6a5a8a';
-  wCtx.lineWidth = 1.5;
-  wCtx.stroke();
+  const portalSprite = spriteImages['portal'];
+  if (portalSprite?.complete && portalSprite.naturalWidth > 0) {
+    wCtx.drawImage(portalSprite, portalX - 20, portalY - 20, 40, 40);
+  } else {
+    wCtx.save();
+    const glow = isDark ? 'rgba(166,146,236,0.4)' : 'rgba(74,53,133,0.3)';
+    wCtx.fillStyle = glow;
+    wCtx.beginPath();
+    wCtx.ellipse(portalX, portalY, 8, 16, 0, 0, Math.PI * 2);
+    wCtx.fill();
+    wCtx.strokeStyle = isDark ? '#A692EC' : '#6a5a8a';
+    wCtx.lineWidth = 1.5;
+    wCtx.stroke();
+    wCtx.restore();
+  }
   wCtx.fillStyle = isDark ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.15)';
   wCtx.font = '8px system-ui';
-  wCtx.fillText('portal', portalX - 10, portalY + 24);
-  wCtx.restore();
+  wCtx.fillText('portal', portalX - 10, portalY + 28);
 
   // Knowledge particles — faint dots drifting, colored by form
   const formHues = ['#B8A866','#5BA0C8','#9AAAB4','#C87070','#6BA84E','#E89050','#A494C4','#46A98D','#CC8450','#9090A4','#7070A0','#B8A870','#A692EC','#7099D8'];
@@ -2671,27 +2547,29 @@ function renderWorld(f) {
     }
   }
 
-  // Draw mages as dots with trails
-  for (const wm of worldMages) {
-    const col = SPECIES_COLORS[wm.species] || '#aaa';
-    // Trail
-    wCtx.fillStyle = col;
-    wCtx.globalAlpha = 0.15;
-    wCtx.beginPath();
-    wCtx.arc(wm.x - (wm.tx - wm.x) * 0.3, wm.y - (wm.ty - wm.y) * 0.3, 2, 0, Math.PI * 2);
-    wCtx.fill();
-    // Body
-    wCtx.globalAlpha = 0.9;
-    const radius = wm.knows > 30 ? 4 : wm.knows > 10 ? 3.5 : 3;
-    wCtx.beginPath();
-    wCtx.arc(wm.x, wm.y, radius, 0, Math.PI * 2);
-    wCtx.fill();
-    // Research spark
-    if (wm.goal === 1 && Math.random() < 0.03) {
+  // Draw mages as sprites (fallback to dots if not loaded)
+  for (let mi = 0; mi < worldMages.length; mi++) {
+    const wm = worldMages[mi];
+    const speciesName = SPRITE_NAMES[wm.species] || 'human';
+    const sprite = spriteImages[speciesName + '-south'];
+    const sz = speciesName === 'gnome' ? 14 : speciesName === 'draconic' ? 22 : 18;
+    if (sprite?.complete && sprite.naturalWidth > 0) {
+      wCtx.globalAlpha = 0.9;
+      wCtx.drawImage(sprite, wm.x - sz / 2, wm.y - sz, sz, sz);
+    } else {
+      const col = SPECIES_COLORS[wm.species] || '#aaa';
+      wCtx.fillStyle = col;
+      wCtx.globalAlpha = 0.9;
+      wCtx.beginPath();
+      wCtx.arc(wm.x, wm.y, 3, 0, Math.PI * 2);
+      wCtx.fill();
+    }
+    // Research spark (deterministic timing)
+    if (wm.goal === 1 && ((worldTick + mi * 17) % 33) === 0) {
       wCtx.fillStyle = isDark ? '#12B8C6' : '#0a8a98';
       wCtx.globalAlpha = 0.7;
       wCtx.beginPath();
-      wCtx.arc(wm.x + (Math.random()-0.5)*8, wm.y - 6, 1.5, 0, Math.PI * 2);
+      wCtx.arc(wm.x + Math.sin(mi * 3.7) * 4, wm.y - sz - 4, 1.5, 0, Math.PI * 2);
       wCtx.fill();
     }
     wCtx.globalAlpha = 1;
