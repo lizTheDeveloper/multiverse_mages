@@ -178,7 +178,13 @@ export class Lobby {
   }
 
   private async serveStatic(urlPath: string, res: ServerResponse): Promise<void> {
-    let filePath = path.join(this.uiRoot, '..', urlPath);
+    const root = path.resolve(this.uiRoot, '..');
+    const decoded = decodeURIComponent(urlPath).replace(/\0/g, '');
+    let filePath = path.resolve(root, '.' + path.posix.normalize(decoded));
+    if (filePath !== root && !filePath.startsWith(root + path.sep)) {
+      text(res, 403, 'forbidden');
+      return;
+    }
 
     // Directory → index.html
     try {
