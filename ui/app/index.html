@@ -1204,8 +1204,6 @@ const el = (id) => document.getElementById(id);
         if (!setup.forms.has(FORMS[i])) forbidForms.push(i + 1);
       }
       const body = { seed: Date.now(), ticks: 4000, warm: 40, forbidTechniques, forbidForms };
-      console.log('[BEGIN] setup.techniques:', [...setup.techniques], 'setup.forms:', [...setup.forms]);
-      console.log('[BEGIN] forbidTechniques:', forbidTechniques, 'forbidForms:', forbidForms);
       await fetch('/live/reset', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
