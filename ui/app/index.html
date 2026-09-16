@@ -2382,7 +2382,7 @@ function renderWorld(f) {
     for (let i = 0; i < mageData.length; i++) {
       const m = mageData[i];
       if (!worldMages[i]) {
-        worldMages[i] = {x: W*.35 + Math.random()*W*.3, y: H*.35 + Math.random()*H*.3, tx:0, ty:0};
+        worldMages[i] = {x: W*.35 + ((i*7919)%1000)/1000*W*.3, y: H*.35 + ((i*6271)%1000)/1000*H*.3, tx:0, ty:0};
       }
       const wm = worldMages[i];
       wm.species = m.speciesId;
@@ -2407,9 +2407,10 @@ function renderWorld(f) {
   for (const wm of worldMages) {
     wm.x += (wm.tx - wm.x) * 0.08;
     wm.y += (wm.ty - wm.y) * 0.08;
-    // Add slight wander
-    wm.x += (Math.random() - 0.5) * 0.5;
-    wm.y += (Math.random() - 0.5) * 0.5;
+    // Deterministic wander based on index and tick
+    const wi = worldMages.indexOf(wm);
+    wm.x += Math.sin(worldTick * 0.03 + wi * 2.1) * 0.3;
+    wm.y += Math.cos(worldTick * 0.025 + wi * 1.7) * 0.3;
   }
 
   // Clear
@@ -2443,11 +2444,11 @@ function renderWorld(f) {
     wCtx.restore();
   }
 
-  // Draw trees in Deep Forest
+  // Draw trees in Deep Forest (deterministic positions)
   const forest = TERRITORIES[3];
   for (let i = 0; i < 20; i++) {
-    const fx = (forest.x + Math.random() * forest.w) * W;
-    const fy = (forest.y + Math.random() * forest.h) * H;
+    const fx = (forest.x + ((i*7919)%1000)/1000 * forest.w) * W;
+    const fy = (forest.y + ((i*6271)%1000)/1000 * forest.h) * H;
     wCtx.fillStyle = isDark ? '#0a2a0a' : '#3a5a3a';
     wCtx.beginPath();
     wCtx.moveTo(fx, fy - 6);
@@ -2456,14 +2457,14 @@ function renderWorld(f) {
     wCtx.fill();
   }
 
-  // Draw rocks in Highland Waste
+  // Draw rocks in Highland Waste (deterministic positions)
   const waste = TERRITORIES[4];
   for (let i = 0; i < 12; i++) {
-    const rx = (waste.x + 0.02 + Math.random() * (waste.w - 0.04)) * W;
-    const ry = (waste.y + 0.05 + Math.random() * (waste.h - 0.1)) * H;
+    const rx = (waste.x + 0.02 + ((i*4967)%1000)/1000 * (waste.w - 0.04)) * W;
+    const ry = (waste.y + 0.05 + ((i*3571)%1000)/1000 * (waste.h - 0.1)) * H;
     wCtx.fillStyle = isDark ? '#2a2a30' : '#8a8a90';
     wCtx.beginPath();
-    wCtx.arc(rx, ry, 2 + Math.random() * 3, 0, Math.PI * 2);
+    wCtx.arc(rx, ry, 2 + ((i*2137)%1000)/1000 * 3, 0, Math.PI * 2);
     wCtx.fill();
   }
 
@@ -2556,12 +2557,13 @@ function renderWorld(f) {
     wCtx.beginPath();
     wCtx.arc(wm.x, wm.y, radius, 0, Math.PI * 2);
     wCtx.fill();
-    // Research spark
-    if (wm.goal === 1 && Math.random() < 0.03) {
+    // Research spark (deterministic timing)
+    const si = worldMages.indexOf(wm);
+    if (wm.goal === 1 && ((worldTick + si * 17) % 33) === 0) {
       wCtx.fillStyle = isDark ? '#12B8C6' : '#0a8a98';
       wCtx.globalAlpha = 0.7;
       wCtx.beginPath();
-      wCtx.arc(wm.x + (Math.random()-0.5)*8, wm.y - 6, 1.5, 0, Math.PI * 2);
+      wCtx.arc(wm.x + Math.sin(si * 3.7) * 4, wm.y - 6, 1.5, 0, Math.PI * 2);
       wCtx.fill();
     }
     wCtx.globalAlpha = 1;
