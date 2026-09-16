@@ -1819,7 +1819,8 @@ function paintActionCandidates(f, detEl) {
   detEl._liveActionId = aid;
 
   let html = `<div class="cell-name">${action?.name || `Action ${aid}`}</div>`;
-  html += `<div class="cell-knowledge">${cands.length} candidate${cands.length !== 1 ? 's' : ''} · costs ${action?.cost?.toLocaleString() || '?'} favor</div>`;
+  const detailCost = action?.cost ? (action.cost / 1024).toFixed(action.cost >= 1024 ? 0 : 1) : '?';
+  html += `<div class="cell-knowledge">${cands.length} candidate${cands.length !== 1 ? 's' : ''} · costs ${detailCost} favor</div>`;
   html += `<div style="font:9px var(--mono);color:var(--god);margin-bottom:.3rem">Click a candidate to execute</div>`;
 
   if (byAction.length > 0) {
@@ -2129,7 +2130,8 @@ for (const action of displayOrder) {
   const btn = document.createElement('button');
   btn.className = `god-action${action.tier === 4 ? ' tier4' : ''}`;
   btn.dataset.actionId = action.id;
-  btn.innerHTML = `<span>${action.name}</span><span class="cost">${action.cost > 0 ? action.cost.toLocaleString() : 'free'}</span>`;
+  const displayCost = action.cost > 0 ? (action.cost / 1024).toFixed(action.cost >= 1024 ? 0 : 1) : 'free';
+  btn.innerHTML = `<span>${action.name}</span><span class="cost">${displayCost}</span>`;
   btn.addEventListener('click', () => {
     if (action.id === 8) {
       state.grantMode = !state.grantMode;
@@ -2168,7 +2170,7 @@ function paintGodPanel(f) {
     if (!action) continue;
     const mask = actions.find(a => a.id === aid);
     const legal = mask ? mask.legal : false;
-    const affordable = favor >= action.cost;
+    const affordable = favor >= action.cost / 1024;
 
     if (!legal) btn.dataset.state = 'denied';
     else if (!affordable) btn.dataset.state = 'unaffordable';
