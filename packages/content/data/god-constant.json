@@ -106,9 +106,9 @@
   },
   {
     "id": "favor-regen-base",
-    "value": 10240,
+    "value": 1024,
     "unit": "fp",
-    "gloss": "Favor a universe regenerates per world tick with no worship at all. Non-zero deliberately: a zero floor makes a bad start unrecoverable and produces long, uninformative Monte Carlo runs. (BOOSTED 10x for playtest \u2014 original 1024)",
+    "gloss": "Favor a universe regenerates per world tick with no worship at all. Non-zero deliberately: a zero floor makes a bad start unrecoverable and produces long, uninformative Monte Carlo runs.",
     "tuningStatus": "untuned"
   },
   {
@@ -120,9 +120,9 @@
   },
   {
     "id": "favor-cap-base",
-    "value": 102400,
+    "value": 20480,
     "unit": "fp",
-    "gloss": "The favor pool's ceiling at worship tier 0. The cap is what converts a worship lead from power into tempo \u2014 a high-worship god cannot do more things, only sooner. (BOOSTED 5x for playtest \u2014 original 20480)",
+    "gloss": "The favor pool's ceiling at worship tier 0. The cap is what converts a worship lead from power into tempo \u2014 a high-worship god cannot do more things, only sooner.",
     "tuningStatus": "untuned"
   },
   {
