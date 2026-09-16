@@ -99,7 +99,7 @@ const arg = (name, fallback) => {
 
 const PORT = Number(arg('port', '8300'));
 const DEFAULT_SEED = Number(arg('seed', '20260813'));
-const DEFAULT_CAP = Number(arg('ticks', '4000'));
+const DEFAULT_CAP = Number(arg('ticks', '100000'));
 /**
  * Ticks the universe runs before anyone can look at it. `--warm 0` for none.
  *
@@ -501,6 +501,7 @@ function header(r) {
       nodeId: contentId,
       id: n.id,
       name: n.name,
+      gloss: n.gloss || '',
       cellId: cellIdByStringId.get(n.cell) ?? 0,
       tier: n.tier,
       /**
