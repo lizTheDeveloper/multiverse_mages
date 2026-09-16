@@ -1062,7 +1062,7 @@ if (isLive) {
     if (!res.ok) throw new Error(`${path} ${res.status}: ${await res.text()}`);
   };
   const reload = async () => {
-    const fresh = await openSession({ recording: '/live/session.json' });
+    const fresh = await openSession({ recording: `/live/session.json?t=${Date.now()}` });
     for (const k of ['provenance','content','actionNames','frameCount','frame','last','actionCost','capabilities']) {
       try { session[k] = fresh[k]; } catch { /* getter-only property, skip */ }
     }
