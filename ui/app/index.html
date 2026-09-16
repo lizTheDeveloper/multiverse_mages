@@ -1189,46 +1189,24 @@ const el = (id) => document.getElementById(id);
 
     // Apply the chosen ruleset — reset, forbid, then warm up
     if (isLive) {
-      // Reset with a few warm-up ticks so the universe has favor to spend on forbids
-      const body = { seed: Date.now(), ticks: 4000, warm: 6 };
+      // Reset and warm up. Each forbid submit costs one tick, so the forbids
+      // themselves generate favor. But forbids cost 4096-8192 each, and early
+      // favor regen is ~2-40/tick. We advance between forbids to let favor
+      // accumulate. The warm param runs no-op ticks before any user action.
+      // Build the forbid lists — the server handles favor regeneration internally.
+      const forbidTechniques = [];
+      for (let i = 0; i < TECHNIQUES.length; i++) {
+        if (!setup.techniques.has(TECHNIQUES[i].id)) forbidTechniques.push(i + 1);
+      }
+      const forbidForms = [];
+      for (let i = 0; i < FORMS.length; i++) {
+        if (!setup.forms.has(FORMS[i])) forbidForms.push(i + 1);
+      }
+      const body = { seed: Date.now(), ticks: 4000, warm: 40, forbidTechniques, forbidForms };
       await fetch('/live/reset', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(body),
-      });
-
-      // Forbid unselected techniques (action 2 = forbid technique, 1-based bit)
-      for (let i = 0; i < TECHNIQUES.length; i++) {
-        if (!setup.techniques.has(TECHNIQUES[i].id)) {
-          await fetch('/live/submit', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ kind: 2, params: [i + 1] }),
-          });
-        }
-      }
-      // Forbid unselected forms (action 4 = forbid form, 1-based bit)
-      for (let i = 0; i < FORMS.length; i++) {
-        if (!setup.forms.has(FORMS[i])) {
-          await fetch('/live/submit', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ kind: 4, params: [i + 1] }),
-          });
-        }
-      }
-      // Warm up 1 year so the universe has its first discoveries
-      await fetch('/live/advance', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ticks: 12 }),
-      });
-
-      // Advance 1 more tick to make the forbids take effect
-      await fetch('/live/advance', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ticks: 1 }),
       });
 
     }

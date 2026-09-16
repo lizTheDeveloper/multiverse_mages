@@ -863,6 +863,23 @@ async function handle(req, res) {
     // worse button than no button.
     const warm = Math.max(0, Math.min(2000, Number(body?.warm ?? WARM)));
     for (let i = 0; i < warm; i += 1) tick(run, { kind: GOD_ACTION.noop });
+
+    // Apply initial ruleset: submit forbids one per tick with noops between
+    // to let favor regenerate. Each forbid-technique costs 8192, forbid-form
+    // costs 4096 — the god starts with ~40 and needs warmup to afford them.
+    const forbidT = Array.isArray(body?.forbidTechniques) ? body.forbidTechniques : [];
+    const forbidF = Array.isArray(body?.forbidForms) ? body.forbidForms : [];
+    for (const idx of forbidT) {
+      // Advance enough ticks to regenerate favor for one forbid-technique (8192)
+      for (let i = 0; i < 80; i += 1) tick(run, { kind: GOD_ACTION.noop });
+      tick(run, { kind: GOD_ACTION.forbidTechnique, params: [Number(idx)] });
+    }
+    for (const idx of forbidF) {
+      // Advance enough ticks to regenerate favor for one forbid-form (4096)
+      for (let i = 0; i < 40; i += 1) tick(run, { kind: GOD_ACTION.noop });
+      tick(run, { kind: GOD_ACTION.forbidForm, params: [Number(idx)] });
+    }
+
     json(res, 200, { ...header(run), frames: run.frames });
     return;
   }
