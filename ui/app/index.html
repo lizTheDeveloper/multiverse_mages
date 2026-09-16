@@ -927,10 +927,8 @@ html, body { height: 100%; overflow: hidden; }
     <button class="tab" data-tab="knowledge" aria-pressed="false">Knowledge</button>
     <button class="tab" data-tab="console" aria-pressed="false">Console</button>
     <span class="spacer"></span>
-    <span class="tick-label">tick</span>
+    <span class="tick-label">year</span>
     <span class="tick-display" id="tick-val">--</span>
-    <span class="tick-label">of</span>
-    <span class="tick-display" id="tick-max">--</span>
     <span class="status-badge" id="status-badge">--</span>
     <span id="theme-host"></span>
   </div>
@@ -1625,8 +1623,7 @@ function paint() {
   renderFeed();
 
   // Topbar
-  el('tick-val').textContent = String(clock.worldTick);
-  el('tick-max').textContent = String(session.provenance?.tickCap ?? '∞');
+  el('tick-val').textContent = String(Math.floor(clock.worldTick / 12));
   el('status-badge').textContent = clock.engaged ? 'engagement' : (isLive ? 'LIVE' : f.status());
 
   // Resources
@@ -1947,12 +1944,16 @@ function renderKnowledge(f) {
   const held = new Set();
   const holders = new Map();
   const rawAcademy = f.raw?.academy;
+  const speciesNames = session.content.species.map(s => s.name);
+  const roleNames = ['researcher', 'warden', 'professor', 'raider'];
   for (const university of Object.values(rawAcademy?.universities || {})) {
     for (const mage of university.roster || []) {
       for (const id of mage.nodeIds || []) {
         held.add(id);
         const list = holders.get(id) || [];
-        list.push(`Mage #${mage.handle}`);
+        const sp = speciesNames[mage.speciesId] || 'mage';
+        const role = roleNames[mage.roleId] || 'citizen';
+        list.push({ handle: mage.handle, label: `${sp} ${role}, ${Math.floor(mage.ageTicks / 12)}y` });
         holders.set(id, list);
       }
     }
@@ -2009,13 +2010,13 @@ function renderKnowledge(f) {
     const cell = cellFor(selected);
     const observed = knowledgeByCell.get(`${cell.technique}-${cell.form}`);
     const nodeHolders = holders.get(nodeKey(selected)) || [];
-    const copyText = nodeHolders.length ? `${nodeHolders.length} recorded ${nodeHolders.length === 1 ? 'copy' : 'copies'}` : `${observed?.redundancy ?? 0} copies in this cell`;
+    const copyText = nodeHolders.length ? `${nodeHolders.length} mage${nodeHolders.length === 1 ? '' : 's'} hold this knowledge` : `${observed?.redundancy ?? 0} copies in this cell`;
     const prereqHtml = prerequisites(selected).length
       ? prerequisites(selected).map((id) => `<span>${escapeKnowledge(nodeById.get(id)?.name || id)}</span>`).join('')
       : '<span>None — a first principle</span>';
     return `<aside class="knowledge-detail" style="--detail-color:var(--${escapeKnowledge(cell.form)})"><div class="detail-kicker">${isKnown(selected) ? 'Known magic' : 'Research frontier'} · ${escapeKnowledge(cell.technique)} ${escapeKnowledge(cell.form)}</div>`
       + `<h3>${escapeKnowledge(selected.name)}</h3><p class="detail-gloss">${escapeKnowledge(selected.gloss || 'No gloss has been recorded.')}</p><dl>`
-      + `<dt>Copies</dt><dd>${copyText}</dd><dt>Holders</dt><dd>${nodeHolders.length ? escapeKnowledge(nodeHolders.join(', ')) : 'No individual holder record available'}</dd>`
+      + `<dt>Holders</dt><dd>${copyText}</dd><dd>${nodeHolders.length ? nodeHolders.map(h => `<span class="mage-click" data-handle="${h.handle}" style="cursor:pointer;text-decoration:underline;color:var(--god)">${escapeKnowledge(h.label)}</span>`).join(', ') : 'No individual holder record available'}</dd>`
       + `<dt>Prerequisites</dt><dd class="detail-prereqs">${prereqHtml}</dd></dl></aside>`;
   })() : `<aside class="knowledge-detail"><div class="detail-kicker">The frontier</div><h3>Choose a named discovery</h3><p class="detail-gloss">Bright tiles are knowledge your civilization holds. The breathing outlines are the next secrets its scholars can reach.</p></aside>`;
   const knownTotal = nodes.filter(isKnown).length;
@@ -2024,6 +2025,13 @@ function renderKnowledge(f) {
 }
 
 el('knowledge-list').addEventListener('click', (event) => {
+  const mageLink = event.target.closest('.mage-click');
+  if (mageLink) {
+    state.selectedMage = Number(mageLink.dataset.handle);
+    state.tab = 'grid';
+    paint();
+    return;
+  }
   const node = event.target.closest('[data-node-id]');
   if (!node) return;
   knowledgeUI.selectedId = node.dataset.nodeId;
