@@ -1061,6 +1061,7 @@ if (isLive) {
       try { session[k] = fresh[k]; } catch { /* getter-only property, skip */ }
     }
   };
+  session.reload = reload;
   session.submit = async (kind, params) => { await post('/live/submit', { kind, params }); await reload(); };
   session.advance = async (ticks) => { await post('/live/advance', { ticks }); await reload(); };
   session.restart = async (seed, ticks) => { await post('/live/reset', { seed, ticks: ticks || 4000 }); await reload(); };
@@ -1208,7 +1209,7 @@ const el = (id) => document.getElementById(id);
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(body),
       });
-      await reload();
+      await session.reload();
 
     }
 
