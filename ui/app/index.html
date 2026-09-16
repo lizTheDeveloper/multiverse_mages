@@ -886,6 +886,11 @@ html, body { height: 100%; overflow: hidden; }
 .begin-btn:hover { box-shadow: 0 0 30px -2px var(--god); transform: scale(1.03); }
 .begin-btn:focus-visible { outline: 2px solid var(--god); outline-offset: 3px; }
 .begin-btn:disabled { opacity: .4; cursor: default; box-shadow: none; transform: none; }
+.toast-container { position: fixed; top: 3rem; left: 50%; transform: translateX(-50%); z-index: 999; display: flex; flex-direction: column; gap: .4rem; pointer-events: none; }
+.toast { background: var(--panel); border: 1px solid var(--god); color: var(--ink); padding: .5rem 1rem; font: 12px var(--mono); border-radius: 4px; opacity: 0; animation: toastIn .3s ease forwards; pointer-events: auto; }
+.toast.fade-out { animation: toastOut .4s ease forwards; }
+@keyframes toastIn { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes toastOut { from { opacity: 1; } to { opacity: 0; transform: translateY(-10px); } }
 </style>
 
 <div class="setup-screen" id="setup-screen">
@@ -911,6 +916,7 @@ html, body { height: 100%; overflow: hidden; }
   <button class="begin-btn" id="begin-btn" disabled>Begin</button>
 </div>
 
+<div class="toast-container" id="toast-container"></div>
 <div class="app" id="app" hidden>
   <!-- ======================== TOP BAR ======================== -->
   <div class="topbar">
@@ -1069,6 +1075,13 @@ if (isLive) {
 }
 
 const el = (id) => document.getElementById(id);
+function showToast(msg, duration = 3000) {
+  const t = document.createElement('div');
+  t.className = 'toast';
+  t.textContent = msg;
+  el('toast-container').appendChild(t);
+  setTimeout(() => { t.classList.add('fade-out'); setTimeout(() => t.remove(), 400); }, duration);
+}
 
 // ================================================================ SETUP SCREEN
 {
@@ -1391,7 +1404,9 @@ for (const btn of document.querySelectorAll('.advance-btn')) {
     state.busy = true;
     btn.disabled = true;
     try {
-      await session.advance(Number(btn.dataset.ticks));
+      const ticks = Number(btn.dataset.ticks);
+      await session.advance(ticks);
+      showToast(`Advanced ${ticks >= 12 ? Math.floor(ticks / 12) + ' year' + (ticks >= 24 ? 's' : '') : ticks + ' month' + (ticks > 1 ? 's' : '')}`);
       refreshRuleset();
       paint();
     } catch (e) { console.error('advance failed', e); }
@@ -1437,6 +1452,9 @@ el('cell-detail').addEventListener('click', async (ev) => {
   item.style.opacity = '0.5';
   try {
     await session.submit(aid, cands[slot].params);
+    const actionName = session.actionNames?.[aid] ?? `action ${aid}`;
+    const candLabel = item.textContent?.trim().split('\n')[0] ?? '';
+    showToast(`${actionName}: ${candLabel}`);
     refreshRuleset();
     state.selectedAction = null;
     paint();
