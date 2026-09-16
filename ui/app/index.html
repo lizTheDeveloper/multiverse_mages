@@ -1204,6 +1204,8 @@ const el = (id) => document.getElementById(id);
         if (!setup.forms.has(FORMS[i])) forbidForms.push(i + 1);
       }
       const body = { seed: Date.now(), ticks: 4000, warm: 40, forbidTechniques, forbidForms };
+      console.log('[BEGIN] setup.techniques:', [...setup.techniques], 'setup.forms:', [...setup.forms]);
+      console.log('[BEGIN] forbidTechniques:', forbidTechniques, 'forbidForms:', forbidForms);
       await fetch('/live/reset', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -2347,6 +2349,12 @@ const worldMages = [];
 let worldTick = -1;
 
 const SPECIES_COLORS = ['#C85050','#C9A84C','#46A98D','#5BA0C8','#E8DCC8','#A08060'];
+const SPRITE_NAMES = ['human','elf','dwarf','draconic','gnome','orc'];
+const spriteImages = {};
+const loadSprite = (name) => { const img = new Image(); img.src = `assets/${name}.png`; spriteImages[name] = img; };
+SPRITE_NAMES.forEach(s => loadSprite(s + '-south'));
+loadSprite('university');
+loadSprite('portal');
 const ROLE_LABELS = ['researcher','warden','professor','raider'];
 const TERRITORIES = [
   {id:'river-delta',    name:'River Delta',     x:.08, y:.55, w:.14, h:.25, fill:'#1a3a2a', accent:'#2a5a3a'},
@@ -2481,49 +2489,45 @@ function renderWorld(f) {
 
   // Draw university building
   const uniX = W * .38, uniY = H * .40;
-  const uniW = 60 + inst.capacity * 0.3;
-  const uniH = 40 + inst.libraryDepth * 0.5;
-  // Walls
-  wCtx.fillStyle = isDark ? '#1a2028' : '#b0a898';
-  wCtx.fillRect(uniX, uniY, uniW, uniH);
-  // Roof
-  wCtx.fillStyle = isDark ? '#2a1a18' : '#8a6a58';
-  wCtx.beginPath();
-  wCtx.moveTo(uniX - 4, uniY);
-  wCtx.lineTo(uniX + uniW / 2, uniY - 18);
-  wCtx.lineTo(uniX + uniW + 4, uniY);
-  wCtx.fill();
-  // Windows — glow with knowledge hue
-  const windowCount = Math.min(6, Math.floor(inst.libraryDepth / 5));
-  for (let i = 0; i < windowCount; i++) {
-    const wx = uniX + 8 + i * (uniW - 16) / Math.max(windowCount, 1);
-    wCtx.fillStyle = isDark ? 'rgba(18,184,198,0.4)' : 'rgba(18,100,110,0.3)';
-    wCtx.fillRect(wx, uniY + 8, 6, 8);
+  const uniW = 72, uniH = 72;
+  const uniSprite = spriteImages['university'];
+  if (uniSprite?.complete && uniSprite.naturalWidth > 0) {
+    wCtx.drawImage(uniSprite, uniX, uniY - 12, uniW, uniH);
+  } else {
+    wCtx.fillStyle = isDark ? '#1a2028' : '#b0a898';
+    wCtx.fillRect(uniX, uniY, 60, 40);
+    wCtx.fillStyle = isDark ? '#2a1a18' : '#8a6a58';
+    wCtx.beginPath();
+    wCtx.moveTo(uniX - 4, uniY);
+    wCtx.lineTo(uniX + 30, uniY - 18);
+    wCtx.lineTo(uniX + 64, uniY);
+    wCtx.fill();
   }
-  // Library shelves inside
-  const shelfFill = Math.min(1, inst.grimoires / 200);
-  wCtx.fillStyle = isDark ? 'rgba(201,168,76,0.3)' : 'rgba(120,90,40,0.2)';
-  wCtx.fillRect(uniX + 4, uniY + uniH - 12, (uniW - 8) * shelfFill, 8);
   // Label
   wCtx.fillStyle = isDark ? 'rgba(255,255,255,0.3)' : 'rgba(0,0,0,0.25)';
   wCtx.font = 'italic 10px Georgia, serif';
-  wCtx.fillText('The Academy', uniX + 4, uniY + uniH + 14);
+  wCtx.fillText('The Academy', uniX + 4, uniY + uniH + 2);
 
   // Portal at the edge
-  wCtx.save();
   const portalX = W * 0.88, portalY = H * 0.55;
-  const glow = isDark ? 'rgba(166,146,236,0.4)' : 'rgba(74,53,133,0.3)';
-  wCtx.fillStyle = glow;
-  wCtx.beginPath();
-  wCtx.ellipse(portalX, portalY, 8, 16, 0, 0, Math.PI * 2);
-  wCtx.fill();
-  wCtx.strokeStyle = isDark ? '#A692EC' : '#6a5a8a';
-  wCtx.lineWidth = 1.5;
-  wCtx.stroke();
+  const portalSprite = spriteImages['portal'];
+  if (portalSprite?.complete && portalSprite.naturalWidth > 0) {
+    wCtx.drawImage(portalSprite, portalX - 20, portalY - 20, 40, 40);
+  } else {
+    wCtx.save();
+    const glow = isDark ? 'rgba(166,146,236,0.4)' : 'rgba(74,53,133,0.3)';
+    wCtx.fillStyle = glow;
+    wCtx.beginPath();
+    wCtx.ellipse(portalX, portalY, 8, 16, 0, 0, Math.PI * 2);
+    wCtx.fill();
+    wCtx.strokeStyle = isDark ? '#A692EC' : '#6a5a8a';
+    wCtx.lineWidth = 1.5;
+    wCtx.stroke();
+    wCtx.restore();
+  }
   wCtx.fillStyle = isDark ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.15)';
   wCtx.font = '8px system-ui';
-  wCtx.fillText('portal', portalX - 10, portalY + 24);
-  wCtx.restore();
+  wCtx.fillText('portal', portalX - 10, portalY + 28);
 
   // Knowledge particles — faint dots drifting, colored by form
   const formHues = ['#B8A866','#5BA0C8','#9AAAB4','#C87070','#6BA84E','#E89050','#A494C4','#46A98D','#CC8450','#9090A4','#7070A0','#B8A870','#A692EC','#7099D8'];
@@ -2543,28 +2547,29 @@ function renderWorld(f) {
     }
   }
 
-  // Draw mages as dots with trails
-  for (const wm of worldMages) {
-    const col = SPECIES_COLORS[wm.species] || '#aaa';
-    // Trail
-    wCtx.fillStyle = col;
-    wCtx.globalAlpha = 0.15;
-    wCtx.beginPath();
-    wCtx.arc(wm.x - (wm.tx - wm.x) * 0.3, wm.y - (wm.ty - wm.y) * 0.3, 2, 0, Math.PI * 2);
-    wCtx.fill();
-    // Body
-    wCtx.globalAlpha = 0.9;
-    const radius = wm.knows > 30 ? 4 : wm.knows > 10 ? 3.5 : 3;
-    wCtx.beginPath();
-    wCtx.arc(wm.x, wm.y, radius, 0, Math.PI * 2);
-    wCtx.fill();
+  // Draw mages as sprites (fallback to dots if not loaded)
+  for (let mi = 0; mi < worldMages.length; mi++) {
+    const wm = worldMages[mi];
+    const speciesName = SPRITE_NAMES[wm.species] || 'human';
+    const sprite = spriteImages[speciesName + '-south'];
+    const sz = speciesName === 'gnome' ? 14 : speciesName === 'draconic' ? 22 : 18;
+    if (sprite?.complete && sprite.naturalWidth > 0) {
+      wCtx.globalAlpha = 0.9;
+      wCtx.drawImage(sprite, wm.x - sz / 2, wm.y - sz, sz, sz);
+    } else {
+      const col = SPECIES_COLORS[wm.species] || '#aaa';
+      wCtx.fillStyle = col;
+      wCtx.globalAlpha = 0.9;
+      wCtx.beginPath();
+      wCtx.arc(wm.x, wm.y, 3, 0, Math.PI * 2);
+      wCtx.fill();
+    }
     // Research spark (deterministic timing)
-    const si = worldMages.indexOf(wm);
-    if (wm.goal === 1 && ((worldTick + si * 17) % 33) === 0) {
+    if (wm.goal === 1 && ((worldTick + mi * 17) % 33) === 0) {
       wCtx.fillStyle = isDark ? '#12B8C6' : '#0a8a98';
       wCtx.globalAlpha = 0.7;
       wCtx.beginPath();
-      wCtx.arc(wm.x + Math.sin(si * 3.7) * 4, wm.y - 6, 1.5, 0, Math.PI * 2);
+      wCtx.arc(wm.x + Math.sin(mi * 3.7) * 4, wm.y - sz - 4, 1.5, 0, Math.PI * 2);
       wCtx.fill();
     }
     wCtx.globalAlpha = 1;
