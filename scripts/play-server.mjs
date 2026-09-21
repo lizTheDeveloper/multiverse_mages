@@ -716,7 +716,7 @@ async function handle(req, res) {
   const route = url.pathname;
 
   if (route === '/') {
-    res.writeHead(302, { location: '/ui/console/' });
+    res.writeHead(302, { location: '/ui/app/' });
     res.end();
     return;
   }
