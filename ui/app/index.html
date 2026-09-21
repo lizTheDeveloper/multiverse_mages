@@ -1786,7 +1786,7 @@ function paintMageDossier(f, detEl, handle) {
   const speciesNames = session.content.species.map(s => s.name);
   const roleNames = ['researcher', 'warden', 'professor', 'raider'];
   const sp = speciesNames[mage.speciesId] || 'unknown';
-  const age = Math.floor(mage.ageTicks / 12);
+  const age = Math.floor((mage.ageTicks ?? 0) / 12);
   const role = roleNames[mage.roleId] || 'citizen';
   const lifespans = [80, 700, 250, 1500, 350, 60]; // human, elf, dwarf, draconic, gnome, orc — but session order differs
   const goalNames = ['idle', 'research', 'teach', 'scribe', 'affiliate', 'wander', 'cast', 'guard', 'serve'];
@@ -1852,7 +1852,7 @@ function paintActionCandidates(f, detEl) {
       const c = byAction[ci];
       const mage = mages[String(c.handle)];
       const sp = mage ? (speciesNames[mage.speciesId] || `species${mage.speciesId}`) : '';
-      const age = mage ? Math.floor(mage.ageTicks / 12) : 0;
+      const age = mage ? Math.floor((mage.ageTicks ?? 0) / 12) : 0;
       const role = mage ? (roleNames[mage.roleId] || '') : '';
       const slotAttr = `class="cand-item" data-slot="${ci}" style="cursor:pointer;`;
 
@@ -1910,7 +1910,7 @@ function paintActionCandidates(f, detEl) {
         const mage = mages[String(handle)];
         if (!mage) continue;
         const sp = speciesNames[mage.speciesId] || 'populace';
-        const age = Math.floor(mage.ageTicks / 12);
+        const age = Math.floor((mage.ageTicks ?? 0) / 12);
         const role = roleNames[mage.roleId] || 'citizen';
         const roleTarget = aid === 10 && c.params?.[1] != null ? ` → ${roleNames[c.params[1]] || 'role ' + c.params[1]}` : '';
         html += `<div class="cand-item" data-slot="${ci}" style="cursor:pointer;padding:.25rem .4rem;border:1px solid var(--edge);border-radius:3px;background:var(--plate);font:10px var(--mono)">
@@ -1958,7 +1958,7 @@ function renderKnowledge(f) {
         const list = holders.get(id) || [];
         const sp = speciesNames[mage.speciesId] || 'mage';
         const role = roleNames[mage.roleId] || 'citizen';
-        list.push({ handle: mage.handle, label: `${sp} ${role}, ${Math.floor(mage.ageTicks / 12)}y` });
+        list.push({ handle: mage.handle, label: `${sp} ${role}, ${Math.floor((mage.ageTicks ?? 0) / 12)}y` });
         holders.set(id, list);
       }
     }
