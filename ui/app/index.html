@@ -891,6 +891,12 @@ html, body { height: 100%; overflow: hidden; }
 .toast.fade-out { animation: toastOut .4s ease forwards; }
 @keyframes toastIn { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
 @keyframes toastOut { from { opacity: 1; } to { opacity: 0; transform: translateY(-10px); } }
+@keyframes yearPulse { 0% { color: var(--god); text-shadow: 0 0 8px var(--god); } 100% { color: var(--ink); text-shadow: none; } }
+.tick-display.pulsing { animation: yearPulse .8s ease-out; }
+@keyframes valFlash { 0% { background: rgba(18,184,198,0.25); } 100% { background: transparent; } }
+.val-changed { animation: valFlash .6s ease-out; }
+.auto-advance-label { font: 10px var(--mono); color: var(--faint); cursor: pointer; display: flex; align-items: center; gap: .3rem; letter-spacing: .06em; text-transform: uppercase; }
+.auto-advance-label input { accent-color: var(--god); }
 </style>
 
 <div class="setup-screen" id="setup-screen">
@@ -1016,6 +1022,7 @@ html, body { height: 100%; overflow: hidden; }
       <button type="button" class="advance-btn" data-ticks="12">+1 year</button>
       <button type="button" class="advance-btn" data-ticks="60">+5 years</button>
       <button type="button" class="advance-btn" data-ticks="240">+20 years</button>
+      <label class="auto-advance-label"><input type="checkbox" id="auto-advance-cb"> auto</label>
       <span class="spacer"></span>
       <button type="button" id="restart-btn">restart</button>
     </div>
@@ -1031,6 +1038,7 @@ html, body { height: 100%; overflow: hidden; }
 
 import { mountThemeControl } from '../shared/theme.js';
 import { openSession, reconstructedCharge, units, mageVocabulary, candidateNamer } from '../shared/session.js';
+import { drawCivilizationAtlas } from './world-atlas-a.js';
 
 // ================================================================ BOOT
 // Try the live play-server first (/live/session.json); fall back to static recording.
@@ -1214,12 +1222,13 @@ function showToast(msg, duration = 3000) {
       for (let i = 0; i < FORMS.length; i++) {
         if (!setup.forms.has(FORMS[i])) forbidForms.push(i + 1);
       }
-      const body = { seed: Date.now(), ticks: 4000, warm: 40, forbidTechniques, forbidForms };
-      await fetch('/live/reset', {
+      const body = { seed: (Date.now() & 0x7FFFFFFF) >>> 0, ticks: 100000, warm: 40, forbidTechniques, forbidForms };
+      const resetRes = await fetch('/live/reset', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(body),
       });
+      await resetRes.json();
       await session.reload();
 
     }
@@ -1394,34 +1403,49 @@ for (const f of forms) {
 // ================================================================ ADVANCE CONTROLS (live mode)
 function drawSpine() {} // no-op in live mode
 
-for (const btn of document.querySelectorAll('.advance-btn')) {
-  btn.addEventListener('click', async () => {
-    if (state.busy) return;
-    state.busy = true;
-    btn.disabled = true;
-    try {
-      const ticks = Number(btn.dataset.ticks);
-      await session.advance(ticks);
-      showToast(`Advanced ${ticks >= 12 ? Math.floor(ticks / 12) + ' year' + (ticks >= 24 ? 's' : '') : ticks + ' month' + (ticks > 1 ? 's' : '')}`);
-      refreshRuleset();
-      paint();
-    } catch (e) { console.error('advance failed', e); }
-    btn.disabled = false;
-    state.busy = false;
-  });
+async function doAdvance(ticks) {
+  if (state.busy) return;
+  state.busy = true;
+  try {
+    const beforeYear = Math.floor((session.last?.()?.raw?.flow?.worldTick ?? 0) / 12);
+    await session.advance(ticks);
+    const afterYear = Math.floor((session.last?.()?.raw?.flow?.worldTick ?? 0) / 12);
+    if (beforeYear !== afterYear) {
+      showToast(`Year ${beforeYear} → ${afterYear}`);
+      const tv = el('tick-val');
+      tv.classList.remove('pulsing');
+      void tv.offsetWidth;
+      tv.classList.add('pulsing');
+    }
+    refreshRuleset();
+    paint();
+    document.querySelectorAll('.econ-row .v, .pop-count, .tick-display').forEach(e => {
+      if (e._prev !== undefined && e._prev !== e.textContent) { e.classList.remove('val-changed'); void e.offsetWidth; e.classList.add('val-changed'); }
+      e._prev = e.textContent;
+    });
+  } catch (e) { console.error('advance failed', e); }
+  state.busy = false;
 }
+for (const btn of document.querySelectorAll('.advance-btn')) {
+  btn.addEventListener('click', () => doAdvance(Number(btn.dataset.ticks)));
+}
+
+let autoInterval = null;
+el('auto-advance-cb').addEventListener('change', (ev) => {
+  if (ev.target.checked) {
+    autoInterval = setInterval(() => doAdvance(1), 2000);
+  } else {
+    clearInterval(autoInterval);
+    autoInterval = null;
+  }
+});
 
 const restartBtn = el('restart-btn');
 if (restartBtn) {
-  restartBtn.addEventListener('click', async () => {
-    if (state.busy) return;
-    state.busy = true;
-    try {
-      await session.restart(Date.now(), 0);
-      refreshRuleset();
-      paint();
-    } catch (e) { console.error('restart failed', e); }
-    state.busy = false;
+  restartBtn.addEventListener('click', () => {
+    el('app').hidden = true;
+    el('setup-screen').hidden = false;
+    window.scrollTo(0, 0);
   });
 }
 
@@ -1628,10 +1652,13 @@ function paint() {
 
   // Resources
   const r = f.resources();
-  const resBar = (k, v, max) =>
-    `<div class="res-row"><span class="k">${k}</span>`
-    + `<span class="res-track"><i style="width:${Math.min(100, (v / max) * 100)}%"></i></span>`
-    + `<span class="v">${v.toFixed(v < 10 ? 1 : 0)}</span></div>`;
+  const resBar = (k, v, max) => {
+    const val = Number.isFinite(v) ? v : 0;
+    const pct = max > 0 ? Math.min(100, (val / max) * 100) : 0;
+    return `<div class="res-row"><span class="k">${k}</span>`
+    + `<span class="res-track"><i style="width:${pct}%"></i></span>`
+    + `<span class="v">${val.toFixed(val < 10 ? 1 : 0)}</span></div>`;
+  };
   el('resources').innerHTML =
     resBar('favor', r.favor, peak.favor)
     + resBar('worship', r.worship, Math.max(1, peak.favor / 10))
@@ -1781,7 +1808,7 @@ function paintMageDossier(f, detEl, handle) {
   const speciesNames = session.content.species.map(s => s.name);
   const roleNames = ['researcher', 'warden', 'professor', 'raider'];
   const sp = speciesNames[mage.speciesId] || 'unknown';
-  const age = Math.floor(mage.ageTicks / 12);
+  const age = Math.floor((mage.ageTicks ?? 0) / 12);
   const role = roleNames[mage.roleId] || 'citizen';
   const lifespans = [80, 700, 250, 1500, 350, 60]; // human, elf, dwarf, draconic, gnome, orc — but session order differs
   const goalNames = ['idle', 'research', 'teach', 'scribe', 'affiliate', 'wander', 'cast', 'guard', 'serve'];
@@ -1847,7 +1874,7 @@ function paintActionCandidates(f, detEl) {
       const c = byAction[ci];
       const mage = mages[String(c.handle)];
       const sp = mage ? (speciesNames[mage.speciesId] || `species${mage.speciesId}`) : '';
-      const age = mage ? Math.floor(mage.ageTicks / 12) : 0;
+      const age = mage ? Math.floor((mage.ageTicks ?? 0) / 12) : 0;
       const role = mage ? (roleNames[mage.roleId] || '') : '';
       const slotAttr = `class="cand-item" data-slot="${ci}" style="cursor:pointer;`;
 
@@ -1905,7 +1932,7 @@ function paintActionCandidates(f, detEl) {
         const mage = mages[String(handle)];
         if (!mage) continue;
         const sp = speciesNames[mage.speciesId] || 'populace';
-        const age = Math.floor(mage.ageTicks / 12);
+        const age = Math.floor((mage.ageTicks ?? 0) / 12);
         const role = roleNames[mage.roleId] || 'citizen';
         const roleTarget = aid === 10 && c.params?.[1] != null ? ` → ${roleNames[c.params[1]] || 'role ' + c.params[1]}` : '';
         html += `<div class="cand-item" data-slot="${ci}" style="cursor:pointer;padding:.25rem .4rem;border:1px solid var(--edge);border-radius:3px;background:var(--plate);font:10px var(--mono)">
@@ -1953,7 +1980,7 @@ function renderKnowledge(f) {
         const list = holders.get(id) || [];
         const sp = speciesNames[mage.speciesId] || 'mage';
         const role = roleNames[mage.roleId] || 'citizen';
-        list.push({ handle: mage.handle, label: `${sp} ${role}, ${Math.floor(mage.ageTicks / 12)}y` });
+        list.push({ handle: mage.handle, label: `${sp} ${role}, ${Math.floor((mage.ageTicks ?? 0) / 12)}y` });
         holders.set(id, list);
       }
     }
@@ -2065,10 +2092,10 @@ function renderConsole(f) {
     <div><span class="label">status</span> ${clock.engaged ? 'engagement' : f.status()}</div>
 
     <div class="section-head">Resources</div>
-    <div><span class="label">favor</span> ${r.favor.toFixed(1)}${r.saturated.favor ? ' (sat)' : ''}</div>
-    <div><span class="label">worship</span> ${r.worship.toFixed(1)} tier ${r.worshipTier}</div>
-    <div><span class="label">materials</span> ${r.materials.toFixed(1)}${r.saturated.materials ? ' (sat)' : ''}</div>
-    <div><span class="label">prestige</span> ${r.prestige.toFixed(1)}</div>
+    <div><span class="label">favor</span> ${(r.favor ?? 0).toFixed(1)}${r.saturated?.favor ? ' (sat)' : ''}</div>
+    <div><span class="label">worship</span> ${(r.worship ?? 0).toFixed(1)} tier ${r.worshipTier ?? 0}</div>
+    <div><span class="label">materials</span> ${(r.materials ?? 0).toFixed(1)}${r.saturated?.materials ? ' (sat)' : ''}</div>
+    <div><span class="label">prestige</span> ${(r.prestige ?? 0).toFixed(1)}</div>
 
     <div class="section-head">Institutions</div>
     <div><span class="label">univ</span> ${inst.universities}, cap ${inst.capacity}</div>
@@ -2302,7 +2329,7 @@ function paintGodPanel(f) {
       econHtml += `<div style="margin-bottom:3px">
         <div style="display:flex;justify-content:space-between;font:9px var(--mono)">
           <span style="color:${hue};font-weight:600;letter-spacing:.04em">${kind}</span>
-          <span><span style="color:var(--ink)">${stock.toFixed(0)}</span> <span style="color:${netColor};font-size:8px">${net >= 0 ? '+' : ''}${net.toFixed(0)}</span></span>
+          <span><span style="color:var(--ink)">${(stock || 0).toFixed(0)}</span> <span style="color:${netColor};font-size:8px">${net >= 0 ? '+' : ''}${(net || 0).toFixed(0)}</span></span>
         </div>
         <div style="height:5px;border-radius:3px;background:var(--sunk);overflow:hidden;margin-top:1px">
           <div style="height:100%;width:${pct}%;background:${hue};border-radius:3px;opacity:.6"></div>
@@ -2331,7 +2358,7 @@ function paintGodPanel(f) {
         econHtml += `<div style="margin-bottom:3px">
           <div style="display:flex;justify-content:space-between;font:9px var(--mono);color:var(--faint)">
             <span>${c.claimant} <span style="opacity:.6">(${c.kind})</span></span>
-            <span style="color:${short ? 'var(--loss)' : 'var(--ink)'}">${c.paid.toFixed(0)}${short ? ' / ' + c.owed.toFixed(0) : ''}</span>
+            <span style="color:${short ? 'var(--loss)' : 'var(--ink)'}">${(c.paid ?? 0).toFixed(0)}${short ? ' / ' + (c.owed ?? 0).toFixed(0) : ''}</span>
           </div>
           <div style="height:4px;border-radius:2px;background:var(--sunk);position:relative;overflow:hidden">
             ${short ? `<div style="position:absolute;inset:0 ${100-owedPct}% 0 0;background:color-mix(in srgb,var(--loss) 30%,transparent);border-radius:2px"></div>` : ''}
@@ -2349,7 +2376,7 @@ function paintGodPanel(f) {
   } else {
     // Fallback when flow() is not available
     econHtml += '<div class="econ-section-label">materials</div>';
-    econHtml += `<div class="econ-row"><span>stock</span><span class="v">${r.materials.toFixed(0)}</span></div>`;
+    econHtml += `<div class="econ-row"><span>stock</span><span class="v">${(r.materials ?? 0).toFixed(0)}</span></div>`;
   }
 
   // Knowledge capital
@@ -2372,6 +2399,9 @@ const worldCanvas = el('world-canvas');
 const wCtx = worldCanvas.getContext('2d');
 const worldMages = [];
 let worldTick = -1;
+const worldMotion = { started: performance.now(), lastTick: -1, pulseAt: -10, pulseKind: 'quiet', discoveries: 0, books: 0 };
+function mapNoise(n) { const x = Math.sin(n * 127.1 + 311.7) * 43758.5453123; return x - Math.floor(x); }
+const worldVisualAudit = await fetch('./world-node-visual-audit.json').then(r => r.ok ? r.json() : null).catch(() => null);
 
 const SPECIES_COLORS = ['#C85050','#C9A84C','#46A98D','#5BA0C8','#E8DCC8','#A08060'];
 const SPRITE_NAMES = ['human','elf','dwarf','draconic','gnome','orc'];
@@ -2398,213 +2428,24 @@ function resizeWorldCanvas() {
   worldCanvas._h = r.height;
 }
 
+function buildAtlasModel(f, W, H, dark, time) {
+  const academy = f.academy?.();
+  const nodeIdToSlug = new Map((session.content.nodes || []).map(node => [node.nodeId, String(node.id)]));
+  const knownNodeIds = new Set(), copiesByNodeId = new Map(), activeGoalNodeIds = new Set();
+  const addCopy = (numericId, copies = 1) => { const id = nodeIdToSlug.get(numericId); if (!id) return; knownNodeIds.add(id); copiesByNodeId.set(id, (copiesByNodeId.get(id) || 0) + Math.max(1, Number(copies) || 1)); };
+  if (academy) for (const handle of academy.handles) { const dossier = academy.university(handle); for (const entry of dossier?.roster || []) for (const nodeId of entry.nodeIds || []) addCopy(nodeId); for (const entry of dossier?.shelf || []) addCopy(entry.nodeId, entry.copies); }
+  const projectedMages = new Map([...Object.entries(f.raw.academy?.mages || {}), ...Object.entries(f.raw.candidateDetail?.mages || {})]);
+  for (const mage of projectedMages.values()) { const id = nodeIdToSlug.get(mage.goal?.targetNodeId); if (id) activeGoalNodeIds.add(id); }
+  return { W, H, dark, time, auditNodes: worldVisualAudit?.nodes || [], knownNodeIds, copiesByNodeId, activeGoalNodeIds, institutions: f.institutions(), populace: { mages: f.mageBuckets().reduce((sum, b) => sum + b.living, 0) }, resources: f.resources() };
+}
+
 function renderWorld(f) {
   resizeWorldCanvas();
   const W = worldCanvas._w, H = worldCanvas._h;
   if (!W || !H) return;
-
-  const cd = f.raw.candidateDetail || {};
-  const mageData = cd.mages ? Object.values(cd.mages) : [];
-  const inst = f.institutions();
-  const kCells = f.knowledge();
-
-  // Sync world mages with data
-  if (f.raw.flow?.worldTick !== worldTick) {
-    worldTick = f.raw.flow?.worldTick ?? 0;
-    // Rebuild mage list
-    while (worldMages.length > mageData.length) worldMages.pop();
-    for (let i = 0; i < mageData.length; i++) {
-      const m = mageData[i];
-      if (!worldMages[i]) {
-        worldMages[i] = {x: W*.35 + ((i*7919)%1000)/1000*W*.3, y: H*.35 + ((i*6271)%1000)/1000*H*.3, tx:0, ty:0};
-      }
-      const wm = worldMages[i];
-      wm.species = m.speciesId;
-      wm.role = m.roleId;
-      wm.knows = m.nodesKnown;
-      wm.age = Math.floor(m.ageTicks / 12);
-      wm.goal = m.goal?.goalId ?? 0;
-      // Target position by role
-      const uniX = W * .42, uniY = H * .48;
-      if (m.roleId === 0) { wm.tx = uniX - 30 + (i%5)*12; wm.ty = uniY - 20 + Math.floor(i/5)*10; } // researcher near library
-      else if (m.roleId === 2) { wm.tx = uniX + 40 + (i%3)*15; wm.ty = uniY + 10 + Math.floor(i/3)*12; } // professor in hall
-      else if (m.roleId === 1) { // warden patrols
-        const a = (i * 1.2 + worldTick * 0.02);
-        wm.tx = uniX + Math.cos(a) * 80; wm.ty = uniY + Math.sin(a) * 60;
-      }
-      else if (m.roleId === 3) { wm.tx = W * .85; wm.ty = H * .55; } // raider near portal
-      else { wm.tx = uniX + (i%4)*10 - 20; wm.ty = uniY + 30; }
-    }
-  }
-
-  // Interpolate positions
-  for (const wm of worldMages) {
-    wm.x += (wm.tx - wm.x) * 0.08;
-    wm.y += (wm.ty - wm.y) * 0.08;
-    // Deterministic wander based on index and tick
-    const wi = worldMages.indexOf(wm);
-    wm.x += Math.sin(worldTick * 0.03 + wi * 2.1) * 0.3;
-    wm.y += Math.cos(worldTick * 0.025 + wi * 1.7) * 0.3;
-  }
-
-  // Clear
+  const time = (performance.now() - worldMotion.started) / 1000;
   const isDark = getComputedStyle(document.documentElement).getPropertyValue('--ground').trim().startsWith('#0');
-  wCtx.fillStyle = isDark ? '#060a0c' : '#e8e4dc';
-  wCtx.fillRect(0, 0, W, H);
-
-  // Draw territories as landscape patches
-  for (const t of TERRITORIES) {
-    const tx = t.x * W, ty = t.y * H, tw = t.w * W, th = t.h * H;
-    // Terrain shape — rounded organic patch
-    wCtx.save();
-    wCtx.beginPath();
-    const r = Math.min(tw, th) * 0.15;
-    wCtx.moveTo(tx + r, ty);
-    wCtx.lineTo(tx + tw - r, ty);
-    wCtx.quadraticCurveTo(tx + tw, ty, tx + tw, ty + r);
-    wCtx.lineTo(tx + tw, ty + th - r);
-    wCtx.quadraticCurveTo(tx + tw, ty + th, tx + tw - r, ty + th);
-    wCtx.lineTo(tx + r, ty + th);
-    wCtx.quadraticCurveTo(tx, ty + th, tx, ty + th - r);
-    wCtx.lineTo(tx, ty + r);
-    wCtx.quadraticCurveTo(tx, ty, tx + r, ty);
-    wCtx.closePath();
-    wCtx.fillStyle = isDark ? t.fill : t.accent;
-    wCtx.fill();
-    // Territory name
-    wCtx.fillStyle = isDark ? 'rgba(255,255,255,0.15)' : 'rgba(0,0,0,0.12)';
-    wCtx.font = '9px system-ui, sans-serif';
-    wCtx.fillText(t.name, tx + 6, ty + th - 6);
-    wCtx.restore();
-  }
-
-  // Draw trees in Deep Forest (deterministic positions)
-  const forest = TERRITORIES[3];
-  for (let i = 0; i < 20; i++) {
-    const fx = (forest.x + ((i*7919)%1000)/1000 * forest.w) * W;
-    const fy = (forest.y + ((i*6271)%1000)/1000 * forest.h) * H;
-    wCtx.fillStyle = isDark ? '#0a2a0a' : '#3a5a3a';
-    wCtx.beginPath();
-    wCtx.moveTo(fx, fy - 6);
-    wCtx.lineTo(fx - 3, fy + 2);
-    wCtx.lineTo(fx + 3, fy + 2);
-    wCtx.fill();
-  }
-
-  // Draw rocks in Highland Waste (deterministic positions)
-  const waste = TERRITORIES[4];
-  for (let i = 0; i < 12; i++) {
-    const rx = (waste.x + 0.02 + ((i*4967)%1000)/1000 * (waste.w - 0.04)) * W;
-    const ry = (waste.y + 0.05 + ((i*3571)%1000)/1000 * (waste.h - 0.1)) * H;
-    wCtx.fillStyle = isDark ? '#2a2a30' : '#8a8a90';
-    wCtx.beginPath();
-    wCtx.arc(rx, ry, 2 + ((i*2137)%1000)/1000 * 3, 0, Math.PI * 2);
-    wCtx.fill();
-  }
-
-  // Draw river in delta
-  const delta = TERRITORIES[0];
-  wCtx.strokeStyle = isDark ? '#1a4a5a' : '#5a8aaa';
-  wCtx.lineWidth = 2;
-  wCtx.beginPath();
-  const rx0 = (delta.x + delta.w * 0.3) * W;
-  wCtx.moveTo(rx0, delta.y * H);
-  wCtx.quadraticCurveTo(rx0 + 10, (delta.y + delta.h * 0.5) * H, rx0 - 5, (delta.y + delta.h) * H);
-  wCtx.stroke();
-
-  // Draw university building
-  const uniX = W * .38, uniY = H * .40;
-  const uniW = 72, uniH = 72;
-  const uniSprite = spriteImages['university'];
-  if (uniSprite?.complete && uniSprite.naturalWidth > 0) {
-    wCtx.drawImage(uniSprite, uniX, uniY - 12, uniW, uniH);
-  } else {
-    wCtx.fillStyle = isDark ? '#1a2028' : '#b0a898';
-    wCtx.fillRect(uniX, uniY, 60, 40);
-    wCtx.fillStyle = isDark ? '#2a1a18' : '#8a6a58';
-    wCtx.beginPath();
-    wCtx.moveTo(uniX - 4, uniY);
-    wCtx.lineTo(uniX + 30, uniY - 18);
-    wCtx.lineTo(uniX + 64, uniY);
-    wCtx.fill();
-  }
-  // Label
-  wCtx.fillStyle = isDark ? 'rgba(255,255,255,0.3)' : 'rgba(0,0,0,0.25)';
-  wCtx.font = 'italic 10px Georgia, serif';
-  wCtx.fillText('The Academy', uniX + 4, uniY + uniH + 2);
-
-  // Portal at the edge
-  const portalX = W * 0.88, portalY = H * 0.55;
-  const portalSprite = spriteImages['portal'];
-  if (portalSprite?.complete && portalSprite.naturalWidth > 0) {
-    wCtx.drawImage(portalSprite, portalX - 20, portalY - 20, 40, 40);
-  } else {
-    wCtx.save();
-    const glow = isDark ? 'rgba(166,146,236,0.4)' : 'rgba(74,53,133,0.3)';
-    wCtx.fillStyle = glow;
-    wCtx.beginPath();
-    wCtx.ellipse(portalX, portalY, 8, 16, 0, 0, Math.PI * 2);
-    wCtx.fill();
-    wCtx.strokeStyle = isDark ? '#A692EC' : '#6a5a8a';
-    wCtx.lineWidth = 1.5;
-    wCtx.stroke();
-    wCtx.restore();
-  }
-  wCtx.fillStyle = isDark ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.15)';
-  wCtx.font = '8px system-ui';
-  wCtx.fillText('portal', portalX - 10, portalY + 28);
-
-  // Knowledge particles — faint dots drifting, colored by form
-  const formHues = ['#B8A866','#5BA0C8','#9AAAB4','#C87070','#6BA84E','#E89050','#A494C4','#46A98D','#CC8450','#9090A4','#7070A0','#B8A870','#A692EC','#7099D8'];
-  for (const c of kCells) {
-    if (!c.live || c.nodesKnown < 1) continue;
-    const formIdx = kCells.indexOf(c) % 14;
-    const hue = formHues[formIdx] || '#888';
-    for (let p = 0; p < Math.min(c.nodesKnown, 3); p++) {
-      const px = uniX + Math.sin(worldTick * 0.01 + formIdx + p * 2) * (40 + p * 20) + uniW / 2;
-      const py = uniY + Math.cos(worldTick * 0.013 + formIdx * 0.7 + p) * (30 + p * 15) + uniH / 2;
-      wCtx.fillStyle = hue;
-      wCtx.globalAlpha = 0.25;
-      wCtx.beginPath();
-      wCtx.arc(px, py, 1.5, 0, Math.PI * 2);
-      wCtx.fill();
-      wCtx.globalAlpha = 1;
-    }
-  }
-
-  // Draw mages as sprites (fallback to dots if not loaded)
-  for (let mi = 0; mi < worldMages.length; mi++) {
-    const wm = worldMages[mi];
-    const speciesName = SPRITE_NAMES[wm.species] || 'human';
-    const sprite = spriteImages[speciesName + '-south'];
-    const sz = speciesName === 'gnome' ? 14 : speciesName === 'draconic' ? 22 : 18;
-    if (sprite?.complete && sprite.naturalWidth > 0) {
-      wCtx.globalAlpha = 0.9;
-      wCtx.drawImage(sprite, wm.x - sz / 2, wm.y - sz, sz, sz);
-    } else {
-      const col = SPECIES_COLORS[wm.species] || '#aaa';
-      wCtx.fillStyle = col;
-      wCtx.globalAlpha = 0.9;
-      wCtx.beginPath();
-      wCtx.arc(wm.x, wm.y, 3, 0, Math.PI * 2);
-      wCtx.fill();
-    }
-    // Research spark (deterministic timing)
-    if (wm.goal === 1 && ((worldTick + mi * 17) % 33) === 0) {
-      wCtx.fillStyle = isDark ? '#12B8C6' : '#0a8a98';
-      wCtx.globalAlpha = 0.7;
-      wCtx.beginPath();
-      wCtx.arc(wm.x + Math.sin(mi * 3.7) * 4, wm.y - sz - 4, 1.5, 0, Math.PI * 2);
-      wCtx.fill();
-    }
-    wCtx.globalAlpha = 1;
-  }
-
-  // Stats overlay bottom-left
-  wCtx.fillStyle = isDark ? 'rgba(255,255,255,0.35)' : 'rgba(0,0,0,0.3)';
-  wCtx.font = '10px ui-monospace, monospace';
-  wCtx.fillText(`${worldMages.length} mages · ${inst.libraryDepth} nodes in the library · ${inst.grimoires} grimoires`, 10, H - 10);
-
+  drawCivilizationAtlas(wCtx, buildAtlasModel(f, W, H, isDark, time));
   // Animate
   if (state.tab === 'world') requestAnimationFrame(() => renderWorld(f));
 }
