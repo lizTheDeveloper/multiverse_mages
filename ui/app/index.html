@@ -891,6 +891,12 @@ html, body { height: 100%; overflow: hidden; }
 .toast.fade-out { animation: toastOut .4s ease forwards; }
 @keyframes toastIn { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
 @keyframes toastOut { from { opacity: 1; } to { opacity: 0; transform: translateY(-10px); } }
+@keyframes yearPulse { 0% { color: var(--god); text-shadow: 0 0 8px var(--god); } 100% { color: var(--ink); text-shadow: none; } }
+.tick-display.pulsing { animation: yearPulse .8s ease-out; }
+@keyframes valFlash { 0% { background: rgba(18,184,198,0.25); } 100% { background: transparent; } }
+.val-changed { animation: valFlash .6s ease-out; }
+.auto-advance-label { font: 10px var(--mono); color: var(--faint); cursor: pointer; display: flex; align-items: center; gap: .3rem; letter-spacing: .06em; text-transform: uppercase; }
+.auto-advance-label input { accent-color: var(--god); }
 </style>
 
 <div class="setup-screen" id="setup-screen">
@@ -1016,6 +1022,7 @@ html, body { height: 100%; overflow: hidden; }
       <button type="button" class="advance-btn" data-ticks="12">+1 year</button>
       <button type="button" class="advance-btn" data-ticks="60">+5 years</button>
       <button type="button" class="advance-btn" data-ticks="240">+20 years</button>
+      <label class="auto-advance-label"><input type="checkbox" id="auto-advance-cb"> auto</label>
       <span class="spacer"></span>
       <button type="button" id="restart-btn">restart</button>
     </div>
@@ -1396,22 +1403,42 @@ for (const f of forms) {
 // ================================================================ ADVANCE CONTROLS (live mode)
 function drawSpine() {} // no-op in live mode
 
-for (const btn of document.querySelectorAll('.advance-btn')) {
-  btn.addEventListener('click', async () => {
-    if (state.busy) return;
-    state.busy = true;
-    btn.disabled = true;
-    try {
-      const ticks = Number(btn.dataset.ticks);
-      await session.advance(ticks);
-      showToast(`Advanced ${ticks >= 12 ? Math.floor(ticks / 12) + ' year' + (ticks >= 24 ? 's' : '') : ticks + ' month' + (ticks > 1 ? 's' : '')}`);
-      refreshRuleset();
-      paint();
-    } catch (e) { console.error('advance failed', e); }
-    btn.disabled = false;
-    state.busy = false;
-  });
+async function doAdvance(ticks) {
+  if (state.busy) return;
+  state.busy = true;
+  try {
+    const beforeYear = Math.floor((session.last?.()?.raw?.flow?.worldTick ?? 0) / 12);
+    await session.advance(ticks);
+    const afterYear = Math.floor((session.last?.()?.raw?.flow?.worldTick ?? 0) / 12);
+    if (beforeYear !== afterYear) {
+      showToast(`Year ${beforeYear} → ${afterYear}`);
+      const tv = el('tick-val');
+      tv.classList.remove('pulsing');
+      void tv.offsetWidth;
+      tv.classList.add('pulsing');
+    }
+    refreshRuleset();
+    paint();
+    document.querySelectorAll('.econ-row .v, .pop-count, .tick-display').forEach(e => {
+      if (e._prev !== undefined && e._prev !== e.textContent) { e.classList.remove('val-changed'); void e.offsetWidth; e.classList.add('val-changed'); }
+      e._prev = e.textContent;
+    });
+  } catch (e) { console.error('advance failed', e); }
+  state.busy = false;
 }
+for (const btn of document.querySelectorAll('.advance-btn')) {
+  btn.addEventListener('click', () => doAdvance(Number(btn.dataset.ticks)));
+}
+
+let autoInterval = null;
+el('auto-advance-cb').addEventListener('change', (ev) => {
+  if (ev.target.checked) {
+    autoInterval = setInterval(() => doAdvance(1), 2000);
+  } else {
+    clearInterval(autoInterval);
+    autoInterval = null;
+  }
+});
 
 const restartBtn = el('restart-btn');
 if (restartBtn) {
