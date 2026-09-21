@@ -1415,15 +1415,10 @@ for (const btn of document.querySelectorAll('.advance-btn')) {
 
 const restartBtn = el('restart-btn');
 if (restartBtn) {
-  restartBtn.addEventListener('click', async () => {
-    if (state.busy) return;
-    state.busy = true;
-    try {
-      await session.restart(Date.now(), 0);
-      refreshRuleset();
-      paint();
-    } catch (e) { console.error('restart failed', e); }
-    state.busy = false;
+  restartBtn.addEventListener('click', () => {
+    el('app').hidden = true;
+    el('setup-screen').hidden = false;
+    window.scrollTo(0, 0);
   });
 }
 
