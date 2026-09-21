@@ -1215,23 +1215,19 @@ function showToast(msg, duration = 3000) {
       for (let i = 0; i < FORMS.length; i++) {
         if (!setup.forms.has(FORMS[i])) forbidForms.push(i + 1);
       }
-      const body = { seed: Date.now(), ticks: 4000, warm: 40, forbidTechniques, forbidForms };
-      await fetch('/live/reset', {
+      const body = { seed: (Date.now() & 0x7FFFFFFF) >>> 0, ticks: 100000, warm: 40, forbidTechniques, forbidForms };
+      const resetRes = await fetch('/live/reset', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(body),
       });
+      await resetRes.json();
       await session.reload();
-      const dbgFrame = session.last();
-      const dbgObs = dbgFrame?.raw?.obs;
-      console.log('[BEGIN-DBG] after reload, techniques:', dbgObs?.slice(0, 5), 'forms:', dbgObs?.slice(5, 19));
-      console.log('[BEGIN-DBG] session.frameCount:', session.frameCount, 'clock:', dbgFrame?.clock?.()?.worldTick);
 
     }
 
     // Refresh ruleset from the (now reset) server and paint
     refreshRuleset();
-    console.log('[BEGIN-DBG] godRuleset after refresh:', JSON.stringify(godRuleset));
     paint();
   });
 }

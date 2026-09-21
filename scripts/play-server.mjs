@@ -880,7 +880,7 @@ async function handle(req, res) {
       tick(run, { kind: GOD_ACTION.forbidForm, params: [Number(idx)] });
     }
 
-    json(res, 200, { ...header(run), frames: run.frames });
+    json(res, 200, { ...header(run), ok: true });
     return;
   }
 
