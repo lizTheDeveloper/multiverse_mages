@@ -1630,10 +1630,13 @@ function paint() {
 
   // Resources
   const r = f.resources();
-  const resBar = (k, v, max) =>
-    `<div class="res-row"><span class="k">${k}</span>`
-    + `<span class="res-track"><i style="width:${Math.min(100, (v / max) * 100)}%"></i></span>`
-    + `<span class="v">${v.toFixed(v < 10 ? 1 : 0)}</span></div>`;
+  const resBar = (k, v, max) => {
+    const val = Number.isFinite(v) ? v : 0;
+    const pct = max > 0 ? Math.min(100, (val / max) * 100) : 0;
+    return `<div class="res-row"><span class="k">${k}</span>`
+    + `<span class="res-track"><i style="width:${pct}%"></i></span>`
+    + `<span class="v">${val.toFixed(val < 10 ? 1 : 0)}</span></div>`;
+  };
   el('resources').innerHTML =
     resBar('favor', r.favor, peak.favor)
     + resBar('worship', r.worship, Math.max(1, peak.favor / 10))
@@ -2067,10 +2070,10 @@ function renderConsole(f) {
     <div><span class="label">status</span> ${clock.engaged ? 'engagement' : f.status()}</div>
 
     <div class="section-head">Resources</div>
-    <div><span class="label">favor</span> ${r.favor.toFixed(1)}${r.saturated.favor ? ' (sat)' : ''}</div>
-    <div><span class="label">worship</span> ${r.worship.toFixed(1)} tier ${r.worshipTier}</div>
-    <div><span class="label">materials</span> ${r.materials.toFixed(1)}${r.saturated.materials ? ' (sat)' : ''}</div>
-    <div><span class="label">prestige</span> ${r.prestige.toFixed(1)}</div>
+    <div><span class="label">favor</span> ${(r.favor ?? 0).toFixed(1)}${r.saturated?.favor ? ' (sat)' : ''}</div>
+    <div><span class="label">worship</span> ${(r.worship ?? 0).toFixed(1)} tier ${r.worshipTier ?? 0}</div>
+    <div><span class="label">materials</span> ${(r.materials ?? 0).toFixed(1)}${r.saturated?.materials ? ' (sat)' : ''}</div>
+    <div><span class="label">prestige</span> ${(r.prestige ?? 0).toFixed(1)}</div>
 
     <div class="section-head">Institutions</div>
     <div><span class="label">univ</span> ${inst.universities}, cap ${inst.capacity}</div>
@@ -2304,7 +2307,7 @@ function paintGodPanel(f) {
       econHtml += `<div style="margin-bottom:3px">
         <div style="display:flex;justify-content:space-between;font:9px var(--mono)">
           <span style="color:${hue};font-weight:600;letter-spacing:.04em">${kind}</span>
-          <span><span style="color:var(--ink)">${stock.toFixed(0)}</span> <span style="color:${netColor};font-size:8px">${net >= 0 ? '+' : ''}${net.toFixed(0)}</span></span>
+          <span><span style="color:var(--ink)">${(stock || 0).toFixed(0)}</span> <span style="color:${netColor};font-size:8px">${net >= 0 ? '+' : ''}${(net || 0).toFixed(0)}</span></span>
         </div>
         <div style="height:5px;border-radius:3px;background:var(--sunk);overflow:hidden;margin-top:1px">
           <div style="height:100%;width:${pct}%;background:${hue};border-radius:3px;opacity:.6"></div>
@@ -2333,7 +2336,7 @@ function paintGodPanel(f) {
         econHtml += `<div style="margin-bottom:3px">
           <div style="display:flex;justify-content:space-between;font:9px var(--mono);color:var(--faint)">
             <span>${c.claimant} <span style="opacity:.6">(${c.kind})</span></span>
-            <span style="color:${short ? 'var(--loss)' : 'var(--ink)'}">${c.paid.toFixed(0)}${short ? ' / ' + c.owed.toFixed(0) : ''}</span>
+            <span style="color:${short ? 'var(--loss)' : 'var(--ink)'}">${(c.paid ?? 0).toFixed(0)}${short ? ' / ' + (c.owed ?? 0).toFixed(0) : ''}</span>
           </div>
           <div style="height:4px;border-radius:2px;background:var(--sunk);position:relative;overflow:hidden">
             ${short ? `<div style="position:absolute;inset:0 ${100-owedPct}% 0 0;background:color-mix(in srgb,var(--loss) 30%,transparent);border-radius:2px"></div>` : ''}
@@ -2351,7 +2354,7 @@ function paintGodPanel(f) {
   } else {
     // Fallback when flow() is not available
     econHtml += '<div class="econ-section-label">materials</div>';
-    econHtml += `<div class="econ-row"><span>stock</span><span class="v">${r.materials.toFixed(0)}</span></div>`;
+    econHtml += `<div class="econ-row"><span>stock</span><span class="v">${(r.materials ?? 0).toFixed(0)}</span></div>`;
   }
 
   // Knowledge capital
