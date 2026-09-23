@@ -74,16 +74,24 @@ const prototypes = (): readonly string[] =>
 /**
  * Every page these assertions apply to, as `{ path, html }`.
  *
- * **`prototypes()` above answers about directories, and `ui/index.html` is a
- * file.** So the front door — the page a reader opens first — sat outside this
- * sweep entirely, and the gap was found the way gaps like this are always
- * found: by opening it and measuring. Its `--faint` was carrying the lede,
- * every section heading, every card path and the footer at **2.70:1 on vellum
- * and 3.91:1 on ink**, and nothing here could have said so, because nothing
- * here looked at the file.
+ * **`prototypes()` above answers about directories, and the front door is a
+ * file.** `ui/index.html` used to be the prototype index — a real page with a
+ * palette, headings and a footer — and it sat outside this sweep entirely, so
+ * the gap was found the way gaps like this are always found: by opening it and
+ * measuring. Its `--faint` was carrying the lede, every section heading, every
+ * card path and the footer at **2.70:1 on vellum and 3.91:1 on ink**, and
+ * nothing here could have said so, because nothing here looked at the file.
+ *
+ * The front door is now a redirect stub, so it is exempt from the stylesheet
+ * and control assertions (`NO_SHARED_STYLESHEET`, `NO_THEME_CONTROL` below) —
+ * it hands the reader to `app/` before any theme would matter. It stays in the
+ * sweep itself, so the token assertion still runs over it and the exemption
+ * list is still held to pages that actually exist. It is held to the one
+ * assertion that survives a redirect — that the page it points at exists — by
+ * `ui-index.test.ts`.
  *
  * The path rather than the directory name is what gets reported, so a failure
- * on the front door reads as `ui/index.html` and not as `ui//`.
+ * on a prototype reads as `ui/<dir>/index.html` and not as `ui//`.
  */
 const pages = (): readonly { readonly path: string; readonly html: string }[] => [
   ...prototypes().map((dir) => ({
@@ -96,23 +104,32 @@ const pages = (): readonly { readonly path: string; readonly html: string }[] =>
 /**
  * Pages that legitimately do not link `shared/theme.css`.
  *
- * Exactly one, and the exemption is narrow on purpose: `ui/index.html` **does**
- * mount the shared theme control and **does** honour the shared storage key, so
- * it is still held to both of the other assertions. What it does not do is load
- * the stylesheet, because it is a front door rather than a prototype and
- * declares a small palette of its own — stated in that file's own comment, next
- * to the four rules that restate the control in those tokens.
+ * Exactly one, and the exemption is narrow on purpose: the front door,
+ * `ui/index.html`, is a redirect stub rather than a page — it hands the reader
+ * to `app/` before any styling would matter, so it loads no stylesheet. It is
+ * exempt from the control assertion for the same reason (`NO_THEME_CONTROL`).
  *
- * There is also a mechanical reason it cannot: `ui-index.test.ts` reads *every*
- * `href` on that page as a prototype directory and asserts an `index.html`
- * behind it, so a `<link rel="stylesheet" href="shared/theme.css">` there fails
- * that suite. The control is loaded with `<script src>` for the same reason.
+ * There is also a mechanical reason it cannot load the stylesheet:
+ * `ui-index.test.ts` reads *every* `href` on that page and asserts an
+ * `index.html` behind it, so a `<link rel="stylesheet" href="shared/theme.css">`
+ * there fails that suite.
  *
  * Listed by path rather than by a convention, so that exempting a second page
  * is a deliberate edit here with a reason next to it — an unexplained exemption
  * is how a real gap gets normalised.
  */
 const NO_SHARED_STYLESHEET = new Set(['ui/index.html']);
+
+/**
+ * Pages that legitimately do not mount the shared theme control.
+ *
+ * The same redirect stub: `ui/index.html` exists to hand the reader to `app/`,
+ * not to be themed, so it mounts no `shared/theme.js` control either. Kept as
+ * its own set rather than folding into `NO_SHARED_STYLESHEET` because a page
+ * that skips the stylesheet could still mount the control, and the two
+ * exemptions do not have to move together.
+ */
+const NO_THEME_CONTROL = new Set(['ui/index.html']);
 
 /** Names a page may set itself: per-element geometry, not colour. */
 const LOCAL_OK = new Set([
@@ -149,15 +166,17 @@ describe('the prototype theme', () => {
       if (!NO_SHARED_STYLESHEET.has(path)) {
         expect(html, `${path} does not link shared/theme.css`).toContain('shared/theme.css');
       }
-      expect(html, `${path} does not mount the theme control`).toContain('shared/theme.js');
+      if (!NO_THEME_CONTROL.has(path)) {
+        expect(html, `${path} does not mount the theme control`).toContain('shared/theme.js');
+      }
     }
   });
 
-  it('holds the exemption list to pages that actually exist', () => {
+  it('holds the exemption lists to pages that actually exist', () => {
     // A stale exemption is a silent hole: rename the file and the entry stops
     // matching anything, which reads as "nothing is exempt" and is not.
     const known = new Set(pages().map((p) => p.path));
-    for (const path of NO_SHARED_STYLESHEET) {
+    for (const path of [...NO_SHARED_STYLESHEET, ...NO_THEME_CONTROL]) {
       expect(known.has(path), `${path} is exempted but is not a page this sweep visits`).toBe(true);
     }
   });
