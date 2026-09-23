@@ -920,6 +920,14 @@ html, body { height: 100%; overflow: hidden; }
 .help-card .goal { border: 1px solid color-mix(in srgb, var(--god) 40%, var(--edge)); background: color-mix(in srgb, var(--god) 6%, var(--plate)); padding: .6rem .8rem; border-radius: 4px; }
 .help-card .close-row { display: flex; justify-content: flex-end; margin-top: 1rem; }
 .help-card .close-row button { padding: .35rem 1rem; border: 1px solid var(--god); border-radius: 4px; background: var(--ctl-charged-bg); color: var(--ctl-charged-fg); font: 11px var(--mono); cursor: pointer; }
+/* The "unweaving" overlay: a Begin can take tens of seconds on a small box,
+   and a blank button is how a long load reads as a dead one. */
+.weave-overlay { position: fixed; inset: 0; z-index: 10001; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: .8rem; background: color-mix(in srgb, var(--ground) 82%, transparent); backdrop-filter: blur(2px); }
+.weave-overlay[hidden] { display: none; }
+.weave-overlay .ring { width: 42px; height: 42px; border-radius: 50%; border: 2px solid var(--edge); border-top-color: var(--god); animation: weaveSpin 1s linear infinite; }
+@keyframes weaveSpin { to { transform: rotate(360deg); } }
+.weave-overlay .msg { font: 13px var(--mono); color: var(--ink); }
+.weave-overlay .sub { font: italic 12px var(--serif); color: var(--soft); max-width: 34rem; text-align: center; padding: 0 1.5rem; }
 </style>
 
 <div class="setup-screen" id="setup-screen">
@@ -947,6 +955,12 @@ html, body { height: 100%; overflow: hidden; }
 </div>
 
 <div class="toast-container" id="toast-container"></div>
+
+<div class="weave-overlay" id="weave-overlay" hidden>
+  <div class="ring"></div>
+  <div class="msg" id="weave-msg">Weaving a new universe…</div>
+  <div class="sub">This runs your chosen starting ruleset into a fresh universe. It can take a few seconds — on a small server, tens of seconds.</div>
+</div>
 
 <div class="help-modal" id="help-modal" hidden>
   <div class="help-card" role="dialog" aria-modal="true" aria-labelledby="help-title">
@@ -1288,12 +1302,21 @@ function showToast(msg, duration = 3000) {
   }
 
   el('begin-btn').addEventListener('click', async () => {
+    if (isLive && state.weaving) return;
     el('setup-screen').hidden = true;
     el('app').hidden = false;
     const btn = el('begin-btn');
     if (isLive) {
       btn.disabled = true;
       btn.textContent = 'Unweaving the old universe…';
+    }
+    // A Begin can take tens of seconds on a small box (the reset runs hundreds
+    // of warm ticks). Say so, and hold the clock: the auto-advance must not
+    // fire a request while the server is rebuilding the run it would talk to.
+    const overlay = el('weave-overlay');
+    if (isLive) {
+      state.weaving = true;
+      overlay?.removeAttribute('hidden');
     }
     // Apply the chosen ruleset — reset, forbid, then warm up
     try {
@@ -1336,6 +1359,8 @@ function showToast(msg, duration = 3000) {
       showToast(e?.message ?? '!Begin failed');
     } finally {
       if (isLive) {
+        state.weaving = false;
+        overlay?.setAttribute('hidden', '');
         btn.disabled = false;
         btn.textContent = 'Begin';
       }
@@ -1359,7 +1384,7 @@ function godPermits(techId, formId) {
   return godRuleset.techniques[techId] && godRuleset.forms[formId];
 }
 function refreshRuleset() { godRuleset = liveRuleset(); }
-const state = { tab: 'grid', selectedCell: null, selectedAction: null, selectedMage: null, hoverAxis: null, busy: false, running: isLive };
+const state = { tab: 'grid', selectedCell: null, selectedAction: null, selectedMage: null, hoverAxis: null, busy: false, running: isLive, weaving: false };
 
 // ================================================================ LIVE STATE
 // No precomputed series in live mode — we only have the current frame
@@ -1561,7 +1586,7 @@ const RUN_TICKS = 12;
 let lastAdvanceAt = 0;
 setInterval(async () => {
   if (!isLive || !state.running) return;
-  if (state.busy) return;
+  if (state.busy || state.weaving) return;
   if (Date.now() - lastAdvanceAt < RUN_MS - 200) return;
   lastAdvanceAt = Date.now();
   state.busy = true;
@@ -1634,8 +1659,9 @@ window.addEventListener('keydown', (ev) => {
 const restartBtn = el('restart-btn');
 if (restartBtn) {
   restartBtn.addEventListener('click', async () => {
-    if (state.busy || !isLive) return;
-    state.busy = true;
+    if (state.busy || state.weaving || !isLive) return;
+    state.weaving = true;
+    el('weave-overlay')?.removeAttribute('hidden');
     try {
       // ticks 0 would clamp the server's cap to 1 and kill the new universe on
       // its first tick; a fresh universe gets a real horizon.
@@ -1649,6 +1675,9 @@ if (restartBtn) {
     } catch (e) {
       console.error('restart failed', e);
       showToast(`!Could not start a new universe: ${e?.message ?? e}`);
+    } finally {
+      state.weaving = false;
+      el('weave-overlay')?.setAttribute('hidden', '');
     }
     state.busy = false;
   });
