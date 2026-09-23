@@ -888,14 +888,44 @@ html, body { height: 100%; overflow: hidden; }
 .begin-btn:disabled { opacity: .4; cursor: default; box-shadow: none; transform: none; }
 .toast-container { position: fixed; top: .5rem; right: 1rem; z-index: 9999; display: flex; flex-direction: column; align-items: flex-end; gap: .4rem; pointer-events: none; }
 .toast { background: var(--panel); border: 1px solid var(--god); color: var(--god); padding: .5rem 1rem; font: 12px var(--mono); border-radius: 4px; opacity: 0; animation: toastIn .3s ease forwards; pointer-events: auto; box-shadow: 0 2px 8px rgba(0,0,0,0.4); }
+.toast.error { border-color: var(--loss); color: var(--loss); }
 .toast.fade-out { animation: toastOut .4s ease forwards; }
 @keyframes toastIn { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
 @keyframes toastOut { from { opacity: 1; } to { opacity: 0; transform: translateY(-10px); } }
+/* Run control (topbar): one button, running / paused */
+.run-btn {
+  display: inline-flex; align-items: center; gap: .35rem;
+  padding: .2rem .6rem; margin-left: .4rem;
+  border: 1px solid var(--ctl-charged-border); border-radius: 4px;
+  background: var(--ctl-charged-bg); color: var(--ctl-charged-fg);
+  font: 11px var(--mono); cursor: pointer;
+}
+.run-btn[data-paused="true"] { border-color: var(--edge); background: var(--sunk); color: var(--soft); }
+.run-btn .dot { width: 7px; height: 7px; border-radius: 50%; background: currentColor; animation: runPulse 1.6s ease infinite; }
+.run-btn[data-paused="true"] .dot { animation: none; }
+@keyframes runPulse { 0%,100% { opacity: 1; } 50% { opacity: .35; } }
+/* Help button + modal */
+.help-btn { padding: .2rem .55rem; border: 1px solid var(--edge); border-radius: 4px; background: var(--sunk); color: var(--soft); font: 11px var(--mono); cursor: pointer; }
+.help-btn:hover { border-color: var(--god); color: var(--god); }
+.help-modal { position: fixed; inset: 0; z-index: 10000; display: flex; align-items: center; justify-content: center; background: color-mix(in srgb, var(--ground) 55%, transparent); backdrop-filter: blur(2px); }
+.help-modal[hidden] { display: none; }
+.help-card { max-width: 44rem; max-height: 86vh; overflow-y: auto; background: var(--panel); border: 1px solid var(--line); border-radius: 6px; padding: 1.4rem 1.6rem; box-shadow: 0 8px 30px rgba(0,0,0,.35); }
+.help-card h2 { font: 400 1.3rem var(--serif); margin: 0 0 .3rem; }
+.help-card .sub { font: italic 12px var(--serif); color: var(--soft); margin: 0 0 1rem; }
+.help-card h3 { font: 11px var(--mono); letter-spacing: .12em; text-transform: uppercase; color: var(--god); margin: 1.1rem 0 .4rem; }
+.help-card p, .help-card li { font: 12.5px/1.65 var(--sans); color: var(--ink); margin: .25rem 0; }
+.help-card ul { margin: .25rem 0; padding-left: 1.1rem; }
+.help-card code { font: 11px var(--mono); color: var(--soft); }
+.help-card kbd { font: 10px var(--mono); background: var(--sunk); border: 1px solid var(--edge); border-radius: 3px; padding: 0 4px; }
+.help-card .goal { border: 1px solid color-mix(in srgb, var(--god) 40%, var(--edge)); background: color-mix(in srgb, var(--god) 6%, var(--plate)); padding: .6rem .8rem; border-radius: 4px; }
+.help-card .close-row { display: flex; justify-content: flex-end; margin-top: 1rem; }
+.help-card .close-row button { padding: .35rem 1rem; border: 1px solid var(--god); border-radius: 4px; background: var(--ctl-charged-bg); color: var(--ctl-charged-fg); font: 11px var(--mono); cursor: pointer; }
 </style>
 
 <div class="setup-screen" id="setup-screen">
   <h1 class="setup-title">Multiverse Mages</h1>
   <p class="setup-subtitle">You are the god of magic for a universe.</p>
+  <p style="margin:.1rem 0 0"><button type="button" class="help-btn" id="help-btn-setup">How do I play this?</button></p>
 
   <div class="setup-section-label">Choose your people</div>
   <div class="species-grid" id="species-grid"></div>
@@ -917,6 +947,54 @@ html, body { height: 100%; overflow: hidden; }
 </div>
 
 <div class="toast-container" id="toast-container"></div>
+
+<div class="help-modal" id="help-modal" hidden>
+  <div class="help-card" role="dialog" aria-modal="true" aria-labelledby="help-title">
+    <h2 id="help-title">How to play Multiverse Mages</h2>
+    <p class="sub">You are the god of magic for one universe. You never cast a spell and never command a mage. You decide what magic is <em>possible</em>, and your mages discover, teach, write down, and lose it.</p>
+
+    <div class="goal">
+      <b>Your goal:</b> grow a civilization of mages and declare <b>ascension</b> before your universe stagnates or is swallowed by one through a portal. The bottom of the spine shows progress; the <b>World</b> tab shows the mages who live your decisions.
+    </div>
+
+    <h3>Time</h3>
+    <ul>
+      <li>The world <b>runs on its own</b> — the clock moves about one season (3 months) every 1.5 seconds, on its own. <b>Pause</b> (topbar button or <kbd>space</kbd>) to think.</li>
+      <li><b>+1 month / +1 year / +5 years / +20 years</b> jump the clock forward yourself, whenever you are in a hurry.</li>
+      <li>The <b>year</b> counter in the topbar is the clock. If it is not moving, the world is paused or the episode is over (the badge says which).</li>
+      <li>Every <b>god action also advances time by one month</b> — acting costs time as well as favor.</li>
+    </ul>
+
+    <h3>What you actually do</h3>
+    <ul>
+      <li><b>Permit / forbid techniques and forms</b> — the rows and columns of the grid (click a row or column label, or the toggles on the left). This is your main lever: a permitted cell can be researched, a forbidden one cannot — by you <em>or anyone who invades you</em>.</li>
+      <li><b>God Actions</b> (left sidebar): glowing buttons are legal and affordable right now. Click one, then click a <b>candidate</b> in the panel next to the grid to execute. Faded buttons are denied; dotted ones cost more favor than you have.</li>
+      <li><b>Favor</b> is the currency for god actions. It regenerates each tick, faster when mages are productive. Big actions (changing a tradition, inviting a scholar) cost a lot — let it build up, or use the big year buttons.</li>
+      <li><b>Edicts</b> are one-off exceptions to your own rules (permit one forbidden cell, forbid one permitted one). There are only a few slots.</li>
+    </ul>
+
+    <h3>Reading the screen</h3>
+    <ul>
+      <li><b>Grid tab</b> — the 70 cells. Lit cells are permitted <em>and known</em>; the number is how many nodes are known. Hover a row or column to see what permitting it would unlock. Click a cell for its detail.</li>
+      <li><b>Activity feed</b> (under the grid) — discoveries, deaths, library growth, as they happen.</li>
+      <li><b>Knowledge tab</b> — the full research tree: what is known, what is next, what is gated.</li>
+      <li><b>World tab</b> — your mages, the university, the portal, and the soul of the place.</li>
+      <li><b>Console tab</b> — the raw state: every action's legality, resources, provenance.</li>
+    </ul>
+
+    <h3>A good first ten minutes</h3>
+    <ul>
+      <li>Let it run. Watch the feed for discoveries.</li>
+      <li>Click a lit cell, look at what is next in the Knowledge tab.</li>
+      <li>When <b>Encourage research</b> or <b>Assign role</b> glow, use them on something you want to happen.</li>
+      <li>When you can afford it, <b>founding knowledge</b> plants a whole school of magic your mages cannot yet reach.</li>
+      <li>Permit a new technique or form only when you understand what the extra cells will do to an invader, too.</li>
+    </ul>
+
+    <div class="close-row"><button type="button" id="help-close">Back to the universe</button></div>
+  </div>
+</div>
+
 <div class="app" id="app" hidden>
   <!-- ======================== TOP BAR ======================== -->
   <div class="topbar">
@@ -930,6 +1008,8 @@ html, body { height: 100%; overflow: hidden; }
     <span class="tick-label">year</span>
     <span class="tick-display" id="tick-val">--</span>
     <span class="status-badge" id="status-badge">--</span>
+    <button type="button" class="run-btn" id="run-btn" data-paused="false" title="Pause the world (space)"><span class="dot"></span><span class="run-label">running</span></button>
+    <button type="button" class="help-btn" id="help-btn" title="How to play">?</button>
     <span id="theme-host"></span>
   </div>
 
@@ -1016,6 +1096,7 @@ html, body { height: 100%; overflow: hidden; }
       <button type="button" class="advance-btn" data-ticks="12">+1 year</button>
       <button type="button" class="advance-btn" data-ticks="60">+5 years</button>
       <button type="button" class="advance-btn" data-ticks="240">+20 years</button>
+      <span style="font:9px var(--mono);color:var(--faint);margin-left:.5rem">the world runs on its own — press space to pause</span>
       <span class="spacer"></span>
       <button type="button" id="restart-btn">restart</button>
     </div>
@@ -1033,49 +1114,60 @@ import { mountThemeControl } from '../shared/theme.js';
 import { openSession, reconstructedCharge, units, mageVocabulary, candidateNamer } from '../shared/session.js';
 
 // ================================================================ BOOT
-// Try the live play-server first (/live/session.json); fall back to static recording.
-const liveProbe = await fetch('/live/session.json').catch(() => null);
-const isLive = liveProbe?.ok === true;
-const sessionSource = isLive ? { recording: '/live/session.json' } : {};
-
+// Try the live play-server first; fall back to the static recording.
+// Live mode is the native transport in shared/session.js: submit and advance
+// absorb only the frames the step produced, and a reset resyncs once. The old
+// path re-fetched the whole document after every button press, which is why a
+// long run stopped feeling live.
 let session;
+let isLive = false;
 try {
-  session = await openSession(sessionSource);
-} catch (e) {
-  document.querySelector('.center').innerHTML =
-    `<div style="padding:2rem;color:var(--loss);font:13px var(--mono)">
-      No universe. Start one with <code>npm run play</code> and open
-      <code>http://localhost:8300/ui/app/</code>.<br><br>${e.message}</div>`;
-  throw new Error('no session');
-}
-
-// Live-server actions: submit, advance, restart, then reload the session.
-if (isLive) {
-  const post = async (path, body) => {
-    const res = await fetch(path, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(body),
-    });
-    if (!res.ok) throw new Error(`${path} ${res.status}: ${await res.text()}`);
-  };
-  const reload = async () => {
-    const fresh = await openSession({ recording: `/live/session.json?t=${Date.now()}` });
-    for (const k of ['provenance','content','actionNames','frameCount','frame','last','actionCost','capabilities']) {
-      try { session[k] = fresh[k]; } catch { /* getter-only property, skip */ }
-    }
-  };
-  session.reload = reload;
-  session.submit = async (kind, params) => { await post('/live/submit', { kind, params }); await reload(); };
-  session.advance = async (ticks) => { await post('/live/advance', { ticks }); await reload(); };
-  session.restart = async (seed, ticks) => { await post('/live/reset', { seed, ticks: ticks || 4000 }); await reload(); };
-  session.controls = { live: true };
+  session = await openSession({ live: '' });
+  isLive = true;
+} catch {
+  try {
+    session = await openSession({});
+  } catch (e) {
+    document.querySelector('.center').innerHTML =
+      `<div style="padding:2rem;color:var(--loss);font:13px var(--mono)">
+        No universe. Start one with <code>npm run play</code> and open
+        <code>http://localhost:8300/ui/app/</code>.<br><br>${e.message}</div>`;
+    throw new Error('no session');
+  }
 }
 
 const el = (id) => document.getElementById(id);
+// The server requires a uint32 seed; Date.now() does not fit, and a bad seed is
+// a 500 that used to arrive as a silent, dead Begin.
+// Milliseconds / 4096 is ~4.4e8 now and still monotonic, so two clicks differ.
+const newSeed = () => Math.floor(Date.now() / 4096) >>> 0;
+
+// A submit that cannot be a no-op to the player. The gate reports a refused
+// action as admitted:false with its own word for why, over HTTP 200 — an old
+// handler logged that to the console and the button clicked into silence.
+const REJECT_HINTS = {
+  masked: 'masked this tick — usually the price exceeds your favor, or the world has other plans',
+  'empty-slot': 'that target is gone or moved — the world advanced while this list was on screen. The list is redrawn; try again',
+  'non-integer-parameter': 'that target is not valid this tick',
+  'parameter-out-of-range': 'that target is not valid this tick',
+};
+async function submitAction(kind, params, label) {
+  const payload = await session.submit(kind, params);
+  if (payload && payload.admitted === false) {
+    const why = payload.rejection ? (REJECT_HINTS[payload.rejection] ?? payload.rejection) : 'the world refused';
+    showToast(`!${label} — ${why}. Watch the favor bar.`, 4500);
+  } else {
+    showToast(label);
+  }
+  return payload;
+}
 function showToast(msg, duration = 3000) {
   const t = document.createElement('div');
   t.className = 'toast';
+  if (msg instanceof Error || String(msg).startsWith('!')) {
+    t.classList.add('error');
+    msg = String(msg).replace(/^!/, '');
+  }
   t.textContent = msg;
   el('toast-container').appendChild(t);
   setTimeout(() => { t.classList.add('fade-out'); setTimeout(() => t.remove(), 400); }, duration);
@@ -1198,35 +1290,56 @@ function showToast(msg, duration = 3000) {
   el('begin-btn').addEventListener('click', async () => {
     el('setup-screen').hidden = true;
     el('app').hidden = false;
-
-    // Apply the chosen ruleset — reset, forbid, then warm up
+    const btn = el('begin-btn');
     if (isLive) {
-      // Reset and warm up. Each forbid submit costs one tick, so the forbids
-      // themselves generate favor. But forbids cost 4096-8192 each, and early
-      // favor regen is ~2-40/tick. We advance between forbids to let favor
-      // accumulate. The warm param runs no-op ticks before any user action.
-      // Build the forbid lists — the server handles favor regeneration internally.
-      const forbidTechniques = [];
-      for (let i = 0; i < TECHNIQUES.length; i++) {
-        if (!setup.techniques.has(TECHNIQUES[i].id)) forbidTechniques.push(i + 1);
-      }
-      const forbidForms = [];
-      for (let i = 0; i < FORMS.length; i++) {
-        if (!setup.forms.has(FORMS[i])) forbidForms.push(i + 1);
-      }
-      const body = { seed: Date.now(), ticks: 4000, warm: 40, forbidTechniques, forbidForms };
-      await fetch('/live/reset', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(body),
-      });
-      await session.reload();
-
+      btn.disabled = true;
+      btn.textContent = 'Unweaving the old universe…';
     }
-
-    // Refresh ruleset from the (now reset) server and paint
-    refreshRuleset();
-    paint();
+    // Apply the chosen ruleset — reset, forbid, then warm up
+    try {
+      if (isLive) {
+        // Reset and warm up. Each forbid submit costs one tick, so the forbids
+        // themselves generate favor. But forbids cost 4096-8192 each, and early
+        // favor regen is ~2-40/tick. We advance between forbids to let favor
+        // accumulate. The warm param runs no-op ticks before any user action.
+        // Build the forbid lists — the server handles favor regeneration internally.
+        const forbidTechniques = [];
+        for (let i = 0; i < TECHNIQUES.length; i++) {
+          if (!setup.techniques.has(TECHNIQUES[i].id)) forbidTechniques.push(i + 1);
+        }
+        const forbidForms = [];
+        for (let i = 0; i < FORMS.length; i++) {
+          // FORMS is a plain string list (not objects), so the kept/forbidden
+          // test is on the string itself. `FORMS[i].id` is always undefined,
+          // which used to forbid every form at Begin no matter what the player
+          // chose — a universe that starts with no magic in it.
+          if (!setup.forms.has(FORMS[i])) forbidForms.push(i + 1);
+        }
+        const body = { seed: newSeed(), ticks: 4000, warm: 40, forbidTechniques, forbidForms };
+        const res = await fetch('/live/reset', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(body),
+        });
+        if (!res.ok) throw new Error(`!The universe refused to start (${res.status}). Try Begin again.`);
+        await session.resync();
+      }
+      // Refresh ruleset from the (now reset) server and paint
+      refreshRuleset();
+      paint();
+      state.running = true;
+      lastAdvanceAt = 0;
+      updateRunBtn();
+      if (isLive) showToast('The universe is yours. It is already running — space pauses it, ? is the guide.');
+    } catch (e) {
+      console.error('begin failed', e);
+      showToast(e?.message ?? '!Begin failed');
+    } finally {
+      if (isLive) {
+        btn.disabled = false;
+        btn.textContent = 'Begin';
+      }
+    }
   });
 }
 // Read the live ruleset from the current frame
@@ -1246,7 +1359,7 @@ function godPermits(techId, formId) {
   return godRuleset.techniques[techId] && godRuleset.forms[formId];
 }
 function refreshRuleset() { godRuleset = liveRuleset(); }
-const state = { tab: 'grid', selectedCell: null, selectedAction: null, selectedMage: null, hoverAxis: null, busy: false };
+const state = { tab: 'grid', selectedCell: null, selectedAction: null, selectedMage: null, hoverAxis: null, busy: false, running: isLive };
 
 // ================================================================ LIVE STATE
 // No precomputed series in live mode — we only have the current frame
@@ -1292,9 +1405,9 @@ for (const f of forms) {
       const on = godRuleset.forms[f.id];
       state.busy = true;
       try {
-        await session.submit(on ? 4 : 3, [fBit + 1]);
+        await submitAction(on ? 4 : 3, [fBit + 1], `${on ? 'Forbidden' : 'Permitted'} ${f.name}`);
         refreshRuleset();
-      } catch (e) { console.error('submit failed', e); }
+      } catch (e) { console.error('submit failed', e); showToast(`!Could not change ${f.name}: ${e?.message ?? e}`); }
       state.busy = false;
     } else {
       godRuleset.forms[f.id] = !godRuleset.forms[f.id];
@@ -1317,9 +1430,9 @@ for (const t of techniques) {
       const on = godRuleset.techniques[t.id];
       state.busy = true;
       try {
-        await session.submit(on ? 2 : 1, [tBit + 1]);
+        await submitAction(on ? 2 : 1, [tBit + 1], `${on ? 'Forbidden' : 'Permitted'} ${t.name}`);
         refreshRuleset();
-      } catch (e) { console.error('submit failed', e); }
+      } catch (e) { console.error('submit failed', e); showToast(`!Could not change ${t.name}: ${e?.message ?? e}`); }
       state.busy = false;
     } else {
       godRuleset.techniques[t.id] = !godRuleset.techniques[t.id];
@@ -1358,10 +1471,10 @@ for (const t of techniques) {
     const on = godRuleset.techniques[t.id];
     state.busy = true;
     try {
-      await session.submit(on ? 2 : 1, [tBit + 1]); // 1=permit, 2=forbid; 1-based
+      await submitAction(on ? 2 : 1, [tBit + 1], `${on ? 'Forbidden' : 'Permitted'} ${t.name}`); // 1=permit, 2=forbid; 1-based
       refreshRuleset();
       paint();
-    } catch (e) { console.error('submit failed', e); }
+    } catch (e) { console.error('submit failed', e); showToast(`!Could not change ${t.name}: ${e?.message ?? e}`); }
     state.busy = false;
   });
   btn.addEventListener('mouseenter', () => { state.hoverAxis = { type: 'technique', id: t.id }; paintGrid(); });
@@ -1380,10 +1493,10 @@ for (const f of forms) {
     const on = godRuleset.forms[f.id];
     state.busy = true;
     try {
-      await session.submit(on ? 4 : 3, [fBit + 1]); // 3=permit, 4=forbid; 1-based
+      await submitAction(on ? 4 : 3, [fBit + 1], `${on ? 'Forbidden' : 'Permitted'} ${f.name}`); // 3=permit, 4=forbid; 1-based
       refreshRuleset();
       paint();
-    } catch (e) { console.error('submit failed', e); }
+    } catch (e) { console.error('submit failed', e); showToast(`!Could not change ${f.name}: ${e?.message ?? e}`); }
     state.busy = false;
   });
   btn.addEventListener('mouseenter', () => { state.hoverAxis = { type: 'form', id: f.id }; paintGrid(); });
@@ -1405,22 +1518,138 @@ for (const btn of document.querySelectorAll('.advance-btn')) {
       showToast(`Advanced ${ticks >= 12 ? Math.floor(ticks / 12) + ' year' + (ticks >= 24 ? 's' : '') : ticks + ' month' + (ticks > 1 ? 's' : '')}`);
       refreshRuleset();
       paint();
-    } catch (e) { console.error('advance failed', e); }
+    } catch (e) {
+      console.error('advance failed', e);
+      showToast(`!Could not advance time: ${e?.message ?? e}`);
+    }
     btn.disabled = false;
     state.busy = false;
   });
 }
 
+// ================================================================ THE CLOCK RUNS
+// The world is alive: while running, it advances one year (12 ticks) every
+// 2 s of wall time — a 4,000-tick universe plays out in roughly eleven
+// minutes of hands-off time, with god actions layered on top. The whole
+// complaint that a playtest is "just a picture" is this absence — a clock
+// that moves on its own.
+//
+// One in-flight advance at a time, gated on state.busy, so a slow tick never
+// stacks. Every other control (submit, restart, the jump buttons) sets the same
+// flag, so the world is never stepped twice at once. The run button, ? and
+// space are the only other things that touch it.
+//
+// The badge is what tells the player the clock moved or stopped. It is set in
+// two places: here, the moment a pause or death is *caused*, and in paint(),
+// which re-derives it from the frame every tick — so a badge cannot go stale
+// against the world it claims to describe.
+function paintStatusBadge(clock, f) {
+  const worldDead = f.status() !== 'running';
+  const b = el('status-badge');
+  b.textContent = clock.engaged ? 'engagement'
+    : worldDead ? f.status()
+    : isLive ? (state.running ? 'running' : 'paused') : f.status();
+  b.title = clock.engaged
+    ? 'A raid is in progress — the two universes fight over this tick'
+    : worldDead ? `The episode ended: ${f.status()}. Press restart for a new universe.`
+    : isLive ? (state.running ? 'Time moves about one year every 2 s. Space or the button pauses it.' : 'Time is paused. Space or the button resumes it.')
+    : 'Static recording — time only moves when you advance it.';
+}
+
+const RUN_MS = 2000;
+const RUN_TICKS = 12;
+let lastAdvanceAt = 0;
+setInterval(async () => {
+  if (!isLive || !state.running) return;
+  if (state.busy) return;
+  if (Date.now() - lastAdvanceAt < RUN_MS - 200) return;
+  lastAdvanceAt = Date.now();
+  state.busy = true;
+  try {
+    const payload = await session.advance(RUN_TICKS);
+    if (payload?.admitted === false && payload?.rejection) {
+      state.running = false; // the world stopped itself; do not nudge it
+      updateRunBtn();
+      paintStatusBadge(session.last().clock(), session.last());
+    }
+    refreshRuleset();
+    paint();
+  } catch (e) {
+    console.error('advance failed', e);
+    state.running = false;
+    updateRunBtn();
+    try { paintStatusBadge(session.last().clock(), session.last()); } catch { /* first frame absent */ }
+    showToast(`!The world stopped moving: ${e?.message ?? e}`);
+  }
+  state.busy = false;
+}, 800);
+
+function updateRunBtn() {
+  const b = el('run-btn');
+  if (!b) return;
+  b.dataset.paused = String(!state.running);
+  b.querySelector('.run-label').textContent = state.running ? 'running' : 'paused';
+}
+
+const runBtn = el('run-btn');
+function setRunning(on) {
+  if (!isLive) return;
+  state.running = on;
+  lastAdvanceAt = 0;
+  updateRunBtn();
+  try { paintStatusBadge(session.last().clock(), session.last()); } catch { /* first frame absent */ }
+  if (!on) showToast('Time paused. The mages wait.');
+}
+if (runBtn) {
+  runBtn.addEventListener('click', () => setRunning(!state.running));
+}
+
+window.addEventListener('keydown', (ev) => {
+  if (ev.key !== ' ' || ev.repeat) return;
+  const t = ev.target;
+  if (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.isContentEditable)) return;
+  if (!isLive || el('help-modal')?.hidden === false) return;
+  ev.preventDefault();
+  setRunning(!state.running);
+});
+
+// The help modal
+const helpModal = el('help-modal');
+const helpBtn = el('help-btn');
+function setHelp(open) {
+  if (!helpModal) return;
+  helpModal.hidden = !open;
+}
+if (helpBtn) helpBtn.addEventListener('click', () => setHelp(true));
+const helpBtnSetup = el('help-btn-setup');
+if (helpBtnSetup) helpBtnSetup.addEventListener('click', () => setHelp(true));
+const helpClose = el('help-close');
+if (helpClose) helpClose.addEventListener('click', () => setHelp(false));
+helpModal?.addEventListener('click', (ev) => { if (ev.target === helpModal) setHelp(false); });
+window.addEventListener('keydown', (ev) => {
+  if (ev.key === 'Escape') setHelp(false);
+  if ((ev.key === '?' || (ev.key === 'h' && !ev.metaKey && !ev.ctrlKey && !ev.altKey)) && el('help-modal')?.hidden) setHelp(true);
+});
+
 const restartBtn = el('restart-btn');
 if (restartBtn) {
   restartBtn.addEventListener('click', async () => {
-    if (state.busy) return;
+    if (state.busy || !isLive) return;
     state.busy = true;
     try {
-      await session.restart(Date.now(), 0);
+      // ticks 0 would clamp the server's cap to 1 and kill the new universe on
+      // its first tick; a fresh universe gets a real horizon.
+      await session.restart(newSeed(), 4000);
+      state.running = true;
+      lastAdvanceAt = 0;
+      updateRunBtn();
       refreshRuleset();
       paint();
-    } catch (e) { console.error('restart failed', e); }
+      showToast('A new universe. It is running — space pauses it.');
+    } catch (e) {
+      console.error('restart failed', e);
+      showToast(`!Could not start a new universe: ${e?.message ?? e}`);
+    }
     state.busy = false;
   });
 }
@@ -1447,15 +1676,29 @@ el('cell-detail').addEventListener('click', async (ev) => {
   state.busy = true;
   item.style.opacity = '0.5';
   try {
-    await session.submit(aid, cands[slot].params);
+    // For the parameterized actions (8–14) the gate takes the slot index, not
+    // the slot's raw params — submit the index, and the server resolves it
+    // against the tick it is admitted on. Sending the raw handle here is what
+    // made every candidate click reject `empty-slot` and look like a dead
+    // button. (doc-comment in session.js: "the parameter submitted is still
+    // the slot index".)
+    const payload = await session.submit(aid, [slot]);
     const actionName = session.actionNames?.[aid] ?? `action ${aid}`;
     const candLabel = item.textContent?.trim().split('\n')[0] ?? '';
+    if (payload && payload.admitted === false) {
+      const why = payload.rejection ? (REJECT_HINTS[payload.rejection] ?? payload.rejection) : 'the world refused';
+      showToast(`!${actionName} — ${why}.`, 4500);
+      item.style.opacity = '1';
+      state.busy = false;
+      return;
+    }
     showToast(`${actionName}: ${candLabel}`);
     refreshRuleset();
     state.selectedAction = null;
     paint();
   } catch (e) {
     console.error('action failed', e);
+    showToast(`!${e?.message ?? 'the action failed'}`);
     item.style.opacity = '1';
   }
   state.busy = false;
@@ -1623,8 +1866,10 @@ function paint() {
   renderFeed();
 
   // Topbar
-  el('tick-val').textContent = String(Math.floor(clock.worldTick / 12));
-  el('status-badge').textContent = clock.engaged ? 'engagement' : (isLive ? 'LIVE' : f.status());
+  const tick12 = Math.floor(clock.worldTick / 12);
+  el('tick-val').textContent = String(tick12);
+  el('tick-val').title = `year ${tick12} (tick ${clock.worldTick}) — 12 ticks = 1 year`;
+  paintStatusBadge(clock, f);
 
   // Resources
   const r = f.resources();
@@ -1734,7 +1979,9 @@ function paintCellDetail(f, knowledgeCells, rules) {
   const edict = rules.edicts.find((e) => !e.empty && e.cell
     && e.cell.technique === tid && e.cell.form === fid);
   const on = edict ? (edict.kindName === 'dispensation') : enabled;
-  const classical = cell?.classical?.length ? cell.classical.join(', ') : '';
+  const classical = (cell?.classicalLabels ?? cell?.classical ?? []).length
+    ? (cell.classicalLabels ?? cell.classical).join(', ')
+    : '';
 
   let reason = '';
   if (edict) reason = edict.kindName;
@@ -1919,6 +2166,22 @@ function paintActionCandidates(f, detEl) {
     } else {
       html += `<div style="font:10px var(--mono);color:var(--faint);margin-top:.3rem">${cands.length} targets available</div>`;
     }
+  } else {
+    // Nothing to point at this tick. Say so, and say what usually unblocks it —
+    // "0 candidates" next to "click a candidate" is the exact moment a player
+    // decides the buttons do nothing.
+    const why = aid === 8
+      ? 'No unknown nodes are reachable yet — research first, then grant what the frontier cannot reach.'
+      : aid === 11
+      ? 'No university is ready to be funded — one must be founded (or the run restarted with one).'
+      : aid === 12
+      ? 'No researchable cells this tick — permit more techniques or forms, or wait for mages to exist.'
+      : aid === 9 || aid === 10
+      ? 'No mages to act on yet — they are born as the run warms.'
+      : aid === 13
+      ? 'The tradition may not be changed this tick — usually the cost is beyond reach (65,536 favor).'
+      : 'Nothing is available for this action this tick. Advance time, or look at another glowing action.';
+    html += `<div style="font:11px/1.5 var(--sans);color:var(--soft);margin-top:.4rem">${why}</div>`;
   }
 
   detEl.innerHTML = html;

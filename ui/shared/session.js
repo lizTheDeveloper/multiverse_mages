@@ -1193,6 +1193,23 @@ function liveControls(base, doc) {
       absorb(payload);
       return doc.frames.length - before;
     },
+    /**
+     * A full re-read. Incremental reads assume the server's run still is this
+     * page's run; a reset (a new seed, a cheat sheet, a restart) starts a
+     * different run, and the first incremental read against it would append
+     * the new run's frames onto the old one's spine. Resync discards and
+     * refetches. Nothing here is cheap, so nothing here is called casually:
+     * exactly once, after a reset.
+     */
+    resync: async () => {
+      const res = await fetch(`${base}/live/session.json`);
+      if (!res.ok) return false;
+      const next = await res.json();
+      doc.frames.length = 0;
+      doc.frames.push(...next.frames);
+      Object.assign(doc.provenance, next.provenance);
+      return true;
+    },
     /** One god action, one tick. Resolves to what the admission gate said. */
     submit: async (kind, params = []) =>
       absorb(await post('submit', { kind, params: [...params] })),
