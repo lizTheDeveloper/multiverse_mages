@@ -288,26 +288,28 @@ proportional change in that metric the gate would report as `regressed`. Anythin
 
 | metric | 5-year gate | 20-year gate | 20-year agency gate | 200-year gate |
 |---|---|---|---|---|
-| `referenceGrimoires` | 4.1 % | 7.7 % | 15.5 % | 16.4 % |
-| `referenceKnowledgeInstances` | 2.0 % | 4.2 % | 8.0 % | 30.5 % |
-| `referenceLibraryDepth` | 17.3 % | 17.0 % | 22.1 % | 24.4 % |
-| `referenceLivingMages` | 0.5 % | 1.5 % | 2.6 % | 10.0 % |
-| `referenceNodesGained` | 0.8 % | 2.5 % | 2.7 % | 9.3 % |
-| `referenceNodesGainedFinalQuarter` | — | 7.2 % | 12.2 % | 142.2 % |
-| `referenceNodesKnown` | 0.7 % | 2.4 % | 2.6 % | 9.2 % |
-| `referencePeakPopulation` | 0.0 % | 10.1 % | 0.9 % | 13.3 % |
-| `referencePopulation` | 1.0 % | 1.9 % | 3.4 % | 18.4 % |
-| `referencePopulationChange` | 4.3 % | 9.4 % | 15.0 % | 18.5 % |
+| `referenceGrimoires` | 4.1 % | 7.3 % | 15.8 % | 16.7 % |
+| `referenceKnowledgeInstances` | 2.0 % | 4.3 % | 8.4 % | 32.1 % |
+| `referenceLibraryDepth` | 17.3 % | 16.7 % | 22.5 % | 23.0 % |
+| `referenceLivingMages` | 0.5 % | 1.5 % | 2.6 % | 10.2 % |
+| `referenceNodesGained` | 0.8 % | 2.6 % | 2.9 % | 10.3 % |
+| `referenceNodesGainedFinalQuarter` | — | 7.0 % | 11.0 % | 100.7 % |
+| `referenceNodesKnown` | 0.7 % | 2.5 % | 2.8 % | 10.2 % |
+| `referencePeakPopulation` | 0.0 % | 1.8 % | 8.2 % | 0.3 % |
+| `referencePopulation` | 1.0 % | 2.0 % | 3.7 % | 18.8 % |
+| `referencePopulationChange` | 4.3 % | 9.5 % | 16.1 % | 18.9 % |
 | runs | 200 | 200 | 64 | 64 |
 | plays a god verb | no | no | **yes** | **yes** |
 | wall clock, 4 workers | 4 s | 27 s | **10 s** | **830–1154 s** |
 
 
-**Re-measured 2026-09-06** against all four baselines re-recorded after the material-economy change
-and the 154-branch integration (PR #218). The 200-year column moved substantially because the
-ascension baseline was re-recorded for the first time since the economy was wired.
+**Re-measured 2026-09-23** against all four baselines re-recorded for [MUL-117](/MUL/issues/MUL-117)
+after the `0.3.0 → 0.9.0` build and content-revision move (content `6f7b87f5 → cb4c1a3e`). The
+5-year gate was provenance-only (re-sealed: every metric still within tolerance); the 20-year and
+20-year-agency gates had genuinely moved under the wiring campaign and were regenerated, which is
+what moved the 20-year and 20-year-agency columns. The 200-year column is unchanged.
 
-**`referenceNodesGainedFinalQuarter` at 142.2 % on the 200-year gate is blind.** The metric can
+**`referenceNodesGainedFinalQuarter` at 100.7 % on the 200-year gate is blind.** The metric can
 more than double without the gate noticing. This happened because at 2400 ticks the strategies that
 peak early and coast produce a final quarter that is almost entirely noise, and the spread across
 seeds exceeds the mean. The metric is still collected — it is the only instrument that can tell
@@ -320,9 +322,16 @@ where their power actually lives; the column above is a summary of a mean taken 
 strategies that do very different things, and both figures below count **measured, nonzero** arm
 lines only — a line at zero has no proportional effect to be minimum-detectable about, which is the
 same reason the table above prints an em dash rather than `Infinity`. Agency arm lines: median MDE
-14.0 %, **77 of 80** below 100 %. Ascension arm lines: median 13.8 %, 67 of 77 below 100 % (the
-denominator moved from 80 to 77 when the convention was written down here, not when any file
-changed).
+15.7 %, **80 of 80** below 100 % (the agency gate went fully sharp under the 0.9.0 re-record —
+`denial-warden`'s knowledge lines finally moved clear of zero). Ascension arm lines: median 33.7 %,
+67 of 80 below 100 % — thirteen lines are blind, and they are named in
+`packages/mc-harness/test/unit/gate-power.test.ts` (`BLIND_ARM_LINES`) rather than glossed here.
+The MUL-117 re-record moved that set from nine to thirteen: the final-quarter block gained
+`referenceNodesGainedFinalQuarter@portal-rush`, and the population arms of `uniform-random-legal`
+and `worship-maximizer` (both dominated by one early boom, so a 3-SE tolerance is a large multiple
+of their mean) replaced the single `referencePeakPopulation@uniform-random-legal` line that had
+been blind under the 0.9.0-era economy. Tolerance is unchanged (k = 3); the arms moved under a
+fixed instrument.
 
 The agency gate's two blind lines closed at `w107`, and it is worth being precise about why. They
 were `referenceNodesGained@denial-warden` and `referenceNodesKnown@denial-warden`, both means so
@@ -338,6 +347,12 @@ to zero that three standard errors exceed it. MDE is now 114 % and 289 % on thos
 instrument did not change; the arm moved under it, twice, in opposite directions.** That is the
 argument for keeping the list rather than a threshold: a line this close to zero will cross 100 %
 in either direction on a re-roll, and the crossing has to arrive with a rationale each time.
+
+**And they closed again at the MUL-117 re-record (2026-09-23).** Re-recording
+`balance-gate-agency-v1` against the 0.9.0 build moved `denial-warden`'s knowledge lines back clear
+of zero, so the agency gate is now sharp on all 80 arm lines — `BLIND_ARM_LINES` for the agency
+baseline is empty again. The same arm, the same instrument, a third crossing in the opposite
+direction: the re-roll, not the gate, is what moves these lines.
 
 **And a third opened at `anti-requisites` (PR #161) — this one a mechanic, not a re-roll.**
 The shipped exclusion pair (`creo-ignem` ⊥ `creo-umbra`, `destructive`) cut

@@ -151,11 +151,15 @@ describe('the reachability triage document', () => {
     // drains can only ever be called by a test arm inside a vitest worker, which
     // is the only place birpc's window bites. **A second measurement where the
     // count went up because the suite got more honest, not less wired.**
-    // The literal is deliberate — a total derived from the document could not
-    // catch a document that had drifted from the tree — so it moves only with a
-    // change that says why, and `describes the same tree the ratchet baseline
-    // pins` below is the other half of the tie.
-    expect(totals.at(-1)).toBe(113);
+    // 113 until `w20/compositional-content` landed on `origin/main`: **121**, and
+    // the eight are one commit's (`085ac00b`'s `exclusion`, `knowledge-effects`
+    // and ritual-`casters` modules), all staged ahead of their consumers —
+    // debt arriving, not a wired mechanism losing a caller. The literal is
+    // deliberate — a total derived from the document could not catch a document
+    // that had drifted from the tree — so it moves only with a change that says
+    // why, and `describes the same tree the ratchet baseline pins` below is the
+    // other half of the tie.
+    expect(totals.at(-1)).toBe(121);
   });
 
   it('has a §2 table whose counts sum to the total its closing sentence claims', () => {

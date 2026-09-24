@@ -1,9 +1,23 @@
-# The 113 reachability findings, triaged
+# The 121 reachability findings, triaged
 
-**Measured at `d7af4468` on 2026-08-17**, by `npm run check:reachability` plus the capability
+**Measured at `4db6666c` on 2026-09-23**, by `npm run check:reachability` plus the capability
 analysis described in §5. This is an **inventory, not a fix**: the point is to convert the single
-number "113 findings" into a count of things somebody would act on, because that number is what
+number "121 findings" into a count of things somebody would act on, because that number is what
 nobody currently knows.
+
+> **Ninth round — 2026-09-23, re-derived at `4db6666c` (`origin/main` head) after the
+> `w20/compositional-content` merge landed on `main`: 113 → 121.** The eight arrivals are all one
+> commit's — `085ac00b`, the new `exclusion`, `knowledge-effects` and ritual-`casters` modules —
+> and every one is **staged ahead of its consumer, not a repair**: `closeAntirequisites`,
+> `trackCatalogFromRegistry` and `internTrack` (`rules-magic/instances/exclusion.ts`),
+> `ritualAvailable`, `ritualsFromRegistry` and `ritualCasters` (`rules-magic/rituals/casters.ts`),
+> `knowledgeEffectHooks` (`coordination/knowledge-effects.ts`) and `combineControls`
+> (`primitives/stack.ts`). None is named in §2, so the "Named in §2, still pinned" column holds at
+> 19 and all eight land in the unclassified column (94 → 102). This is the same shape the earlier
+> rounds report: the count went up because a module shipped ahead of the code that would call it,
+> not because a wired mechanism lost a caller — a re-pin that records the debt rather than
+> pretending it is not there, exactly as [MUL-117](/MUL/issues/MUL-117) instructed the ratchet to
+> do.
 
 > **Eighth round — 2026-08-18, re-derived at `14affa55` on
 > `integration/all-branches`: 111 → 113, and both arrivals are one commit's.**
@@ -182,24 +196,26 @@ is what happens when you skip that step.
 | Package | Named in §2, still pinned | Unclassified at this measurement | Total |
 | --- | ---: | ---: | ---: |
 | `content` | 0 | 7 | 7 |
-| `coordination` | 0 | 4 | 4 |
-| `primitives` | 6 | 3 | 9 |
-| `rules-magic` | 4 | 10 | 14 |
+| `coordination` | 0 | 5 | 5 |
+| `primitives` | 6 | 4 | 10 |
+| `rules-magic` | 4 | 16 | 20 |
 | `rules-raid` | 5 | 6 | 11 |
 | `rules-world` | 2 | 32 | 34 |
 | `scenario` | 0 | 21 | 21 |
 | `sim-core` | 0 | 6 | 6 |
 | `state` | 2 | 5 | 7 |
-| **Total** | **19** | **94** | **113** |
+| **Total** | **19** | **102** | **121** |
 
 The headline is no longer a proportion, because a proportion needs a denominator somebody judged.
 It is a direction, and for the first time the last step of it is upward: **129 at `origin/main`,
 125 on the combined base, 108 after the five wiring merges, 110 at `bf96bdfb`, 111 at `d7af4468`,
-113 here.** The nineteen that closed
+113 at `14affa55`, 121 here.** The nineteen that closed
 between `origin/main` and the wiring round are not spread thinly, and the two that re-opened are
 three arrivals against one repair — see the sixth-round note above for all four by name. Four whole §2 rows went to zero — spell preparation and its cost
 half, the tradition store policy, `changeTradition` and its two companions, and three of the seven
 university-staffing symbols — and each of those was a mechanism the game shipped and never ran.
+The eight that arrived here did the opposite of closing: a module shipped ahead of the code that
+would call it, and the count followed.
 
 ## 2. The load-bearing ones
 
@@ -232,9 +248,10 @@ legacy was wired, 46 of 61 before `applyWard` and `replay` moved to §3, and 44 
 `characterFor` arrived with #201 — see §5. Those denominators were the five-way judgement §1
 retires; the numerators are comparable and the denominators are not.)
 
-The 91 findings §1 leaves unclassified certainly contain integration debt of the ordinary kind —
+The 102 findings §1 leaves unclassified certainly contain integration debt of the ordinary kind —
 an economy input list, a commitment predicate, a monoculture threshold,
-`speciesRediscoveryMultiplier`, `worshipShareOfRegeneration`, `characterFor` — and equally
+`speciesRediscoveryMultiplier`, `worshipShareOfRegeneration`, `characterFor`, and the eight
+`w20/compositional-content` arrivals named in the ninth-round note — and equally
 certainly contain the `scenario` tooling that has never been anything else. Re-judging them is the
 work this document now owes; asserting a split it has not done is the work it must not do.
 

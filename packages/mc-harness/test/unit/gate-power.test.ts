@@ -92,15 +92,21 @@ const BLIND_ARM_LINES: Readonly<Record<string, readonly string[]>> = {
   // final-quarter gain stabilised. The agency gate can now see a proportional
   // change on every arm line it carries.
   'balance/baselines/balance-gate-agency-v1.baseline.json': [],
-  // **Nine after the material-economy re-recording, 2026-09-06.** The set
-  // reshuffled: denial-warden's grimoire and knowledge lines left (the economy
-  // gave it something to spend), replaced by worship-maximizer and
-  // passive-control lines where the spread widened. The final-quarter node-gain
-  // metrics dominate — four of nine — because at the 2400-tick horizon a
-  // strategy that peaks early and coasts has a final quarter that is noise.
-  // `referencePeakPopulation@uniform-random-legal` joined because the
-  // random-legal arm's peak is now close enough to its tolerance that the gate
-  // cannot distinguish a proportional shift from sampling noise.
+  // **Thirteen after the MUL-117 re-record, 2026-09-23.** Re-recording the
+  // 200-year gate against the 0.9.0 build reshuffled the set, the same way the
+  // 2026-09-06 re-record did. `referencePeakPopulation@uniform-random-legal`
+  // left — the random-legal arm's peak moved clear of its tolerance — and the
+  // population arms grew: `referenceNodesGainedFinalQuarter@portal-rush`
+  // joined the final-quarter block (portal-rush now coasts for most of the run,
+  // so its last quarter is noise like the others'), and the
+  // `referencePopulation` / `referencePopulationChange` lines for
+  // `uniform-random-legal` and `worship-maximizer` — the two arms whose 200-year
+  // population is dominated by one lucky early boom, so a three-standard-error
+  // tolerance is a large multiple of their mean and the gate cannot separate a
+  // proportional shift from sampling noise there. The final-quarter node-gain
+  // metrics still dominate: five of thirteen. Tolerance is unchanged (k = 3);
+  // this is the arms moving under a fixed instrument, not the instrument
+  // moving.
   'balance/baselines/balance-gate-ascension-v1.baseline.json': [
     'referenceGrimoires@worship-maximizer',
     'referenceKnowledgeInstances@passive-control',
@@ -109,8 +115,12 @@ const BLIND_ARM_LINES: Readonly<Record<string, readonly string[]>> = {
     'referenceNodesGainedFinalQuarter@narrow-depth',
     'referenceNodesGainedFinalQuarter@passive-control',
     'referenceNodesGainedFinalQuarter@permissive-breadth',
+    'referenceNodesGainedFinalQuarter@portal-rush',
     'referenceNodesGainedFinalQuarter@worship-maximizer',
-    'referencePeakPopulation@uniform-random-legal',
+    'referencePopulation@uniform-random-legal',
+    'referencePopulation@worship-maximizer',
+    'referencePopulationChange@uniform-random-legal',
+    'referencePopulationChange@worship-maximizer',
   ],
   'balance/baselines/balance-gate-v1.baseline.json': [],
   'balance/baselines/balance-gate-horizon-v1.baseline.json': [],

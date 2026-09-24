@@ -1,14 +1,14 @@
 {
   "note": "Pinned reachability findings. Generated — do not hand-edit. Regenerate with `npm run reachability:pin` and explain the diff in the commit message: an entry removed is a repair, an entry added is a debt someone accepted.",
   "scan": {
-    "examinedSymbolCount": 1100,
-    "productionFileCount": 376
+    "examinedSymbolCount": 1117,
+    "productionFileCount": 382
   },
   "scanFloor": {
-    "examinedSymbolCount": 880,
-    "productionFileCount": 300
+    "examinedSymbolCount": 893,
+    "productionFileCount": 305
   },
-  "findingCount": 113,
+  "findingCount": 121,
   "findings": [
     {
       "key": "symbol:packages/content/src/audio-selection-merge.ts:assetIdOf",
@@ -90,6 +90,14 @@
       "kind": "function"
     },
     {
+      "key": "symbol:packages/coordination/src/knowledge-effects.ts:knowledgeEffectHooks",
+      "group": "symbol",
+      "category": "unreached",
+      "file": "packages/coordination/src/knowledge-effects.ts",
+      "name": "knowledgeEffectHooks",
+      "kind": "function"
+    },
+    {
       "key": "symbol:packages/coordination/src/universe-effects.ts:summedYield",
       "group": "symbol",
       "category": "unreached",
@@ -158,6 +166,13 @@
       "kind": "function"
     },
     {
+      "key": "symbol:packages/primitives/src/stack.ts:combineControls",
+      "group": "symbol",
+      "category": "reachedOnlyByUnreached",
+      "file": "packages/primitives/src/stack.ts",
+      "name": "combineControls"
+    },
+    {
       "key": "symbol:packages/primitives/src/stacking.ts:applyWard",
       "group": "symbol",
       "category": "unreached",
@@ -213,6 +228,29 @@
       "kind": "function"
     },
     {
+      "key": "symbol:packages/rules-magic/src/instances/exclusion.ts:closeAntirequisites",
+      "group": "symbol",
+      "category": "unreached",
+      "file": "packages/rules-magic/src/instances/exclusion.ts",
+      "name": "closeAntirequisites",
+      "kind": "function"
+    },
+    {
+      "key": "symbol:packages/rules-magic/src/instances/exclusion.ts:internTrack",
+      "group": "symbol",
+      "category": "reachedOnlyByUnreached",
+      "file": "packages/rules-magic/src/instances/exclusion.ts",
+      "name": "internTrack"
+    },
+    {
+      "key": "symbol:packages/rules-magic/src/instances/exclusion.ts:trackCatalogFromRegistry",
+      "group": "symbol",
+      "category": "unreached",
+      "file": "packages/rules-magic/src/instances/exclusion.ts",
+      "name": "trackCatalogFromRegistry",
+      "kind": "function"
+    },
+    {
       "key": "symbol:packages/rules-magic/src/instances/location.ts:destroyLibrary",
       "group": "symbol",
       "category": "unreached",
@@ -242,6 +280,29 @@
       "category": "unreached",
       "file": "packages/rules-magic/src/instances/outcomes.ts",
       "name": "describeRefusal",
+      "kind": "function"
+    },
+    {
+      "key": "symbol:packages/rules-magic/src/rituals/casters.ts:ritualAvailable",
+      "group": "symbol",
+      "category": "unreached",
+      "file": "packages/rules-magic/src/rituals/casters.ts",
+      "name": "ritualAvailable",
+      "kind": "function"
+    },
+    {
+      "key": "symbol:packages/rules-magic/src/rituals/casters.ts:ritualCasters",
+      "group": "symbol",
+      "category": "reachedOnlyByUnreached",
+      "file": "packages/rules-magic/src/rituals/casters.ts",
+      "name": "ritualCasters"
+    },
+    {
+      "key": "symbol:packages/rules-magic/src/rituals/casters.ts:ritualsFromRegistry",
+      "group": "symbol",
+      "category": "unreached",
+      "file": "packages/rules-magic/src/rituals/casters.ts",
+      "name": "ritualsFromRegistry",
       "kind": "function"
     },
     {
