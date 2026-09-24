@@ -928,6 +928,28 @@ html, body { height: 100%; overflow: hidden; }
 @keyframes weaveSpin { to { transform: rotate(360deg); } }
 .weave-overlay .msg { font: 13px var(--mono); color: var(--ink); }
 .weave-overlay .sub { font: italic 12px var(--serif); color: var(--soft); max-width: 34rem; text-align: center; padding: 0 1.5rem; }
+/* The ending screen: an episode that has run to its own end (ascended,
+   stagnated, or out of its horizon) is shown, not implied by a badge.
+   A universe that ends on a tooltip has no ending a player can read. */
+.end-overlay { position: fixed; inset: 0; z-index: 10002; display: flex; align-items: center; justify-content: center; background: color-mix(in srgb, var(--ground) 88%, transparent); backdrop-filter: blur(3px); padding: 1.5rem; }
+.end-overlay[hidden] { display: none; }
+.end-card { max-width: 30rem; width: 100%; border: 1px solid var(--edge); border-radius: 6px; background: var(--plate); padding: 1.4rem 1.5rem; box-shadow: 0 8px 40px color-mix(in srgb, var(--ground) 70%, transparent); }
+.end-card h2 { font: italic 22px var(--serif); color: var(--ink); margin: 0 0 .2rem; }
+.end-card .end-sub { font: 12px var(--mono); color: var(--soft); margin: 0 0 .9rem; }
+.end-card .end-facts { display: grid; grid-template-columns: auto 1fr; gap: .25rem .9rem; margin: 0 0 .9rem; font: 11px var(--mono); }
+.end-card .end-facts dt { color: var(--faint); }
+.end-card .end-facts dd { margin: 0; color: var(--ink); text-align: right; }
+.end-card .end-cause { font: italic 13px/1.5 var(--serif); color: var(--soft); border-left: 2px solid var(--god); padding-left: .8rem; margin: 0 0 .9rem; }
+.end-card .close-row { display: flex; justify-content: flex-end; gap: .5rem; margin-top: .4rem; }
+.end-card .close-row button { padding: .45rem 1rem; border: 1px solid var(--god); border-radius: 4px; background: var(--ctl-charged-bg); color: var(--ctl-charged-fg); font: 11px var(--mono); cursor: pointer; }
+.end-card .close-row button.alt { border-color: var(--edge); background: var(--sunk); color: var(--soft); }
+/* The one god action with no candidates: it is the goal, not a tool, so it
+   executes from its own button once legal. */
+.god-action.has-fire { position: relative; }
+.god-action.has-fire .fire-row { position: absolute; right: .35rem; top: 50%; transform: translateY(-50%); display: flex; align-items: center; gap: .3rem; pointer-events: none; }
+.god-action.has-fire .fire-row[hidden] { display: none; }
+.god-action .fire-btn { pointer-events: auto; padding: .05rem .45rem; border: 1px solid var(--god); border-radius: 3px; background: var(--ctl-charged-bg); color: var(--ctl-charged-fg); font: 9px var(--mono); cursor: pointer; }
+.god-action .fire-hint { font: 9px var(--mono); color: var(--warn); }
 </style>
 
 <div class="setup-screen" id="setup-screen">
@@ -962,13 +984,26 @@ html, body { height: 100%; overflow: hidden; }
   <div class="sub">This runs your chosen starting ruleset into a fresh universe. It can take a few seconds — on a small server, tens of seconds.</div>
 </div>
 
+<div class="end-overlay" id="end-overlay" hidden>
+  <div class="end-card" role="dialog" aria-modal="true" aria-labelledby="end-title">
+    <h2 id="end-title">The universe is over</h2>
+    <p class="end-sub" id="end-sub"></p>
+    <dl class="end-facts" id="end-facts"></dl>
+    <p class="end-cause" id="end-cause"></p>
+    <div class="close-row">
+      <button type="button" class="alt" id="end-review">Review the ruins</button>
+      <button type="button" id="end-begin">Weave a new universe</button>
+    </div>
+  </div>
+</div>
+
 <div class="help-modal" id="help-modal" hidden>
   <div class="help-card" role="dialog" aria-modal="true" aria-labelledby="help-title">
     <h2 id="help-title">How to play Multiverse Mages</h2>
     <p class="sub">You are the god of magic for one universe. You never cast a spell and never command a mage. You decide what magic is <em>possible</em>, and your mages discover, teach, write down, and lose it.</p>
 
     <div class="goal">
-      <b>Your goal:</b> grow a civilization of mages and declare <b>ascension</b> before your universe stagnates or is swallowed by one through a portal. The bottom of the spine shows progress; the <b>World</b> tab shows the mages who live your decisions.
+      <b>Your goal:</b> grow a civilization of mages and declare <b>ascension</b> before your universe stagnates or is swallowed by one through a portal. When <b>declare ascension</b> in the God Actions list lights up, it is your moment — press its <b>Declare</b> button. The bottom of the spine shows progress; the <b>World</b> tab shows the mages who live your decisions.
     </div>
 
     <h3>Time</h3>
@@ -1003,6 +1038,13 @@ html, body { height: 100%; overflow: hidden; }
       <li>When <b>Encourage research</b> or <b>Assign role</b> glow, use them on something you want to happen.</li>
       <li>When you can afford it, <b>founding knowledge</b> plants a whole school of magic your mages cannot yet reach.</li>
       <li>Permit a new technique or form only when you understand what the extra cells will do to an invader, too.</li>
+    </ul>
+
+    <h3>Winning — declaring ascension</h3>
+    <ul>
+      <li><b>Declare ascension</b> (bottom of the God Actions list, free) lights up the moment your universe meets <em>either</em> ending: a <b>Mastery</b> path (a tier-4 worshipped world holding 13 permitted cells whose deepest node a living mage holds, with at least two copies of each surviving, and two completed universities standing) or an <b>Enduring Canon</b> path (four consecutive eras in which the library held most of what it knew and lost no more than two nodes).</li>
+      <li>It can light at the earliest in <b>year 50</b>. Worship tier is the long pole — it climbs from a productive, well-taught populace, so build mages and universities and keep the world busy.</li>
+      <li>When it lights, press its <b>Declare</b> button — that is the win. If the universe ever stagnates instead (no mages, or long unworshipped and unchanging), the episode ends the other way, and the ending screen tells you which happened and what you left behind.</li>
     </ul>
 
     <div class="close-row"><button type="button" id="help-close">Back to the universe</button></div>
@@ -1384,7 +1426,7 @@ function godPermits(techId, formId) {
   return godRuleset.techniques[techId] && godRuleset.forms[formId];
 }
 function refreshRuleset() { godRuleset = liveRuleset(); }
-const state = { tab: 'grid', selectedCell: null, selectedAction: null, selectedMage: null, hoverAxis: null, busy: false, running: isLive, weaving: false };
+const state = { tab: 'grid', selectedCell: null, selectedAction: null, selectedMage: null, hoverAxis: null, busy: false, running: isLive, weaving: false, ended: false };
 
 // ================================================================ LIVE STATE
 // No precomputed series in live mode — we only have the current frame
@@ -1581,6 +1623,20 @@ function paintStatusBadge(clock, f) {
     : 'Static recording — time only moves when you advance it.';
 }
 
+// A finished run shows its ending once — not every paint. The clock is held
+// the moment the world stops, so the overlay's facts do not move out from
+// under it. Live mode only: a static recording that ends on a terminal frame
+// is read through the badge, and an overlay there would cover it with no
+// door out (a recording cannot be re-woven).
+function checkEnd(f) {
+  if (!f || state.weaving || state.ended || !isLive) return;
+  if (f.status() === 'running') return;
+  state.ended = true;
+  state.running = false;
+  updateRunBtn();
+  showEndScreen(f);
+}
+
 const RUN_MS = 2000;
 const RUN_TICKS = 12;
 let lastAdvanceAt = 0;
@@ -1656,32 +1712,143 @@ window.addEventListener('keydown', (ev) => {
   if ((ev.key === '?' || (ev.key === 'h' && !ev.metaKey && !ev.ctrlKey && !ev.altKey)) && el('help-modal')?.hidden) setHelp(true);
 });
 
+// The restart is one action a new universe: fresh seed, real horizon, the
+// clock held while the server weaves. The end screen reuses it, so a finished
+// run and a bored player leave through the same door.
+async function weaveNewUniverse() {
+  if (state.busy || state.weaving || !isLive) return;
+  state.weaving = true;
+  state.ended = false;
+  el('weave-overlay')?.removeAttribute('hidden');
+  el('end-overlay')?.setAttribute('hidden', '');
+  try {
+    // ticks 0 would clamp the server's cap to 1 and kill the new universe on
+    // its first tick; a fresh universe gets a real horizon.
+    await session.restart(newSeed(), 4000);
+    state.running = true;
+    lastAdvanceAt = 0;
+    updateRunBtn();
+    refreshRuleset();
+    paint();
+    showToast('A new universe. It is running — space pauses it.');
+  } catch (e) {
+    console.error('restart failed', e);
+    showToast(`!Could not start a new universe: ${e?.message ?? e}`);
+  } finally {
+    state.weaving = false;
+    el('weave-overlay')?.setAttribute('hidden', '');
+  }
+  state.busy = false;
+}
 const restartBtn = el('restart-btn');
 if (restartBtn) {
-  restartBtn.addEventListener('click', async () => {
-    if (state.busy || state.weaving || !isLive) return;
-    state.weaving = true;
-    el('weave-overlay')?.removeAttribute('hidden');
-    try {
-      // ticks 0 would clamp the server's cap to 1 and kill the new universe on
-      // its first tick; a fresh universe gets a real horizon.
-      await session.restart(newSeed(), 4000);
-      state.running = true;
-      lastAdvanceAt = 0;
-      updateRunBtn();
-      refreshRuleset();
-      paint();
-      showToast('A new universe. It is running — space pauses it.');
-    } catch (e) {
-      console.error('restart failed', e);
-      showToast(`!Could not start a new universe: ${e?.message ?? e}`);
-    } finally {
-      state.weaving = false;
-      el('weave-overlay')?.setAttribute('hidden', '');
+  restartBtn.addEventListener('click', () => weaveNewUniverse());
+}
+
+// ================================================================ THE ENDGAME
+// A universe ends three ways — ascended (you declared the path), stagnated
+// (it stopped producing the world that pays worship), or truncated (the
+// caller's step limit). All three are a *finished run*, and a finished run
+// deserves a screen, not a tooltip: the facts of what it left behind, and the
+// door out. The one action that never had a path in the UI is declare
+// ascension itself — it takes no candidates, and the only way to execute an
+// action was clicking a candidate, so the goal could be selected and never
+// fired. It is legal (mask 1) exactly when the server's own qualification
+// says the moment is open, so the button lights on the same fact that makes
+// the submit succeed.
+async function fireAscension() {
+  if (!isLive || state.weaving) return;
+  // The world moves every 800 ms; a Declare that lands on an in-flight
+  // advance waits for the tick to settle rather than silently no-opping —
+  // a goal button that eats a click is a dead button, the exact failure this
+  // page has been fixing.
+  for (let i = 0; i < 25 && state.busy; i += 1) await new Promise((r) => setTimeout(r, 200));
+  if (state.busy) {
+    showToast('!The world is mid-tick — declare ascension in a moment.', 4000);
+    return;
+  }
+  const f = session.last();
+  const m = f.actions().find((a) => a.id === 15);
+  if (!m || !m.legal) {
+    showToast('!Declare ascension — the path is not open this tick. Keep the world climbing.', 4500);
+    return;
+  }
+  state.busy = true;
+  try {
+    // No parameters: the gate admits action 15 as submitted, and the server
+    // commits the terminal reason the qualification it just recomputed chose.
+    const payload = await session.submit(15, []);
+    if (payload && payload.admitted === false) {
+      const why = payload.rejection ? (REJECT_HINTS[payload.rejection] ?? payload.rejection) : 'the world refused';
+      showToast(`!Declare ascension — ${why}. The moment passed; it may open again.`, 4500);
+    } else {
+      showToast('Ascension declared. The universe ends as it chose to.');
     }
-    state.busy = false;
+    refreshRuleset();
+    state.selectedAction = null;
+    paint();
+  } catch (e) {
+    console.error('ascension failed', e);
+    showToast(`!Declare ascension failed: ${e?.message ?? e}`);
+  }
+  state.busy = false;
+}
+
+const END_COPY = {
+  ascended: {
+    title: 'Ascension — the universe is over',
+    cause: 'Your civilization met the path and you declared it. What it left behind is the measure of the run.'
+  },
+  stagnated: {
+    title: 'Stagnation — the universe is over',
+    cause: 'A world without mages, or long unworshipped and unchanging, drifts past its own horizon of possibility. The ending the world made for itself.'
+  },
+  truncated: {
+    title: 'The horizon — the universe is over',
+    cause: 'The run reached its step limit: a cutoff, not a ruin. It might have gone further; the caller said it would not.'
+  }
+};
+function showEndScreen(f) {
+  const st = f.status();
+  const o = el('end-overlay');
+  if (!o) return;
+  const clock = f.clock();
+  const r = f.resources();
+  const known = f.knowledge().filter((c) => c.live);
+  const deepest = f.knowledge().reduce((m, c) => Math.max(m, c.deepestTier || 0), 0);
+  const mages = f.mageBuckets().reduce((n, b) => n + b.living, 0);
+  const inst = f.institutions();
+  const copy = END_COPY[st] ?? END_COPY.truncated;
+  el('end-title').textContent = copy.title;
+  el('end-sub').textContent = `year ${Math.floor(clock.worldTick / 12)} · era ${clock.era}`;
+  const fact = (k, v) => `<dt>${k}</dt><dd>${v}</dd>`;
+  el('end-facts').innerHTML =
+    fact('mages left behind', `${mages} living`)
+    + fact('magic that was known', `${known.length} of ${f.knowledge().length} cells, deepest tier ${deepest}`)
+    + fact('worship', `tier ${r.worshipTier}`)
+    + fact('universities', inst.universities)
+    + fact('favor in the bank', r.favor.toFixed(r.favor < 10 ? 1 : 0))
+    + fact('prestige carried to the next universe', r.prestige.toFixed(r.prestige < 10 ? 1 : 0));
+  el('end-cause').textContent = copy.cause;
+  o.hidden = false;
+}
+const endOverlay = el('end-overlay');
+if (el('end-begin')) {
+  el('end-begin').addEventListener('click', () => {
+    endOverlay?.setAttribute('hidden', '');
+    weaveNewUniverse();
   });
 }
+if (el('end-review')) {
+  el('end-review').addEventListener('click', () => {
+    endOverlay?.setAttribute('hidden', '');
+  });
+}
+// The detail panel's inline Declare button (see paintActionCandidates'
+// zero-candidate branch for declare ascension).
+el('cell-detail').addEventListener('click', (ev) => {
+  if (ev.target.closest('[data-ascend]')) fireAscension();
+});
 
 // Mage click delegation on university panel
 el('university-panel').addEventListener('click', (ev) => {
@@ -1899,6 +2066,7 @@ function paint() {
   el('tick-val').textContent = String(tick12);
   el('tick-val').title = `year ${tick12} (tick ${clock.worldTick}) — 12 ticks = 1 year`;
   paintStatusBadge(clock, f);
+  checkEnd(f);
 
   // Resources
   const r = f.resources();
@@ -2199,7 +2367,10 @@ function paintActionCandidates(f, detEl) {
     // Nothing to point at this tick. Say so, and say what usually unblocks it —
     // "0 candidates" next to "click a candidate" is the exact moment a player
     // decides the buttons do nothing.
-    const why = aid === 8
+    const ascension = aid === 15;
+    const why = ascension
+      ? null
+      : aid === 8
       ? 'No unknown nodes are reachable yet — research first, then grant what the frontier cannot reach.'
       : aid === 11
       ? 'No university is ready to be funded — one must be founded (or the run restarted with one).'
@@ -2210,7 +2381,17 @@ function paintActionCandidates(f, detEl) {
       : aid === 13
       ? 'The tradition may not be changed this tick — usually the cost is beyond reach (65,536 favor).'
       : 'Nothing is available for this action this tick. Advance time, or look at another glowing action.';
-    html += `<div style="font:11px/1.5 var(--sans);color:var(--soft);margin-top:.4rem">${why}</div>`;
+    const m = f.actions().find((a) => a.id === aid);
+    const ascensionLegal = ascension && m && m.legal;
+    const hint = ascension
+      ? ascensionLegal
+        ? 'The path is open and the moment is now — press Declare, or its button on the left.'
+        : 'Not yet: the world has not qualified. Mastery needs worship tier 4, two completed universities, and 13 permitted cells whose deepest node a living mage holds, with at least two copies of it surviving (in minds or the library). The Enduring Canon needs four clean eras in a row. It can open at the earliest in year 50.'
+      : why;
+    html += `<div style="font:11px/1.5 var(--sans);color:${ascensionLegal ? 'var(--god)' : 'var(--soft)'};margin-top:.4rem">${hint}</div>`;
+    if (ascensionLegal) {
+      html += `<div style="margin-top:.5rem"><button type="button" class="fire-btn" data-ascend="1" style="padding:.3rem .9rem;font:11px var(--mono)">&#9733; Declare ascension now</button></div>`;
+    }
   }
 
   detEl.innerHTML = html;
@@ -2510,6 +2691,33 @@ function paintGodPanel(f) {
       badge.style.display = '';
     } else if (badge) {
       badge.style.display = 'none';
+    }
+
+    // Declare ascension has no candidates to click — it is the goal. When it is
+    // legal, the button itself must be the way to fire it, or the win is
+    // unreachable the same way every other candidate-less action is.
+    if (aid === 15) {
+      let fire = btn.querySelector('.fire-row');
+      if (legal) {
+        if (!fire) {
+          btn.classList.add('has-fire');
+          fire = document.createElement('span');
+          fire.className = 'fire-row';
+          const b = document.createElement('button');
+          b.type = 'button';
+          b.className = 'fire-btn';
+          b.textContent = 'Declare';
+          b.addEventListener('click', async (ev) => {
+            ev.stopPropagation();
+            await fireAscension();
+          });
+          fire.append(b);
+          btn.append(fire);
+        }
+        fire.hidden = false;
+      } else if (fire) {
+        fire.hidden = true;
+      }
     }
   }
 
