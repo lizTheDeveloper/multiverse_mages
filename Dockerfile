@@ -40,6 +40,10 @@ RUN npx tsc --build
 
 FROM node:22-slim
 WORKDIR /app
-COPY --from=build /app .
+COPY --from=build --chown=root:root /app .
+# Unprivileged at runtime. The tree stays root-owned and read-only to this user:
+# play-server writes nothing to disk, so a compromised process cannot rewrite
+# the code it is serving.
+USER node
 EXPOSE 8300
 CMD ["node", "scripts/play-server.mjs", "--port", "8300"]

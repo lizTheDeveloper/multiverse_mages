@@ -7,11 +7,19 @@
 #
 #     docker compose -f deploy/play-compose.yml up -d --build
 
+# Pinned: the host proxy routes to the container BY NAME (`mm-play-play-1`).
+# Unpinned, compose names the project after this file's directory and the
+# container becomes `deploy-play-1` — a redeploy that takes the site down.
+name: mm-play
+
 services:
   play:
     build: ..
     ports:
-      - "8300:8300"
+      # Loopback only. The domain is served over the `coolify` network, which reaches
+      # the container directly; a 0.0.0.0 publish would expose the raw server past
+      # the proxy, and Docker's iptables rules bypass ufw.
+      - "127.0.0.1:8300:8300"
     restart: unless-stopped
     environment:
       - NODE_ENV=production

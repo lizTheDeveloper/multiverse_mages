@@ -13,3 +13,9 @@
 .claude
 .playwright-mcp
 mc-results
+# Secrets never enter the build context: `COPY . .` would bake them into a layer.
+.env
+.env.*
+**/*.pem
+**/*.key
+.npmrc
