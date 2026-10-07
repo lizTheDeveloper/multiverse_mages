@@ -1,0 +1,21 @@
+# Multiverse Mages — what the image build never sees.
+# Copyright (C) 2026 Ann Kelner
+# SPDX-License-Identifier: AGPL-3.0-or-later
+
+.git
+**/node_modules
+# Build output AND its incremental state, together. A tsbuildinfo without its
+# dist makes `tsc --build` report up to date and emit nothing — an image with no
+# compiled packages that still builds green.
+**/dist
+**/*.tsbuildinfo
+.tsbuild
+.claude
+.playwright-mcp
+mc-results
+# Secrets never enter the build context: `COPY . .` would bake them into a layer.
+.env
+.env.*
+**/*.pem
+**/*.key
+.npmrc

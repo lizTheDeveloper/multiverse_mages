@@ -322,11 +322,22 @@ pedantry: `sim-core` is a determinism project, and a green check produced on an 
 is a check that means nothing. The runner image was on Node 20 until this was set up; if it drifts
 again, fix `/opt/ci-runner/Dockerfile`, do not relax the assertion.
 
-## Deployment: nothing to deploy yet
+## Deployment: one hand-run deploy, no pipeline
 
-**There is no deploy pipeline for this repository, and that is correct.** `packages/sim-core` is a
-pure library with zero runtime dependencies and no I/O. Per `docs/design/vision.md` §11, a
-deployable artifact first appears at **0.15.0** (`pvp-server`, delivering `hetzner-deployment`).
+**What is live (checked 2026-10-07 against the host, at `4db6666c`).** `mages.multiversegames.ai`
+is a compose project on `games` (`/opt/mm-play`, a plain checkout of this repo) running
+`scripts/play-server.mjs` in one container on `:8300`, routed over Coolify's proxy network. Until
+this date its `Dockerfile` and compose file existed only on the host, untracked; they are now
+[`Dockerfile`](../../Dockerfile) and [`deploy/play-compose.yml`](../../deploy/play-compose.yml). To
+redeploy: on the host, check out the commit, then
+`docker compose -f deploy/play-compose.yml up -d --build`.
+
+What that is **not**: it is one shared universe whose clock is driven by whichever browsers are
+open (measured: 108 ticks in 20 s with one tab, 0 in 25 s with none), and the setup screen's Begin
+resets it for every visitor. It is a playtest server, not the game. Nothing triggers it from CI.
+
+**There is no deploy pipeline, and that is still correct.** Per `docs/design/vision.md` §11, the
+deployable game server first appears at **0.15.0** (`pvp-server`, delivering `hetzner-deployment`).
 
 A placeholder Coolify app or a `STAGING_DEPLOY_MAP` entry pointing at nothing would be a booby
 trap — the deploy status would go green having deployed nothing. So the path is written down here
