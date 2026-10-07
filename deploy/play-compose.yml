@@ -1,0 +1,29 @@
+# Multiverse Mages — the compose project behind mages.multiversegames.ai
+# Copyright (C) 2026 Ann Kelner
+# SPDX-License-Identifier: AGPL-3.0-or-later
+#
+# Tracked copy of what ran untracked on the host until 2026-10-07. `coolify` is
+# the external network the host's proxy routes the domain over.
+#
+#     docker compose -f deploy/play-compose.yml up -d --build
+
+services:
+  play:
+    build: ..
+    ports:
+      - "8300:8300"
+    restart: unless-stopped
+    environment:
+      - NODE_ENV=production
+    networks:
+      - coolify
+      - default
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://localhost:8300/ui/app/').then(r => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+networks:
+  coolify:
+    external: true
