@@ -181,8 +181,8 @@ const HORIZON = 400;
  * own stated rule. Five further movers are above if the next tree needs one.
  */
 /*
- * **`0x00ab_cdef` replaced by `0x0a97_0001` on `sim-playability` (S4),
- * 2026-10-08.** `laborObligation` asks for about twice the laborers it did, so
+ * **`0x00ab_cdef` replaced by `0x0bad_f00d` on `sim-playability` (S4),
+ * 2026-10-08** (not by the recorded spare `0x0a97_0001`; see below). `laborObligation` asks for about twice the laborers it did, so
  * who is idle, who studies and who reaches a portal all shift upstream of any
  * raid. Re-surveyed the same twelve seeds, control and `knowledge-steal`-
  * ablated arms at this horizon:
