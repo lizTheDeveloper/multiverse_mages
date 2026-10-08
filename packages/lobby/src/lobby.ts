@@ -40,7 +40,7 @@ import type { Clock } from '@mm/server';
 import type { FrameDocument } from '../../../scripts/lib/frame-document.mjs';
 import { Bubble, type SeatOccupant } from './bubble.js';
 import { BodyTooLarge, Router, json, readBody, text } from './router.js';
-import { UniverseHost, validateConfig, type GodAction } from './universe-host.js';
+import { DEFAULT_CAP, UniverseHost, validateConfig, type GodAction } from './universe-host.js';
 
 /** Vision §13: "small clears fast and churns tiers while large makes raids
  * frequent and promotion rare." Start with 4. */
@@ -55,6 +55,7 @@ export const LOBBY_LIMITS = Object.freeze({
   evictAfterMs: { min: 0, max: 30 * 24 * 3_600_000 },
   idleAfterMs: { min: 1_000, max: 7 * 24 * 3_600_000 },
   matchAfterMs: { min: 0, max: 24 * 3_600_000 },
+  tickCap: { min: 1, max: DEFAULT_CAP },
 });
 
 /**
@@ -114,6 +115,12 @@ export interface LobbyOptions {
    * Default one minute.
    */
   matchAfterMs?: number;
+  /**
+   * The server's world-tick cap. A create may ask for less, never more; only a
+   * universe that reaches this cap is paid the cutoff ending's legacy.
+   * Default {@link DEFAULT_CAP}.
+   */
+  tickCap?: number;
   /** Suppress the startup banner (tests). */
   quiet?: boolean;
 }
@@ -167,6 +174,7 @@ export class Lobby {
   private readonly evictAfterMs: number;
   private readonly idleAfterMs: number;
   private readonly matchAfterMs: number;
+  private readonly tickCap: number;
   private readonly quiet: boolean;
   /** When each ended universe was first seen ended, by the lobby clock. */
   private endedAt = new Map<string, number>();
@@ -180,6 +188,7 @@ export class Lobby {
     this.evictAfterMs = bounded('evictAfterMs', opts.evictAfterMs, EVICT_AFTER_MS);
     this.idleAfterMs = bounded('idleAfterMs', opts.idleAfterMs, IDLE_AFTER_MS);
     this.matchAfterMs = bounded('matchAfterMs', opts.matchAfterMs, MATCH_AFTER_MS);
+    this.tickCap = bounded('tickCap', opts.tickCap, DEFAULT_CAP);
     this.quiet = opts.quiet ?? false;
     this.setupRoutes();
   }
@@ -251,7 +260,7 @@ export class Lobby {
       const raw = parse(body);
       let config;
       try {
-        config = validateConfig(raw);
+        config = validateConfig(raw, this.tickCap);
       } catch (e) {
         json(res, 400, { error: (e as Error).message });
         return;
@@ -286,7 +295,7 @@ export class Lobby {
       const host = new UniverseHost(config, this.doc, this.clock.now(), {
         seats: this.bubbleSize - 1,
         seatOf: (self, seat) => this.seatOf(self, seat),
-      }, legacy);
+      }, { legacy, serverCap: this.tickCap });
       this.universes.set(host.id, host);
       const token = randomBytes(32);
       this.tokens.set(host.id, token);

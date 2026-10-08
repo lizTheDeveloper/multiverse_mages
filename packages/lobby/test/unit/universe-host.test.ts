@@ -5,8 +5,8 @@
  */
 import { describe, expect, it } from 'vitest';
 
-import { GOD_ACTION, MAGE_TIER_SLOTS, OBSERVATION_BLOCKS, speciesSlot } from '@mm/agent-api';
-import { referenceContent } from '@mm/scenario';
+import { GOD_ACTION, MAGE_TIER_SLOTS, OBSERVATION_BLOCKS, createSession, speciesSlot } from '@mm/agent-api';
+import { referenceContent, referenceScenario } from '@mm/scenario';
 
 import { frameDocument } from '../../../../scripts/lib/frame-document.mjs';
 import {
@@ -117,6 +117,29 @@ describe('UniverseHost', () => {
     const nouns = new Set(Array.from({ length: 64 }, (_, i) => defaultUniverseName(`id-${String(i)}`, 'Elf')));
     expect(nouns.size).toBeGreaterThan(8);
   });
+});
+
+describe('founding population', () => {
+  const block = (o: number[], name: string): number => {
+    const b = OBSERVATION_BLOCKS.find((x) => x.name === name)!;
+    return o.slice(b.offset, b.offset + b.size).reduce((a, v) => a + v, 0);
+  };
+  /** The reference all-species start, built the way the harness builds it. */
+  const reference = (): number[] => {
+    const session = createSession({ scenario: referenceScenario(shipped, { raids: false }).scenario, strategyId: 't' });
+    session.reset(11, { worldTickCap: 10 });
+    return doc.encodeFrame(session).obs as number[];
+  };
+
+  it.each(['dwarf', 'elf', 'human'])(
+    'a one-species (%s) universe founds as many mages as the all-species reference',
+    (species) => {
+      const one = obs(new UniverseHost({ ...base, species }, doc, 0));
+      const all = reference();
+      expect(block(all, 'mages')).toBeGreaterThan(0);
+      expect(block(one, 'mages')).toBe(block(all, 'mages'));
+    },
+  );
 });
 
 describe('validateName', () => {

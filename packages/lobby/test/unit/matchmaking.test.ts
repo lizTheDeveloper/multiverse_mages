@@ -294,13 +294,19 @@ describe('Lobby matchmaking', () => {
     };
     const carriedOf = (made: Made): number | null =>
       (made as unknown as { carriedPrestige: number | null }).carriedPrestige;
-    /** Ticks until `id` ends by the rules (an untouched opening stagnates near tick 620). */
+    /**
+     * The server's cap in these tests. A universe ends deliberately by reaching
+     * it — the cutoff ending — rather than by idling into stagnation, whose
+     * timing is a rules question this file must not depend on.
+     */
+    const SERVER_CAP = 30;
+    /** Ticks until `id` reaches the server's cap. */
     const runOut = (id: string): void => {
-      for (let i = 0; i < 4000 && lobby.universe(id)!.isAlive; i += 1) lobby.tickAll();
-      expect(lobby.universe(id)!.session.status()).toBe('stagnated');
+      for (let i = 0; i <= SERVER_CAP && lobby.universe(id)!.isAlive; i += 1) lobby.tickAll();
+      expect(lobby.universe(id)!.session.status()).toBe('truncated');
     };
     async function ended(): Promise<string> {
-      await start({ bubbleSize: 2, idleAfterMs: 7 * 24 * 3_600_000 });
+      await start({ bubbleSize: 2, tickCap: SERVER_CAP });
       const old = (await create({ tickCap: undefined })).universeId;
       runOut(old);
       return old;
@@ -319,16 +325,16 @@ describe('Lobby matchmaking', () => {
     it('pays a legacy once: retiring the same universe again carries nothing', async () => {
       const old = await ended();
       const token = tokens.get(old)!;
-      const first = await create({ retire: { universeId: old, token } });
+      const first = await create({ tickCap: undefined, retire: { universeId: old, token } });
       expect(carriedOf(first)).toBeGreaterThan(0);
-      const second = await create({ retire: { universeId: old, token } });
+      const second = await create({ tickCap: undefined, retire: { universeId: old, token } });
       expect(carriedOf(second)).toBeNull();
       expect(prestige(second.universeId)).toBe(0);
     }, 60_000);
 
     it('carries nothing without the owner’s token, and leaves the universe in place', async () => {
       const old = await ended();
-      const forged = await create({ retire: { universeId: old, token: 'ab'.repeat(32) } });
+      const forged = await create({ tickCap: undefined, retire: { universeId: old, token: 'ab'.repeat(32) } });
       expect(carriedOf(forged)).toBeNull();
       expect(prestige(forged.universeId)).toBe(0);
       expect(lobby.universe(old)).toBeDefined();
@@ -343,19 +349,25 @@ describe('Lobby matchmaking', () => {
       expect(prestige(fresh.universeId)).toBe(0);
     });
 
+    it('refuses a create asking for more ticks than the server’s cap', async () => {
+      await start({ bubbleSize: 2, tickCap: SERVER_CAP });
+      expect((await createRaw({ tickCap: SERVER_CAP + 1 })).status).toBe(400);
+      expect((await createRaw({ tickCap: SERVER_CAP })).status).toBe(200);
+    });
+
     it('carries nothing from a universe the client cut short with its own tickCap', async () => {
-      await start({ bubbleSize: 2 });
+      await start({ bubbleSize: 2, tickCap: SERVER_CAP });
       const short = (await create({ tickCap: 1 })).universeId;
       lobby.tickAll();
       lobby.tickAll();
       expect(lobby.universe(short)!.session.status()).toBe('truncated');
-      const fresh = await replace(short);
+      const fresh = await replace(short, { tickCap: undefined });
       expect(carriedOf(fresh)).toBeNull();
       expect(prestige(fresh.universeId)).toBe(0);
     });
 
     it('a chain of quick deaths converges under the cap instead of stacking without bound', async () => {
-      await start({ bubbleSize: 2, idleAfterMs: 7 * 24 * 3_600_000 });
+      await start({ bubbleSize: 2, tickCap: SERVER_CAP });
       let id = (await create({ tickCap: undefined })).universeId;
       const chain: number[] = [];
       const earnedMax = constants.prestigeEarnMax;

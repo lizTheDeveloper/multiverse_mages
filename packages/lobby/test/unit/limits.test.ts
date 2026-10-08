@@ -50,6 +50,8 @@ describe('Lobby limits', () => {
     ['idleAfterMs', Number.NaN],
     ['matchAfterMs', -1],
     ['matchAfterMs', Number.NaN],
+    ['tickCap', 0],
+    ['tickCap', 4001],
   ])('throws on %s = %s rather than clamping', (name, value) => {
     expect(() => make({ [name]: value })).toThrow(RangeError);
   });

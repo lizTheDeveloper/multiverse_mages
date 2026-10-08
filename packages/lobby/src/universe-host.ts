@@ -27,6 +27,7 @@ import {
   legacyRecordOf,
   participantOf,
   referenceContent,
+  referenceOptions,
   referenceScenario,
   speciesTable,
   type LegacyRecord,
@@ -228,6 +229,8 @@ export class UniverseHost implements FrameRun {
   readonly inbound: InboundRaid[] = [];
   /** Portal seats: the bubble's size less one. Fixed, because the candidate list is. */
   readonly seatCount: number;
+  /** The server's tick cap; see the constructor. */
+  readonly serverCap: number;
   /** Public, read-only: shown to bubble-mates in their seats. Plain text. */
   readonly name: string;
   /** The founding species' display name. */
@@ -244,17 +247,23 @@ export class UniverseHost implements FrameRun {
   #queued: { action: GodAction; resolve: (o: Outcome) => void } | null = null;
 
   /**
-   * @param legacy - What the player's previous, **ended** universe left this
-   *   one (vision §8a: a universe ends, a player does not). Absent for a first
-   *   universe, which is then built exactly as before.
+   * @param host.legacy - What the player's previous, **ended** universe left
+   *   this one (vision §8a: a universe ends, a player does not). Absent for a
+   *   first universe, which is then built exactly as before.
+   * @param host.serverCap - The tick cap the **server** sets (the lobby's,
+   *   {@link DEFAULT_CAP} by default). A config's own `tickCap` may only
+   *   shorten a run, and a run that stops short of this cap is not paid the
+   *   cutoff ending — see {@link legacy}.
    */
   constructor(
     config: UniverseConfig,
     doc: FrameDocument,
     now: number,
     peers: PeerSeats = NO_PEERS,
-    legacy?: LegacyRecord,
+    host: { readonly legacy?: LegacyRecord | undefined; readonly serverCap?: number } = {},
   ) {
+    const legacy = host.legacy;
+    this.serverCap = host.serverCap ?? DEFAULT_CAP;
     this.config = config;
     this.#doc = doc;
     this.ref = { universeId: this.id, bubbleId: '', prestige: 0 };
@@ -292,13 +301,26 @@ export class UniverseHost implements FrameRun {
     this.speciesName = wanted.record.name;
     this.name = config.name ?? defaultUniverseName(this.id, this.speciesName);
     const foundingSpeciesMask = 1 << ids.indexOf(wanted.contentId);
+    // Founders and starting cohorts are counted **per species**, so founding
+    // one species out of N would start a universe with 1/N of the reference
+    // population — about five mages that barely grow. Scale the chosen
+    // species' counts by N so the total founding population is the reference
+    // all-species one. N comes from the registry, and the per-species defaults
+    // from `referenceOptions`, so neither is restated here.
+    const perSpecies = referenceOptions({ worldTickCap: 1 });
+    const speciesCount = ids.length;
 
     // `Date.now()` is not a uint32, and `session.reset` refuses anything else.
     this.seed = config.seed ?? randomInt(0, 0xffff_ffff);
-    this.cap = config.tickCap ?? DEFAULT_CAP;
+    this.cap = Math.min(config.tickCap ?? this.serverCap, this.serverCap);
     this.session.reset(this.seed, {
       worldTickCap: this.cap,
-      options: { foundingSpeciesMask, foundingPortalMagic: config.foundingPortalMagic === 1 ? 1 : 0 },
+      options: {
+        foundingSpeciesMask,
+        foundingMages: perSpecies.foundingMages * speciesCount,
+        cohortSize: perSpecies.cohortSize * speciesCount,
+        foundingPortalMagic: config.foundingPortalMagic === 1 ? 1 : 0,
+      },
     });
     this.frames.push(doc.encodeFrame(this.session));
   }
@@ -365,7 +387,7 @@ export class UniverseHost implements FrameRun {
    * **The cutoff ending is paid only at the server's cap.** `tickCap` is
    * client-chosen, so a universe created with `tickCap: 1` would otherwise
    * "reach the tick cap" one tick in and claim `prestige-base-cutoff` — a
-   * second-long mint. Only a universe that ran to {@link DEFAULT_CAP} reached
+   * second-long mint. Only a universe that ran to {@link serverCap} reached
    * the cap the server set; a shorter one stopped early and leaves nothing.
    * Stagnation and ascension are the rules' own endings and always count.
    */
@@ -376,7 +398,7 @@ export class UniverseHost implements FrameRun {
       constants,
       scenarioId: REFERENCE_SCENARIO_ID,
       runSeed: this.seed,
-      endedAtCap: this.session.status() === 'truncated' && this.cap === DEFAULT_CAP,
+      endedAtCap: this.session.status() === 'truncated' && this.cap === this.serverCap,
     });
   }
 
