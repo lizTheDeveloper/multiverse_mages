@@ -79,12 +79,13 @@ export function edictControls(f, content, cellId, { act, isBusy }) {
       className: 'edict-btn',
       'data-action': id,
       disabled: !legal || busy,
-      title: legal ? `${verb} (${priceText(content, id)})` : reasons.map((r) => r.text).join('; '),
+      title: legal ? `${verb} (${priceText(content, id)}, base price)` : reasons.map((r) => r.text).join('; '),
       onclick: () => act(id, params, verb),
     }, verb, h('span', { className: 'edict-price' }, priceText(content, id))),
-    h('div', { className: 'edict-gloss' }, gloss),
+    h('div', { className: 'edict-gloss' }, gloss,
+      ' Price shown is the base price: the server adds a surcharge soon after another permit, forbid or edict, and the exact surcharge is not published to this page.'),
     legal ? null : h('ul', { className: 'edict-why' },
-      reasons.map((r) => h('li', {}, r.text, h('span', { className: 'edict-src' }, ` [${r.source}]`)))));
+      reasons.map((r) => h('li', { title: `read from ${r.source}` }, r.text))));
   return { sig, node };
 }
 
@@ -97,7 +98,6 @@ export function ascensionNode(f, content, compact = false) {
     h('span', { className: 'asc-mark', 'aria-label': it.status === 'unknown' ? 'not visible yet' : it.status }, MARK[it.status]),
     h('span', { className: 'asc-label' }, it.label),
     h('span', { className: 'asc-val' }, `${it.value} / ${it.target}`),
-    compact ? null : h('span', { className: 'asc-src' }, it.source),
     compact || !it.note ? null : h('span', { className: 'asc-note' }, it.note));
   return h('div', { className: 'asc' },
     h('div', { className: `asc-open ${c.open ? 'yes' : 'no'}` },

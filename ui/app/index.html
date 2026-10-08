@@ -266,7 +266,23 @@ html, body { height: 100%; overflow: hidden; }
   color: var(--faint);
   margin-left: auto;
 }
-.axis-toggle[data-on="true"] .gloss { color: color-mix(in srgb, var(--ctl-charged-fg) 60%, transparent); }
+.axis-toggle[data-on="true"] .gloss { color: color-mix(in srgb, var(--ctl-charged-fg) 75%, transparent); }
+.axis-toggle { --hue: currentColor; } /* a form toggle sets its own hue (JS) */
+.axis-toggle .dot { background: var(--hue); }
+.axis-toggle .axis-price { font: 9px var(--mono); color: var(--faint); min-width: 1.4rem; text-align: right; }
+.axis-toggle[data-on="true"] .axis-price { color: color-mix(in srgb, var(--ctl-charged-fg) 80%, transparent); }
+/* The confirm step for a priced act. */
+.confirm-modal { position: fixed; inset: 0; z-index: 10004; display: flex; align-items: center; justify-content: center; background: color-mix(in srgb, var(--ground) 60%, transparent); backdrop-filter: blur(2px); padding: 1rem; }
+.confirm-card { max-width: 26rem; width: 100%; background: var(--plate); border: 1px solid var(--edge); border-radius: 6px; padding: 1rem 1.2rem; box-shadow: 0 8px 30px rgba(0,0,0,.35); }
+.confirm-card h2 { font: 400 1.15rem var(--serif); color: var(--ink); margin: 0 0 .5rem; }
+.confirm-card .confirm-price { font: 600 13px var(--mono); color: var(--ink); }
+.confirm-card .confirm-price .k { font-weight: 400; color: var(--soft); }
+.confirm-card .confirm-body { font: 12px/1.5 var(--sans); color: var(--ink); margin: .5rem 0 0; }
+.confirm-card .confirm-note { font: italic 11.5px/1.45 var(--serif); color: var(--soft); margin: .5rem 0 0; }
+.confirm-card .close-row { display: flex; justify-content: flex-end; gap: .5rem; margin-top: .8rem; }
+.confirm-card .close-row button { padding: .4rem 1rem; border: 1px solid var(--ctl-charged-border); border-radius: 4px; background: var(--ctl-charged-bg); color: var(--ctl-charged-fg); font: 11px var(--mono); cursor: pointer; }
+.confirm-card .close-row button.alt { border-color: var(--edge); background: var(--sunk); color: var(--soft); }
+.confirm-card .close-row button:disabled { opacity: .5; cursor: default; }
 
 /* God actions — tiered intervention buttons */
 .god-actions { display: flex; flex-direction: column; gap: 2px; }
@@ -307,7 +323,14 @@ html, body { height: 100%; overflow: hidden; }
 .god-action[data-state="denied"] {
   color: color-mix(in srgb, var(--faint) 50%, transparent);
   border-color: transparent;
-  cursor: default;
+  cursor: help;
+}
+/* The action open in the detail panel — visible, so a second click is not a mystery. */
+.god-action[aria-pressed="true"] {
+  border-color: var(--god);
+  border-style: solid;
+  box-shadow: inset 3px 0 0 var(--god);
+  color: var(--ink);
 }
 .god-action.tier4 {
   border-width: 2px;
@@ -531,11 +554,30 @@ html, body { height: 100%; overflow: hidden; }
   box-shadow: none;
 }
 .grid70 .c[data-off="false"] {
-  border-color: color-mix(in srgb, currentColor 35%, var(--edge));
-  background: color-mix(in srgb, currentColor 10%, var(--panel));
+  /* Permitted but empty: an open, dashed frame in the form's colour — clearly
+     "available", clearly not yet "known". */
+  border: 1.5px dashed color-mix(in srgb, currentColor 70%, var(--edge));
+  background: color-mix(in srgb, currentColor 8%, var(--panel));
 }
+.grid70 .c[data-off="true"][data-known="true"] {
+  /* Forbidden, but knowledge survives here: the count stays readable. */
+  opacity: 0.55;
+  border: 1px dotted color-mix(in srgb, var(--faint) 60%, transparent);
+  font-weight: 500;
+}
+.grid70 .c[data-off="true"] {
+  background-image: repeating-linear-gradient(135deg, transparent 0 4px, color-mix(in srgb, var(--faint) 18%, transparent) 4px 5px);
+}
+.grid-legend { display: flex; flex-wrap: wrap; justify-content: center; gap: .3rem .9rem; margin-top: .2rem; font: 9px var(--mono); color: var(--faint); }
+.grid-legend span { display: inline-flex; align-items: center; gap: .3rem; }
+.grid-legend .sw { width: 11px; height: 11px; border-radius: 2px; display: inline-block; }
+.grid-legend .sw-off { background: repeating-linear-gradient(135deg, transparent 0 3px, color-mix(in srgb, var(--faint) 40%, transparent) 3px 4px); border: 1px solid transparent; opacity: .6; }
+.grid-legend .sw-open { border: 1.5px dashed var(--god); background: color-mix(in srgb, var(--god) 8%, var(--panel)); }
+.grid-legend .sw-live { border: 1.5px solid var(--god); background: color-mix(in srgb, var(--god) 28%, var(--panel)); }
+.grid-legend .sw-kept { border: 1px dotted var(--faint); opacity: .7; }
 .grid70 .c[data-live="true"] {
   border-color: currentColor;
+  border-style: solid;
   background: color-mix(in srgb, currentColor 28%, var(--panel));
   box-shadow: 0 0 16px -3px currentColor;
   font-weight: 700;
@@ -790,6 +832,14 @@ html, body { height: 100%; overflow: hidden; }
   *, *::before, *::after { animation: none !important; transition: none !important; }
 }
 
+body.held .god-action, body.held .axis-toggle, body.held .edict-btn, body.held .cand-item { opacity: .5; cursor: wait; }
+.store-note { margin-top: .25rem; font: italic 10px/1.4 var(--serif); color: var(--soft); }
+.boot-overlay { position: fixed; inset: 0; z-index: 10005; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: .8rem; background: var(--ground); }
+.boot-overlay[hidden] { display: none; }
+.boot-overlay .ring { width: 42px; height: 42px; border-radius: 50%; border: 2px solid var(--edge); border-top-color: var(--god); animation: bootSpin 1s linear infinite; }
+@keyframes bootSpin { to { transform: rotate(360deg); } }
+.boot-overlay .msg { font: 13px var(--mono); color: var(--ink); }
+.boot-overlay .sub { font: italic 12px var(--serif); color: var(--soft); max-width: 34rem; text-align: center; padding: 0 1.5rem; }
 .toast-container { position: fixed; top: .5rem; right: 1rem; z-index: 9999; display: flex; flex-direction: column; align-items: flex-end; gap: .4rem; pointer-events: none; }
 .toast { background: var(--panel); border: 1px solid var(--god); color: var(--god); padding: .5rem 1rem; font: 12px var(--mono); border-radius: 4px; opacity: 0; animation: toastIn .3s ease forwards; pointer-events: auto; box-shadow: 0 2px 8px rgba(0,0,0,0.4); }
 .toast.error { border-color: var(--loss); color: var(--loss); }
@@ -824,6 +874,11 @@ html, body { height: 100%; overflow: hidden; }
 .end-card .end-facts dt { color: var(--faint); }
 .end-card .end-facts dd { margin: 0; color: var(--ink); text-align: right; }
 .end-card .end-cause { font: italic 13px/1.5 var(--serif); color: var(--soft); border-left: 2px solid var(--god); padding-left: .8rem; margin: 0 0 .9rem; }
+.end-card .end-why { font: 11.5px/1.5 var(--sans); color: var(--ink); margin: 0 0 .9rem; }
+.end-card .end-why:empty { display: none; }
+.end-card .end-why-head { margin: 0 0 .3rem; font-weight: 600; }
+.end-card .end-why ul { margin: 0; padding-left: 1.1rem; }
+.end-card .end-why li.ruled-out { color: var(--faint); }
 .end-card .close-row { display: flex; justify-content: flex-end; gap: .5rem; margin-top: .4rem; }
 .end-card .close-row button { padding: .45rem 1rem; border: 1px solid var(--god); border-radius: 4px; background: var(--ctl-charged-bg); color: var(--ctl-charged-fg); font: 11px var(--mono); cursor: pointer; }
 .end-card .close-row button.alt { border-color: var(--edge); background: var(--sunk); color: var(--soft); }
@@ -882,9 +937,19 @@ html, body { height: 100%; overflow: hidden; }
 .edict-btn:not(:disabled) { border-color: var(--ctl-charged-border); background: var(--ctl-charged-bg); color: var(--ctl-charged-fg); }
 .edict-btn:disabled { opacity: .55; cursor: not-allowed; }
 .edict-price { color: var(--faint); }
+.edict-btn:not(:disabled) .edict-price { color: var(--ctl-charged-fg); opacity: .85; }
 .edict-gloss { color: var(--faint); margin-top: .25rem; font: 10px/1.4 var(--sans); }
 .edict-why { margin: .25rem 0 0; padding-left: 1rem; color: var(--warn); font: 10px/1.4 var(--sans); }
 .edict-slot[data-kind] { cursor: pointer; }
+.mage-row { padding: .2rem 0; border-bottom: 1px solid color-mix(in srgb, var(--edge) 50%, transparent); cursor: pointer; }
+.mage-row:hover .mage-row-head { color: var(--god); }
+.mage-row-head { font: 10px var(--mono); color: var(--ink); }
+.mage-row-doing { font: italic 10px var(--serif); color: var(--soft); }
+.mage-row-doing .v { font: 9px var(--mono); font-style: normal; color: var(--faint); }
+.roster-more { margin-top: .25rem; padding: .1rem .4rem; border: 1px solid var(--edge); border-radius: 3px; background: var(--sunk); color: var(--soft); font: 9px var(--mono); cursor: pointer; }
+.tradition-label { font: italic 12px var(--serif); color: var(--ink); margin-right: .8rem; }
+.detail-close { flex-shrink: 0; padding: .05rem .4rem; border: 1px solid var(--edge); border-radius: 3px; background: var(--sunk); color: var(--soft); font: 9px var(--mono); cursor: pointer; }
+.detail-close:hover { border-color: var(--god); color: var(--ink); }
 .why-denied { margin: .35rem 0; padding: .3rem .45rem; border-left: 2px solid var(--warn); background: var(--sunk); font: 10px/1.45 var(--sans); color: var(--soft); }
 .why-denied ul { margin: .15rem 0 0; padding-left: 1rem; }
 .asc { font: 10px/1.4 var(--sans); color: var(--soft); }
@@ -907,6 +972,11 @@ html, body { height: 100%; overflow: hidden; }
 </style>
 
 
+<div class="boot-overlay" id="boot-overlay" role="status" aria-live="polite">
+  <div class="ring"></div>
+  <div class="msg" id="boot-msg">Opening your universe…</div>
+  <div class="sub">Fetching its whole history from the server — a long-running universe takes a few seconds.</div>
+</div>
 <div class="toast-container" id="toast-container"></div>
 <div class="raid-reports" id="raid-reports" aria-live="assertive"></div>
 
@@ -917,6 +987,7 @@ html, body { height: 100%; overflow: hidden; }
     <p class="end-sub" id="end-sub"></p>
     <dl class="end-facts" id="end-facts"></dl>
     <p class="end-cause" id="end-cause"></p>
+    <div class="end-why" id="end-why"></div>
     <div class="close-row">
       <button type="button" class="alt" id="end-review">Review the ruins</button>
       <button type="button" id="end-begin">Weave a new universe</button>
@@ -935,7 +1006,7 @@ html, body { height: 100%; overflow: hidden; }
 
     <h3>Time</h3>
     <ul>
-      <li>The server keeps time: one month per second, even when you close the tab. You can't pause it; that is the point.</li>
+      <li>The server keeps time — one month per second at the default speed (the bar at the bottom shows the speed this server is actually running) — even when you close the tab. You can't pause it; that is the point.</li>
       <li>The <b>year</b> counter in the topbar is the clock. If it is not moving, the episode is over (the badge says so).</li>
       <li>A god action takes effect on the next month. One per month: a second click in the same month is refused.</li>
       <li>Reloading, or coming back later in the same browser, returns you to the same universe. <b>new universe</b> (bottom right) leaves it and lets you choose again.</li>
@@ -992,6 +1063,8 @@ html, body { height: 100%; overflow: hidden; }
     <button class="tab" data-tab="raids" aria-pressed="false" id="raids-tab">Raids</button>
     <button class="tab" data-tab="console" aria-pressed="false">Console</button>
     <span class="spacer"></span>
+    <span class="tick-label">tradition</span>
+    <span class="tradition-label" id="tradition-label"></span>
     <span class="tick-label">year</span>
     <span class="tick-display" id="tick-val">--</span>
     <span class="status-badge" id="status-badge">--</span>
@@ -1002,11 +1075,11 @@ html, body { height: 100%; overflow: hidden; }
   <!-- ======================== LEFT SIDEBAR ======================== -->
   <div class="sidebar-left">
     <div class="sb-section">
-      <div class="sb-head">Techniques</div>
+      <div class="sb-head">Techniques <span class="v" title="Base favor price to permit or forbid; a surcharge applies soon after another constitutional act">favor</span></div>
       <div id="tech-toggles" class="axis-toggles"></div>
     </div>
     <div class="sb-section">
-      <div class="sb-head">Forms</div>
+      <div class="sb-head">Forms <span class="v" title="Base favor price to permit or forbid; a surcharge applies soon after another constitutional act">favor</span></div>
       <div id="form-toggles" class="axis-toggles"></div>
     </div>
     <div class="sb-section">
@@ -1088,7 +1161,7 @@ html, body { height: 100%; overflow: hidden; }
   <!-- ======================== SPINE ======================== -->
   <div class="spine-area">
     <div class="spine-controls" style="justify-content:center;gap:.5rem;padding:.5rem">
-      <span style="font:9px var(--mono);color:var(--faint);margin-left:.5rem">the world runs on the server — one month per second, whether or not you are watching</span>
+      <span id="pace-note" style="font:9px var(--mono);color:var(--faint);margin-left:.5rem">the world runs on the server, whether or not you are watching</span>
       <span class="spacer"></span>
       <button type="button" id="restart-btn" title="Leave this universe and choose a new one">new universe</button>
     </div>
@@ -1103,10 +1176,10 @@ html, body { height: 100%; overflow: hidden; }
  */
 
 import { mountThemeControl } from '../shared/theme.js';
-import { LiveSessionError, openSession, reconstructedCharge, units, mageVocabulary, candidateNamer } from '../shared/session.js';
+import { LiveSessionError, openSession, reconstructedCharge, units, mageVocabulary, candidateNamer, cellCensus, nodeHolders } from '../shared/session.js';
 import { mountRaids } from './raid-panel.js';
 import { edictControls, ascensionNode, paintAscension } from './god-panels.js';
-import { whyDenied, whyDeniedText } from './explain.js';
+import { whyDenied, whyDeniedText, priceText, priceOf, namedMages, stagnationReading } from './explain.js';
 import { h } from './dom.js';
 
 // ================================================================ BOOT
@@ -1162,6 +1235,11 @@ for (let attempt = 0, wait = 1000; session === undefined; attempt += 1, wait = M
       // Sent on reads too: the owner's polling is what keeps a running
       // universe from being retired as abandoned.
       headers: () => ({ 'x-universe-token': universeToken }),
+      onProgress: (bytes, total) => {
+        const mb = (n) => (n / 1048576).toFixed(1);
+        const m = document.getElementById('boot-msg');
+        if (m) m.textContent = total ? `Opening your universe… ${mb(bytes)} of ${mb(total)} MB` : `Opening your universe… ${mb(bytes)} MB received`;
+      },
     });
   } catch (e) {
     if (e instanceof LiveSessionError && e.status === 404) universeGone();
@@ -1182,6 +1260,7 @@ for (let attempt = 0, wait = 1000; session === undefined; attempt += 1, wait = M
   }
 }
 document.getElementById('reconnect-banner')?.remove();
+document.getElementById('boot-overlay')?.setAttribute('hidden', '');
 
 const el = (id) => document.getElementById(id);
 
@@ -1189,41 +1268,60 @@ const el = (id) => document.getElementById(id);
 // action as admitted:false with its own word for why, over HTTP 200 — an old
 // handler logged that to the console and the button clicked into silence.
 const REJECT_HINTS = {
-  masked: 'masked this tick — usually the price exceeds your favor, or the world has other plans',
+  masked: 'the server refuses it this tick',
   'empty-slot': 'that target is gone or moved — the world advanced while this list was on screen. The list is redrawn; try again',
   'non-integer-parameter': 'that target is not valid this tick',
   'parameter-out-of-range': 'that target is not valid this tick',
+  'missing-slot': 'no target was chosen',
+  'unknown-action': 'this server does not know that action',
 };
-async function submitAction(kind, params, label) {
+/**
+ * The gate's refusal in words. For `masked` the gate says only "no", so the
+ * page adds what the frame shows (explain.js) — never a bare code.
+ */
+function rejectionText(kind, rejection) {
+  if (typeof rejection === 'string' && rejection.startsWith('episode-')) {
+    return `the universe has ended (${rejection.slice('episode-'.length)})`;
+  }
+  if (rejection === 'masked') {
+    const why = whyDenied(session.last(), session.content, kind);
+    if (why.length > 0) return why.map((r) => r.text).join('; ');
+  }
+  return REJECT_HINTS[rejection] ?? 'the world refused it this tick';
+}
+async function submitAction(kind, params, label, doneLabel = label) {
   const payload = await session.submit(kind, params);
   if (payload && payload.admitted === false) {
-    const why = payload.rejection ? (REJECT_HINTS[payload.rejection] ?? payload.rejection) : 'the world refused';
-    showToast(`!${label} — ${why}. Watch the favor bar.`, 4500);
+    showToast(`!${label} — refused: ${rejectionText(kind, payload.rejection)}.`, 5000);
   } else {
-    showToast(label);
+    showToast(doneLabel);
   }
   return payload;
 }
 // One god action from a panel (raids, edicts): waits out a submit already in
 // flight rather than racing it, reports the gate's answer, and repaints.
 async function act(kind, params, label) {
-  if (state.busy) {
+  if (state.busy || held()) {
     showToast('!Another action is waiting for this month\'s tick — try again in a moment.', 3500);
     return null;
   }
   state.busy = true;
   try {
     const payload = await submitAction(kind, params, label);
+    noteAdmitted(kind, payload);
     refreshRuleset();
     return payload;
   } catch (e) {
-    showToast(`!${label} — ${e?.message ?? 'the action failed'}`, 4500);
+    submitFailed(e, label);
     return null;
   } finally {
     state.busy = false;
     paint();
   }
 }
+// Toasts: newest on top, at most three, each gone after a few seconds or on
+// a click. A stack of eight stale refusals is noise that hides the new one.
+const TOAST_MAX = 3;
 function showToast(msg, duration = 3000) {
   const t = document.createElement('div');
   t.className = 'toast';
@@ -1232,8 +1330,20 @@ function showToast(msg, duration = 3000) {
     msg = String(msg).replace(/^!/, '');
   }
   t.textContent = msg;
-  el('toast-container').appendChild(t);
-  setTimeout(() => { t.classList.add('fade-out'); setTimeout(() => t.remove(), 400); }, duration);
+  t.title = 'Click to dismiss';
+  const host = el('toast-container');
+  host.prepend(t);
+  const live = [...host.querySelectorAll('.toast:not(.fade-out)')];
+  for (const old of live.slice(TOAST_MAX)) old.remove();
+  let gone = false;
+  const dismiss = () => {
+    if (gone) return;
+    gone = true;
+    t.classList.add('fade-out');
+    setTimeout(() => t.remove(), 450);
+  };
+  t.addEventListener('click', dismiss);
+  setTimeout(dismiss, Math.min(duration, 6000));
 }
 
 // Read the live ruleset from the current frame
@@ -1278,6 +1388,119 @@ for (const btn of document.querySelectorAll('.topbar .tab')) {
   });
 }
 
+// ================================================================ CONSTITUTIONAL ACTS
+// Permit / forbid a technique or form (actions 1–4) and the three edict verbs
+// (5–7) are the god's constitutional acts. Each has a base price in content
+// (`content.actionCosts`, `content.actionMaterialCosts`); the server adds a
+// surcharge when another constitutional act landed only a few months before
+// (§5.2's "unease"). The surcharge's window and rate are god constants this
+// server does not publish to the page, and the charged price is not in the
+// frame — so the page shows the base price, labels it as such, and says when
+// this page last made such an act. It never computes the surcharge itself.
+const CONSTITUTIONAL = new Set([1, 2, 3, 4, 5, 6, 7]);
+let lastConstitutionalTick = null;
+function noteAdmitted(kind, payload) {
+  if (!CONSTITUTIONAL.has(kind) || !payload || payload.admitted === false) return;
+  lastConstitutionalTick = session.last().clock().worldTick;
+}
+function surchargeNote() {
+  const base = 'Base price from content. The server adds a surcharge if another permit, forbid or edict landed only a few months before; the exact surcharge is not published to this page.';
+  if (lastConstitutionalTick === null) return base;
+  const ago = session.last().clock().worldTick - lastConstitutionalTick;
+  return `${base} Your last one from this page was ${ago} month${ago === 1 ? '' : 's'} ago.`;
+}
+const axisOn = (kind, item) => (kind === 'technique' ? godRuleset.techniques[item.id] : godRuleset.forms[item.id]);
+const axisActionId = (kind, on) => (kind === 'technique' ? (on ? 2 : 1) : (on ? 4 : 3));
+function axisTitle(kind, item) {
+  const on = axisOn(kind, item);
+  const id = axisActionId(kind, on);
+  return `${on ? 'Forbid' : 'Permit'} ${item.name} — costs ${priceText(session.content, id)} (base price; + surcharge if soon after another constitutional act)`;
+}
+
+// A confirm step for an act that costs something. Resolves true on Confirm.
+// `denied` (from whyDenied) disables Confirm and says why instead of letting
+// the click go to the server to be refused.
+function confirmAct({ title, price, body, note, denied = [] }) {
+  return new Promise((resolve) => {
+    const prev = document.activeElement;
+    const done = (ok) => { modal.remove(); window.removeEventListener('keydown', onKey, true); prev?.focus?.(); resolve(ok); };
+    const onKey = (ev) => {
+      if (ev.key === 'Escape') { ev.stopPropagation(); done(false); }
+      if (ev.key === 'Enter' && denied.length === 0) { ev.preventDefault(); done(true); }
+    };
+    const ok = h('button', { type: 'button', className: 'confirm-ok', disabled: denied.length > 0, onclick: () => done(true) }, denied.length > 0 ? 'Not available' : 'Confirm');
+    const modal = h('div', { className: 'confirm-modal', onclick: (ev) => { if (ev.target === modal) done(false); } },
+      h('div', { className: 'confirm-card', role: 'dialog', 'aria-modal': 'true', 'aria-labelledby': 'confirm-title' },
+        h('h2', { id: 'confirm-title' }, title),
+        h('div', { className: 'confirm-price' }, h('span', { className: 'k' }, 'costs'), ' ', price),
+        body ? h('p', { className: 'confirm-body' }, body) : null,
+        note ? h('p', { className: 'confirm-note' }, note) : null,
+        denied.length > 0
+          ? h('div', { className: 'why-denied', role: 'note' }, h('b', {}, 'Not available this tick'),
+            h('ul', {}, denied.map((r) => h('li', { title: `read from ${r.source}` }, r.text))))
+          : null,
+        h('div', { className: 'close-row' },
+          h('button', { type: 'button', className: 'alt', onclick: () => done(false) }, 'Cancel'), ok)));
+    document.body.append(modal);
+    window.addEventListener('keydown', onKey, true);
+    (denied.length > 0 ? modal.querySelector('.alt') : ok).focus();
+  });
+}
+
+// The server takes one god action per world tick. A second one in the same
+// month is refused with 409; say so, and hold the controls until the next
+// frame arrives rather than letting the player click into the same wall.
+function submitFailed(e, label) {
+  console.error('submit failed', e);
+  if (e instanceof LiveSessionError && e.status === 409 && /queued/u.test(e.message)) {
+    state.heldUntilFrame = session.frameCount;
+    showToast('!One act of god per month — an act is already waiting on this month. Try again next month.', 4500);
+    paint();
+    return;
+  }
+  if (e instanceof LiveSessionError && e.status === 409) {
+    showToast(`!${label} — the universe has ended; nothing more can be done in it.`, 4500);
+    return;
+  }
+  showToast(`!${label} — ${e?.message ?? 'the action failed'}`, 4500);
+}
+const held = () => state.heldUntilFrame !== undefined && session.frameCount <= state.heldUntilFrame;
+
+function busyToast() {
+  showToast('!One act of god per month — your last act is still waiting on this month. Try again next month.', 3500);
+}
+
+async function toggleAxis(kind, item) {
+  if (state.busy || held()) { busyToast(); return; }
+  if (state.ended) { showToast(`!The universe has ended (${session.last().status()}) — nothing can be changed.`, 4000); return; }
+  const on = axisOn(kind, item);
+  const id = axisActionId(kind, on);
+  const verb = `${on ? 'Forbid' : 'Permit'} ${item.name}`;
+  const body = on
+    ? `Every cell in the ${item.name} ${kind === 'technique' ? 'row' : 'column'} closes (unless an edict holds it open). What your mages already know there is kept, but stops growing.`
+    : `Opens the ${item.name} ${kind === 'technique' ? 'row' : 'column'} wherever its ${kind === 'technique' ? 'form' : 'technique'} is also permitted. Hover the toggle to see which cells light.`;
+  const confirmed = await confirmAct({
+    title: `${verb}?`,
+    price: priceText(session.content, id),
+    body,
+    note: surchargeNote(),
+    denied: whyDenied(session.last(), session.content, id),
+  });
+  if (!confirmed) return;
+  if (state.busy || held()) { busyToast(); return; }
+  state.busy = true;
+  try {
+    const payload = await submitAction(id, [item.bit + 1], verb, `${on ? 'Forbade' : 'Permitted'} ${item.name}`); // 1-based axis bit
+    noteAdmitted(id, payload);
+    refreshRuleset();
+  } catch (e) {
+    submitFailed(e, verb);
+  } finally {
+    state.busy = false;
+    paint();
+  }
+}
+
 // ================================================================ BUILD GRID (once)
 const gridEl = el('grid70');
 const forms = session.content.forms;
@@ -1292,24 +1515,9 @@ for (const f of forms) {
   const h = document.createElement('span');
   h.className = `h h-base f-${f.id}`;
   h.textContent = f.name;
-  h.title = `Click to ${godRuleset.forms[f.id] ? 'forbid' : 'permit'} ${f.name}`;
+  h.title = axisTitle('form', f);
   h.dataset.fid = f.id;
-  h.addEventListener('click', async () => {
-    if (state.busy) return;
-    if (isLive) {
-      const fBit = session.content.forms.find(cf => cf.id === f.id)?.bit ?? forms.indexOf(f);
-      const on = godRuleset.forms[f.id];
-      state.busy = true;
-      try {
-        await submitAction(on ? 4 : 3, [fBit + 1], `${on ? 'Forbidden' : 'Permitted'} ${f.name}`);
-        refreshRuleset();
-      } catch (e) { console.error('submit failed', e); showToast(`!Could not change ${f.name}: ${e?.message ?? e}`); }
-      state.busy = false;
-    } else {
-      godRuleset.forms[f.id] = !godRuleset.forms[f.id];
-    }
-    paint();
-  });
+  h.addEventListener('click', () => toggleAxis('form', f));
   gridEl.append(h);
   formHeaders.set(f.id, h);
 }
@@ -1317,24 +1525,9 @@ for (const t of techniques) {
   const rl = document.createElement('span');
   rl.className = 'rl';
   rl.textContent = t.name;
-  rl.title = `Click to ${godRuleset.techniques[t.id] ? 'forbid' : 'permit'} ${t.name}`;
+  rl.title = axisTitle('technique', t);
   rl.dataset.tid = t.id;
-  rl.addEventListener('click', async () => {
-    if (state.busy) return;
-    if (isLive) {
-      const tBit = session.content.techniques.find(ct => ct.id === t.id)?.bit ?? techniques.indexOf(t);
-      const on = godRuleset.techniques[t.id];
-      state.busy = true;
-      try {
-        await submitAction(on ? 2 : 1, [tBit + 1], `${on ? 'Forbidden' : 'Permitted'} ${t.name}`);
-        refreshRuleset();
-      } catch (e) { console.error('submit failed', e); showToast(`!Could not change ${t.name}: ${e?.message ?? e}`); }
-      state.busy = false;
-    } else {
-      godRuleset.techniques[t.id] = !godRuleset.techniques[t.id];
-    }
-    paint();
-  });
+  rl.addEventListener('click', () => toggleAxis('technique', t));
   gridEl.append(rl);
   techLabels.set(t.id, rl);
   for (const f of forms) {
@@ -1360,19 +1553,8 @@ for (const t of techniques) {
   const btn = document.createElement('button');
   btn.className = 'axis-toggle';
   btn.dataset.tid = t.id;
-  btn.innerHTML = `<span class="dot"></span>${t.name}<span class="gloss">${t.gloss || ''}</span>`;
-  btn.addEventListener('click', async () => {
-    if (state.busy) return;
-    const tBit = session.content.techniques.find(ct => ct.id === t.id)?.bit ?? techniques.indexOf(t);
-    const on = godRuleset.techniques[t.id];
-    state.busy = true;
-    try {
-      await submitAction(on ? 2 : 1, [tBit + 1], `${on ? 'Forbidden' : 'Permitted'} ${t.name}`); // 1=permit, 2=forbid; 1-based
-      refreshRuleset();
-      paint();
-    } catch (e) { console.error('submit failed', e); showToast(`!Could not change ${t.name}: ${e?.message ?? e}`); }
-    state.busy = false;
-  });
+  btn.innerHTML = `<span class="dot"></span>${t.name}<span class="gloss">${t.gloss || ''}</span><span class="axis-price"></span>`;
+  btn.addEventListener('click', () => toggleAxis('technique', t));
   btn.addEventListener('mouseenter', () => { state.hoverAxis = { type: 'technique', id: t.id }; paintGrid(); });
   btn.addEventListener('mouseleave', () => { state.hoverAxis = null; paintGrid(); });
   techTogglesEl.append(btn);
@@ -1381,20 +1563,11 @@ for (const f of forms) {
   const btn = document.createElement('button');
   btn.className = 'axis-toggle';
   btn.dataset.fid = f.id;
-  btn.style.color = godRuleset.forms[f.id] ? `var(--${f.id})` : '';
-  btn.innerHTML = `<span class="dot"></span>${f.name}<span class="gloss">${f.gloss || ''}</span>`;
-  btn.addEventListener('click', async () => {
-    if (state.busy) return;
-    const fBit = session.content.forms.find(cf => cf.id === f.id)?.bit ?? forms.indexOf(f);
-    const on = godRuleset.forms[f.id];
-    state.busy = true;
-    try {
-      await submitAction(on ? 4 : 3, [fBit + 1], `${on ? 'Forbidden' : 'Permitted'} ${f.name}`); // 3=permit, 4=forbid; 1-based
-      refreshRuleset();
-      paint();
-    } catch (e) { console.error('submit failed', e); showToast(`!Could not change ${f.name}: ${e?.message ?? e}`); }
-    state.busy = false;
-  });
+  // The form's hue rides on the dot only: coloured text on the selected
+  // (teal) background is unreadable in the light theme.
+  btn.style.setProperty('--hue', `var(--${f.id})`);
+  btn.innerHTML = `<span class="dot"></span>${f.name}<span class="gloss">${f.gloss || ''}</span><span class="axis-price"></span>`;
+  btn.addEventListener('click', () => toggleAxis('form', f));
   btn.addEventListener('mouseenter', () => { state.hoverAxis = { type: 'form', id: f.id }; paintGrid(); });
   btn.addEventListener('mouseleave', () => { state.hoverAxis = null; paintGrid(); });
   formTogglesEl.append(btn);
@@ -1420,8 +1593,8 @@ function paintStatusBadge(clock, f) {
     ? 'A raid is in progress — the two universes fight over this tick'
     : worldDead ? `The episode ended: ${f.status()}. Press "new universe" to choose another.`
     : tabOnly
-      ? 'The world runs on the server, one month per second. This browser refused lasting storage, so closing this tab loses your way back to this universe.'
-      : 'The world runs on the server — one month per second, whether or not you are watching.';
+      ? `The world runs on the server, ${paceText()}. This browser refused lasting storage, so closing this tab loses your way back to this universe.`
+      : `The world runs on the server — ${paceText()}, whether or not you are watching.`;
 }
 
 // A finished run shows its ending once — not every paint. The server stops
@@ -1437,12 +1610,28 @@ if (tabOnly) {
   showToast('!This browser refused lasting storage: your universe is kept for this tab only. Closing the tab loses your way back to it.', 9000);
 }
 
-// The server keeps time (lobby tickAll, 1 tick/s). The page only reads.
+// The server keeps time (lobby tickAll). The page only reads.
 const POLL_MS = 1000;
+// The tick interval is a server flag the page is not told, so the speed shown
+// is measured: frames gained over the last ~15 s of polling.
+const paceSamples = [];
+function notePace() {
+  paceSamples.push({ at: performance.now(), frames: session.frameCount });
+  while (paceSamples.length > 2 && paceSamples[paceSamples.length - 1].at - paceSamples[0].at > 15_000) paceSamples.shift();
+}
+function paceText() {
+  const a = paceSamples[0];
+  const b = paceSamples[paceSamples.length - 1];
+  if (!a || !b || b.at - a.at < 3000 || b.frames === a.frames) return 'speed being measured';
+  const perSec = (b.frames - a.frames) / ((b.at - a.at) / 1000);
+  return perSec >= 0.95 && perSec <= 1.05 ? 'about one month per second (measured)' : `about ${perSec < 10 ? perSec.toFixed(1) : Math.round(perSec)} months per second (measured)`;
+}
 async function pollOnce() {
   if (document.hidden || state.ended) return;
   try {
-    if ((await session.poll()) > 0) {
+    const gained = await session.poll();
+    notePace();
+    if (gained > 0) {
       refreshRuleset();
       paint();
     }
@@ -1527,8 +1716,7 @@ async function fireAscension() {
     // commits the terminal reason the qualification it just recomputed chose.
     const payload = await session.submit(15, []);
     if (payload && payload.admitted === false) {
-      const why = payload.rejection ? (REJECT_HINTS[payload.rejection] ?? payload.rejection) : 'the world refused';
-      showToast(`!Declare ascension — ${why}. The moment passed; it may open again.`, 4500);
+      showToast(`!Declare ascension — ${rejectionText(15, payload.rejection)}. The moment passed; it may open again.`, 4500);
     } else {
       showToast('Ascension declared. The universe ends as it chose to.');
     }
@@ -1536,8 +1724,7 @@ async function fireAscension() {
     state.selectedAction = null;
     paint();
   } catch (e) {
-    console.error('ascension failed', e);
-    showToast(`!Declare ascension failed: ${e?.message ?? e}`);
+    submitFailed(e, 'Declare ascension');
   }
   state.busy = false;
 }
@@ -1549,11 +1736,11 @@ const END_COPY = {
   },
   stagnated: {
     title: 'Stagnation — the universe is over',
-    cause: 'A world without mages, or long unworshipped and unchanging, drifts past its own horizon of possibility. The ending the world made for itself.'
+    cause: 'The world stopped producing what sustains it — its mages, its worship, or its discoveries — for long enough that it drifted past its own horizon. The ending the world made for itself.'
   },
   truncated: {
     title: 'The horizon — the universe is over',
-    cause: 'The run reached its step limit: a cutoff, not a ruin. It might have gone further; the caller said it would not.'
+    cause: 'Your universe lived out every year this server gives a universe. That is not a ruin: nothing failed, and it might have gone further. It simply ran out of time before it ascended.'
   }
 };
 function showEndScreen(f) {
@@ -1562,7 +1749,7 @@ function showEndScreen(f) {
   if (!o) return;
   const clock = f.clock();
   const r = f.resources();
-  const known = f.knowledge().filter((c) => c.live);
+  const census = cellCensus(f);
   const deepest = f.knowledge().reduce((m, c) => Math.max(m, c.deepestTier || 0), 0);
   const mages = f.mageBuckets().reduce((n, b) => n + b.living, 0);
   const inst = f.institutions();
@@ -1572,12 +1759,32 @@ function showEndScreen(f) {
   const fact = (k, v) => `<dt>${k}</dt><dd>${v}</dd>`;
   el('end-facts').innerHTML =
     fact('mages left behind', `${mages} living`)
-    + fact('magic that was known', `${known.length} of ${f.knowledge().length} cells, deepest tier ${deepest}`)
+    // The grid's definition, with the grid's label: a cell "with discoveries"
+    // holds at least one known node, permitted or not.
+    + fact('cells with discoveries', `${census.withDiscoveries} of ${census.total}`
+      + (census.withDiscoveriesPermitted === null ? '' : ` (${census.withDiscoveriesPermitted} still permitted)`))
+    + fact('discoveries known', `${census.nodesKnown}${census.nodesKnown > 0 ? ` — the deepest at tier ${deepest} of ${Math.max(0, ...(session.content.nodes ?? []).map((n) => n.tier))}` : ''}`)
     + fact('worship', `tier ${r.worshipTier}`)
     + fact('universities', inst.universities)
     + fact('favor in the bank', r.favor.toFixed(r.favor < 10 ? 1 : 0))
     + fact('prestige carried to the next universe', r.prestige.toFixed(r.prestige < 10 ? 1 : 0));
   el('end-cause').textContent = copy.cause;
+  // Stagnation has three triggers and the frame names none of them. Say which
+  // the run's own frames leave possible, with the readings, rather than a
+  // generic sentence the summary above can contradict.
+  const why = el('end-why');
+  why.replaceChildren();
+  if (st === 'stagnated') {
+    const reading = stagnationReading(session);
+    const possible = reading.rules.filter((x) => x.possible);
+    why.append(
+      h('p', { className: 'end-why-head' },
+        possible.length === 1
+          ? `The rule that ended it: ${possible[0].text}.`
+          : `The server does not say which rule ended it. Given what the frames show, it was ${possible.map((x) => x.text).join(', or ')}.`),
+      h('ul', {}, reading.rules.map((x) => h('li', { className: x.possible ? 'possible' : 'ruled-out' },
+        h('b', {}, x.possible ? 'possible — ' : 'ruled out — '), `${x.text}: ${x.evidence}.`))));
+  }
   o.hidden = false;
 }
 const endOverlay = el('end-overlay');
@@ -1600,6 +1807,7 @@ el('cell-detail').addEventListener('click', (ev) => {
 
 // Mage click delegation on university panel
 el('university-panel').addEventListener('click', (ev) => {
+  if (ev.target.closest('[data-roster-toggle]')) { state.rosterAll = !state.rosterAll; paint(); return; }
   const row = ev.target.closest('.mage-click');
   if (!row) return;
   state.selectedMage = Number(row.dataset.handle);
@@ -1610,13 +1818,24 @@ el('university-panel').addEventListener('click', (ev) => {
 
 // Click-to-execute on candidate items in the detail panel
 el('cell-detail').addEventListener('click', async (ev) => {
+  if (ev.target.closest('[data-close-action]')) { closeAction(); return; }
+  if (ev.target.closest('[data-close-mage]')) { state.selectedMage = null; paint(); return; }
   const item = ev.target.closest('.cand-item');
-  if (!item || state.busy) return;
+  if (!item) return;
+  if (state.busy || held()) { busyToast(); return; }
   const detEl = el('cell-detail');
   const slot = Number(item.dataset.slot);
   const cands = detEl._liveCands;
   const aid = detEl._liveActionId;
   if (!cands || !cands[slot]) return;
+  const actionName = actionLabel(aid);
+  const candLabel = item.dataset.label ?? '';
+  // A dark action says why here, rather than sending a click the gate will
+  // refuse with one word.
+  if (!session.last().isLegal(aid)) {
+    showToast(`!${actionName} — not available: ${whyDenied(session.last(), session.content, aid).map((r) => r.text).join('; ') || 'the server refuses it this tick'}.`, 5000);
+    return;
+  }
   state.busy = true;
   item.style.opacity = '0.5';
   try {
@@ -1627,22 +1846,19 @@ el('cell-detail').addEventListener('click', async (ev) => {
     // button. (doc-comment in session.js: "the parameter submitted is still
     // the slot index".)
     const payload = await session.submit(aid, [slot]);
-    const actionName = session.actionNames?.[aid] ?? `action ${aid}`;
-    const candLabel = item.textContent?.trim().split('\n')[0] ?? '';
     if (payload && payload.admitted === false) {
-      const why = payload.rejection ? (REJECT_HINTS[payload.rejection] ?? payload.rejection) : 'the world refused';
-      showToast(`!${actionName} — ${why}.`, 4500);
+      showToast(`!${actionName} (${candLabel}) — refused: ${rejectionText(aid, payload.rejection)}.`, 5000);
       item.style.opacity = '1';
       state.busy = false;
       return;
     }
     showToast(`${actionName}: ${candLabel}`);
+    noteAdmitted(aid, payload);
     refreshRuleset();
     state.selectedAction = null;
     paint();
   } catch (e) {
-    console.error('action failed', e);
-    showToast(`!${e?.message ?? 'the action failed'}`);
+    submitFailed(e, actionName);
     item.style.opacity = '1';
   }
   state.busy = false;
@@ -1653,8 +1869,8 @@ function paintGrid() {
   const f = session.last();
   const knowledgeCells = f.knowledge();
   const hover = state.hoverAxis;
-  let liveCells = 0;
-  let totalNodes = 0;
+  // One census for the status line, the grid and the ending screen.
+  const census = cellCensus(f);
 
   // Update technique labels and form headers
   for (const [tid, label] of techLabels) {
@@ -1682,7 +1898,10 @@ function paintGrid() {
   for (const c of knowledgeCells) {
     const node = cellNodes.get(`${c.technique}-${c.form}`);
     if (!node) continue;
-    const permitted = godPermits(c.technique, c.form);
+    const cellId = session.content.cells[c.index]?.cellId;
+    // The server's answer (academy.permittedCells, edicts included) when the
+    // frame carries it; the two axis bits only when it does not.
+    const permitted = census.permittedSet ? census.permittedSet.has(cellId) : godPermits(c.technique, c.form);
 
     // Ghost preview: would this cell become permitted if the hovered axis were toggled?
     let ghost = false;
@@ -1695,20 +1914,36 @@ function paintGrid() {
 
     node.dataset.off = String(!permitted && !ghost);
     node.dataset.live = String(permitted && c.live);
+    // Knowledge in a forbidden cell is kept, not lost: it is drawn (dimmed) so
+    // the grid counts the same cells the ending screen does.
+    node.dataset.known = String(c.live);
     node.dataset.ghost = String(ghost);
     node.dataset.sel = String(state.selectedCell === `${c.technique}-${c.form}`);
     node.dataset.grantTarget = String(grantTargets.has(`${c.technique}-${c.form}`));
-    node.textContent = (permitted || ghost) ? (c.live ? String(c.nodesKnown) : '') : '';
-    node.title = `${c.technique} ${c.form}\n${permitted
-      ? (c.live ? `${c.nodesKnown} nodes, tier ${c.deepestTier}` : 'permitted, empty')
-      : ghost ? 'would be permitted' : 'forbidden'}`;
-    if (permitted && c.live) { liveCells++; totalNodes += c.nodesKnown; }
+    node.textContent = c.live ? String(c.nodesKnown) : '';
+    const name = vocab.cellName.get(cellId) ?? `${c.technique} ${c.form}`;
+    node.title = `${name}\n${permitted
+      ? (c.live ? `permitted · ${c.nodesKnown} node${c.nodesKnown === 1 ? '' : 's'} known, deepest tier ${c.deepestTier}` : 'permitted · nothing discovered here yet')
+      : ghost ? 'would be permitted'
+      : c.live ? `forbidden · ${c.nodesKnown} node${c.nodesKnown === 1 ? '' : 's'} still known here, but no new research` : 'forbidden'}`;
   }
 
   const nTech = Object.values(godRuleset.techniques).filter(Boolean).length;
   const nForm = Object.values(godRuleset.forms).filter(Boolean).length;
-  el('grid-info').innerHTML = `<b>${liveCells}</b> cells live, <b>${totalNodes}</b> nodes known. `
-    + `<b>${nTech}</b> techniques, <b>${nForm}</b> forms permitted.`;
+  const plural = (n, one, many) => `<b>${n}</b> ${n === 1 ? one : many}`;
+  el('grid-info').innerHTML =
+    (census.permitted === null ? '' : `${plural(census.permitted, 'cell permitted', 'cells permitted')} · `)
+    + `${plural(census.withDiscoveries, 'cell with discoveries', 'cells with discoveries')}`
+    + (census.withDiscoveriesPermitted !== null && census.withDiscoveriesPermitted !== census.withDiscoveries
+      ? ` (${census.withDiscoveriesPermitted} of them permitted)` : '')
+    + ` · ${plural(census.nodesKnown, 'node known', 'nodes known')}`
+    + ` · ${plural(nTech, 'technique', 'techniques')}, ${plural(nForm, 'form', 'forms')} permitted`
+    + `<div class="grid-legend">`
+    + `<span><i class="sw sw-off"></i>forbidden</span>`
+    + `<span><i class="sw sw-open"></i>permitted, nothing discovered yet</span>`
+    + `<span><i class="sw sw-live"></i>permitted, with discoveries (number = nodes known)</span>`
+    + `<span><i class="sw sw-kept"></i>forbidden, knowledge kept</span>`
+    + `</div>`;
 }
 
 // ================================================================ ACTIVITY FEED
@@ -1730,21 +1965,48 @@ function snapshotFrame(f) {
   };
 }
 
+const feedCellName = (i, c) => vocab.cellName.get(session.content.cells[i]?.cellId) ?? `${c.t} ${c.f}`;
+/**
+ * Adds an event to the feed, folding it into an earlier entry of the same
+ * kind and subject in the same year. Six "grimoire written" lines a year
+ * drowned the discoveries and deaths a player needs to see.
+ */
+function pushFeed({ tick, type, key = '', n = 1, dim = false, text }) {
+  const year = Math.floor(tick / 12);
+  const hit = feedLog.findLast((e) => e.type === type && e.key === key && Math.floor(e.tick / 12) === year);
+  if (hit) {
+    hit.n += n;
+    hit.tick = tick;
+    hit.text = text(hit.n);
+    hit.dim = dim;
+    // Move it to the end, so the feed stays in order of the latest event.
+    feedLog.splice(feedLog.indexOf(hit), 1);
+    feedLog.push(hit);
+  } else {
+    feedLog.push({ tick, type, key, n, dim, text: text(n) });
+  }
+  while (feedLog.length > FEED_MAX) feedLog.shift();
+}
+
 function diffAndLog(curr) {
   const snap = snapshotFrame(curr);
   if (!prevSnapshot) { prevSnapshot = snap; return; }
   const prev = prevSnapshot;
   const tick = snap.tick;
+  const s = (n, one, many) => (n === 1 ? one : many);
 
   // Knowledge discoveries
   for (let i = 0; i < snap.cells.length && i < prev.cells.length; i++) {
     const c = snap.cells[i], p = prev.cells[i];
     const cellPermitted = godRuleset?.techniques?.[c.t] && godRuleset?.forms?.[c.f];
+    const name = feedCellName(i, c);
     if (c.n > p.n) {
-      feedLog.push({ tick, type: 'discovery', text: `New node in ${c.t} ${c.f}`, count: c.n - p.n, dim: !cellPermitted });
+      pushFeed({ tick, type: 'discovery', key: name, n: c.n - p.n, dim: !cellPermitted,
+        text: (n) => `${n} new node${s(n, '', 's')} in ${name}` });
     }
     if (c.n < p.n) {
-      feedLog.push({ tick, type: 'knowledge-loss', text: `Knowledge lost in ${c.t} ${c.f}`, dim: !cellPermitted });
+      pushFeed({ tick, type: 'knowledge-loss', key: name, n: p.n - c.n, dim: !cellPermitted,
+        text: (n) => `${n} node${s(n, '', 's')} lost in ${name}` });
     }
   }
 
@@ -1752,31 +2014,38 @@ function diffAndLog(curr) {
   for (let i = 0; i < snap.species.length && i < prev.species.length; i++) {
     const c = snap.species[i], p = prev.species[i];
     if (c.living < p.living) {
-      feedLog.push({ tick, type: 'death', text: `${p.living - c.living} ${c.name} mage${p.living - c.living > 1 ? 's' : ''} died` });
+      pushFeed({ tick, type: 'death', key: c.name, n: p.living - c.living, text: (n) => `${n} ${c.name} mage${s(n, '', 's')} died` });
     }
     if (c.living > p.living) {
-      feedLog.push({ tick, type: 'birth', text: `${c.living - p.living} new ${c.name} mage${c.living - p.living > 1 ? 's' : ''}` });
+      pushFeed({ tick, type: 'birth', key: c.name, n: c.living - p.living, text: (n) => `${n} new ${c.name} mage${s(n, '', 's')}` });
     }
   }
 
-  // Library
   if (snap.library > prev.library) {
-    feedLog.push({ tick, type: 'library', text: `Library grew to ${snap.library} nodes` });
+    const total = snap.library;
+    pushFeed({ tick, type: 'library', n: snap.library - prev.library, text: (n) => `Library grew by ${n} node${s(n, '', 's')} (${total} shelved)` });
   }
-
-  // Grimoires
   if (snap.grimoires > prev.grimoires) {
-    feedLog.push({ tick, type: 'scribed', text: `Grimoire written (${snap.grimoires} total)` });
+    const total = snap.grimoires;
+    pushFeed({ tick, type: 'scribed', n: snap.grimoires - prev.grimoires, text: (n) => `${n} grimoire${s(n, '', 's')} written (${total} in all)` });
   }
-
-  // Universities
   if (snap.universities > prev.universities) {
-    feedLog.push({ tick, type: 'action', text: `University founded (${snap.universities} total)` });
+    const total = snap.universities;
+    pushFeed({ tick, type: 'action', n: snap.universities - prev.universities, text: (n) => `${n} universit${s(n, 'y', 'ies')} founded (${total} in all)` });
   }
-
-  // Trim
-  while (feedLog.length > FEED_MAX) feedLog.shift();
   prevSnapshot = snap;
+}
+
+/**
+ * Brings the feed up to the newest frame, one frame at a time. On load this
+ * replays the whole spine the page was handed, so a reload keeps the history
+ * (the death that cost the canon is still there); afterwards it walks every
+ * frame a poll brought in, not just the last.
+ */
+let feedFrame = -1;
+function catchUpFeed() {
+  for (let i = feedFrame + 1; i < session.frameCount; i += 1) diffAndLog(session.frame(i));
+  feedFrame = session.frameCount - 1;
 }
 
 const FEED_ICONS = {
@@ -1790,10 +2059,10 @@ function renderFeed() {
   const entries = feedLog.slice(-30);
   let html = '<div class="feed-head">Activity</div>';
   if (entries.length === 0) {
-    html += '<div style="font:italic 10px var(--serif);color:var(--faint);padding:.3rem 0">Advance time to see your civilization grow.</div>';
+    html += '<div style="font:italic 10px var(--serif);color:var(--faint);padding:.3rem 0">Nothing has happened yet. Discoveries, deaths, births and books appear here as the months pass.</div>';
   } else {
     for (const e of entries) {
-      const yr = Math.floor(e.tick / 12) + 1;
+      const yr = Math.floor(e.tick / 12); // the topbar's year, so the two agree
       html += `<div class="feed-entry fe-${e.type}"${e.dim ? ' style="opacity:0.35"' : ''}><span class="fe-icon">${FEED_ICONS[e.type] || '·'}</span>${escapeFeed(e.text)}<span class="fe-tick">yr ${yr}</span></div>`;
     }
   }
@@ -1807,7 +2076,7 @@ function paint() {
   const clock = f.clock();
 
   // Activity feed — diff this frame against the previous
-  diffAndLog(f);
+  catchUpFeed();
   renderFeed();
 
   // Topbar
@@ -1815,6 +2084,12 @@ function paint() {
   el('tick-val').textContent = String(tick12);
   el('tick-val').title = `year ${tick12} (tick ${clock.worldTick}) — 12 ticks = 1 year`;
   paintStatusBadge(clock, f);
+  el('pace-note').textContent = `the world runs on the server — ${paceText()}, whether or not you are watching`;
+  // The tradition the universe was founded with (or changed to), by name.
+  const tradId = f.ruleset().traditionId;
+  const trad = session.content.traditions?.find((t) => t.traditionId === tradId);
+  el('tradition-label').textContent = trad ? trad.name : '';
+  el('tradition-label').title = trad ? `Your tradition: ${trad.name} — how your mages hold and use what they know.` : '';
   checkEnd(f);
 
   // Resources
@@ -1833,17 +2108,26 @@ function paint() {
   // Institutions — painted by paintGodPanel into the right sidebar
 
   // Toggle button states
+  // Each toggle states what clicking it would cost, before the click.
   for (const btn of techTogglesEl.children) {
-    btn.dataset.on = String(godRuleset.techniques[btn.dataset.tid]);
-    btn.title = godRuleset.techniques[btn.dataset.tid]
-      ? `Forbid ${btn.textContent.trim().split(/\s/)[0]}`
-      : `Permit ${btn.textContent.trim().split(/\s/)[0]}`;
+    const t = techniques.find((x) => x.id === btn.dataset.tid);
+    const on = godRuleset.techniques[t.id];
+    btn.dataset.on = String(on);
+    btn.title = axisTitle('technique', t);
+    btn.querySelector('.axis-price').textContent = String(priceOf(session.content, axisActionId('technique', on)).favor);
   }
   for (const btn of formTogglesEl.children) {
-    const fid = btn.dataset.fid;
-    btn.dataset.on = String(godRuleset.forms[fid]);
-    btn.style.color = godRuleset.forms[fid] ? `var(--${fid})` : '';
+    const fm = forms.find((x) => x.id === btn.dataset.fid);
+    const on = godRuleset.forms[fm.id];
+    btn.dataset.on = String(on);
+    btn.title = axisTitle('form', fm);
+    btn.querySelector('.axis-price').textContent = String(priceOf(session.content, axisActionId('form', on)).favor);
   }
+  for (const [tid, label] of techLabels) label.title = axisTitle('technique', techniques.find((x) => x.id === tid));
+  for (const [fid, header] of formHeaders) header.title = axisTitle('form', forms.find((x) => x.id === fid));
+
+  // Held after a "one action per tick" refusal, until the next frame lands.
+  document.body.classList.toggle('held', held());
 
   // Grid cells — use godRuleset, not session ruleset
   paintGrid();
@@ -1939,11 +2223,12 @@ function paintCellDetail(f, knowledgeCells, rules) {
   const kc = knowledgeCells.find((c) => c.technique === tid && c.form === fid);
   const techOn = godRuleset.techniques[tid];
   const formOn = godRuleset.forms[fid];
-  const enabled = techOn && formOn;
+  const permittedSet = cellCensus(f).permittedSet;
+  const enabled = permittedSet ? permittedSet.has(cell?.cellId) : techOn && formOn;
 
   const edict = rules.edicts.find((e) => !e.empty && e.cell
     && e.cell.technique === tid && e.cell.form === fid);
-  const on = edict ? (edict.kindName === 'dispensation') : enabled;
+  const on = enabled;
   const classical = (cell?.classicalLabels ?? cell?.classical ?? []).length
     ? (cell.classicalLabels ?? cell.classical).join(', ')
     : '';
@@ -1966,10 +2251,18 @@ function paintCellDetail(f, knowledgeCells, rules) {
   if (cellNodes_.length > 0) {
     nodeListHtml = '<div style="display:flex;flex-direction:column;gap:2px;margin-top:.4rem">';
     for (const n of cellNodes_) {
-      const known = n.tier <= (kc?.deepestTier ?? 0) && knownCount > 0;
+      // Where this node lives, from the academy sidecar (minds and shelves of
+      // college mages). Without it, fall back to the cell's deepest tier.
+      const where = nodeHolders(f, n.nodeId);
+      const listed = where.minds.length + where.shelves.length;
+      const known = where.visible ? listed > 0 : n.tier <= (kc?.deepestTier ?? 0) && knownCount > 0;
+      const whereText = !where.visible || listed === 0 ? ''
+        : [where.minds.length ? `${where.minds.length} mind${where.minds.length === 1 ? '' : 's'}` : '',
+           where.shelves.length ? `${where.shelves.reduce((a, x) => a + x.copies, 0)} on library shelves` : ''].filter(Boolean).join(' · ');
       nodeListHtml += `<div style="padding:.2rem .4rem;border:1px solid ${known ? 'color-mix(in srgb, var(--god) 30%, var(--edge))' : 'var(--edge)'};border-radius:3px;background:${known ? 'color-mix(in srgb, var(--god) 6%, var(--plate))' : 'var(--plate)'};font:10px var(--mono)">
         <span style="display:inline-block;font:700 8px var(--mono);padding:1px 4px;border-radius:2px;background:${known ? 'var(--god)' : 'var(--sunk)'};color:${known ? 'var(--ground)' : 'var(--faint)'};margin-right:.3rem">T${n.tier}</span>
         <span style="font:italic 11px var(--serif);color:${known ? 'var(--ink)' : 'var(--faint)'}">${n.name}</span>
+        ${whereText ? `<span style="float:right;font:9px var(--mono);color:var(--soft)" title="Held by college mages (minds) and college libraries. Unaffiliated mages and loose grimoires are not itemised in the frame.">${whereText}</span>` : ''}
       </div>`;
     }
     nodeListHtml += '</div>';
@@ -1981,156 +2274,120 @@ function paintCellDetail(f, knowledgeCells, rules) {
     + `<span class="cell-verdict" data-on="${on}">${on ? 'PERMITTED' : 'FORBIDDEN'} — ${reason}</span>`
     + (kc && kc.live
       ? `<div class="cell-knowledge">${kc.nodesKnown} of ${cellNodes_.length} nodes known, deepest tier ${kc.deepestTier}</div>`
-      : `<div class="cell-knowledge">${enabled ? `${cellNodes_.length} nodes available, none yet known` : 'Cell not enabled'}</div>`)
+      : `<div class="cell-knowledge">${enabled ? `Permitted — ${cellNodes_.length} nodes to discover, none known yet` : 'Forbidden — nothing known here'}</div>`)
+    + (kc && kc.live && !enabled ? `<div class="cell-knowledge" style="color:var(--warn)">Forbidden: what is known here is kept, but no new research happens.</div>` : '')
     + nodeListHtml;
 }
 
-function paintMageDossier(f, detEl, handle) {
-  const cd = f.raw.candidateDetail || {};
-  const mage = cd.mages?.[String(handle)];
-  if (!mage) { detEl.innerHTML = '<span class="hint">Mage not found</span>'; return; }
+// What each published role means, keyed by the role's published name
+// (content.mageRoles) — words for a name, not a table of ids.
+const ROLE_GLOSS = {
+  researcher: 'pushes into knowledge nobody she can learn from holds',
+  warden: 'stands guard against raids on this universe',
+  professor: 'teaches what she knows to students at her college',
+  raider: 'goes through portals on raids',
+  student: 'learns from the professors at her college',
+  populace: 'is not a scholar — she puts what she knows to work',
+};
 
-  const speciesNames = session.content.species.map(s => s.name);
-  const roleNames = ['researcher', 'warden', 'professor', 'raider'];
-  const sp = speciesNames[mage.speciesId] || 'unknown';
-  const age = Math.floor(mage.ageTicks / 12);
-  const role = roleNames[mage.roleId] || 'citizen';
-  const lifespans = [80, 700, 250, 1500, 350, 60]; // human, elf, dwarf, draconic, gnome, orc — but session order differs
-  const goalNames = ['idle', 'research', 'teach', 'scribe', 'affiliate', 'wander', 'cast', 'guard', 'serve'];
+function paintMageDossier(f, detEl, handle) {
+  const m = namedMages(f).get(handle);
+  const esc = escapeFeed;
+  const close = `<button type="button" class="detail-close" data-close-mage="1" title="Close">close ✕</button>`;
+  if (!m) {
+    detEl.innerHTML = `<div style="display:flex;justify-content:space-between"><span class="hint">This mage is not in this month's records — she may have died, or left every list the server publishes.</span>${close}</div>`;
+    return;
+  }
+  const role = vocab.roleName(m.roleId);
+  const species = vocab.speciesName.get(m.speciesId) ?? 'unknown species';
 
   // Personality as bars (0–2048 range, 1024 is neutral)
-  const pBar = (label, val) => {
-    const pct = (val / 2048) * 100;
+  const pBar = (label, val, max = 2048) => {
+    const pct = Math.max(0, Math.min(100, (val / max) * 100));
     return `<div style="display:flex;align-items:center;gap:.3rem;font:9px var(--mono);margin-bottom:2px">
       <span style="width:4rem;color:var(--faint)">${label}</span>
       <div style="flex:1;height:4px;border-radius:2px;background:var(--sunk);position:relative">
         <div style="position:absolute;inset:0 ${100-pct}% 0 0;background:var(--god);border-radius:2px;opacity:.6"></div>
-        <div style="position:absolute;left:50%;top:-1px;bottom:-1px;width:1px;background:var(--edge)"></div>
+        ${max === 2048 ? '<div style="position:absolute;left:50%;top:-1px;bottom:-1px;width:1px;background:var(--edge)"></div>' : ''}
       </div>
-      <span style="width:2rem;text-align:right;color:var(--soft)">${val}</span>
     </div>`;
   };
 
-  const goal = mage.goal;
-  const goalName = goalNames[goal?.goalId] || `goal-${goal?.goalId}`;
-  const targetNode = goal?.targetNodeId != null
-    ? (session.content.nodes.find(n => n.nodeId === goal.targetNodeId)?.id || `node-${goal.targetNodeId}`)
-    : '';
-  const adoptedAge = goal?.adoptedTick != null ? Math.floor(goal.adoptedTick / 12) : '?';
+  // What she holds, by name — only her college's roster lists it.
+  const acad = f.academy();
+  let heldIds = null;
+  for (const h of acad?.handles ?? []) {
+    const entry = acad.university(h)?.roster?.find((r) => r.handle === handle);
+    if (entry) heldIds = entry.nodeIds;
+  }
+  const nodeName = (id) => vocab.nodeName(id);
+  const known = heldIds === null
+    ? `<div style="font:italic 10px var(--serif);color:var(--faint)">She knows ${m.nodesKnown} node${m.nodesKnown === 1 ? '' : 's'}${m.nodesKnown ? `, to tier ${m.deepestTier}` : ''}. Which ones is published only for mages who belong to a college.</div>`
+    : heldIds.length === 0
+      ? `<div style="font:italic 10px var(--serif);color:var(--faint)">She knows nothing yet.</div>`
+      : `<div style="font:10px/1.5 var(--sans);color:var(--ink)">${heldIds.map((id) => esc(nodeName(id))).join(' · ')}</div>`;
+
+  const goal = m.goal;
+  const since = goal?.adoptedTick != null ? `since year ${Math.floor(goal.adoptedTick / 12)}` : '';
+  const why = goal === undefined
+    ? 'She has not settled on anything yet.'
+    : `She is ${esc(vocab.doing(m).replace(/^now /u, ''))}${since ? `, ${since}` : ''}. As a ${esc(role)} she ${esc(ROLE_GLOSS[role] ?? 'has no description for her role')}; her temper is ${vocab.temper(m)}.`;
 
   detEl.innerHTML =
-    `<div class="cell-name">${sp} ${role}</div>`
-    + `<div class="cell-classical">${age} years old · knows ${mage.nodesKnown} nodes · deepest tier ${mage.deepestTier}</div>`
-    + `<div style="margin:.5rem 0"><div class="econ-section-label">personality</div>`
-    + pBar('curiosity', mage.curiosity)
-    + pBar('ambition', mage.ambition)
-    + pBar('caution', mage.caution)
-    + pBar('vigor', mage.vigor)
+    `<div style="display:flex;justify-content:space-between;align-items:baseline;gap:.5rem"><div class="cell-name">${esc(species)} ${esc(role)}</div>${close}</div>`
+    + `<div class="cell-classical">${esc(vocab.age(m.ageTicks))} old · ${esc(vocab.where(m))} · ${esc(vocab.knows(m))}</div>`
+    + `<div class="econ-section-label">what she is doing, and why</div>`
+    + `<div style="font:11px/1.5 var(--sans);color:var(--ink);padding:.1rem 0 .3rem">${why}</div>`
+    + `<div class="econ-section-label">what she knows</div>`
+    + known
+    + `<div style="margin:.5rem 0"><div class="econ-section-label">temperament</div>`
+    + pBar('curiosity', m.curiosity)
+    + pBar('ambition', m.ambition)
+    + pBar('caution', m.caution)
+    + pBar('vigor', m.vigor, Math.max(1, m.maxVigor))
     + `</div>`
-    + `<div class="econ-section-label">current goal</div>`
-    + `<div style="font:11px var(--mono);color:var(--ink);padding:.2rem 0">${goalName}${targetNode ? ` → ${targetNode}` : ''}</div>`
-    + `<div style="font:9px var(--mono);color:var(--faint)">adopted year ${adoptedAge} · score ${goal?.score ?? '?'}</div>`;
+    + `<div style="font:italic 9px var(--serif);color:var(--faint)">No name — no component holds one — and how long she has left is not published.</div>`;
 }
 
 function paintActionCandidates(f, detEl) {
   const aid = state.selectedAction;
   const action = GOD_COSTS.find(a => a.id === aid);
-  const cd = f.raw.candidateDetail || {};
   const cands = f.raw.candidates?.[String(aid)] || [];
-  const byAction = cd.byAction?.[String(aid)] || [];
-  const mages = cd.mages || {};
-  const unis = cd.universities || {};
-  const speciesNames = session.content.species.map(s => s.name);
-  const roleNames = ['researcher', 'warden', 'professor', 'raider'];
-  const nodeIndex = Object.fromEntries((session.content.nodes || []).map(n => [n.nodeIndex ?? n.id, n]));
+  const view = f.candidateDetails();
 
   // Store candidates for click-to-execute
   detEl._liveCands = cands;
   detEl._liveActionId = aid;
 
-  let html = `<div class="cell-name">${action?.name || `Action ${aid}`}</div>`;
-  const detailCost = action?.cost ? (action.cost / 1024).toFixed(action.cost >= 1024 ? 0 : 1) : '?';
-  html += `<div class="cell-knowledge">${cands.length} candidate${cands.length !== 1 ? 's' : ''} · costs ${detailCost} favor</div>`;
-  html += `<div style="font:9px var(--mono);color:var(--god);margin-bottom:.3rem">Click a candidate to execute</div>`;
+  const esc = escapeFeed;
+  let html = `<div style="display:flex;justify-content:space-between;align-items:baseline;gap:.5rem">`
+    + `<div class="cell-name">${esc(action?.name || 'God action')}</div>`
+    + `<button type="button" class="detail-close" data-close-action="1" title="Close this action">close ✕</button></div>`;
+  html += `<div class="cell-knowledge">${cands.length} target${cands.length !== 1 ? 's' : ''} · costs ${esc(priceText(session.content, aid))}`
+    + `${CONSTITUTIONAL.has(aid) ? ' (base price; + surcharge if soon after another constitutional act)' : ''}</div>`;
+  if (cands.length > 0) {
+    html += `<div style="font:9px var(--mono);color:var(--god);margin-bottom:.3rem">${f.isLegal(aid) ? 'Click a target to do it' : 'Not available this tick — see why above'}</div>`;
+  }
 
-  if (byAction.length > 0) {
+  if (cands.length > 0) {
+    // Every row through the one vocabulary (session.js candidateNamer): species
+    // by content id, roles and goals by their published names, nodes and cells
+    // by name. Never a raw id or a JSON blob.
     html += '<div style="display:flex;flex-direction:column;gap:3px;margin-top:.4rem">';
-    for (let ci = 0; ci < Math.min(byAction.length, 20); ci++) {
-      const c = byAction[ci];
-      const mage = mages[String(c.handle)];
-      const sp = mage ? (speciesNames[mage.speciesId] || `species${mage.speciesId}`) : '';
-      const age = mage ? Math.floor(mage.ageTicks / 12) : 0;
-      const role = mage ? (roleNames[mage.roleId] || '') : '';
-      const slotAttr = `class="cand-item" data-slot="${ci}" style="cursor:pointer;`;
-
-      if (c.kind === 'mage-node') {
-        const node = nodeIndex[c.nodeId] || session.content.nodes?.[c.nodeId];
-        const nodeName = node?.id || `node-${c.nodeId}`;
-        html += `<div ${slotAttr}padding:.25rem .4rem;border:1px solid var(--edge);border-radius:3px;background:var(--plate);font:10px var(--mono)">
-          <div style="color:var(--god)">${nodeName}</div>
-          <div style="color:var(--faint)">${sp} ${role}, ${age}y</div>
-        </div>`;
-      } else if (c.kind === 'mage') {
-        html += `<div ${slotAttr}padding:.25rem .4rem;border:1px solid var(--edge);border-radius:3px;background:var(--plate);font:10px var(--mono)">
-          <div style="color:var(--ink)">${sp} ${role}</div>
-          <div style="color:var(--faint)">${age}y · knows ${mage?.nodesKnown ?? '?'} · tier ${mage?.deepestTier ?? '?'}</div>
-        </div>`;
-      } else if (c.kind === 'mage-role') {
-        const toRole = roleNames[c.toRoleId] || `role-${c.toRoleId}`;
-        html += `<div ${slotAttr}padding:.25rem .4rem;border:1px solid var(--edge);border-radius:3px;background:var(--plate);font:10px var(--mono)">
-          <div style="color:var(--ink)">${sp} ${role} <span style="color:var(--god)">→ ${toRole}</span></div>
-          <div style="color:var(--faint)">${age}y · knows ${mage?.nodesKnown ?? '?'}</div>
-        </div>`;
-      } else if (c.kind === 'cell') {
-        const cellId = c.cellId ?? c.cell;
-        const cellObj = session.content.cells.find(cl => cl.cellId === cellId);
-        const cellName = cellObj ? `${cellObj.technique} ${cellObj.form}` : `cell-${cellId}`;
-        html += `<div ${slotAttr}padding:.25rem .4rem;border:1px solid var(--edge);border-radius:3px;background:var(--plate);font:10px var(--mono)">
-          <div style="color:var(--god)">${cellName}</div>
-        </div>`;
-      } else if (c.kind === 'tradition') {
-        const tradNames = session.content.traditions?.map(t => t.name) || [];
-        html += `<div ${slotAttr}padding:.25rem .4rem;border:1px solid var(--edge);border-radius:3px;background:var(--plate);font:10px var(--mono)">
-          <div style="color:var(--warn)">${tradNames[c.traditionId] || c.traditionId}</div>
-        </div>`;
-      } else if (c.kind === 'university' || c.kind === 'found-university') {
-        const uni = unis[String(c.handle)];
-        html += `<div ${slotAttr}padding:.25rem .4rem;border:1px solid var(--edge);border-radius:3px;background:var(--plate);font:10px var(--mono)">
-          <div style="color:var(--ink)">${c.kind === 'found-university' ? 'Found new university' : `University (${uni?.capacity ?? '?'} seats)`}</div>
-        </div>`;
-      } else {
-        html += `<div ${slotAttr}padding:.25rem .4rem;border:1px solid var(--edge);border-radius:3px;background:var(--plate);font:10px var(--mono);color:var(--soft)">${c.kind}: ${JSON.stringify(c).slice(0, 80)}</div>`;
-      }
+    const shown = Math.min(cands.length, 20);
+    for (let ci = 0; ci < shown; ci++) {
+      const named = namer(view, aid, ci, cands[ci]?.params ?? []);
+      const head = named?.head ?? `target ${ci + 1}`;
+      const sub = named?.sub ?? '';
+      html += `<div class="cand-item" data-slot="${ci}" data-label="${esc(head)}" style="cursor:pointer;padding:.25rem .4rem;border:1px solid var(--edge);border-radius:3px;background:var(--plate);font:10px var(--mono)">
+        <div style="color:var(--ink)">${esc(head)}</div>
+        ${sub ? `<div style="color:var(--faint)">${esc(sub)}</div>` : ''}
+      </div>`;
     }
-    if (byAction.length > 20) html += `<div style="font:9px var(--mono);color:var(--faint)">…and ${byAction.length - 20} more</div>`;
+    if (cands.length > shown) html += `<div style="font:9px var(--mono);color:var(--faint)">…and ${cands.length - shown} more</div>`;
+    const missing = namer.missing(view, aid);
+    if (missing) html += `<div style="font:italic 10px var(--serif);color:var(--faint);margin-top:.2rem">${esc(missing)}</div>`;
     html += '</div>';
-  } else if (cands.length > 0) {
-    // For actions without byAction detail, try to resolve mage handles directly
-    const mageActions = new Set([9, 10]); // bless, assign role
-    if (mageActions.has(aid) && Object.keys(mages).length > 0) {
-      html += '<div style="display:flex;flex-direction:column;gap:3px;margin-top:.4rem">';
-      let rendered = 0;
-      for (let ci = 0; ci < cands.length && rendered < 20; ci++) {
-        const c = cands[ci];
-        const handle = c.params?.[0];
-        if (!handle) continue;
-        const mage = mages[String(handle)];
-        if (!mage) continue;
-        const sp = speciesNames[mage.speciesId] || 'populace';
-        const age = Math.floor(mage.ageTicks / 12);
-        const role = roleNames[mage.roleId] || 'citizen';
-        const roleTarget = aid === 10 && c.params?.[1] != null ? ` → ${roleNames[c.params[1]] || 'role ' + c.params[1]}` : '';
-        html += `<div class="cand-item" data-slot="${ci}" style="cursor:pointer;padding:.25rem .4rem;border:1px solid var(--edge);border-radius:3px;background:var(--plate);font:10px var(--mono)">
-          <div style="color:var(--ink)">${sp} ${role}${roleTarget}</div>
-          <div style="color:var(--faint)">${age}y · knows ${mage.nodesKnown ?? '?'} · tier ${mage.deepestTier ?? '?'}</div>
-        </div>`;
-        rendered++;
-      }
-      if (cands.length > 20) html += `<div style="font:9px var(--mono);color:var(--faint)">…and ${cands.length - 20} more</div>`;
-      html += '</div>';
-    } else {
-      html += `<div style="font:10px var(--mono);color:var(--faint);margin-top:.3rem">${cands.length} targets available</div>`;
-    }
   } else {
     // Nothing to point at this tick. Say so, and say what usually unblocks it —
     // "0 candidates" next to "click a candidate" is the exact moment a player
@@ -2147,7 +2404,7 @@ function paintActionCandidates(f, detEl) {
       : aid === 9 || aid === 10
       ? 'No mages to act on yet — they are born as the run warms.'
       : aid === 13
-      ? 'The tradition may not be changed this tick — usually the cost is beyond reach (65,536 favor).'
+      ? `The tradition may not be changed this tick — usually the cost is beyond reach (${priceText(session.content, 13)}).`
       : 'Nothing is available for this action this tick. Advance time, or look at another glowing action.';
     const m = f.actions().find((a) => a.id === aid);
     const ascensionLegal = ascension && m && m.legal;
@@ -2167,7 +2424,7 @@ function paintActionCandidates(f, detEl) {
   if (denied.length > 0) {
     detEl.prepend(h('div', { className: 'why-denied', role: 'note' },
       h('b', {}, 'Not available this tick'),
-      h('ul', {}, denied.map((r) => h('li', {}, r.text, h('span', { className: 'edict-src' }, ` [${r.source}]`))))));
+      h('ul', {}, denied.map((r) => h('li', { title: `read from ${r.source}` }, r.text)))));
   }
   if (aid === 15) detEl.append(ascensionNode(f, session.content, false));
 }
@@ -2189,22 +2446,13 @@ function renderKnowledge(f) {
   const cellById = new Map(cells.map((cell) => [cellKey(cell), cell]));
   const knowledgeByCell = new Map(f.knowledge().map((cell) => [`${cell.technique}-${cell.form}`, cell]));
   const academy = f.academy?.();
+  // Known = held in some college's minds or on its shelves (the academy
+  // sidecar). Falls back to the per-cell depth below when nothing is listed.
   const held = new Set();
-  const holders = new Map();
-  const rawAcademy = f.raw?.academy;
-  const speciesNames = session.content.species.map(s => s.name);
-  const roleNames = ['researcher', 'warden', 'professor', 'raider'];
-  for (const university of Object.values(rawAcademy?.universities || {})) {
-    for (const mage of university.roster || []) {
-      for (const id of mage.nodeIds || []) {
-        held.add(id);
-        const list = holders.get(id) || [];
-        const sp = speciesNames[mage.speciesId] || 'mage';
-        const role = roleNames[mage.roleId] || 'citizen';
-        list.push({ handle: mage.handle, label: `${sp} ${role}, ${Math.floor(mage.ageTicks / 12)}y` });
-        holders.set(id, list);
-      }
-    }
+  for (const h of academy?.handles ?? []) {
+    const u = academy.university(h);
+    for (const entry of u?.roster ?? []) for (const id of entry.nodeIds) held.add(id);
+    for (const entry of u?.shelf ?? []) held.add(entry.nodeId);
   }
 
   const cellFor = (node) => cellById.get(node.cellId ?? node.cell) || {};
@@ -2257,14 +2505,26 @@ function renderKnowledge(f) {
   const detail = selected ? (() => {
     const cell = cellFor(selected);
     const observed = knowledgeByCell.get(`${cell.technique}-${cell.form}`);
-    const nodeHolders = holders.get(nodeKey(selected)) || [];
-    const copyText = nodeHolders.length ? `${nodeHolders.length} mage${nodeHolders.length === 1 ? '' : 's'} hold this knowledge` : `${observed?.redundancy ?? 0} copies in this cell`;
+    const where = nodeHolders(f, nodeKey(selected));
+    const collegeName = (h) => `college #${h & 0xfffff}`;
+    const mindsHtml = where.minds.length
+      ? where.minds.map((x) => `<span class="mage-click" data-handle="${x.handle}" style="cursor:pointer;text-decoration:underline;color:var(--god)">${escapeKnowledge(x.mage ? vocab.who(x.mage) : 'a mage')}</span>`
+        + ` <span style="color:var(--faint)">(${escapeKnowledge(collegeName(x.college))})</span>`).join(', ')
+      : 'no college mage holds it';
+    const shelvesHtml = where.shelves.length
+      ? where.shelves.map((x) => `${escapeKnowledge(collegeName(x.college))} library — ${x.copies} cop${x.copies === 1 ? 'y' : 'ies'}`).join('; ')
+      : 'on no library shelf';
     const prereqHtml = prerequisites(selected).length
       ? prerequisites(selected).map((id) => `<span>${escapeKnowledge(nodeById.get(id)?.name || id)}</span>`).join('')
       : '<span>None — a first principle</span>';
-    return `<aside class="knowledge-detail" style="--detail-color:var(--${escapeKnowledge(cell.form)})"><div class="detail-kicker">${isKnown(selected) ? 'Known magic' : 'Research frontier'} · ${escapeKnowledge(cell.technique)} ${escapeKnowledge(cell.form)}</div>`
+    return `<aside class="knowledge-detail" style="--detail-color:var(--${escapeKnowledge(cell.form)})"><div class="detail-kicker">${isKnown(selected) ? 'Known magic' : 'Research frontier'} · ${escapeKnowledge(vocab.cellName.get(cell.cellId) ?? `${cell.technique} ${cell.form}`)}</div>`
       + `<h3>${escapeKnowledge(selected.name)}</h3><p class="detail-gloss">${escapeKnowledge(selected.gloss || 'No gloss has been recorded.')}</p><dl>`
-      + `<dt>Holders</dt><dd>${copyText}</dd><dd>${nodeHolders.length ? nodeHolders.map(h => `<span class="mage-click" data-handle="${h.handle}" style="cursor:pointer;text-decoration:underline;color:var(--god)">${escapeKnowledge(h.label)}</span>`).join(', ') : 'No individual holder record available'}</dd>`
+      + `<dt>Where it lives</dt>`
+      + (where.visible
+        ? `<dd><b>In minds:</b> ${mindsHtml}</dd><dd><b>In libraries:</b> ${shelvesHtml}</dd>`
+          + `<dd style="color:var(--faint)">${where.cellCopies} cop${where.cellCopies === 1 ? 'y' : 'ies'} of knowledge in this whole cell, counting every mind, palace and book.</dd>`
+          + `<dd style="font-style:italic;color:var(--faint)">Not shown: ${escapeKnowledge(where.gaps.join('; '))}.</dd>`
+        : `<dd>${escapeKnowledge(where.gaps.join('; '))}</dd>`)
       + `<dt>Prerequisites</dt><dd class="detail-prereqs">${prereqHtml}</dd></dl></aside>`;
   })() : `<aside class="knowledge-detail"><div class="detail-kicker">The frontier</div><h3>Choose a named discovery</h3><p class="detail-gloss">Bright tiles are knowledge your civilization holds. The breathing outlines are the next secrets its scholars can reach.</p></aside>`;
   const knownTotal = nodes.filter(isKnown).length;
@@ -2275,8 +2535,11 @@ function renderKnowledge(f) {
 el('knowledge-list').addEventListener('click', (event) => {
   const mageLink = event.target.closest('.mage-click');
   if (mageLink) {
-    state.selectedMage = Number(mageLink.dataset.handle);
-    state.tab = 'grid';
+    const handle = Number(mageLink.dataset.handle);
+    document.querySelector('.topbar .tab[data-tab="grid"]')?.click();
+    state.selectedMage = handle;
+    state.selectedCell = null;
+    state.selectedAction = null;
     paint();
     return;
   }
@@ -2324,7 +2587,7 @@ function renderConsole(f) {
     <div><span class="label">grimoires</span> ${inst.grimoires}</div>
 
     <div class="section-head">Ruleset</div>
-    <div><span class="label">tradition</span> ${rules.traditionId}</div>
+    <div><span class="label">tradition</span> ${escapeFeed(session.content.traditions?.find((t) => t.traditionId === rules.traditionId)?.name ?? `tradition ${rules.traditionId}`)}</div>
     <div><span class="label">tech</span> ${rules.techniques.filter(t => t.permitted).map(t => t.id).join(', ')}</div>
     <div><span class="label">forms</span> ${rules.forms.filter(f => f.permitted).map(f => f.id).join(', ')}</div>
 
@@ -2335,7 +2598,7 @@ function renderConsole(f) {
     ).join('')}
 
     <div class="section-head">Knowledge</div>
-    <div><span class="label">cells</span> ${kCells.filter(c => c.live).length} live</div>
+    <div><span class="label">cells</span> ${cellCensus(f).withDiscoveries} with discoveries</div>
     <div><span class="label">nodes</span> ${kCells.reduce((n, c) => n + c.nodesKnown, 0)} known</div>`;
 
   const rightEl = el('console-right');
@@ -2381,6 +2644,10 @@ const GOD_COSTS = [
   { id: 15, name: 'declare ascension',       cost: 0,     tier: 4 },
   { id: 16, name: 'invite scholar',          cost: 24576, tier: 2 },
 ];
+// The prices above are a fallback only: content publishes the real base
+// prices, and a retune must not leave this page quoting the old ones.
+for (const a of GOD_COSTS) a.cost = session.content.actionCosts?.[String(a.id)] ?? a.cost;
+const actionLabel = (id) => GOD_COSTS.find((a) => a.id === id)?.name ?? 'that action';
 
 // Build god action buttons (skip no-op and the 4 permit/forbid which are the toggles)
 const godActionsEl = el('god-actions');
@@ -2409,24 +2676,38 @@ for (const action of displayOrder) {
   btn.dataset.actionId = action.id;
   const displayCost = action.cost > 0 ? (action.cost / 1024).toFixed(action.cost >= 1024 ? 0 : 1) : 'free';
   btn.innerHTML = `<span>${action.name}</span><span class="cost">${displayCost}</span>`;
-  btn.addEventListener('click', () => {
-    if (action.id === 8) {
-      state.grantMode = !state.grantMode;
-      btn.classList.toggle('active-grant', state.grantMode);
-      paintGrid();
-    }
-    // Show candidates in the detail panel
-    state.selectedCell = null;
-    state.selectedMage = null;
-    state.selectedAction = state.selectedAction === action.id ? null : action.id;
-    // Clear other active-grant states
-    godActionsEl.querySelectorAll('.god-action').forEach(b => {
-      if (Number(b.dataset.actionId) !== 8) return;
-      if (state.selectedAction !== 8) { state.grantMode = false; b.classList.remove('active-grant'); }
-    });
-    paint();
-  });
+  btn.setAttribute('aria-pressed', 'false');
+  // A click always opens the action in the detail panel — its targets, its
+  // price, and (when it is dark) why. Clicking the open action again keeps it
+  // open rather than silently closing it; the panel's "close" does that.
+  btn.addEventListener('click', () => selectAction(action.id));
   godActionsEl.append(btn);
+}
+
+/**
+ * Why a 0 under "grimoires" may be by design. Keyed by the tradition's
+ * published id: the session document names traditions but does not publish
+ * their store hook, and The Art of Memory's hook (`store: palace`) is the one
+ * that refuses scribing — knowledge lives in memory palaces and dies with the
+ * mage (rules-magic traditions/store.ts, `scribingAvailable: false`).
+ */
+function traditionStoreNote(f) {
+  const t = session.content.traditions?.find((x) => x.traditionId === f.ruleset().traditionId);
+  if (t?.id !== 'art-of-memory') return '';
+  return 'The Art of Memory keeps knowledge in its mages\' memory palaces. They never write grimoires, so no grimoires is expected here, not a fault, and what a mage knows dies with her.';
+}
+
+function selectAction(id) {
+  state.selectedCell = null;
+  state.selectedMage = null;
+  state.selectedAction = id;
+  state.grantMode = id === 8;
+  paint();
+}
+function closeAction() {
+  state.selectedAction = null;
+  state.grantMode = false;
+  paint();
 }
 
 // ================================================================ VOCABULARY
@@ -2452,8 +2733,13 @@ function paintGodPanel(f) {
     if (!legal) btn.dataset.state = 'denied';
     else if (!affordable) btn.dataset.state = 'unaffordable';
     else btn.dataset.state = 'legal';
+    const selected = state.selectedAction === aid;
+    btn.setAttribute('aria-pressed', String(selected));
+    btn.classList.toggle('active-grant', aid === 8 && state.grantMode);
     // A dark button says why, from the mask and the candidates (explain.js).
-    btn.title = legal ? `${action.name} — click to choose a target` : whyDeniedText(f, session.content, aid);
+    btn.title = legal
+      ? `${action.name} — costs ${priceText(session.content, aid)} (base price). Click to see its targets.`
+      : `${whyDeniedText(f, session.content, aid)}. Click for details.`;
 
     // Show candidate count badge
     const cands = candidates[String(aid)];
@@ -2543,6 +2829,8 @@ function paintGodPanel(f) {
     const libPct = Math.min(100, (inst.libraryDepth / 70) * 100);
     uniHtml += `<div class="uni-bar"><i style="width:${libPct}%;background:var(--ok)"></i></div>`;
     uniHtml += `<div class="uni-stat"><span>grimoires</span><span class="v">${inst.grimoires}</span></div>`;
+    const storeNote = traditionStoreNote(f);
+    if (storeNote) uniHtml += `<div class="store-note">${escapeFeed(storeNote)}</div>`;
 
     // Show academy roster if available
     if (acad) {
@@ -2550,13 +2838,17 @@ function paintGodPanel(f) {
         const u = acad.university(h);
         if (!u) continue;
         uniHtml += `<div class="econ-section-label">roster · ${u.roster?.length ?? 0} mages</div>`;
-        for (const entry of (u.roster ?? []).slice(0, 6)) {
+        const limit = state.rosterAll ? Infinity : 6;
+        for (const entry of (u.roster ?? []).slice(0, limit)) {
           const m = acad.mage(entry.handle);
           if (!m) continue;
-          uniHtml += `<div class="econ-row mage-click" data-handle="${entry.handle}" style="cursor:pointer" title="Click for dossier"><span>${vocab.who(m)}</span><span class="v">${vocab.knows(m)}</span></div>`;
+          // Who she is, and what she is doing — the second line is the "why".
+          uniHtml += `<div class="mage-row mage-click" data-handle="${entry.handle}" title="Click for her dossier">`
+            + `<div class="mage-row-head">${escapeFeed(vocab.who(m))}</div>`
+            + `<div class="mage-row-doing">${escapeFeed(vocab.doing(m))} · <span class="v">${escapeFeed(vocab.knows(m))}</span></div></div>`;
         }
         if ((u.roster?.length ?? 0) > 6) {
-          uniHtml += `<div class="econ-row" style="color:var(--faint)"><span>…and ${u.roster.length - 6} more</span></div>`;
+          uniHtml += `<button type="button" class="roster-more" data-roster-toggle="1">${state.rosterAll ? 'show fewer' : `show all ${u.roster.length}`}</button>`;
         }
       }
     }
@@ -2644,6 +2936,7 @@ function paintGodPanel(f) {
   econHtml += `<div class="econ-row"><span>library</span><span class="v">${inst.libraryDepth} nodes</span></div>`;
   econHtml += `<div class="econ-row"><span>grimoires</span><span class="v">${inst.grimoires}</span></div>`;
   econHtml += `<div class="econ-row"><span>ratio</span><span class="v">${inst.libraryDepth > 0 ? (inst.grimoires / inst.libraryDepth).toFixed(1) : '—'} books/node</span></div>`;
+  if (traditionStoreNote(f)) econHtml += `<div class="store-note">${escapeFeed(traditionStoreNote(f))}</div>`;
 
   // Worship loop
   econHtml += '<div class="econ-section-label">worship → favor</div>';
@@ -2667,7 +2960,6 @@ const loadSprite = (name) => { const img = new Image(); img.src = `assets/${name
 SPRITE_NAMES.forEach(s => loadSprite(s + '-south'));
 loadSprite('university');
 loadSprite('portal');
-const ROLE_LABELS = ['researcher','warden','professor','raider'];
 const TERRITORIES = [
   {id:'river-delta',    name:'River Delta',     x:.08, y:.55, w:.14, h:.25, fill:'#1a3a2a', accent:'#2a5a3a'},
   {id:'arable-lowland', name:'Arable Lowland',  x:.24, y:.35, w:.30, h:.40, fill:'#1a2a1a', accent:'#2a3a2a'},
@@ -2676,6 +2968,28 @@ const TERRITORIES = [
   {id:'highland-waste', name:'Highland Waste',  x:.78, y:.10, w:.18, h:.50, fill:'#1a1a1e', accent:'#2a2a30'},
 ];
 
+// A mage on the World tab opens the same dossier as her roster row.
+function worldMageAt(ev) {
+  const hits = worldCanvas._hits ?? [];
+  let best = null;
+  for (const hit of hits) {
+    const d = Math.hypot(ev.offsetX - hit.x, ev.offsetY - hit.y);
+    if (d <= hit.r && (best === null || d < best.d)) best = { ...hit, d };
+  }
+  return best;
+}
+worldCanvas.addEventListener('click', (ev) => {
+  const hit = worldMageAt(ev);
+  if (!hit || hit.handle === undefined) return;
+  document.querySelector('.topbar .tab[data-tab="grid"]')?.click();
+  state.selectedMage = hit.handle;
+  state.selectedCell = null;
+  state.selectedAction = null;
+  paint();
+});
+worldCanvas.addEventListener('mousemove', (ev) => {
+  worldCanvas.style.cursor = worldMageAt(ev) ? 'pointer' : 'default';
+});
 function resizeWorldCanvas() {
   const r = worldCanvas.parentElement.getBoundingClientRect();
   worldCanvas.width = r.width * devicePixelRatio;
@@ -2690,8 +3004,8 @@ function renderWorld(f) {
   const W = worldCanvas._w, H = worldCanvas._h;
   if (!W || !H) return;
 
-  const cd = f.raw.candidateDetail || {};
-  const mageData = cd.mages ? Object.values(cd.mages) : [];
+  // Every mage the frame names (candidate lists and college rosters).
+  const mageData = [...namedMages(f).values()];
   const inst = f.institutions();
   const kCells = f.knowledge();
 
@@ -2706,6 +3020,7 @@ function renderWorld(f) {
         worldMages[i] = {x: W*.35 + ((i*7919)%1000)/1000*W*.3, y: H*.35 + ((i*6271)%1000)/1000*H*.3, tx:0, ty:0};
       }
       const wm = worldMages[i];
+      wm.handle = m.handle;
       wm.species = m.speciesId;
       wm.role = m.roleId;
       wm.knows = m.nodesKnown;
@@ -2862,14 +3177,15 @@ function renderWorld(f) {
   // Draw mages as sprites (fallback to dots if not loaded)
   for (let mi = 0; mi < worldMages.length; mi++) {
     const wm = worldMages[mi];
-    const speciesName = SPRITE_NAMES[wm.species] || 'human';
+    // speciesId is a content id, not an index into the sprite list.
+    const speciesName = vocab.speciesById.get(wm.species)?.id ?? 'human';
     const sprite = spriteImages[speciesName + '-south'];
     const sz = speciesName === 'gnome' ? 14 : speciesName === 'draconic' ? 22 : 18;
     if (sprite?.complete && sprite.naturalWidth > 0) {
       wCtx.globalAlpha = 0.9;
       wCtx.drawImage(sprite, wm.x - sz / 2, wm.y - sz, sz, sz);
     } else {
-      const col = SPECIES_COLORS[wm.species] || '#aaa';
+      const col = SPECIES_COLORS[SPRITE_NAMES.indexOf(speciesName)] || '#aaa';
       wCtx.fillStyle = col;
       wCtx.globalAlpha = 0.9;
       wCtx.beginPath();
@@ -2890,10 +3206,17 @@ function renderWorld(f) {
   // Stats overlay bottom-left
   wCtx.fillStyle = isDark ? 'rgba(255,255,255,0.35)' : 'rgba(0,0,0,0.3)';
   wCtx.font = '10px ui-monospace, monospace';
-  wCtx.fillText(`${worldMages.length} mages · ${inst.libraryDepth} nodes in the library · ${inst.grimoires} grimoires`, 10, H - 10);
+  wCtx.fillText(`${worldMages.length} mages · ${inst.libraryDepth} nodes in the library · ${inst.grimoires} grimoires · click a mage to see who she is`, 10, H - 10);
+  // Where each sprite was drawn, for the click handler below.
+  worldCanvas._hits = worldMages.map((wm) => {
+    const sz = (vocab.speciesById.get(wm.species)?.id === 'gnome') ? 14 : (vocab.speciesById.get(wm.species)?.id === 'draconic') ? 22 : 18;
+    return { handle: wm.handle, x: wm.x, y: wm.y - sz / 2, r: Math.max(8, sz / 2 + 2) };
+  });
 
   // Animate
-  if (state.tab === 'world') requestAnimationFrame(() => renderWorld(f));
+  // One animation chain, not one more per repaint.
+  cancelAnimationFrame(worldCanvas._raf);
+  if (state.tab === 'world') worldCanvas._raf = requestAnimationFrame(() => renderWorld(session.last()));
 }
 
 // ================================================================ RAIDS
@@ -2911,8 +3234,7 @@ raids = mountRaids({
   isBusy: () => state.busy,
   isEnded: () => state.ended,
   onFeed: (tick, text, inbound) => {
-    feedLog.push({ tick, type: inbound ? 'raid-in' : 'raid', text });
-    while (feedLog.length > FEED_MAX) feedLog.shift();
+    pushFeed({ tick, type: inbound ? 'raid-in' : 'raid', key: text, text: () => text });
     renderFeed();
   },
 });
