@@ -10,7 +10,7 @@
 services:
   lobby:
     build: ..
-    command: node packages/lobby/bin/lobby.mjs --port 8300 --bubble-size 4
+    command: node packages/lobby/bin/lobby.mjs --port 8300 --bubble-size 4 --tick-ms 1000 --max-universes 16
     ports:
       - "8300:8300"
     restart: unless-stopped

@@ -1147,11 +1147,27 @@ function buildSession(doc, extras = {}) {
  * That asymmetry is `gate.ts`'s, not this file's; it is restated here because it
  * is the single thing a caller gets wrong.
  */
-function liveControls(base, doc) {
+/**
+ * A live read that failed with an HTTP status a page must act on. `status` is
+ * the server's: `404` means the universe is gone (a lobby restart); anything
+ * else is worth retrying. A network failure is a plain `TypeError` from fetch.
+ */
+export class LiveSessionError extends Error {
+  constructor(message, status) {
+    super(message);
+    this.name = 'LiveSessionError';
+    this.status = status;
+  }
+}
+
+function liveControls(base, doc, headers = () => ({})) {
   const post = async (route, body) => {
     const res = await fetch(`${base}/live/${route}`, {
       method: 'POST',
-      headers: { 'content-type': 'application/json' },
+      // `headers()` is the caller's hook for anything a request must carry — the
+      // lobby's per-universe owner token. Called per request, so a token stored
+      // after the session opened is still sent.
+      headers: { ...headers(), 'content-type': 'application/json' },
       body: JSON.stringify(body ?? {}),
     });
     const payload = await res.json();
@@ -1186,7 +1202,11 @@ function liveControls(base, doc) {
      * when the clock has actually moved.
      */
     poll: async () => {
-      const res = await fetch(`${base}/live/frames?since=${doc.frames.length}`);
+      const res = await fetch(`${base}/live/frames?since=${doc.frames.length}`, { headers: headers() });
+      // A 404 is not "no new frames": the server no longer has this universe
+      // (it restarted). Returning 0 here froze a page silently while its badge
+      // said running, so it is thrown, typed, for the page to act on.
+      if (res.status === 404) throw new LiveSessionError('universe-gone', 404);
       if (!res.ok) return 0;
       const payload = await res.json();
       const before = doc.frames.length;
@@ -1202,7 +1222,8 @@ function liveControls(base, doc) {
      * exactly once, after a reset.
      */
     resync: async () => {
-      const res = await fetch(`${base}/live/session.json`);
+      const res = await fetch(`${base}/live/session.json`, { headers: headers() });
+      if (res.status === 404) throw new LiveSessionError('universe-gone', 404);
       if (!res.ok) return false;
       const next = await res.json();
       doc.frames.length = 0;
@@ -1241,20 +1262,30 @@ function liveControls(base, doc) {
  *
  * The live branch talks to `scripts/play-server.mjs` (`npm run play`), which
  * holds one `AgentSession` in memory and publishes it in exactly this document
- * shape. `base` is a URL prefix — `''` for the page's own origin.
+ * shape, or to the lobby (`packages/lobby`), which publishes each universe at
+ * `/u/<id>/live/*` — `openSession({ live: '/u/<id>' })`. `base` is a URL
+ * prefix — `''` for the page's own origin.
+ *
+ * `source.headers`, optional, is a function returning extra headers for every
+ * request, reads and writes. The lobby needs its owner token there — to act,
+ * and so that the owner's polling counts as the universe still being played:
+ *
+ *     openSession({ live: `/u/${id}`, headers: () => ({ 'x-universe-token': token }) })
  */
 export async function openSession(source = {}) {
   if (source.live !== undefined) {
     const base = String(source.live === true ? '' : source.live).replace(/\/+$/u, '');
-    const res = await fetch(`${base}/live/session.json`);
+    const headers = typeof source.headers === 'function' ? source.headers : () => ({});
+    const res = await fetch(`${base}/live/session.json`, { headers: headers() });
     if (!res.ok) {
-      throw new Error(
+      throw new LiveSessionError(
         `No live universe at ${base}/live/session.json (${res.status}). Start one with ` +
           '`npm run play` and open http://localhost:8300/.',
+        res.status,
       );
     }
     const doc = await res.json();
-    return buildSession(doc, liveControls(base, doc));
+    return buildSession(doc, liveControls(base, doc, headers));
   }
   const url = source.recording ?? '../session.json';
   const res = await fetch(url);

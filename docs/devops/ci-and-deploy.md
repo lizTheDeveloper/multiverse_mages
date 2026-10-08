@@ -336,6 +336,18 @@ What that is **not**: it is one shared universe whose clock is driven by whichev
 open (measured: 108 ticks in 20 s with one tab, 0 in 25 s with none), and the setup screen's Begin
 resets it for every visitor. It is a playtest server, not the game. Nothing triggers it from CI.
 
+**What the repo's image serves from the lobby-server-clock change (written 2026-10-08, on branch
+`lobby-server-clock-impl`; not deployed when written).** The `Dockerfile`'s default command is now
+the lobby, `packages/lobby/bin/lobby.mjs --port 8300`: a universe per player, built from the
+species, tradition and opening square chosen on `ui/app/setup.html`, and **timed by the server** —
+one world tick per `--tick-ms` (default 1000) from one interval, whether or not a browser is open.
+No route advances, resets or pauses a universe (`POST /u/<id>/live/advance` is `403`), and only
+the holder of a universe's owner token may submit to it. `deploy/play-compose.yml` is unchanged
+and so serves the lobby on its next `up -d --build`; until someone redeploys, the host keeps
+serving `scripts/play-server.mjs` as described above. Universes live in memory: a container
+restart ends every one of them, and the page sends its player back to setup saying so. There is
+still no CI-triggered deploy.
+
 **There is no deploy pipeline, and that is still correct.** Per `docs/design/vision.md` §11, the
 deployable game server first appears at **0.15.0** (`pvp-server`, delivering `hetzner-deployment`).
 

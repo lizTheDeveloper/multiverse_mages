@@ -32,6 +32,7 @@
     { "path": "./packages/bubble" },
     { "path": "./packages/universe-host" },
     { "path": "./packages/lobby" },
+    { "path": "./packages/lobby/tsconfig.test.json" },
     { "path": "./tsconfig.tools.json" }
   ]
 }

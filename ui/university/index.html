@@ -949,7 +949,8 @@
         // `poll`, not `advance`: this page is a view, and a view that ticked the
         // clock to find out what time it was would be driving the universe it
         // claims to be watching — two tabs open would race each other.
-        const fresh = await session.poll();
+        // A gone universe (404) throws; this view just stops updating.
+        const fresh = await session.poll().catch(() => 0);
         if (fresh > 0) {
           at = session.frameCount - 1;
           draw();

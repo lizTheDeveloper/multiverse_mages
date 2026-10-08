@@ -4,7 +4,18 @@
  * SPDX-License-Identifier: AGPL-3.0-or-later
  */
 
-export { Lobby, type LobbyOptions } from './lobby.js';
-export { UniverseHost, type UniverseConfig } from './universe-host.js';
+export { LOBBY_LIMITS, Lobby, type LobbyOptions } from './lobby.js';
+export {
+  DEFAULT_CAP,
+  UniverseHost,
+  validateConfig,
+  type GodAction,
+  type InboundRaid,
+  type Outcome,
+  type PeerSeats,
+  type SeatResolver,
+  type UniverseConfig,
+  type UniverseRef,
+} from './universe-host.js';
 export { Bubble, type BubbleInfo } from './bubble.js';
-export { Router, json, text } from './router.js';
+export { BodyTooLarge, MAX_BODY, Router, json, readBody, text } from './router.js';

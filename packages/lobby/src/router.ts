@@ -18,6 +18,15 @@ interface Route {
   handler: RouteHandler;
 }
 
+/** A request body above {@link MAX_BODY}. Answered `413`, not `500`. */
+export class BodyTooLarge extends Error {
+  constructor() {
+    super(`request body is larger than ${String(MAX_BODY)} bytes`);
+  }
+}
+
+export const MAX_BODY = 64 * 1024;
+
 export class Router {
   private routes: Route[] = [];
 
@@ -47,21 +56,24 @@ export class Router {
   }
 }
 
-function readBody(req: IncomingMessage): Promise<string> {
+/**
+ * Reads a request body, refusing more than {@link MAX_BODY} bytes.
+ *
+ * Drains the rest rather than destroying the socket, so the caller can still
+ * answer `413` on it.
+ */
+export function readBody(req: IncomingMessage): Promise<string> {
   return new Promise((resolve, reject) => {
     const chunks: Buffer[] = [];
     let size = 0;
-    const MAX = 64 * 1024;
     req.on('data', (chunk: Buffer) => {
       size += chunk.length;
-      if (size > MAX) {
-        req.destroy();
-        reject(new Error('body too large'));
-        return;
-      }
-      chunks.push(chunk);
+      if (size <= MAX_BODY) chunks.push(chunk);
     });
-    req.on('end', () => resolve(Buffer.concat(chunks).toString()));
+    req.on('end', () => {
+      if (size > MAX_BODY) reject(new BodyTooLarge());
+      else resolve(Buffer.concat(chunks).toString());
+    });
     req.on('error', reject);
   });
 }
@@ -71,6 +83,7 @@ export function json(res: ServerResponse, status: number, data: unknown): void {
   res.writeHead(status, {
     'Content-Type': 'application/json',
     'Content-Length': Buffer.byteLength(body),
+    'Cache-Control': 'no-store',
   });
   res.end(body);
 }
