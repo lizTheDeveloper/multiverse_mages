@@ -154,25 +154,42 @@ export function validateConfig(raw: unknown, maxTickCap = DEFAULT_CAP): Universe
 /** The longest universe name, in code points. */
 export const NAME_MAX = 32;
 /**
- * Letters, digits, spaces and a little punctuation. No marks (`\p{M}`), no
- * format characters (bidi overrides are `\p{Cf}`), no `<`, `>`, `"`, `` ` ``,
- * `/` or `\\`: a name is plain text wherever it lands.
+ * Letters and digits, each followed by at most three combining marks, plus
+ * spaces and a little punctuation. A mark only ever follows a letter or digit,
+ * so scripts that need them (Devanagari's virama and vowel signs) pass while a
+ * free-standing stack of them — zalgo — does not. No format characters (bidi
+ * overrides, zero-width joiners are `\p{Cf}`), no `<`, `>`, `"`, `` ` ``, `/`
+ * or `\\`: a name is plain text wherever it lands. Checked after NFC, so a
+ * decomposed `e` + U+0301 and a precomposed `é` are the same name.
  */
-const NAME_CHARS = /^[\p{L}\p{N} .,'!?&()-]+$/u;
+const NAME_SHAPE = /^(?:[\p{L}\p{N}]\p{M}{0,3}|[ .,'!?&()-])+$/u;
 const NAME_HAS_WORD = /[\p{L}\p{N}]/u;
+/**
+ * Characters that are letters or marks by category but render as nothing, so
+ * a name made of them reads as blank or impersonates a shorter one: the Hangul
+ * fillers (U+115F, U+1160, U+3164, U+FFA0), the Khmer inherent vowels
+ * (U+17B4, U+17B5), the combining grapheme joiner (U+034F), and variation
+ * selectors (U+180B–U+180D, U+FE00–U+FE0F, U+E0100–U+E01EF).
+ */
+// An alternation, not one class: U+115F and U+1160 are jamo that combine, and
+// a class holding both is what `no-misleading-character-class` refuses.
+const NAME_INVISIBLE =
+  /\u115F|\u1160|\u3164|\uFFA0|\u17B4|\u17B5|\u034F|[\u180B-\u180D]|[\uFE00-\uFE0F]|[\u{E0100}-\u{E01EF}]/u;
 
 /**
- * A player-chosen universe name, trimmed and with runs of spaces collapsed;
- * `undefined` when none was chosen (absent, or blank). Throws on anything
- * else that is not 1–{@link NAME_MAX} plain-text characters.
+ * A player-chosen universe name, NFC-normalised, trimmed and with runs of
+ * spaces collapsed; `undefined` when none was chosen (absent, or blank).
+ * Throws on anything else that is not 1–{@link NAME_MAX} plain-text
+ * characters. A name is not unique and not an identity — every surface that
+ * shows one shows the universe's short id beside it.
  */
 export function validateName(raw: unknown): string | undefined {
   if (raw === undefined || raw === null) return undefined;
   if (typeof raw !== 'string') throw new Error('name must be a string');
-  const name = raw.trim().replace(/ {2,}/gu, ' ');
+  const name = raw.normalize('NFC').trim().replace(/ {2,}/gu, ' ');
   if (name === '') return undefined;
   if ([...name].length > NAME_MAX) throw new Error(`name must be at most ${String(NAME_MAX)} characters`);
-  if (!NAME_CHARS.test(name) || !NAME_HAS_WORD.test(name)) {
+  if (!NAME_SHAPE.test(name) || !NAME_HAS_WORD.test(name) || NAME_INVISIBLE.test(name)) {
     throw new Error("name may hold only letters, digits, spaces and . , ' ! ? & ( ) -");
   }
   return name;

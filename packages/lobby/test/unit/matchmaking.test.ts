@@ -170,13 +170,21 @@ describe('Lobby matchmaking', () => {
   });
 
   describe('a player whose universe was raided', () => {
-    /** X = {a, b, c} full; Y = {d, e}, short, with room. */
+    /**
+     * Bubbles of four. X = {a, b, c, d}, then d ends, so after a retires X
+     * holds two live universes; Y = {e, f, g} holds three with one open seat.
+     * The loneliest rule alone sends a newcomer to X, deterministically.
+     */
     async function twoBubbles(): Promise<{ a: string; b: string; x: string; y: string }> {
-      await start({ bubbleSize: 3, matchAfterMs: 0 });
-      const [a, b] = [await create(), await create(), await create()].map((m) => m.universeId);
-      const d = (await create()).universeId;
+      await start({ bubbleSize: 4, matchAfterMs: 0 });
+      const [a, b] = [await create(), await create(), await create(), await create({ tickCap: 2 })].map(
+        (m) => m.universeId,
+      );
+      const e = (await create()).universeId;
       await create();
-      return { a: a!, b: b!, x: bubbleOf(a!), y: bubbleOf(d) };
+      await create();
+      for (let i = 0; i < 3; i += 1) lobby.tickAll();
+      return { a: a!, b: b!, x: bubbleOf(a!), y: bubbleOf(e) };
     }
     const raidedBy = (victim: string, attacker: string): void => {
       lobby.universe(victim)!.inbound.push({ fromUniverseId: attacker, fromName: 'x', record: {} as RaidRecord });
@@ -185,7 +193,6 @@ describe('Lobby matchmaking', () => {
     it('is placed in the loneliest open bubble when nobody raided them (control)', async () => {
       const { a, x, y } = await twoBubbles();
       expect(x).not.toBe(y);
-      // Both bubbles hold two live universes after a leaves X; the older wins the tie.
       expect((await replace(a)).bubbleId).toBe(x);
     });
 
@@ -208,6 +215,45 @@ describe('Lobby matchmaking', () => {
     });
   });
 
+  it('seats a newcomer in the loneliest bubble, not the oldest one with room', async () => {
+    await start({ bubbleSize: 3, matchAfterMs: 0 });
+    // X (older) = {a, b, c}; Y (newer) = {d, e}. Then c and e end.
+    const [a] = [await create(), await create(), await create({ tickCap: 2 })].map((m) => m.universeId);
+    const d = (await create()).universeId;
+    await create({ tickCap: 2 });
+    const x = bubbleOf(a!);
+    const y = bubbleOf(d);
+    expect(x).not.toBe(y);
+    for (let i = 0; i < 3; i += 1) lobby.tickAll();
+    // X: two live and one open; Y: one live and two open.
+    expect((await create()).bubbleId).toBe(y);
+  });
+
+  it('breaks a tie between equally lonely bubbles at random, so a newcomer cannot aim', async () => {
+    const landed = new Set<string>();
+    for (let trial = 0; trial < 24 && landed.size < 2; trial += 1) {
+      await start({ bubbleSize: 3, matchAfterMs: 0 });
+      // X = {a, b} and Y = {c, d}: two live each, one open each.
+      const a = (await create()).universeId;
+      await create();
+      await create({ tickCap: 2 });
+      const c = (await create()).universeId;
+      await create();
+      await create({ tickCap: 2 });
+      for (let i = 0; i < 3; i += 1) lobby.tickAll();
+      const x = bubbleOf(a);
+      const y = bubbleOf(c);
+      expect(x).not.toBe(y);
+      const made = await create();
+      expect([x, y]).toContain(made.bubbleId);
+      landed.add(made.bubbleId === x ? 'older' : 'newer');
+      await new Promise<void>((r) => (server === undefined ? r() : server.close(() => r())));
+      server = undefined;
+    }
+    // A fixed tie-break lands the same side all 24 times; chance of that at random is 2^-23.
+    expect(landed).toEqual(new Set(['older', 'newer']));
+  }, 60_000);
+
   it('names every seat: chosen names, and generated ones for the rest', async () => {
     await start({ bubbleSize: 3 });
     const a = await create({ name: '  The   Ember Court ' });
@@ -218,8 +264,8 @@ describe('Lobby matchmaking', () => {
     const view = Object.values(await seats(c.universeId));
     expect(view).toContainEqual({ universeId: a.universeId, name: 'The Ember Court', species: 'Elf' });
     expect(view).toContainEqual({ universeId: b.universeId, name: b.name, species: 'Dwarf' });
-    const listed = (await (await fetch(`${base}/api/bubbles`)).json()) as { bubbles: { members: { name: string }[] }[] };
-    expect(listed.bubbles[0]!.members.map((m) => m.name)).toContain('The Ember Court');
+    // The public count route names nobody.
+    expect(await (await fetch(`${base}/api/bubbles`)).text()).not.toContain('Ember');
   });
 
   it.each([

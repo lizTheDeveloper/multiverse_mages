@@ -29,7 +29,7 @@
  * `openSession({ live: base })`.
  */
 
-import { randomBytes, timingSafeEqual } from 'node:crypto';
+import { randomBytes, randomInt, timingSafeEqual } from 'node:crypto';
 import { createServer, type IncomingMessage, type Server, type ServerResponse } from 'node:http';
 import { readFile, stat } from 'node:fs/promises';
 import path from 'node:path';
@@ -38,7 +38,7 @@ import type { LegacyRecord } from '@mm/scenario';
 import type { Clock } from '@mm/server';
 
 import type { FrameDocument } from '../../../scripts/lib/frame-document.mjs';
-import { Bubble, type BubbleInfo, type SeatOccupant } from './bubble.js';
+import { Bubble, type SeatOccupant } from './bubble.js';
 import { BodyTooLarge, Router, json, readBody, text } from './router.js';
 import { UniverseHost, validateConfig, type GodAction } from './universe-host.js';
 
@@ -153,7 +153,7 @@ export class Lobby {
   private avoid = new Map<string, ReadonlySet<string>>();
   /**
    * Each universe's owner token: 32 random bytes, never derived from the id.
-   * Universe ids are public — `/api/bubbles` lists them and a bubble-mate's
+   * Universe ids are public — a bubble-mate's
    * `seats` names them — so the id alone must not let anyone act on a universe.
    */
   private tokens = new Map<string, Buffer>();
@@ -326,13 +326,20 @@ export class Lobby {
       });
     });
 
+    // Aggregates only. A per-bubble roster (ids, names, who is alive) is a map
+    // for an attacker choosing whom to be seated beside; a player learns their
+    // own bubble-mates from their own `/u/<id>/live/raids`.
     this.router.get('/api/bubbles', (_req, res) => {
-      const infos: BubbleInfo[] = [];
+      let seated = 0;
+      let alive = 0;
       for (const bubble of this.bubbles.values()) {
-        infos.push(bubble.info());
+        seated += bubble.size;
+        alive += bubble.aliveCount;
       }
       json(res, 200, {
-        bubbles: infos,
+        bubbles: this.bubbles.size,
+        seated,
+        alive,
         waiting: this.waiting.length,
         universes: this.universes.size,
         maxUniverses: this.maxUniverses,
@@ -351,8 +358,12 @@ export class Lobby {
    *
    * 1. An open seat in a bubble holding at least one live universe — the
    *    loneliest such bubble first, so the player with nobody to raid gets
-   *    company first — unless a universe that raided this player's last one
-   *    sits there.
+   *    company first, with ties broken by `crypto.randomInt` so a newcomer
+   *    cannot predict whose bubble it lands in — unless a universe that
+   *    raided this player's last one sits there. That avoidance is **per
+   *    universe, not per player**: the lobby has no player identity, only the
+   *    retired universe's inbound raid log, so it knows "this universe was
+   *    raided by those" and nothing about who is behind either.
    * 2. A full `bubbleSize` batch of waiters forms a new bubble.
    * 3. Once anyone has waited `matchAfterMs`, two or more waiters form a short
    *    bubble; step 1 tops it up as others arrive.
@@ -377,14 +388,23 @@ export class Lobby {
   /** Step 1 (and 4, with `besideRaiders`) of {@link match}: true when `host` was seated. */
   private seatInBubble(host: UniverseHost, besideRaiders: boolean): boolean {
     const avoid = besideRaiders ? undefined : this.avoid.get(host.id);
-    let best: Bubble | undefined;
+    let loneliest: Bubble[] = [];
+    let fewest = Number.POSITIVE_INFINITY;
     for (const bubble of this.bubbles.values()) {
       const alive = bubble.aliveCount;
       if (alive === 0 || !bubble.hasRoom) continue;
       if (avoid !== undefined && [...avoid].some((id) => bubble.has(id) && bubble.get(id)?.isAlive === true)) continue;
-      if (best === undefined || alive < best.aliveCount) best = bubble;
+      if (alive < fewest) {
+        fewest = alive;
+        loneliest = [bubble];
+      } else if (alive === fewest) {
+        loneliest.push(bubble);
+      }
     }
-    if (best === undefined) return false;
+    if (loneliest.length === 0) return false;
+    // Server-side randomness, outside the rules path: no universe's state
+    // depends on it, only which bubble a newcomer joins.
+    const best = loneliest.length === 1 ? loneliest[0]! : loneliest[randomInt(loneliest.length)]!;
     best.add(host);
     this.queuedAt.delete(host.id);
     this.avoid.delete(host.id);
@@ -590,7 +610,7 @@ export class Lobby {
         }
         console.log(`Multiverse Mages lobby on http://localhost:${String(bound)}/`);
         console.log(`  /api/create        — start a universe`);
-        console.log(`  /api/bubbles       — list active bubbles`);
+        console.log(`  /api/bubbles       — bubble and universe counts`);
         console.log(`  /u/<id>/live/*     — one universe, read-only but for submit`);
         console.log(`  /ui/app/           — play the game`);
         resolve(server);

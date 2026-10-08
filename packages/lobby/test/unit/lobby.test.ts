@@ -255,16 +255,17 @@ describe('Lobby', () => {
     expect(r.headers.get('location')).toBe('/ui/app/');
   });
 
-  it('lists bubbles, and forms one when enough universes wait', async () => {
+  it('counts bubbles without naming who is in them, and forms one when enough universes wait', async () => {
     await start({ bubbleSize: 2 });
-    expect(await getJson('/api/bubbles')).toMatchObject({ bubbles: [], waiting: 0 });
+    expect(await getJson('/api/bubbles')).toMatchObject({ bubbles: 0, waiting: 0 });
     const a = await create();
-    expect(await getJson('/api/bubbles')).toMatchObject({ bubbles: [], waiting: 1 });
+    expect(await getJson('/api/bubbles')).toMatchObject({ bubbles: 0, waiting: 1 });
     const b = await create();
-    const listed = await getJson<{ bubbles: { members: { universeId: string }[] }[]; waiting: number }>('/api/bubbles');
-    expect(listed.waiting).toBe(0);
-    expect(listed.bubbles).toHaveLength(1);
-    expect(listed.bubbles[0]!.members.map((m) => m.universeId).sort()).toEqual([a, b].sort());
+    const raw = await (await fetch(`${base}/api/bubbles`)).text();
+    expect(JSON.parse(raw)).toMatchObject({ bubbles: 1, seated: 2, alive: 2, waiting: 0, universes: 2 });
+    // Aggregates only: no id, no name, nothing to pick a victim by.
+    for (const id of [a, b]) expect(raw).not.toContain(id);
+    expect(raw).not.toMatch(/name|members|universeId/u);
     const seat = (id: string): unknown => ({ universeId: id, name: expect.any(String), species: 'Elf' });
     expect((await getJson<{ seats: unknown }>(`/u/${a}/live/raids`)).seats).toEqual({ '1': seat(b) });
     expect((await getJson<{ seats: unknown }>(`/u/${b}/live/raids`)).seats).toEqual({ '1': seat(a) });

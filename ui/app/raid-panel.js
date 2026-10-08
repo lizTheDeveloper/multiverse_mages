@@ -404,7 +404,9 @@ export function mountRaids(o) {
 
     return h('div', { className: 'raid-seat', 'data-seat': seat },
       h('div', { className: 'raid-seat-head' },
-        h('span', {}, id ? `Seat ${seat} — ${model.names.get(id) ?? shortId(id)}` : `Seat ${seat}`),
+        // Name and short id together: names are not unique, and a look-alike
+        // name must not pass for someone else's universe.
+        h('span', {}, id ? `Seat ${seat} — ${universeLabel(id)}` : `Seat ${seat}`),
         h('button', {
           type: 'button', className: 'raid-btn raid-go', disabled: blocked || slot < 0 || o.isBusy(),
           title: blocked ? blockers.filter((b) => b.blocks).map((b) => b.text).join('; ') : `Open a portal to seat ${seat} (${priceText(content, 14)})`,
