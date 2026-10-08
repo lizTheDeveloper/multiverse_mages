@@ -181,12 +181,11 @@ describe('session.json?pack=1', () => {
     expect(a).toEqual(b);
     // …and that history has something in it for a feed to report: months on
     // which knowledge, population or institutions moved.
-    const events = b.filter((v, i) => {
-      if (i === 0) return false;
-      const { tick: _t, ...now } = (v as { feed: { tick: number } }).feed;
-      const { tick: _p, ...then } = (b[i - 1] as { feed: { tick: number } }).feed;
-      return JSON.stringify(now) !== JSON.stringify(then);
-    }).length;
+    const feedOnly = (v: unknown): string => {
+      const { cells, species, inst } = (v as { feed: { cells: unknown; species: unknown; inst: unknown } }).feed;
+      return JSON.stringify([cells, species, inst]);
+    };
+    const events = b.filter((v, i) => i > 0 && feedOnly(v) !== feedOnly(b[i - 1])).length;
     expect(events).toBeGreaterThan(10);
     // The views the page builds from all of history, and from the newest frame.
     expect(explain.stagnationReading(reloaded)).toEqual(explain.stagnationReading(control));
