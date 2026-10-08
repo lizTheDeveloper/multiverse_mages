@@ -22,3 +22,4 @@ export {
 } from './universe-host.js';
 export { Bubble, type BubbleInfo, type SeatOccupant } from './bubble.js';
 export { BodyTooLarge, MAX_BODY, Router, json, readBody, text } from './router.js';
+export { FULL_FRAMES, packHistory, slimFrame } from './history.js';
