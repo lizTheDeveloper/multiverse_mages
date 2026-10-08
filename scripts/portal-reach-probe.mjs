@@ -129,10 +129,13 @@ function play(seed, policy, opening, portalMagic = 0) {
   session.reset(seed, { worldTickCap: 4000, options });
   let named = false;
   for (let t = 0; t < ticks; t += 1) {
+    // A universe that ended (stagnation, ascension) before its portal opened
+    // never got one: reported as `ended@t` rather than folded into "never".
+    if (session.status() !== 'running') return { ended: t };
     // Possible means both: the mask offers it and the raid system's gate would
     // open it. On a build where the mask is optimistic the gate is the one that
     // matters; on this one they agree.
-    if (session.legalActions()[GOD_ACTION.openPortal] === 1 && live.s !== undefined && gateOpen(live.s)) return t;
+    if (session.legalActions()[GOD_ACTION.openPortal] === 1 && live.s !== undefined && gateOpen(live.s)) return { at: t };
     let action = { kind: GOD_ACTION.noop, params: [] };
     if (policy === 'seek-portal' && live.s !== undefined) {
       const state = live.s;
@@ -159,27 +162,29 @@ function play(seed, policy, opening, portalMagic = 0) {
     }
     session.submit(action);
   }
-  return -1;
+  return { never: true };
 }
 
-const control = play(seeds[0], 'idle', 'v1', 1);
+const control = play(seeds[0], 'idle', 'v1', 1).at ?? -1;
 if (control < 0 || control > 30) {
   console.error(`BROKEN PROBE: with founding portal magic the gate should open within thirty ticks (favor is the only wait); first legal tick ${control}.`);
   process.exit(1);
 }
 
+/** Median first tick, counting a universe that never got there as later than any that did. */
 const median = (xs) => {
-  const s = [...xs].sort((a, b) => (a < 0 ? Infinity : a) - (b < 0 ? Infinity : b));
+  const s = xs.map((x) => x.at ?? Infinity).sort((a, b) => a - b);
   const m = s[(s.length - 1) >> 1];
-  return m < 0 ? 'never' : String(m);
+  return m === Infinity ? 'not reached' : String(m);
 };
+const cell = (x) => (x.at !== undefined ? String(x.at) : x.ended !== undefined ? `ended@${x.ended}` : '—');
 console.log(`closure: ${[...closure.values()].map((e) => `${e.record.id}(t${e.record.tier})`).join(', ')}`);
-console.log('| opening | policy | first possible raid, world tick, per seed | median | never (of seeds) |');
+console.log('| opening | policy | first possible raid, world tick, per seed (— never; ended@t universe ended first) | median | not reached (of seeds) |');
 console.log('|---|---|---|---|---|');
 for (const opening of Object.keys(SQUARES)) {
   for (const policy of ['idle', 'seek-portal']) {
     const firsts = seeds.map((seed) => play(seed, policy, opening));
-    console.log(`| ${opening} | ${policy} | ${firsts.map((f) => (f < 0 ? '—' : String(f))).join(', ')} | ${median(firsts)} | ${firsts.filter((f) => f < 0).length}/${seeds.length} |`);
+    console.log(`| ${opening} | ${policy} | ${firsts.map(cell).join(', ')} | ${median(firsts)} | ${firsts.filter((f) => f.at === undefined).length}/${seeds.length} |`);
   }
 }
 console.log(`control (foundingPortalMagic 1): first legal tick ${control}`);
