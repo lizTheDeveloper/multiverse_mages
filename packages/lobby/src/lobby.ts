@@ -42,7 +42,28 @@ import { UniverseHost, validateConfig, type GodAction } from './universe-host.js
 /** Vision §13: "small clears fast and churns tiers while large makes raids
  * frequent and promotion rare." Start with 4. */
 const BUBBLE_SIZE = 4;
-const MAX_UNIVERSES = 32;
+const MAX_UNIVERSES = 16;
+/** The ranges a caller may configure. Out of range is a thrown error, never a clamp. */
+export const LOBBY_LIMITS = Object.freeze({
+  bubbleSize: { min: 2, max: 16 },
+  maxUniverses: { min: 1, max: 1024 },
+  evictAfterMs: { min: 0, max: 30 * 24 * 3_600_000 },
+});
+
+/**
+ * An option as an integer inside its range, or a thrown `RangeError`.
+ *
+ * Refuses rather than defaults: `size >= NaN` is always false, so a cap that
+ * parsed to `NaN` would quietly be no cap at all.
+ */
+function bounded(name: keyof typeof LOBBY_LIMITS, value: number | undefined, fallback: number): number {
+  const v = value ?? fallback;
+  const { min, max } = LOBBY_LIMITS[name];
+  if (!Number.isSafeInteger(v) || v < min || v > max) {
+    throw new RangeError(`${name} must be an integer in ${String(min)}..${String(max)}, not ${String(v)}`);
+  }
+  return v;
+}
 const EVICT_AFTER_MS = 3_600_000;
 
 const READ_ONLY =
@@ -64,7 +85,7 @@ export interface LobbyOptions {
   uiRoot?: string;
   /** Universes per bubble. Default {@link BUBBLE_SIZE}; 2 is a duel. */
   bubbleSize?: number;
-  /** Live universes held at once. A create above it is `503`. Default 32. */
+  /** Live universes held at once. A create above it is `503`. Default 16 (see the bin). */
   maxUniverses?: number;
   /** An ended universe untouched this long is dropped. Default one hour. */
   evictAfterMs?: number;
@@ -117,9 +138,9 @@ export class Lobby {
     this.doc = opts.doc;
     this.clock = opts.clock;
     this.uiRoot = opts.uiRoot ?? path.resolve('ui');
-    this.bubbleSize = Math.max(2, opts.bubbleSize ?? BUBBLE_SIZE);
-    this.maxUniverses = Math.max(1, opts.maxUniverses ?? MAX_UNIVERSES);
-    this.evictAfterMs = Math.max(0, opts.evictAfterMs ?? EVICT_AFTER_MS);
+    this.bubbleSize = bounded('bubbleSize', opts.bubbleSize, BUBBLE_SIZE);
+    this.maxUniverses = bounded('maxUniverses', opts.maxUniverses, MAX_UNIVERSES);
+    this.evictAfterMs = bounded('evictAfterMs', opts.evictAfterMs, EVICT_AFTER_MS);
     this.quiet = opts.quiet ?? false;
     this.setupRoutes();
   }

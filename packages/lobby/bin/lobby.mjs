@@ -31,7 +31,7 @@ import { fileURLToPath } from 'node:url';
 import { DEFAULT_PACING, systemClock } from '@mm/server';
 import { referenceContent } from '@mm/scenario';
 
-import { Lobby } from '../dist/index.js';
+import { LOBBY_LIMITS, Lobby } from '../dist/index.js';
 import { frameDocument } from '../../../scripts/lib/frame-document.mjs';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
@@ -41,19 +41,28 @@ const arg = (name, fallback) => {
   const i = process.argv.indexOf(`--${name}`);
   return i >= 0 ? process.argv[i + 1] : fallback;
 };
-const positive = (name, fallback) => {
-  const n = Number(arg(name, String(fallback)));
-  if (!Number.isInteger(n) || n < 1) {
-    process.stderr.write(`--${name} must be a positive integer, not ${String(arg(name, ''))}\n`);
+/**
+ * A numeric flag as an integer in `[min, max]`, or exit 2 naming the flag.
+ *
+ * Refuses rather than defaults. `--max-universes foo` parsing to `NaN` would be
+ * no cap at all (`size >= NaN` is always false), and `--tick-ms 0` a hot loop.
+ */
+const integer = (name, fallback, min, max) => {
+  const raw = arg(name, String(fallback));
+  const n = /^-?\d+$/u.test(String(raw)) ? Number(raw) : Number.NaN;
+  if (!Number.isSafeInteger(n) || n < min || n > max) {
+    process.stderr.write(
+      `--${name} must be an integer in ${String(min)}..${String(max)}, not ${JSON.stringify(raw ?? null)}\n`,
+    );
     process.exit(2);
   }
   return n;
 };
 
-const port = Number(arg('port', '8400'));
-const tickMs = positive('tick-ms', DEFAULT_PACING.world.tickIntervalMs);
-const maxUniverses = positive('max-universes', 16);
-const bubbleSize = positive('bubble-size', 4);
+const port = integer('port', 8400, 0, 65535);
+const tickMs = integer('tick-ms', DEFAULT_PACING.world.tickIntervalMs, 50, 3_600_000);
+const maxUniverses = integer('max-universes', 16, LOBBY_LIMITS.maxUniverses.min, LOBBY_LIMITS.maxUniverses.max);
+const bubbleSize = integer('bubble-size', 4, LOBBY_LIMITS.bubbleSize.min, LOBBY_LIMITS.bubbleSize.max);
 
 const lobby = new Lobby({
   doc: frameDocument(referenceContent(), 'packages/lobby'),

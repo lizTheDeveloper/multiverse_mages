@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: AGPL-3.0-or-later
  */
 
-export { Lobby, type LobbyOptions } from './lobby.js';
+export { LOBBY_LIMITS, Lobby, type LobbyOptions } from './lobby.js';
 export {
   UniverseHost,
   validateConfig,
