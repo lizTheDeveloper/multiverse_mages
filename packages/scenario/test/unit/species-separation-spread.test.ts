@@ -250,32 +250,54 @@ const CLAIMED_SEPARATIONS: readonly {
   // about power, not about ordering**: where the two species could be compared,
   // the claimed order held in every set. The `#140` block below asserts that
   // distinction rather than leaving it in prose.
+  //
+  // **All four retired on `sim-playability` (S4), 2026-10-08, and for one
+  // reason.** `laborObligation` asks for the laborers the food bill needs; the
+  // reference universe used to starve at a 47% shortfall from world year 150,
+  // and dwarf — the species whose months went to writing — was the slowest
+  // column because it was short of students. Fed, it is not. Re-measured with
+  // `node packages/scenario/bin/species-separation.mjs --sets 12`, 72 runs at
+  // 720 ticks:
+  //
+  //     draconic  mean 452.7 ±  9.2 SE   censored 48/72
+  //     dwarf     mean 514.8 ± 26.2 SE   censored 58/72
+  //     elf       mean 494.0 ± 11.0 SE   censored 69/72
+  //     gnome     mean 432.2 ±  5.3 SE   censored  2/72
+  //     human     mean 508.4 ± 19.3 SE   censored 49/72
+  //     orc       mean 530.8 ± 20.2 SE   censored 63/72
+  //
+  // `gnome < dwarf` 3/9 sets, 83.2 ± 24.3 = 3.4 SE; `draconic < dwarf` 4/9,
+  // 59.4 ± 25.0 = 2.4 SE; `human < dwarf` — read as `dwarf < human` — 2/8,
+  // 0.2 SE; `orc < dwarf` reversed, `dwarf < orc` 2/4 at 1.0 SE. Every one is
+  // `inconclusive` at twelve sets and the per-set endpoint gaps straddle zero,
+  // so this is the ordering dissolving, not power running out. The sibling file
+  // no longer asserts any of them.
   {
     faster: 'gnome',
     slower: 'dwarf',
-    assertedAs: 'beforeDwarf.high < dwarf.low — established at twelve sets, 36.3 SE',
-    status: 'asserted',
-    verdict: 'established',
+    assertedAs: 'beforeDwarf.high < dwarf.low — retired 2026-10-08 (S4), 3/9 sets at 3.4 SE',
+    status: 'retired',
+    verdict: 'inconclusive',
   },
   {
     faster: 'draconic',
     slower: 'dwarf',
-    assertedAs: 'beforeDwarf.high < dwarf.low — established at twelve sets, 32.1 SE',
-    status: 'asserted',
-    verdict: 'established',
+    assertedAs: 'beforeDwarf.high < dwarf.low — retired 2026-10-08 (S4), 4/9 sets at 2.4 SE',
+    status: 'retired',
+    verdict: 'inconclusive',
   },
   {
     faster: 'human',
     slower: 'dwarf',
-    assertedAs: 'beforeDwarf.high < dwarf.low — established at twelve sets, 8.3 SE',
-    status: 'asserted',
+    assertedAs: 'beforeDwarf.high < dwarf.low — retired 2026-10-08 (S4), 2/8 sets at 0.2 SE',
+    status: 'retired',
     verdict: 'inconclusive',
   },
   {
     faster: 'orc',
     slower: 'dwarf',
-    assertedAs: 'beforeDwarf.high < dwarf.low — established at twelve sets, 7.0 SE',
-    status: 'asserted',
+    assertedAs: 'beforeDwarf.high < dwarf.low — retired 2026-10-08 (S4), reversed at 1.0 SE',
+    status: 'retired',
     verdict: 'inconclusive',
   },
   // **Retired on `w185/cohort-source`, 2026-08-14, at 6/12.** It was 12/12 when
@@ -681,7 +703,13 @@ describe('every strict separation this repository asserts, re-rolled', () => {
       'reference-time-to-tier.test.ts changed how many strict separations it asserts. Add or ' +
         'remove the matching row in CLAIMED_SEPARATIONS so that every separation this ' +
         'repository publishes carries the number of seed sets it survives.',
-    ).toBe(1);
+    ).toBe(0);
+    // **Zero on `sim-playability` (S4), 2026-10-08.** The `beforeDwarf` loop was
+    // the one site, and all four of its claims are retired above; the sibling now
+    // pins its six-seed intervals as calibration and asserts no strict
+    // separation. The three lines at the end of this case say so in the form a
+    // swap cannot satisfy.
+    //
     // **Two sites, two asserted separations, and it was two sites and three
     // before `w185/cohort-source`.** The loop over `beforeElf` is one site; it
     // held two species until `dwarf < elf` fell to 6/12 under W185 and is down
@@ -707,9 +735,9 @@ describe('every strict separation this repository asserts, re-rolled', () => {
     // below is over *claims*, and they stopped being equal when `beforeDwarf`
     // took four species where `beforeElf` had one — which is exactly why both
     // are asserted rather than one standing in for the other.
-    expect(sibling).toContain('for (const entry of beforeDwarf) expect(entry.high)');
-    expect(sibling).toContain('const beforeDwarf = [gnome, draconic, human, orc]');
-    expect(CLAIMED_SEPARATIONS.filter((claim) => claim.status === 'asserted')).toHaveLength(4);
+    expect(sibling).not.toContain('for (const entry of beforeDwarf) expect(entry.high)');
+    expect(sibling).not.toContain('const beforeDwarf = [');
+    expect(CLAIMED_SEPARATIONS.filter((claim) => claim.status === 'asserted')).toHaveLength(0);
   });
 
   it.each(RETIRED_ASSERTIONS)(
@@ -825,11 +853,18 @@ describe("#140's four-species chain", () => {
     // established form.
     expect(verdictOf(separationOf(report, 'gnome', 'human')).verdict).toBe('inconclusive');
 
+    //
+    // **S4 (`sim-playability`), 2026-10-08: the pair is now inconclusive because
+    // the ordering itself stopped holding, which is the other reading this
+    // block named.** Fed, dwarf arrives in more sets (censored 19/24 here, was
+    // 22/24), so `comparableSets` rose to 3 — and the ordering held strictly
+    // in **1** of them. At twelve sets it is 3/9 at 3.4 SE with per-set gaps
+    // from -234 to +167. Asserted as what it is now: comparable, positive on
+    // average, and not strict where compared.
     const gnomeDwarf = separationOf(report, 'gnome', 'dwarf');
-    expect(verdictOf(gnomeDwarf).verdict).toBe('established');
-    expect(gnomeDwarf.comparableSets).toBeGreaterThanOrEqual(1);
-    // Where it could be compared at all, the ordering held and held strictly.
-    expect(gnomeDwarf.strictSets).toBe(gnomeDwarf.comparableSets);
+    expect(verdictOf(gnomeDwarf).verdict).toBe('inconclusive');
+    expect(gnomeDwarf.comparableSets).toBeGreaterThanOrEqual(3);
+    expect(gnomeDwarf.strictSets).toBeLessThan(gnomeDwarf.comparableSets);
     expect(gnomeDwarf.meanGap).toBeGreaterThan(0);
 
     // And the general fact, so that "nothing reproduces" is measured rather than
@@ -852,7 +887,13 @@ describe("#140's four-species chain", () => {
     }
     // With compositional content and primitive floors, some links now establish
     // at four sets — species differentiation improved.
-    expect([...verdicts]).toContain('established');
+    //
+    // **And on S4 (`sim-playability`), 2026-10-08, none do.** The verdicts at
+    // four sets are `inconclusive` and `refuted` — the refutations are
+    // `gnome < draconic` (0/4, draconic arrives first), `human < draconic` and
+    // `human < gnome` — which is one band, not a ladder.
+    expect([...verdicts]).not.toContain('established');
+    expect([...verdicts]).toContain('refuted');
 
     // The cause, read off the report rather than asserted in prose: gnome is the
     // only species this horizon does not censor, and four of the other five are
@@ -863,7 +904,10 @@ describe("#140's four-species chain", () => {
       return found.censored;
     };
     expect(censoredOf('gnome')).toBe(0);
-    for (const id of ['dwarf', 'elf', 'orc']) {
+    // Dwarf left this list on S4: censored 19 of 24, short of four fifths,
+    // because a fed populace sends it students. Elf and orc remain.
+    expect(censoredOf('dwarf')).toBe(19);
+    for (const id of ['elf', 'orc']) {
       expect(censoredOf(id) * 5, `${id} censoring`).toBeGreaterThan(report.runCount * 4);
     }
   });

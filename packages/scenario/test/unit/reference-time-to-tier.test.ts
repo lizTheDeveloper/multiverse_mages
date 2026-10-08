@@ -423,7 +423,9 @@ describe('time to tier, by species', () => {
     // for it, and the interval it would name is one this file cannot state a
     // rate about.
     const dwarf = interval('dwarf');
-    const orc = interval('orc');
+    // `orc` is unbound as of S4 (`sim-playability`, 2026-10-08): it is censored
+    // in all six seeds here, so `interval('orc')` has nothing to band. See the
+    // block above the assertion below.
 
     // ## Rewritten a fifth time on `integration/all-branches`, 2026-08-17, and
     // ## every binding in the list changed
@@ -489,9 +491,51 @@ describe('time to tier, by species', () => {
     // than repaired: every species magnitude still carries
     // `tuningStatus: "untuned"`, no `balance/` baseline moved, and no content
     // file was edited to produce it.
-    const beforeDwarf = [gnome, draconic, human, orc];
-
-    for (const entry of beforeDwarf) expect(entry.high).toBeLessThan(dwarf.low);
+    // ## Rewritten a sixth time on `sim-playability` (S4), 2026-10-08, and the
+    // ## laggard is gone
+    //
+    // `laborObligation` asks for the laborers the food bill needs — about twice
+    // as many — so the populace is fed and grows where it used to starve from
+    // world year 150. Re-measured as this file instructs,
+    // `node packages/scenario/bin/species-separation.mjs --sets 12`, 72 runs at
+    // 720 ticks, tier 3:
+    //
+    //     draconic  mean 452.7 ±  9.2 SE   censored 48/72
+    //     dwarf     mean 514.8 ± 26.2 SE   censored 58/72
+    //     elf       mean 494.0 ± 11.0 SE   censored 69/72
+    //     gnome     mean 432.2 ±  5.3 SE   censored  2/72
+    //     human     mean 508.4 ± 19.3 SE   censored 49/72
+    //     orc       mean 530.8 ± 20.2 SE   censored 63/72
+    //
+    // and on the six seeds here: gnome [363, 437], draconic [393, 402], dwarf
+    // [395, 401], human [418, 418], elf [697, 697], orc censored in all six.
+    //
+    // **None of the four claims about dwarf survives.** At twelve sets
+    // `gnome < dwarf` is inconclusive (3/9, 3.4 SE), `draconic < dwarf` (4/9,
+    // 2.4 SE), `human < dwarf` (2/8, 0.2 SE), `orc < dwarf` (2/4, 1.0 SE). Dwarf
+    // fell from 638 to 515 — it was the slowest column because it was starved of
+    // students, and a fed populace sends it students. What twelve sets do call
+    // `established` is `gnome < elf` and `dwarf < elf`, each on **2** comparable
+    // sets with elf censored in 69 of 72 runs: the selected-tail reading this
+    // file retired `gnome < elf` for on 2026-08-17, and it is not bound here for
+    // the same reason.
+    //
+    // So **this file now asserts no strict separation at all**, and that is the
+    // measurement rather than a gap in it: nothing it could assert survives a
+    // re-roll. A containment claim ("dwarf now sits inside gnome") was drafted
+    // and dropped for the reason the block below gives about `overlaps(gnome,
+    // dwarf)` — a claim that two species are indistinguishable is exactly as
+    // seed-dependent as one that they are not; per-set gaps for this pair run
+    // from -234 to +167 ticks.
+    //
+    // What is pinned instead is the calibration the spread script prints first
+    // and tells its reader to stop on if it disagrees — the six-seed intervals,
+    // as a pin and not a finding, so the next unannounced move of the reference
+    // universe fails here and says which column moved.
+    expect([gnome.low, gnome.high]).toEqual([363, 437]);
+    expect([draconic.low, draconic.high]).toEqual([393, 402]);
+    expect([dwarf.low, dwarf.high]).toEqual([395, 401]);
+    expect([human.low, human.high]).toEqual([418, 418]);
 
     // **The trio is a pair now, and `apply-magic` is what broke it up.**
     //
@@ -542,5 +586,10 @@ describe('time to tier, by species', () => {
     // every species magnitude carries `tuningStatus: "untuned"`, and inventing
     // one to make a test go green is what `release-plan.md`'s measurement pivot
     // exists to prevent.
+    //
+    // **S4, 2026-10-08:** the "one band and a laggard" reading above is itself
+    // history now — feeding the populace removed the laggard, and what is left
+    // is one band with nothing separated. 9.9 is no closer; it is differently
+    // unmet.
   });
 });

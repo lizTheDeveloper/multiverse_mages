@@ -180,9 +180,30 @@ const HORIZON = 400;
  * A seed **replaced rather than the assertion weakened**, which is this file's
  * own stated rule. Five further movers are above if the next tree needs one.
  */
+/*
+ * **`0x00ab_cdef` replaced by `0x0a97_0001` on `sim-playability` (S4),
+ * 2026-10-08.** `laborObligation` asks for about twice the laborers it did, so
+ * who is idle, who studies and who reaches a portal all shift upstream of any
+ * raid. Re-surveyed the same twelve seeds, control and `knowledge-steal`-
+ * ablated arms at this horizon:
+ *
+ *   0x0bad_c0de  3 raids  moves      0x0000_022b  2 raids  moves
+ *   0x00ab_cdef  2 raids  DOES NOT   0x0a97_0001  3 raids  moves
+ *   0x1234_5678  1 raid   moves      0x2222_2222  1 raid   DOES NOT
+ *   0x0badf00d   1 raid   moves      0x0004_1000  1 raid   DOES NOT
+ *   0x1111_1111  1 raid   DOES NOT   0x0000_0001  0 raids
+ *   0x0000_1000  0 raids             0x0eff_0001  0 raids
+ *
+ * `0x0a97_0001`, the spare both earlier surveys recorded, was tried first and
+ * refused by this file's other guard: its ablated arm resolves **2** raids to
+ * the control's 3, so the theft changes *whether* a raid happens rather than
+ * what one does, and `ablated.raidCount === control.raidCount` fails. Taken
+ * instead: `0x0badf00d`, 1 raid in both arms, log moved — the next recorded
+ * mover, not the first seed that happened to pass.
+ */
 const SEEDS: readonly number[] = Object.freeze([
   0x0bad_c0de,
-  0x00ab_cdef,
+  0x0bad_f00d,
   0x1234_5678,
   0x0000_022b,
 ]);

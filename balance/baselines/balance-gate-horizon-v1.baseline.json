@@ -1,7 +1,7 @@
 {
   "baselineFormatVersion": 1,
   "configurationHash": "aa74eef219106c40a8253e9a23c28911cd09f244ce05cd104ee3bd0c8cbea191",
-  "contentHash": "2dd6fbc8d72a2a5310aa311664f76d4905666b14225bdc2da652750d6c028905",
+  "contentHash": "c10fd6bda1a3b250a4731978d39b7fe521f018a64ea1ad7c0b2dacd301374571",
   "kind": "gate",
   "metrics": [
     {"aggregation":"mean","definitionVersion":1,"metricId":"referenceGrimoires","sampleSize":200,"standardError":8.53787073775973,"standardErrorMethod":"stratified-by-cell","status":"measured","tolerance":25.61361221327919,"unit":"grimoires","value":350.02},
@@ -16,11 +16,13 @@
     {"aggregation":"mean","definitionVersion":1,"metricId":"referencePopulationChange","sampleSize":200,"standardError":1.181377395678624,"standardErrorMethod":"stratified-by-cell","status":"measured","tolerance":3.544132187035872,"unit":"people","value":37.125}
   ],
   "notes": [
-    "This is a pre-0.5.0 measurement on a degenerate universe (single-species per arm, scripted strategies). It is not a balance claim; release-plan.md forbids balance claims before 0.5.0."
+    "This is a pre-0.5.0 measurement on a degenerate universe (single-species per arm, scripted strategies). It is not a balance claim; release-plan.md forbids balance claims before 0.5.0.",
+    "Re-sealed 2026-10-08: PROVENANCE ONLY. No metric in this file was re-measured and no metric value changed — every metric line below is the one sealed under contentHash 2dd6fbc8d72a2a5310aa311664f76d4905666b14225bdc2da652750d6c028905, byte for byte. provenance.contentHash cb4c1a3e43a67f81a6315c3590b749ef → bfb519da9a6635db2e41bc97094711f1. A verification sweep of 200 runs was executed for the sole purpose of establishing that every gated metric was still inside the tolerance committed here (k = 3); its numbers were read and discarded, and the largest movement it saw was referencePeakPopulation: -2.01 SE. So read these values as a measurement of the build the PREVIOUS provenance names, re-sealed against the current one — not as a measurement taken against the current one.",
+    "S4 sim-playability re-seal: provenance only; the content revision moved (rl-open-the-portal researchCost) and every gated metric stayed within tolerance."
   ],
   "provenance": {
     "buildVersion": "0.9.0",
-    "contentHash": "cb4c1a3e43a67f81a6315c3590b749ef",
+    "contentHash": "bfb519da9a6635db2e41bc97094711f1",
     "metricDefinitionVersions": {"ascensionRate":1,"capitalSnowball":1,"combatActionEconomy":1,"combatThresholdEfficiency":1,"illegalActionRate":1,"inboundRaidTempoLoss":1,"knowledgeHalfLife":1,"libraryDependence":1,"lossShockRecovery":1,"materialGradeProfile":1,"prestigeAdvantage":2,"raidInitiationCost":1,"raidLengthDistribution":1,"referenceConservationBreaches":1,"referenceGrimoires":1,"referenceKnowledgeInstances":1,"referenceLibraryDepth":1,"referenceLivingMages":1,"referenceNodesGained":1,"referenceNodesGainedFinalQuarter":1,"referenceNodesKnown":1,"referencePeakPopulation":1,"referencePopulation":1,"referencePopulationChange":1,"roleAssignmentDemographicCost":1,"speciesCellOccupancy":1,"speciesGridVersatility":1,"timeToTierBySpecies":1,"winRateByPrimitive":2,"worshipSnowball":2},
     "observationLayoutDigest": "46182c35d829b205",
     "observationSchemaVersion": 1,
