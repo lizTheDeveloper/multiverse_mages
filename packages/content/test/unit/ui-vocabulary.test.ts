@@ -221,12 +221,15 @@ describe('nodeHolders reads minds and shelves, and lists what it cannot see', ()
 
 describe('stagnationReading rules out what the frames contradict', () => {
   /** A session-shaped object over per-tick `{living, known, worship}` rows. */
-  const sessionOf = (rows: { living: number; known: number; worship: number }[]): any => {
+  const sessionOf = (
+    rows: { living: number; known: number; worship: number; tier?: number }[],
+    ticksPerRow = 12,
+  ): any => {
     const frame = (i: number): any => ({
-      clock: () => ({ worldTick: i * 12 }),
+      clock: () => ({ worldTick: i * ticksPerRow }),
       mageBuckets: () => [{ living: rows[i]!.living }],
       knowledge: () => [{ nodesKnown: rows[i]!.known }],
-      resources: () => ({ worship: rows[i]!.worship, worshipTier: 1 }),
+      resources: () => ({ worship: rows[i]!.worship, worshipTier: rows[i]!.tier ?? 1 }),
     });
     return { frameCount: rows.length, frame, last: () => frame(rows.length - 1) };
   };
@@ -238,9 +241,24 @@ describe('stagnationReading rules out what the frames contradict', () => {
       { living: 7, known: 4, worship: 0.6 },
     ]));
     const byId = Object.fromEntries(r.rules.map((x: { id: string; possible: boolean }) => [x.id, x.possible]));
-    expect(byId).toEqual({ mageless: false, 'no-worship': true, stasis: true });
+    // S4's rule: decline needs the tier below the universe's own peak, and
+    // neglect needs a century of quiet. Neither holds at a flat tier over 24 ticks.
+    expect(byId).toEqual({ mageless: false, 'no-worship': true, stasis: false, neglect: false });
     expect(r.lastNewKnowledgeTick).toBe(12);
     expect(r.livingAtEnd).toBe(7);
+  });
+
+  it('decline and neglect are possible exactly when the frames allow them (positive controls)', () => {
+    const fell = explain.stagnationReading(sessionOf([
+      { living: 5, known: 4, worship: 1.2, tier: 2 },
+      { living: 3, known: 4, worship: 0.4, tier: 0 },
+    ]));
+    expect(fell.rules.find((x: { id: string }) => x.id === 'stasis').possible).toBe(true);
+    const quiet = explain.stagnationReading(sessionOf([
+      { living: 5, known: 4, worship: 0.6 },
+      { living: 5, known: 4, worship: 0.6 },
+    ], 1200));
+    expect(quiet.rules.find((x: { id: string }) => x.id === 'neglect').possible).toBe(true);
   });
 
   it('with no mage left, the no-mages rule is possible (positive control)', () => {

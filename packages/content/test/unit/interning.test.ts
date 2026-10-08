@@ -996,12 +996,14 @@ describe('contentRevision', () => {
     // after `npx tsc --build --force` on the merged tree rather than chosen
     // between them.
     //
-    // cb4c1a3e... -> e5fd4e0f12d14efec1faa38192a28004, on `sim-playability`
-    // (S4), 2026-10-08. **Two records**: `rl-open-the-portal`'s `researchCost`
-    // 18343 -> 9520 (the tier-4 floor) and `change-tradition`'s `favorCost`
-    // 65536 -> 61440 (the tier-4 cap), each with its gloss saying why.
-    // Measured with `npm run check:content` on the tree, not chosen.
-    expect(registry.contentRevision).toBe('e5fd4e0f12d14efec1faa38192a28004');
+    // cb4c1a3e... -> b1923b223d0686054a27a2aff163d8af, on `sim-playability`
+    // (S4), 2026-10-08. **Three records**: `rl-open-the-portal`'s
+    // `researchCost` 18343 -> 9520 (the tier-4 floor), `change-tradition`'s
+    // `favorCost` 65536 -> 61440 (the tier-4 cap), and a new god constant,
+    // `stagnation-neglect-ticks` (1200), with `stagnation-stasis-ticks`' gloss
+    // rewritten for the quiet clock. Measured with `npm run check:content` on
+    // the tree, not chosen.
+    expect(registry.contentRevision).toBe('b1923b223d0686054a27a2aff163d8af');
   });
 
   it('is stable across loads of identical content', () => {

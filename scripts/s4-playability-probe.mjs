@@ -135,11 +135,32 @@ function stewardPolicy(session, run) {
   };
 }
 
+/**
+ * A light hand: one cheap act whenever the probe's cadence comes round, taken
+ * from whatever is affordable — point research at the commonest cell, bless a
+ * scholar, advance or found a university, or failing all of those reassign a
+ * mage. The arm the stagnation claim's "lightly played" half is measured on.
+ */
+function lightPolicy() {
+  return (_obs, mask, _slot, candidates) => {
+    const legal = (action) => mask[action] === 1;
+    if (legal(GOD_ACTION.encourageResearch)) return { action: GOD_ACTION.encourageResearch, parameter: 0 };
+    if (legal(GOD_ACTION.blessMage)) return { action: GOD_ACTION.blessMage, parameter: 0 };
+    if (legal(GOD_ACTION.fundUniversity)) {
+      const list = candidates.get(GOD_ACTION.fundUniversity) ?? [];
+      return { action: GOD_ACTION.fundUniversity, parameter: list.length > 1 ? 1 : 0 };
+    }
+    if (legal(GOD_ACTION.assignRole)) return { action: GOD_ACTION.assignRole, parameter: 0 };
+    return { action: GOD_ACTION.noop };
+  };
+}
+
 function makePolicy(spec, runSeed, session, run) {
   const [strategyId, cadence] = spec.split('@every');
   const every = cadence === undefined ? 1 : Number(cadence);
   let inner;
   if (strategyId === 'steward') inner = stewardPolicy(session, run);
+  else if (strategyId === 'light') inner = lightPolicy();
   else {
     const definition = BOT_POOL_REGISTRY.get(strategyId);
     if (definition === undefined) throw new Error(`no strategy ${strategyId}`);
@@ -175,6 +196,7 @@ function runOne(spec, runSeed) {
     favorAtCapTicks: 0,
     favorWasted: 0,
     favorSpent: 0,
+    ticksGodActed: 0,
     favorRegenerated: 0,
     actionsAdmitted: 0,
     grantCandidateTicks: 0,
@@ -263,7 +285,12 @@ function runOne(spec, runSeed) {
       r.minDependence = Math.min(r.minDependence, god.ascensionProgress.dependence);
       if (god.worshipTier >= 4) r.ticksAtTier4 += 1;
       if (god.ascensionProgress.completedUniversities >= 2) r.ticksTwoUniversities += 1;
-      for (const v of Object.values(god.ledger.spentByAction)) r.favorSpent += v;
+      let acted = false;
+      for (const v of Object.values(god.ledger.spentByAction)) {
+        r.favorSpent += v;
+        if (v > 0) acted = true;
+      }
+      if (acted) r.ticksGodActed += 1;
     }
     if (r.ticks % 120 === 0 && god !== undefined) {
       r.yearly.push({

@@ -87,7 +87,7 @@ import {
   readUniverse,
 } from '@mm/state';
 
-import type { DeepestByCell } from './ascension.js';
+import type { DeepestByCell, StagnationRule } from './ascension.js';
 import {
   deepestNodesByCell,
   eraBoundaryPassed,
@@ -95,6 +95,7 @@ import {
   masteredCellCount,
   prestigeEarned,
   qualifyingPath,
+  stagnationRule,
   stepStagnation,
 } from './ascension.js';
 import type { GodContent } from './constants.js';
@@ -212,7 +213,7 @@ export interface GodTickReport {
    */
   readonly stagnation: {
     /** The clock that reached its window this tick, or `none`. */
-    readonly rule: 'none' | 'mageless' | 'unworshipped' | 'stasis';
+    readonly rule: StagnationRule;
     readonly magelessTicks: number;
     readonly lowWorshipTicks: number;
     readonly stasisTicks: number;
@@ -563,6 +564,14 @@ function outcomeSystem(
 
       // ---- 8. Stagnation, and the terminal write ------------------------------
       const livingMages = countLiving(state);
+      // Read once here and reused for the ledger below: what the god's
+      // interventions spent this tick. Any paid action is an act on the world,
+      // and an act resets the quiet clock (`stepStagnation`).
+      const interventions = interventionsFor(ctx.tick);
+      let godActed = false;
+      for (const amount of Object.values(interventions.spentByAction)) {
+        if (amount > 0) godActed = true;
+      }
       const stagnation = stepStagnation(
         god,
         {
@@ -577,6 +586,7 @@ function outcomeSystem(
           // stasis trigger is conjunctive with the worship health floor, so a
           // universe healthy enough to be doing both is never terminated by it.
           nodeEntered: everKnown > god.lastEverKnown || known.length > god.lastExisting,
+          godActed,
         },
         constants,
       );
@@ -624,7 +634,6 @@ function outcomeSystem(
 
       writeGodState(state, universe, god);
 
-      const interventions = interventionsFor(ctx.tick);
       let spentThisTick = 0;
       for (const amount of Object.values(interventions.spentByAction)) spentThisTick += amount;
 
@@ -669,13 +678,7 @@ function outcomeSystem(
         ascensionPath: path,
         terminalReason,
         stagnation: {
-          rule: !stagnation.stagnated
-            ? 'none'
-            : stagnation.magelessTicks >= constants.stagnationMagelessTicks
-              ? 'mageless'
-              : stagnation.lowWorshipTicks >= constants.stagnationWorshipTicks
-                ? 'unworshipped'
-                : 'stasis',
+          rule: stagnationRule(stagnation, constants),
           magelessTicks: stagnation.magelessTicks,
           lowWorshipTicks: stagnation.lowWorshipTicks,
           stasisTicks: stagnation.stasisTicks,

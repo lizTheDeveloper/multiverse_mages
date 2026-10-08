@@ -51,6 +51,7 @@ import {
   libraryDependence,
   prestigeEarned,
   qualifyingPath,
+  stagnationRule,
   stepStagnation,
 } from '../../src/index.js';
 
@@ -229,27 +230,40 @@ describe('libraryDependence is a fraction of what is known', () => {
 });
 
 describe('stagnation means decline, and the stasis trigger is conjunctive', () => {
-  const thriving = { livingMages: 12, worship: C.stagnationHealthFloor * 2, worshipTier: 3, nodeEntered: false };
+  const thriving = { livingMages: 12, worship: C.stagnationHealthFloor * 2, worshipTier: 3, nodeEntered: false, godActed: false };
 
-  it('does not terminate a thriving custodian who acquires nothing, ever', () => {
+  it('does not terminate a thriving custodian who acquires nothing but keeps acting', () => {
     // The bound nobody could reach, wearing the opposite sign. Run it well past
-    // the stasis window and past the tick Path B qualifies at, and it must still
-    // be alive to declare.
+    // both windows and past the tick Path B qualifies at, and a god who acts
+    // once a year must still be alive to declare.
     let state = god();
-    for (let tick = 0; tick < C.stagnationStasisTicks * 3; tick += 1) {
-      const outcome = stepStagnation(state, thriving, C);
+    for (let tick = 0; tick < C.stagnationNeglectTicks * 2; tick += 1) {
+      const outcome = stepStagnation(state, { ...thriving, godActed: tick % 12 === 0 }, C);
       expect(outcome.stagnated).toBe(false);
-      state = god({
-        magelessTicks: outcome.magelessTicks,
-        lowWorshipTicks: outcome.lowWorshipTicks,
-        stasisTicks: outcome.stasisTicks,
-      });
+      state = god({ stasisTicks: outcome.stasisTicks });
     }
-    expect(state.stasisTicks).toBe(0);
+    expect(state.stasisTicks).toBeLessThan(12);
+  });
+
+  it('ends a thriving universe its god has abandoned, at the neglect window and not before', () => {
+    // S4: with the peak conjunct, a universe that never fell could never
+    // stagnate, so neglect alone no longer ended a run. A century with no new
+    // knowledge and no paid act of its god is the neglect window.
+    let state = god();
+    let terminatedAt = -1;
+    for (let tick = 0; tick < C.stagnationNeglectTicks + 5; tick += 1) {
+      const outcome = stepStagnation(state, thriving, C);
+      state = god({ stasisTicks: outcome.stasisTicks });
+      if (outcome.stagnated && terminatedAt < 0) {
+        terminatedAt = tick;
+        expect(stagnationRule(outcome, C)).toBe('neglect');
+      }
+    }
+    expect(terminatedAt).toBe(C.stagnationNeglectTicks - 1);
   });
 
   it('terminates a universe that is frozen, unworshipped, and fallen from its peak', () => {
-    const failing = { livingMages: 3, worship: C.stagnationHealthFloor - 1, worshipTier: 1, nodeEntered: false };
+    const failing = { livingMages: 3, worship: C.stagnationHealthFloor - 1, worshipTier: 1, nodeEntered: false, godActed: false };
     let state = god({ peakWorshipTier: 3 });
     let terminatedAt = -1;
     for (let tick = 0; tick < C.stagnationStasisTicks + 5; tick += 1) {
@@ -260,28 +274,62 @@ describe('stagnation means decline, and the stasis trigger is conjunctive', () =
         lowWorshipTicks: outcome.lowWorshipTicks,
         stasisTicks: outcome.stasisTicks,
       });
-      if (outcome.stagnated && terminatedAt < 0) terminatedAt = tick;
+      if (outcome.stagnated && terminatedAt < 0) {
+        terminatedAt = tick;
+        expect(stagnationRule(outcome, C)).toBe('stasis');
+      }
     }
     expect(terminatedAt).toBe(C.stagnationStasisTicks - 1);
   });
 
-  it('does not terminate a small universe that finished its square and never fell', () => {
+  it('does not end a small universe that finished its square and never fell, until it is neglected', () => {
     // The lobby's opening, measured: one species on a 2x2 square, worship flat
     // at its own ceiling below the health floor, nothing left to learn. That is
     // completion at a small scale, and it ran this clock out in 12 of 12 runs
     // before the peak conjunct existed.
-    const finished = { livingMages: 5, worship: C.stagnationHealthFloor / 2, worshipTier: 1, nodeEntered: false };
+    const finished = { livingMages: 5, worship: C.stagnationHealthFloor / 2, worshipTier: 1, nodeEntered: false, godActed: false };
     let state = god({ peakWorshipTier: 1 });
-    for (let tick = 0; tick < C.stagnationStasisTicks * 3; tick += 1) {
+    // Past the decline window with no god at all: still alive, because it never fell.
+    for (let tick = 0; tick < C.stagnationNeglectTicks - 1; tick += 1) {
       const outcome = stepStagnation(state, finished, C);
       expect(outcome.stagnated).toBe(false);
       state = god({ peakWorshipTier: 1, stasisTicks: outcome.stasisTicks });
     }
-    expect(state.stasisTicks).toBe(0);
+    // And a god who acts once a year keeps it alive indefinitely.
+    let played = god({ peakWorshipTier: 1 });
+    for (let tick = 0; tick < C.stagnationNeglectTicks * 2; tick += 1) {
+      const outcome = stepStagnation(played, { ...finished, godActed: tick % 12 === 0 }, C);
+      expect(outcome.stagnated).toBe(false);
+      played = god({ peakWorshipTier: 1, stasisTicks: outcome.stasisTicks });
+    }
+  });
+
+  it('names the rule that fired, and the most specific cause wins on a shared tick', () => {
+    const at = (overrides: Partial<{ magelessTicks: number; lowWorshipTicks: number; stasisTicks: number }>) =>
+      stagnationRule(
+        { magelessTicks: 0, lowWorshipTicks: 0, stasisTicks: 0, stagnated: true, ...overrides },
+        C,
+      );
+    expect(stagnationRule({ magelessTicks: 0, lowWorshipTicks: 0, stasisTicks: 0, stagnated: false }, C)).toBe('none');
+    expect(at({ magelessTicks: C.stagnationMagelessTicks })).toBe('mageless');
+    expect(at({ lowWorshipTicks: C.stagnationWorshipTicks })).toBe('unworshipped');
+    expect(at({ stasisTicks: C.stagnationStasisTicks })).toBe('stasis');
+    expect(at({ stasisTicks: C.stagnationNeglectTicks })).toBe('neglect');
+    // Same tick: mageless beats unworshipped beats the quiet clock.
+    expect(
+      at({
+        magelessTicks: C.stagnationMagelessTicks,
+        lowWorshipTicks: C.stagnationWorshipTicks,
+        stasisTicks: C.stagnationNeglectTicks,
+      }),
+    ).toBe('mageless');
+    expect(
+      at({ lowWorshipTicks: C.stagnationWorshipTicks, stasisTicks: C.stagnationNeglectTicks }),
+    ).toBe('unworshipped');
   });
 
   it('terminates a mageless universe after the declared window', () => {
-    const dead = { livingMages: 0, worship: C.stagnationHealthFloor * 2, worshipTier: 3, nodeEntered: true };
+    const dead = { livingMages: 0, worship: C.stagnationHealthFloor * 2, worshipTier: 3, nodeEntered: true, godActed: false };
     let state = god();
     for (let tick = 1; tick < C.stagnationMagelessTicks; tick += 1) {
       const outcome = stepStagnation(state, dead, C);
@@ -292,7 +340,7 @@ describe('stagnation means decline, and the stasis trigger is conjunctive', () =
   });
 
   it('resets every clock the moment its condition stops holding', () => {
-    const dead = { livingMages: 0, worship: 0, worshipTier: 0, nodeEntered: false };
+    const dead = { livingMages: 0, worship: 0, worshipTier: 0, nodeEntered: false, godActed: false };
     let state = god();
     for (let tick = 0; tick < 30; tick += 1) {
       const outcome = stepStagnation(state, dead, C);
@@ -309,6 +357,7 @@ describe('stagnation means decline, and the stasis trigger is conjunctive', () =
       worship: C.stagnationHealthFloor * 2,
       worshipTier: 3,
       nodeEntered: true,
+      godActed: false,
     }, C);
     expect(recovered.magelessTicks).toBe(0);
     expect(recovered.lowWorshipTicks).toBe(0);
@@ -317,7 +366,7 @@ describe('stagnation means decline, and the stasis trigger is conjunctive', () =
   });
 
   it('terminates a universe held below the worship floor for the declared window', () => {
-    const starved = { livingMages: 2, worship: C.stagnationWorshipFloor - 1, worshipTier: 0, nodeEntered: true };
+    const starved = { livingMages: 2, worship: C.stagnationWorshipFloor - 1, worshipTier: 0, nodeEntered: true, godActed: false };
     let state = god();
     let ticks = 0;
     while (ticks < C.stagnationWorshipTicks + 5) {
