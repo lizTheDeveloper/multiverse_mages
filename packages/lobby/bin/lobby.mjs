@@ -37,6 +37,24 @@ import { frameDocument } from '../../../scripts/lib/frame-document.mjs';
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(HERE, '..', '..', '..');
 
+const USAGE = `usage: node packages/lobby/bin/lobby.mjs [options]
+
+Serves the lobby and every universe it hosts, and ticks them on one clock.
+
+  --port <n>            TCP port to listen on (0..65535, default 8400)
+  --tick-ms <n>         milliseconds between world ticks (50..3600000)
+  --max-universes <n>   universes hosted at once (default 16)
+  --bubble-size <n>     universes per raid bubble (default 4)
+  --idle-ms <n>         a universe left alone this long gives its slot back
+                        (default 900000)
+  -h, --help            print this message and exit
+`;
+// Before anything binds a port: `--help` must never start a server.
+if (process.argv.includes('--help') || process.argv.includes('-h')) {
+  process.stdout.write(USAGE);
+  process.exit(0);
+}
+
 const arg = (name, fallback) => {
   const i = process.argv.indexOf(`--${name}`);
   return i >= 0 ? process.argv[i + 1] : fallback;

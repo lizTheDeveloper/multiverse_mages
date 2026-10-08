@@ -709,6 +709,31 @@ export function mageVocabulary(content) {
      carry. */
   const roleName = (id) => content.mageRoles?.[String(id)] ?? `role ${id}`;
   const goalName = (id) => content.goals?.[String(id)] ?? `goal ${id}`;
+  /**
+   * A goal in a sentence. Keyed by the goal's **published name**
+   * (`content.goals`), not by its id, so a renumbered registry cannot make a
+   * page say the wrong thing; a name this table does not know falls back to
+   * the name itself with its dashes spaced out. `target` is whether the goal
+   * names a node, which then follows the phrase.
+   */
+  const GOAL_PHRASE = {
+    idle: 'idle',
+    'research-node': 'researching',
+    'rediscover-node': 'rediscovering lost',
+    'seek-teaching': 'looking for someone to teach her',
+    teach: 'teaching',
+    scribe: 'writing a grimoire of',
+    affiliate: 'looking for a college to join',
+    'ward-duty': 'on ward duty',
+    'raid-readiness': 'readying for a raid',
+    'apply-magic': 'putting her magic to work with',
+    practice: 'practising',
+    'sustain-working': 'sustaining a working of',
+  };
+  const goalPhrase = (id) => {
+    const name = goalName(id);
+    return GOAL_PHRASE[name] ?? name.replace(/-/gu, ' ');
+  };
   const nodeName = (id) => nodeById.get(id)?.name ?? `node ${id}`;
 
   /** Months into years, because a mage's age is only ever discussed in years. */
@@ -729,10 +754,10 @@ export function mageVocabulary(content) {
 
   const doing = (m) =>
     m.goal === undefined
-      ? 'has not chosen'
+      ? 'has not chosen what to do'
       : m.goal.targetNodeId === 0
-        ? `now ${goalName(m.goal.goalId)}`
-        : `now ${goalName(m.goal.goalId)} → ${nodeById.get(m.goal.targetNodeId)?.name ?? `node ${m.goal.targetNodeId}`}`;
+        ? `now ${goalPhrase(m.goal.goalId)}`
+        : `now ${goalPhrase(m.goal.goalId)} ${nodeById.get(m.goal.targetNodeId)?.name ?? 'an unnamed node'}`;
 
   const where = (m) => (m.universityId === 0 ? 'unaffiliated' : `at college #${shortHandle(m.universityId)}`);
 
@@ -759,6 +784,7 @@ export function mageVocabulary(content) {
     cellName,
     roleName,
     goalName,
+    goalPhrase,
     age,
     temper,
     knows,
@@ -971,7 +997,9 @@ export function candidateNamer(content) {
 
     if (row.kind === 'portal-target') {
       return {
-        head: `target #${row.targetId}`,
+        /* The target id is the raid seat the portal opens on — the same seat
+           number the Raids tab lists — not an entity, so it is named as one. */
+        head: `the universe in raid seat ${row.targetId}`,
         /* Short here and long once under the list. The full reason is
            {@link WHY_ABSENT.portalTargetDetail}, and repeating a paragraph on
            every row of an eight-slot list would bury the one thing that differs
@@ -1001,6 +1029,96 @@ export function candidateNamer(content) {
   /** `namer.missing(view, action)` — the honesty line for one verb's list. */
   namer.missing = missing;
   return namer;
+}
+
+/**
+ * How many cells are permitted, how many hold any knowledge, and how much.
+ *
+ * **One definition, used everywhere a page counts cells.** The grid's status
+ * line once counted *permitted cells with a known node* and the ending screen
+ * counted *any cell with a known node*, so a run ended reading "36 of 70 cells"
+ * under a grid that said "16 live". Both were true and they read as a
+ * contradiction. Now every surface reads these fields and labels them.
+ *
+ * - `withDiscoveries` — cells where at least one node is known anywhere (a
+ *   mind, a palace, a book), **whether or not the cell is still permitted**.
+ *   Knowledge does not vanish when its cell is forbidden; it stops growing.
+ *   This is the same count the Enduring Canon checklist uses.
+ * - `withDiscoveriesPermitted` — the subset whose cell the ruleset permits now.
+ * - `permitted` — cells the ruleset permits, read from `academy.permittedCells`
+ *   (the server's `permits()`, edicts included). `null` when the frame carries
+ *   no academy sidecar: counting nineteen bits here would be the client
+ *   computing a rule, and would miss every edict.
+ *
+ * @returns `{ total, permitted, withDiscoveries, withDiscoveriesPermitted,
+ * nodesKnown, permittedSet }` — the last a `Set` of cell ids or `null`.
+ */
+export function cellCensus(frame) {
+  const cells = frame.knowledge();
+  const acad = frame.academy();
+  const permittedSet = acad === null ? null : acad.permittedCells;
+  const cellIdOf = (c) => frame.doc.content.cells[c.index]?.cellId ?? c.index + 1;
+  let withDiscoveries = 0;
+  let withDiscoveriesPermitted = 0;
+  let nodesKnown = 0;
+  for (const c of cells) {
+    if (c.nodesKnown <= 0) continue;
+    withDiscoveries += 1;
+    nodesKnown += c.nodesKnown;
+    if (permittedSet !== null && permittedSet.has(cellIdOf(c))) withDiscoveriesPermitted += 1;
+  }
+  return {
+    total: cells.length,
+    permitted: permittedSet === null ? null : permittedSet.size,
+    withDiscoveries,
+    withDiscoveriesPermitted: permittedSet === null ? null : withDiscoveriesPermitted,
+    nodesKnown,
+    permittedSet,
+  };
+}
+
+/**
+ * Where one node lives, as far as the frame can say.
+ *
+ * Read from the academy sidecar: `roster[].nodeIds` is what each affiliated
+ * mage holds in her own head (mind or memory palace), and `shelf[]` is what a
+ * college library holds, with its copy count. Nothing is inferred.
+ *
+ * What it **cannot** say, and says so in `gaps`: the heads of mages affiliated
+ * with no college (only their count, `academy.unaffiliated`, is published), and
+ * grimoires outside a library — the frame carries a grimoire *total*, not which
+ * nodes they hold. `cellCopies` is the knowledge block's per-cell redundancy,
+ * the only figure that counts every instance, and it is per cell, not per node.
+ *
+ * @returns `{ visible, minds: [{handle, mage, college}], shelves: [{college,
+ * copies, bestMastery}], cellCopies, gaps: string[] }`. `visible` is false when
+ * the frame has no academy sidecar at all.
+ */
+export function nodeHolders(frame, nodeId) {
+  const acad = frame.academy();
+  const node = (frame.doc.content.nodes ?? []).find((n) => n.nodeId === nodeId);
+  const k = node === undefined ? undefined : frame.knowledge().find((c) => (frame.doc.content.cells[c.index]?.cellId ?? c.index + 1) === node.cellId);
+  const cellCopies = k?.redundancy ?? 0;
+  if (acad === null) {
+    return { visible: false, minds: [], shelves: [], cellCopies, gaps: ['this frame carries no academy sidecar, so no holder can be named'] };
+  }
+  const minds = [];
+  const shelves = [];
+  for (const college of acad.handles) {
+    const u = acad.university(college);
+    for (const entry of u?.roster ?? []) {
+      if (entry.nodeIds.includes(nodeId)) minds.push({ handle: entry.handle, mage: acad.mage(entry.handle), college });
+    }
+    for (const entry of u?.shelf ?? []) {
+      if (entry.nodeId === nodeId) shelves.push({ college, copies: entry.copies, bestMastery: entry.bestMastery });
+    }
+  }
+  const gaps = [];
+  if (acad.unaffiliated > 0) {
+    gaps.push(`${acad.unaffiliated} mage${acad.unaffiliated === 1 ? '' : 's'} belong${acad.unaffiliated === 1 ? 's' : ''} to no college, and what they know is not published`);
+  }
+  gaps.push('grimoires outside a library are counted, not itemised, so they cannot be listed here');
+  return { visible: true, minds, shelves, cellCopies, gaps };
 }
 
 /**
@@ -1178,7 +1296,9 @@ function liveControls(base, doc, headers = () => ({})) {
       body: JSON.stringify(body ?? {}),
     });
     const payload = await res.json();
-    if (!res.ok) throw new Error(payload?.error ?? `${route} failed (${res.status})`);
+    /* A LiveSessionError, so a page can tell "one action per tick" (409)
+       from a refused token (401) without parsing the message. */
+    if (!res.ok) throw new LiveSessionError(payload?.error ?? `${route} failed (${res.status})`, res.status);
     return payload;
   };
 
@@ -1279,6 +1399,30 @@ function liveControls(base, doc, headers = () => ({})) {
  *
  *     openSession({ live: `/u/${id}`, headers: () => ({ 'x-universe-token': token }) })
  */
+/**
+ * A response body as JSON, reporting `(bytesSoFar, totalOrNull)` as it
+ * arrives. A late-game universe's whole spine is tens of megabytes, and a page
+ * that waits on it silently reads as a dead one.
+ */
+async function readWithProgress(res, onProgress) {
+  const total = Number(res.headers.get('content-length')) || null;
+  if (!res.body || typeof res.body.getReader !== 'function') return res.json();
+  const reader = res.body.getReader();
+  const chunks = [];
+  let received = 0;
+  for (;;) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    chunks.push(value);
+    received += value.length;
+    onProgress(received, total);
+  }
+  const bytes = new Uint8Array(received);
+  let at = 0;
+  for (const c of chunks) { bytes.set(c, at); at += c.length; }
+  return JSON.parse(new TextDecoder().decode(bytes));
+}
+
 export async function openSession(source = {}) {
   if (source.live !== undefined) {
     const base = String(source.live === true ? '' : source.live).replace(/\/+$/u, '');
@@ -1291,7 +1435,7 @@ export async function openSession(source = {}) {
         res.status,
       );
     }
-    const doc = await res.json();
+    const doc = typeof source.onProgress === 'function' ? await readWithProgress(res, source.onProgress) : await res.json();
     return buildSession(doc, liveControls(base, doc, headers));
   }
   const url = source.recording ?? '../session.json';

@@ -335,7 +335,7 @@ export function mountRaids(o) {
         ul.append(h('li', {},
           h('button', {
             type: 'button', className: 'raid-btn', disabled: f.raw.mask[10] !== 1 || o.isBusy(),
-            title: deny10 || `Make this mage a raider (slot ${slot} of action 10)`,
+            title: deny10 || 'Make this mage a raider',
             onclick: async () => { await act(10, [slot], `Named a raider: ${label}`); lastSig = ''; paint(); },
           }, 'Make raider'),
           ' ', label, m ? h('span', { className: 'raid-muted' }, ` — ${vocab.knows(m)}`) : null));
@@ -398,8 +398,7 @@ export function mountRaids(o) {
 
     const why = h('ul', { className: 'raid-why' });
     for (const b of blockers) {
-      why.append(h('li', { className: b.blocks ? 'blocks' : 'advice' },
-        b.text, h('span', { className: 'raid-src' }, ` [${b.source}]`)));
+      why.append(h('li', { className: b.blocks ? 'blocks' : 'advice', title: `read from ${b.source}` }, b.text));
     }
 
     return h('div', { className: 'raid-seat', 'data-seat': seat },
