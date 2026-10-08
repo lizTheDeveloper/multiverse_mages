@@ -1311,14 +1311,45 @@ function liveControls(base, doc, headers = () => ({})) {
   };
 
   /* The server returns only the frames the client does not have, so a
-     four-thousand-tick run does not re-ship itself on every button press. */
-  const absorb = (payload) => {
+     four-thousand-tick run does not re-ship itself on every button press.
+
+     `from` is the server's index of the first frame in the payload, and it is
+     not always this page's length. A submit answers from the frame count *when
+     the action was queued*, and the page polls once a second while the server
+     may tick faster — so `from` can be ahead of what the page holds. Setting
+     `doc.frames.length = from` there grew the array with holes, and the next
+     paint read `frame(i).raw.obs` off one: "Cannot read properties of undefined
+     (reading 'obs')", on every paint after, though the action had landed.
+
+     So a payload that starts past the page's end is not spliced in: the gap is
+     fetched first, and the read that fills it already carries the payload's
+     frames (frames are history; the server only appends). And a payload never
+     shortens what the page has — a poll answered before a submit but delivered
+     after it would otherwise throw away the submit's newer frames. */
+  const read = async (since) => {
+    const res = await fetch(`${base}/live/frames?since=${since}`, { headers: headers() });
+    if (res.status === 404) throw new LiveSessionError('universe-gone', 404);
+    return res.ok ? res.json() : null;
+  };
+  const absorb = async (payload) => {
     if (Array.isArray(payload.frames)) {
-      doc.frames.length = payload.from ?? doc.frames.length;
-      doc.frames.push(...payload.frames);
+      const from = payload.from ?? doc.frames.length;
+      if (from > doc.frames.length) {
+        const gap = await read(doc.frames.length);
+        if (gap !== null && Array.isArray(gap.frames) && (gap.from ?? doc.frames.length) <= doc.frames.length) {
+          splice(gap.from ?? doc.frames.length, gap.frames);
+        }
+      } else {
+        splice(from, payload.frames);
+      }
     }
     if (payload.provenance !== undefined) Object.assign(doc.provenance, payload.provenance);
     return payload;
+  };
+  /* Writes `frames` at `from` (≤ the current length), never leaving a hole and
+     never shortening the array. */
+  const splice = (from, frames) => {
+    for (let i = 0; i < frames.length; i += 1) doc.frames[from + i] = frames[i];
   };
 
   return {
@@ -1345,7 +1376,7 @@ function liveControls(base, doc, headers = () => ({})) {
       if (!res.ok) return 0;
       const payload = await res.json();
       const before = doc.frames.length;
-      absorb(payload);
+      await absorb(payload);
       return doc.frames.length - before;
     },
     /**

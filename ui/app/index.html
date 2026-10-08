@@ -1652,8 +1652,12 @@ async function pollOnce() {
   } catch (e) {
     // A server restart: the universe is gone, and a page that kept saying
     // "running" over a frozen world would be lying.
-    if (e instanceof LiveSessionError && e.status === 404) universeGone();
-    /* anything else is transient; the next poll retries */
+    if (e instanceof LiveSessionError && e.status === 404) { universeGone(); return; }
+    /* Anything else — a network blip, or a paint that threw — is logged and
+       the next poll retries. Swallowing it silently is how a frozen page went
+       unexplained; letting it escape would not stop the interval but would
+       hide the cause just the same. */
+    console.error('poll failed; retrying on the next interval', e);
   }
 }
 setInterval(pollOnce, POLL_MS);
@@ -2153,7 +2157,17 @@ function diffAndLog(curr) {
  */
 let feedFrame = -1;
 function catchUpFeed() {
-  for (let i = feedFrame + 1; i < session.frameCount; i += 1) diffAndLog(session.frame(i));
+  // paint() calls this first, so a throw here used to stop the whole repaint:
+  // the year counter froze while the server ran on, and act()'s finally passed
+  // the throw on to whichever panel had submitted. A frame the feed cannot
+  // read is logged and passed over; the feed is a commentary, not the clock.
+  for (let i = feedFrame + 1; i < session.frameCount; i += 1) {
+    try {
+      diffAndLog(session.frame(i));
+    } catch (e) {
+      console.error(`feed: frame ${i} could not be read`, e);
+    }
+  }
   feedFrame = session.frameCount - 1;
 }
 
