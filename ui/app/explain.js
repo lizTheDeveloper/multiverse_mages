@@ -26,6 +26,14 @@
  */
 
 export const FP = 1024;
+
+/**
+ * Whether action `id` is legal on frame `f`: the mask, and only while the
+ * episode is running (an ended universe's last frame keeps its final mask).
+ * Accepts a bare frame-shaped object, as tests build one.
+ */
+const isLegal = (f, id) =>
+  typeof f.isLegal === 'function' ? f.isLegal(id) : (f.raw?.status ?? 'running') === 'running' && f.raw?.mask?.[id] === 1;
 const units = (fp) => fp / FP;
 const num = (v) => (Math.abs(v) < 10 ? v.toFixed(1).replace(/\.0$/u, '') : v.toFixed(0));
 
@@ -150,7 +158,7 @@ export function foundingWhy(f) {
  * mask itself — the frame carries no reason for every "no".
  */
 export function whyDenied(f, content, id) {
-  if (f.isLegal(id)) return [];
+  if (isLegal(f, id)) return [];
   if (f.status() !== 'running') {
     return [{ text: `this universe is over (${f.status()}) — nothing can be done in it now`, source: 'frame.status' }];
   }
@@ -281,7 +289,7 @@ export function whyDeniedText(f, content, id) {
 export function raidBlockers(f, content, seat, peer, raiders) {
   const out = [];
   const portalCell = content.cells.find((c) => c.id === PORTAL_CELL);
-  const legal = f.isLegal(14);
+  const legal = isLegal(f, 14);
   const slot = (f.raw.candidates?.['14'] ?? []).findIndex((c) => c.params?.[0] === seat);
 
   if (f.status() !== 'running') {
@@ -641,7 +649,7 @@ export function ascensionChecklist(f, content) {
   return {
     published,
     gate: { label: 'Not before', value: `year ${Math.floor(clock.worldTick / 12)}`, target: `year ${Math.ceil(a['min-tick'] / 12)}`, status: st(clock.worldTick >= a['min-tick']), source: 'clock.worldTick' },
-    open: f.isLegal(15),
+    open: isLegal(f, 15),
     mastery,
     canon,
     summits,
