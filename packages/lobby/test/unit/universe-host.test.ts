@@ -5,11 +5,17 @@
  */
 import { describe, expect, it } from 'vitest';
 
-import { GOD_ACTION, MAGE_TIER_SLOTS, OBSERVATION_BLOCKS, speciesSlot } from '@mm/agent-api';
-import { referenceContent } from '@mm/scenario';
+import { GOD_ACTION, MAGE_TIER_SLOTS, OBSERVATION_BLOCKS, createSession, speciesSlot } from '@mm/agent-api';
+import { referenceContent, referenceScenario } from '@mm/scenario';
 
 import { frameDocument } from '../../../../scripts/lib/frame-document.mjs';
-import { UniverseHost, validateConfig, type UniverseConfig } from '../../src/universe-host.js';
+import {
+  UniverseHost,
+  defaultUniverseName,
+  validateConfig,
+  validateName,
+  type UniverseConfig,
+} from '../../src/universe-host.js';
 
 const shipped = referenceContent();
 const doc = frameDocument(shipped, 'test');
@@ -98,4 +104,84 @@ describe('UniverseHost', () => {
   it('accepts a valid config with foundingPortalMagic', () => {
     expect(validateConfig({ ...base, foundingPortalMagic: 1 })).toEqual({ ...base, foundingPortalMagic: 1 });
   });
+
+  it('keeps a chosen name, and generates a stable one from the id otherwise', () => {
+    expect(new UniverseHost({ ...base, name: 'Quiet Fen' }, doc, 0).name).toBe('Quiet Fen');
+    const h = new UniverseHost(base, doc, 0);
+    expect(h.speciesName).toBe('Dwarf');
+    expect(h.name).toBe(defaultUniverseName(h.id, 'Dwarf'));
+    expect(defaultUniverseName('00000000-0000-4000-8000-000000000000', 'Elf')).toBe(
+      defaultUniverseName('00000000-0000-4000-8000-000000000000', 'Elf'),
+    );
+    // Different ids reach different nouns: the hash is not a constant.
+    const nouns = new Set(Array.from({ length: 64 }, (_, i) => defaultUniverseName(`id-${String(i)}`, 'Elf')));
+    expect(nouns.size).toBeGreaterThan(8);
+  });
 });
+
+describe('founding population', () => {
+  const block = (o: number[], name: string): number => {
+    const b = OBSERVATION_BLOCKS.find((x) => x.name === name)!;
+    return o.slice(b.offset, b.offset + b.size).reduce((a, v) => a + v, 0);
+  };
+  /** The reference all-species start, built the way the harness builds it. */
+  const reference = (): number[] => {
+    const session = createSession({ scenario: referenceScenario(shipped, { raids: false }).scenario, strategyId: 't' });
+    session.reset(11, { worldTickCap: 10 });
+    return doc.encodeFrame(session).obs as number[];
+  };
+
+  it.each(['dwarf', 'elf', 'human'])(
+    'a one-species (%s) universe founds as many mages as the all-species reference',
+    (species) => {
+      const one = obs(new UniverseHost({ ...base, species }, doc, 0));
+      const all = reference();
+      expect(block(all, 'mages')).toBeGreaterThan(0);
+      expect(block(one, 'mages')).toBe(block(all, 'mages'));
+    },
+  );
+});
+
+describe('validateName', () => {
+  it.each([
+    ['Quiet Fen', 'Quiet Fen'],
+    ['  The   Ember  Court ', 'The Ember Court'],
+    ["Ka'thar (II) & Co.", "Ka'thar (II) & Co."],
+    ['Île-de-Flamme', 'Île-de-Flamme'],
+    ['नमस्ते', 'नमस्ते'],
+    // Decomposed Latin is accepted and stored composed (NFC).
+    ['Ame\u0301lie', 'Am\u00e9lie'],
+    ['\u00c5ngstro\u0308m', '\u00c5ngstr\u00f6m'],
+    ['x'.repeat(32), 'x'.repeat(32)],
+    [undefined, undefined],
+    ['   ', undefined],
+  ])('accepts %j as %j', (raw, want) => {
+    expect(validateName(raw)).toBe(want);
+  });
+
+  it.each([
+    ['<script>alert(1)</script>'],
+    ['a<b'],
+    ['line\nbreak'],
+    ['nul\u0000'],
+    ['bell\u0007'],
+    ['bidi\u202Eflip'],
+    ['zero\u200Bwidth'],
+    ['zalgo\u0301\u0302\u0303\u0304\u0305\u0306'],
+    ['\u0301\u0301lead'],
+    ['hangul\u3164filler'],
+    ['\u3164'],
+    ['\u115F\u1160'],
+    ['half\uFFA0width'],
+    ['vs\uFE0F'],
+    ['emoji \u{1F525}'],
+    ['x'.repeat(33)],
+    ['x'.repeat(200)],
+    ['---'],
+    [7],
+    [{}],
+  ])('refuses %j', (raw) => {
+    expect(() => validateName(raw)).toThrow(/name/u);
+  });
+});
+

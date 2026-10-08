@@ -7,8 +7,11 @@
 export { LOBBY_LIMITS, Lobby, type LobbyOptions } from './lobby.js';
 export {
   DEFAULT_CAP,
+  NAME_MAX,
   UniverseHost,
+  defaultUniverseName,
   validateConfig,
+  validateName,
   type GodAction,
   type InboundRaid,
   type Outcome,
@@ -17,5 +20,5 @@ export {
   type UniverseConfig,
   type UniverseRef,
 } from './universe-host.js';
-export { Bubble, type BubbleInfo } from './bubble.js';
+export { Bubble, type BubbleInfo, type SeatOccupant } from './bubble.js';
 export { BodyTooLarge, MAX_BODY, Router, json, readBody, text } from './router.js';
