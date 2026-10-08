@@ -107,20 +107,26 @@ const BLIND_ARM_LINES: Readonly<Record<string, readonly string[]>> = {
   // metrics still dominate: five of thirteen. Tolerance is unchanged (k = 3);
   // this is the arms moving under a fixed instrument, not the instrument
   // moving.
+  // **Ten after the S4 (`sim-playability`) re-record, 2026-10-08.** Feeding the
+  // populace (`laborObligation`) moved the population arms clear: all four
+  // `referencePopulation*` lines for `uniform-random-legal` and
+  // `worship-maximizer` left, because a fed universe's 200-year population is
+  // no longer one lucky boom. The library and instance lines of
+  // `passive-control` and `worship-maximizer` and one grimoire line joined: a
+  // larger populace spreads knowledge over more mages and books, and those arms'
+  // between-seed spread grew faster than their means. Tolerance is unchanged
+  // (k = 3).
   'balance/baselines/balance-gate-ascension-v1.baseline.json': [
-    'referenceGrimoires@worship-maximizer',
+    'referenceGrimoires@uniform-random-legal',
     'referenceKnowledgeInstances@passive-control',
+    'referenceKnowledgeInstances@worship-maximizer',
     'referenceLibraryDepth@passive-control',
+    'referenceLibraryDepth@worship-maximizer',
     'referenceNodesGainedFinalQuarter@denial-warden',
-    'referenceNodesGainedFinalQuarter@narrow-depth',
     'referenceNodesGainedFinalQuarter@passive-control',
     'referenceNodesGainedFinalQuarter@permissive-breadth',
     'referenceNodesGainedFinalQuarter@portal-rush',
     'referenceNodesGainedFinalQuarter@worship-maximizer',
-    'referencePopulation@uniform-random-legal',
-    'referencePopulation@worship-maximizer',
-    'referencePopulationChange@uniform-random-legal',
-    'referencePopulationChange@worship-maximizer',
   ],
   'balance/baselines/balance-gate-v1.baseline.json': [],
   'balance/baselines/balance-gate-horizon-v1.baseline.json': [],
@@ -255,9 +261,9 @@ const BLIND_SWEEP_LINES: Readonly<Record<string, readonly string[]>> = {
   'balance/baselines/balance-gate-v1.baseline.json': [],
   'balance/baselines/balance-gate-horizon-v1.baseline.json': [],
   'balance/baselines/balance-gate-agency-v1.baseline.json': [],
-  'balance/baselines/balance-gate-ascension-v1.baseline.json': [
-    'referenceNodesGainedFinalQuarter',
-  ],
+  // Empty after the S4 re-record, 2026-10-08: the final-quarter gain went from
+  // 100.7 % to 72.7 % MDE — a fed universe keeps learning in its last quarter.
+  'balance/baselines/balance-gate-ascension-v1.baseline.json': [],
 };
 
 describe('no gated metric may be blind to a change that doubles it', () => {

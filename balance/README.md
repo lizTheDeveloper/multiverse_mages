@@ -288,20 +288,30 @@ proportional change in that metric the gate would report as `regressed`. Anythin
 
 | metric | 5-year gate | 20-year gate | 20-year agency gate | 200-year gate |
 |---|---|---|---|---|
-| `referenceGrimoires` | 4.1 % | 7.3 % | 15.8 % | 16.7 % |
-| `referenceKnowledgeInstances` | 2.0 % | 4.3 % | 8.4 % | 32.1 % |
-| `referenceLibraryDepth` | 17.3 % | 16.7 % | 22.5 % | 23.0 % |
-| `referenceLivingMages` | 0.5 % | 1.5 % | 2.6 % | 10.2 % |
-| `referenceNodesGained` | 0.8 % | 2.6 % | 2.9 % | 10.3 % |
-| `referenceNodesGainedFinalQuarter` | — | 7.0 % | 11.0 % | 100.7 % |
-| `referenceNodesKnown` | 0.7 % | 2.5 % | 2.8 % | 10.2 % |
-| `referencePeakPopulation` | 0.0 % | 1.8 % | 8.2 % | 0.3 % |
-| `referencePopulation` | 1.0 % | 2.0 % | 3.7 % | 18.8 % |
-| `referencePopulationChange` | 4.3 % | 9.5 % | 16.1 % | 18.9 % |
+| `referenceGrimoires` | 4.1 % | 7.3 % | 15.4 % | 11.7 % |
+| `referenceKnowledgeInstances` | 2.0 % | 4.3 % | 8.5 % | 40.0 % |
+| `referenceLibraryDepth` | 17.3 % | 16.7 % | 21.3 % | 35.4 % |
+| `referenceLivingMages` | 0.5 % | 1.5 % | 2.5 % | 14.2 % |
+| `referenceNodesGained` | 0.8 % | 2.6 % | 3.0 % | 7.5 % |
+| `referenceNodesGainedFinalQuarter` | — | 7.0 % | 11.1 % | 72.7 % |
+| `referenceNodesKnown` | 0.7 % | 2.5 % | 2.9 % | 7.4 % |
+| `referencePeakPopulation` | 0.0 % | 1.8 % | 17.8 % | 25.7 % |
+| `referencePopulation` | 1.0 % | 2.0 % | 3.8 % | 8.2 % |
+| `referencePopulationChange` | 4.3 % | 9.5 % | 16.9 % | 8.3 % |
 | runs | 200 | 200 | 64 | 64 |
 | plays a god verb | no | no | **yes** | **yes** |
 | wall clock, 4 workers | 4 s | 27 s | **10 s** | **830–1154 s** |
 
+
+**Re-measured 2026-10-08 on `sim-playability` (S4).** The 5-year and 20-year gates were re-sealed
+(provenance only; content moved for `rl-open-the-portal` and `change-tradition`), so their columns
+are unchanged. The 20-year agency gate and the 200-year gate were regenerated, because feeding the
+populace (`laborObligation`) moved population and knowledge on purpose. Agency arm lines now have a
+median MDE of 15.6 %, **80 of 80** below 100 %. Ascension arm lines have a median of 20.9 %, **69 of
+79** measured nonzero lines below 100 %, and ten lines are blind (`BLIND_ARM_LINES` names them).
+`referenceNodesGainedFinalQuarter` on the 200-year gate is **no longer blind** (100.7 % → 72.7 %):
+a fed universe keeps learning in its last quarter instead of coasting. The paragraphs below
+describe the 2026-09-23 measurement and are kept as history.
 
 **Re-measured 2026-09-23** against all four baselines re-recorded for [MUL-117](/MUL/issues/MUL-117)
 after the `0.3.0 → 0.9.0` build and content-revision move (content `6f7b87f5 → cb4c1a3e`). The
