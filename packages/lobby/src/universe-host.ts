@@ -21,12 +21,16 @@ import { randomInt, randomUUID } from 'node:crypto';
 
 import { GOD_ACTION, createSession, type AgentSession } from '@mm/agent-api';
 import {
+  REFERENCE_SCENARIO_ID,
   explicitOpeningAxes,
   foundingCandidates,
+  legacyRecordOf,
   participantOf,
   referenceContent,
+  referenceOptions,
   referenceScenario,
   speciesTable,
+  type LegacyRecord,
   type RaidRecord,
   type ReferenceContent,
 } from '@mm/scenario';
@@ -44,6 +48,8 @@ export interface UniverseConfig {
   tradition: string;
   techniques: string[];
   forms: string[];
+  /** The player's name for this universe; generated from its id when absent. See {@link universeName}. */
+  name?: string;
   seed?: number;
   tickCap?: number;
   /** 1 founds a mage holding a portal node, so action 14 opens within a few ticks. */
@@ -64,6 +70,8 @@ export interface Outcome {
 /** A raid another universe opened on this one, as its attacker recorded it. */
 export interface InboundRaid {
   readonly fromUniverseId: string;
+  /** The attacker's name when it raided — kept, because the attacker may since have left. */
+  readonly fromName: string;
   readonly record: RaidRecord;
 }
 
@@ -121,6 +129,8 @@ export function validateConfig(raw: unknown, maxTickCap = DEFAULT_CAP): Universe
     techniques: strings(c.techniques, 'techniques', ids(r.techniques)),
     forms: strings(c.forms, 'forms', ids(r.forms)),
   };
+  const name = validateName(c.name);
+  if (name !== undefined) out.name = name;
   if (c.seed !== undefined) {
     if (typeof c.seed !== 'number' || !Number.isInteger(c.seed) || c.seed < 0 || c.seed > 0xffff_ffff) {
       throw new Error('seed must be a uint32');
@@ -142,6 +152,68 @@ export function validateConfig(raw: unknown, maxTickCap = DEFAULT_CAP): Universe
   return out;
 }
 
+/** The longest universe name, in code points. */
+export const NAME_MAX = 32;
+/**
+ * Letters and digits, each followed by at most three combining marks, plus
+ * spaces and a little punctuation. A mark only ever follows a letter or digit,
+ * so scripts that need them (Devanagari's virama and vowel signs) pass while a
+ * free-standing stack of them — zalgo — does not. No format characters (bidi
+ * overrides, zero-width joiners are `\p{Cf}`), no `<`, `>`, `"`, `` ` ``, `/`
+ * or `\\`: a name is plain text wherever it lands. Checked after NFC, so a
+ * decomposed `e` + U+0301 and a precomposed `é` are the same name.
+ */
+const NAME_SHAPE = /^(?:[\p{L}\p{N}]\p{M}{0,3}|[ .,'!?&()-])+$/u;
+const NAME_HAS_WORD = /[\p{L}\p{N}]/u;
+/**
+ * Characters that are letters or marks by category but render as nothing, so
+ * a name made of them reads as blank or impersonates a shorter one: the Hangul
+ * fillers (U+115F, U+1160, U+3164, U+FFA0), the Khmer inherent vowels
+ * (U+17B4, U+17B5), the combining grapheme joiner (U+034F), and variation
+ * selectors (U+180B–U+180D, U+FE00–U+FE0F, U+E0100–U+E01EF).
+ */
+// An alternation, not one class: U+115F and U+1160 are jamo that combine, and
+// a class holding both is what `no-misleading-character-class` refuses.
+const NAME_INVISIBLE =
+  /\u115F|\u1160|\u3164|\uFFA0|\u17B4|\u17B5|\u034F|[\u180B-\u180D]|[\uFE00-\uFE0F]|[\u{E0100}-\u{E01EF}]/u;
+
+/**
+ * A player-chosen universe name, NFC-normalised, trimmed and with runs of
+ * spaces collapsed; `undefined` when none was chosen (absent, or blank).
+ * Throws on anything else that is not 1–{@link NAME_MAX} plain-text
+ * characters. A name is not unique and not an identity — every surface that
+ * shows one shows the universe's short id beside it.
+ */
+export function validateName(raw: unknown): string | undefined {
+  if (raw === undefined || raw === null) return undefined;
+  if (typeof raw !== 'string') throw new Error('name must be a string');
+  const name = raw.normalize('NFC').trim().replace(/ {2,}/gu, ' ');
+  if (name === '') return undefined;
+  if ([...name].length > NAME_MAX) throw new Error(`name must be at most ${String(NAME_MAX)} characters`);
+  if (!NAME_SHAPE.test(name) || !NAME_HAS_WORD.test(name) || NAME_INVISIBLE.test(name)) {
+    throw new Error("name may hold only letters, digits, spaces and . , ' ! ? & ( ) -");
+  }
+  return name;
+}
+
+/** Fixed, so a universe's default name is a function of its id alone. */
+const NAME_NOUNS = Object.freeze([
+  'Reach', 'Hollow', 'Spire', 'Expanse', 'Vale', 'Deep', 'Crown', 'Drift',
+  'Lantern', 'Weald', 'Mire', 'Ember', 'Tide', 'Cairn', 'Veil', 'March',
+  'Bastion', 'Fen', 'Halo', 'Sound', 'Thorn', 'Ridge', 'Gate', 'Orchard',
+  'Archive', 'Loom', 'Well', 'Harbor', 'Steppe', 'Cloister', 'Shoal', 'Verge',
+]);
+
+/** `"<Species> <noun>"`, the noun picked by an FNV-1a hash of `id`. Pure. */
+export function defaultUniverseName(id: string, speciesName: string): string {
+  let h = 0x811c9dc5;
+  for (let i = 0; i < id.length; i += 1) {
+    h ^= id.charCodeAt(i);
+    h = Math.imul(h, 0x01000193) >>> 0;
+  }
+  return `${speciesName} ${NAME_NOUNS[h % NAME_NOUNS.length] ?? 'Reach'}`;
+}
+
 const NO_PEERS: PeerSeats = { seats: 0, seatOf: () => undefined };
 
 export class UniverseHost implements FrameRun {
@@ -157,6 +229,12 @@ export class UniverseHost implements FrameRun {
   readonly inbound: InboundRaid[] = [];
   /** Portal seats: the bubble's size less one. Fixed, because the candidate list is. */
   readonly seatCount: number;
+  /** The server's tick cap; see the constructor. */
+  readonly serverCap: number;
+  /** Public, read-only: shown to bubble-mates in their seats. Plain text. */
+  readonly name: string;
+  /** The founding species' display name. */
+  readonly speciesName: string;
   lastTouched: number;
 
   readonly #content: ReferenceContent;
@@ -164,9 +242,28 @@ export class UniverseHost implements FrameRun {
   readonly #doc: FrameDocument;
   /** This universe's current state: what a peer's raid reads and writes. */
   #state: Parameters<typeof participantOf>[0] | undefined;
+  /** Who each outbound raid hit, by raid id, as they were when it opened. */
+  readonly #targets = new Map<number, { universeId: string; name: string; species: string }>();
   #queued: { action: GodAction; resolve: (o: Outcome) => void } | null = null;
 
-  constructor(config: UniverseConfig, doc: FrameDocument, now: number, peers: PeerSeats = NO_PEERS) {
+  /**
+   * @param host.legacy - What the player's previous, **ended** universe left
+   *   this one (vision §8a: a universe ends, a player does not). Absent for a
+   *   first universe, which is then built exactly as before.
+   * @param host.serverCap - The tick cap the **server** sets (the lobby's,
+   *   {@link DEFAULT_CAP} by default). A config's own `tickCap` may only
+   *   shorten a run, and a run that stops short of this cap is not paid the
+   *   cutoff ending — see {@link legacy}.
+   */
+  constructor(
+    config: UniverseConfig,
+    doc: FrameDocument,
+    now: number,
+    peers: PeerSeats = NO_PEERS,
+    host: { readonly legacy?: LegacyRecord | undefined; readonly serverCap?: number } = {},
+  ) {
+    const legacy = host.legacy;
+    this.serverCap = host.serverCap ?? DEFAULT_CAP;
     this.config = config;
     this.#doc = doc;
     this.ref = { universeId: this.id, bubbleId: '', prestige: 0 };
@@ -180,6 +277,7 @@ export class UniverseHost implements FrameRun {
 
     const run = referenceScenario(content, {
       raids: true,
+      ...(legacy === undefined ? {} : { legacy }),
       onState: (s) => {
         this.#state = s;
       },
@@ -187,7 +285,10 @@ export class UniverseHost implements FrameRun {
         seats: Array.from({ length: peers.seats }, (_, i) => i + 1),
         participant: (seat) => peers.seatOf(this, seat)?.participant(),
         onOutbound: (seat, record) => {
-          peers.seatOf(this, seat)?.inbound.push({ fromUniverseId: this.id, record });
+          const target = peers.seatOf(this, seat);
+          if (target === undefined) return;
+          target.inbound.push({ fromUniverseId: this.id, fromName: this.name, record });
+          this.#targets.set(record.raidId, { universeId: target.id, name: target.name, species: target.speciesName });
         },
       },
     });
@@ -197,14 +298,29 @@ export class UniverseHost implements FrameRun {
     const { ids } = speciesTable(base.registry);
     const wanted = base.registry.species.find((e) => e.record.id === config.species);
     if (wanted === undefined) throw new Error(`species must be one of the shipped species, not ${config.species}`);
+    this.speciesName = wanted.record.name;
+    this.name = config.name ?? defaultUniverseName(this.id, this.speciesName);
     const foundingSpeciesMask = 1 << ids.indexOf(wanted.contentId);
+    // Founders and starting cohorts are counted **per species**, so founding
+    // one species out of N would start a universe with 1/N of the reference
+    // population — about five mages that barely grow. Scale the chosen
+    // species' counts by N so the total founding population is the reference
+    // all-species one. N comes from the registry, and the per-species defaults
+    // from `referenceOptions`, so neither is restated here.
+    const perSpecies = referenceOptions({ worldTickCap: 1 });
+    const speciesCount = ids.length;
 
     // `Date.now()` is not a uint32, and `session.reset` refuses anything else.
     this.seed = config.seed ?? randomInt(0, 0xffff_ffff);
-    this.cap = config.tickCap ?? DEFAULT_CAP;
+    this.cap = Math.min(config.tickCap ?? this.serverCap, this.serverCap);
     this.session.reset(this.seed, {
       worldTickCap: this.cap,
-      options: { foundingSpeciesMask, foundingPortalMagic: config.foundingPortalMagic === 1 ? 1 : 0 },
+      options: {
+        foundingSpeciesMask,
+        foundingMages: perSpecies.foundingMages * speciesCount,
+        cohortSize: perSpecies.cohortSize * speciesCount,
+        foundingPortalMagic: config.foundingPortalMagic === 1 ? 1 : 0,
+      },
     });
     this.frames.push(doc.encodeFrame(this.session));
   }
@@ -262,9 +378,38 @@ export class UniverseHost implements FrameRun {
     });
   }
 
+  /**
+   * What this universe leaves its player's next one, or `undefined` while it is
+   * still running (or never stepped). Computed from this universe's own state
+   * by the scenario's succession layer, `legacyRecordOf`, which also applies
+   * the content's retention and cap; nothing a client sends enters it.
+   *
+   * **The cutoff ending is paid only at the server's cap.** `tickCap` is
+   * client-chosen, so a universe created with `tickCap: 1` would otherwise
+   * "reach the tick cap" one tick in and claim `prestige-base-cutoff` — a
+   * second-long mint. Only a universe that ran to {@link serverCap} reached
+   * the cap the server set; a shorter one stopped early and leaves nothing.
+   * Stagnation and ascension are the rules' own endings and always count.
+   */
+  legacy(): LegacyRecord | undefined {
+    const constants = this.#content.deps.god?.content.constants;
+    if (this.isAlive || this.#state === undefined || constants === undefined) return undefined;
+    return legacyRecordOf(this.#state, {
+      constants,
+      scenarioId: REFERENCE_SCENARIO_ID,
+      runSeed: this.seed,
+      endedAtCap: this.session.status() === 'truncated' && this.cap === this.serverCap,
+    });
+  }
+
   /** Raids this universe resolved, in order — its own outbound and any stand-in inbound. */
   raidLog(): readonly RaidRecord[] {
     return this.#raids();
+  }
+
+  /** Whom outbound raid `raidId` was opened on, or `undefined` (inbound, or not recorded). */
+  raidTarget(raidId: number): { universeId: string; name: string; species: string } | undefined {
+    return this.#targets.get(raidId);
   }
 
   snapshotHash(): string {

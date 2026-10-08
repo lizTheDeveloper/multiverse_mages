@@ -255,18 +255,20 @@ describe('Lobby', () => {
     expect(r.headers.get('location')).toBe('/ui/app/');
   });
 
-  it('lists bubbles, and forms one when enough universes wait', async () => {
+  it('counts bubbles without naming who is in them, and forms one when enough universes wait', async () => {
     await start({ bubbleSize: 2 });
-    expect(await getJson('/api/bubbles')).toMatchObject({ bubbles: [], waiting: 0 });
+    expect(await getJson('/api/bubbles')).toMatchObject({ bubbles: 0, waiting: 0 });
     const a = await create();
-    expect(await getJson('/api/bubbles')).toMatchObject({ bubbles: [], waiting: 1 });
+    expect(await getJson('/api/bubbles')).toMatchObject({ bubbles: 0, waiting: 1 });
     const b = await create();
-    const listed = await getJson<{ bubbles: { members: { universeId: string }[] }[]; waiting: number }>('/api/bubbles');
-    expect(listed.waiting).toBe(0);
-    expect(listed.bubbles).toHaveLength(1);
-    expect(listed.bubbles[0]!.members.map((m) => m.universeId).sort()).toEqual([a, b].sort());
-    expect((await getJson<{ seats: unknown }>(`/u/${a}/live/raids`)).seats).toEqual({ '1': b });
-    expect((await getJson<{ seats: unknown }>(`/u/${b}/live/raids`)).seats).toEqual({ '1': a });
+    const raw = await (await fetch(`${base}/api/bubbles`)).text();
+    expect(JSON.parse(raw)).toMatchObject({ bubbles: 1, seated: 2, alive: 2, waiting: 0, universes: 2 });
+    // Aggregates only: no id, no name, nothing to pick a victim by.
+    for (const id of [a, b]) expect(raw).not.toContain(id);
+    expect(raw).not.toMatch(/name|members|universeId/u);
+    const seat = (id: string): unknown => ({ universeId: id, name: expect.any(String), species: 'Elf' });
+    expect((await getJson<{ seats: unknown }>(`/u/${a}/live/raids`)).seats).toEqual({ '1': seat(b) });
+    expect((await getJson<{ seats: unknown }>(`/u/${b}/live/raids`)).seats).toEqual({ '1': seat(a) });
   });
 
   it('shows an empty seat before the bubble forms', async () => {
@@ -286,8 +288,8 @@ describe('Lobby', () => {
       techniques: ['creo', 'rego'],
       forms: ['ignem', 'limen'],
     };
-    const a = await create({ ...portal, seed: 1 });
-    const b = await create({ ...portal, seed: 2 });
+    const a = await create({ ...portal, seed: 1, name: 'The Ember Court' });
+    const b = await create({ ...portal, seed: 2, name: 'Quiet Fen' });
 
     let frames = 1;
     const latest = async (id: string): Promise<Frame> => {
@@ -331,17 +333,20 @@ describe('Lobby', () => {
 
     expect((await submit(GOD_ACTION.openPortal, [0])).admitted).toBe(true);
 
-    const attacker = await getJson<{ seats: Record<string, string | null>; log: { outbound: boolean }[] }>(
+    const attacker = await getJson<{ seats: Record<string, unknown>; log: { outbound: boolean; target?: unknown }[] }>(
       `/u/${a}/live/raids`,
     );
-    expect(attacker.seats).toEqual({ '1': b });
+    expect(attacker.seats).toEqual({ '1': { universeId: b, name: 'Quiet Fen', species: 'Human' } });
     expect(attacker.log.filter((r) => r.outbound)).toHaveLength(1);
+    // The report names whom it hit, as they were when the portal opened.
+    expect(attacker.log.find((r) => r.outbound)!.target).toEqual({ universeId: b, name: 'Quiet Fen', species: 'Human' });
 
-    const defender = await getJson<{ inbound: { fromUniverseId: string; record: { outbound: boolean } }[] }>(
-      `/u/${b}/live/raids`,
-    );
+    const defender = await getJson<{
+      inbound: { fromUniverseId: string; fromName: string; record: { outbound: boolean } }[];
+    }>(`/u/${b}/live/raids`);
     expect(defender.inbound).toHaveLength(1);
     expect(defender.inbound[0]!.fromUniverseId).toBe(a);
+    expect(defender.inbound[0]!.fromName).toBe('The Ember Court');
     expect(defender.inbound[0]!.record.outbound).toBe(true);
   }, 120_000);
 });
