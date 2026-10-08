@@ -25,7 +25,7 @@ export interface FrameHeader {
 }
 
 export interface FrameDocument {
-  encodeFrame(session: AgentSession): Record<string, unknown>;
+  encodeFrame(session: AgentSession, extras?: { readonly godReport?: () => unknown }): Record<string, unknown>;
   header(run: FrameRun): FrameHeader;
   declaredCheats(spec: unknown): string[];
 }

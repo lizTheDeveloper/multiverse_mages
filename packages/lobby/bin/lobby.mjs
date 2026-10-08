@@ -47,6 +47,8 @@ Serves the lobby and every universe it hosts, and ticks them on one clock.
   --bubble-size <n>     universes per raid bubble (default 4)
   --idle-ms <n>         a universe left alone this long gives its slot back
                         (default 900000)
+  --tick-cap <n>        the server's world-tick cap; a universe that reaches
+                        it ends and is paid the cutoff legacy (default 4000)
   -h, --help            print this message and exit
 `;
 // Before anything binds a port: `--help` must never start a server.
@@ -85,6 +87,8 @@ const bubbleSize = integer('bubble-size', 4, LOBBY_LIMITS.bubbleSize.min, LOBBY_
 const idleMs = integer('idle-ms', 15 * 60_000, LOBBY_LIMITS.idleAfterMs.min, LOBBY_LIMITS.idleAfterMs.max);
 // A universe that finds no open seat for this long joins whoever else is waiting.
 const matchMs = integer('match-ms', 60_000, LOBBY_LIMITS.matchAfterMs.min, LOBBY_LIMITS.matchAfterMs.max);
+// Shorter than the default only for testing an ending end to end; never longer.
+const tickCap = integer('tick-cap', LOBBY_LIMITS.tickCap.max, LOBBY_LIMITS.tickCap.min, LOBBY_LIMITS.tickCap.max);
 
 const lobby = new Lobby({
   doc: frameDocument(referenceContent(), 'packages/lobby'),
@@ -94,6 +98,7 @@ const lobby = new Lobby({
   bubbleSize,
   idleAfterMs: idleMs,
   matchAfterMs: matchMs,
+  tickCap,
 });
 await lobby.listen(port);
 // The one wall-clock driver: pacing only (authoritative-lockstep spec, l.97).

@@ -155,6 +155,7 @@ body { margin: 0; background: var(--ground); color: var(--ink); }
 .weave-overlay .sub { font: italic 12px var(--serif); color: var(--soft); max-width: 34rem; text-align: center; padding: 0 1.5rem; }
 .setup-rule { min-height: 1.1rem; margin: 1rem 0 0; font: 12px var(--mono); color: var(--soft); text-align: center; max-width: 40rem; }
 .setup-rule.unmet { color: var(--warn); }
+.setup-legacy { margin: 1rem 0 0; font: italic 14px var(--serif); color: var(--god); text-align: center; max-width: 40rem; }
 .setup-error { min-height: 1.2rem; margin: .8rem 0 0; font: 12px var(--mono); color: var(--loss); text-align: center; max-width: 40rem; }
 .setup-note { margin: .4rem 0 0; font: italic 12px var(--serif); color: var(--soft); text-align: center; max-width: 40rem; }
 .name-row { max-width: 56rem; width: 100%; display: flex; flex-direction: column; gap: .3rem; }
@@ -193,6 +194,7 @@ body { margin: 0; background: var(--ground); color: var(--ink); }
     <span class="hint">Your bubble-mates see this name. Letters, digits, spaces and . , ' ! ? &amp; ( ) - — up to 32. Leave it blank for one chosen for you.</span>
   </div>
 
+  <p class="setup-legacy" id="setup-legacy" role="status" hidden></p>
   <p class="setup-rule" id="setup-rule" role="status"></p>
   <button class="begin-btn" id="begin-btn" disabled>Begin</button>
   <p class="setup-error" id="setup-error" role="alert"></p>
@@ -378,6 +380,40 @@ function renderSetup() {
 }
 
 renderSetup();
+
+// ================================================================ LEGACY
+// "Weave a new universe" sent us here from an ended one: say what its ending
+// carries into the universe about to be founded, as the server will pay it
+// (`GET /u/<id>/live/legacy` reads the same record the create's retire spends).
+(async () => {
+  let id = null;
+  try { id = sessionStorage.getItem('mm.retireId'); } catch { /* refused */ }
+  if (!id) return;
+  const p = el('setup-legacy');
+  try {
+    const res = await fetch(`/u/${encodeURIComponent(id)}/live/legacy`);
+    if (!res.ok) return;
+    const body = await res.json();
+    const lg = body.legacy;
+    const fp = (v) => { const x = v / 1024; return x.toFixed(x < 10 ? 1 : 0); };
+    const name = typeof body.name === 'string' ? body.name : 'Your last universe';
+    if (lg === null || lg === undefined) {
+      p.textContent = body.status === 'running'
+        ? `${name} is still running. Beginning a new universe now abandons it, and an abandoned universe carries nothing forward.`
+        : `${name} ended without a legacy to carry forward.`;
+    } else {
+      const ch = lg.channels ?? {};
+      const parts = [];
+      if (ch.favor > 0) parts.push(`${fp(ch.favor)} favor`);
+      if (ch.materials > 0) parts.push(`${fp(ch.materials)} materials`);
+      if (ch.populace > 0) parts.push(`${ch.populace} more people`);
+      if (ch.archive > 0) parts.push(`${ch.archive} archived book${ch.archive === 1 ? '' : 's'}`);
+      p.textContent = `${name} carries ${fp(lg.carriedPrestige)} prestige into the universe you found next`
+        + (parts.length === 0 ? '.' : ` — it begins with ${parts.join(', ')} more than a fresh one.`);
+    }
+    p.hidden = false;
+  } catch { /* the create still carries it; only the sentence is missing */ }
+})();
 
 // ================================================================ BEGIN
 // One POST: the lobby founds the universe and starts its clock. Nothing here

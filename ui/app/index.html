@@ -278,6 +278,8 @@ html, body { height: 100%; overflow: hidden; }
 .confirm-card .confirm-price { font: 600 13px var(--mono); color: var(--ink); }
 .confirm-card .confirm-price .k { font-weight: 400; color: var(--soft); }
 .confirm-card .confirm-body { font: 12px/1.5 var(--sans); color: var(--ink); margin: .5rem 0 0; }
+.confirm-card .confirm-list { margin: .4rem 0 0; padding-left: 1.1rem; }
+.confirm-card .confirm-list li { margin: .2rem 0; }
 .confirm-card .confirm-note { font: italic 11.5px/1.45 var(--serif); color: var(--soft); margin: .5rem 0 0; }
 .confirm-card .close-row { display: flex; justify-content: flex-end; gap: .5rem; margin-top: .8rem; }
 .confirm-card .close-row button { padding: .4rem 1rem; border: 1px solid var(--ctl-charged-border); border-radius: 4px; background: var(--ctl-charged-bg); color: var(--ctl-charged-fg); font: 11px var(--mono); cursor: pointer; }
@@ -706,6 +708,7 @@ html, body { height: 100%; overflow: hidden; }
 .feed-entry.fe-library { color: var(--warn); }
 .feed-entry.fe-scribed { color: var(--warn); }
 .feed-entry.fe-knowledge-loss { color: var(--loss); font-weight: 600; }
+.feed-entry.fe-rediscovery { color: var(--god); font-weight: 600; }
 .feed-entry.fe-action { color: var(--god); }
 @media (max-width: 56rem) {
   .feed-wrap { grid-template-columns: 1fr; }
@@ -968,6 +971,16 @@ body.held .god-action, body.held .axis-toggle, body.held .edict-btn, body.held .
 .asc-unknown .asc-val { color: var(--warn); }
 .asc-src, .asc-note { font: 9px var(--mono); color: var(--faint); }
 .asc-foot { margin-top: .4rem; font: 9px var(--mono); color: var(--faint); }
+.god-action .btn-why { display: block; font: italic 9px var(--serif); color: var(--faint); }
+.end-legacy { font: italic 12px var(--serif); color: var(--god); margin: .4rem 0; }
+.asc-summits { margin: .25rem 0; font: 9px var(--mono); color: var(--soft); }
+.asc-summits summary { cursor: pointer; color: var(--ink); }
+.asc-summits .asc-list { max-height: 14rem; overflow-y: auto; margin-top: .2rem; }
+.asc-summit { display: grid; grid-template-columns: 1rem 1fr; gap: 0 .3rem; }
+.asc-summit .asc-mark { grid-row: auto; }
+.asc-summit-met .asc-mark { color: var(--ok); }
+.asc-summit-short .asc-mark { color: var(--warn); }
+.asc-summit-none { color: var(--faint); }
 
 </style>
 
@@ -986,6 +999,7 @@ body.held .god-action, body.held .axis-toggle, body.held .edict-btn, body.held .
     <h2 id="end-title">The universe is over</h2>
     <p class="end-sub" id="end-sub"></p>
     <dl class="end-facts" id="end-facts"></dl>
+    <p class="end-legacy" id="end-legacy"></p>
     <p class="end-cause" id="end-cause"></p>
     <div class="end-why" id="end-why"></div>
     <div class="close-row">
@@ -1179,7 +1193,7 @@ import { mountThemeControl } from '../shared/theme.js';
 import { LiveSessionError, openSession, reconstructedCharge, units, mageVocabulary, candidateNamer, cellCensus, nodeHolders } from '../shared/session.js';
 import { mountRaids } from './raid-panel.js';
 import { edictControls, ascensionNode, paintAscension } from './god-panels.js';
-import { whyDenied, whyDeniedText, priceText, priceOf, namedMages, stagnationReading } from './explain.js';
+import { whyDenied, whyDeniedText, foundingWhy, traditionChangeReading, priceText, priceOf, namedMages, stagnationReading } from './explain.js';
 import { h } from './dom.js';
 
 // ================================================================ BOOT
@@ -1433,7 +1447,7 @@ function confirmAct({ title, price, body, note, denied = [] }) {
       h('div', { className: 'confirm-card', role: 'dialog', 'aria-modal': 'true', 'aria-labelledby': 'confirm-title' },
         h('h2', { id: 'confirm-title' }, title),
         h('div', { className: 'confirm-price' }, h('span', { className: 'k' }, 'costs'), ' ', price),
-        body ? h('p', { className: 'confirm-body' }, body) : null,
+        body ? h(body instanceof Node ? 'div' : 'p', { className: 'confirm-body' }, body) : null,
         note ? h('p', { className: 'confirm-note' }, note) : null,
         denied.length > 0
           ? h('div', { className: 'why-denied', role: 'note' }, h('b', {}, 'Not available this tick'),
@@ -1767,8 +1781,9 @@ function showEndScreen(f) {
     + fact('worship', `tier ${r.worshipTier}`)
     + fact('universities', inst.universities)
     + fact('favor in the bank', r.favor.toFixed(r.favor < 10 ? 1 : 0))
-    + fact('prestige carried to the next universe', r.prestige.toFixed(r.prestige < 10 ? 1 : 0));
+    + fact('prestige this universe began with', r.prestige.toFixed(r.prestige < 10 ? 1 : 0));
   el('end-cause').textContent = copy.cause;
+  paintEndLegacy();
   // Stagnation has three triggers and the frame names none of them. Say which
   // the run's own frames leave possible, with the readings, rather than a
   // generic sentence the summary above can contradict.
@@ -1781,11 +1796,47 @@ function showEndScreen(f) {
       h('p', { className: 'end-why-head' },
         possible.length === 1
           ? `The rule that ended it: ${possible[0].text}.`
-          : `The server does not say which rule ended it. Given what the frames show, it was ${possible.map((x) => x.text).join(', or ')}.`),
+          : `The server does not say which rule ended it. Going by what this universe recorded, it was ${possible.map((x) => x.text).join(', or ')}.`),
       h('ul', {}, reading.rules.map((x) => h('li', { className: x.possible ? 'possible' : 'ruled-out' },
         h('b', {}, x.possible ? 'possible — ' : 'ruled out — '), `${x.text}: ${x.evidence}.`))));
   }
   o.hidden = false;
+}
+/**
+ * What this ending carries into the next universe, as the server will pay it:
+ * `GET /u/<id>/live/legacy` reads the same `legacy()` that `/api/create`'s
+ * retire spends. Not the frame's prestige — that is what this universe began
+ * with, which is 0 for a first universe whatever its ending earned.
+ */
+async function paintEndLegacy() {
+  const p = el('end-legacy');
+  if (!p) return;
+  p.textContent = 'Reading what this ending carries forward…';
+  let body;
+  try {
+    const res = await fetch(`/u/${encodeURIComponent(universeId)}/live/legacy`, { headers: { 'x-universe-token': universeToken } });
+    if (!res.ok) throw new Error(String(res.status));
+    body = await res.json();
+  } catch {
+    p.textContent = 'Could not read what this ending carries forward; the server will still pay it when you weave a new universe.';
+    return;
+  }
+  p.textContent = legacySentence(body.legacy);
+}
+/** One sentence for a `LegacyRecord` (fixed-point favor, materials and prestige; counts for people and books). */
+function legacySentence(legacy) {
+  if (legacy === null || legacy === undefined) {
+    return 'This ending carries nothing forward — only a universe that ascends, stagnates or reaches the server’s last year leaves a legacy.';
+  }
+  const fp = (v) => { const x = v / 1024; return x.toFixed(x < 10 ? 1 : 0); };
+  const ch = legacy.channels ?? {};
+  const parts = [];
+  if (ch.favor > 0) parts.push(`${fp(ch.favor)} favor`);
+  if (ch.materials > 0) parts.push(`${fp(ch.materials)} materials`);
+  if (ch.populace > 0) parts.push(`${ch.populace} more people`);
+  if (ch.archive > 0) parts.push(`${ch.archive} archived book${ch.archive === 1 ? '' : 's'}`);
+  return `This ending carries ${fp(legacy.carriedPrestige)} prestige into your next universe (it earned ${fp(legacy.prestigeEarned)})`
+    + (parts.length === 0 ? '.' : ` — a head start of ${parts.join(', ')}.`);
 }
 const endOverlay = el('end-overlay');
 if (el('end-begin')) {
@@ -1835,6 +1886,22 @@ el('cell-detail').addEventListener('click', async (ev) => {
   if (!session.last().isLegal(aid)) {
     showToast(`!${actionName} — not available: ${whyDenied(session.last(), session.content, aid).map((r) => r.text).join('; ') || 'the server refuses it this tick'}.`, 5000);
     return;
+  }
+  // Changing tradition is the costliest act there is, and most of what it
+  // costs is not its price: say what it does before it is sent.
+  if (aid === 13) {
+    const f = session.last();
+    const toId = cands[slot]?.params?.[0];
+    const reading = traditionChangeReading(f, session.content, f.ruleset().traditionId, toId);
+    const confirmed = await confirmAct({
+      title: `Change your world’s tradition to ${candLabel || 'this tradition'}?`,
+      price: priceText(session.content, 13),
+      body: h('span', {}, h('b', {}, reading.risk), h('ul', { className: 'confirm-list' }, reading.lines.map((x) => h('li', {}, x)))),
+      note: `Not shown here: ${reading.gaps.join('; ')}.`,
+      denied: whyDenied(f, session.content, 13),
+    });
+    if (!confirmed) return;
+    if (state.busy || held()) { busyToast(); return; }
   }
   state.busy = true;
   item.style.opacity = '0.5';
@@ -1962,8 +2029,25 @@ function snapshotFrame(f) {
     library: inst.libraryDepth,
     grimoires: inst.grimoires,
     universities: inst.universities,
+    known: knownNodeSet(f.raw.ascension?.knownNodes),
   };
 }
+
+/**
+ * The server's known-node bitset (`frame.ascension.knownNodes`, hex, bit = node
+ * id) as a Set, or `null` when the frame does not carry it.
+ */
+function knownNodeSet(hex) {
+  if (typeof hex !== 'string') return null;
+  const out = new Set();
+  for (let i = 0; i < hex.length; i += 1) {
+    const nibble = parseInt(hex[i], 16);
+    for (let b = 0; b < 4; b += 1) if (nibble & (1 << b)) out.add(i * 4 + b);
+  }
+  return out;
+}
+/** Every node any frame of this session has shown as known — what makes a return a rediscovery. */
+const everKnownNodes = new Set();
 
 const feedCellName = (i, c) => vocab.cellName.get(session.content.cells[i]?.cellId) ?? `${c.t} ${c.f}`;
 /**
@@ -1990,7 +2074,11 @@ function pushFeed({ tick, type, key = '', n = 1, dim = false, text }) {
 
 function diffAndLog(curr) {
   const snap = snapshotFrame(curr);
-  if (!prevSnapshot) { prevSnapshot = snap; return; }
+  if (!prevSnapshot) {
+    for (const id of snap.known ?? []) everKnownNodes.add(id);
+    prevSnapshot = snap;
+    return;
+  }
   const prev = prevSnapshot;
   const tick = snap.tick;
   const s = (n, one, many) => (n === 1 ? one : many);
@@ -2004,11 +2092,32 @@ function diffAndLog(curr) {
       pushFeed({ tick, type: 'discovery', key: name, n: c.n - p.n, dim: !cellPermitted,
         text: (n) => `${n} new node${s(n, '', 's')} in ${name}` });
     }
-    if (c.n < p.n) {
+    if (c.n < p.n && !(snap.known && prev.known)) {
       pushFeed({ tick, type: 'knowledge-loss', key: name, n: p.n - c.n, dim: !cellPermitted,
         text: (n) => `${n} node${s(n, '', 's')} lost in ${name}` });
     }
   }
+
+  // Per node, when the server publishes which nodes exist: a node whose last
+  // copy is gone is lost, and one that comes back after that is rediscovered.
+  // A per-cell count cannot show either when a loss and a gain share a cell.
+  if (snap.known && prev.known) {
+    const nodeName = (id) => {
+      const node = vocab.nodeById.get(id);
+      return node ? `${node.name} (${vocab.cellName.get(node.cellId) ?? 'unknown cell'}, tier ${node.tier})` : `node ${id}`;
+    };
+    for (const id of prev.known) {
+      if (!snap.known.has(id)) {
+        pushFeed({ tick, type: 'knowledge-loss', key: `node-${id}`, text: () => `Lost: ${nodeName(id)} — its last copy is gone` });
+      }
+    }
+    for (const id of snap.known) {
+      if (!prev.known.has(id) && everKnownNodes.has(id)) {
+        pushFeed({ tick, type: 'rediscovery', key: `node-${id}`, text: () => `Rediscovered: ${nodeName(id)}` });
+      }
+    }
+  }
+  for (const id of snap.known ?? []) everKnownNodes.add(id);
 
   // Population
   for (let i = 0; i < snap.species.length && i < prev.species.length; i++) {
@@ -2050,7 +2159,7 @@ function catchUpFeed() {
 
 const FEED_ICONS = {
   discovery: '✦', death: '†', birth: '↑', library: '📖',
-  scribed: '✎', 'knowledge-loss': '✕', action: '⚡', raid: '⚔', 'raid-in': '⚠',
+  scribed: '✎', 'knowledge-loss': '✕', rediscovery: '↺', action: '⚡', raid: '⚔', 'raid-in': '⚠',
 };
 const escapeFeed = (v) => String(v ?? '').replace(/[&<>"']/g, (c) => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' })[c]);
 
@@ -2262,7 +2371,7 @@ function paintCellDetail(f, knowledgeCells, rules) {
       nodeListHtml += `<div style="padding:.2rem .4rem;border:1px solid ${known ? 'color-mix(in srgb, var(--god) 30%, var(--edge))' : 'var(--edge)'};border-radius:3px;background:${known ? 'color-mix(in srgb, var(--god) 6%, var(--plate))' : 'var(--plate)'};font:10px var(--mono)">
         <span style="display:inline-block;font:700 8px var(--mono);padding:1px 4px;border-radius:2px;background:${known ? 'var(--god)' : 'var(--sunk)'};color:${known ? 'var(--ground)' : 'var(--faint)'};margin-right:.3rem">T${n.tier}</span>
         <span style="font:italic 11px var(--serif);color:${known ? 'var(--ink)' : 'var(--faint)'}">${n.name}</span>
-        ${whereText ? `<span style="float:right;font:9px var(--mono);color:var(--soft)" title="Held by college mages (minds) and college libraries. Unaffiliated mages and loose grimoires are not itemised in the frame.">${whereText}</span>` : ''}
+        ${whereText ? `<span style="float:right;font:9px var(--mono);color:var(--soft)" title="Held by college mages (minds) and college libraries. Mages outside a college and loose grimoires are not listed here.">${whereText}</span>` : ''}
       </div>`;
     }
     nodeListHtml += '</div>';
@@ -2346,13 +2455,15 @@ function paintMageDossier(f, detEl, handle) {
     + pBar('caution', m.caution)
     + pBar('vigor', m.vigor, Math.max(1, m.maxVigor))
     + `</div>`
-    + `<div style="font:italic 9px var(--serif);color:var(--faint)">No name — no component holds one — and how long she has left is not published.</div>`;
+    + `<div style="font:italic 9px var(--serif);color:var(--faint)">Mages in this world have no names, and how long she has left is not something you can see.</div>`;
 }
 
 function paintActionCandidates(f, detEl) {
   const aid = state.selectedAction;
   const action = GOD_COSTS.find(a => a.id === aid);
-  const cands = f.raw.candidates?.[String(aid)] || [];
+  // An ended universe takes no action: its last frame still lists targets,
+  // but the server refuses every submit, so offer none.
+  const cands = f.status() === 'running' ? (f.raw.candidates?.[String(aid)] || []) : [];
   const view = f.candidateDetails();
 
   // Store candidates for click-to-execute
@@ -2393,10 +2504,13 @@ function paintActionCandidates(f, detEl) {
     // "0 candidates" next to "click a candidate" is the exact moment a player
     // decides the buttons do nothing.
     const ascension = aid === 15;
-    const why = ascension
+    const over = f.status() !== 'running';
+    const why = over
+      ? 'This universe is over — nothing can be done in it now. Weave a new universe to play again.'
+      : ascension
       ? null
       : aid === 8
-      ? 'No unknown nodes are reachable yet — research first, then grant what the frontier cannot reach.'
+      ? `${(foundingWhy(f)?.text ?? 'founding knowledge only plants the first node of a school, and none in a permitted cell is unknown in your world (or your founding grants are spent)').replace(/^./u, (c) => c.toUpperCase())}.`
       : aid === 11
       ? 'No university is ready to be funded — one must be founded (or the run restarted with one).'
       : aid === 12
@@ -2408,7 +2522,7 @@ function paintActionCandidates(f, detEl) {
       : 'Nothing is available for this action this tick. Advance time, or look at another glowing action.';
     const m = f.actions().find((a) => a.id === aid);
     const ascensionLegal = ascension && m && m.legal;
-    const hint = ascension
+    const hint = ascension && !over
       ? ascensionLegal
         ? 'The path is open and the moment is now — press Declare, or its button on the left.'
         : 'Not yet: the world has not qualified. Mastery needs worship tier 4, two completed universities, and 13 permitted cells whose deepest node a living mage holds, with at least two copies of it surviving (in minds or the library). The Enduring Canon needs four clean eras in a row. It can open at the earliest in year 50.'
@@ -2423,7 +2537,7 @@ function paintActionCandidates(f, detEl) {
   const denied = whyDenied(f, session.content, aid);
   if (denied.length > 0) {
     detEl.prepend(h('div', { className: 'why-denied', role: 'note' },
-      h('b', {}, 'Not available this tick'),
+      h('b', {}, f.status() === 'running' ? 'Not available this tick' : 'Not available'),
       h('ul', {}, denied.map((r) => h('li', { title: `read from ${r.source}` }, r.text)))));
   }
   if (aid === 15) detEl.append(ascensionNode(f, session.content, false));
@@ -2740,11 +2854,28 @@ function paintGodPanel(f) {
     btn.title = legal
       ? `${action.name} — costs ${priceText(session.content, aid)} (base price). Click to see its targets.`
       : `${whyDeniedText(f, session.content, aid)}. Click for details.`;
+    // Founding knowledge is dark for long stretches for one of two reasons that
+    // read nothing alike; say which on the button itself, not only on hover.
+    if (aid === 8) {
+      let why = btn.querySelector('.btn-why');
+      const reason = legal ? null : foundingWhy(f);
+      if (reason !== null) {
+        if (!why) {
+          why = document.createElement('span');
+          why.className = 'btn-why';
+          btn.append(why);
+        }
+        why.textContent = f.raw.founding.grantsRemaining === 0 ? 'no grants left' : 'every school’s first node is known';
+        why.hidden = false;
+      } else if (why) {
+        why.hidden = true;
+      }
+    }
 
     // Show candidate count badge
     const cands = candidates[String(aid)];
     let badge = btn.querySelector('.cand-badge');
-    if (cands && Array.isArray(cands) && cands.length > 0) {
+    if (cands && Array.isArray(cands) && cands.length > 0 && f.status() === 'running') {
       if (!badge) {
         badge = document.createElement('span');
         badge.className = 'cand-badge';

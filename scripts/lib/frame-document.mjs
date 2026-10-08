@@ -115,8 +115,62 @@ function declaredCheats(spec) {
   return named;
 }
 
-/** One tick, encoded the way `record-session.mjs` encodes one. */
-function encodeFrame(session) {
+/**
+ * A sorted node-id list as a hex bitset: bit `id` set when the node is known.
+ * 300 nodes is 76 characters, against roughly a kilobyte as a JSON array —
+ * and a lobby holds every frame of every universe it hosts.
+ */
+function nodeBits(ids) {
+  const max = registry.nodes.length;
+  const nibbles = new Array(Math.floor(max / 4) + 1).fill(0);
+  for (const id of ids) if (id >= 0 && id <= max) nibbles[id >> 2] |= 1 << (id & 3);
+  return nibbles.map((n) => n.toString(16)).join('');
+}
+
+/**
+ * The god report's readings, as the page's ascension checklist and feed read
+ * them. Absent when the run has no god report for this tick (frame 0, or a
+ * caller that passed no report source) — absent, never zero, because "no
+ * consecutive good eras" and "not published" are different statements.
+ *
+ * Every number here is computed by the rules (`god/system.ts`, report-only:
+ * nothing hashes it and no rule reads it back). The page compares them with
+ * content's thresholds; it computes none of them.
+ */
+function encodeGodReadings(report) {
+  if (report === undefined) return {};
+  const p = report.ascensionProgress;
+  return {
+    ascension: {
+      goodEraRun: p.goodEraRun,
+      dependence: p.dependence,
+      eraNodesLost: p.eraNodesLost,
+      eraLossAllowance: p.eraLossAllowance,
+      nodesKnown: p.nodesKnown,
+      cellsKnown: p.cellsKnown,
+      completedUniversities: p.completedUniversities,
+      masteredCells: p.masteredCells,
+      // `[cellId, nodeId, holders, copies]` per permitted cell — tuples, not
+      // objects, because seventy objects with four named keys were an eighth of
+      // the frame.
+      summits: p.summits.map((row) => [row.cellId, row.nodeId, row.holders, row.copies]),
+      knownNodes: nodeBits(p.knownNodes),
+    },
+    founding: {
+      // `Infinity` (no budget row) does not survive JSON; null says "unbounded".
+      grantsRemaining: Number.isFinite(report.founding.grantsRemaining) ? report.founding.grantsRemaining : null,
+      unknownRoots: report.founding.unknownRoots,
+    },
+  };
+}
+
+/**
+ * One tick, encoded the way `record-session.mjs` encodes one.
+ *
+ * @param extras.godReport - the scenario's `lastGodReport`, when the caller has
+ *   it. Optional and additive: without it a frame is exactly what it was.
+ */
+function encodeFrame(session, extras = {}) {
   const normalized = session.observe();
   const mask = session.legalActions();
   const candidates = session.candidates();
@@ -202,6 +256,7 @@ function encodeFrame(session) {
      * "the client computes no rules" forbids.
      */
     academy: encodeAcademy(session.academy()),
+    ...encodeGodReadings(extras.godReport?.()),
     mask: [...mask],
     candidates: Object.fromEntries(
       [...candidates].map(([action, list]) => [action, [...(list ?? [])]]),
@@ -420,7 +475,26 @@ function header(r) {
         traditionId: contentId,
         id: t.id,
         name: t.name ?? t.id,
+        /**
+         * The four hooks as content authors them (`kind` and `params`), so the
+         * change-tradition confirm can say what a switch does — which store
+         * kind holds knowledge where — from content rather than a hand-copied
+         * table. Additive; read with `??`.
+         */
+        hooks: Object.fromEntries(
+          Object.entries(t.hooks ?? {}).map(([hook, v]) => [hook, { kind: v.kind, params: { ...(v.params ?? {}) } }]),
+        ),
       })),
+      /**
+       * `tradition-shock` and `tradition-shock-ticks` from `god-constant.json`:
+       * how hard and how long a tradition change holds the worship target
+       * down. Content, published so the confirm step states it. Additive.
+       */
+      traditionChange: Object.fromEntries(
+        registry.godConstants
+          .filter(({ record: c }) => c.id === 'tradition-shock' || c.id === 'tradition-shock-ticks')
+          .map(({ record: c }) => [c.id === 'tradition-shock' ? 'shock' : 'shockTicks', c.value]),
+      ),
     },
   };
 }

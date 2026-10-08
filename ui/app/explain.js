@@ -82,7 +82,7 @@ export function priceText(content, id) {
 const PARAMETERIZED = new Set([8, 9, 10, 11, 12, 13, 14, 16]);
 
 const NO_CANDIDATE_HINT = {
-  8: 'no unknown root node is reachable in a permitted cell',
+  8: 'founding knowledge only plants the first node of a school, and every such node in a permitted cell is already known in your world — or your founding grants are spent',
   9: 'no living mage can be blessed',
   10: 'no living mage can change role',
   11: 'no university can be funded or founded',
@@ -121,14 +121,38 @@ function affordability(f, content, id) {
 }
 
 /**
+ * Why "grant founding knowledge" (action 8) has nothing to offer, from the
+ * server's two published facts (`frame.founding`): grants left in the budget,
+ * and unknown first-of-a-school nodes in permitted cells. `null` when the frame
+ * does not carry them (a recording), or when neither explains it.
+ */
+export function foundingWhy(f) {
+  const g = f.raw.founding;
+  if (g === undefined) return null;
+  if (g.grantsRemaining === 0) {
+    return {
+      text: 'you have no founding grants left — more are earned as your mages discover knowledge on their own',
+      source: 'frame.founding.grantsRemaining',
+    };
+  }
+  if (g.unknownRoots === 0) {
+    return {
+      text: 'every school’s first node is already known in your world — founding knowledge only plants the first node of a school',
+      source: 'frame.founding.unknownRoots',
+    };
+  }
+  return null;
+}
+
+/**
  * Why action `id` is dark this tick: `[]` when the mask says it is legal,
  * otherwise one or more `{text, source}` sentences. The last resort is the
  * mask itself — the frame carries no reason for every "no".
  */
 export function whyDenied(f, content, id) {
-  if (f.raw.mask[id] === 1) return [];
+  if (f.isLegal(id)) return [];
   if (f.status() !== 'running') {
-    return [{ text: `the universe has ended (${f.status()})`, source: 'frame.status' }];
+    return [{ text: `this universe is over (${f.status()}) — nothing can be done in it now`, source: 'frame.status' }];
   }
   if (f.clock().engaged) {
     return [{ text: 'a raid is in progress — only the defender may change the ruleset until it ends', source: 'clock.mode' }];
@@ -136,6 +160,8 @@ export function whyDenied(f, content, id) {
   const reasons = [];
   const cands = f.raw.candidates?.[String(id)];
   if (PARAMETERIZED.has(id) && (!Array.isArray(cands) || cands.length === 0)) {
+    const founding = id === 8 ? foundingWhy(f) : null;
+    if (founding !== null) return [founding];
     reasons.push({ text: `nothing to act on: ${NO_CANDIDATE_HINT[id] ?? 'no candidates'}`, source: `candidates[${id}] is empty` });
     return reasons;
   }
@@ -150,11 +176,90 @@ export function whyDenied(f, content, id) {
   if (id === 5 || id === 6) {
     const used = f.ruleset().edicts.filter((e) => !e.empty).length;
     return [{
-      text: `likely no free edict slot: ${used} in use. The budget grows with worship tier; the budget itself is not in the frame`,
+      text: `likely no free edict slot: ${used} in use. the number of edicts you may keep grows with worship tier, and this page cannot see the exact number`,
       source: 'mask[' + id + '] + ruleset.edicts',
     }];
   }
-  return [{ text: 'not legal this tick, and the frame does not carry why', source: `mask[${id}]` }];
+  return [{ text: 'not allowed this month, and the server does not say why', source: `mask[${id}]` }];
+}
+
+/**
+ * What changing tradition from `fromId` to `toId` does, as far as published
+ * content says — for the confirm step. Returns `{lines: string[], risk, gaps}`.
+ *
+ * Read from `content.traditions[].hooks` (which store kind holds knowledge
+ * where) and `content.traditionChange` (`tradition-shock`, `-ticks`). The one
+ * consequence stated without a published number behind it is favor falling to
+ * zero, which is how the action resolves (`god/interventions.ts`,
+ * `traditionPlan`) and is named as a gap so a reviewer can see it.
+ */
+export function traditionChangeReading(f, content, fromId, toId) {
+  const t = (id) => (content.traditions ?? []).find((x) => x.traditionId === id);
+  const from = t(fromId);
+  const to = t(toId);
+  const name = (x, id) => x?.name ?? `tradition ${id}`;
+  const lines = [];
+  const gaps = [];
+  lines.push('Your favor: the price is paid, and whatever favor is left after it is spent too — you start again from 0.');
+  const shock = content.traditionChange?.shock;
+  const ticks = content.traditionChange?.shockTicks;
+  if (shock !== undefined && ticks !== undefined) {
+    lines.push(
+      `Worship: for ${Math.round(ticks / 12)} years your people’s worship aims at ${Math.round((shock / FP) * 100)}% of what it otherwise would. `
+      + 'Your worship tier will fall over that time, and the favor you can hold and the edicts you can keep fall with it.',
+    );
+  } else {
+    lines.push('Worship: the change throws your people into upheaval and worship falls for years.');
+    gaps.push('this server does not publish how deep or how long the worship shock is');
+  }
+  const store = (x) => x?.hooks?.store?.kind;
+  const fromStore = store(from);
+  const toStore = store(to);
+  const inst = f.institutions();
+  if (fromStore === undefined || toStore === undefined) {
+    lines.push('Knowledge: anything kept in a form the new tradition cannot hold is destroyed.');
+    gaps.push('this server does not publish the traditions’ storage rules');
+  } else if (fromStore === toStore) {
+    lines.push(`Knowledge: nothing is destroyed — ${name(from, fromId)} and ${name(to, toId)} both keep knowledge in the same places.`);
+  } else if (toStore === 'palace') {
+    lines.push(
+      `Knowledge: every book is destroyed — every grimoire and every library shelf (${inst.grimoires} grimoire${inst.grimoires === 1 ? '' : 's'}, ${inst.libraryDepth} node${inst.libraryDepth === 1 ? '' : 's'} shelved now). `
+      + `${name(to, toId)} keeps knowledge only in minds and memory palaces, so anything known only from a book is lost for good.`,
+    );
+  } else if (fromStore === 'palace') {
+    lines.push(
+      `Knowledge: everything held in memory palaces is destroyed. ${name(to, toId)} keeps knowledge in minds and books, not palaces, `
+      + 'so whatever your mages remember only in their palaces is lost.',
+    );
+  } else {
+    lines.push(`Knowledge: anything ${name(from, fromId)} keeps where ${name(to, toId)} cannot is destroyed.`);
+  }
+  const words = {
+    acquire: { 'true-name': (p) => `research costs ×${(p.researchCostMultiplier ?? FP) / FP}, teaching ×${(p.teachCostMultiplier ?? FP) / FP}` },
+    cast: { prepared: (p) => `each mage prepares at most ${p.slotsPerMage ?? '?'} spells ahead of casting` },
+    cost: { prepaid: () => 'spells are paid for when prepared, not when cast' },
+    store: { palace: (p) => `each mage’s palace holds ${p.slotsPerMage ?? '?'} nodes; nothing can be burned or stolen` },
+  };
+  const changes = [];
+  for (const hook of ['acquire', 'cast', 'cost']) {
+    const a = from?.hooks?.[hook];
+    const b = to?.hooks?.[hook];
+    if (a === undefined || b === undefined || a.kind === b.kind) continue;
+    const now = words[hook]?.[b.kind];
+    const was = words[hook]?.[a.kind];
+    if (now) changes.push(now(b.params ?? {}));
+    if (was) changes.push(`no longer — ${was(a.params ?? {})}`);
+    if (!now && !was) changes.push(`${hook} works the ${b.kind} way`);
+  }
+  if (toStore === 'palace' && fromStore !== 'palace') changes.push(words.store.palace(to.hooks.store.params ?? {}));
+  if (changes.length > 0) lines.push(`How magic works afterwards: ${changes.join('; ')}.`);
+  gaps.push('nothing published forecasts what the upheaval does to your population (one playtest saw it fall from 61 to 44 within a year)');
+  gaps.push('favor falling to 0 is how the action resolves, not a published number');
+  return {
+    lines,
+    risk: 'This is the costliest act a god has. Expect a decade of falling worship and a smaller, poorer world; do it only if the new tradition is worth that.',
+    gaps,
+  };
 }
 
 /** One line for a tooltip: "Not available — a; b". */
@@ -176,7 +281,7 @@ export function whyDeniedText(f, content, id) {
 export function raidBlockers(f, content, seat, peer, raiders) {
   const out = [];
   const portalCell = content.cells.find((c) => c.id === PORTAL_CELL);
-  const legal = f.raw.mask[14] === 1;
+  const legal = f.isLegal(14);
   const slot = (f.raw.candidates?.['14'] ?? []).findIndex((c) => c.params?.[0] === seat);
 
   if (f.status() !== 'running') {
@@ -236,7 +341,14 @@ export function describeRaid(record, perspective, otherLabel) {
   const title = weAttacked
     ? `You raided universe ${otherLabel}`
     : `Universe ${otherLabel} raided you`;
-  const outcome = `${weWon ? 'You won' : 'You lost'}: the ${attackerWon ? 'attackers' : 'defenders'} carried it, because ${reason.text}.`;
+  // A portal with nobody sent through it ends "side eliminated" on the first
+  // tick, which read as a victory over raiders who never existed.
+  const empty = record.raidersFielded === 0;
+  const outcome = empty
+    ? weAttacked
+      ? 'You opened a portal but sent nobody through — no raider of yours was ready, so nothing happened beyond the portal’s cost.'
+      : 'They opened a portal but sent nobody through — nothing happened.'
+    : `${weWon ? 'You won' : 'You lost'}: the ${attackerWon ? 'attackers' : 'defenders'} carried it, because ${reason.text}.`;
   const rows = [
     ['when', `year ${year} (tick ${record.worldTick}), ${record.engagementTicks} engagement ticks`],
     [weAttacked ? 'your raiders' : 'their raiders',
@@ -253,12 +365,13 @@ export function describeRaid(record, perspective, otherLabel) {
   } else {
     rows.push(['your mages lost for good', 'not in the attacker\'s record — watch your population']);
   }
-  return { title, outcome, reasonId: reason.id, weWon, rows, inbound: !weAttacked };
+  return { title, outcome, reasonId: reason.id, weWon, empty, rows, inbound: !weAttacked };
 }
 
 /** A one-line feed entry for a raid. Only numbers and a hex label. */
 export function raidFeedText(record, perspective, otherLabel) {
   const d = describeRaid(record, perspective, otherLabel);
+  if (d.empty) return `${d.title} — a portal opened, but nobody came through`;
   return `${d.title} — ${d.weWon ? 'won' : 'lost'} (${d.reasonId}); ${record.raidersFielded} raider(s), ${record.nodesTakenByAttacker} node(s) taken`;
 }
 
@@ -369,8 +482,13 @@ const GUIDE_ASCENSION = Object.freeze({
  * Both ascension paths as a checklist. Each item:
  * `{label, value, target, status: 'met'|'unmet'|'unknown', source, note?}`.
  *
- * `unknown` is "not visible yet": the frame does not carry the fact, and a
- * guess would be a rule this page has no business computing.
+ * `unknown` means the frame does not carry the fact (an older recording), and
+ * a guess would be a rule this page has no business computing.
+ *
+ * `summits` is `null` without the server's readings, otherwise one row per
+ * permitted cell: `{cell, node, tier, holders, copies, state}` where `state`
+ * is `met` | `short` (held, too few copies) | `orphaned` (copies, no living
+ * holder) | `none`.
  */
 export function ascensionChecklist(f, content) {
   const published = content.ascension !== undefined;
@@ -381,83 +499,151 @@ export function ascensionChecklist(f, content) {
   const acad = f.raw.academy;
   const st = (ok) => (ok ? 'met' : 'unmet');
 
+  // The server's own readings (`frame.ascension`, from the god report), when
+  // this frame carries them. Absent on a recording and on frame 0, and then
+  // the older, weaker readings below stand in.
+  const g = f.raw.ascension;
   const colleges = acad === undefined ? null : Object.values(acad.universities ?? {});
-  const completed = colleges === null ? null : colleges.filter((u) => (u.college?.buildProgress ?? 0) >= FP).length;
+  const completed = g !== undefined ? g.completedUniversities
+    : colleges === null ? null : colleges.filter((u) => (u.college?.buildProgress ?? 0) >= FP).length;
   const universitiesItem = {
     label: 'Completed universities',
-    value: completed === null ? 'not visible yet' : String(completed),
+    value: completed === null ? 'not shown here' : String(completed),
     target: `≥ ${a.institutions}`,
     status: completed === null ? 'unknown' : st(completed >= a.institutions),
     source: 'academy colleges, buildProgress ≥ 1',
   };
 
+  const nodesKnown = g?.nodesKnown ?? k.reduce((s, c) => s + c.nodesKnown, 0);
+  const cellsKnown = g?.cellsKnown ?? k.filter((c) => c.nodesKnown > 0).length;
+  const pct = (fp) => Math.round((fp / FP) * 100);
+
   // Mastery's summit: for each permitted cell, the deepest authored node must be
-  // held by a living mage with ≥ copies instances. The frame says, per cell, the
-  // deepest tier reached by any instance anywhere — so counting the permitted
-  // cells whose deepest tier equals content's deepest is an UPPER BOUND.
-  const deepestAuthored = new Map();
-  for (const n of content.nodes ?? []) deepestAuthored.set(n.cellId, Math.max(deepestAuthored.get(n.cellId) ?? 0, n.tier));
-  const permitted = acad === undefined ? null : new Set(acad.permittedCells);
-  let summitReach = null;
-  if (permitted !== null) {
-    summitReach = 0;
-    for (const cell of k) {
-      const cellId = content.cells[cell.index]?.cellId ?? cell.index + 1;
-      const top = deepestAuthored.get(cellId) ?? 0;
-      if (permitted.has(cellId) && top > 0 && cell.deepestTier >= top) summitReach += 1;
+  // held by a living mage, with ≥ copies instances. The server counts it
+  // (`ascension.masteredCells`) and lists each cell's reading (`summits`).
+  let summitItem;
+  let summits = null;
+  if (g !== undefined) {
+    const nodeById = new Map((content.nodes ?? []).map((n) => [n.nodeId, n]));
+    const cellById = new Map((content.cells ?? []).map((c) => [c.cellId, c]));
+    const titled = (id) => String(id ?? '').replace(/(^|[-_ ])(\w)/gu, (_, sep, ch) => (sep ? ' ' : '') + ch.toUpperCase());
+    const cellLabel = (cellId) => {
+      const c = cellById.get(cellId);
+      if (c === undefined) return `cell ${cellId}`;
+      const t = (content.techniques ?? []).find((x) => x.id === c.technique);
+      const fm = (content.forms ?? []).find((x) => x.id === c.form);
+      return `${t?.name ?? titled(c.technique)} ${fm?.name ?? titled(c.form)}`;
+    };
+    const need = a['summit-copies'];
+    summits = g.summits.map(([cellId, nodeId, holders, copies]) => {
+      const node = nodeById.get(nodeId);
+      const state = holders > 0 && copies >= need ? 'met' : holders > 0 ? 'short' : copies > 0 ? 'orphaned' : 'none';
+      return { cellId, nodeId, holders, copies, state, cell: cellLabel(cellId), node: node?.name ?? `node ${nodeId}`, tier: node?.tier };
+    });
+    const order = { met: 0, short: 1, orphaned: 2, none: 3 };
+    summits.sort((x, y) => order[x.state] - order[y.state] || y.copies - x.copies || x.cellId - y.cellId);
+    const short = summits.filter((r) => r.state === 'short').length;
+    const orphaned = summits.filter((r) => r.state === 'orphaned').length;
+    summitItem = {
+      label: 'Permitted cells mastered (deepest node held by a living mage, enough copies)',
+      value: String(g.masteredCells),
+      target: `≥ ${a['summit-cells']}`,
+      status: st(g.masteredCells >= a['summit-cells']),
+      source: 'frame.ascension.masteredCells (the server’s count)',
+      note: `${short} more cell${short === 1 ? '' : 's'} have the deepest node in a living mind but fewer than ${need} copies — teaching or scribing it closes the gap. `
+        + `${orphaned} more have copies but no living mage who holds it.`,
+    };
+  } else {
+    const deepestAuthored = new Map();
+    for (const n of content.nodes ?? []) deepestAuthored.set(n.cellId, Math.max(deepestAuthored.get(n.cellId) ?? 0, n.tier));
+    const permitted = acad === undefined ? null : new Set(acad.permittedCells);
+    let summitReach = null;
+    if (permitted !== null) {
+      summitReach = 0;
+      for (const cell of k) {
+        const cellId = content.cells[cell.index]?.cellId ?? cell.index + 1;
+        const top = deepestAuthored.get(cellId) ?? 0;
+        if (permitted.has(cellId) && top > 0 && cell.deepestTier >= top) summitReach += 1;
+      }
     }
+    summitItem = {
+      label: 'Permitted cells whose deepest node is reached',
+      value: summitReach === null ? 'not shown here' : `at most ${summitReach}`,
+      target: `${a['summit-cells']}`,
+      status: summitReach === null ? 'unknown' : summitReach < a['summit-cells'] ? 'unmet' : 'unknown',
+      source: 'knowledge.deepestTier × academy.permittedCells',
+      note: `An upper bound: this recording does not say whether a living mage holds that exact node or whether ${a['summit-copies']} copies survive.`,
+    };
   }
-  const nodesKnown = k.reduce((s, c) => s + c.nodesKnown, 0);
-  const cellsKnown = k.filter((c) => c.nodesKnown > 0).length;
 
   const mastery = [
     { label: 'Worship tier', value: String(r.worshipTier), target: `≥ ${a['tier-gate']}`, status: st(r.worshipTier >= a['tier-gate']), source: 'resources.worshipTier' },
     universitiesItem,
-    {
-      label: `Permitted cells whose deepest node is reached`,
-      value: summitReach === null ? 'not visible yet' : `at most ${summitReach}`,
-      target: `${a['summit-cells']}`,
-      status: summitReach === null ? 'unknown' : summitReach < a['summit-cells'] ? 'unmet' : 'unknown',
-      source: 'knowledge.deepestTier × academy.permittedCells',
-      note: `An upper bound: the frame shows the deepest tier any copy reached, not whether a living mage holds that exact node or whether ${a['summit-copies']} copies survive — those are not visible yet.`,
-    },
+    summitItem,
   ];
   const canon = [
-    {
-      label: 'Consecutive good eras',
-      value: 'not visible yet',
-      target: `${a['era-count']} in a row`,
-      status: 'unknown',
-      source: `the god-state's good-era run is not in the frame; current era ${clock.era}`,
-    },
+    g === undefined
+      ? {
+        label: 'Consecutive good eras',
+        value: 'not shown here',
+        target: `${a['era-count']} in a row`,
+        status: 'unknown',
+        source: `this recording does not carry the run of good eras; current era ${clock.era}`,
+      }
+      : {
+        label: 'Consecutive good eras so far',
+        value: String(g.goodEraRun),
+        target: `${a['era-count']} in a row`,
+        status: st(g.goodEraRun >= a['era-count']),
+        source: `frame.ascension.goodEraRun; current era ${clock.era} — every condition below is checked when an era ends, and one failure resets the run to 0`,
+      },
   ];
   if (a['canon-breadth'] !== undefined) {
-    canon.push({ label: 'Nodes known (checked at each era boundary)', value: String(nodesKnown), target: `≥ ${a['canon-breadth']}`, status: st(nodesKnown >= a['canon-breadth']), source: 'Σ knowledge.nodesKnown' });
+    canon.push({ label: 'Nodes known (checked at each era boundary)', value: String(nodesKnown), target: `≥ ${a['canon-breadth']}`, status: st(nodesKnown >= a['canon-breadth']), source: g ? 'frame.ascension.nodesKnown' : 'Σ knowledge.nodesKnown' });
   }
   if (a['canon-cells'] !== undefined) {
-    canon.push({ label: 'Cells with any knowledge (at each boundary)', value: String(cellsKnown), target: `≥ ${a['canon-cells']}`, status: st(cellsKnown >= a['canon-cells']), source: 'knowledge.nodesKnown > 0' });
+    canon.push({ label: 'Cells with any knowledge (at each boundary)', value: String(cellsKnown), target: `≥ ${a['canon-cells']}`, status: st(cellsKnown >= a['canon-cells']), source: g ? 'frame.ascension.cellsKnown' : 'knowledge.nodesKnown > 0' });
   }
   canon.push({ ...universitiesItem, label: 'Completed universities (at each boundary)' });
-  canon.push({
-    label: 'Library held most of what it knew',
-    value: 'not visible yet',
-    target: a['dependence-max'] === undefined ? 'most' : `≤ ${Math.round((a['dependence-max'] / FP) * 100)}% of nodes with one copy`,
-    status: 'unknown',
-    source: 'per-node copy counts are not in the frame (redundancy is per cell)',
-  });
-  canon.push({
-    label: 'Nodes lost in the era',
-    value: 'not visible yet',
-    target: a['loss-max'] === undefined ? '≤ 2' : `≤ ${a['loss-max']} (or ${Math.round(((a['loss-fraction'] ?? 0) / FP) * 100)}% of the canon, if larger)`,
-    status: 'unknown',
-    source: 'era losses are not in the frame',
-  });
+  const depMax = a['dependence-max'];
+  canon.push(g === undefined
+    ? {
+      label: 'Library held most of what it knew',
+      value: 'not shown here',
+      target: depMax === undefined ? 'most' : `≤ ${pct(depMax)}% of nodes with one copy`,
+      status: 'unknown',
+      source: 'this recording does not carry per-node copy counts',
+    }
+    : {
+      label: 'Known nodes with only one copy',
+      value: `${pct(g.dependence)}%`,
+      target: depMax === undefined ? 'few' : `≤ ${pct(depMax)}%`,
+      status: depMax === undefined ? 'unknown' : st(g.dependence <= depMax),
+      source: 'frame.ascension.dependence (library dependence, the server’s figure)',
+      note: 'A node held in only one mind or one book is one death or one fire from gone. Teaching, scribing and libraries add copies.',
+    });
+  canon.push(g === undefined
+    ? {
+      label: 'Nodes lost in the era',
+      value: 'not shown here',
+      target: a['loss-max'] === undefined ? '≤ 2' : `≤ ${a['loss-max']} (or ${pct(a['loss-fraction'] ?? 0)}% of the canon, if larger)`,
+      status: 'unknown',
+      source: 'this recording does not carry era losses',
+    }
+    : {
+      label: 'Nodes lost so far this era',
+      value: String(g.eraNodesLost),
+      target: `≤ ${g.eraLossAllowance}`,
+      status: st(g.eraNodesLost <= g.eraLossAllowance),
+      source: 'frame.ascension.eraNodesLost vs eraLossAllowance (the server’s figures)',
+    });
 
   return {
     published,
     gate: { label: 'Not before', value: `year ${Math.floor(clock.worldTick / 12)}`, target: `year ${Math.ceil(a['min-tick'] / 12)}`, status: st(clock.worldTick >= a['min-tick']), source: 'clock.worldTick' },
-    open: f.raw.mask[15] === 1,
+    open: f.isLegal(15),
     mastery,
     canon,
+    summits,
   };
 }

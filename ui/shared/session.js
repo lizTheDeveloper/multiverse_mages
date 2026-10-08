@@ -494,16 +494,24 @@ class Frame {
 
   /** §4.2's mask over the whole action space, with each action's name. */
   actions() {
+    const running = this.status() === 'running';
     return this.raw.mask.map((legal, id) => ({
       id,
       name: this.doc.actions[String(id)] ?? `action${id}`,
-      legal: legal === 1,
+      legal: running && legal === 1,
     }));
   }
 
-  /** Whether one action id is legal this tick. */
+  /**
+   * Whether one action id is legal this tick.
+   *
+   * An ended episode's last frame still carries the mask of its final state —
+   * the mask is computed over the state, not the episode — but the server
+   * refuses every submit once `status` leaves `running`. So nothing is legal
+   * on a frame whose status says the universe is over.
+   */
   isLegal(id) {
-    return this.raw.mask[id] === 1;
+    return this.status() === 'running' && this.raw.mask[id] === 1;
   }
 
   /**
@@ -934,7 +942,7 @@ export function candidateNamer(content) {
       return 'Nothing else is knowable: the rival is built from the seed when the portal opens.';
     }
     if (rows.some((r) => r.kind === 'mage' || r.kind === 'mage-role' || r.kind === 'mage-node')) {
-      return 'Still absent: a name — no component holds one — and how long she has left.';
+      return 'Mages in this world have no names, and how long each has left is not something you can see.';
     }
     return '';
   };
@@ -990,8 +998,8 @@ export function candidateNamer(content) {
         /* Not an entity, which is exactly what the old anonymous label could not
            say: §4.2 gives founding and funding one action id and slot 0 is the
            founding half. */
-        sub: '§4.2 puts founding and funding under one verb, and this is the founding half — there is no college here yet to describe.',
-        title: `slot 0 · params 0 — §4.2's "universityId | 0 to found new"`,
+        sub: 'Founds a new university on fresh ground. The other choices here fund one that already stands.',
+        title: 'Fund university, first choice: found a new one',
       };
     }
 
@@ -1021,7 +1029,7 @@ export function candidateNamer(content) {
 
     return {
       head: `slot ${slot} — gone`,
-      sub: 'The handle in this slot names nobody living in the world as it stands now. §4.4 calls submitting it an ordinary illegal action.',
+      sub: 'Whoever this choice named is no longer in the world — choosing it now will be refused.',
       title: tail,
     };
   };
