@@ -107,20 +107,28 @@ const BLIND_ARM_LINES: Readonly<Record<string, readonly string[]>> = {
   // metrics still dominate: five of thirteen. Tolerance is unchanged (k = 3);
   // this is the arms moving under a fixed instrument, not the instrument
   // moving.
+  // **Eleven after the raid-tuning re-record, 2026-10-08.** Raids now fight,
+  // and every 200-year run is raided by stand-ins that kill, so the arms whose
+  // long-run value is dominated by a few lucky booms or crashes reshuffled
+  // again. Left: `referenceGrimoires@worship-maximizer`,
+  // `referenceKnowledgeInstances@passive-control`,
+  // `referenceNodesGainedFinalQuarter@narrow-depth` and `@permissive-breadth`,
+  // and worship-maximizer's two population lines. Joined: uniform-random-
+  // legal's grimoire and instance lines, worship-maximizer's instance line, and
+  // `referenceNodesGainedFinalQuarter@archivist`. Tolerance is unchanged
+  // (k = 3); the arms moved under a fixed instrument.
   'balance/baselines/balance-gate-ascension-v1.baseline.json': [
-    'referenceGrimoires@worship-maximizer',
-    'referenceKnowledgeInstances@passive-control',
+    'referenceGrimoires@uniform-random-legal',
+    'referenceKnowledgeInstances@uniform-random-legal',
+    'referenceKnowledgeInstances@worship-maximizer',
     'referenceLibraryDepth@passive-control',
+    'referenceNodesGainedFinalQuarter@archivist',
     'referenceNodesGainedFinalQuarter@denial-warden',
-    'referenceNodesGainedFinalQuarter@narrow-depth',
     'referenceNodesGainedFinalQuarter@passive-control',
-    'referenceNodesGainedFinalQuarter@permissive-breadth',
     'referenceNodesGainedFinalQuarter@portal-rush',
     'referenceNodesGainedFinalQuarter@worship-maximizer',
     'referencePopulation@uniform-random-legal',
-    'referencePopulation@worship-maximizer',
     'referencePopulationChange@uniform-random-legal',
-    'referencePopulationChange@worship-maximizer',
   ],
   'balance/baselines/balance-gate-v1.baseline.json': [],
   'balance/baselines/balance-gate-horizon-v1.baseline.json': [],

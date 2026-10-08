@@ -288,16 +288,16 @@ proportional change in that metric the gate would report as `regressed`. Anythin
 
 | metric | 5-year gate | 20-year gate | 20-year agency gate | 200-year gate |
 |---|---|---|---|---|
-| `referenceGrimoires` | 4.1 % | 7.3 % | 15.8 % | 16.7 % |
-| `referenceKnowledgeInstances` | 2.0 % | 4.3 % | 8.4 % | 32.1 % |
-| `referenceLibraryDepth` | 17.3 % | 16.7 % | 22.5 % | 23.0 % |
-| `referenceLivingMages` | 0.5 % | 1.5 % | 2.6 % | 10.2 % |
-| `referenceNodesGained` | 0.8 % | 2.6 % | 2.9 % | 10.3 % |
-| `referenceNodesGainedFinalQuarter` | — | 7.0 % | 11.0 % | 100.7 % |
-| `referenceNodesKnown` | 0.7 % | 2.5 % | 2.8 % | 10.2 % |
-| `referencePeakPopulation` | 0.0 % | 1.8 % | 8.2 % | 0.3 % |
-| `referencePopulation` | 1.0 % | 2.0 % | 3.7 % | 18.8 % |
-| `referencePopulationChange` | 4.3 % | 9.5 % | 16.1 % | 18.9 % |
+| `referenceGrimoires` | 4.4 % | 8.0 % | 17.4 % | 11.5 % |
+| `referenceKnowledgeInstances` | 2.4 % | 4.8 % | 10.0 % | 42.2 % |
+| `referenceLibraryDepth` | 17.4 % | 16.8 % | 21.9 % | 24.1 % |
+| `referenceLivingMages` | 1.5 % | 2.4 % | 3.9 % | 15.7 % |
+| `referenceNodesGained` | 0.9 % | 2.6 % | 3.5 % | 14.6 % |
+| `referenceNodesGainedFinalQuarter` | — | 8.0 % | 15.4 % | 145.9 % |
+| `referenceNodesKnown` | 0.8 % | 2.6 % | 3.4 % | 14.4 % |
+| `referencePeakPopulation` | 0.0 % | 2.7 % | 17.3 % | 4.5 % |
+| `referencePopulation` | 1.0 % | 1.9 % | 3.9 % | 13.7 % |
+| `referencePopulationChange` | 4.3 % | 9.5 % | 16.6 % | 13.7 % |
 | runs | 200 | 200 | 64 | 64 |
 | plays a god verb | no | no | **yes** | **yes** |
 | wall clock, 4 workers | 4 s | 27 s | **10 s** | **830–1154 s** |
@@ -322,10 +322,12 @@ where their power actually lives; the column above is a summary of a mean taken 
 strategies that do very different things, and both figures below count **measured, nonzero** arm
 lines only — a line at zero has no proportional effect to be minimum-detectable about, which is the
 same reason the table above prints an em dash rather than `Infinity`. Agency arm lines: median MDE
-15.7 %, **80 of 80** below 100 % (the agency gate went fully sharp under the 0.9.0 re-record —
-`denial-warden`'s knowledge lines finally moved clear of zero). Ascension arm lines: median 33.7 %,
-67 of 80 below 100 % — thirteen lines are blind, and they are named in
+17.8 %, **80 of 80** below 100 % (the agency gate went fully sharp under the 0.9.0 re-record —
+`denial-warden`'s knowledge lines finally moved clear of zero). Ascension arm lines: median 29.6 %,
+68 of 79 measured nonzero lines below 100 % — eleven lines are blind, and they are named in
 `packages/mc-harness/test/unit/gate-power.test.ts` (`BLIND_ARM_LINES`) rather than glossed here.
+The raid-tuning re-record of 2026-10-08 (raids now fight; stand-in arrivals kill) moved that set
+from thirteen to eleven; the test's comment names which left and which joined.
 The MUL-117 re-record moved that set from nine to thirteen: the final-quarter block gained
 `referenceNodesGainedFinalQuarter@portal-rush`, and the population arms of `uniform-random-legal`
 and `worship-maximizer` (both dominated by one early boom, so a 3-SE tolerance is a large multiple
