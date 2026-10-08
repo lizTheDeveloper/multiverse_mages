@@ -108,7 +108,13 @@ unlinked prototype is invisible.
 
 ## Playing one
 
-    npm run play      # a universe that is actually running, on :8300
+    npm run lobby     # the game: a universe per player, timed by the server, on :8300
+    npm run play      # one shared universe for development, on :8300
+
+`play` = one shared universe for development; `lobby` = per-player, server-timed. The game page,
+[`app/`](app/), needs the lobby: it creates its universe on [`app/setup.html`](app/setup.html)
+(`POST /api/create`) and joins it at `/u/<id>/live/*`, polling once a second and never advancing
+it. The prototype pages below read `/live/*` and are what `npm run play` serves.
 
 Opens on [`console/`](console/). This is the one command that makes the game **playable by a
 person**: `scripts/play-server.mjs` builds the reference scenario exactly the way the recorder does,

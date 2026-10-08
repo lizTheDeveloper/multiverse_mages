@@ -54,6 +54,8 @@
     "ui:record": "node scripts/record-session.mjs",
     "preplay": "npm run typecheck",
     "play": "node scripts/play-server.mjs",
+    "prelobby": "npm run typecheck",
+    "lobby": "node packages/lobby/bin/lobby.mjs --port 8300",
     "preui:record": "npm run typecheck",
     "ui:dashboard": "node scripts/build-design-dashboard.mjs",
     "preui:dashboard": "npm run typecheck"
