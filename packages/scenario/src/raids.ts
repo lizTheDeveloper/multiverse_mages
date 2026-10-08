@@ -270,6 +270,62 @@ export interface RaidSystemDeps {
   readonly engagementPolicy?: EngagementPolicy | undefined;
   /** The catalogue the mid-raid mask prices against. Absent means structure only. */
   readonly maskCatalogue?: ContentCatalogue | undefined;
+  /**
+   * Live universes on the other side of the portal, or absent for the headless
+   * build. Absent is byte-identical to the build before the seam existed: every
+   * branch below that reads this field is guarded on `=== undefined` first.
+   */
+  readonly peers?: PeerPortals | undefined;
+}
+
+/**
+ * The other universes in a bubble, as portal seats (`vision.md` §8b).
+ *
+ * Present, it **replaces** the headless stand-in rather than adding to it:
+ * a seat's raid builds no `buildRival` universe, and the inbound arrival roll is
+ * off, because an inbound raid now arrives when a peer's god opens one. What
+ * this does not give is replay: a peer's write-back lands in that universe's
+ * state from outside its own step, so neither universe's action log alone
+ * reproduces it. `pvp-server`'s snapshot exchange is what closes that.
+ */
+export interface PeerPortals {
+  /** Seat ids action 14 may target. Fixed for the scenario's life. */
+  readonly seats: readonly number[];
+  /** The live universe in a seat, or `undefined` when the seat is empty or its universe ended. */
+  participant(seat: number): RaidParticipant | undefined;
+  /** An outbound raid against a seat resolved, so the host can tell the defender. */
+  onOutbound?(seat: number, record: RaidRecord): void;
+}
+
+/**
+ * A universe's live state in the shape `openPortal` reads, or `undefined` when
+ * it holds no universe or that universe has ended.
+ */
+export function participantOf(state: SimState, content: ReferenceContent): RaidParticipant | undefined {
+  const universe = findUniverse(state);
+  if (universe === 0) return undefined;
+  if (readUniverse(state, universe).terminalReason !== TERMINAL_REASON.none) return undefined;
+  const ruleset = captureRuleset(state, universe);
+  return {
+    world: state,
+    // `fromState`, never the bare constructor: the constructor builds an
+    // empty existence index, and a raid that destroyed an instance the index
+    // had never seen would trip `NodeExistenceIndex.remove`'s divergence
+    // guard on the first library it burned.
+    // The exclusion resolver is passed here for the reason `rules-magic`'s
+    // `exclusions.test.ts` names: theft writes straight into a thief's mind,
+    // so a raid subsystem built without it would let a raider acquire the one
+    // school her own holdings forbid (`vision.md` §4b).
+    knowledge: KnowledgeSubsystem.fromState(state, content.deps.catalog.nodeCount, content.deps.cells),
+    ruleset,
+    // Host and home are the same tradition for the local side of an inbound
+    // raid, and differ only if a rival ever holds another. Resolved through
+    // the same split either way, so the one code path is the tested one.
+    hooks: resolvePortalHooks(
+      portalHookSet(ruleset.traditionId, ruleset.traditionId, traditionTableFrom(content.registry)),
+    ),
+    speciesOf: requiredSpeciesOf(content.registry),
+  };
 }
 
 /**
@@ -284,8 +340,7 @@ export interface RaidSystemDeps {
  */
 export function raidSystem(deps: RaidSystemDeps): System {
   const { content, constants } = deps;
-  const traditions = traditionTableFrom(content.registry);
-  const targets = portalTargetIds(constants);
+  const targets = deps.peers?.seats ?? portalTargetIds(constants);
   const portalCost = content.deps.god?.content.costs.byAction[OPEN_PORTAL_ACTION] ?? 0;
 
   return {
@@ -322,7 +377,10 @@ export function raidSystem(deps: RaidSystemDeps): System {
       if (outboundTarget !== 0) {
         targetId = outboundTarget;
         outbound = true;
-      } else if (worldTick - lastRaidWorldTick(deps) >= constants.inboundCooldownWorldTicks) {
+      } else if (
+        deps.peers === undefined &&
+        worldTick - lastRaidWorldTick(deps) >= constants.inboundCooldownWorldTicks
+      ) {
         // The arrival process. One draw, always taken, whether or not it fires:
         // a draw taken conditionally would make the stream's position depend on
         // the cooldown, and two runs differing only in when they were last
@@ -334,7 +392,7 @@ export function raidSystem(deps: RaidSystemDeps): System {
 
       if (targetId === 0) return;
 
-      const local = localParticipant(ctx.state, deps, universe);
+      const local = localParticipant(ctx.state, deps);
 
       if (outbound) {
         const gate = portalGate({
@@ -361,68 +419,50 @@ export function raidSystem(deps: RaidSystemDeps): System {
       // mixed with the target so two rivals raided on one tick differ.
       const raidSeed = (nextBounded(stream, 0x1_0000_0000) ^ (targetId * 0x9e37)) >>> 0;
 
-      const rival = buildRival({
-        runSeed: ctx.state.rootSeed,
-        targetId,
-        content,
-        schema: deps.schema,
-        // §4a splits the hooks across the portal: `cast` and `cost` follow the
-        // host. For an inbound raid this universe is the host, so the rival's
-        // hooks resolve against the tradition this universe currently holds —
-        // which god action 13 may have changed since tick zero.
-        hostTraditionId: outbound ? content.traditionId : local.ruleset.traditionId,
-        // The loot shelf is keyed on what *this* universe's god forbids, which
-        // is a fact about this universe and not about the rival — so it is
-        // captured here, at the portal, alongside the tradition. It is the same
-        // snapshot arbitration uses, so a shelf can never be stocked against a
-        // ruleset the raid does not then enforce.
-        localRuleset: local.ruleset,
-        constants,
-      });
+      const rival =
+        deps.peers === undefined
+          ? buildRival({
+              runSeed: ctx.state.rootSeed,
+              targetId,
+              content,
+              schema: deps.schema,
+              // §4a splits the hooks across the portal: `cast` and `cost` follow the
+              // host. For an inbound raid this universe is the host, so the rival's
+              // hooks resolve against the tradition this universe currently holds —
+              // which god action 13 may have changed since tick zero.
+              hostTraditionId: outbound ? content.traditionId : local.ruleset.traditionId,
+              // The loot shelf is keyed on what *this* universe's god forbids, which
+              // is a fact about this universe and not about the rival — so it is
+              // captured here, at the portal, alongside the tradition. It is the same
+              // snapshot arbitration uses, so a shelf can never be stocked against a
+              // ruleset the raid does not then enforce.
+              localRuleset: local.ruleset,
+              constants,
+            }).participant
+          : deps.peers.participant(targetId);
+      if (rival === undefined) return;
 
-      resolveOneRaid({
+
+      const record = resolveOneRaid({
         deps,
         local,
-        rival: rival.participant,
+        rival,
         outbound,
         raidSeed,
         worldTick,
         raidId: deps.raidsSoFar().length + 1,
         attackerFavorCost: outbound ? portalCost : 0,
       });
+      if (outbound) deps.peers?.onOutbound?.(targetId, record);
     },
   };
 
-  /** This universe, in the shape `openPortal` reads. */
+  /** This universe, in the shape `openPortal` reads. Its terminal state was checked above. */
   function localParticipant(
     state: SimState,
     input: RaidSystemDeps,
-    universe: EntityHandle,
   ): RaidParticipant {
-    const ruleset = captureRuleset(state, universe);
-    const speciesOf = requiredSpeciesOf(input.content.registry);
-    return {
-      world: state,
-      // `fromState`, never the bare constructor: the constructor builds an
-      // empty existence index, and a raid that destroyed an instance the index
-      // had never seen would trip `NodeExistenceIndex.remove`'s divergence
-      // guard on the first library it burned.
-      // The exclusion resolver is passed here for the reason `rules-magic`'s
-      // `exclusions.test.ts` names: theft writes straight into a thief's mind,
-      // so a raid subsystem built without it would let a raider acquire the one
-      // school her own holdings forbid (`vision.md` §4b).
-      knowledge: KnowledgeSubsystem.fromState(
-        state,
-        input.content.deps.catalog.nodeCount,
-        input.content.deps.cells,
-      ),
-      ruleset,
-      // Host and home are the same tradition for the local side of an inbound
-      // raid, and differ only if a rival ever holds another. Resolved through
-      // the same split either way, so the one code path is the tested one.
-      hooks: resolvePortalHooks(portalHookSet(ruleset.traditionId, ruleset.traditionId, traditions)),
-      speciesOf,
-    };
+    return participantOf(state, input.content) as RaidParticipant;
   }
 }
 
@@ -469,7 +509,7 @@ function resolveOneRaid(input: {
   readonly worldTick: number;
   readonly raidId: number;
   readonly attackerFavorCost: number;
-}): void {
+}): RaidRecord {
   const { deps, local, rival, outbound } = input;
   const attacker = outbound ? local : rival;
   const host = outbound ? rival : local;
@@ -551,7 +591,7 @@ function resolveOneRaid(input: {
     if (casualty.side === localSideValue) localCasualties += 1;
   }
 
-  deps.onRaid({
+  const record: RaidRecord = {
     raidId: input.raidId,
     raidSeed: input.raidSeed,
     worldTick: input.worldTick,
@@ -577,7 +617,9 @@ function resolveOneRaid(input: {
     // Passed through untouched. `resolveRaid` froze it at resolution and this
     // layer neither normalises nor re-sides it; see the field's own note.
     actionEconomy: outcome.actionEconomy,
-  });
+  };
+  deps.onRaid(record);
+  return record;
 }
 
 function countOf(nodes: readonly ContentId[]): number {
