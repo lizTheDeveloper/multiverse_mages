@@ -201,6 +201,28 @@ export interface GodTickReport {
   readonly ascensionPath: number;
   readonly terminalReason: number;
   /**
+   * The three stagnation clocks after this tick, and which one ended the run.
+   *
+   * `terminalReason` says *stagnation* and nothing about why, and the three
+   * rules are different stories: the last mage died, nobody worshipped for
+   * twenty years, or nothing new was learnt for forty while worship sat below
+   * the health floor and below its own peak. A player who loses a universe is
+   * owed the one that fired and the numbers it compared. Report-only, like
+   * `ascensionProgress`: nothing hashes it and no rule reads it back.
+   */
+  readonly stagnation: {
+    /** The clock that reached its window this tick, or `none`. */
+    readonly rule: 'none' | 'mageless' | 'unworshipped' | 'stasis';
+    readonly magelessTicks: number;
+    readonly lowWorshipTicks: number;
+    readonly stasisTicks: number;
+    /** The worship each floor was compared against, fp. */
+    readonly worship: Fixed;
+    readonly worshipTier: number;
+    /** The god record's peak tier, which the stasis clock requires falling below. */
+    readonly peakWorshipTier: number;
+  };
+  /**
    * What each ascension conjunct read this tick.
    *
    * Added because both paths now gate on quantities the god's play produces, and
@@ -646,6 +668,21 @@ function outcomeSystem(
         interventions,
         ascensionPath: path,
         terminalReason,
+        stagnation: {
+          rule: !stagnation.stagnated
+            ? 'none'
+            : stagnation.magelessTicks >= constants.stagnationMagelessTicks
+              ? 'mageless'
+              : stagnation.lowWorshipTicks >= constants.stagnationWorshipTicks
+                ? 'unworshipped'
+                : 'stasis',
+          magelessTicks: stagnation.magelessTicks,
+          lowWorshipTicks: stagnation.lowWorshipTicks,
+          stasisTicks: stagnation.stasisTicks,
+          worship,
+          worshipTier,
+          peakWorshipTier: god.peakWorshipTier,
+        },
         ascensionProgress: {
           masteredCells: masteredCellCount(apotheosisFacts, constants.ascensionSummitCopies),
           nodesKnown: known.length,

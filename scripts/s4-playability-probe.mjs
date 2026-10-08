@@ -87,10 +87,12 @@ if (OUT === undefined) {
  * without editing the tree two concurrent runs read.
  */
 const CONTENT_DIR = arg('content-dir', undefined);
+/** `--tradition <id>` plays a named tradition instead of the scribing default. */
+const TRADITION = arg('tradition', undefined);
 const content =
   CONTENT_DIR === undefined
-    ? referenceContent()
-    : referenceContent(loadContent(directorySource(CONTENT_DIR, CONTENT_DIR)));
+    ? referenceContent(undefined, TRADITION)
+    : referenceContent(loadContent(directorySource(CONTENT_DIR, CONTENT_DIR)), TRADITION);
 
 /** The cells `rl-open-the-portal` and its cross-cell prerequisite live in. */
 const PORTAL_CELLS = content.registry.cells
@@ -295,6 +297,9 @@ function runOne(spec, runSeed) {
         lowWorshipTicks: god.lowWorshipTicks,
         stasisTicks: god.stasisTicks,
         terminalTick: god.terminalTick,
+        // Which rule fired, as the god report names it (S4); absent on a build
+        // whose report predates the field.
+        rule: run.lastGodReport()?.stagnation?.rule,
       };
     }
   }
