@@ -34,6 +34,8 @@ interface TierEntry {
 export interface LobbyOptions {
   port?: number;
   uiRoot?: string;
+  /** Universes per bubble. Default {@link BUBBLE_SIZE}; 2 is a duel. */
+  bubbleSize?: number;
 }
 
 export class Lobby {
@@ -43,9 +45,11 @@ export class Lobby {
   private ladder: TierEntry[] = [];
   private router = new Router();
   private uiRoot: string;
+  private bubbleSize: number;
 
   constructor(opts: LobbyOptions = {}) {
     this.uiRoot = opts.uiRoot ?? path.resolve('ui');
+    this.bubbleSize = Math.max(2, opts.bubbleSize ?? BUBBLE_SIZE);
     this.setupRoutes();
   }
 
@@ -53,7 +57,7 @@ export class Lobby {
     this.router.post('/api/create', async (_req, res, body) => {
       try {
         const config: UniverseConfig = JSON.parse(body);
-        const host = new UniverseHost(config);
+        const host = new UniverseHost(config, this.bubbleSize - 1, (self, seat) => this.seatOf(self, seat));
         this.universes.set(host.id, host);
 
         this.waiting.push({ host, config, createdAt: Date.now() });
@@ -63,7 +67,7 @@ export class Lobby {
           universeId: host.id,
           bubbleId: host.ref.bubbleId || null,
           worldTick: host.worldTick,
-          bubbleSize: BUBBLE_SIZE,
+          bubbleSize: this.bubbleSize,
           waiting: this.waiting.length,
         });
       } catch (e) {
@@ -108,8 +112,8 @@ export class Lobby {
         const { universeId, kind, params } = JSON.parse(body);
         const host = this.universes.get(universeId);
         if (!host) { json(res, 404, { error: 'not found' }); return; }
-        host.submit(kind, params ?? []);
-        json(res, 200, { ok: true, tick: host.worldTick });
+        const result = host.submit(kind, params ?? []);
+        json(res, 200, { ok: true, ...result, tick: host.worldTick });
       } catch (e) {
         json(res, 400, { error: (e as Error).message });
       }
@@ -133,8 +137,26 @@ export class Lobby {
       if (!universeId) { json(res, 400, { error: 'missing universeId' }); return; }
       const host = this.universes.get(universeId);
       if (!host) { json(res, 404, { error: 'not found' }); return; }
-      const { obs, mask } = host.observe();
-      json(res, 200, { universeId, tick: host.worldTick, obs, mask });
+      const { obs, mask, candidates } = host.observe();
+      const seats: Record<number, string | null> = {};
+      for (let seat = 1; seat < this.bubbleSize; seat++) seats[seat] = this.seatOf(host, seat)?.id ?? null;
+      json(res, 200, { universeId, tick: host.worldTick, obs, mask, candidates, seats });
+    });
+
+    // Every raid this universe was in: what it opened, and what was opened on it.
+    this.router.get('/api/universe/raids', async (req, res) => {
+      const url = new URL(req.url ?? '/', `http://${req.headers.host ?? 'localhost'}`);
+      const universeId = url.searchParams.get('universeId');
+      if (!universeId) { json(res, 400, { error: 'missing universeId' }); return; }
+      const host = this.universes.get(universeId);
+      if (!host) { json(res, 404, { error: 'not found' }); return; }
+      json(res, 200, {
+        universeId,
+        tick: host.worldTick,
+        snapshotHash: host.snapshotHash(),
+        log: host.raidLog(),
+        inbound: host.inbound,
+      });
     });
 
     this.router.get('/api/universe/portal-targets', async (req, res) => {
@@ -155,14 +177,25 @@ export class Lobby {
   }
 
   private tryFormBubble(): void {
-    while (this.waiting.length >= BUBBLE_SIZE) {
-      const batch = this.waiting.splice(0, BUBBLE_SIZE);
+    while (this.waiting.length >= this.bubbleSize) {
+      const batch = this.waiting.splice(0, this.bubbleSize);
       const bubble = new Bubble(0);
       for (const { host } of batch) {
         bubble.add(host);
       }
       this.bubbles.set(bubble.id, bubble);
     }
+  }
+
+  /**
+   * The universe in `self`'s portal seat `seat` (1-based): its bubble-mates,
+   * by id, with itself left out. Empty until the bubble forms.
+   */
+  private seatOf(self: UniverseHost, seat: number): UniverseHost | undefined {
+    const bubble = this.findBubble(self.ref.bubbleId);
+    if (!bubble) return undefined;
+    const mates = bubble.others(self.id).sort((a, b) => (a.id < b.id ? -1 : a.id > b.id ? 1 : 0));
+    return mates[seat - 1];
   }
 
   private findBubble(bubbleId: string): Bubble | undefined {

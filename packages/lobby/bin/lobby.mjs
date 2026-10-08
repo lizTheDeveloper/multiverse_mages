@@ -17,5 +17,9 @@ const port = Number(process.argv.includes('--port')
   ? process.argv[process.argv.indexOf('--port') + 1]
   : '8400');
 
-const lobby = new Lobby({ uiRoot: path.join(ROOT, 'ui') });
+const bubbleSize = Number(process.argv.includes('--bubble-size')
+  ? process.argv[process.argv.indexOf('--bubble-size') + 1]
+  : '4');
+
+const lobby = new Lobby({ uiRoot: path.join(ROOT, 'ui'), bubbleSize });
 lobby.listen(port);

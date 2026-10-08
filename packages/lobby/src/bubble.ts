@@ -46,6 +46,11 @@ export class Bubble {
     return targets;
   }
 
+  /** Every other member, alive or not, so a seat keeps its occupant when one dies. */
+  others(selfId: string): UniverseHost[] {
+    return [...this.members.values()].filter((h) => h.id !== selfId);
+  }
+
   randomTarget(attackerId: string): UniverseHost | undefined {
     const targets = this.portalTargets(attackerId);
     if (targets.length === 0) return undefined;
