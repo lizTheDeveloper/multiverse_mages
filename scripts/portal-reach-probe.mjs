@@ -44,7 +44,15 @@ import { GOD_ACTION, createSession } from '@mm/agent-api';
 import { MagicGrid } from '@mm/rules-magic';
 import { heldInstancesOf, portalGate } from '@mm/rules-raid';
 import { MAGE, MAGE_ROLE, collectRecords, findUniverse, readRulesetForObservation, permits } from '@mm/state';
-import { explicitOpeningAxes, foundingCandidates, participantOf, referenceContent, referenceScenario } from '@mm/scenario';
+import {
+  explicitOpeningAxes,
+  foundingCandidates,
+  participantOf,
+  referenceContent,
+  referenceOptions,
+  referenceScenario,
+  speciesTable,
+} from '@mm/scenario';
 
 const { values } = parseArgs({
   options: {
@@ -106,6 +114,11 @@ function portalHolder(state) {
  */
 const SQUARES = {
   v1: undefined,
+  // One species, founders scaled to the reference total — exactly what
+  // `packages/lobby`'s universe host does since #246 — on a square that holds
+  // the whole closure, and on one that holds none of it.
+  'lobby human 2x2 rego,intellego x limen,mentem': [['rego', 'intellego'], ['limen', 'mentem'], 'human'],
+  'lobby human 2x2 creo,muto x animal,aquam': [['creo', 'muto'], ['animal', 'aquam'], 'human'],
   // The whole closure inside the square: rego-limen and intellego-limen.
   '2x2 rego,intellego x limen,mentem': [['rego', 'intellego'], ['limen', 'mentem']],
   // The portal's own cell, but not the cell its prerequisite reads from.
@@ -121,11 +134,24 @@ const contentFor = new Map(
   }),
 );
 
+/** The lobby's one-species founding options (see `packages/lobby/src/universe-host.ts`). */
+function lobbyOptions(speciesId) {
+  const { ids } = speciesTable(registry);
+  const wanted = registry.species.find((e) => e.record.id === speciesId);
+  const perSpecies = referenceOptions({ worldTickCap: 1 });
+  return {
+    foundingSpeciesMask: 1 << ids.indexOf(wanted.contentId),
+    foundingMages: perSpecies.foundingMages * ids.length,
+    cohortSize: perSpecies.cohortSize * ids.length,
+  };
+}
+
 function play(seed, policy, opening, portalMagic = 0) {
   const live = {};
   const run = referenceScenario(contentFor.get(opening), { onState: (s) => { live.s = s; } });
+  const species = SQUARES[opening]?.[2];
   const session = createSession({ scenario: run.scenario, strategyId: `portal-reach-${policy}` });
-  const options = { foundingPortalMagic: portalMagic };
+  const options = { foundingPortalMagic: portalMagic, ...(species === undefined ? {} : lobbyOptions(species)) };
   session.reset(seed, { worldTickCap: 4000, options });
   let named = false;
   for (let t = 0; t < ticks; t += 1) {

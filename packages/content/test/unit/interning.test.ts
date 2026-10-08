@@ -1003,7 +1003,18 @@ describe('contentRevision', () => {
     // `stagnation-neglect-ticks` (1200), with `stagnation-stasis-ticks`' gloss
     // rewritten for the quiet clock. Measured with `npm run check:content` on
     // the tree, not chosen.
-    expect(registry.contentRevision).toBe('b1923b223d0686054a27a2aff163d8af');
+    //
+    // b1923b223d0686054a27a2aff163d8af -> f0885a0e674b8291093f28b513bd4ef9, the
+    // raid tuning of 2026-10-08, merged on top of the above: twelve
+    // `raid-constant.json` values — the hit-point family rescaled by 1/16,
+    // cast vigor made affordable, the portal shortened to 150 ± 30 ticks, the
+    // stand-in's arming cut from eight nodes to two, a summon's blow cut by
+    // 1/64 — their glosses, and every `direct-damage` magnitude in `node.json`
+    // multiplied by four. Every existing record keeps its id; the values are
+    // the point. Two universes either side of this revision would fight
+    // battles of different lethality, which is what the revision exists to
+    // refuse. Measured with `check:content` on the merged tree.
+    expect(registry.contentRevision).toBe('f0885a0e674b8291093f28b513bd4ef9');
   });
 
   it('is stable across loads of identical content', () => {

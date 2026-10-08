@@ -123,11 +123,18 @@ const ANCHOR_SEED = 20260813;
  * the tier-4 cap, and the stagnation clock gained a neglect window
  * (`stagnation-neglect-ticks`) — content edits, so the content revision in the
  * tick-zero snapshot moves too.
+ *
+ * **Re-measured 2026-10-08 on `raid-tuning`, merged over the set above**
+ * (`ff256d65e8292850` / `c2cbcd3994257703` / `b08a9818e920e7bd`). Tick 0 moves
+ * because twelve raid constants and `node.json`'s bolts changed and the content
+ * revision is in the snapshot; 200 and 500 move as well because the default
+ * scenario is raided by stand-ins, and stand-in raids now fight. No sandbox
+ * change.
  */
 const INERT_DEFAULT_HASHES: Readonly<Record<number, string>> = {
-  0: 'ff256d65e8292850',
-  200: 'c2cbcd3994257703',
-  500: 'b08a9818e920e7bd',
+  0: '67d8c7f341050448',
+  200: '7b01bd16253c249b',
+  500: 'e635a83d59ccc5bd',
 };
 
 /** Generous, for the reason `balance-telemetry.test.ts` gives at length. */
