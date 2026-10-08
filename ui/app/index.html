@@ -834,10 +834,81 @@ html, body { height: 100%; overflow: hidden; }
 .god-action.has-fire .fire-row[hidden] { display: none; }
 .god-action .fire-btn { pointer-events: auto; padding: .05rem .45rem; border: 1px solid var(--god); border-radius: 3px; background: var(--ctl-charged-bg); color: var(--ctl-charged-fg); font: 9px var(--mono); cursor: pointer; }
 .god-action .fire-hint { font: 9px var(--mono); color: var(--warn); }
+/* ================================================================ RAIDS, EDICTS, ASCENSION */
+.topbar .tab.alarm { color: var(--loss); border-color: var(--loss); animation: raidPulse 1.2s ease-in-out infinite; }
+@keyframes raidPulse { 50% { background: color-mix(in srgb, var(--loss) 22%, transparent); } }
+@media (prefers-reduced-motion: reduce) { .topbar .tab.alarm { animation: none; } }
+.raid-panel { max-width: 56rem; font: 11px/1.5 var(--sans); color: var(--soft); }
+.raid-h { font: 400 1rem var(--serif); color: var(--ink); margin: .9rem 0 .3rem; }
+.raid-h3 { font: 9.5px var(--mono); letter-spacing: .1em; text-transform: uppercase; color: var(--faint); margin: .7rem 0 .3rem; }
+.raid-lede, .raid-muted { color: var(--faint); margin: .1rem 0 .4rem; }
+.raid-err { color: var(--loss); }
+.raid-seats { display: grid; grid-template-columns: repeat(auto-fill, minmax(17rem, 1fr)); gap: .5rem; }
+.raid-seat { border: 1px solid var(--edge); border-radius: 4px; background: var(--panel); padding: .5rem .6rem; }
+.raid-seat-head { display: flex; justify-content: space-between; align-items: center; font: 10px var(--mono); letter-spacing: .08em; text-transform: uppercase; color: var(--ink); margin-bottom: .3rem; }
+.raid-peer { display: grid; grid-template-columns: auto 1fr; gap: .1rem .6rem; margin: 0 0 .4rem; font: 10px var(--mono); }
+.raid-peer dt { color: var(--faint); }
+.raid-peer dd { margin: 0; color: var(--ink); overflow-wrap: anywhere; }
+.raid-why { margin: .2rem 0 0; padding-left: 1rem; }
+.raid-why li.blocks { color: var(--loss); }
+.raid-why li.advice { color: var(--warn); }
+.raid-src, .edict-src { color: var(--faint); font: 9px var(--mono); }
+.raid-ok { color: var(--ok); margin: .2rem 0 0; }
+.raid-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 3px; }
+.raid-list li { font: 10px var(--mono); color: var(--ink); }
+.raid-list li.raid-in { color: var(--loss); }
+.raid-btn { font: 10px var(--mono); padding: .15rem .55rem; border: 1px solid var(--edge); border-radius: 3px; background: var(--sunk); color: var(--soft); cursor: pointer; }
+.raid-btn:not(:disabled) { border-color: var(--ctl-charged-border); background: var(--ctl-charged-bg); color: var(--ctl-charged-fg); }
+.raid-btn:disabled { opacity: .45; cursor: not-allowed; }
+.raid-btn:focus-visible, .edict-btn:focus-visible, .raid-card-close:focus-visible { outline: 2px solid var(--god); outline-offset: 1px; }
+.raid-reports { position: fixed; top: 3rem; left: 50%; transform: translateX(-50%); z-index: 9000; display: flex; flex-direction: column; gap: .5rem; width: min(30rem, calc(100vw - 2rem)); max-height: calc(100vh - 4rem); overflow-y: auto; }
+.raid-card { background: var(--panel); border: 1px solid var(--god); border-radius: 6px; padding: .6rem .75rem; box-shadow: 0 4px 18px rgba(0,0,0,.45); font: 11px/1.45 var(--sans); color: var(--soft); }
+.raid-card.inbound { border: 2px solid var(--loss); }
+.raid-card.warn { border-color: var(--warn); }
+.raid-card-head { display: flex; justify-content: space-between; align-items: center; gap: .5rem; }
+.raid-card-title { font: 400 1rem var(--serif); color: var(--ink); }
+.raid-card.inbound .raid-card-title { color: var(--loss); }
+.raid-card-close { border: 1px solid var(--edge); background: var(--sunk); color: var(--soft); border-radius: 3px; cursor: pointer; font: 12px var(--mono); padding: 0 .4rem; }
+.raid-card-outcome { margin: .3rem 0; color: var(--ink); }
+.raid-card-outcome.won { color: var(--ok); }
+.raid-card-outcome.lost { color: var(--loss); }
+.raid-card dl { display: grid; grid-template-columns: auto 1fr; gap: .1rem .6rem; margin: 0; font: 10px var(--mono); }
+.raid-card dt { color: var(--faint); }
+.raid-card dd { margin: 0; color: var(--ink); }
+.cell-detail-col { display: flex; flex-direction: column; gap: .4rem; min-width: 0; }
+.edict-box { background: var(--panel); border: 1px solid var(--edge); border-radius: 4px; padding: .45rem .6rem; font: 10px var(--mono); }
+.edict-head { font: 9.5px var(--mono); letter-spacing: .1em; text-transform: uppercase; color: var(--faint); margin-bottom: .3rem; }
+.edict-btn { display: flex; justify-content: space-between; gap: .6rem; width: 100%; font: 10px var(--mono); padding: .3rem .5rem; border: 1px solid var(--edge); border-radius: 3px; background: var(--sunk); color: var(--soft); cursor: pointer; text-align: left; }
+.edict-btn:not(:disabled) { border-color: var(--ctl-charged-border); background: var(--ctl-charged-bg); color: var(--ctl-charged-fg); }
+.edict-btn:disabled { opacity: .55; cursor: not-allowed; }
+.edict-price { color: var(--faint); }
+.edict-gloss { color: var(--faint); margin-top: .25rem; font: 10px/1.4 var(--sans); }
+.edict-why { margin: .25rem 0 0; padding-left: 1rem; color: var(--warn); font: 10px/1.4 var(--sans); }
+.edict-slot[data-kind] { cursor: pointer; }
+.why-denied { margin: .35rem 0; padding: .3rem .45rem; border-left: 2px solid var(--warn); background: var(--sunk); font: 10px/1.45 var(--sans); color: var(--soft); }
+.why-denied ul { margin: .15rem 0 0; padding-left: 1rem; }
+.asc { font: 10px/1.4 var(--sans); color: var(--soft); }
+.asc-open { font: 10px var(--mono); margin-bottom: .3rem; }
+.asc-open.yes { color: var(--god); }
+.asc-open.no { color: var(--faint); }
+.asc-path { font: 9px var(--mono); letter-spacing: .08em; text-transform: uppercase; color: var(--faint); margin: .35rem 0 .15rem; }
+.asc-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 2px; }
+.asc-item { display: grid; grid-template-columns: 1rem 1fr; gap: 0 .3rem; }
+.asc-mark { grid-row: span 3; font: 700 11px var(--mono); }
+.asc-met .asc-mark { color: var(--ok); }
+.asc-unmet .asc-mark { color: var(--loss); }
+.asc-unknown .asc-mark { color: var(--warn); }
+.asc-label { color: var(--ink); }
+.asc-val { font: 10px var(--mono); color: var(--soft); }
+.asc-unknown .asc-val { color: var(--warn); }
+.asc-src, .asc-note { font: 9px var(--mono); color: var(--faint); }
+.asc-foot { margin-top: .4rem; font: 9px var(--mono); color: var(--faint); }
+
 </style>
 
 
 <div class="toast-container" id="toast-container"></div>
+<div class="raid-reports" id="raid-reports" aria-live="assertive"></div>
 
 
 <div class="end-overlay" id="end-overlay" hidden>
@@ -884,6 +955,8 @@ html, body { height: 100%; overflow: hidden; }
       <li><b>Activity feed</b> (under the grid) — discoveries, deaths, library growth, as they happen.</li>
       <li><b>Knowledge tab</b> — the full research tree: what is known, what is next, what is gated.</li>
       <li><b>World tab</b> — your mages, the university, the portal, and the soul of the place.</li>
+      <li><b>Raids tab</b> — the universes in your portal seats, how strong they look, your raiders, and every raid either way. A raid on you also pops up a report you have to dismiss.</li>
+      <li><b>Edicts</b> — click a cell: a forbidden one offers a <em>dispensation</em> (open just it), a permitted one an <em>interdiction</em> (close just it), and a cell an edict holds offers <em>revoke</em>.</li>
       <li><b>Console tab</b> — the raw state: every action's legality, resources, provenance.</li>
     </ul>
 
@@ -899,6 +972,7 @@ html, body { height: 100%; overflow: hidden; }
     <h3>Winning — declaring ascension</h3>
     <ul>
       <li><b>Declare ascension</b> (bottom of the God Actions list, free) lights up the moment your universe meets <em>either</em> ending: a <b>Mastery</b> path (a tier-4 worshipped world holding 13 permitted cells whose deepest node a living mage holds, with at least two copies of each surviving, and two completed universities standing) or an <b>Enduring Canon</b> path (four consecutive eras in which the library held most of what it knew and lost no more than two nodes).</li>
+      <li>The <b>Ascension</b> panel on the right is the checklist: each bar with your current value, and a <b>?</b> where the frame does not show the value yet. The Canon is also checked against breadth — how many nodes and cells the universe knows at each era boundary.</li>
       <li>It can light at the earliest in <b>year 50</b>. Worship tier is the long pole — it climbs from a productive, well-taught populace, so build mages and universities and keep the world busy.</li>
       <li>When it lights, press its <b>Declare</b> button — that is the win. If the universe ever stagnates instead (no mages, or long unworshipped and unchanging), the episode ends the other way, and the ending screen tells you which happened and what you left behind.</li>
     </ul>
@@ -915,6 +989,7 @@ html, body { height: 100%; overflow: hidden; }
     <button class="tab" data-tab="grid" aria-pressed="true">Grid</button>
     <button class="tab" data-tab="world" aria-pressed="false">World</button>
     <button class="tab" data-tab="knowledge" aria-pressed="false">Knowledge</button>
+    <button class="tab" data-tab="raids" aria-pressed="false" id="raids-tab">Raids</button>
     <button class="tab" data-tab="console" aria-pressed="false">Console</button>
     <span class="spacer"></span>
     <span class="tick-label">year</span>
@@ -958,8 +1033,11 @@ html, body { height: 100%; overflow: hidden; }
           <div class="activity-feed" id="activity-feed">
             <div class="feed-head">Activity</div>
           </div>
-          <div class="cell-detail" id="cell-detail">
-            <span class="hint">Select a cell on the grid</span>
+          <div class="cell-detail-col">
+            <div class="cell-detail" id="cell-detail">
+              <span class="hint">Select a cell on the grid</span>
+            </div>
+            <div id="cell-edicts" hidden></div>
           </div>
         </div>
       </div>
@@ -971,6 +1049,9 @@ html, body { height: 100%; overflow: hidden; }
       <div class="knowledge-panel" id="knowledge-list">
         <div class="knowledge-tree"></div>
       </div>
+    </div>
+    <div class="center-panel" id="panel-raids">
+      <div class="raid-panel" id="raids-host"></div>
     </div>
     <div class="center-panel" id="panel-console">
       <div class="console-grid">
@@ -989,6 +1070,10 @@ html, body { height: 100%; overflow: hidden; }
     <div class="sb-section">
       <div class="sb-head">Species x Tier</div>
       <div class="tier-grid" id="tier-grid"></div>
+    </div>
+    <div class="sb-section">
+      <div class="sb-head">Ascension</div>
+      <div id="ascension-panel"></div>
     </div>
     <div class="sb-section">
       <div class="sb-head">University</div>
@@ -1019,6 +1104,10 @@ html, body { height: 100%; overflow: hidden; }
 
 import { mountThemeControl } from '../shared/theme.js';
 import { LiveSessionError, openSession, reconstructedCharge, units, mageVocabulary, candidateNamer } from '../shared/session.js';
+import { mountRaids } from './raid-panel.js';
+import { edictControls, ascensionNode, paintAscension } from './god-panels.js';
+import { whyDenied, whyDeniedText } from './explain.js';
+import { h } from './dom.js';
 
 // ================================================================ BOOT
 // The lobby keeps time. This page joins the universe this browser created on
@@ -1115,6 +1204,26 @@ async function submitAction(kind, params, label) {
   }
   return payload;
 }
+// One god action from a panel (raids, edicts): waits out a submit already in
+// flight rather than racing it, reports the gate's answer, and repaints.
+async function act(kind, params, label) {
+  if (state.busy) {
+    showToast('!Another action is waiting for this month\'s tick — try again in a moment.', 3500);
+    return null;
+  }
+  state.busy = true;
+  try {
+    const payload = await submitAction(kind, params, label);
+    refreshRuleset();
+    return payload;
+  } catch (e) {
+    showToast(`!${label} — ${e?.message ?? 'the action failed'}`, 4500);
+    return null;
+  } finally {
+    state.busy = false;
+    paint();
+  }
+}
 function showToast(msg, duration = 3000) {
   const t = document.createElement('div');
   t.className = 'toast';
@@ -1144,6 +1253,8 @@ function godPermits(techId, formId) {
   return godRuleset.techniques[techId] && godRuleset.forms[formId];
 }
 function refreshRuleset() { godRuleset = liveRuleset(); }
+/** The Raids tab controller; mounted near the end of this script. */
+let raids = null;
 const state = { tab: 'grid', selectedCell: null, selectedAction: null, selectedMage: null, hoverAxis: null, busy: false, weaving: false, ended: false };
 
 // ================================================================ LIVE STATE
@@ -1670,8 +1781,9 @@ function diffAndLog(curr) {
 
 const FEED_ICONS = {
   discovery: '✦', death: '†', birth: '↑', library: '📖',
-  scribed: '✎', 'knowledge-loss': '✕', action: '⚡',
+  scribed: '✎', 'knowledge-loss': '✕', action: '⚡', raid: '⚔', 'raid-in': '⚠',
 };
+const escapeFeed = (v) => String(v ?? '').replace(/[&<>"']/g, (c) => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' })[c]);
 
 function renderFeed() {
   const feedEl = el('activity-feed');
@@ -1682,7 +1794,7 @@ function renderFeed() {
   } else {
     for (const e of entries) {
       const yr = Math.floor(e.tick / 12) + 1;
-      html += `<div class="feed-entry fe-${e.type}"${e.dim ? ' style="opacity:0.35"' : ''}><span class="fe-icon">${FEED_ICONS[e.type] || '·'}</span>${e.text}<span class="fe-tick">yr ${yr}</span></div>`;
+      html += `<div class="feed-entry fe-${e.type}"${e.dim ? ' style="opacity:0.35"' : ''}><span class="fe-icon">${FEED_ICONS[e.type] || '·'}</span>${escapeFeed(e.text)}<span class="fe-tick">yr ${yr}</span></div>`;
     }
   }
   feedEl.innerHTML = html;
@@ -1740,6 +1852,8 @@ function paint() {
   const knowledgeCells = f.knowledge();
   const rules = f.ruleset();
   paintCellDetail(f, knowledgeCells, rules);
+  paintCellEdicts(f);
+  paintAscension(el('ascension-panel'), f, session.content, true);
 
   // Population
   const buckets = f.mageBuckets();
@@ -1777,6 +1891,23 @@ function paint() {
   if (state.tab === 'knowledge') renderKnowledge(f);
   if (state.tab === 'world') renderWorld(f);
   if (state.tab === 'console') renderConsole(f);
+  if (state.tab === 'raids') raids?.paint();
+}
+
+// The edict verbs for the selected cell, beside its detail (god-panels.js).
+// Rebuilt only when what they show changes, so a button is never replaced
+// between press and release.
+function paintCellEdicts(f) {
+  const host = el('cell-edicts');
+  const cell = state.selectedCell && state.selectedMage == null && state.selectedAction == null
+    ? session.content.cells.find((c) => `${c.technique}-${c.form}` === state.selectedCell)
+    : undefined;
+  if (!cell) { host.hidden = true; host.dataset.sig = ''; return; }
+  const { sig, node } = edictControls(f, session.content, cell.cellId, { act, isBusy: () => state.busy });
+  host.hidden = false;
+  if (host.dataset.sig === sig) return;
+  host.dataset.sig = sig;
+  host.replaceChildren(node);
 }
 
 // ================================================================ CELL DETAIL
@@ -2032,6 +2163,13 @@ function paintActionCandidates(f, detEl) {
   }
 
   detEl.innerHTML = html;
+  const denied = whyDenied(f, session.content, aid);
+  if (denied.length > 0) {
+    detEl.prepend(h('div', { className: 'why-denied', role: 'note' },
+      h('b', {}, 'Not available this tick'),
+      h('ul', {}, denied.map((r) => h('li', {}, r.text, h('span', { className: 'edict-src' }, ` [${r.source}]`))))));
+  }
+  if (aid === 15) detEl.append(ascensionNode(f, session.content, false));
 }
 
 // ================================================================ KNOWLEDGE TAB
@@ -2314,6 +2452,8 @@ function paintGodPanel(f) {
     if (!legal) btn.dataset.state = 'denied';
     else if (!affordable) btn.dataset.state = 'unaffordable';
     else btn.dataset.state = 'legal';
+    // A dark button says why, from the mask and the candidates (explain.js).
+    btn.title = legal ? `${action.name} — click to choose a target` : whyDeniedText(f, session.content, aid);
 
     // Show candidate count badge
     const cands = candidates[String(aid)];
@@ -2374,7 +2514,17 @@ function paintGodPanel(f) {
       slot.dataset.kind = e.kindName;
       const cellName = e.cell ? `${e.cell.technique.slice(0,2)}·${e.cell.form.slice(0,3)}` : '?';
       slot.textContent = `${e.kindName === 'dispensation' ? '◇' : '×'} ${cellName}`;
-      slot.title = `${e.kindName}: ${e.cell ? `${e.cell.technique} ${e.cell.form}` : 'unknown cell'}`;
+      slot.title = `${e.kindName}: ${e.cell ? `${e.cell.technique} ${e.cell.form}` : 'unknown cell'} — click to revoke it`;
+      if (e.cell) {
+        slot.addEventListener('click', () => {
+          state.selectedCell = `${e.cell.technique}-${e.cell.form}`;
+          state.selectedAction = null;
+          state.selectedMage = null;
+          state.tab = 'grid';
+          document.querySelector('.topbar .tab[data-tab="grid"]')?.click();
+          paint();
+        });
+      }
     } else {
       slot.textContent = '—';
       slot.title = `Edict slot ${i + 1}: empty`;
@@ -2745,6 +2895,27 @@ function renderWorld(f) {
   // Animate
   if (state.tab === 'world') requestAnimationFrame(() => renderWorld(f));
 }
+
+// ================================================================ RAIDS
+// The Raids tab, raid reports and the inbound alarm (raid-panel.js). Its
+// reads of other universes go to their public routes with no token; its one
+// write is `act`, to this universe.
+raids = mountRaids({
+  session,
+  universeId,
+  host: el('raids-host'),
+  reports: el('raid-reports'),
+  tab: el('raids-tab'),
+  act,
+  vocab,
+  isBusy: () => state.busy,
+  isEnded: () => state.ended,
+  onFeed: (tick, text, inbound) => {
+    feedLog.push({ tick, type: inbound ? 'raid-in' : 'raid', text });
+    while (feedLog.length > FEED_MAX) feedLog.shift();
+    renderFeed();
+  },
+});
 
 // ================================================================ INITIAL PAINT
 paint();
