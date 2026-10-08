@@ -1147,11 +1147,14 @@ function buildSession(doc, extras = {}) {
  * That asymmetry is `gate.ts`'s, not this file's; it is restated here because it
  * is the single thing a caller gets wrong.
  */
-function liveControls(base, doc) {
+function liveControls(base, doc, headers = () => ({})) {
   const post = async (route, body) => {
     const res = await fetch(`${base}/live/${route}`, {
       method: 'POST',
-      headers: { 'content-type': 'application/json' },
+      // `headers()` is the caller's hook for anything a write must carry — the
+      // lobby's per-universe owner token. Called per request, so a token stored
+      // after the session opened is still sent.
+      headers: { ...headers(), 'content-type': 'application/json' },
       body: JSON.stringify(body ?? {}),
     });
     const payload = await res.json();
@@ -1241,7 +1244,14 @@ function liveControls(base, doc) {
  *
  * The live branch talks to `scripts/play-server.mjs` (`npm run play`), which
  * holds one `AgentSession` in memory and publishes it in exactly this document
- * shape. `base` is a URL prefix — `''` for the page's own origin.
+ * shape, or to the lobby (`packages/lobby`), which publishes each universe at
+ * `/u/<id>/live/*` — `openSession({ live: '/u/<id>' })`. `base` is a URL
+ * prefix — `''` for the page's own origin.
+ *
+ * `source.headers`, optional, is a function returning extra headers for every
+ * write (`submit`, `advance`, …). The lobby needs its owner token there:
+ *
+ *     openSession({ live: `/u/${id}`, headers: () => ({ 'x-universe-token': token }) })
  */
 export async function openSession(source = {}) {
   if (source.live !== undefined) {
@@ -1254,7 +1264,8 @@ export async function openSession(source = {}) {
       );
     }
     const doc = await res.json();
-    return buildSession(doc, liveControls(base, doc));
+    const headers = typeof source.headers === 'function' ? source.headers : () => ({});
+    return buildSession(doc, liveControls(base, doc, headers));
   }
   const url = source.recording ?? '../session.json';
   const res = await fetch(url);
