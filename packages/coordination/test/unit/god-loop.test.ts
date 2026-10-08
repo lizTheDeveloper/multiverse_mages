@@ -337,6 +337,27 @@ describe('eras advance, and each boundary is recorded once', () => {
   }, 90_000);
 });
 
+describe('a stagnated universe says which rule ended it', () => {
+  it('names the mageless clock, and the counts it compared, on the tick it fires', () => {
+    // S4: `terminalReason` says *stagnation* and nothing more, and a lobby
+    // playtester lost a universe at year 45 with no way to tell which of three
+    // rules had fired. Every mage is killed, so only the mageless clock can run
+    // out — and it must be the one the report names.
+    const { simulation, state, source } = world();
+    let current = step(state, [], source);
+    const mages = componentOf(current, MAGE);
+    for (const { handle } of collectRecords(current, MAGE)) mages.set(handle, 'alive', 0);
+    let report = simulation.lastGodReport();
+    for (let tick = 0; tick < 80 && universeOf(current).terminalReason === 0; tick += 1) {
+      current = step(current, [], source);
+      report = simulation.lastGodReport();
+    }
+    expect(universeOf(current).terminalReason).toBe(TERMINAL_REASON.stagnation);
+    expect(report?.stagnation.rule).toBe('mageless');
+    expect(report?.stagnation.magelessTicks).toBe(C.stagnationMagelessTicks);
+  });
+});
+
 describe('a terminated universe is frozen', () => {
   it('changes no component row once a terminal reason is written', () => {
     const { state, source } = world();

@@ -112,11 +112,22 @@ const ANCHOR_SEED = 20260813;
  * Measured at `c6d11439`, 2026-08-17. The previous set, taken at `57bcbc44`,
  * was `1b95bef9afe5b5d4` / `251dc6441d9c707b` / `3097649cf676def1`; it is kept
  * here so the size of the move is readable rather than only its fact.
+ *
+ * **Re-measured 2026-10-08 on `sim-playability` (S4), by the same procedure**,
+ * after the procedure was first given a positive control: run on a detached
+ * `origin/main` 95738881 it reproduced the set below it exactly
+ * (`0ceb9bffbc4b20f4` / `cc89d97858673b71` / `27c0db075e966bf3`). Two announced
+ * moves, both deliberate: `laborObligation` asks for the laborers the food bill
+ * needs (which moves every tick after the first), and `rl-open-the-portal`'s
+ * research cost fell to the tier-4 floor and `change-tradition`'s price fell to
+ * the tier-4 cap, and the stagnation clock gained a neglect window
+ * (`stagnation-neglect-ticks`) — content edits, so the content revision in the
+ * tick-zero snapshot moves too.
  */
 const INERT_DEFAULT_HASHES: Readonly<Record<number, string>> = {
-  0: '0ceb9bffbc4b20f4',
-  200: 'cc89d97858673b71',
-  500: '27c0db075e966bf3',
+  0: 'ff256d65e8292850',
+  200: 'c2cbcd3994257703',
+  500: 'b08a9818e920e7bd',
 };
 
 /** Generous, for the reason `balance-telemetry.test.ts` gives at length. */

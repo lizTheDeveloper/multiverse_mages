@@ -343,25 +343,16 @@ const REGISTERED: ReadonlyMap<string, string> = new Map([
       'for the first time and the rounding step at the end of it is finally ' +
       'visible. Fires on 32 of 240 ticks (0.133).',
   ],
-  [
-    'materials:materialsProduced',
-    'A genuine floor with no banking, at the land-share split: ' +
-      '`floorDiv(worked x shares[kind], FP_ONE)` is zero when a cohort works ' +
-      'less than one fp unit into a kind. The sample is floorDiv(512, 1024) — ' +
-      'half a unit of a material, from a cohort too small or too tilted away ' +
-      'from that kind to make a whole one. Nothing stalls: production is ' +
-      'recomputed per cohort per tick from headcount and affinity, no remainder ' +
-      'is carried and none is owed, and the same cohort produces the moment it ' +
-      'is larger or its share is higher. It is the same reading ' +
-      '`world-step:latentInCohort` above carries — a population too small to ' +
-      'produce a whole unit should produce none, and rounding it up would have ' +
-      'every hamlet quarrying stone. Fires on 4 of 240 ticks (0.017), which is ' +
-      'the honest rate for a floor that needs both a small cohort and a low ' +
-      'share to bite. **Newly reached rather than newly written** — `material-' +
-      'economy` widened the stock from three kinds to seven and tilted the land ' +
-      'shares by species aptitude, so a cohort now splits one month of work ' +
-      'across four land kinds instead of concentrating it.',
-  ],
+  // `materials:materialsProduced` was registered here — *"a genuine floor with
+  // no banking, at the land-share split ... from a cohort too small or too
+  // tilted away from that kind to make a whole one"* — and **the row is gone on
+  // `sim-playability` (S4), 2026-10-08**, caught by `registeredButUnseen`.
+  // The floor is still in the function; the arm stopped reaching it.
+  // `laborObligation` asks for the laborers the food bill actually needs —
+  // about twice as many — so the laborer cohorts this arm builds are no longer
+  // small enough for any of them to work under one `fp` unit into a kind. A
+  // universe with a one-laborer cohort would still floor there; if a later
+  // change thins the workforce again, the row comes back with its old text.
 
   // ---- Handled at the site. ----
   [

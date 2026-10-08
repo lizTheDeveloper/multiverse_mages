@@ -163,6 +163,7 @@ export interface GodConstants {
   readonly stagnationWorshipFloor: Fp;
   readonly stagnationWorshipTicks: number;
   readonly stagnationStasisTicks: number;
+  readonly stagnationNeglectTicks: number;
   readonly stagnationHealthFloor: Fp;
 
   // Prestige and legacy.
@@ -330,6 +331,7 @@ export function resolveGodConstants(registry: ContentRegistry): GodConstants {
     stagnationWorshipFloor: value('stagnation-worship-floor'),
     stagnationWorshipTicks: value('stagnation-worship-ticks'),
     stagnationStasisTicks: value('stagnation-stasis-ticks'),
+    stagnationNeglectTicks: value('stagnation-neglect-ticks'),
     stagnationHealthFloor: value('stagnation-health-floor'),
 
     prestigeEarnMax: value('prestige-earn-max'),

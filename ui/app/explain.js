@@ -318,15 +318,25 @@ export function stagnationReading(session) {
       possible: true,
       evidence: `worship ended at ${num(r.worship)} (tier ${r.worshipTier}); its peak was ${num(Math.max(0, peakWorship.value))} in year ${year(peakWorship.tick)}`,
     },
+    // The quiet clock (coordination `stepStagnation`, S4): a tick is quiet when
+    // nothing new was learned AND the god paid for no intervention. Two windows.
     {
       id: 'stasis',
-      text: 'nothing new was learned for a long stretch while worship stayed below a healthy level',
-      possible: lastNewKnowledgeTick !== endTick,
+      text: 'decline: forty quiet years (nothing new learned, no act of yours) while worship was low and below the tier your universe once reached',
+      possible: lastNewKnowledgeTick !== endTick && r.worshipTier < peakTierOf(session),
       evidence: lastNewKnowledgeTick === null
         ? 'no node was ever newly learned in this run'
         : lastNewKnowledgeTick === endTick
           ? 'something new was learned in the final month, so not this one'
-          : `the last new node was learned in year ${year(lastNewKnowledgeTick)}, ${year(endTick - lastNewKnowledgeTick)} years before the end`,
+          : `the last new node was learned in year ${year(lastNewKnowledgeTick)}, ${year(endTick - lastNewKnowledgeTick)} years before the end; worship ended at tier ${r.worshipTier}`,
+    },
+    {
+      id: 'neglect',
+      text: 'neglect: a century of quiet — nothing new learned and no act of yours — whatever worship read. Any paid action resets it',
+      possible: lastNewKnowledgeTick === null || endTick - lastNewKnowledgeTick >= 1200,
+      evidence: lastNewKnowledgeTick === null
+        ? 'no node was ever newly learned in this run'
+        : `the last new node was learned ${year(endTick - lastNewKnowledgeTick)} years before the end`,
     },
   ];
   return {
@@ -339,6 +349,15 @@ export function stagnationReading(session) {
     endTick,
     rules,
   };
+}
+
+/** The highest worship tier any frame of the session shows. */
+function peakTierOf(session) {
+  let peak = 0;
+  for (let i = 0; i < session.frameCount; i += 1) {
+    peak = Math.max(peak, session.frame(i).resources().worshipTier);
+  }
+  return peak;
 }
 
 /** The guide's thresholds, used only when the session document does not publish `content.ascension`. */

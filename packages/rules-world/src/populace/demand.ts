@@ -309,6 +309,53 @@ function ceilDiv(numerator: number, denominator: number): number {
 }
 
 /**
+ * What a kind-denominated bill asks of laborers, restated in the all-kinds unit
+ * {@link LABORER_MATERIALS_YIELD} divides by. `fp`.
+ *
+ * ## The defect this exists to close
+ *
+ * {@link DemandInputs.materialsObligation} was written for the single-stock
+ * economy, where a laborer's sixteen materials *were* sixteen of whatever the
+ * bill was owed in. The differentiated economy split that sixteen into three by
+ * the land's yield shares, and the bill kept its old shape: subsistence (owed in
+ * `food`) plus upkeep (owed in `vellum`), divided by sixteen. On the shipped
+ * territory a laborer's food is `16 × 470 / 1024` ≈ 7.3, so the demand asked for
+ * **under half** the laborers it takes to feed the populace. Measured on the
+ * reference universe (origin/main 95738881, seed 20260813, no god input): land
+ * food covered 52% of subsistence at world year 180, the founding stock ran out
+ * at about year 150 and never came back, and the population kept growing under a
+ * 47% shortfall — which is the playtest's *"food sat at 0 for 150 years"*.
+ *
+ * ## Why the maximum, not the sum
+ *
+ * Every laborer produces every land kind at once, in the shares the land fixes.
+ * A workforce big enough to cover the food bill already produces some vellum,
+ * and vice versa, so the headcount that covers both bills is the larger of the
+ * two headcounts, not their sum. Summing would over-staff by the smaller bill.
+ *
+ * A kind the land yields none of is skipped rather than divided by zero: no
+ * number of laborers covers it, and asking for infinitely many would turn the
+ * whole populace into laborers for a bill they cannot pay.
+ *
+ * Integer arithmetic throughout, rounded **up** for the reason the laborer term
+ * itself rounds up: a bill of one unit still asks for the laborer who could
+ * cover it.
+ */
+export function laborObligation(
+  owed: { readonly food: Fixed; readonly vellum: Fixed },
+  shares: { readonly food: Fixed; readonly vellum: Fixed },
+): Fixed {
+  let obligation = 0;
+  for (const kind of ['food', 'vellum'] as const) {
+    const bill = Math.max(0, owed[kind]);
+    const share = shares[kind];
+    if (bill === 0 || share <= 0) continue;
+    obligation = Math.max(obligation, ceilDiv(bill * FP_ONE, share));
+  }
+  return obligation;
+}
+
+/**
  * Demand that went unmet this tick, per occupation, in the one iteration order.
  *
  * Required to be *observable* by the `economy` spec — "the unmet demand per

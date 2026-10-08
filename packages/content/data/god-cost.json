@@ -106,8 +106,8 @@
   {
     "id": "change-tradition",
     "actionId": 13,
-    "favorCost": 65536,
-    "gloss": "Exceeds the favor cap at every worship tier below the highest, so the ruinous action is structurally unavailable to a young universe rather than merely expensive. It also zeroes whatever is left in the pool.",
+    "favorCost": 61440,
+    "gloss": "Exactly the tier-4 favor cap and above every cap below it: the ruinous action needs a full pool at tier 4. It was 65536, payable only at tier 5, which no measured 333-year run reached (S4, 2026-10-08), so it was unaffordable forever. It also zeroes whatever is left in the pool.",
     "tuningStatus": "untuned"
   },
   {

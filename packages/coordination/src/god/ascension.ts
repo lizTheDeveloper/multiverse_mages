@@ -316,8 +316,15 @@ export function libraryDependence(knownNodes: number, singleInstanceNodes: numbe
 export interface StagnationInputs {
   readonly livingMages: number;
   readonly worship: Fixed;
+  /** The worship tier this tick, compared against the god record's peak. */
+  readonly worshipTier: number;
   /** Whether a node newly entered the universe this tick. */
   readonly nodeEntered: boolean;
+  /**
+   * Whether an intervention the god paid for landed this tick. A submitted
+   * no-op, a refused action and a free declaration are not acts on the world.
+   */
+  readonly godActed: boolean;
 }
 
 /** The counters after one tick, and whether any trigger fired. */
@@ -344,20 +351,71 @@ export function stepStagnation(
   const magelessTicks = inputs.livingMages === 0 ? god.magelessTicks + 1 : 0;
   const lowWorshipTicks =
     inputs.worship < constants.stagnationWorshipFloor ? god.lowWorshipTicks + 1 : 0;
-  // The conjunctive one. The clock runs only while the universe is *both*
-  // acquiring nothing and unworshipped, so a healthy custodian with a completed
-  // graph resets it every tick and is never terminated as ruin.
-  const stasisTicks =
-    !inputs.nodeEntered && inputs.worship < constants.stagnationHealthFloor
-      ? god.stasisTicks + 1
-      : 0;
+  // ## The quiet clock, and its two windows
+  //
+  // `stasisTicks` counts **quiet** ticks: no node newly entered the universe and
+  // no intervention of its god landed. Either resets it. A world is quiet when
+  // nobody in it — neither its scholars nor its god — is changing it.
+  //
+  // It ends the run on one of two windows.
+  //
+  // **Decline, `stagnation-stasis-ticks` (480).** Quiet for forty years while
+  // worship sits below the health floor *and* below the tier the universe once
+  // held. This is the rule the health floor's gloss describes: stagnation must
+  // mean decline, not completion. The peak conjunct is the S4 repair — measured
+  // on origin/main 95738881 (passive god, one founding species, the 2×2
+  // opening, all six species, seeds 20260813–14), **12 of 12** universes were
+  // ended between ticks 481 and 874 by the floor alone, at worship 0.45–1.25
+  // against a floor of 2.0 no one-species 2×2 universe reached, flat or rising
+  // in every run. That was completion at a small scale, read as ruin.
+  //
+  // **Neglect, `stagnation-neglect-ticks` (1200).** Quiet for a century,
+  // whatever worship reads. Without it the peak conjunct made neglect
+  // unpunishable: a universe that never climbed a tier could never fall from
+  // one, so a god who never acted kept a thriving universe forever. A century
+  // with no new knowledge and no act of its god is a world its god abandoned,
+  // and §8a's *"stagnation is its own ending"* is that ending. One paid action
+  // anywhere in the century resets it, so a learning player who acts at all is
+  // never ended by it.
+  //
+  // A god who keeps acting in a declining universe is not ended by either
+  // window; ruin still ends that run through the low-worship and mageless
+  // clocks, which neither change touches.
+  const quiet = !inputs.nodeEntered && !inputs.godActed;
+  const stasisTicks = quiet ? god.stasisTicks + 1 : 0;
+  const declining =
+    inputs.worship < constants.stagnationHealthFloor && inputs.worshipTier < god.peakWorshipTier;
+  const stasisFired =
+    (declining && stasisTicks >= constants.stagnationStasisTicks) ||
+    stasisTicks >= constants.stagnationNeglectTicks;
 
   const stagnated =
     magelessTicks >= constants.stagnationMagelessTicks ||
     lowWorshipTicks >= constants.stagnationWorshipTicks ||
-    stasisTicks >= constants.stagnationStasisTicks;
+    stasisFired;
 
   return { magelessTicks, lowWorshipTicks, stasisTicks, stagnated };
+}
+
+/** Which stagnation rule a tick's outcome names. */
+export type StagnationRule = 'none' | 'mageless' | 'unworshipped' | 'stasis' | 'neglect';
+
+/**
+ * The rule that ended the run this tick, or `none`.
+ *
+ * Report-only: nothing in the rules reads it back. When more than one clock
+ * runs out on the same tick the most specific cause wins, in this order —
+ * **mageless** (the last scholar is gone), **unworshipped** (nobody reveres the
+ * god), then the quiet clock, which names **neglect** when its century window
+ * was reached and **stasis** (decline) otherwise. A universe whose last mage
+ * died while it was also quiet is reported as mageless, because that is the
+ * fact a player can do something about next time.
+ */
+export function stagnationRule(outcome: StagnationOutcome, constants: GodConstants): StagnationRule {
+  if (!outcome.stagnated) return 'none';
+  if (outcome.magelessTicks >= constants.stagnationMagelessTicks) return 'mageless';
+  if (outcome.lowWorshipTicks >= constants.stagnationWorshipTicks) return 'unworshipped';
+  return outcome.stasisTicks >= constants.stagnationNeglectTicks ? 'neglect' : 'stasis';
 }
 
 /** What a terminated run earned, and the achievement it earned it from. */

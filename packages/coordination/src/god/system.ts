@@ -87,7 +87,7 @@ import {
   readUniverse,
 } from '@mm/state';
 
-import type { DeepestByCell } from './ascension.js';
+import type { DeepestByCell, StagnationRule } from './ascension.js';
 import {
   deepestNodesByCell,
   eraBoundaryPassed,
@@ -95,6 +95,7 @@ import {
   masteredCellCount,
   prestigeEarned,
   qualifyingPath,
+  stagnationRule,
   stepStagnation,
 } from './ascension.js';
 import type { GodContent } from './constants.js';
@@ -201,6 +202,28 @@ export interface GodTickReport {
   readonly ascensionPath: number;
   readonly terminalReason: number;
   /**
+   * The three stagnation clocks after this tick, and which one ended the run.
+   *
+   * `terminalReason` says *stagnation* and nothing about why, and the three
+   * rules are different stories: the last mage died, nobody worshipped for
+   * twenty years, or nothing new was learnt for forty while worship sat below
+   * the health floor and below its own peak. A player who loses a universe is
+   * owed the one that fired and the numbers it compared. Report-only, like
+   * `ascensionProgress`: nothing hashes it and no rule reads it back.
+   */
+  readonly stagnation: {
+    /** The clock that reached its window this tick, or `none`. */
+    readonly rule: StagnationRule;
+    readonly magelessTicks: number;
+    readonly lowWorshipTicks: number;
+    readonly stasisTicks: number;
+    /** The worship each floor was compared against, fp. */
+    readonly worship: Fixed;
+    readonly worshipTier: number;
+    /** The god record's peak tier, which the stasis clock requires falling below. */
+    readonly peakWorshipTier: number;
+  };
+  /**
    * What each ascension conjunct read this tick.
    *
    * Added because both paths now gate on quantities the god's play produces, and
@@ -217,6 +240,21 @@ export interface GodTickReport {
     readonly cellsKnown: number;
     /** Universities at full `buildProgress`; only the god's funding creates one. */
     readonly completedUniversities: number;
+    /**
+     * Path B's counter: consecutive passing era boundaries, as the god record
+     * holds it after this tick. Reported so a probe can tell *which* path is
+     * closed without reading state — the four quantities above say how close
+     * Path A is and nothing at all about Path B's run.
+     */
+    readonly goodEraRun: number;
+    /**
+     * `libraryDependence` right now, fp — the Path B conjunct the four counts
+     * above cannot show. Computed on every tick for the report only; the era
+     * boundary computes its own at the boundary, and nothing reads this one.
+     */
+    readonly dependence: Fixed;
+    /** Nodes lost so far in the era now running — the last Path B conjunct. */
+    readonly eraNodesLost: number;
   };
 }
 
@@ -526,11 +564,20 @@ function outcomeSystem(
 
       // ---- 8. Stagnation, and the terminal write ------------------------------
       const livingMages = countLiving(state);
+      // Read once here and reused for the ledger below: what the god's
+      // interventions spent this tick. Any paid action is an act on the world,
+      // and an act resets the quiet clock (`stepStagnation`).
+      const interventions = interventionsFor(ctx.tick);
+      let godActed = false;
+      for (const amount of Object.values(interventions.spentByAction)) {
+        if (amount > 0) godActed = true;
+      }
       const stagnation = stepStagnation(
         god,
         {
           livingMages,
           worship,
+          worshipTier,
           // "A node newly entered the universe" is read as either count rising:
           // ever-known catches a genuinely new node, existing catches a
           // rediscovery or a re-taught one. The case both miss is a loss and a
@@ -539,6 +586,7 @@ function outcomeSystem(
           // stasis trigger is conjunctive with the worship health floor, so a
           // universe healthy enough to be doing both is never terminated by it.
           nodeEntered: everKnown > god.lastEverKnown || known.length > god.lastExisting,
+          godActed,
         },
         constants,
       );
@@ -586,7 +634,6 @@ function outcomeSystem(
 
       writeGodState(state, universe, god);
 
-      const interventions = interventionsFor(ctx.tick);
       let spentThisTick = 0;
       for (const amount of Object.values(interventions.spentByAction)) spentThisTick += amount;
 
@@ -630,11 +677,23 @@ function outcomeSystem(
         interventions,
         ascensionPath: path,
         terminalReason,
+        stagnation: {
+          rule: stagnationRule(stagnation, constants),
+          magelessTicks: stagnation.magelessTicks,
+          lowWorshipTicks: stagnation.lowWorshipTicks,
+          stasisTicks: stagnation.stasisTicks,
+          worship,
+          worshipTier,
+          peakWorshipTier: god.peakWorshipTier,
+        },
         ascensionProgress: {
           masteredCells: masteredCellCount(apotheosisFacts, constants.ascensionSummitCopies),
           nodesKnown: known.length,
           cellsKnown: knownCells.size,
           completedUniversities: sources.completedUniversities,
+          goodEraRun: god.goodEraRun,
+          dependence: libraryDependence(known.length, knowledge.singleInstanceNodes().length),
+          eraNodesLost: god.eraNodesLost,
         },
       });
     },

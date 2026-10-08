@@ -97,6 +97,7 @@ export type {
   PrestigeInputs,
   StagnationInputs,
   StagnationOutcome,
+  StagnationRule,
 } from './ascension.js';
 export {
   LEGACY_CHANNELS,
@@ -112,6 +113,7 @@ export {
   masteredCellCount,
   prestigeEarned,
   qualifyingPath,
+  stagnationRule,
   stepStagnation,
 } from './ascension.js';
 

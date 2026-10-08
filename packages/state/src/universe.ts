@@ -117,7 +117,20 @@ export function readUniverse(state: SimState, universe: EntityHandle): UniverseR
  * reached the same state by different routes agree on.
  */
 export function readEdicts(state: SimState): Edict[] {
-  return collectRecords(state, EDICT).map(({ row }) => ({ cellId: row.cellId, kind: row.kind }));
+  // Sorted, and by the same key `revokePlan` sorts by. `collectRecords` walks
+  // the component's dense rows, which is *storage* order: a store that moves
+  // its last row into a freed one reorders it, and entity handles are recycled
+  // with a new generation in their high bits, so neither matches ascending
+  // handle. This said "ascending slot order" and returned storage order, while
+  // the resolver for action 7 indexed ascending handle — so the observation,
+  // the player projection and the UI showed a list in one order and `revoke
+  // edict 0` removed the first edict of a different one. Measured on the
+  // reference universe, seed 20260813: interdict cells 5 then 9, the list
+  // reads [5, 9], and revoking index 0 removed cell 9. The regression test is
+  // `scenario/test/unit/revoke-edict-order.test.ts`.
+  return collectRecords(state, EDICT)
+    .sort((a, b) => a.handle - b.handle)
+    .map(({ row }) => ({ cellId: row.cellId, kind: row.kind }));
 }
 
 /**

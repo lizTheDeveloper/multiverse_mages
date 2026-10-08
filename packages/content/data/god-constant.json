@@ -360,7 +360,14 @@
     "id": "stagnation-stasis-ticks",
     "value": 480,
     "unit": "ticks",
-    "gloss": "Consecutive world ticks with no node newly entering the universe before the stasis trigger fires \u2014 but only while worship is simultaneously below the health floor.",
+    "gloss": "Consecutive quiet world ticks (no node newly entering the universe and no paid intervention by its god) before the decline trigger fires \u2014 only while worship is below the health floor and below the tier the universe once reached. Completion of a small square is not decline (S4).",
+    "tuningStatus": "untuned"
+  },
+  {
+    "id": "stagnation-neglect-ticks",
+    "value": 1200,
+    "unit": "ticks",
+    "gloss": "Consecutive quiet world ticks before the neglect trigger fires, whatever worship reads: a century with no new knowledge and no paid act of its god. One action resets it. Claim (S4): neglected first universes end before tick 4000 in most seeds and lightly played ones survive a century in 90%; measured by scripts/s4-playability-probe.mjs.",
     "tuningStatus": "untuned"
   },
   {
