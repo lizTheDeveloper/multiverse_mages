@@ -8,9 +8,12 @@
 #     docker build -t mm-play .
 #     docker compose -f deploy/play-compose.yml up -d --build
 #
-# The serving process is scripts/play-server.mjs: ONE shared universe, timed by
-# whichever browsers are open. docs/devops/ci-and-deploy.md says why that is not
-# the game yet.
+# The serving process is the lobby (packages/lobby): a universe per player, and
+# the server's own interval is the only clock — one world tick per second
+# whether or not a browser is open. The old single shared universe,
+# scripts/play-server.mjs, is still in the image for development:
+#
+#     docker run --rm -p 8300:8300 mm-play node scripts/play-server.mjs --port 8300
 
 FROM node:22-slim AS build
 WORKDIR /app
@@ -42,8 +45,8 @@ FROM node:22-slim
 WORKDIR /app
 COPY --from=build --chown=root:root /app .
 # Unprivileged at runtime. The tree stays root-owned and read-only to this user:
-# play-server writes nothing to disk, so a compromised process cannot rewrite
+# the lobby writes nothing to disk, so a compromised process cannot rewrite
 # the code it is serving.
 USER node
 EXPOSE 8300
-CMD ["node", "scripts/play-server.mjs", "--port", "8300"]
+CMD ["node", "packages/lobby/bin/lobby.mjs", "--port", "8300"]

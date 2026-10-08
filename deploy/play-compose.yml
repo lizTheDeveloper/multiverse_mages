@@ -6,6 +6,9 @@
 # the external network the host's proxy routes the domain over.
 #
 #     docker compose -f deploy/play-compose.yml up -d --build
+#
+# Runs the image's default command: the lobby, one universe per player, timed
+# by the server (see the Dockerfile).
 
 # Pinned: the host proxy routes to the container BY NAME (`mm-play-play-1`).
 # Unpinned, compose names the project after this file's directory and the
