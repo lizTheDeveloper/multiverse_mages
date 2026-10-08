@@ -288,20 +288,30 @@ proportional change in that metric the gate would report as `regressed`. Anythin
 
 | metric | 5-year gate | 20-year gate | 20-year agency gate | 200-year gate |
 |---|---|---|---|---|
-| `referenceGrimoires` | 4.1 % | 7.3 % | 15.4 % | 15.4 % |
-| `referenceKnowledgeInstances` | 2.0 % | 4.3 % | 8.5 % | 40.3 % |
-| `referenceLibraryDepth` | 17.3 % | 16.7 % | 21.3 % | 35.8 % |
-| `referenceLivingMages` | 0.5 % | 1.5 % | 2.5 % | 15.2 % |
-| `referenceNodesGained` | 0.8 % | 2.6 % | 3.0 % | 8.2 % |
-| `referenceNodesGainedFinalQuarter` | — | 7.0 % | 11.1 % | 74.9 % |
-| `referenceNodesKnown` | 0.7 % | 2.5 % | 2.9 % | 8.1 % |
-| `referencePeakPopulation` | 0.0 % | 1.8 % | 17.8 % | 25.7 % |
-| `referencePopulation` | 1.0 % | 2.0 % | 3.8 % | 12.1 % |
-| `referencePopulationChange` | 4.3 % | 9.5 % | 16.9 % | 12.2 % |
+| `referenceGrimoires` | 4.4 % | 7.9 % | 17.6 % | 14.2 % |
+| `referenceKnowledgeInstances` | 2.4 % | 5.1 % | 10.0 % | 33.3 % |
+| `referenceLibraryDepth` | 17.4 % | 16.5 % | 20.8 % | 33.2 % |
+| `referenceLivingMages` | 1.5 % | 2.5 % | 3.7 % | 16.8 % |
+| `referenceNodesGained` | 0.9 % | 2.7 % | 3.6 % | 16.4 % |
+| `referenceNodesGainedFinalQuarter` | — | 8.5 % | 15.9 % | 128.6 % |
+| `referenceNodesKnown` | 0.8 % | 2.6 % | 3.5 % | 16.1 % |
+| `referencePeakPopulation` | 0.0 % | 15.4 % | 26.7 % | 23.0 % |
+| `referencePopulation` | 1.0 % | 1.9 % | 3.7 % | 22.8 % |
+| `referencePopulationChange` | 4.3 % | 9.3 % | 16.0 % | 22.9 % |
 | runs | 200 | 200 | 64 | 64 |
 | plays a god verb | no | no | **yes** | **yes** |
 | wall clock, 4 workers | 4 s | 27 s | **10 s** | **830–1154 s** |
 
+
+**Re-measured 2026-10-08 on `raid-tuning`, over S4.** All four gates were regenerated, because
+every gated run is raided by stand-ins and those raids now kill and burn libraries (the raid-tuning
+PR: casting affordable, hit points and bolts on one scale, stand-ins re-armed). Living mages moved
+−14.5 SE at 5 years and −13.0 SE at 20. Agency arm lines: median MDE 18.3 %, **80 of 80** below
+100 %. Ascension arm lines: median 43.7 %, 68 of 80 below 100 % counting the saturated line;
+thirteen are blind (`BLIND_ARM_LINES`). **`referenceNodesGainedFinalQuarter` on the 200-year gate is
+blind again at sweep level (128.6 %):** a raided universe's final quarter can *lose* nodes, which
+pulls the mean toward zero. The fix the paragraphs below name — more replicates — still stands. The
+S4 paragraph is kept as history.
 
 **Re-measured 2026-10-08 on `sim-playability` (S4).** The 5-year and 20-year gates were re-sealed
 (provenance only; the content moved for `rl-open-the-portal`, `change-tradition` and the new
