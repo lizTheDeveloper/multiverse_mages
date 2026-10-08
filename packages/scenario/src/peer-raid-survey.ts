@@ -319,9 +319,13 @@ export function playPeerPair(
     return encourage(b);
   };
 
+  // A universe that has ended — stagnated, ascended, hit its cap — takes no
+  // more actions; a session refuses them, rightly. The attacker's ending ends
+  // the pair; the defender's ends only its own moves.
+  const running = (session: AgentSession | undefined): boolean => session?.status() === 'running';
   const step = (action: { kind: number; params: number[] }): void => {
-    a.submit(action);
-    b?.submit(defenderMove());
+    if (running(a)) a.submit(action);
+    if (running(b)) b?.submit(defenderMove());
     tick += 1;
   };
 
@@ -365,6 +369,7 @@ export function playPeerPair(
   let favorLostInPair = 0;
   const raidsWanted = arm.raids ?? 1;
   for (let i = 0; i < MAX_WAIT_TICKS * raidsWanted && measured.length < raidsWanted; i += 1) {
+    if (!running(a)) break;
     if (live.b !== undefined && hostEnded(live.b)) break;
     const portalSlot = (a.candidates().get(GOD_ACTION.openPortal) ?? []).findIndex((c) => c.params[0] === 1);
     if (a.legalActions()[GOD_ACTION.openPortal] !== 1 || portalSlot < 0 || live.a === undefined) {
@@ -437,7 +442,7 @@ export function playPeerPair(
       portalRefusals = 0;
       favorLostToRefusals = 0;
     }
-    b?.submit(defenderMove());
+    if (running(b)) b?.submit(defenderMove());
     tick += 1;
   }
   return { raids: measured, portalRefusals: refusalsInPair, favorLostToRefusals: favorLostInPair };
