@@ -1147,11 +1147,24 @@ function buildSession(doc, extras = {}) {
  * That asymmetry is `gate.ts`'s, not this file's; it is restated here because it
  * is the single thing a caller gets wrong.
  */
+/**
+ * A live read that failed with an HTTP status a page must act on. `status` is
+ * the server's: `404` means the universe is gone (a lobby restart); anything
+ * else is worth retrying. A network failure is a plain `TypeError` from fetch.
+ */
+export class LiveSessionError extends Error {
+  constructor(message, status) {
+    super(message);
+    this.name = 'LiveSessionError';
+    this.status = status;
+  }
+}
+
 function liveControls(base, doc, headers = () => ({})) {
   const post = async (route, body) => {
     const res = await fetch(`${base}/live/${route}`, {
       method: 'POST',
-      // `headers()` is the caller's hook for anything a write must carry — the
+      // `headers()` is the caller's hook for anything a request must carry — the
       // lobby's per-universe owner token. Called per request, so a token stored
       // after the session opened is still sent.
       headers: { ...headers(), 'content-type': 'application/json' },
@@ -1189,7 +1202,11 @@ function liveControls(base, doc, headers = () => ({})) {
      * when the clock has actually moved.
      */
     poll: async () => {
-      const res = await fetch(`${base}/live/frames?since=${doc.frames.length}`);
+      const res = await fetch(`${base}/live/frames?since=${doc.frames.length}`, { headers: headers() });
+      // A 404 is not "no new frames": the server no longer has this universe
+      // (it restarted). Returning 0 here froze a page silently while its badge
+      // said running, so it is thrown, typed, for the page to act on.
+      if (res.status === 404) throw new LiveSessionError('universe-gone', 404);
       if (!res.ok) return 0;
       const payload = await res.json();
       const before = doc.frames.length;
@@ -1205,7 +1222,8 @@ function liveControls(base, doc, headers = () => ({})) {
      * exactly once, after a reset.
      */
     resync: async () => {
-      const res = await fetch(`${base}/live/session.json`);
+      const res = await fetch(`${base}/live/session.json`, { headers: headers() });
+      if (res.status === 404) throw new LiveSessionError('universe-gone', 404);
       if (!res.ok) return false;
       const next = await res.json();
       doc.frames.length = 0;
@@ -1249,22 +1267,24 @@ function liveControls(base, doc, headers = () => ({})) {
  * prefix — `''` for the page's own origin.
  *
  * `source.headers`, optional, is a function returning extra headers for every
- * write (`submit`, `advance`, …). The lobby needs its owner token there:
+ * request, reads and writes. The lobby needs its owner token there — to act,
+ * and so that the owner's polling counts as the universe still being played:
  *
  *     openSession({ live: `/u/${id}`, headers: () => ({ 'x-universe-token': token }) })
  */
 export async function openSession(source = {}) {
   if (source.live !== undefined) {
     const base = String(source.live === true ? '' : source.live).replace(/\/+$/u, '');
-    const res = await fetch(`${base}/live/session.json`);
+    const headers = typeof source.headers === 'function' ? source.headers : () => ({});
+    const res = await fetch(`${base}/live/session.json`, { headers: headers() });
     if (!res.ok) {
-      throw new Error(
+      throw new LiveSessionError(
         `No live universe at ${base}/live/session.json (${res.status}). Start one with ` +
           '`npm run play` and open http://localhost:8300/.',
+        res.status,
       );
     }
     const doc = await res.json();
-    const headers = typeof source.headers === 'function' ? source.headers : () => ({});
     return buildSession(doc, liveControls(base, doc, headers));
   }
   const url = source.recording ?? '../session.json';
