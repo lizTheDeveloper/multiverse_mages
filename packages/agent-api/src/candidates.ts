@@ -59,6 +59,7 @@ import {
   KNOWLEDGE_INSTANCE,
   LOCATION_KIND,
   MAGE,
+  MAGE_ROLE,
   UNIVERSITY,
   readRulesetForObservation,
   canGrantFoundingKnowledge,
@@ -433,6 +434,11 @@ function changeTraditionCandidates(input: CandidateInput): Candidate[] {
  */
 function portalCandidates(input: CandidateInput): Candidate[] {
   if (!holdsPortalMagic(input)) return [];
+  // Nobody to send. A portal opened with no living raider fields no attacker,
+  // resolves on its opening tick and charges full price for a record that
+  // says nothing happened — reported from a live lobby as "No raid opened".
+  // `coordination`'s `portalPlan` refuses the same case, so the two agree.
+  if (!hasLivingRaider(input.state)) return [];
   return [...new Set(input.portalTargets ?? [])]
     .filter((target) => Number.isInteger(target) && target !== 0)
     .sort((a, b) => a - b)
@@ -485,6 +491,11 @@ function inviteScholarCandidates(input: CandidateInput): Candidate[] {
     .filter((speciesId) => !resident.has(speciesId))
     .sort((a, b) => a - b)
     .map((speciesId) => ({ params: [speciesId] }));
+}
+
+/** Whether any living mage holds the raider role — someone to send through a portal. */
+function hasLivingRaider(state: SimState): boolean {
+  return collectRecords(state, MAGE).some(({ row }) => row.alive !== 0 && row.roleId === MAGE_ROLE.raider);
 }
 
 /**

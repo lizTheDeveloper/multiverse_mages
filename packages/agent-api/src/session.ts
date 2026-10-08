@@ -140,6 +140,18 @@ export interface Scenario {
    */
   readonly portalTargets?: readonly number[];
   /**
+   * The subset of {@link portalTargets} that holds a universe **right now**,
+   * or absent when every listed target always does.
+   *
+   * A live peer's seat can empty — its universe stagnated, ascended, hit its
+   * cap — and the raid system then has nobody to open a portal on. Measured on
+   * `2464588b` with a peer stepped to stagnation: the mask still offered the
+   * seat, the god was charged favor and passage, and no raid opened. Asked at
+   * every observation and every admission, so the mask closes on the tick the
+   * seat empties.
+   */
+  readonly openPortalTargets?: () => readonly number[];
+  /**
    * Species an allied realm would send a scholar from, if any.
    *
    * The same §1.1 shape as {@link portalTargets}, and absent for the same
@@ -390,8 +402,11 @@ export function createSession(options: SessionOptions): AgentSession {
    * keeps "this scenario named no targets" byte-identical to every call this
    * package made before the field existed.
    */
-  const portalTargets =
+  const staticPortalTargets =
     scenario.portalTargets === undefined ? {} : { portalTargets: scenario.portalTargets };
+  /** The targets as of now — the open subset when the scenario can say, else the static list. */
+  const portalTargetsNow = (): { portalTargets?: readonly number[] } =>
+    scenario.openPortalTargets === undefined ? staticPortalTargets : { portalTargets: scenario.openPortalTargets() };
 
   /** The alliance roster, spread for exactly the reason above. */
   const invitableSpecies =
@@ -453,7 +468,7 @@ export function createSession(options: SessionOptions): AgentSession {
     view ??= observe({
       state: current,
       catalogue: scenario.catalogue,
-      ...portalTargets,
+      ...portalTargetsNow(),
       ...invitableSpecies,
       ...portalNodes,
       truncated: atCap(current),
@@ -555,7 +570,7 @@ export function createSession(options: SessionOptions): AgentSession {
         {
           state: current,
           catalogue: scenario.catalogue,
-          ...portalTargets,
+          ...portalTargetsNow(),
           ...invitableSpecies,
           ...portalNodes,
         },

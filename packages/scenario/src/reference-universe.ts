@@ -1552,6 +1552,17 @@ export function referenceScenario(
       scenarioId,
       catalogue: content.catalogue,
       portalTargets: options.peers?.seats ?? portalTargetIds(constants),
+      // A peer's seat holds a universe only while that universe runs; a seat
+      // whose universe ended must not be offered, or the god pays for a portal
+      // the raid system has nobody to open on. Stand-in seats always hold one.
+      ...(options.peers === undefined
+        ? {}
+        : {
+            openPortalTargets: (): readonly number[] => {
+              const peers = options.peers as PeerPortals;
+              return peers.seats.filter((seat) => peers.participant(seat) !== undefined);
+            },
+          }),
       // The roster the god may invite from, and it is every species the content
       // declares. `invitePlan` refuses one already living here, so a
       // single-species universe sees five candidates and an all-six universe

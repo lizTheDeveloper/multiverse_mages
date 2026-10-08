@@ -81,6 +81,7 @@ import {
   LIBRARY,
   LOCATION_KIND,
   MAGE,
+  MAGE_ROLE,
   MATERIAL_STOCK,
   RULE_CHANGE_KIND,
   RULE_SCOPE,
@@ -1362,6 +1363,11 @@ function portalPlan(
 ): Plan | undefined {
   if (targetId === undefined || targetId === 0) return undefined;
   if (portalMagicHolder(state, universe, deps) === 0) return undefined;
+  // Nobody to send: refused before payment, as the mask refuses it. See
+  // `agent-api`'s `portalCandidates`.
+  if (!collectRecords(state, MAGE).some(({ row }) => row.alive !== 0 && row.roleId === MAGE_ROLE.raider)) {
+    return undefined;
+  }
 
   return {
     cost: interventionCost(ACTION.openPortal, deps.god.costs),

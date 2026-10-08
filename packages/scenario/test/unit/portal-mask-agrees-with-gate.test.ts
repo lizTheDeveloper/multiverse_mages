@@ -32,11 +32,11 @@
 
 import { describe, expect, it } from 'vitest';
 
-import { GOD_ACTION, createSession } from '@mm/agent-api';
+import { GOD_ACTION, createSession, type AgentSession } from '@mm/agent-api';
 import { MagicGrid } from '@mm/rules-magic';
 import { heldInstancesOf, portalGate } from '@mm/rules-raid';
 import type { SimState } from '@mm/sim-core';
-import { findUniverse, readUniverse } from '@mm/state';
+import { MAGE_ROLE, findUniverse, readUniverse } from '@mm/state';
 
 import { participantOf, referenceContent, referenceScenario } from '@mm/scenario';
 
@@ -58,6 +58,20 @@ function gateOpen(state: SimState): boolean {
     alreadyEngaged: false,
     heldOf: (mage) => heldInstancesOf(p, mage),
   }).open;
+}
+
+/**
+ * Names one raider — the **last** raider candidate, so not the founding portal
+ * holder (the first mage), whose drilling would keep the door open and hide the
+ * decay this file watches. Action 14 is masked until someone is a raider.
+ */
+function nameARaider(session: AgentSession): { kind: number; params: number[] } {
+  const offered = session.candidates().get(GOD_ACTION.assignRole) ?? [];
+  let slot = -1;
+  offered.forEach((c, index) => {
+    if (c.params[1] === MAGE_ROLE.raider) slot = index;
+  });
+  return slot < 0 ? { kind: GOD_ACTION.noop, params: [] } : { kind: GOD_ACTION.assignRole, params: [slot] };
 }
 
 describe('action 14 and the raid system agree on whether a portal can open', () => {
@@ -84,7 +98,7 @@ describe('action 14 and the raid system agree on whether a portal can open', () 
         if (!open && gateOpenTicks > 0) gateClosedAfterOpen = true;
         if (legal && !open) disagreements += 1;
       }
-      session.submit({ kind: GOD_ACTION.noop });
+      session.submit(tick === 12 ? nameARaider(session) : { kind: GOD_ACTION.noop });
       if (tick % 12 === 11) await new Promise((resolve) => setImmediate(resolve));
     }
 
@@ -123,7 +137,7 @@ describe('action 14 and the raid system agree on whether a portal can open', () 
         const favorAfter = readUniverse(live.s, findUniverse(live.s)).favor;
         if (!opened && favorAfter < favorBefore) chargedRefusals += 1;
       } else {
-        session.submit({ kind: GOD_ACTION.noop });
+        session.submit(tick === 12 ? nameARaider(session) : { kind: GOD_ACTION.noop });
       }
       if (tick % 12 === 11) await new Promise((resolve) => setImmediate(resolve));
     }
