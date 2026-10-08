@@ -17,19 +17,29 @@ export interface BubbleInfo {
 export class Bubble {
   readonly id: string;
   readonly tier: number;
-  private members: Map<string, UniverseHost> = new Map();
-  readonly createdAt = Date.now();
+  readonly createdAt: number;
+  private members = new Map<string, UniverseHost>();
+  /**
+   * Every universe that ever joined, ascending. A seat is a position in this
+   * list, so evicting one member empties its seat instead of shifting every
+   * other member into a different one.
+   */
+  private memberIds: string[] = [];
 
-  constructor(tier = 0) {
+  /** @param now - The lobby clock's reading; the bubble reads no clock itself. */
+  constructor(now: number, tier = 0) {
     this.id = randomUUID();
     this.tier = tier;
+    this.createdAt = now;
   }
 
   add(host: UniverseHost): void {
     host.ref.bubbleId = this.id;
     this.members.set(host.id, host);
+    this.memberIds = [...this.memberIds, host.id].sort();
   }
 
+  /** Drops a member. Its seat stays, empty. */
   remove(universeId: string): void {
     this.members.delete(universeId);
   }
@@ -38,23 +48,20 @@ export class Bubble {
     return this.members.get(universeId);
   }
 
-  portalTargets(attackerId: string): UniverseHost[] {
-    const targets: UniverseHost[] = [];
-    for (const [id, host] of this.members) {
-      if (id !== attackerId && host.isAlive) targets.push(host);
-    }
-    return targets;
+  /**
+   * The universe in `self`'s portal seat `seat` (1-based): its bubble-mates in
+   * id order, with itself left out. `undefined` for an evicted mate.
+   */
+  seatOf(selfId: string, seat: number): UniverseHost | undefined {
+    const id = this.memberIds.filter((m) => m !== selfId)[seat - 1];
+    return id === undefined ? undefined : this.members.get(id);
   }
 
-  /** Every other member, alive or not, so a seat keeps its occupant when one dies. */
-  others(selfId: string): UniverseHost[] {
-    return [...this.members.values()].filter((h) => h.id !== selfId);
-  }
-
-  randomTarget(attackerId: string): UniverseHost | undefined {
-    const targets = this.portalTargets(attackerId);
-    if (targets.length === 0) return undefined;
-    return targets[Math.floor(Math.random() * targets.length)];
+  /** Who sits in each of `self`'s seats, by universe id — `null` for an empty seat. */
+  seatIds(selfId: string, seats: number): Record<string, string | null> {
+    const out: Record<string, string | null> = {};
+    for (let seat = 1; seat <= seats; seat += 1) out[String(seat)] = this.seatOf(selfId, seat)?.id ?? null;
+    return out;
   }
 
   get aliveCount(): number {
@@ -63,18 +70,6 @@ export class Bubble {
       if (host.isAlive) n++;
     }
     return n;
-  }
-
-  get isCleared(): boolean {
-    return this.aliveCount <= 1;
-  }
-
-  get winner(): UniverseHost | undefined {
-    if (!this.isCleared) return undefined;
-    for (const host of this.members.values()) {
-      if (host.isAlive) return host;
-    }
-    return undefined;
   }
 
   info(): BubbleInfo {

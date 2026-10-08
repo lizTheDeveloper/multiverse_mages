@@ -1,0 +1,405 @@
+<!doctype html>
+<!--
+  Multiverse Mages — choosing a universe.
+  Copyright (C) 2026 Ann Kelner
+  SPDX-License-Identifier: AGPL-3.0-or-later
+
+  The setup screen, on its own page. Begin asks the lobby for a new universe
+  (POST /api/create) built from the species, tradition and opening square
+  chosen here, stores its id and owner token, and goes to the game. The game
+  page (./) never creates or resets a universe; it joins one.
+
+  Served by the lobby: `npm run lobby`, then open http://localhost:8300/.
+-->
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Multiverse Mages — a new universe</title>
+<link rel="stylesheet" href="../shared/theme.css">
+
+<style>
+body { margin: 0; background: var(--ground); color: var(--ink); }
+/* ================================================================ SETUP SCREEN */
+.setup-screen {
+  position: fixed; inset: 0; z-index: 1000;
+  background: var(--ground);
+  display: flex; flex-direction: column; align-items: center;
+  overflow-y: auto; padding: 2rem 1rem 4rem;
+}
+.setup-screen[hidden] { display: none !important; }
+.setup-title {
+  font: 400 2rem var(--serif); color: var(--ink);
+  margin-bottom: .3rem; text-align: center;
+}
+.setup-subtitle {
+  font: italic 1rem var(--serif); color: var(--god);
+  margin-bottom: 2rem; text-align: center;
+}
+.setup-section-label {
+  font: 9.5px var(--mono); letter-spacing: .14em;
+  text-transform: uppercase; color: var(--faint);
+  margin: 1.5rem 0 .6rem; width: 100%; max-width: 56rem;
+  padding-bottom: .3rem; border-bottom: 1px solid var(--edge);
+}
+.species-grid {
+  display: grid; grid-template-columns: repeat(3, 1fr);
+  gap: .6rem; max-width: 56rem; width: 100%;
+}
+@media (max-width: 48rem) { .species-grid { grid-template-columns: repeat(2, 1fr); } }
+.species-card {
+  padding: .8rem 1rem; border: 2px solid var(--edge);
+  border-radius: 6px; background: var(--panel);
+  cursor: pointer; transition: all 150ms ease;
+}
+.species-card:hover { border-color: var(--god); }
+.species-card.selected { border-color: var(--god); box-shadow: var(--glow-charged); background: var(--ctl-charged-bg); }
+.species-card .sp-name { font: 600 1.1rem var(--serif); color: var(--ink); }
+.species-card .sp-life { font: 10px var(--mono); color: var(--god); margin-top: .15rem; }
+.species-card .sp-desc { font: italic 12px var(--serif); color: var(--soft); margin-top: .3rem; line-height: 1.4; }
+.species-card.selected .sp-name { color: var(--ctl-charged-fg); }
+
+.tradition-row { display: flex; gap: .6rem; max-width: 56rem; width: 100%; flex-wrap: wrap; }
+.tradition-card {
+  flex: 1; min-width: 14rem;
+  padding: .7rem .9rem; border: 2px solid var(--edge);
+  border-radius: 6px; background: var(--panel);
+  cursor: pointer; transition: all 150ms ease;
+}
+.tradition-card:hover { border-color: var(--god); }
+.tradition-card.selected { border-color: var(--god); box-shadow: var(--glow-charged); background: var(--ctl-charged-bg); }
+.tradition-card .tr-name { font: 600 .95rem var(--serif); color: var(--ink); }
+.tradition-card .tr-desc { font: italic 11px var(--serif); color: var(--soft); margin-top: .2rem; line-height: 1.4; }
+.tradition-card.selected .tr-name { color: var(--ctl-charged-fg); }
+
+.setup-magic {
+  max-width: 56rem; width: 100%;
+  display: grid; grid-template-columns: 10rem 1fr; gap: 1rem;
+  align-items: start;
+}
+.setup-toggles { display: flex; flex-direction: column; gap: 3px; }
+.setup-toggle {
+  display: flex; align-items: center; gap: .4rem;
+  padding: .25rem .4rem; border: 1px solid var(--edge);
+  border-radius: 3px; background: transparent;
+  color: var(--faint); font: 11px var(--mono);
+  cursor: pointer; transition: all 120ms ease;
+}
+.setup-toggle:hover { border-color: var(--god); }
+.setup-toggle.on { background: var(--ctl-charged-bg); color: var(--ctl-charged-fg); border-color: var(--ctl-charged-border); box-shadow: var(--glow-soft); }
+.setup-toggle .dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+
+.setup-grid-preview {
+  display: grid; grid-template-columns: 2.5rem repeat(14, 1fr); gap: 2px;
+  font: 8px var(--mono);
+}
+.setup-grid-preview .rl { text-align: right; padding-right: .3rem; color: var(--faint); align-self: center; }
+.setup-grid-preview .rl.on { color: var(--ctl-charged-fg); }
+.setup-grid-preview .h { text-align: center; color: var(--faint); writing-mode: vertical-lr; transform: rotate(180deg); height: 3rem; display: flex; align-items: center; justify-content: center; }
+.setup-grid-preview .h.on { color: var(--ctl-charged-fg); text-shadow: 0 0 6px currentColor; }
+.setup-grid-preview .gc {
+  aspect-ratio: 1; border-radius: 2px;
+  background: var(--sunk); border: 1px solid transparent;
+}
+.setup-grid-preview .gc.on {
+  background: color-mix(in srgb, var(--form-hue, var(--god)) 18%, var(--panel));
+  border-color: color-mix(in srgb, var(--form-hue, var(--god)) 40%, transparent);
+  box-shadow: 0 0 8px -3px var(--form-hue, var(--god));
+}
+
+.begin-btn {
+  margin-top: 2rem; padding: .7rem 3rem;
+  font: 600 1rem var(--serif); letter-spacing: .02em;
+  color: var(--ground); background: var(--god);
+  border: none; border-radius: 4px; cursor: pointer;
+  box-shadow: 0 0 20px -4px var(--god);
+  transition: all 150ms ease;
+}
+.begin-btn:hover { box-shadow: 0 0 30px -2px var(--god); transform: scale(1.03); }
+.begin-btn:focus-visible { outline: 2px solid var(--god); outline-offset: 3px; }
+.begin-btn:disabled { opacity: .4; cursor: default; box-shadow: none; transform: none; }
+.toast-container { position: fixed; top: .5rem; right: 1rem; z-index: 9999; display: flex; flex-direction: column; align-items: flex-end; gap: .4rem; pointer-events: none; }
+.toast { background: var(--panel); border: 1px solid var(--god); color: var(--god); padding: .5rem 1rem; font: 12px var(--mono); border-radius: 4px; opacity: 0; animation: toastIn .3s ease forwards; pointer-events: auto; box-shadow: 0 2px 8px rgba(0,0,0,0.4); }
+.toast.error { border-color: var(--loss); color: var(--loss); }
+.toast.fade-out { animation: toastOut .4s ease forwards; }
+@keyframes toastIn { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes toastOut { from { opacity: 1; } to { opacity: 0; transform: translateY(-10px); } }
+/* Help button + modal */
+.help-btn { padding: .2rem .55rem; border: 1px solid var(--edge); border-radius: 4px; background: var(--sunk); color: var(--soft); font: 11px var(--mono); cursor: pointer; }
+.help-btn:hover { border-color: var(--god); color: var(--god); }
+.help-modal { position: fixed; inset: 0; z-index: 10000; display: flex; align-items: center; justify-content: center; background: color-mix(in srgb, var(--ground) 55%, transparent); backdrop-filter: blur(2px); }
+.help-modal[hidden] { display: none; }
+.help-card { max-width: 44rem; max-height: 86vh; overflow-y: auto; background: var(--panel); border: 1px solid var(--line); border-radius: 6px; padding: 1.4rem 1.6rem; box-shadow: 0 8px 30px rgba(0,0,0,.35); }
+.help-card h2 { font: 400 1.3rem var(--serif); margin: 0 0 .3rem; }
+.help-card .sub { font: italic 12px var(--serif); color: var(--soft); margin: 0 0 1rem; }
+.help-card h3 { font: 11px var(--mono); letter-spacing: .12em; text-transform: uppercase; color: var(--god); margin: 1.1rem 0 .4rem; }
+.help-card p, .help-card li { font: 12.5px/1.65 var(--sans); color: var(--ink); margin: .25rem 0; }
+.help-card ul { margin: .25rem 0; padding-left: 1.1rem; }
+.help-card code { font: 11px var(--mono); color: var(--soft); }
+.help-card kbd { font: 10px var(--mono); background: var(--sunk); border: 1px solid var(--edge); border-radius: 3px; padding: 0 4px; }
+.help-card .goal { border: 1px solid color-mix(in srgb, var(--god) 40%, var(--edge)); background: color-mix(in srgb, var(--god) 6%, var(--plate)); padding: .6rem .8rem; border-radius: 4px; }
+.help-card .close-row { display: flex; justify-content: flex-end; margin-top: 1rem; }
+.help-card .close-row button { padding: .35rem 1rem; border: 1px solid var(--god); border-radius: 4px; background: var(--ctl-charged-bg); color: var(--ctl-charged-fg); font: 11px var(--mono); cursor: pointer; }
+/* The "unweaving" overlay: a Begin can take tens of seconds on a small box,
+   and a blank button is how a long load reads as a dead one. */
+.weave-overlay { position: fixed; inset: 0; z-index: 10001; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: .8rem; background: color-mix(in srgb, var(--ground) 82%, transparent); backdrop-filter: blur(2px); }
+.weave-overlay[hidden] { display: none; }
+.weave-overlay .ring { width: 42px; height: 42px; border-radius: 50%; border: 2px solid var(--edge); border-top-color: var(--god); animation: weaveSpin 1s linear infinite; }
+@keyframes weaveSpin { to { transform: rotate(360deg); } }
+.weave-overlay .msg { font: 13px var(--mono); color: var(--ink); }
+.weave-overlay .sub { font: italic 12px var(--serif); color: var(--soft); max-width: 34rem; text-align: center; padding: 0 1.5rem; }
+.setup-error { min-height: 1.2rem; margin: .8rem 0 0; font: 12px var(--mono); color: var(--loss); text-align: center; max-width: 40rem; }
+.setup-note { margin: .4rem 0 0; font: italic 12px var(--serif); color: var(--soft); text-align: center; max-width: 40rem; }
+.theme-corner { position: fixed; top: .5rem; left: 1rem; z-index: 1001; }
+</style>
+
+<span class="theme-corner" id="theme-host"></span>
+<div class="setup-screen" id="setup-screen">
+  <h1 class="setup-title">Multiverse Mages</h1>
+  <p class="setup-subtitle">You are the god of magic for a universe.</p>
+  <p style="margin:.1rem 0 0"><button type="button" class="help-btn" id="help-btn-setup">How do I play this?</button></p>
+
+  <div class="setup-section-label">Choose your people</div>
+  <div class="species-grid" id="species-grid"></div>
+
+  <div class="setup-section-label">Choose your tradition</div>
+  <div class="tradition-row" id="tradition-row"></div>
+
+  <div class="setup-section-label">Choose your starting magic — 2 techniques, 2 forms</div>
+  <div class="setup-magic">
+    <div>
+      <div class="setup-toggles" id="setup-techniques"></div>
+      <div style="height:.6rem"></div>
+      <div class="setup-toggles" id="setup-forms"></div>
+    </div>
+    <div class="setup-grid-preview" id="setup-grid-preview"></div>
+  </div>
+
+  <button class="begin-btn" id="begin-btn" disabled>Begin</button>
+  <p class="setup-error" id="setup-error" role="alert"></p>
+  <p class="setup-note">The server keeps time: your universe runs one month per second from the moment you begin, whether or not this tab is open.</p>
+</div>
+
+<div class="toast-container" id="toast-container"></div>
+
+<div class="weave-overlay" id="weave-overlay" hidden>
+  <div class="ring"></div>
+  <div class="msg" id="weave-msg">Weaving a new universe…</div>
+  <div class="sub">Founding your people on the magic you chose.</div>
+</div>
+
+<div id="help-host"></div>
+
+<script type="module">
+/*
+ * Multiverse Mages — the setup page script.
+ * Copyright (C) 2026 Ann Kelner
+ * SPDX-License-Identifier: AGPL-3.0-or-later
+ */
+
+import { mountThemeControl } from '../shared/theme.js';
+
+const el = (id) => document.getElementById(id);
+mountThemeControl(el('theme-host'));
+
+function showToast(msg, duration = 3000) {
+  const t = document.createElement('div');
+  t.className = 'toast';
+  if (String(msg).startsWith('!')) {
+    t.classList.add('error');
+    msg = String(msg).replace(/^!/, '');
+  }
+  t.textContent = msg;
+  el('toast-container').appendChild(t);
+  setTimeout(() => { t.classList.add('fade-out'); setTimeout(() => t.remove(), 400); }, duration);
+}
+
+// The guide lives in the game page; borrow it rather than keep a second copy
+// that drifts.
+async function openHelp() {
+  let modal = el('help-modal');
+  if (!modal) {
+    try {
+      const html = await (await fetch('./index.html')).text();
+      const found = new DOMParser().parseFromString(html, 'text/html').getElementById('help-modal');
+      if (!found) throw new Error('no guide in index.html');
+      modal = document.importNode(found, true);
+      el('help-host').append(modal);
+      const close = () => { modal.hidden = true; };
+      modal.querySelector('#help-close')?.addEventListener('click', close);
+      modal.addEventListener('click', (ev) => { if (ev.target === modal) close(); });
+      window.addEventListener('keydown', (ev) => { if (ev.key === 'Escape') close(); });
+    } catch (e) {
+      showToast(`!Could not load the guide: ${e.message}`);
+      return;
+    }
+  }
+  modal.hidden = false;
+}
+el('help-btn-setup')?.addEventListener('click', openHelp);
+
+// ================================================================ SETUP SCREEN
+const TECHNIQUES = [
+  { id: 'creo', name: 'Creo', gloss: 'create, heal' },
+  { id: 'intellego', name: 'Intellego', gloss: 'perceive, know' },
+  { id: 'muto', name: 'Muto', gloss: 'transform' },
+  { id: 'perdo', name: 'Perdo', gloss: 'unmake, destroy' },
+  { id: 'rego', name: 'Rego', gloss: 'control, bind' },
+];
+const FORMS = [
+  'animal','aquam','auram','corpus','herbam','ignem','imaginem',
+  'mentem','terram','vim','umbra','fatum','limen','nomen'
+];
+const SPECIES = [
+  { id: 'human', name: 'Human', life: '~80y', desc: 'High curiosity, high fertility, broad aptitude. Wins on volume and breadth.' },
+  { id: 'elf', name: 'Elf', life: '~700y', desc: 'Deep specialist, slow to learn. Few but enduring.' },
+  { id: 'dwarf', name: 'Dwarf', life: '~250y', desc: 'Exceptional retention and scribing. The archivists.' },
+  { id: 'draconic', name: 'Draconic', life: '~1500y', desc: 'Highest depth ceiling, very few. Ancient and terrifying.' },
+  { id: 'gnome', name: 'Gnome', life: '~350y', desc: 'Highest curiosity, poor retention. Erratic geniuses.' },
+  { id: 'orc', name: 'Orc', life: '~60y', desc: 'Low magic, high build-rate, martial. The builders.' },
+];
+const TRADITIONS = [
+  { id: 'vancian-memorization', name: 'Vancian Memorization', desc: 'A mage holds limited prepared spells; casting expends them until re-memorized.' },
+  { id: 'true-naming', name: 'True Naming', desc: 'The knowledge instance IS a name. Holding a thing\'s name grants power over it.' },
+  { id: 'art-of-memory', name: 'The Art of Memory', desc: 'Knowledge stored in a mental palace. Unburnable, unstealable, dies with the mage.' },
+];
+
+const setup = { species: null, tradition: 0, techniques: new Set(['intellego', 'rego']), forms: new Set(['mentem', 'terram']) };
+
+function renderSetup() {
+  // Species cards
+  const sg = el('species-grid');
+  sg.innerHTML = SPECIES.map(s =>
+    `<div class="species-card${setup.species === s.id ? ' selected' : ''}" data-sp="${s.id}">
+      <div class="sp-name">${s.name}</div>
+      <div class="sp-life">${s.life}</div>
+      <div class="sp-desc">${s.desc}</div>
+    </div>`
+  ).join('');
+  sg.querySelectorAll('.species-card').forEach(c => c.addEventListener('click', () => {
+    setup.species = c.dataset.sp;
+    renderSetup();
+  }));
+
+  // Tradition cards
+  const tr = el('tradition-row');
+  tr.innerHTML = TRADITIONS.map((t, i) =>
+    `<div class="tradition-card${setup.tradition === i ? ' selected' : ''}" data-ti="${i}">
+      <div class="tr-name">${t.name}</div>
+      <div class="tr-desc">${t.desc}</div>
+    </div>`
+  ).join('');
+  tr.querySelectorAll('.tradition-card').forEach(c => c.addEventListener('click', () => {
+    setup.tradition = Number(c.dataset.ti);
+    renderSetup();
+  }));
+
+  // Technique toggles
+  const st = el('setup-techniques');
+  st.innerHTML = TECHNIQUES.map(t =>
+    `<button class="setup-toggle${setup.techniques.has(t.id) ? ' on' : ''}" data-id="${t.id}">
+      <span class="dot"></span>${t.name}
+    </button>`
+  ).join('');
+  st.querySelectorAll('.setup-toggle').forEach(btn => btn.addEventListener('click', () => {
+    const id = btn.dataset.id;
+    if (setup.techniques.has(id)) setup.techniques.delete(id);
+    else if (setup.techniques.size < 2) setup.techniques.add(id);
+    renderSetup();
+  }));
+
+  // Form toggles
+  const sf = el('setup-forms');
+  sf.innerHTML = FORMS.map(f =>
+    `<button class="setup-toggle${setup.forms.has(f) ? ' on' : ''}" data-id="${f}" style="color:${setup.forms.has(f) ? `var(--${f})` : ''}">
+      <span class="dot"></span>${f}
+    </button>`
+  ).join('');
+  sf.querySelectorAll('.setup-toggle').forEach(btn => btn.addEventListener('click', () => {
+    const id = btn.dataset.id;
+    if (setup.forms.has(id)) setup.forms.delete(id);
+    else if (setup.forms.size < 2) setup.forms.add(id);
+    renderSetup();
+  }));
+
+  // Grid preview
+  const gp = el('setup-grid-preview');
+  let gh = '<div></div>'; // empty corner
+  for (const f of FORMS) {
+    gh += `<div class="h${setup.forms.has(f) ? ' on' : ''}" style="color:var(--${f})">${f.slice(0,3)}</div>`;
+  }
+  for (const t of TECHNIQUES) {
+    gh += `<div class="rl${setup.techniques.has(t.id) ? ' on' : ''}">${t.name}</div>`;
+    for (const f of FORMS) {
+      const on = setup.techniques.has(t.id) && setup.forms.has(f);
+      gh += `<div class="gc${on ? ' on' : ''}" style="--form-hue:var(--${f})"></div>`;
+    }
+  }
+  gp.innerHTML = gh;
+
+  // Begin button
+  el('begin-btn').disabled = !setup.species || setup.techniques.size < 1 || setup.forms.size < 1;
+}
+
+renderSetup();
+
+// ================================================================ BEGIN
+// One POST: the lobby founds the universe and starts its clock. Nothing here
+// resets, warms or advances anything — the server keeps time.
+el('begin-btn').addEventListener('click', async () => {
+  const btn = el('begin-btn');
+  btn.disabled = true;
+  el('setup-error').textContent = '';
+  el('weave-overlay').removeAttribute('hidden');
+  try {
+    // The universe this tab is leaving, if "new universe" sent us here: the
+    // server retires it (with its token) so its slot is free for this one.
+    let retire = null;
+    try {
+      const id = sessionStorage.getItem('mm.retireId');
+      const token = sessionStorage.getItem('mm.retireToken');
+      if (id && token) retire = { universeId: id, token };
+    } catch { /* refused */ }
+    const res = await fetch('/api/create', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({
+        species: setup.species,
+        tradition: TRADITIONS[setup.tradition].id,
+        techniques: [...setup.techniques],
+        forms: [...setup.forms],
+        ...(retire === null ? {} : { retire }),
+      }),
+    });
+    const body = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(body.error ?? `The universe refused to start (${res.status}).`);
+    try { sessionStorage.removeItem('mm.retireId'); sessionStorage.removeItem('mm.retireToken'); } catch { /* refused */ }
+    // The id is public (bubble-mates see it); the token is what lets this
+    // browser act on the universe. Both live in storage, never in a URL: a URL
+    // is in history, in referrers and in anyone's clipboard. localStorage keeps
+    // the universe across reloads and visits; if it is refused (a private
+    // window), sessionStorage keeps it for this tab only, and the game page
+    // says so.
+    const keep = (storage) => {
+      try {
+        storage.setItem('mm.universeId', body.universeId);
+        storage.setItem('mm.universeToken', body.token);
+        return true;
+      } catch {
+        return false;
+      }
+    };
+    const kept = (() => { try { return keep(localStorage); } catch { return false; } })()
+      || (() => { try { return keep(sessionStorage); } catch { return false; } })();
+    if (!kept) {
+      throw new Error('This browser refuses to store anything for this page, so it could not keep your universe. Allow site storage and try again.');
+    }
+    location.href = './';
+  } catch (e) {
+    el('setup-error').textContent = e.message;
+    btn.disabled = false;
+    el('weave-overlay').setAttribute('hidden', '');
+  }
+});
+if (new URLSearchParams(location.search).has('gone')) {
+  el('setup-error').textContent = 'That universe no longer exists — the server may have restarted. Choose again.';
+}
+</script>
