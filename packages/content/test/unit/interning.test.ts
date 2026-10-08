@@ -995,7 +995,13 @@ describe('contentRevision', () => {
     // literal is MEASURED with `node packages/content/bin/validate-content.mjs`
     // after `npx tsc --build --force` on the merged tree rather than chosen
     // between them.
-    expect(registry.contentRevision).toBe('cb4c1a3e43a67f81a6315c3590b749ef');
+    //
+    // cb4c1a3e... -> e5fd4e0f12d14efec1faa38192a28004, on `sim-playability`
+    // (S4), 2026-10-08. **Two records**: `rl-open-the-portal`'s `researchCost`
+    // 18343 -> 9520 (the tier-4 floor) and `change-tradition`'s `favorCost`
+    // 65536 -> 61440 (the tier-4 cap), each with its gloss saying why.
+    // Measured with `npm run check:content` on the tree, not chosen.
+    expect(registry.contentRevision).toBe('e5fd4e0f12d14efec1faa38192a28004');
   });
 
   it('is stable across loads of identical content', () => {

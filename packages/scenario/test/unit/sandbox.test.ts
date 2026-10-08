@@ -119,13 +119,14 @@ const ANCHOR_SEED = 20260813;
  * (`0ceb9bffbc4b20f4` / `cc89d97858673b71` / `27c0db075e966bf3`). Two announced
  * moves, both deliberate: `laborObligation` asks for the laborers the food bill
  * needs (which moves every tick after the first), and `rl-open-the-portal`'s
- * research cost fell to the tier-4 floor (a content edit, so the content
- * revision in the tick-zero snapshot moves too).
+ * research cost fell to the tier-4 floor and `change-tradition`'s price fell to
+ * the tier-4 cap (content edits, so the content revision in the tick-zero
+ * snapshot moves too).
  */
 const INERT_DEFAULT_HASHES: Readonly<Record<number, string>> = {
-  0: '9ff20792caecbcb4',
-  200: 'd72021ddbccefa48',
-  500: 'f7fed02c740a4cc8',
+  0: '757c0cca92557346',
+  200: '4f5584c17356815e',
+  500: 'eec423765d36e9c6',
 };
 
 /** Generous, for the reason `balance-telemetry.test.ts` gives at length. */
