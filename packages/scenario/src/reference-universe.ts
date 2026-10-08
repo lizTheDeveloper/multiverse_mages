@@ -119,7 +119,7 @@ import {
 } from './sandbox.js';
 import { BalanceTelemetryRecorder, balanceTelemetrySystem } from './balance-telemetry.js';
 import type { BalanceRunTelemetry } from './balance-telemetry.js';
-import type { RaidRecord } from './raids.js';
+import type { PeerPortals, RaidRecord } from './raids.js';
 import { raidSystem } from './raids.js';
 import { portalTargetIds, readRivalConstants } from './rival-universe.js';
 
@@ -1240,6 +1240,11 @@ export interface ReferenceRun {
   readonly sandbox?: NormalizedSandbox;
 }
 
+/** The system behind {@link ReferenceScenarioOptions.onState}. Reads, writes nothing, draws nothing. */
+function stateTap(onState: (state: SimState) => void): System {
+  return { name: 'state-tap', run: (ctx) => onState(ctx.state) };
+}
+
 /** The scenario id every reference run records. Stable; a baseline is keyed on it. */
 export const REFERENCE_SCENARIO_ID = 'reference-universe-v1';
 
@@ -1327,6 +1332,20 @@ export interface ReferenceScenarioOptions {
    * shared by every run the worker executed afterwards.
    */
   readonly engagementPolicy?: EngagementPolicy;
+  /**
+   * Live peer universes behind the portal seats, or absent for the headless
+   * build. See {@link PeerPortals}. Absent builds the byte-identical scenario:
+   * the same schema, the same targets, the same arrival roll.
+   */
+  readonly peers?: PeerPortals;
+  /**
+   * Called at the end of every step with the state that step produced, or
+   * absent. The one way a host holding several universes can hand one of them
+   * to another's raid: `step` returns the very object its systems ran on, so
+   * the state this sees is the session's current state until the next step.
+   * Installs a system only when present.
+   */
+  readonly onState?: (state: SimState) => void;
 
   /**
    * What a previous universe left this one, or absent for a first universe.
@@ -1523,14 +1542,16 @@ export function referenceScenario(
       ...(options.engagementPolicy === undefined
         ? {}
         : { engagementPolicy: options.engagementPolicy, maskCatalogue: content.catalogue }),
+      ...(options.peers === undefined ? {} : { peers: options.peers }),
     }),
+    ...(options.onState === undefined ? [] : [stateTap(options.onState)]),
   ]);
 
   return {
     scenario: {
       scenarioId,
       catalogue: content.catalogue,
-      portalTargets: portalTargetIds(constants),
+      portalTargets: options.peers?.seats ?? portalTargetIds(constants),
       // The roster the god may invite from, and it is every species the content
       // declares. `invitePlan` refuses one already living here, so a
       // single-species universe sees five candidates and an all-six universe

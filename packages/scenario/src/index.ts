@@ -56,8 +56,8 @@ export {
   worldDeps,
 } from './content-set.js';
 
-export type { RaidRecord, RaidSystemDeps } from './raids.js';
-export { raidSystem } from './raids.js';
+export type { PeerPortals, RaidRecord, RaidSystemDeps } from './raids.js';
+export { participantOf, raidSystem } from './raids.js';
 
 export type { DirectiveLog, EngagementPolicy, TranslatedDirective } from './raid-directives.js';
 export {
