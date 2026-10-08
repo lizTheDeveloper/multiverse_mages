@@ -18,12 +18,14 @@
  * be discovered. One universe per seed, headless (the stand-in seats give
  * action 14 a target), under two god policies:
  *
- * - `idle` — no-ops.
+ * - `idle` — names one raider at tick 12 (action 14 is refused while nobody
+ *   is a raider) and otherwise no-ops.
  * - `seek-portal` — what a player who wants a raid does through the action
  *   space: permit `rego` and `limen` if the opening lacks them (actions 1 and
  *   3), grant the tier-1 roots of the portal's prerequisite closure (action 8),
  *   encourage research in the closure's cells (action 12), and from the tick a
- *   living mage holds a portal node name her a raider so she drills it.
+ *   living mage holds a portal node name her a raider so she drills it. It
+ *   also names the one raider every policy names.
  *
  * Openings: the v1 rectangle, and three 2 × 2 squares founded the way
  * `packages/lobby` founds a player's — one holding the whole closure, one
@@ -154,6 +156,7 @@ function play(seed, policy, opening, portalMagic = 0) {
   const options = { foundingPortalMagic: portalMagic, ...(species === undefined ? {} : lobbyOptions(species)) };
   session.reset(seed, { worldTickCap: 4000, options });
   let named = false;
+  let anyRaider = false;
   for (let t = 0; t < ticks; t += 1) {
     // A universe that ended (stagnation, ascension) before its portal opened
     // never got one: reported as `ended@t` rather than folded into "never".
@@ -163,6 +166,21 @@ function play(seed, policy, opening, portalMagic = 0) {
     // matters; on this one they agree.
     if (session.legalActions()[GOD_ACTION.openPortal] === 1 && live.s !== undefined && gateOpen(live.s)) return { at: t };
     let action = { kind: GOD_ACTION.noop, params: [] };
+    // Every policy names one raider at tick 12 — the last raider candidate, so
+    // not the founding portal holder — because since 2026-10-08 action 14 is
+    // refused while nobody is a raider. A god who wants a raid names one; a
+    // probe that did not would measure the naming, not the portal.
+    if (!anyRaider && t >= 12 && session.legalActions()[GOD_ACTION.assignRole] === 1) {
+      let slot = -1;
+      (session.candidates().get(GOD_ACTION.assignRole) ?? []).forEach((c, index) => {
+        if (c.params[1] === MAGE_ROLE.raider) slot = index;
+      });
+      if (slot >= 0) {
+        session.submit({ kind: GOD_ACTION.assignRole, params: [slot] });
+        anyRaider = true;
+        continue;
+      }
+    }
     if (policy === 'seek-portal' && live.s !== undefined) {
       const state = live.s;
       const ruleset = readRulesetForObservation(state, findUniverse(state));
