@@ -1074,6 +1074,13 @@ function buildSession(doc, extras = {}) {
     live: false,
     frame,
     last: () => frame(doc.frames.length - 1),
+    /**
+     * A raw frame from **another** universe served by the same content — a
+     * bubble-mate's last frame, read off its public `frames` route — decoded
+     * with this document's header. Read-only: it shares this document's layout
+     * and content tables and touches nothing of this session's frames.
+     */
+    decode: (raw) => new Frame({ ...doc, frames: [raw] }, 0),
     /** An action's favor price in fp, from the content the run was built with. */
     actionCost: (id) => doc.content.actionCosts[String(id)],
     /**
