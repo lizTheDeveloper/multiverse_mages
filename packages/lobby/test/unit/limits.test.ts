@@ -38,6 +38,8 @@ describe('Lobby limits', () => {
     ['evictAfterMs', Number.NaN],
     ['idleAfterMs', 0],
     ['idleAfterMs', Number.NaN],
+    ['matchAfterMs', -1],
+    ['matchAfterMs', Number.NaN],
   ])('throws on %s = %s rather than clamping', (name, value) => {
     expect(() => make({ [name]: value })).toThrow(RangeError);
   });
@@ -55,6 +57,8 @@ describe('Lobby limits', () => {
     ['--port', 'eighty'],
     ['--idle-ms', '10'],
     ['--max-universes', '257'],
+    ['--match-ms', '-1'],
+    ['--match-ms', 'soon'],
   ])('the bin refuses %s %s and exits non-zero', (flag, value) => {
     const r = spawnSync(process.execPath, [BIN, flag, value], { encoding: 'utf8', timeout: 30_000 });
     expect(r.status).toBe(2);

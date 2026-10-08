@@ -7,7 +7,7 @@
 
 /**
  *     node packages/lobby/bin/lobby.mjs --port 8300 [--tick-ms 1000]
- *         [--max-universes 16] [--bubble-size 4] [--idle-ms 900000]
+ *         [--max-universes 16] [--bubble-size 4] [--idle-ms 900000] [--match-ms 60000]
  *
  * The interval below is the **only** thing that moves time in any universe this
  * process hosts. No route advances, resets or pauses one.
@@ -65,6 +65,8 @@ const maxUniverses = integer('max-universes', 16, LOBBY_LIMITS.maxUniverses.min,
 const bubbleSize = integer('bubble-size', 4, LOBBY_LIMITS.bubbleSize.min, LOBBY_LIMITS.bubbleSize.max);
 // A running universe its owner has left alone this long gives its slot back.
 const idleMs = integer('idle-ms', 15 * 60_000, LOBBY_LIMITS.idleAfterMs.min, LOBBY_LIMITS.idleAfterMs.max);
+// A universe that finds no open seat for this long joins whoever else is waiting.
+const matchMs = integer('match-ms', 60_000, LOBBY_LIMITS.matchAfterMs.min, LOBBY_LIMITS.matchAfterMs.max);
 
 const lobby = new Lobby({
   doc: frameDocument(referenceContent(), 'packages/lobby'),
@@ -73,6 +75,7 @@ const lobby = new Lobby({
   maxUniverses,
   bubbleSize,
   idleAfterMs: idleMs,
+  matchAfterMs: matchMs,
 });
 await lobby.listen(port);
 // The one wall-clock driver: pacing only (authoritative-lockstep spec, l.97).

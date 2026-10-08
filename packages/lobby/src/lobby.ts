@@ -34,10 +34,11 @@ import { createServer, type IncomingMessage, type Server, type ServerResponse } 
 import { readFile, stat } from 'node:fs/promises';
 import path from 'node:path';
 
+import type { LegacyRecord } from '@mm/scenario';
 import type { Clock } from '@mm/server';
 
 import type { FrameDocument } from '../../../scripts/lib/frame-document.mjs';
-import { Bubble, type BubbleInfo } from './bubble.js';
+import { Bubble, type BubbleInfo, type SeatOccupant } from './bubble.js';
 import { BodyTooLarge, Router, json, readBody, text } from './router.js';
 import { UniverseHost, validateConfig, type GodAction } from './universe-host.js';
 
@@ -53,6 +54,7 @@ export const LOBBY_LIMITS = Object.freeze({
   maxUniverses: { min: 1, max: 256 },
   evictAfterMs: { min: 0, max: 30 * 24 * 3_600_000 },
   idleAfterMs: { min: 1_000, max: 7 * 24 * 3_600_000 },
+  matchAfterMs: { min: 0, max: 24 * 3_600_000 },
 });
 
 /**
@@ -72,6 +74,8 @@ function bounded(name: keyof typeof LOBBY_LIMITS, value: number | undefined, fal
 const EVICT_AFTER_MS = 3_600_000;
 /** A running universe its owner has not touched for this long is retired. */
 const IDLE_AFTER_MS = 15 * 60_000;
+/** A universe that has waited this long for a bubble takes whoever else is waiting. */
+const MATCH_AFTER_MS = 60_000;
 
 const READ_ONLY =
   'This server keeps time. A universe advances one month per tick whether or not anyone is ' +
@@ -104,6 +108,12 @@ export interface LobbyOptions {
    * touched it for this long is dropped. Default 15 minutes.
    */
   idleAfterMs?: number;
+  /**
+   * A universe that has found no open seat for this long is put in a bubble
+   * with whoever else is waiting (two or more), which later arrivals top up.
+   * Default one minute.
+   */
+  matchAfterMs?: number;
   /** Suppress the startup banner (tests). */
   quiet?: boolean;
 }
@@ -133,6 +143,14 @@ export class Lobby {
   private universes = new Map<string, UniverseHost>();
   private bubbles = new Map<string, Bubble>();
   private waiting: UniverseHost[] = [];
+  /** When each waiting universe started waiting, by the lobby clock. */
+  private queuedAt = new Map<string, number>();
+  /**
+   * Universes a waiting universe should not be seated beside: those that
+   * raided the universe its player retired to make it (vision §8b — a lost
+   * universe's player rejoins a fresh bubble).
+   */
+  private avoid = new Map<string, ReadonlySet<string>>();
   /**
    * Each universe's owner token: 32 random bytes, never derived from the id.
    * Universe ids are public — `/api/bubbles` lists them and a bubble-mate's
@@ -148,6 +166,7 @@ export class Lobby {
   private readonly maxUniverses: number;
   private readonly evictAfterMs: number;
   private readonly idleAfterMs: number;
+  private readonly matchAfterMs: number;
   private readonly quiet: boolean;
   /** When each ended universe was first seen ended, by the lobby clock. */
   private endedAt = new Map<string, number>();
@@ -160,6 +179,7 @@ export class Lobby {
     this.maxUniverses = bounded('maxUniverses', opts.maxUniverses, MAX_UNIVERSES);
     this.evictAfterMs = bounded('evictAfterMs', opts.evictAfterMs, EVICT_AFTER_MS);
     this.idleAfterMs = bounded('idleAfterMs', opts.idleAfterMs, IDLE_AFTER_MS);
+    this.matchAfterMs = bounded('matchAfterMs', opts.matchAfterMs, MATCH_AFTER_MS);
     this.quiet = opts.quiet ?? false;
     this.setupRoutes();
   }
@@ -185,6 +205,7 @@ export class Lobby {
       this.endedAt.set(id, ended);
       if (now - ended > this.evictAfterMs) this.evict(id);
     }
+    this.match();
   }
 
   /** Drops a universe and frees its slot. Its bubble seat stays, empty. */
@@ -195,6 +216,8 @@ export class Lobby {
     this.tokens.delete(id);
     this.endedAt.delete(id);
     this.waiting = this.waiting.filter((h) => h.id !== id);
+    this.queuedAt.delete(id);
+    this.avoid.delete(id);
     const bubble = this.bubbles.get(host.ref.bubbleId);
     if (bubble !== undefined) {
       bubble.remove(id);
@@ -237,9 +260,22 @@ export class Lobby {
       // Dropped at once, with its owner's token, so "new universe" frees the
       // slot it held instead of leaving it to idle out.
       const retire = (raw as { retire?: { universeId?: unknown; token?: unknown } }).retire;
+      //
+      // Only the owner's token retires one, and only then does its ending carry
+      // over (vision §8a): an **ended** universe's legacy seeds the new one. A
+      // universe retired while still running leaves nothing — abandoning a run
+      // is not an ending, and paying for it would make "new universe" a way to
+      // mint prestige.
+      let raiders: ReadonlySet<string> = new Set();
+      let legacy: LegacyRecord | undefined;
       if (retire !== undefined && retire !== null && typeof retire === 'object') {
         const old = typeof retire.universeId === 'string' ? retire.universeId : '';
-        if (this.ownerToken(old, retire.token)) this.evict(old);
+        const previous = this.universes.get(old);
+        if (previous !== undefined && this.ownerToken(old, retire.token)) {
+          raiders = new Set(previous.inbound.map((r) => r.fromUniverseId));
+          legacy = previous.legacy();
+          this.evict(old);
+        }
       }
       if (this.universes.size >= this.maxUniverses) {
         json(res, 503, { error: FULL });
@@ -248,16 +284,21 @@ export class Lobby {
       const host = new UniverseHost(config, this.doc, this.clock.now(), {
         seats: this.bubbleSize - 1,
         seatOf: (self, seat) => this.seatOf(self, seat),
-      });
+      }, legacy);
       this.universes.set(host.id, host);
       const token = randomBytes(32);
       this.tokens.set(host.id, token);
       this.waiting.push(host);
-      this.tryFormBubble();
+      this.queuedAt.set(host.id, this.clock.now());
+      if (raiders.size > 0) this.avoid.set(host.id, raiders);
+      this.match();
 
       json(res, 200, {
         universeId: host.id,
+        name: host.name,
         token: token.toString('hex'),
+        // What the retired universe's ending carried in; `null` when nothing did.
+        carriedPrestige: legacy?.carriedPrestige ?? null,
         bubbleId: host.ref.bubbleId || null,
         worldTick: host.worldTick,
         bubbleSize: this.bubbleSize,
@@ -276,6 +317,7 @@ export class Lobby {
       this.touchIfOwner(host, req);
       json(res, 200, {
         universeId: host.id,
+        name: host.name,
         bubbleId: host.ref.bubbleId || null,
         worldTick: host.worldTick,
         alive: host.isAlive,
@@ -301,15 +343,61 @@ export class Lobby {
     });
   }
 
-  private tryFormBubble(): void {
-    while (this.waiting.length >= this.bubbleSize) {
-      const batch = this.waiting.splice(0, this.bubbleSize);
-      const bubble = new Bubble(this.clock.now(), 0);
-      for (const host of batch) {
-        bubble.add(host);
-      }
-      this.bubbles.set(bubble.id, bubble);
+  /**
+   * Seats waiting universes, oldest first. Called on every create and every
+   * tick.
+   *
+   * 1. An open seat in a bubble holding at least one live universe — the
+   *    loneliest such bubble first, so the player with nobody to raid gets
+   *    company first — unless a universe that raided this player's last one
+   *    sits there.
+   * 2. A full `bubbleSize` batch of waiters forms a new bubble.
+   * 3. Once anyone has waited `matchAfterMs`, two or more waiters form a short
+   *    bubble; step 1 tops it up as others arrive.
+   * 4. A lone waiter past `matchAfterMs` takes a seat even beside its raider:
+   *    the avoidance is a preference, not a reason to wait forever.
+   *
+   * An ended universe is never seated, and its seat is open at once: it can
+   * neither act nor be raided again (`status` never returns to `running`), so
+   * holding the seat until eviction — an hour by default — would only leave
+   * its live bubble-mates with nobody to raid. Its own history lives on its
+   * host, not on the seat.
+   */
+  private match(): void {
+    const now = this.clock.now();
+    const overdue = (h: UniverseHost): boolean => now - (this.queuedAt.get(h.id) ?? now) >= this.matchAfterMs;
+    this.waiting = this.waiting.filter((h) => h.isAlive && !this.seatInBubble(h, false));
+    while (this.waiting.length >= this.bubbleSize) this.formBubble(this.waiting.splice(0, this.bubbleSize));
+    if (this.waiting.length >= 2 && this.waiting.some(overdue)) this.formBubble(this.waiting.splice(0));
+    this.waiting = this.waiting.filter((h) => !(overdue(h) && this.seatInBubble(h, true)));
+  }
+
+  /** Step 1 (and 4, with `besideRaiders`) of {@link match}: true when `host` was seated. */
+  private seatInBubble(host: UniverseHost, besideRaiders: boolean): boolean {
+    const avoid = besideRaiders ? undefined : this.avoid.get(host.id);
+    let best: Bubble | undefined;
+    for (const bubble of this.bubbles.values()) {
+      const alive = bubble.aliveCount;
+      if (alive === 0 || !bubble.hasRoom) continue;
+      if (avoid !== undefined && [...avoid].some((id) => bubble.has(id) && bubble.get(id)?.isAlive === true)) continue;
+      if (best === undefined || alive < best.aliveCount) best = bubble;
     }
+    if (best === undefined) return false;
+    best.add(host);
+    this.queuedAt.delete(host.id);
+    this.avoid.delete(host.id);
+    return true;
+  }
+
+  /** A new bubble of `batch`, positioned in id order. */
+  private formBubble(batch: UniverseHost[]): void {
+    const bubble = new Bubble(this.clock.now(), this.bubbleSize, 0);
+    for (const host of [...batch].sort((a, b) => (a.id < b.id ? -1 : a.id > b.id ? 1 : 0))) {
+      bubble.add(host);
+      this.queuedAt.delete(host.id);
+      this.avoid.delete(host.id);
+    }
+    this.bubbles.set(bubble.id, bubble);
   }
 
   /**
@@ -390,14 +478,19 @@ export class Lobby {
         // What this universe opened, what was opened on it, and who sits in
         // each of its portal seats.
         const bubble = this.bubbles.get(host.ref.bubbleId);
-        const seats: Record<string, string | null> = {};
+        const seats: Record<string, SeatOccupant | null> = {};
         for (let seat = 1; seat <= host.seatCount; seat += 1) seats[String(seat)] = null;
         json(res, 200, {
           universeId: host.id,
+          name: host.name,
+          species: host.speciesName,
           bubbleId: host.ref.bubbleId || null,
           worldTick: host.worldTick,
-          seats: bubble === undefined ? seats : bubble.seatIds(host.id, host.seatCount),
-          log: host.raidLog(),
+          seats: bubble === undefined ? seats : bubble.seats(host.id, host.seatCount),
+          log: host.raidLog().map((r) => {
+            const target = r.outbound ? host.raidTarget(r.raidId) : undefined;
+            return target === undefined ? r : { ...r, target };
+          }),
           inbound: host.inbound,
         });
         return;

@@ -148,6 +148,10 @@ body { margin: 0; background: var(--ground); color: var(--ink); }
 .weave-overlay .sub { font: italic 12px var(--serif); color: var(--soft); max-width: 34rem; text-align: center; padding: 0 1.5rem; }
 .setup-error { min-height: 1.2rem; margin: .8rem 0 0; font: 12px var(--mono); color: var(--loss); text-align: center; max-width: 40rem; }
 .setup-note { margin: .4rem 0 0; font: italic 12px var(--serif); color: var(--soft); text-align: center; max-width: 40rem; }
+.name-row { max-width: 56rem; width: 100%; display: flex; flex-direction: column; gap: .3rem; }
+.name-row input { font: 1rem var(--serif); color: var(--ink); background: var(--panel); border: 1px solid var(--edge); border-radius: 4px; padding: .45rem .7rem; max-width: 24rem; }
+.name-row input:focus-visible { outline: 2px solid var(--god); outline-offset: 1px; }
+.name-row .hint { font: italic 12px var(--serif); color: var(--soft); }
 .theme-corner { position: fixed; top: .5rem; left: 1rem; z-index: 1001; }
 </style>
 
@@ -171,6 +175,13 @@ body { margin: 0; background: var(--ground); color: var(--ink); }
       <div class="setup-toggles" id="setup-forms"></div>
     </div>
     <div class="setup-grid-preview" id="setup-grid-preview"></div>
+  </div>
+
+  <div class="setup-section-label"><label for="universe-name">Name your universe (optional)</label></div>
+  <div class="name-row">
+    <input id="universe-name" type="text" maxlength="32" autocomplete="off" spellcheck="false"
+      placeholder="e.g. The Ember Court">
+    <span class="hint">Your bubble-mates see this name. Letters, digits, spaces and . , ' ! ? &amp; ( ) - — up to 32. Leave it blank for one chosen for you.</span>
   </div>
 
   <button class="begin-btn" id="begin-btn" disabled>Begin</button>
@@ -358,6 +369,8 @@ el('begin-btn').addEventListener('click', async () => {
       const token = sessionStorage.getItem('mm.retireToken');
       if (id && token) retire = { universeId: id, token };
     } catch { /* refused */ }
+    // The server validates the name and says why it refused one.
+    const name = el('universe-name').value.trim();
     const res = await fetch('/api/create', {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
@@ -366,6 +379,7 @@ el('begin-btn').addEventListener('click', async () => {
         tradition: TRADITIONS[setup.tradition].id,
         techniques: [...setup.techniques],
         forms: [...setup.forms],
+        ...(name === '' ? {} : { name }),
         ...(retire === null ? {} : { retire }),
       }),
     });

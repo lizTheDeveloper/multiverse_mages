@@ -9,7 +9,13 @@ import { GOD_ACTION, MAGE_TIER_SLOTS, OBSERVATION_BLOCKS, speciesSlot } from '@m
 import { referenceContent } from '@mm/scenario';
 
 import { frameDocument } from '../../../../scripts/lib/frame-document.mjs';
-import { UniverseHost, validateConfig, type UniverseConfig } from '../../src/universe-host.js';
+import {
+  UniverseHost,
+  defaultUniverseName,
+  validateConfig,
+  validateName,
+  type UniverseConfig,
+} from '../../src/universe-host.js';
 
 const shipped = referenceContent();
 const doc = frameDocument(shipped, 'test');
@@ -98,4 +104,51 @@ describe('UniverseHost', () => {
   it('accepts a valid config with foundingPortalMagic', () => {
     expect(validateConfig({ ...base, foundingPortalMagic: 1 })).toEqual({ ...base, foundingPortalMagic: 1 });
   });
+
+  it('keeps a chosen name, and generates a stable one from the id otherwise', () => {
+    expect(new UniverseHost({ ...base, name: 'Quiet Fen' }, doc, 0).name).toBe('Quiet Fen');
+    const h = new UniverseHost(base, doc, 0);
+    expect(h.speciesName).toBe('Dwarf');
+    expect(h.name).toBe(defaultUniverseName(h.id, 'Dwarf'));
+    expect(defaultUniverseName('00000000-0000-4000-8000-000000000000', 'Elf')).toBe(
+      defaultUniverseName('00000000-0000-4000-8000-000000000000', 'Elf'),
+    );
+    // Different ids reach different nouns: the hash is not a constant.
+    const nouns = new Set(Array.from({ length: 64 }, (_, i) => defaultUniverseName(`id-${String(i)}`, 'Elf')));
+    expect(nouns.size).toBeGreaterThan(8);
+  });
 });
+
+describe('validateName', () => {
+  it.each([
+    ['Quiet Fen', 'Quiet Fen'],
+    ['  The   Ember  Court ', 'The Ember Court'],
+    ["Ka'thar (II) & Co.", "Ka'thar (II) & Co."],
+    ['Île-de-Flamme', 'Île-de-Flamme'],
+    ['x'.repeat(32), 'x'.repeat(32)],
+    [undefined, undefined],
+    ['   ', undefined],
+  ])('accepts %j as %j', (raw, want) => {
+    expect(validateName(raw)).toBe(want);
+  });
+
+  it.each([
+    ['<script>alert(1)</script>'],
+    ['a<b'],
+    ['line\nbreak'],
+    ['nul\u0000'],
+    ['bell\u0007'],
+    ['bidi\u202Eflip'],
+    ['zero\u200Bwidth'],
+    ['zalgo\u0301\u0301'],
+    ['emoji \u{1F525}'],
+    ['x'.repeat(33)],
+    ['x'.repeat(200)],
+    ['---'],
+    [7],
+    [{}],
+  ])('refuses %j', (raw) => {
+    expect(() => validateName(raw)).toThrow(/name/u);
+  });
+});
+
