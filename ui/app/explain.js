@@ -160,7 +160,9 @@ export function whyDenied(f, content, id) {
 /** One line for a tooltip: "Not available — a; b". */
 export function whyDeniedText(f, content, id) {
   const r = whyDenied(f, content, id);
-  return r.length === 0 ? '' : `Not available — ${r.map((x) => `${x.text} [${x.source}]`).join('; ')}`;
+  // Player prose only: the observation each reason was read from is a
+  // developer's detail, kept in `source` for the panels' tooltips.
+  return r.length === 0 ? '' : `Not available — ${r.map((x) => x.text).join('; ')}`;
 }
 
 /**
@@ -258,6 +260,85 @@ export function describeRaid(record, perspective, otherLabel) {
 export function raidFeedText(record, perspective, otherLabel) {
   const d = describeRaid(record, perspective, otherLabel);
   return `${d.title} — ${d.weWon ? 'won' : 'lost'} (${d.reasonId}); ${record.raidersFielded} raider(s), ${record.nodesTakenByAttacker} node(s) taken`;
+}
+
+/**
+ * What the frames can say about **why** a universe stagnated.
+ *
+ * The frame carries `status: 'stagnated'` and nothing else — not which of the
+ * server's three stagnation clocks ran out (`coordination/src/god/ascension.ts`
+ * `stepStagnation`), and not the clocks themselves or their thresholds. So
+ * this does not decide which rule fired; it reads the run's own frames for the
+ * facts each rule depends on and says which rules those facts leave possible.
+ *
+ * The three rules, in words: **no mages** — the universe had no living mage
+ * for a stretch; **no worship** — worship stayed very low for a long stretch;
+ * **stasis** — nothing new entered the universe's knowledge for a long stretch
+ * *while* worship stayed below a health floor.
+ *
+ * @param session - anything with `frameCount`, `frame(i)` and `last()`.
+ * @returns `{ livingAtEnd, lastLivingTick, lastNewKnowledgeTick, worshipAtEnd,
+ *   worshipTierAtEnd, peakWorship: {value, tick}, endTick, rules: [{id, text,
+ *   possible, evidence}] }`
+ */
+export function stagnationReading(session) {
+  const living = (f) => f.mageBuckets().reduce((a, b) => a + b.living, 0);
+  const known = (f) => f.knowledge().reduce((a, c) => a + c.nodesKnown, 0);
+  let lastLivingTick = null;
+  let lastNewKnowledgeTick = null;
+  let prevKnown = null;
+  let peakWorship = { value: -1, tick: 0 };
+  for (let i = 0; i < session.frameCount; i += 1) {
+    const f = session.frame(i);
+    const tick = f.clock().worldTick;
+    if (living(f) > 0) lastLivingTick = tick;
+    const k = known(f);
+    if (prevKnown !== null && k > prevKnown) lastNewKnowledgeTick = tick;
+    prevKnown = k;
+    const w = f.resources().worship;
+    if (w > peakWorship.value) peakWorship = { value: w, tick };
+  }
+  const end = session.last();
+  const endTick = end.clock().worldTick;
+  const livingAtEnd = living(end);
+  const r = end.resources();
+  const year = (t) => Math.floor(t / 12);
+  const rules = [
+    {
+      id: 'mageless',
+      text: 'no living mage for a stretch of years',
+      possible: livingAtEnd === 0,
+      evidence: livingAtEnd === 0
+        ? (lastLivingTick === null ? 'no mage lived at any point in the run' : `the last mage was alive in year ${year(lastLivingTick)}`)
+        : `${livingAtEnd} mage${livingAtEnd === 1 ? ' was' : 's were'} alive at the end, so not this one`,
+    },
+    {
+      id: 'no-worship',
+      text: 'worship stayed very low for a long stretch',
+      possible: true,
+      evidence: `worship ended at ${num(r.worship)} (tier ${r.worshipTier}); its peak was ${num(Math.max(0, peakWorship.value))} in year ${year(peakWorship.tick)}`,
+    },
+    {
+      id: 'stasis',
+      text: 'nothing new was learned for a long stretch while worship stayed below a healthy level',
+      possible: lastNewKnowledgeTick !== endTick,
+      evidence: lastNewKnowledgeTick === null
+        ? 'no node was ever newly learned in this run'
+        : lastNewKnowledgeTick === endTick
+          ? 'something new was learned in the final month, so not this one'
+          : `the last new node was learned in year ${year(lastNewKnowledgeTick)}, ${year(endTick - lastNewKnowledgeTick)} years before the end`,
+    },
+  ];
+  return {
+    livingAtEnd,
+    lastLivingTick,
+    lastNewKnowledgeTick,
+    worshipAtEnd: r.worship,
+    worshipTierAtEnd: r.worshipTier,
+    peakWorship,
+    endTick,
+    rules,
+  };
 }
 
 /** The guide's thresholds, used only when the session document does not publish `content.ascension`. */
