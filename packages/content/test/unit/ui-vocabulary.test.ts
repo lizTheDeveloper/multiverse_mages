@@ -175,6 +175,8 @@ describe('species are looked up by content id, never by array index', () => {
       expect(src, f).not.toMatch(/species\.map\(\s*\(?s\)?\s*=>\s*s\.name\s*\)/u);
       expect(src, f).not.toMatch(/speciesNames\[/u);
       expect(src, f).not.toMatch(/JSON\.stringify\(c\)/u);
+      // Debug fragments ("[candidates[14] is empty]") belong in a tooltip, not prose.
+      expect(src, f).not.toMatch(/\[\$\{\w+\.source\}\]/u);
     }
   });
 });

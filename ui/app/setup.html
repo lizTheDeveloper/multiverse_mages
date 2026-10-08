@@ -153,6 +153,8 @@ body { margin: 0; background: var(--ground); color: var(--ink); }
 @keyframes weaveSpin { to { transform: rotate(360deg); } }
 .weave-overlay .msg { font: 13px var(--mono); color: var(--ink); }
 .weave-overlay .sub { font: italic 12px var(--serif); color: var(--soft); max-width: 34rem; text-align: center; padding: 0 1.5rem; }
+.setup-rule { min-height: 1.1rem; margin: 1rem 0 0; font: 12px var(--mono); color: var(--soft); text-align: center; max-width: 40rem; }
+.setup-rule.unmet { color: var(--warn); }
 .setup-error { min-height: 1.2rem; margin: .8rem 0 0; font: 12px var(--mono); color: var(--loss); text-align: center; max-width: 40rem; }
 .setup-note { margin: .4rem 0 0; font: italic 12px var(--serif); color: var(--soft); text-align: center; max-width: 40rem; }
 .theme-corner { position: fixed; top: .5rem; left: 1rem; z-index: 1001; }
@@ -180,9 +182,10 @@ body { margin: 0; background: var(--ground); color: var(--ink); }
     <div class="setup-grid-preview" id="setup-grid-preview"></div>
   </div>
 
+  <p class="setup-rule" id="setup-rule" role="status"></p>
   <button class="begin-btn" id="begin-btn" disabled>Begin</button>
   <p class="setup-error" id="setup-error" role="alert"></p>
-  <p class="setup-note">The server keeps time: your universe runs one month per second from the moment you begin, whether or not this tab is open.</p>
+  <p class="setup-note">The server keeps time: your universe runs from the moment you begin — one month per second at the default speed — whether or not this tab is open.</p>
 </div>
 
 <div class="toast-container" id="toast-container"></div>
@@ -215,8 +218,13 @@ function showToast(msg, duration = 3000) {
     msg = String(msg).replace(/^!/, '');
   }
   t.textContent = msg;
-  el('toast-container').appendChild(t);
-  setTimeout(() => { t.classList.add('fade-out'); setTimeout(() => t.remove(), 400); }, duration);
+  // Newest on top, at most three, gone after a few seconds or on a click.
+  const host = el('toast-container');
+  host.prepend(t);
+  for (const old of [...host.querySelectorAll('.toast:not(.fade-out)')].slice(3)) old.remove();
+  const dismiss = () => { t.classList.add('fade-out'); setTimeout(() => t.remove(), 400); };
+  t.addEventListener('click', dismiss, { once: true });
+  setTimeout(dismiss, Math.min(duration, 6000));
 }
 
 // The guide lives in the game page; borrow it rather than keep a second copy
@@ -310,6 +318,7 @@ function renderSetup() {
     const id = btn.dataset.id;
     if (setup.techniques.has(id)) setup.techniques.delete(id);
     else if (setup.techniques.size < 2) setup.techniques.add(id);
+    else showToast('!Two techniques already chosen — click one of them to drop it first.');
     renderSetup();
   }));
 
@@ -324,6 +333,7 @@ function renderSetup() {
     const id = btn.dataset.id;
     if (setup.forms.has(id)) setup.forms.delete(id);
     else if (setup.forms.size < 2) setup.forms.add(id);
+    else showToast('!Two forms already chosen — click one of them to drop it first.');
     renderSetup();
   }));
 
@@ -343,7 +353,17 @@ function renderSetup() {
   gp.innerHTML = gh;
 
   // Begin button
-  el('begin-btn').disabled = !setup.species || setup.techniques.size < 1 || setup.forms.size < 1;
+  // Exactly two of each: the opening square is 2×2. Begin stays dark, and
+  // says what is missing, until the choice is complete.
+  const missing = [];
+  if (!setup.species) missing.push('choose your people');
+  if (setup.techniques.size !== 2) missing.push(`choose ${2 - setup.techniques.size} more technique${2 - setup.techniques.size === 1 ? '' : 's'} (${setup.techniques.size} of 2)`);
+  if (setup.forms.size !== 2) missing.push(`choose ${2 - setup.forms.size} more form${2 - setup.forms.size === 1 ? '' : 's'} (${setup.forms.size} of 2)`);
+  el('begin-btn').disabled = missing.length > 0;
+  el('setup-rule').textContent = missing.length > 0
+    ? `To begin: ${missing.join(', ')}.`
+    : 'Ready: two techniques and two forms make your opening four cells.';
+  el('setup-rule').classList.toggle('unmet', missing.length > 0);
 }
 
 renderSetup();

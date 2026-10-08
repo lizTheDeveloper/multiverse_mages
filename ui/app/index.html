@@ -939,6 +939,7 @@ html, body { height: 100%; overflow: hidden; }
 .mage-row-doing { font: italic 10px var(--serif); color: var(--soft); }
 .mage-row-doing .v { font: 9px var(--mono); font-style: normal; color: var(--faint); }
 .roster-more { margin-top: .25rem; padding: .1rem .4rem; border: 1px solid var(--edge); border-radius: 3px; background: var(--sunk); color: var(--soft); font: 9px var(--mono); cursor: pointer; }
+.tradition-label { font: italic 12px var(--serif); color: var(--ink); margin-right: .8rem; }
 .detail-close { flex-shrink: 0; padding: .05rem .4rem; border: 1px solid var(--edge); border-radius: 3px; background: var(--sunk); color: var(--soft); font: 9px var(--mono); cursor: pointer; }
 .detail-close:hover { border-color: var(--god); color: var(--ink); }
 .why-denied { margin: .35rem 0; padding: .3rem .45rem; border-left: 2px solid var(--warn); background: var(--sunk); font: 10px/1.45 var(--sans); color: var(--soft); }
@@ -992,7 +993,7 @@ html, body { height: 100%; overflow: hidden; }
 
     <h3>Time</h3>
     <ul>
-      <li>The server keeps time: one month per second, even when you close the tab. You can't pause it; that is the point.</li>
+      <li>The server keeps time — one month per second at the default speed (the bar at the bottom shows the speed this server is actually running) — even when you close the tab. You can't pause it; that is the point.</li>
       <li>The <b>year</b> counter in the topbar is the clock. If it is not moving, the episode is over (the badge says so).</li>
       <li>A god action takes effect on the next month. One per month: a second click in the same month is refused.</li>
       <li>Reloading, or coming back later in the same browser, returns you to the same universe. <b>new universe</b> (bottom right) leaves it and lets you choose again.</li>
@@ -1049,6 +1050,8 @@ html, body { height: 100%; overflow: hidden; }
     <button class="tab" data-tab="raids" aria-pressed="false" id="raids-tab">Raids</button>
     <button class="tab" data-tab="console" aria-pressed="false">Console</button>
     <span class="spacer"></span>
+    <span class="tick-label">tradition</span>
+    <span class="tradition-label" id="tradition-label"></span>
     <span class="tick-label">year</span>
     <span class="tick-display" id="tick-val">--</span>
     <span class="status-badge" id="status-badge">--</span>
@@ -1145,7 +1148,7 @@ html, body { height: 100%; overflow: hidden; }
   <!-- ======================== SPINE ======================== -->
   <div class="spine-area">
     <div class="spine-controls" style="justify-content:center;gap:.5rem;padding:.5rem">
-      <span style="font:9px var(--mono);color:var(--faint);margin-left:.5rem">the world runs on the server — one month per second, whether or not you are watching</span>
+      <span id="pace-note" style="font:9px var(--mono);color:var(--faint);margin-left:.5rem">the world runs on the server, whether or not you are watching</span>
       <span class="spacer"></span>
       <button type="button" id="restart-btn" title="Leave this universe and choose a new one">new universe</button>
     </div>
@@ -1246,7 +1249,7 @@ const el = (id) => document.getElementById(id);
 // action as admitted:false with its own word for why, over HTTP 200 — an old
 // handler logged that to the console and the button clicked into silence.
 const REJECT_HINTS = {
-  masked: 'masked this tick — usually the price exceeds your favor, or the world has other plans',
+  masked: 'the server refuses it this tick',
   'empty-slot': 'that target is gone or moved — the world advanced while this list was on screen. The list is redrawn; try again',
   'non-integer-parameter': 'that target is not valid this tick',
   'parameter-out-of-range': 'that target is not valid this tick',
@@ -1297,6 +1300,9 @@ async function act(kind, params, label) {
     paint();
   }
 }
+// Toasts: newest on top, at most three, each gone after a few seconds or on
+// a click. A stack of eight stale refusals is noise that hides the new one.
+const TOAST_MAX = 3;
 function showToast(msg, duration = 3000) {
   const t = document.createElement('div');
   t.className = 'toast';
@@ -1305,8 +1311,20 @@ function showToast(msg, duration = 3000) {
     msg = String(msg).replace(/^!/, '');
   }
   t.textContent = msg;
-  el('toast-container').appendChild(t);
-  setTimeout(() => { t.classList.add('fade-out'); setTimeout(() => t.remove(), 400); }, duration);
+  t.title = 'Click to dismiss';
+  const host = el('toast-container');
+  host.prepend(t);
+  const live = [...host.querySelectorAll('.toast:not(.fade-out)')];
+  for (const old of live.slice(TOAST_MAX)) old.remove();
+  let gone = false;
+  const dismiss = () => {
+    if (gone) return;
+    gone = true;
+    t.classList.add('fade-out');
+    setTimeout(() => t.remove(), 450);
+  };
+  t.addEventListener('click', dismiss);
+  setTimeout(dismiss, Math.min(duration, 6000));
 }
 
 // Read the live ruleset from the current frame
@@ -1400,7 +1418,7 @@ function confirmAct({ title, price, body, note, denied = [] }) {
         note ? h('p', { className: 'confirm-note' }, note) : null,
         denied.length > 0
           ? h('div', { className: 'why-denied', role: 'note' }, h('b', {}, 'Not available this tick'),
-            h('ul', {}, denied.map((r) => h('li', {}, r.text, h('span', { className: 'edict-src' }, ` [${r.source}]`)))))
+            h('ul', {}, denied.map((r) => h('li', { title: `read from ${r.source}` }, r.text))))
           : null,
         h('div', { className: 'close-row' },
           h('button', { type: 'button', className: 'alt', onclick: () => done(false) }, 'Cancel'), ok)));
@@ -1538,8 +1556,8 @@ function paintStatusBadge(clock, f) {
     ? 'A raid is in progress — the two universes fight over this tick'
     : worldDead ? `The episode ended: ${f.status()}. Press "new universe" to choose another.`
     : tabOnly
-      ? 'The world runs on the server, one month per second. This browser refused lasting storage, so closing this tab loses your way back to this universe.'
-      : 'The world runs on the server — one month per second, whether or not you are watching.';
+      ? `The world runs on the server, ${paceText()}. This browser refused lasting storage, so closing this tab loses your way back to this universe.`
+      : `The world runs on the server — ${paceText()}, whether or not you are watching.`;
 }
 
 // A finished run shows its ending once — not every paint. The server stops
@@ -1555,12 +1573,28 @@ if (tabOnly) {
   showToast('!This browser refused lasting storage: your universe is kept for this tab only. Closing the tab loses your way back to it.', 9000);
 }
 
-// The server keeps time (lobby tickAll, 1 tick/s). The page only reads.
+// The server keeps time (lobby tickAll). The page only reads.
 const POLL_MS = 1000;
+// The tick interval is a server flag the page is not told, so the speed shown
+// is measured: frames gained over the last ~15 s of polling.
+const paceSamples = [];
+function notePace() {
+  paceSamples.push({ at: performance.now(), frames: session.frameCount });
+  while (paceSamples.length > 2 && paceSamples[paceSamples.length - 1].at - paceSamples[0].at > 15_000) paceSamples.shift();
+}
+function paceText() {
+  const a = paceSamples[0];
+  const b = paceSamples[paceSamples.length - 1];
+  if (!a || !b || b.at - a.at < 3000 || b.frames === a.frames) return 'speed being measured';
+  const perSec = (b.frames - a.frames) / ((b.at - a.at) / 1000);
+  return perSec >= 0.95 && perSec <= 1.05 ? 'about one month per second (measured)' : `about ${perSec < 10 ? perSec.toFixed(1) : Math.round(perSec)} months per second (measured)`;
+}
 async function pollOnce() {
   if (document.hidden || state.ended) return;
   try {
-    if ((await session.poll()) > 0) {
+    const gained = await session.poll();
+    notePace();
+    if (gained > 0) {
       refreshRuleset();
       paint();
     }
@@ -1897,21 +1931,47 @@ function snapshotFrame(f) {
 }
 
 const feedCellName = (i, c) => vocab.cellName.get(session.content.cells[i]?.cellId) ?? `${c.t} ${c.f}`;
+/**
+ * Adds an event to the feed, folding it into an earlier entry of the same
+ * kind and subject in the same year. Six "grimoire written" lines a year
+ * drowned the discoveries and deaths a player needs to see.
+ */
+function pushFeed({ tick, type, key = '', n = 1, dim = false, text }) {
+  const year = Math.floor(tick / 12);
+  const hit = feedLog.findLast((e) => e.type === type && e.key === key && Math.floor(e.tick / 12) === year);
+  if (hit) {
+    hit.n += n;
+    hit.tick = tick;
+    hit.text = text(hit.n);
+    hit.dim = dim;
+    // Move it to the end, so the feed stays in order of the latest event.
+    feedLog.splice(feedLog.indexOf(hit), 1);
+    feedLog.push(hit);
+  } else {
+    feedLog.push({ tick, type, key, n, dim, text: text(n) });
+  }
+  while (feedLog.length > FEED_MAX) feedLog.shift();
+}
+
 function diffAndLog(curr) {
   const snap = snapshotFrame(curr);
   if (!prevSnapshot) { prevSnapshot = snap; return; }
   const prev = prevSnapshot;
   const tick = snap.tick;
+  const s = (n, one, many) => (n === 1 ? one : many);
 
   // Knowledge discoveries
   for (let i = 0; i < snap.cells.length && i < prev.cells.length; i++) {
     const c = snap.cells[i], p = prev.cells[i];
     const cellPermitted = godRuleset?.techniques?.[c.t] && godRuleset?.forms?.[c.f];
+    const name = feedCellName(i, c);
     if (c.n > p.n) {
-      feedLog.push({ tick, type: 'discovery', text: `New node in ${feedCellName(i, c)}`, count: c.n - p.n, dim: !cellPermitted });
+      pushFeed({ tick, type: 'discovery', key: name, n: c.n - p.n, dim: !cellPermitted,
+        text: (n) => `${n} new node${s(n, '', 's')} in ${name}` });
     }
     if (c.n < p.n) {
-      feedLog.push({ tick, type: 'knowledge-loss', text: `Knowledge lost in ${feedCellName(i, c)}`, dim: !cellPermitted });
+      pushFeed({ tick, type: 'knowledge-loss', key: name, n: p.n - c.n, dim: !cellPermitted,
+        text: (n) => `${n} node${s(n, '', 's')} lost in ${name}` });
     }
   }
 
@@ -1919,31 +1979,38 @@ function diffAndLog(curr) {
   for (let i = 0; i < snap.species.length && i < prev.species.length; i++) {
     const c = snap.species[i], p = prev.species[i];
     if (c.living < p.living) {
-      feedLog.push({ tick, type: 'death', text: `${p.living - c.living} ${c.name} mage${p.living - c.living > 1 ? 's' : ''} died` });
+      pushFeed({ tick, type: 'death', key: c.name, n: p.living - c.living, text: (n) => `${n} ${c.name} mage${s(n, '', 's')} died` });
     }
     if (c.living > p.living) {
-      feedLog.push({ tick, type: 'birth', text: `${c.living - p.living} new ${c.name} mage${c.living - p.living > 1 ? 's' : ''}` });
+      pushFeed({ tick, type: 'birth', key: c.name, n: c.living - p.living, text: (n) => `${n} new ${c.name} mage${s(n, '', 's')}` });
     }
   }
 
-  // Library
   if (snap.library > prev.library) {
-    feedLog.push({ tick, type: 'library', text: `Library grew to ${snap.library} nodes` });
+    const total = snap.library;
+    pushFeed({ tick, type: 'library', n: snap.library - prev.library, text: (n) => `Library grew by ${n} node${s(n, '', 's')} (${total} shelved)` });
   }
-
-  // Grimoires
   if (snap.grimoires > prev.grimoires) {
-    feedLog.push({ tick, type: 'scribed', text: `Grimoire written (${snap.grimoires} total)` });
+    const total = snap.grimoires;
+    pushFeed({ tick, type: 'scribed', n: snap.grimoires - prev.grimoires, text: (n) => `${n} grimoire${s(n, '', 's')} written (${total} in all)` });
   }
-
-  // Universities
   if (snap.universities > prev.universities) {
-    feedLog.push({ tick, type: 'action', text: `University founded (${snap.universities} total)` });
+    const total = snap.universities;
+    pushFeed({ tick, type: 'action', n: snap.universities - prev.universities, text: (n) => `${n} universit${s(n, 'y', 'ies')} founded (${total} in all)` });
   }
-
-  // Trim
-  while (feedLog.length > FEED_MAX) feedLog.shift();
   prevSnapshot = snap;
+}
+
+/**
+ * Brings the feed up to the newest frame, one frame at a time. On load this
+ * replays the whole spine the page was handed, so a reload keeps the history
+ * (the death that cost the canon is still there); afterwards it walks every
+ * frame a poll brought in, not just the last.
+ */
+let feedFrame = -1;
+function catchUpFeed() {
+  for (let i = feedFrame + 1; i < session.frameCount; i += 1) diffAndLog(session.frame(i));
+  feedFrame = session.frameCount - 1;
 }
 
 const FEED_ICONS = {
@@ -1957,10 +2024,10 @@ function renderFeed() {
   const entries = feedLog.slice(-30);
   let html = '<div class="feed-head">Activity</div>';
   if (entries.length === 0) {
-    html += '<div style="font:italic 10px var(--serif);color:var(--faint);padding:.3rem 0">Advance time to see your civilization grow.</div>';
+    html += '<div style="font:italic 10px var(--serif);color:var(--faint);padding:.3rem 0">Nothing has happened yet. Discoveries, deaths, births and books appear here as the months pass.</div>';
   } else {
     for (const e of entries) {
-      const yr = Math.floor(e.tick / 12) + 1;
+      const yr = Math.floor(e.tick / 12); // the topbar's year, so the two agree
       html += `<div class="feed-entry fe-${e.type}"${e.dim ? ' style="opacity:0.35"' : ''}><span class="fe-icon">${FEED_ICONS[e.type] || '·'}</span>${escapeFeed(e.text)}<span class="fe-tick">yr ${yr}</span></div>`;
     }
   }
@@ -1974,7 +2041,7 @@ function paint() {
   const clock = f.clock();
 
   // Activity feed — diff this frame against the previous
-  diffAndLog(f);
+  catchUpFeed();
   renderFeed();
 
   // Topbar
@@ -1982,6 +2049,12 @@ function paint() {
   el('tick-val').textContent = String(tick12);
   el('tick-val').title = `year ${tick12} (tick ${clock.worldTick}) — 12 ticks = 1 year`;
   paintStatusBadge(clock, f);
+  el('pace-note').textContent = `the world runs on the server — ${paceText()}, whether or not you are watching`;
+  // The tradition the universe was founded with (or changed to), by name.
+  const tradId = f.ruleset().traditionId;
+  const trad = session.content.traditions?.find((t) => t.traditionId === tradId);
+  el('tradition-label').textContent = trad ? trad.name : '';
+  el('tradition-label').title = trad ? `Your tradition: ${trad.name} — how your mages hold and use what they know.` : '';
   checkEnd(f);
 
   // Resources
@@ -2313,7 +2386,7 @@ function paintActionCandidates(f, detEl) {
   if (denied.length > 0) {
     detEl.prepend(h('div', { className: 'why-denied', role: 'note' },
       h('b', {}, 'Not available this tick'),
-      h('ul', {}, denied.map((r) => h('li', {}, r.text, h('span', { className: 'edict-src' }, ` [${r.source}]`))))));
+      h('ul', {}, denied.map((r) => h('li', { title: `read from ${r.source}` }, r.text)))));
   }
   if (aid === 15) detEl.append(ascensionNode(f, session.content, false));
 }
@@ -2841,6 +2914,28 @@ const TERRITORIES = [
   {id:'highland-waste', name:'Highland Waste',  x:.78, y:.10, w:.18, h:.50, fill:'#1a1a1e', accent:'#2a2a30'},
 ];
 
+// A mage on the World tab opens the same dossier as her roster row.
+function worldMageAt(ev) {
+  const hits = worldCanvas._hits ?? [];
+  let best = null;
+  for (const hit of hits) {
+    const d = Math.hypot(ev.offsetX - hit.x, ev.offsetY - hit.y);
+    if (d <= hit.r && (best === null || d < best.d)) best = { ...hit, d };
+  }
+  return best;
+}
+worldCanvas.addEventListener('click', (ev) => {
+  const hit = worldMageAt(ev);
+  if (!hit || hit.handle === undefined) return;
+  document.querySelector('.topbar .tab[data-tab="grid"]')?.click();
+  state.selectedMage = hit.handle;
+  state.selectedCell = null;
+  state.selectedAction = null;
+  paint();
+});
+worldCanvas.addEventListener('mousemove', (ev) => {
+  worldCanvas.style.cursor = worldMageAt(ev) ? 'pointer' : 'default';
+});
 function resizeWorldCanvas() {
   const r = worldCanvas.parentElement.getBoundingClientRect();
   worldCanvas.width = r.width * devicePixelRatio;
@@ -2855,8 +2950,8 @@ function renderWorld(f) {
   const W = worldCanvas._w, H = worldCanvas._h;
   if (!W || !H) return;
 
-  const cd = f.raw.candidateDetail || {};
-  const mageData = cd.mages ? Object.values(cd.mages) : [];
+  // Every mage the frame names (candidate lists and college rosters).
+  const mageData = [...namedMages(f).values()];
   const inst = f.institutions();
   const kCells = f.knowledge();
 
@@ -2871,6 +2966,7 @@ function renderWorld(f) {
         worldMages[i] = {x: W*.35 + ((i*7919)%1000)/1000*W*.3, y: H*.35 + ((i*6271)%1000)/1000*H*.3, tx:0, ty:0};
       }
       const wm = worldMages[i];
+      wm.handle = m.handle;
       wm.species = m.speciesId;
       wm.role = m.roleId;
       wm.knows = m.nodesKnown;
@@ -3056,10 +3152,17 @@ function renderWorld(f) {
   // Stats overlay bottom-left
   wCtx.fillStyle = isDark ? 'rgba(255,255,255,0.35)' : 'rgba(0,0,0,0.3)';
   wCtx.font = '10px ui-monospace, monospace';
-  wCtx.fillText(`${worldMages.length} mages · ${inst.libraryDepth} nodes in the library · ${inst.grimoires} grimoires`, 10, H - 10);
+  wCtx.fillText(`${worldMages.length} mages · ${inst.libraryDepth} nodes in the library · ${inst.grimoires} grimoires · click a mage to see who she is`, 10, H - 10);
+  // Where each sprite was drawn, for the click handler below.
+  worldCanvas._hits = worldMages.map((wm) => {
+    const sz = (vocab.speciesById.get(wm.species)?.id === 'gnome') ? 14 : (vocab.speciesById.get(wm.species)?.id === 'draconic') ? 22 : 18;
+    return { handle: wm.handle, x: wm.x, y: wm.y - sz / 2, r: Math.max(8, sz / 2 + 2) };
+  });
 
   // Animate
-  if (state.tab === 'world') requestAnimationFrame(() => renderWorld(f));
+  // One animation chain, not one more per repaint.
+  cancelAnimationFrame(worldCanvas._raf);
+  if (state.tab === 'world') worldCanvas._raf = requestAnimationFrame(() => renderWorld(session.last()));
 }
 
 // ================================================================ RAIDS
@@ -3077,8 +3180,7 @@ raids = mountRaids({
   isBusy: () => state.busy,
   isEnded: () => state.ended,
   onFeed: (tick, text, inbound) => {
-    feedLog.push({ tick, type: inbound ? 'raid-in' : 'raid', text });
-    while (feedLog.length > FEED_MAX) feedLog.shift();
+    pushFeed({ tick, type: inbound ? 'raid-in' : 'raid', key: text, text: () => text });
     renderFeed();
   },
 });

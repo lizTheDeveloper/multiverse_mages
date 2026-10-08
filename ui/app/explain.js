@@ -160,7 +160,9 @@ export function whyDenied(f, content, id) {
 /** One line for a tooltip: "Not available — a; b". */
 export function whyDeniedText(f, content, id) {
   const r = whyDenied(f, content, id);
-  return r.length === 0 ? '' : `Not available — ${r.map((x) => `${x.text} [${x.source}]`).join('; ')}`;
+  // Player prose only: the observation each reason was read from is a
+  // developer's detail, kept in `source` for the panels' tooltips.
+  return r.length === 0 ? '' : `Not available — ${r.map((x) => x.text).join('; ')}`;
 }
 
 /**
