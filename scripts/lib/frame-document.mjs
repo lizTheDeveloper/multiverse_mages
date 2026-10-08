@@ -332,6 +332,30 @@ function header(r) {
       actionCosts: Object.fromEntries(
         registry.godCosts.map(({ record: g }) => [g.actionId, g.favorCost]),
       ),
+      /**
+       * The second currency of each priced action, `fp` per material kind, as
+       * `god-cost.json` authors it — so a page can say *"costs 6 favor and 4
+       * essence"* instead of only the favor half. Content, not a rule: the mask
+       * still decides whether the god can pay. Additive; not in a recording's
+       * content block, so a page reads it with `??`.
+       */
+      actionMaterialCosts: Object.fromEntries(
+        registry.godCosts
+          .filter(({ record: g }) => g.materialCost !== undefined)
+          .map(({ record: g }) => [g.actionId, { ...g.materialCost }]),
+      ),
+      /**
+       * The ascension thresholds from `god-constant.json` (`ascension-*`), keyed
+       * by the id without its prefix. Published so the play page's checklist
+       * states the bars content sets rather than a hand-copied set that a retune
+       * would silently falsify. The qualification itself stays the server's
+       * (mask entry 15). Additive, like `actionMaterialCosts`.
+       */
+      ascension: Object.fromEntries(
+        registry.godConstants
+          .filter(({ record: c }) => c.id.startsWith('ascension-'))
+          .map(({ record: c }) => [c.id.slice('ascension-'.length), c.value]),
+      ),
     /**
      * Every node, so a founding grant can say *which* node it would found.
      *
