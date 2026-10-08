@@ -356,7 +356,7 @@ export function mountRaids(o) {
     if (!id) {
       row('occupant', 'empty');
     } else if (peer.state === 'gone') {
-      row('occupant', `universe ${label} — gone from the server`);
+      row('occupant', `empty — universe ${label} has left the server`);
     } else if (!p?.frame) {
       row('occupant', `universe ${label}`);
       row('strength', 'reading…');

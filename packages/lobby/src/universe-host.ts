@@ -78,7 +78,8 @@ export interface PeerSeats {
 
 /** A god picks up to two techniques and two forms (the setup screen). */
 const OPENING_MAX = 2;
-const DEFAULT_CAP = 4000;
+/** The tick cap, and the most an HTTP caller may ask for: memory is sized on it. */
+export const DEFAULT_CAP = 4000;
 const shipped = referenceContent();
 
 const strings = (v: unknown, field: string, allowed: readonly string[]): string[] => {
@@ -94,8 +95,14 @@ const strings = (v: unknown, field: string, allowed: readonly string[]): string[
   return v as string[];
 };
 
-/** Checks a create request. Throws an `Error` naming the bad field. */
-export function validateConfig(raw: unknown): UniverseConfig {
+/**
+ * Checks a create request. Throws an `Error` naming the bad field.
+ *
+ * @param maxTickCap - The largest `tickCap` accepted. {@link DEFAULT_CAP} for
+ *   anything that arrived over HTTP — the lobby's memory budget assumes it, and
+ *   a 100000-tick spine would not even serialise. Raised only by tests.
+ */
+export function validateConfig(raw: unknown, maxTickCap = DEFAULT_CAP): UniverseConfig {
   if (raw === null || typeof raw !== 'object' || Array.isArray(raw)) {
     throw new Error('config must be a JSON object');
   }
@@ -121,8 +128,8 @@ export function validateConfig(raw: unknown): UniverseConfig {
     out.seed = c.seed;
   }
   if (c.tickCap !== undefined) {
-    if (typeof c.tickCap !== 'number' || !Number.isInteger(c.tickCap) || c.tickCap < 1 || c.tickCap > 100_000) {
-      throw new Error('tickCap must be 1..100000');
+    if (typeof c.tickCap !== 'number' || !Number.isInteger(c.tickCap) || c.tickCap < 1 || c.tickCap > maxTickCap) {
+      throw new Error(`tickCap must be 1..${String(maxTickCap)}`);
     }
     out.tickCap = c.tickCap;
   }

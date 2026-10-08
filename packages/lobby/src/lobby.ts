@@ -17,8 +17,10 @@
  * `tickAll` applies. `advance`, `reset`, `control` and `sandbox` are `403`.
  *
  * The wall clock enters only through the injected {@link Clock}, and only for
- * pacing and admission (`authoritative-lockstep` spec): eviction of ended,
- * untouched universes, and the timestamps the API reports.
+ * pacing and admission (`authoritative-lockstep` spec): eviction — an ended
+ * universe a fixed time after it ended, a running one its owner has left — and
+ * the timestamps the API reports. Only a request carrying the owner token
+ * counts as the owner touching a universe; ids are public and reads are not.
  *
  * ## Per-universe routes
  *
@@ -46,8 +48,11 @@ const MAX_UNIVERSES = 16;
 /** The ranges a caller may configure. Out of range is a thrown error, never a clamp. */
 export const LOBBY_LIMITS = Object.freeze({
   bubbleSize: { min: 2, max: 16 },
-  maxUniverses: { min: 1, max: 1024 },
+  // tickAll steps every universe inside one tick interval; measured ~1.4 ms per
+  // universe, so 256 is ~360 ms of a 1000 ms tick.
+  maxUniverses: { min: 1, max: 256 },
   evictAfterMs: { min: 0, max: 30 * 24 * 3_600_000 },
+  idleAfterMs: { min: 1_000, max: 7 * 24 * 3_600_000 },
 });
 
 /**
@@ -65,6 +70,8 @@ function bounded(name: keyof typeof LOBBY_LIMITS, value: number | undefined, fal
   return v;
 }
 const EVICT_AFTER_MS = 3_600_000;
+/** A running universe its owner has not touched for this long is retired. */
+const IDLE_AFTER_MS = 15 * 60_000;
 
 const READ_ONLY =
   'This server keeps time. A universe advances one month per tick whether or not anyone is ' +
@@ -87,8 +94,16 @@ export interface LobbyOptions {
   bubbleSize?: number;
   /** Live universes held at once. A create above it is `503`. Default 16 (see the bin). */
   maxUniverses?: number;
-  /** An ended universe untouched this long is dropped. Default one hour. */
+  /**
+   * An ended universe is dropped this long after it **ended**, whoever reads it
+   * meanwhile. Default one hour.
+   */
   evictAfterMs?: number;
+  /**
+   * A running universe whose **owner** (token-bearing requests only) has not
+   * touched it for this long is dropped. Default 15 minutes.
+   */
+  idleAfterMs?: number;
   /** Suppress the startup banner (tests). */
   quiet?: boolean;
 }
@@ -132,7 +147,10 @@ export class Lobby {
   private readonly clock: Clock;
   private readonly maxUniverses: number;
   private readonly evictAfterMs: number;
+  private readonly idleAfterMs: number;
   private readonly quiet: boolean;
+  /** When each ended universe was first seen ended, by the lobby clock. */
+  private endedAt = new Map<string, number>();
 
   constructor(opts: LobbyOptions) {
     this.doc = opts.doc;
@@ -141,36 +159,63 @@ export class Lobby {
     this.bubbleSize = bounded('bubbleSize', opts.bubbleSize, BUBBLE_SIZE);
     this.maxUniverses = bounded('maxUniverses', opts.maxUniverses, MAX_UNIVERSES);
     this.evictAfterMs = bounded('evictAfterMs', opts.evictAfterMs, EVICT_AFTER_MS);
+    this.idleAfterMs = bounded('idleAfterMs', opts.idleAfterMs, IDLE_AFTER_MS);
     this.quiet = opts.quiet ?? false;
     this.setupRoutes();
   }
 
   /**
-   * One world tick for every live universe, in creation order.
+   * One world tick for every live universe, in creation order, then eviction.
    *
    * An ended universe is not stepped, but any submit queued on it is answered
-   * `episode-<status>`; once it has also gone untouched for `evictAfterMs` it
-   * is dropped. Its bubble seat stays, empty.
+   * `episode-<status>`. It is dropped `evictAfterMs` after it ended — reads do
+   * not extend that, because ids are public and anyone can read. A running
+   * universe is dropped once its owner has not touched it (a request carrying
+   * its token) for `idleAfterMs`. Either way its bubble seat stays, empty.
    */
   tickAll(): void {
     const now = this.clock.now();
     for (const [id, host] of this.universes) {
+      host.tick();
       if (host.isAlive) {
-        host.tick();
+        if (now - host.lastTouched > this.idleAfterMs) this.evict(id);
         continue;
       }
-      host.tick();
-      if (now - host.lastTouched > this.evictAfterMs) {
-        this.universes.delete(id);
-        this.tokens.delete(id);
-        this.waiting = this.waiting.filter((h) => h.id !== id);
-        const bubble = this.bubbles.get(host.ref.bubbleId);
-        if (bubble !== undefined) {
-          bubble.remove(id);
-          if (bubble.size === 0) this.bubbles.delete(bubble.id);
-        }
-      }
+      const ended = this.endedAt.get(id) ?? now;
+      this.endedAt.set(id, ended);
+      if (now - ended > this.evictAfterMs) this.evict(id);
     }
+  }
+
+  /** Drops a universe and frees its slot. Its bubble seat stays, empty. */
+  private evict(id: string): void {
+    const host = this.universes.get(id);
+    if (host === undefined) return;
+    this.universes.delete(id);
+    this.tokens.delete(id);
+    this.endedAt.delete(id);
+    this.waiting = this.waiting.filter((h) => h.id !== id);
+    const bubble = this.bubbles.get(host.ref.bubbleId);
+    if (bubble !== undefined) {
+      bubble.remove(id);
+      if (bubble.size === 0) this.bubbles.delete(bubble.id);
+    }
+  }
+
+  /** Whether `token` (hex) is `id`'s owner token. Constant-time; never logged. */
+  private ownerToken(id: string, token: unknown): boolean {
+    if (typeof token !== 'string') return false;
+    const expected = this.tokens.get(id);
+    const given = /^[0-9a-f]{64}$/u.test(token) ? Buffer.from(token, 'hex') : Buffer.alloc(0);
+    return expected !== undefined && given.length === expected.length && timingSafeEqual(given, expected);
+  }
+
+  /**
+   * Refreshes `lastTouched` when, and only when, the request carries the
+   * owner's token. A read without one is served but is not a touch.
+   */
+  private touchIfOwner(host: UniverseHost, req: IncomingMessage): void {
+    if (this.ownerToken(host.id, req.headers[TOKEN_HEADER])) host.lastTouched = this.clock.now();
   }
 
   /** A hosted universe by id, or `undefined` (never created, or evicted). */
@@ -180,12 +225,21 @@ export class Lobby {
 
   private setupRoutes(): void {
     this.router.post('/api/create', (_req, res, body) => {
+      const raw = parse(body);
       let config;
       try {
-        config = validateConfig(parse(body));
+        config = validateConfig(raw);
       } catch (e) {
         json(res, 400, { error: (e as Error).message });
         return;
+      }
+      // `retire: {universeId, token}` — the universe this player is leaving.
+      // Dropped at once, with its owner's token, so "new universe" frees the
+      // slot it held instead of leaving it to idle out.
+      const retire = (raw as { retire?: { universeId?: unknown; token?: unknown } }).retire;
+      if (retire !== undefined && retire !== null && typeof retire === 'object') {
+        const old = typeof retire.universeId === 'string' ? retire.universeId : '';
+        if (this.ownerToken(old, retire.token)) this.evict(old);
       }
       if (this.universes.size >= this.maxUniverses) {
         json(res, 503, { error: FULL });
@@ -211,7 +265,7 @@ export class Lobby {
       });
     });
 
-    this.router.post('/api/rejoin', (_req, res, body) => {
+    this.router.post('/api/rejoin', (req, res, body) => {
       const parsed = parse(body) as { universeId?: unknown } | null;
       const id = typeof parsed?.universeId === 'string' ? parsed.universeId : '';
       const host = this.universes.get(id);
@@ -219,7 +273,7 @@ export class Lobby {
         json(res, 404, { error: GONE });
         return;
       }
-      host.lastTouched = this.clock.now();
+      this.touchIfOwner(host, req);
       json(res, 200, {
         universeId: host.id,
         bubbleId: host.ref.bubbleId || null,
@@ -297,9 +351,7 @@ export class Lobby {
       json(res, 401, { error: `this route changes a universe; send its owner token in ${TOKEN_HEADER}` });
       return false;
     }
-    const expected = this.tokens.get(id);
-    const given = /^[0-9a-f]{64}$/u.test(sent) ? Buffer.from(sent, 'hex') : Buffer.alloc(0);
-    if (expected === undefined || given.length !== expected.length || !timingSafeEqual(given, expected)) {
+    if (!this.ownerToken(id, sent)) {
       json(res, 403, { error: 'that is not this universe\'s owner token' });
       return false;
     }
@@ -318,7 +370,7 @@ export class Lobby {
       json(res, 404, { error: GONE });
       return;
     }
-    host.lastTouched = this.clock.now();
+    this.touchIfOwner(host, req);
 
     switch (`${req.method ?? 'GET'} ${route}`) {
       case 'GET session.json':
@@ -422,7 +474,7 @@ export class Lobby {
 
   /** Binds `port` (0 for any free one) and resolves once listening. */
   listen(port: number): Promise<Server> {
-    const server = createServer((req, res) => {
+    const server = createServer({ requestTimeout: 30_000, headersTimeout: 10_000 }, (req, res) => {
       this.handleRequest(req, res).catch((e: unknown) => {
         if (res.headersSent) return;
         if (e instanceof BodyTooLarge) {

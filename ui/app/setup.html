@@ -350,6 +350,14 @@ el('begin-btn').addEventListener('click', async () => {
   el('setup-error').textContent = '';
   el('weave-overlay').removeAttribute('hidden');
   try {
+    // The universe this tab is leaving, if "new universe" sent us here: the
+    // server retires it (with its token) so its slot is free for this one.
+    let retire = null;
+    try {
+      const id = sessionStorage.getItem('mm.retireId');
+      const token = sessionStorage.getItem('mm.retireToken');
+      if (id && token) retire = { universeId: id, token };
+    } catch { /* refused */ }
     const res = await fetch('/api/create', {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
@@ -358,10 +366,12 @@ el('begin-btn').addEventListener('click', async () => {
         tradition: TRADITIONS[setup.tradition].id,
         techniques: [...setup.techniques],
         forms: [...setup.forms],
+        ...(retire === null ? {} : { retire }),
       }),
     });
     const body = await res.json().catch(() => ({}));
     if (!res.ok) throw new Error(body.error ?? `The universe refused to start (${res.status}).`);
+    try { sessionStorage.removeItem('mm.retireId'); sessionStorage.removeItem('mm.retireToken'); } catch { /* refused */ }
     // The id is public (bubble-mates see it); the token is what lets this
     // browser act on the universe. Both live in storage, never in a URL: a URL
     // is in history, in referrers and in anyone's clipboard. localStorage keeps

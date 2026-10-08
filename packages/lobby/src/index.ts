@@ -6,6 +6,7 @@
 
 export { LOBBY_LIMITS, Lobby, type LobbyOptions } from './lobby.js';
 export {
+  DEFAULT_CAP,
   UniverseHost,
   validateConfig,
   type GodAction,

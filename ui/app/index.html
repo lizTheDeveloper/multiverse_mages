@@ -1103,7 +1103,7 @@ html, body { height: 100%; overflow: hidden; }
  */
 
 import { mountThemeControl } from '../shared/theme.js';
-import { openSession, reconstructedCharge, units, mageVocabulary, candidateNamer } from '../shared/session.js';
+import { LiveSessionError, openSession, reconstructedCharge, units, mageVocabulary, candidateNamer } from '../shared/session.js';
 import { mountRaids } from './raid-panel.js';
 import { edictControls, ascensionNode, paintAscension } from './god-panels.js';
 import { whyDenied, whyDeniedText } from './explain.js';
@@ -1146,16 +1146,42 @@ const universeToken = identity.token;
 const tabOnly = persistent === null;
 let session;
 const isLive = true;
-try {
-  session = await openSession({
-    live: `/u/${encodeURIComponent(universeId)}`,
-    headers: () => ({ 'x-universe-token': universeToken }),
-  });
-} catch {
+/** The server no longer has this universe: forget it and say why on setup. */
+function universeGone() {
   forget();
   location.replace('./setup.html?gone=1');
   throw new Error('universe gone');
 }
+// Only a 404 means the universe is gone. A network error, a 502 from the proxy
+// or a 503 is the server being briefly unreachable — forgetting a live universe
+// over one would strand the player — so those retry with backoff, saying so.
+for (let attempt = 0, wait = 1000; session === undefined; attempt += 1, wait = Math.min(wait * 2, 30_000)) {
+  try {
+    session = await openSession({
+      live: `/u/${encodeURIComponent(universeId)}`,
+      // Sent on reads too: the owner's polling is what keeps a running
+      // universe from being retired as abandoned.
+      headers: () => ({ 'x-universe-token': universeToken }),
+    });
+  } catch (e) {
+    if (e instanceof LiveSessionError && e.status === 404) universeGone();
+    const why = e instanceof LiveSessionError ? `the server answered ${e.status}` : 'the server could not be reached';
+    // A banner of its own, not a replacement for the page: the page is built
+    // once on the first successful load, so its DOM must survive the retries.
+    let banner = document.getElementById('reconnect-banner');
+    if (banner === null) {
+      banner = Object.assign(document.createElement('div'), { id: 'reconnect-banner' });
+      banner.setAttribute('role', 'alert');
+      banner.style.cssText = 'position:fixed;inset:0;z-index:10003;display:flex;align-items:center;justify-content:center;'
+        + 'padding:2rem;background:var(--ground);color:var(--warn);font:13px var(--mono);text-align:center';
+      document.body.append(banner);
+    }
+    banner.textContent = `Reconnecting to your universe — ${why}. Trying again in ${Math.round(wait / 1000)} s `
+      + `(attempt ${attempt + 1}). Your universe keeps running on the server meanwhile.`;
+    await new Promise((r) => setTimeout(r, wait));
+  }
+}
+document.getElementById('reconnect-banner')?.remove();
 
 const el = (id) => document.getElementById(id);
 
@@ -1413,21 +1439,24 @@ if (tabOnly) {
 
 // The server keeps time (lobby tickAll, 1 tick/s). The page only reads.
 const POLL_MS = 1000;
-setInterval(async () => {
+async function pollOnce() {
   if (document.hidden || state.ended) return;
   try {
     if ((await session.poll()) > 0) {
       refreshRuleset();
       paint();
     }
-  } catch { /* transient; the next poll retries */ }
-}, POLL_MS);
+  } catch (e) {
+    // A server restart: the universe is gone, and a page that kept saying
+    // "running" over a frozen world would be lying.
+    if (e instanceof LiveSessionError && e.status === 404) universeGone();
+    /* anything else is transient; the next poll retries */
+  }
+}
+setInterval(pollOnce, POLL_MS);
 // A tab coming back from the background catches up at once rather than on the
 // next interval.
-document.addEventListener('visibilitychange', async () => {
-  if (document.hidden || state.ended) return;
-  try { if ((await session.poll()) > 0) { refreshRuleset(); paint(); } } catch { /* next poll */ }
-});
+document.addEventListener('visibilitychange', pollOnce);
 
 // The help modal
 const helpModal = el('help-modal');
@@ -1449,6 +1478,13 @@ window.addEventListener('keydown', (ev) => {
 // made on the setup page. This one keeps running on the server (until it ends
 // and nobody has looked at it for an hour); its id is forgotten here.
 function weaveNewUniverse() {
+  // Hand the universe being left to setup.html, which names it as `retire` on
+  // its create so the server frees that slot at once instead of letting it
+  // idle out. Kept for this tab only, and never in a URL.
+  try {
+    sessionStorage.setItem('mm.retireId', universeId);
+    sessionStorage.setItem('mm.retireToken', universeToken);
+  } catch { /* refused: it idles out instead */ }
   forget();
   location.href = './setup.html';
 }

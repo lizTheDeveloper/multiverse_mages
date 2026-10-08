@@ -198,7 +198,7 @@ export function raidBlockers(f, content, seat, peer, raiders) {
   if (peer.state === 'empty') {
     out.push({ text: 'this seat is empty — the portal would be paid for and open on nothing', source: 'live/raids seats', blocks: true });
   } else if (peer.state === 'gone') {
-    out.push({ text: 'that universe is gone from the server', source: 'peer frames 404', blocks: true });
+    out.push({ text: 'this seat is empty — its universe has left the server', source: 'peer frames 404', blocks: true });
   } else if (peer.state === 'ended') {
     out.push({ text: `that universe has ended (${peer.status}) — there is nothing to raid`, source: 'peer frame.status', blocks: true });
   }
