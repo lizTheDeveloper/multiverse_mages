@@ -363,16 +363,26 @@ el('begin-btn').addEventListener('click', async () => {
     const body = await res.json().catch(() => ({}));
     if (!res.ok) throw new Error(body.error ?? `The universe refused to start (${res.status}).`);
     // The id is public (bubble-mates see it); the token is what lets this
-    // browser act on the universe. Stored together; if storage is refused (a
-    // private window), the token rides in the URL fragment, which never
-    // reaches a server or its logs, and the game page moves it out of the URL.
-    let stored = false;
-    try {
-      localStorage.setItem('mm.universeId', body.universeId);
-      localStorage.setItem('mm.universeToken', body.token);
-      stored = true;
-    } catch { /* see above */ }
-    location.href = `./?u=${encodeURIComponent(body.universeId)}${stored ? '' : `#t=${body.token}`}`;
+    // browser act on the universe. Both live in storage, never in a URL: a URL
+    // is in history, in referrers and in anyone's clipboard. localStorage keeps
+    // the universe across reloads and visits; if it is refused (a private
+    // window), sessionStorage keeps it for this tab only, and the game page
+    // says so.
+    const keep = (storage) => {
+      try {
+        storage.setItem('mm.universeId', body.universeId);
+        storage.setItem('mm.universeToken', body.token);
+        return true;
+      } catch {
+        return false;
+      }
+    };
+    const kept = (() => { try { return keep(localStorage); } catch { return false; } })()
+      || (() => { try { return keep(sessionStorage); } catch { return false; } })();
+    if (!kept) {
+      throw new Error('This browser refuses to store anything for this page, so it could not keep your universe. Allow site storage and try again.');
+    }
+    location.href = './';
   } catch (e) {
     el('setup-error').textContent = e.message;
     btn.disabled = false;

@@ -1021,50 +1021,49 @@ import { mountThemeControl } from '../shared/theme.js';
 import { openSession, reconstructedCharge, units, mageVocabulary, candidateNamer } from '../shared/session.js';
 
 // ================================================================ BOOT
-// The lobby keeps time. This page joins one universe — named by ?u=, or the one
-// this browser last created — and only reads it, submitting at most one god
-// action per month. No universe yet: go and choose one. A universe the server
-// no longer has (it restarted; universes live in memory): go and choose again,
-// and say why.
+// The lobby keeps time. This page joins the universe this browser created on
+// setup.html and only reads it, submitting at most one god action per month.
+// No universe yet: go and choose one. A universe the server no longer has (it
+// restarted; universes live in memory): go and choose again, and say why.
+//
+// Identity comes from storage only, never from the URL. A `?u=` link would let
+// anyone switch a player onto another universe (session fixation), and a token
+// in a URL leaks through history and referrers. Any query or fragment is
+// dropped unread.
 const KEY = 'mm.universeId';
 const TOKEN_KEY = 'mm.universeToken';
-const store = {
-  get: (k) => { try { return localStorage.getItem(k); } catch { return null; } },
-  set: (k, v) => { try { localStorage.setItem(k, v); } catch { /* private window */ } },
-  del: (k) => { try { localStorage.removeItem(k); } catch { /* private window */ } },
+const storageOf = (name) => { try { return window[name]; } catch { return null; } };
+const read = (storage) => {
+  try {
+    const id = storage?.getItem(KEY);
+    const token = storage?.getItem(TOKEN_KEY);
+    return id && token ? { id, token } : null;
+  } catch { return null; }
 };
-const fromUrl = new URLSearchParams(location.search).get('u');
-const universeId = fromUrl ?? store.get(KEY);
-if (!universeId) {
+const forget = () => {
+  for (const name of ['localStorage', 'sessionStorage']) {
+    try { storageOf(name)?.removeItem(KEY); storageOf(name)?.removeItem(TOKEN_KEY); } catch { /* refused */ }
+  }
+};
+if (location.search !== '' || location.hash !== '') history.replaceState(null, '', location.pathname);
+const persistent = read(storageOf('localStorage'));
+const identity = persistent ?? read(storageOf('sessionStorage'));
+if (identity === null) {
   location.replace('./setup.html');
   throw new Error('no universe yet');
 }
-// The owner token: what lets this browser act, as opposed to watch. Stored with
-// the id by setup.html, or handed over in the fragment when storage is refused.
-let universeToken = store.get(KEY) === universeId ? store.get(TOKEN_KEY) : null;
-const fromHash = new URLSearchParams(location.hash.slice(1)).get('t');
-if (fromHash) {
-  universeToken = fromHash;
-  history.replaceState(null, '', `${location.pathname}?u=${encodeURIComponent(universeId)}`);
-}
+const universeId = identity.id;
+const universeToken = identity.token;
+const tabOnly = persistent === null;
 let session;
 const isLive = true;
 try {
   session = await openSession({
     live: `/u/${encodeURIComponent(universeId)}`,
-    headers: () => (universeToken ? { 'x-universe-token': universeToken } : {}),
+    headers: () => ({ 'x-universe-token': universeToken }),
   });
-  // Remember only a universe this browser can act on. Watching someone else's
-  // (a ?u= link, no token) must not replace your own on the next bare visit.
-  if (universeToken) {
-    store.set(KEY, universeId);
-    store.set(TOKEN_KEY, universeToken);
-  }
-  if (fromUrl !== null && location.search !== `?u=${encodeURIComponent(universeId)}`) {
-    history.replaceState(null, '', `${location.pathname}?u=${encodeURIComponent(universeId)}`);
-  }
 } catch {
-  if (store.get(KEY) === universeId) { store.del(KEY); store.del(TOKEN_KEY); }
+  forget();
   location.replace('./setup.html?gone=1');
   throw new Error('universe gone');
 }
@@ -1119,7 +1118,7 @@ function godPermits(techId, formId) {
   return godRuleset.techniques[techId] && godRuleset.forms[formId];
 }
 function refreshRuleset() { godRuleset = liveRuleset(); }
-const state = { tab: 'grid', selectedCell: null, selectedAction: null, selectedMage: null, hoverAxis: null, busy: false, weaving: false, ended: false, watchOnly: !universeToken };
+const state = { tab: 'grid', selectedCell: null, selectedAction: null, selectedMage: null, hoverAxis: null, busy: false, weaving: false, ended: false };
 
 // ================================================================ LIVE STATE
 // No precomputed series in live mode — we only have the current frame
@@ -1279,12 +1278,12 @@ function paintStatusBadge(clock, f) {
   const b = el('status-badge');
   b.textContent = clock.engaged ? 'engagement'
     : worldDead ? f.status()
-    : state.watchOnly ? 'watching' : 'running';
+    : 'running';
   b.title = clock.engaged
     ? 'A raid is in progress — the two universes fight over this tick'
     : worldDead ? `The episode ended: ${f.status()}. Press "new universe" to choose another.`
-    : state.watchOnly
-      ? 'This browser does not hold this universe\'s owner token, so it can watch but not act.'
+    : tabOnly
+      ? 'The world runs on the server, one month per second. This browser refused lasting storage, so closing this tab loses your way back to this universe.'
       : 'The world runs on the server — one month per second, whether or not you are watching.';
 }
 
@@ -1295,6 +1294,10 @@ function checkEnd(f) {
   if (f.status() === 'running') return;
   state.ended = true;
   showEndScreen(f);
+}
+
+if (tabOnly) {
+  showToast('!This browser refused lasting storage: your universe is kept for this tab only. Closing the tab loses your way back to it.', 9000);
 }
 
 // The server keeps time (lobby tickAll, 1 tick/s). The page only reads.
@@ -1335,8 +1338,7 @@ window.addEventListener('keydown', (ev) => {
 // made on the setup page. This one keeps running on the server (until it ends
 // and nobody has looked at it for an hour); its id is forgotten here.
 function weaveNewUniverse() {
-  store.del(KEY);
-  store.del(TOKEN_KEY);
+  forget();
   location.href = './setup.html';
 }
 const restartBtn = el('restart-btn');
