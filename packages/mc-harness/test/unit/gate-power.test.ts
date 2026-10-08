@@ -107,28 +107,31 @@ const BLIND_ARM_LINES: Readonly<Record<string, readonly string[]>> = {
   // metrics still dominate: five of thirteen. Tolerance is unchanged (k = 3);
   // this is the arms moving under a fixed instrument, not the instrument
   // moving.
-  // **Eleven after the raid-tuning re-record, 2026-10-08.** Raids now fight,
-  // and every 200-year run is raided by stand-ins that kill, so the arms whose
-  // long-run value is dominated by a few lucky booms or crashes reshuffled
-  // again. Left: `referenceGrimoires@worship-maximizer`,
-  // `referenceKnowledgeInstances@passive-control`,
-  // `referenceNodesGainedFinalQuarter@narrow-depth` and `@permissive-breadth`,
-  // and worship-maximizer's two population lines. Joined: uniform-random-
-  // legal's grimoire and instance lines, worship-maximizer's instance line, and
-  // `referenceNodesGainedFinalQuarter@archivist`. Tolerance is unchanged
-  // (k = 3); the arms moved under a fixed instrument.
+  // **Twelve after the S4 (`sim-playability`) re-record, 2026-10-08.** Feeding
+  // the populace (`laborObligation`) moved the population arms clear: the four
+  // `referencePopulation*` lines for `uniform-random-legal` and
+  // `worship-maximizer` left, because a fed universe's 200-year population is
+  // no longer one lucky boom. The library and instance lines of
+  // `passive-control`, `permissive-breadth` and `worship-maximizer` and one
+  // grimoire line joined: a larger populace spreads knowledge over more mages
+  // and books, and those arms' between-seed spread grew faster than their
+  // means. `referenceGrimoires@portal-rush` is blind for a different reason —
+  // every run saturated the observation's 4096 clamp, so it reads 4096 with a
+  // standard error of zero (see `OBSERVATION_CLAMP`, and the baseline's own
+  // SATURATION note). Tolerance is unchanged (k = 3).
   'balance/baselines/balance-gate-ascension-v1.baseline.json': [
+    'referenceGrimoires@portal-rush',
     'referenceGrimoires@uniform-random-legal',
-    'referenceKnowledgeInstances@uniform-random-legal',
+    'referenceKnowledgeInstances@passive-control',
+    'referenceKnowledgeInstances@permissive-breadth',
     'referenceKnowledgeInstances@worship-maximizer',
     'referenceLibraryDepth@passive-control',
-    'referenceNodesGainedFinalQuarter@archivist',
-    'referenceNodesGainedFinalQuarter@denial-warden',
+    'referenceLibraryDepth@worship-maximizer',
+    'referenceNodesGainedFinalQuarter@narrow-depth',
     'referenceNodesGainedFinalQuarter@passive-control',
+    'referenceNodesGainedFinalQuarter@permissive-breadth',
     'referenceNodesGainedFinalQuarter@portal-rush',
     'referenceNodesGainedFinalQuarter@worship-maximizer',
-    'referencePopulation@uniform-random-legal',
-    'referencePopulationChange@uniform-random-legal',
   ],
   'balance/baselines/balance-gate-v1.baseline.json': [],
   'balance/baselines/balance-gate-horizon-v1.baseline.json': [],
@@ -263,10 +266,29 @@ const BLIND_SWEEP_LINES: Readonly<Record<string, readonly string[]>> = {
   'balance/baselines/balance-gate-v1.baseline.json': [],
   'balance/baselines/balance-gate-horizon-v1.baseline.json': [],
   'balance/baselines/balance-gate-agency-v1.baseline.json': [],
-  'balance/baselines/balance-gate-ascension-v1.baseline.json': [
-    'referenceNodesGainedFinalQuarter',
-  ],
+  // Empty after the S4 re-record, 2026-10-08: the final-quarter gain went from
+  // 100.7 % to 74.9 % MDE — a fed universe keeps learning in its last quarter.
+  'balance/baselines/balance-gate-ascension-v1.baseline.json': [],
 };
+
+/**
+ * The observation clamps the census reads through (`agent-api` `layout.ts`), by
+ * metric. A line whose every run saturated reads exactly the clamp with a
+ * standard error and tolerance of zero: it looks infinitely sharp and is blind
+ * in both directions, because nothing above the clamp can be seen. Added on S4,
+ * 2026-10-08, when `referenceGrimoires@portal-rush` reached 4096 on the
+ * 200-year gate.
+ */
+const OBSERVATION_CLAMP: Readonly<Record<string, number>> = {
+  referenceGrimoires: 4096,
+  referenceLibraryDepth: 4096,
+};
+
+function atObservationClamp(entry: { metricId: string; value: number }): boolean {
+  const base = entry.metricId.split(ARM_SCOPE_SEPARATOR)[0] ?? entry.metricId;
+  const clamp = OBSERVATION_CLAMP[base];
+  return clamp !== undefined && entry.value >= clamp;
+}
 
 describe('no gated metric may be blind to a change that doubles it', () => {
   it.each(GATES.map((gate) => [gate.column, gate.file] as const))(
@@ -320,13 +342,14 @@ describe('no gated metric may be blind to a change that doubles it', () => {
           (entry) =>
             entry.status === 'measured' &&
             entry.value !== 0 &&
-            entry.tolerance / Math.abs(entry.value) >= 1,
+            (entry.tolerance / Math.abs(entry.value) >= 1 || atObservationClamp(entry)),
         )
         .map((entry) => entry.metricId)
         .sort();
       expect(
         blind,
-        `${column}: the set of arm lines whose tolerance exceeds their own value has changed. ` +
+        `${column}: the set of arm lines whose tolerance exceeds their own value, or whose ` +
+          'value sits at its observation clamp, has changed. ' +
           'Growing it means the gate went blind somewhere new. Shrinking it means it can see ' +
           'something it could not, which is equally a change in the instrument. Either way the ' +
           'new set belongs in BLIND_ARM_LINES with the regeneration that produced it.',

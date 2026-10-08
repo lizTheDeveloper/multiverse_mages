@@ -56,6 +56,11 @@ body { margin: 0; background: var(--ground); color: var(--ink); }
 .species-card .sp-life { font: 10px var(--mono); color: var(--god); margin-top: .15rem; }
 .species-card .sp-desc { font: italic 12px var(--serif); color: var(--soft); margin-top: .3rem; line-height: 1.4; }
 .species-card.selected .sp-name { color: var(--ctl-charged-fg); }
+/* Everything on a selected (charged) card reads in the charged foreground:
+   the unselected greys and teals are unreadable on the charged background in
+   the light theme. */
+.species-card.selected .sp-life,
+.species-card.selected .sp-desc { color: var(--ctl-charged-fg); opacity: .9; }
 
 .tradition-row { display: flex; gap: .6rem; max-width: 56rem; width: 100%; flex-wrap: wrap; }
 .tradition-card {
@@ -69,6 +74,7 @@ body { margin: 0; background: var(--ground); color: var(--ink); }
 .tradition-card .tr-name { font: 600 .95rem var(--serif); color: var(--ink); }
 .tradition-card .tr-desc { font: italic 11px var(--serif); color: var(--soft); margin-top: .2rem; line-height: 1.4; }
 .tradition-card.selected .tr-name { color: var(--ctl-charged-fg); }
+.tradition-card.selected .tr-desc { color: var(--ctl-charged-fg); opacity: .9; }
 
 .setup-magic {
   max-width: 56rem; width: 100%;
@@ -85,14 +91,15 @@ body { margin: 0; background: var(--ground); color: var(--ink); }
 }
 .setup-toggle:hover { border-color: var(--god); }
 .setup-toggle.on { background: var(--ctl-charged-bg); color: var(--ctl-charged-fg); border-color: var(--ctl-charged-border); box-shadow: var(--glow-soft); }
-.setup-toggle .dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+.setup-toggle .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--hue, currentColor); }
+.setup-toggle.on .dot { width: 8px; height: 8px; box-shadow: 0 0 0 1px var(--ctl-charged-fg); }
 
 .setup-grid-preview {
   display: grid; grid-template-columns: 2.5rem repeat(14, 1fr); gap: 2px;
   font: 8px var(--mono);
 }
 .setup-grid-preview .rl { text-align: right; padding-right: .3rem; color: var(--faint); align-self: center; }
-.setup-grid-preview .rl.on { color: var(--ctl-charged-fg); }
+.setup-grid-preview .rl.on { color: var(--god); font-weight: 600; }
 .setup-grid-preview .h { text-align: center; color: var(--faint); writing-mode: vertical-lr; transform: rotate(180deg); height: 3rem; display: flex; align-items: center; justify-content: center; }
 .setup-grid-preview .h.on { color: var(--ctl-charged-fg); text-shadow: 0 0 6px currentColor; }
 .setup-grid-preview .gc {
@@ -146,8 +153,14 @@ body { margin: 0; background: var(--ground); color: var(--ink); }
 @keyframes weaveSpin { to { transform: rotate(360deg); } }
 .weave-overlay .msg { font: 13px var(--mono); color: var(--ink); }
 .weave-overlay .sub { font: italic 12px var(--serif); color: var(--soft); max-width: 34rem; text-align: center; padding: 0 1.5rem; }
+.setup-rule { min-height: 1.1rem; margin: 1rem 0 0; font: 12px var(--mono); color: var(--soft); text-align: center; max-width: 40rem; }
+.setup-rule.unmet { color: var(--warn); }
 .setup-error { min-height: 1.2rem; margin: .8rem 0 0; font: 12px var(--mono); color: var(--loss); text-align: center; max-width: 40rem; }
 .setup-note { margin: .4rem 0 0; font: italic 12px var(--serif); color: var(--soft); text-align: center; max-width: 40rem; }
+.name-row { max-width: 56rem; width: 100%; display: flex; flex-direction: column; gap: .3rem; }
+.name-row input { font: 1rem var(--serif); color: var(--ink); background: var(--panel); border: 1px solid var(--edge); border-radius: 4px; padding: .45rem .7rem; max-width: 24rem; }
+.name-row input:focus-visible { outline: 2px solid var(--god); outline-offset: 1px; }
+.name-row .hint { font: italic 12px var(--serif); color: var(--soft); }
 .theme-corner { position: fixed; top: .5rem; left: 1rem; z-index: 1001; }
 </style>
 
@@ -173,9 +186,17 @@ body { margin: 0; background: var(--ground); color: var(--ink); }
     <div class="setup-grid-preview" id="setup-grid-preview"></div>
   </div>
 
+  <div class="setup-section-label"><label for="universe-name">Name your universe (optional)</label></div>
+  <div class="name-row">
+    <input id="universe-name" type="text" maxlength="32" autocomplete="off" spellcheck="false"
+      placeholder="e.g. The Ember Court">
+    <span class="hint">Your bubble-mates see this name. Letters, digits, spaces and . , ' ! ? &amp; ( ) - — up to 32. Leave it blank for one chosen for you.</span>
+  </div>
+
+  <p class="setup-rule" id="setup-rule" role="status"></p>
   <button class="begin-btn" id="begin-btn" disabled>Begin</button>
   <p class="setup-error" id="setup-error" role="alert"></p>
-  <p class="setup-note">The server keeps time: your universe runs one month per second from the moment you begin, whether or not this tab is open.</p>
+  <p class="setup-note">The server keeps time: your universe runs from the moment you begin — one month per second at the default speed — whether or not this tab is open.</p>
 </div>
 
 <div class="toast-container" id="toast-container"></div>
@@ -208,8 +229,13 @@ function showToast(msg, duration = 3000) {
     msg = String(msg).replace(/^!/, '');
   }
   t.textContent = msg;
-  el('toast-container').appendChild(t);
-  setTimeout(() => { t.classList.add('fade-out'); setTimeout(() => t.remove(), 400); }, duration);
+  // Newest on top, at most three, gone after a few seconds or on a click.
+  const host = el('toast-container');
+  host.prepend(t);
+  for (const old of [...host.querySelectorAll('.toast:not(.fade-out)')].slice(3)) old.remove();
+  const dismiss = () => { t.classList.add('fade-out'); setTimeout(() => t.remove(), 400); };
+  t.addEventListener('click', dismiss, { once: true });
+  setTimeout(dismiss, Math.min(duration, 6000));
 }
 
 // The guide lives in the game page; borrow it rather than keep a second copy
@@ -303,13 +329,14 @@ function renderSetup() {
     const id = btn.dataset.id;
     if (setup.techniques.has(id)) setup.techniques.delete(id);
     else if (setup.techniques.size < 2) setup.techniques.add(id);
+    else showToast('!Two techniques already chosen — click one of them to drop it first.');
     renderSetup();
   }));
 
   // Form toggles
   const sf = el('setup-forms');
   sf.innerHTML = FORMS.map(f =>
-    `<button class="setup-toggle${setup.forms.has(f) ? ' on' : ''}" data-id="${f}" style="color:${setup.forms.has(f) ? `var(--${f})` : ''}">
+    `<button class="setup-toggle${setup.forms.has(f) ? ' on' : ''}" data-id="${f}" style="--hue:var(--${f})">
       <span class="dot"></span>${f}
     </button>`
   ).join('');
@@ -317,6 +344,7 @@ function renderSetup() {
     const id = btn.dataset.id;
     if (setup.forms.has(id)) setup.forms.delete(id);
     else if (setup.forms.size < 2) setup.forms.add(id);
+    else showToast('!Two forms already chosen — click one of them to drop it first.');
     renderSetup();
   }));
 
@@ -336,7 +364,17 @@ function renderSetup() {
   gp.innerHTML = gh;
 
   // Begin button
-  el('begin-btn').disabled = !setup.species || setup.techniques.size < 1 || setup.forms.size < 1;
+  // Exactly two of each: the opening square is 2×2. Begin stays dark, and
+  // says what is missing, until the choice is complete.
+  const missing = [];
+  if (!setup.species) missing.push('choose your people');
+  if (setup.techniques.size !== 2) missing.push(`choose ${2 - setup.techniques.size} more technique${2 - setup.techniques.size === 1 ? '' : 's'} (${setup.techniques.size} of 2)`);
+  if (setup.forms.size !== 2) missing.push(`choose ${2 - setup.forms.size} more form${2 - setup.forms.size === 1 ? '' : 's'} (${setup.forms.size} of 2)`);
+  el('begin-btn').disabled = missing.length > 0;
+  el('setup-rule').textContent = missing.length > 0
+    ? `To begin: ${missing.join(', ')}.`
+    : 'Ready: two techniques and two forms make your opening four cells.';
+  el('setup-rule').classList.toggle('unmet', missing.length > 0);
 }
 
 renderSetup();
@@ -358,6 +396,8 @@ el('begin-btn').addEventListener('click', async () => {
       const token = sessionStorage.getItem('mm.retireToken');
       if (id && token) retire = { universeId: id, token };
     } catch { /* refused */ }
+    // The server validates the name and says why it refused one.
+    const name = el('universe-name').value.trim();
     const res = await fetch('/api/create', {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
@@ -366,6 +406,7 @@ el('begin-btn').addEventListener('click', async () => {
         tradition: TRADITIONS[setup.tradition].id,
         techniques: [...setup.techniques],
         forms: [...setup.forms],
+        ...(name === '' ? {} : { name }),
         ...(retire === null ? {} : { retire }),
       }),
     });

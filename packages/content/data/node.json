@@ -8676,14 +8676,14 @@
     "id": "rl-open-the-portal",
     "cell": "rego-limen",
     "name": "Open the Portal",
-    "gloss": "Hold a threshold open onto a sky that is not yours. Everything the multiverse does to a universe begins here, which is why contracts.md §8 requires this cell in every v1 build.",
+    "gloss": "Hold a threshold open onto a sky that is not yours. Everything the multiverse does to a universe begins here, which is why contracts.md §8 requires this cell in every v1 build. Priced at the tier-4 floor: mages research cheapest-first, and at 18343 the portal waited behind cheaper work for centuries. Untuned.",
     "tier": 4,
     "prerequisites": [
       "rl-step-across",
       "rl-seal-the-way",
       "il-read-the-binding"
     ],
-    "researchCost": 18343,
+    "researchCost": 9520,
     "teachCost": 4096,
     "scribeCost": 8192,
     "rediscoveryMultiplier": 7168,

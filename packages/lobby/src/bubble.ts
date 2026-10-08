@@ -10,8 +10,15 @@ import type { UniverseHost } from './universe-host.js';
 export interface BubbleInfo {
   bubbleId: string;
   tier: number;
-  members: { universeId: string; alive: boolean }[];
+  members: { universeId: string; name: string; species: string; alive: boolean }[];
   createdAt: number;
+}
+
+/** A bubble-mate as another universe sees it: public, read-only. */
+export interface SeatOccupant {
+  universeId: string;
+  name: string;
+  species: string;
 }
 
 export class Bubble {
@@ -20,47 +27,84 @@ export class Bubble {
   readonly createdAt: number;
   private members = new Map<string, UniverseHost>();
   /**
-   * Every universe that ever joined, ascending. A seat is a position in this
-   * list, so evicting one member empties its seat instead of shifting every
-   * other member into a different one.
+   * The bubble's fixed positions, `capacity` of them, each holding a universe
+   * id or `null`. A member's portal seats are the other positions in order, so
+   * a seat number always names the same position: a universe joining or
+   * leaving changes who sits in one seat and never moves anyone to another.
    */
-  private memberIds: string[] = [];
+  private slots: (string | null)[];
 
-  /** @param now - The lobby clock's reading; the bubble reads no clock itself. */
-  constructor(now: number, tier = 0) {
+  /**
+   * @param now - The lobby clock's reading; the bubble reads no clock itself.
+   * @param capacity - Positions in the bubble: the lobby's bubble size.
+   */
+  constructor(now: number, capacity: number, tier = 0) {
     this.id = randomUUID();
     this.tier = tier;
     this.createdAt = now;
+    this.slots = Array.from({ length: capacity }, () => null);
   }
 
-  add(host: UniverseHost): void {
+  /**
+   * Seats `host` in an open position, ending (and dropping) an ended
+   * universe that held it. Returns false when every position holds a live
+   * universe.
+   */
+  add(host: UniverseHost): boolean {
+    const at = this.openSlot();
+    if (at < 0) return false;
+    const previous = this.slots[at];
+    if (previous !== null && previous !== undefined) this.members.delete(previous);
+    this.slots[at] = host.id;
     host.ref.bubbleId = this.id;
     this.members.set(host.id, host);
-    this.memberIds = [...this.memberIds, host.id].sort();
+    return true;
   }
 
-  /** Drops a member. Its seat stays, empty. */
+  /** The first position that is empty or holds an ended universe, or -1. */
+  private openSlot(): number {
+    return this.slots.findIndex((id) => id === null || this.members.get(id)?.isAlive !== true);
+  }
+
+  /** Whether a universe could join now. */
+  get hasRoom(): boolean {
+    return this.openSlot() >= 0;
+  }
+
+  /** Drops a member. Its position stays, empty, for the next arrival. */
   remove(universeId: string): void {
     this.members.delete(universeId);
+    const at = this.slots.indexOf(universeId);
+    if (at >= 0) this.slots[at] = null;
   }
 
   get(universeId: string): UniverseHost | undefined {
     return this.members.get(universeId);
   }
 
-  /**
-   * The universe in `self`'s portal seat `seat` (1-based): its bubble-mates in
-   * id order, with itself left out. `undefined` for an evicted mate.
-   */
-  seatOf(selfId: string, seat: number): UniverseHost | undefined {
-    const id = this.memberIds.filter((m) => m !== selfId)[seat - 1];
-    return id === undefined ? undefined : this.members.get(id);
+  /** Whether `universeId` holds a position here now. */
+  has(universeId: string): boolean {
+    return this.slots.includes(universeId);
   }
 
-  /** Who sits in each of `self`'s seats, by universe id — `null` for an empty seat. */
-  seatIds(selfId: string, seats: number): Record<string, string | null> {
-    const out: Record<string, string | null> = {};
-    for (let seat = 1; seat <= seats; seat += 1) out[String(seat)] = this.seatOf(selfId, seat)?.id ?? null;
+  /**
+   * The universe in `self`'s portal seat `seat` (1-based): the bubble's other
+   * positions in order, with `self`'s own left out. `undefined` for an empty
+   * seat, and for every seat of a universe that no longer holds a position.
+   */
+  seatOf(selfId: string, seat: number): UniverseHost | undefined {
+    if (!this.slots.includes(selfId)) return undefined;
+    const id = this.slots.filter((m) => m !== selfId)[seat - 1];
+    return id === null || id === undefined ? undefined : this.members.get(id);
+  }
+
+  /** Who sits in each of `self`'s seats — `null` for an empty seat. */
+  seats(selfId: string, seats: number): Record<string, SeatOccupant | null> {
+    const out: Record<string, SeatOccupant | null> = {};
+    for (let seat = 1; seat <= seats; seat += 1) {
+      const h = this.seatOf(selfId, seat);
+      out[String(seat)] = h === undefined ? null : { universeId: h.id, name: h.name, species: h.speciesName };
+    }
     return out;
   }
 
@@ -76,10 +120,10 @@ export class Bubble {
     return {
       bubbleId: this.id,
       tier: this.tier,
-      members: [...this.members.values()].map((h) => ({
-        universeId: h.id,
-        alive: h.isAlive,
-      })),
+      members: this.slots
+        .map((id) => (id === null ? undefined : this.members.get(id)))
+        .filter((h): h is UniverseHost => h !== undefined)
+        .map((h) => ({ universeId: h.id, name: h.name, species: h.speciesName, alive: h.isAlive })),
       createdAt: this.createdAt,
     };
   }

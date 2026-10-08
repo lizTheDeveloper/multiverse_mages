@@ -18,6 +18,16 @@ const doc = frameDocument(referenceContent(), 'limits');
 const make = (opts: Partial<LobbyOptions>): Lobby => new Lobby({ doc, clock: manualClock(0), quiet: true, ...opts });
 const BIN = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../bin/lobby.mjs');
 
+describe('lobby bin --help', () => {
+  it.each(['--help', '-h'])('%s prints usage and exits 0 without starting a server', (flag) => {
+    const r = spawnSync(process.execPath, [BIN, flag], { encoding: 'utf8', timeout: 30_000 });
+    expect(r.status).toBe(0);
+    expect(r.stdout).toMatch(/^usage:/u);
+    expect(r.stdout).toContain('--bubble-size');
+    expect(r.stdout).not.toContain('world tick every');
+  });
+});
+
 describe('Lobby limits', () => {
   it('accepts the defaults and in-range values (positive control)', () => {
     expect(() => make({})).not.toThrow();
@@ -38,6 +48,10 @@ describe('Lobby limits', () => {
     ['evictAfterMs', Number.NaN],
     ['idleAfterMs', 0],
     ['idleAfterMs', Number.NaN],
+    ['matchAfterMs', -1],
+    ['matchAfterMs', Number.NaN],
+    ['tickCap', 0],
+    ['tickCap', 4001],
   ])('throws on %s = %s rather than clamping', (name, value) => {
     expect(() => make({ [name]: value })).toThrow(RangeError);
   });
@@ -55,6 +69,8 @@ describe('Lobby limits', () => {
     ['--port', 'eighty'],
     ['--idle-ms', '10'],
     ['--max-universes', '257'],
+    ['--match-ms', '-1'],
+    ['--match-ms', 'soon'],
   ])('the bin refuses %s %s and exits non-zero', (flag, value) => {
     const r = spawnSync(process.execPath, [BIN, flag, value], { encoding: 'utf8', timeout: 30_000 });
     expect(r.status).toBe(2);

@@ -184,6 +184,7 @@ import {
   cohortBirths,
   completeAffiliation,
   computeOccupationDemand,
+  laborObligation,
   affordableMageMonths,
   castingDemand,
   consumeMaterials,
@@ -1787,7 +1788,22 @@ export function worldSystem(
           // driver's sign or scale. If applied magic ever becomes a large share
           // of the food bill, this is the line that has to change, and the fix
           // is a phase reorder with its own rationale and its own baselines.
-          materialsObligation: subsistenceDemand(cohorts.totalCount()) + upkeepOwed,
+          //
+          // ## And the unit it is divided by
+          //
+          // The two terms are owed in different kinds — subsistence in `food`,
+          // upkeep in `vellum` — and the demand divides by a laborer's output of
+          // *all* kinds. On the shipped land a laborer's food is under half of
+          // that, so the plain sum asked for under half the farmers the populace
+          // eats through, and the reference universe ran its founding stock to
+          // zero at about world year 150 and starved at a 47% shortfall from
+          // then on. `laborObligation` restates each bill in the all-kinds unit
+          // at this land's own yield share and takes the larger; its header has
+          // the measurement and the argument for the maximum.
+          materialsObligation: laborObligation(
+            { food: subsistenceDemand(cohorts.totalCount()), vellum: upkeepOwed },
+            yieldShares,
+          ),
         }),
       });
 

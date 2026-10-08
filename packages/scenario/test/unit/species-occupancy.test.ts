@@ -336,12 +336,26 @@ describe('twenty world years in', () => {
     //
     // Pinned, not softened, and the pin is membership rather than finding — the
     // instruction this block has carried since 2026-08-14.
+    //
+    // **Re-measured on `sim-playability` (S4), 2026-10-08, same seed and
+    // horizon.** `laborObligation` asks for the laborers the food bill needs —
+    // about twice as many — so more of the populace works and fewer idle
+    // people sit outside the student pool's reach; every species except gnome
+    // (already at the union) widened:
+    //
+    //     gnome     67 / 70      draconic  58 / 70      human  65 / 70
+    //     elf       55 / 70      dwarf     55 / 70      orc    56 / 70
+    //
+    // Gnome still reaches every cell any species reaches. Human is the mover —
+    // 53 to 65, the most fertile common species gaining most from a populace
+    // that is fed — and is now two cells short of the union rather than
+    // thirteen.
     expect(bySpecies('elf').occupiedCells).toBe(55);
-    expect(bySpecies('orc').occupiedCells).toBe(52);
-    expect(bySpecies('draconic').occupiedCells).toBe(54);
-    expect(bySpecies('human').occupiedCells).toBe(53);
-    expect(bySpecies('gnome').occupiedCells).toBe(66);
-    expect(bySpecies('dwarf').occupiedCells).toBe(48);
+    expect(bySpecies('orc').occupiedCells).toBe(56);
+    expect(bySpecies('draconic').occupiedCells).toBe(58);
+    expect(bySpecies('human').occupiedCells).toBe(65);
+    expect(bySpecies('gnome').occupiedCells).toBe(67);
+    expect(bySpecies('dwarf').occupiedCells).toBe(55);
     //
     // **`material-economy` measured this row too, and its numbers are recorded
     // rather than adopted.** Neither side's pin is a measurement of *this* tree:
@@ -446,7 +460,11 @@ describe('twenty world years in', () => {
     // 0.0508 is neither flat (a Gini of 0, which the founding position reads and
     // `everySpeciesEqual` still denies) nor a hegemony (which would need this
     // toward 1).
-    expect((entry as { value: number }).value).toBeCloseTo(0.0508, 4);
+    //
+    // **0.0431 on `sim-playability` (S4), 2026-10-08.** The range narrowed from
+    // 48–66 to 55–67 as the fed populace widened every short species; still
+    // neither flat nor a hegemony.
+    expect((entry as { value: number }).value).toBeCloseTo(0.0431, 4);
     //
     // The branch's reading of the same row, recorded and not adopted, for the
     // reason the occupancy block above gives:
@@ -592,10 +610,31 @@ describe('twenty world years in', () => {
       (e) => e.record.technique === 'perdo',
     ).length;
     expect(perdoCells).toBe(14);
+    // **Re-measured on `sim-playability` (S4), 2026-10-08:**
+    //
+    //     dwarf     12   rego 4           perdo 8
+    //     orc       11   muto 1  rego 1  perdo 7  creo 2
+    //     elf       12   muto 2  rego 2  perdo 7  creo 1
+    //     draconic   9           rego 1  perdo 7  creo 1
+    //     human      2   muto 1  rego 1
+    //     gnome      0
+    //
+    // Perdo is still 7 or 8 of every shortfall of more than two cells. Human is
+    // the exception and it is pinned rather than filtered out: two cells, neither
+    // of them Perdo, which is what being nearly at the union looks like — the
+    // last two cells a species misses need not be the grid's hardest ones.
+    const HUMAN_RESIDUE = { missing: 2, perdo: 0 };
     for (const entry of sample.species) {
       const has = new Set(entry.occupiedCellIds.map((id) => cellName.get(id)));
       const missing = [...reached].filter((cell) => !has.has(cell));
       if (missing.length === 0) continue;
+      if (entry.speciesId === 'human') {
+        expect({
+          missing: missing.length,
+          perdo: missing.filter((cell) => techniqueOf.get(cell as string) === 'perdo').length,
+        }).toEqual(HUMAN_RESIDUE);
+        continue;
+      }
       const perdo = missing.filter((cell) => techniqueOf.get(cell as string) === 'perdo').length;
       // Strictly over-represented against Perdo's share of the grid, in every
       // species that is short of anything. A species that fell behind evenly
@@ -609,7 +648,7 @@ describe('twenty world years in', () => {
     }
   });
 
-  it('has nine cells with a sole occupant, all of them gnome\'s — the claim above it reversed', () => {
+  it('has every occupied cell shared again — gnome no longer holds any alone', () => {
     const entry = collectSpeciesCellOccupancy(telemetryFor(sample));
     expect(entry).toMatchObject({
       // Re-recorded on `w185/cohort-source`, 2026-08-14: two of the twelve now
@@ -646,7 +685,14 @@ describe('twenty world years in', () => {
       // defect: a Gini of 0.0508 across six species, 14% of the occupied grid held
       // by one species alone. The instrument is unchanged and both halves are
       // pinned, so a return to a fully shared grid fails here and says so.
-      detail: { cellsOccupiedByAnySpecies: 66, cellsWithASoleOccupant: 9 },
+      //
+      // **Re-recorded on `sim-playability` (S4), 2026-10-08: 0 of 67, and the
+      // title changed back with it.** The nine gnome-only cells were the margin
+      // by which gnome led; with the populace fed, the other species reach far
+      // enough that every cell gnome holds, somebody else holds too. Gnome is
+      // still the only species at the union (67), so the lead survives and the
+      // specialisation does not.
+      detail: { cellsOccupiedByAnySpecies: 67, cellsWithASoleOccupant: 0 },
     });
     // Which species owns the sole occupancy, since the count alone cannot say —
     // and this is the half that makes "specialisation" the right word for it.
@@ -657,7 +703,7 @@ describe('twenty world years in', () => {
       detail.species
         .filter((row) => row.soleOccupantCells > 0)
         .map((row) => [row.speciesId, row.soleOccupantCells]),
-    ).toEqual([['gnome', 9]]);
+    ).toEqual([]);
   });
 
   it('reports living mages beside every count, so a zero is readable', () => {

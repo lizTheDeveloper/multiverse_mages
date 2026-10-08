@@ -236,14 +236,21 @@ describe('the cost table is symmetric where vision pillar 1 requires it', () => 
     expect(one).toBeGreaterThan(0);
   });
 
-  it('prices changing tradition above the favor cap of every tier below the top', () => {
+  it('prices changing tradition at the tier-4 cap: above every cap below it, affordable at it', () => {
     // The structural gate: the ruinous action is not merely expensive, it is
     // unavailable to a young universe, which is vision §4a's "at enormous cost"
     // without a separate check to forget.
+    //
+    // **Moved from "the top tier" to tier 4 on S4, 2026-10-08.** It was priced
+    // above every cap but tier 5's, and tier 5 — worship 8 of a possible 9 — was
+    // reached in none of the 60-odd 333-year runs measured that night, so the
+    // action was unaffordable in practice. The gate is now the highest tier a
+    // universe was observed to hold, with a full pool.
     const tradition = COSTS.byAction[ACTION.changeTradition] ?? 0;
-    for (let tier = 0; tier < C.worshipTierCount; tier += 1) {
+    for (let tier = 0; tier < 4; tier += 1) {
       expect(favorCapFor(tier, C)).toBeLessThan(tradition);
     }
+    expect(favorCapFor(4, C)).toBe(tradition);
   });
 });
 

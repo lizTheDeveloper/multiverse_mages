@@ -65,6 +65,8 @@ export function mountRaids(o) {
 
   const model = {
     seats: {},
+    /** Universe id → its public name, for every universe ever seen in a seat or a raid. */
+    names: new Map(),
     log: [],
     inbound: [],
     loaded: false,
@@ -105,7 +107,14 @@ export function mountRaids(o) {
   }
 
   function absorb(body) {
-    model.seats = body.seats && typeof body.seats === 'object' ? body.seats : {};
+    // A seat is `{universeId, name, species}` or null (a bare id from an older server).
+    const raw = body.seats && typeof body.seats === 'object' ? body.seats : {};
+    model.seats = {};
+    for (const [seat, v] of Object.entries(raw)) {
+      const id = typeof v === 'string' ? v : (v && typeof v.universeId === 'string' ? v.universeId : null);
+      model.seats[seat] = id;
+      if (id && v && typeof v.name === 'string') model.names.set(id, v.name);
+    }
     const log = Array.isArray(body.log) ? body.log.filter((r) => r && r.outbound === true) : [];
     const inbound = Array.isArray(body.inbound) ? body.inbound : [];
     const first = !model.loaded;
@@ -124,10 +133,10 @@ export function mountRaids(o) {
       const key = `in:${shortId(entry.fromUniverseId)}:${r.raidId}`;
       if (fed.has(key)) continue;
       fed.add(key);
-      onFeed(r.worldTick, raidFeedText(r, 'inbound', shortId(entry.fromUniverseId)), true);
+      onFeed(r.worldTick, raidFeedText(r, 'inbound', inboundLabel(entry)), true);
       // An inbound raid stays on screen until it is dismissed — across reloads,
       // which is why only a dismissal is remembered.
-      if (!dismissed.has(key)) card(r, 'inbound', shortId(entry.fromUniverseId), key);
+      if (!dismissed.has(key)) card(r, 'inbound', inboundLabel(entry), key);
     }
     if (model.pending !== null) {
       if (log.length > model.pending.logLength) {
@@ -143,10 +152,20 @@ export function mountRaids(o) {
     syncPeers();
   }
 
-  /** The seat holding a record's target is not in the record; name it by the seat's current occupant. */
-  function seatOfRecord() {
+  /** A universe as the page names it: its public name and short id, as plain text. */
+  function universeLabel(id, name) {
+    const n = typeof name === 'string' && name !== '' ? name : model.names.get(id);
+    return n ? `${n} (${shortId(id)})` : shortId(id);
+  }
+  function inboundLabel(entry) {
+    return universeLabel(entry.fromUniverseId, entry.fromName);
+  }
+
+  /** Whom an outbound raid hit: the server's `target`, else the only seated mate. */
+  function seatOfRecord(r) {
+    if (r?.target && typeof r.target.universeId === 'string') return universeLabel(r.target.universeId, r.target.name);
     const ids = Object.values(model.seats).filter(Boolean);
-    return ids.length === 1 ? shortId(ids[0]) : 'in your bubble';
+    return ids.length === 1 ? universeLabel(ids[0]) : 'in your bubble';
   }
 
   function syncPeers() {
@@ -316,7 +335,7 @@ export function mountRaids(o) {
         ul.append(h('li', {},
           h('button', {
             type: 'button', className: 'raid-btn', disabled: f.raw.mask[10] !== 1 || o.isBusy(),
-            title: deny10 || `Make this mage a raider (slot ${slot} of action 10)`,
+            title: deny10 || 'Make this mage a raider',
             onclick: async () => { await act(10, [slot], `Named a raider: ${label}`); lastSig = ''; paint(); },
           }, 'Make raider'),
           ' ', label, m ? h('span', { className: 'raid-muted' }, ` — ${vocab.knows(m)}`) : null));
@@ -329,7 +348,7 @@ export function mountRaids(o) {
     const hist = h('ul', { className: 'raid-list' });
     const all = [
       ...model.log.map((r) => ({ r, p: 'outbound', label: seatOfRecord(r) })),
-      ...model.inbound.filter((e) => e?.record).map((e) => ({ r: e.record, p: 'inbound', label: shortId(e.fromUniverseId) })),
+      ...model.inbound.filter((e) => e?.record).map((e) => ({ r: e.record, p: 'inbound', label: inboundLabel(e) })),
     ].sort((a, b) => b.r.worldTick - a.r.worldTick);
     for (const { r, p, label } of all) {
       const d = describeRaid(r, p, label);
@@ -349,16 +368,16 @@ export function mountRaids(o) {
     const blockers = raidBlockers(f, content, seat, peer, raiderCount);
     const blocked = blockers.some((b) => b.blocks);
     const slot = (f.raw.candidates?.['14'] ?? []).findIndex((c) => c.params?.[0] === seat);
-    const label = id ? shortId(id) : null;
+    const label = !id ? null : model.names.has(id) ? universeLabel(id) : `universe ${shortId(id)}`;
 
     const summary = h('dl', { className: 'raid-peer' });
     const row = (k, v) => summary.append(h('dt', {}, k), h('dd', {}, v));
     if (!id) {
       row('occupant', 'empty');
     } else if (peer.state === 'gone') {
-      row('occupant', `empty — universe ${label} has left the server`);
+      row('occupant', `empty — ${label} has left the server`);
     } else if (!p?.frame) {
-      row('occupant', `universe ${label}`);
+      row('occupant', label);
       row('strength', 'reading…');
     } else {
       const pf = p.frame;
@@ -368,7 +387,7 @@ export function mountRaids(o) {
       const k = pf.knowledge();
       const inst = pf.institutions();
       const theirRaiders = [...namedMages(pf).values()].filter((m) => m.roleId === RAIDER).length;
-      row('occupant', `universe ${label}${peer.state === 'ended' ? ` — ended (${peer.status})` : ''}`);
+      row('occupant', `${label}${peer.state === 'ended' ? ` — ended (${peer.status})` : ''}`);
       row('species', species);
       row('mages', `${living} living · ${theirRaiders} raider(s) visible`);
       row('magic', `${k.reduce((s, c) => s + c.nodesKnown, 0)} nodes in ${k.filter((c) => c.nodesKnown > 0).length} cells, deepest tier ${Math.max(0, ...k.map((c) => c.deepestTier))}`);
@@ -379,19 +398,20 @@ export function mountRaids(o) {
 
     const why = h('ul', { className: 'raid-why' });
     for (const b of blockers) {
-      why.append(h('li', { className: b.blocks ? 'blocks' : 'advice' },
-        b.text, h('span', { className: 'raid-src' }, ` [${b.source}]`)));
+      why.append(h('li', { className: b.blocks ? 'blocks' : 'advice', title: `read from ${b.source}` }, b.text));
     }
 
     return h('div', { className: 'raid-seat', 'data-seat': seat },
       h('div', { className: 'raid-seat-head' },
-        h('span', {}, `Seat ${seat}`),
+        // Name and short id together: names are not unique, and a look-alike
+        // name must not pass for someone else's universe.
+        h('span', {}, id ? `Seat ${seat} — ${universeLabel(id)}` : `Seat ${seat}`),
         h('button', {
           type: 'button', className: 'raid-btn raid-go', disabled: blocked || slot < 0 || o.isBusy(),
           title: blocked ? blockers.filter((b) => b.blocks).map((b) => b.text).join('; ') : `Open a portal to seat ${seat} (${priceText(content, 14)})`,
           onclick: async () => {
             const logLength = model.log.length;
-            const payload = await act(14, [slot], `Opened a portal to universe ${label}`);
+            const payload = await act(14, [slot], `Opened a portal to ${label}`);
             if (payload && payload.admitted !== false) {
               model.pending = { seat, tick: f.clock().worldTick, polls: 0, logLength };
               clearTimeout(raidsTimer);

@@ -996,16 +996,14 @@ describe('contentRevision', () => {
     // after `npx tsc --build --force` on the merged tree rather than chosen
     // between them.
     //
-    // cb4c1a3e43a67f81a6315c3590b749ef -> 62af9cbb6380c71d61aea08cdc4aceaf, the
-    // raid tuning of 2026-10-08: twelve `raid-constant.json` values — the
-    // hit-point family rescaled by 1/16, cast vigor made affordable, the portal
-    // shortened to 150 ± 30 ticks, the stand-in's arming cut from eight nodes to
-    // two, a summon's blow cut by 1/64 — their glosses, and every
-    // `direct-damage` magnitude in `node.json` multiplied by four. Every
-    // existing record keeps its id; the values are the point. Two universes
-    // either side of this revision would fight battles of different lethality,
-    // which is what the revision exists to refuse.
-    expect(registry.contentRevision).toBe('62af9cbb6380c71d61aea08cdc4aceaf');
+    // cb4c1a3e... -> b1923b223d0686054a27a2aff163d8af, on `sim-playability`
+    // (S4), 2026-10-08. **Three records**: `rl-open-the-portal`'s
+    // `researchCost` 18343 -> 9520 (the tier-4 floor), `change-tradition`'s
+    // `favorCost` 65536 -> 61440 (the tier-4 cap), and a new god constant,
+    // `stagnation-neglect-ticks` (1200), with `stagnation-stasis-ticks`' gloss
+    // rewritten for the quiet clock. Measured with `npm run check:content` on
+    // the tree, not chosen.
+    expect(registry.contentRevision).toBe('b1923b223d0686054a27a2aff163d8af');
   });
 
   it('is stable across loads of identical content', () => {

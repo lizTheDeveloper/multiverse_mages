@@ -395,7 +395,12 @@ describe('the causal chain for build-rate, end to end at one seed', () => {
     // forbidding **every** form takes the source count to 0 and the completion
     // tick to **86**. So the chain from sources to opening date is intact and
     // the cap is what hides it, rather than the wire being out.
-    expect(permitted.peakBuildRateSources).toBe(88);
+    //
+    // **88 became 91 on `sim-playability` (S4), 2026-10-08**, and the forbid
+    // arm stayed at 52. `laborObligation` feeds the populace, more mages are
+    // alive at the peak, and three more of them hold a `build-rate` node in a
+    // non-Terram form — the denominator moved, the verb's reach did not.
+    expect(permitted.peakBuildRateSources).toBe(91);
     expect(forbidden.peakBuildRateSources).toBe(52);
     expect(forbidden.peakBuildRateSources * 100).toBeLessThan(
       permitted.peakBuildRateSources * 60,
