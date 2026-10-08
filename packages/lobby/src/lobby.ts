@@ -27,6 +27,7 @@
  * `openSession({ live: base })`.
  */
 
+import { randomBytes, timingSafeEqual } from 'node:crypto';
 import { createServer, type IncomingMessage, type Server, type ServerResponse } from 'node:http';
 import { readFile, stat } from 'node:fs/promises';
 import path from 'node:path';
@@ -48,6 +49,7 @@ const READ_ONLY =
   'This server keeps time. A universe advances one month per tick whether or not anyone is ' +
   'watching; there is no advance, reset, pause or control here.';
 const GONE = 'universe not found — the server may have restarted';
+const TOKEN_HEADER = 'x-universe-token';
 const FULL = 'The server is full — every universe slot is taken. Try again when one ends.';
 
 interface TierEntry {
@@ -95,6 +97,12 @@ export class Lobby {
   private universes = new Map<string, UniverseHost>();
   private bubbles = new Map<string, Bubble>();
   private waiting: UniverseHost[] = [];
+  /**
+   * Each universe's owner token: 32 random bytes, never derived from the id.
+   * Universe ids are public — `/api/bubbles` lists them and a bubble-mate's
+   * `seats` names them — so the id alone must not let anyone act on a universe.
+   */
+  private tokens = new Map<string, Buffer>();
   private ladder: TierEntry[] = [];
   private router = new Router();
   private readonly uiRoot: string;
@@ -133,6 +141,7 @@ export class Lobby {
       host.tick();
       if (now - host.lastTouched > this.evictAfterMs) {
         this.universes.delete(id);
+        this.tokens.delete(id);
         this.waiting = this.waiting.filter((h) => h.id !== id);
         const bubble = this.bubbles.get(host.ref.bubbleId);
         if (bubble !== undefined) {
@@ -166,11 +175,14 @@ export class Lobby {
         seatOf: (self, seat) => this.seatOf(self, seat),
       });
       this.universes.set(host.id, host);
+      const token = randomBytes(32);
+      this.tokens.set(host.id, token);
       this.waiting.push(host);
       this.tryFormBubble();
 
       json(res, 200, {
         universeId: host.id,
+        token: token.toString('hex'),
         bubbleId: host.ref.bubbleId || null,
         worldTick: host.worldTick,
         bubbleSize: this.bubbleSize,
@@ -253,6 +265,26 @@ export class Lobby {
     await this.serveStatic(url.pathname, res);
   }
 
+  /**
+   * Whether `req` carries this universe's owner token. Answers `401` (none
+   * sent) or `403` (wrong one) itself and returns false; the token is compared
+   * in constant time and never echoed or logged.
+   */
+  private authorized(id: string, req: IncomingMessage, res: ServerResponse): boolean {
+    const sent = req.headers[TOKEN_HEADER];
+    if (typeof sent !== 'string' || sent === '') {
+      json(res, 401, { error: `this route changes a universe; send its owner token in ${TOKEN_HEADER}` });
+      return false;
+    }
+    const expected = this.tokens.get(id);
+    const given = /^[0-9a-f]{64}$/u.test(sent) ? Buffer.from(sent, 'hex') : Buffer.alloc(0);
+    if (expected === undefined || given.length !== expected.length || !timingSafeEqual(given, expected)) {
+      json(res, 403, { error: 'that is not this universe\'s owner token' });
+      return false;
+    }
+    return true;
+  }
+
   private async handleLive(
     id: string,
     route: string,
@@ -298,6 +330,7 @@ export class Lobby {
         return;
       }
       case 'POST submit': {
+        if (!this.authorized(host.id, req, res)) return;
         const action = toAction(parse(await readBody(req)), host.session.actionSpaceSize);
         if (action === null) {
           json(res, 400, { error: 'body must be {kind:int within the session action space, params:int[]}' });

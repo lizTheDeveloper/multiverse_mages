@@ -44,11 +44,22 @@ afterEach(
     }),
 );
 
-const post = (p: string, body: unknown): Promise<Response> =>
-  fetch(base + p, { method: 'POST', body: typeof body === 'string' ? body : JSON.stringify(body) });
+/** Owner tokens by universe id, as `/api/create` handed them out. */
+const tokens = new Map<string, string>();
+const post = (p: string, body: unknown, token?: string): Promise<Response> =>
+  fetch(base + p, {
+    method: 'POST',
+    body: typeof body === 'string' ? body : JSON.stringify(body),
+    ...(token === undefined ? {} : { headers: { 'x-universe-token': token } }),
+  });
+/** A submit, carrying the universe's own token. */
+const submitAs = (id: string, body: unknown): Promise<Response> => post(`/u/${id}/live/submit`, body, tokens.get(id));
 const getJson = async <T = Record<string, unknown>>(p: string): Promise<T> => (await (await fetch(base + p)).json()) as T;
-const create = async (over: Record<string, unknown> = {}): Promise<string> =>
-  ((await (await post('/api/create', { ...cfg, ...over })).json()) as { universeId: string }).universeId;
+const create = async (over: Record<string, unknown> = {}): Promise<string> => {
+  const made = (await (await post('/api/create', { ...cfg, ...over })).json()) as { universeId: string; token: string };
+  tokens.set(made.universeId, made.token);
+  return made.universeId;
+};
 const sleep = (ms: number): Promise<void> => new Promise((r) => setTimeout(r, ms));
 /** Waits until the server has queued a submit on `id` — no fixed sleep to race. */
 const queued = async (id: string): Promise<void> => {
@@ -86,9 +97,9 @@ describe('Lobby', () => {
   it('applies a submit on the next tick and answers with that frame', async () => {
     await start();
     const id = await create();
-    const pending = post(`/u/${id}/live/submit`, { kind: GOD_ACTION.noop, params: [] });
+    const pending = submitAs(id, { kind: GOD_ACTION.noop, params: [] });
     await queued(id);
-    const second = await post(`/u/${id}/live/submit`, { kind: GOD_ACTION.noop });
+    const second = await submitAs(id, { kind: GOD_ACTION.noop });
     expect(second.status).toBe(409);
     expect(((await second.json()) as { error: string }).error).toMatch(/already queued/);
     lobby.tickAll();
@@ -100,11 +111,36 @@ describe('Lobby', () => {
   it('answers 400 to a malformed action and to a bad config, and 413 to a huge body', async () => {
     await start();
     const id = await create();
-    expect((await post(`/u/${id}/live/submit`, { kind: 999 })).status).toBe(400);
-    expect((await post(`/u/${id}/live/submit`, 'not json')).status).toBe(400);
+    expect((await submitAs(id, { kind: 999 })).status).toBe(400);
+    expect((await submitAs(id, 'not json')).status).toBe(400);
     expect((await post('/api/create', { ...cfg, species: 'hobbit' })).status).toBe(400);
     expect((await post('/api/create', 'not json')).status).toBe(400);
-    expect((await post(`/u/${id}/live/submit`, 'x'.repeat(70 * 1024))).status).toBe(413);
+    expect((await submitAs(id, 'x'.repeat(70 * 1024))).status).toBe(413);
+  });
+
+  it('takes a submit only from the universe owner', async () => {
+    await start();
+    const mine = await create();
+    const theirs = await create();
+    const token = tokens.get(mine)!;
+    expect(token).toMatch(/^[0-9a-f]{64}$/u);
+    expect(token).not.toContain(mine.replace(/-/gu, ''));
+    expect(tokens.get(theirs)).not.toBe(token);
+
+    const noop = { kind: GOD_ACTION.noop };
+    expect((await post(`/u/${mine}/live/submit`, noop)).status).toBe(401);
+    expect((await post(`/u/${mine}/live/submit`, noop, tokens.get(theirs))).status).toBe(403);
+    expect((await post(`/u/${mine}/live/submit`, noop, 'not-hex')).status).toBe(403);
+    // Neither refusal queued anything: the owner's own submit is not a 409.
+    const pending = post(`/u/${mine}/live/submit`, noop, token);
+    await queued(mine);
+    lobby.tickAll();
+    expect((await pending).status).toBe(200);
+    // The token never appears on a public read.
+    for (const route of ['session.json', 'frames?since=0', 'raids']) {
+      expect(await (await fetch(`${base}/u/${mine}/live/${route}`)).text()).not.toContain(token);
+    }
+    expect(await (await fetch(`${base}/api/bubbles`)).text()).not.toContain(token);
   });
 
   it('caps the number of universes with 503', async () => {
@@ -140,7 +176,7 @@ describe('Lobby', () => {
     const n = (await getJson<{ frames: unknown[] }>(`/u/${id}/live/session.json`)).frames.length;
     lobby.tickAll();
     expect((await getJson<{ frames: unknown[] }>(`/u/${id}/live/frames?since=${String(n)}`)).frames).toHaveLength(0);
-    expect((await post(`/u/${id}/live/submit`, { kind: GOD_ACTION.noop })).status).toBe(409);
+    expect((await submitAs(id, { kind: GOD_ACTION.noop })).status).toBe(409);
     // Touched just now, so one more tick does not evict it...
     lobby.tickAll();
     expect((await post('/api/rejoin', { universeId: id })).status).toBe(200);
@@ -201,7 +237,7 @@ describe('Lobby', () => {
     };
     /** One tick for every universe, with `action` queued on A. */
     const submit = async (kind: number, params: number[]): Promise<{ admitted: boolean }> => {
-      const pending = post(`/u/${a}/live/submit`, { kind, params });
+      const pending = submitAs(a, { kind, params });
       await queued(a);
       lobby.tickAll();
       return (await (await pending).json()) as { admitted: boolean };
