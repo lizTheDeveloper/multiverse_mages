@@ -25,9 +25,9 @@
  *   encourage research in the closure's cells (action 12), and from the tick a
  *   living mage holds a portal node name her a raider so she drills it.
  *
- * Openings: the v1 rectangle (what `packages/lobby` builds), and the standard
- * 2 × 2 (`creo`, `intellego` × `animal`, `aquam`), which holds no cell of the
- * closure until the god permits one.
+ * Openings: the v1 rectangle, and three 2 × 2 squares founded the way
+ * `packages/lobby` founds a player's — one holding the whole closure, one
+ * holding only the portal's own cell, one holding neither (see `SQUARES`).
  *
  * Reports the first possible raid per seed, the median, and how many seeds
  * never got there within the horizon. Deterministic. Exit `1` if the seeded
@@ -44,7 +44,7 @@ import { GOD_ACTION, createSession } from '@mm/agent-api';
 import { MagicGrid } from '@mm/rules-magic';
 import { heldInstancesOf, portalGate } from '@mm/rules-raid';
 import { MAGE, MAGE_ROLE, collectRecords, findUniverse, readRulesetForObservation, permits } from '@mm/state';
-import { participantOf, referenceContent, referenceScenario } from '@mm/scenario';
+import { explicitOpeningAxes, foundingCandidates, participantOf, referenceContent, referenceScenario } from '@mm/scenario';
 
 const { values } = parseArgs({
   options: {
@@ -99,11 +99,33 @@ function portalHolder(state) {
   return 0;
 }
 
+/**
+ * Openings, the way `packages/lobby` founds a universe on a player's square:
+ * an explicit 2 × 2 swapped into the content's axes. `v1` is the full
+ * rectangle.
+ */
+const SQUARES = {
+  v1: undefined,
+  // The whole closure inside the square: rego-limen and intellego-limen.
+  '2x2 rego,intellego x limen,mentem': [['rego', 'intellego'], ['limen', 'mentem']],
+  // The portal's own cell, but not the cell its prerequisite reads from.
+  '2x2 rego,perdo x limen,ignem': [['rego', 'perdo'], ['limen', 'ignem']],
+  // Neither: the god has to permit a technique and a form first.
+  '2x2 creo,muto x animal,aquam': [['creo', 'muto'], ['animal', 'aquam']],
+};
+const contentFor = new Map(
+  Object.entries(SQUARES).map(([name, square]) => {
+    if (square === undefined) return [name, content];
+    const axes = explicitOpeningAxes(registry, square[0], square[1]);
+    return [name, { ...content, axes, foundingNodeIds: foundingCandidates(registry, axes) }];
+  }),
+);
+
 function play(seed, policy, opening, portalMagic = 0) {
   const live = {};
-  const run = referenceScenario(content, { onState: (s) => { live.s = s; } });
+  const run = referenceScenario(contentFor.get(opening), { onState: (s) => { live.s = s; } });
   const session = createSession({ scenario: run.scenario, strategyId: `portal-reach-${policy}` });
-  const options = { foundingPortalMagic: portalMagic, ...(opening === '2x2' ? { openingTechniqueCount: 2, openingFormCount: 2 } : {}) };
+  const options = { foundingPortalMagic: portalMagic };
   session.reset(seed, { worldTickCap: 4000, options });
   let named = false;
   for (let t = 0; t < ticks; t += 1) {
@@ -154,7 +176,7 @@ const median = (xs) => {
 console.log(`closure: ${[...closure.values()].map((e) => `${e.record.id}(t${e.record.tier})`).join(', ')}`);
 console.log('| opening | policy | first possible raid, world tick, per seed | median | never (of seeds) |');
 console.log('|---|---|---|---|---|');
-for (const opening of ['v1', '2x2']) {
+for (const opening of Object.keys(SQUARES)) {
   for (const policy of ['idle', 'seek-portal']) {
     const firsts = seeds.map((seed) => play(seed, policy, opening));
     console.log(`| ${opening} | ${policy} | ${firsts.map((f) => (f < 0 ? '—' : String(f))).join(', ')} | ${median(firsts)} | ${firsts.filter((f) => f < 0).length}/${seeds.length} |`);
