@@ -90,6 +90,11 @@ describe('UniverseHost', () => {
     [null, /config/],
   ])('rejects %j', (raw, msg) => expect(() => validateConfig(raw)).toThrow(msg));
 
+  it('caps tickCap at the default unless a test raises it', () => {
+    expect(() => validateConfig({ ...base, tickCap: 4001 })).toThrow(/tickCap/u);
+    expect(validateConfig({ ...base, tickCap: 4001 }, 10_000).tickCap).toBe(4001);
+  });
+
   it('accepts a valid config with foundingPortalMagic', () => {
     expect(validateConfig({ ...base, foundingPortalMagic: 1 })).toEqual({ ...base, foundingPortalMagic: 1 });
   });

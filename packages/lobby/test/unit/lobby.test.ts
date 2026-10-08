@@ -169,7 +169,7 @@ describe('Lobby', () => {
     expect(await r.json()).toMatchObject({ universeId: id, alive: true, worldTick: 1 });
   });
 
-  it('stops ticking an ended universe and evicts it once untouched', async () => {
+  it('stops ticking an ended universe and evicts it a fixed time after it ended', async () => {
     await start();
     const id = await create({ tickCap: 2 });
     for (let i = 0; i < 5; i += 1) lobby.tickAll();
@@ -177,15 +177,75 @@ describe('Lobby', () => {
     lobby.tickAll();
     expect((await getJson<{ frames: unknown[] }>(`/u/${id}/live/frames?since=${String(n)}`)).frames).toHaveLength(0);
     expect((await submitAs(id, { kind: GOD_ACTION.noop })).status).toBe(409);
-    // Touched just now, so one more tick does not evict it...
-    lobby.tickAll();
     expect((await post('/api/rejoin', { universeId: id })).status).toBe(200);
-    // ...but an hour (here: a second) of nobody looking does.
     clock.advance(1001);
     lobby.tickAll();
     expect((await post('/api/rejoin', { universeId: id })).status).toBe(404);
     // And the slot is free again.
     expect((await post('/api/create', cfg)).status).toBe(200);
+  });
+
+  it('does not let anyone keep an ended universe alive by reading it (slot squatting)', async () => {
+    await start();
+    const id = await create({ tickCap: 2 });
+    for (let i = 0; i < 4; i += 1) lobby.tickAll(); // ended
+    // A stranger, without the token, polls it every 300 ms of lobby time...
+    for (let i = 0; i < 5; i += 1) {
+      clock.advance(300);
+      await fetch(`${base}/u/${id}/live/frames?since=0`);
+      await fetch(`${base}/u/${id}/live/session.json`);
+      await post('/api/rejoin', { universeId: id });
+      lobby.tickAll();
+    }
+    // ...and it is gone anyway, 1000 ms after it ended.
+    expect(lobby.universe(id)).toBeUndefined();
+    // Even its owner's reads do not extend an ended universe.
+    const owned = await create({ tickCap: 2 });
+    for (let i = 0; i < 4; i += 1) lobby.tickAll();
+    for (let i = 0; i < 5; i += 1) {
+      clock.advance(300);
+      await fetch(`${base}/u/${owned}/live/frames?since=0`, { headers: { 'x-universe-token': tokens.get(owned)! } });
+      lobby.tickAll();
+    }
+    expect(lobby.universe(owned)).toBeUndefined();
+  });
+
+  it('retires a running universe its owner has left, however often strangers read it', async () => {
+    await start({ idleAfterMs: 5000 });
+    const mine = await create();
+    const theirs = await create();
+    for (let i = 0; i < 6; i += 1) {
+      clock.advance(1000);
+      // The owner of `mine` keeps polling with the token; `theirs` is only read by strangers.
+      await fetch(`${base}/u/${mine}/live/frames?since=0`, { headers: { 'x-universe-token': tokens.get(mine)! } });
+      await fetch(`${base}/u/${theirs}/live/frames?since=0`);
+      await post('/api/rejoin', { universeId: theirs });
+      lobby.tickAll();
+    }
+    expect(lobby.universe(mine)?.isAlive).toBe(true);
+    expect(lobby.universe(theirs)).toBeUndefined();
+  });
+
+  it('retires the universe a player leaves when they create the next', async () => {
+    await start();
+    const old = await create();
+    await create(); // the server is now full (maxUniverses 2)
+    expect((await post('/api/create', cfg)).status).toBe(503);
+    // Naming a universe without its token retires nothing.
+    expect((await post('/api/create', { ...cfg, retire: { universeId: old, token: 'f'.repeat(64) } })).status).toBe(503);
+    expect(lobby.universe(old)).toBeDefined();
+    // With it, the old one goes and the new one takes its slot.
+    const r = await post('/api/create', { ...cfg, retire: { universeId: old, token: tokens.get(old) } });
+    expect(r.status).toBe(200);
+    expect(lobby.universe(old)).toBeUndefined();
+  });
+
+  it('refuses a tickCap above the default over HTTP', async () => {
+    await start();
+    const r = await post('/api/create', { ...cfg, tickCap: 100_000 });
+    expect(r.status).toBe(400);
+    expect(((await r.json()) as { error: string }).error).toMatch(/tickCap must be 1\.\.4000/u);
+    expect((await post('/api/create', { ...cfg, tickCap: 4000 })).status).toBe(200);
   });
 
   it('redirects / to the game', async () => {
