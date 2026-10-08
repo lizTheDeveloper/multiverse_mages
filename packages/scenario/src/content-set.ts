@@ -107,6 +107,33 @@ let cached: ContentRegistry | undefined;
  * @throws ContentValidationError when the shipped data does not validate, which
  * is a build problem rather than a scenario problem and is left to propagate.
  */
+/**
+ * The primitives a raider's drilling is aimed at: the seven combat primitives
+ * a raid resolves, plus `portal` itself, so a raider who holds the way through
+ * keeps it open. Interned from the registry; a name the registry does not hold
+ * interns to `0` and is dropped rather than matching nothing silently.
+ */
+export const RAID_KIT_PRIMITIVE_NAMES: readonly string[] = Object.freeze([
+  'direct-damage',
+  'area-denial',
+  'summon',
+  'blink',
+  'knowledge-steal',
+  'knowledge-corrupt',
+  'portal',
+]);
+
+export function raidKitPrimitivesOf(registry: ContentRegistry): ReadonlySet<number> {
+  const ids = RAID_KIT_PRIMITIVE_NAMES.map((name) => registry.intern('primitive', name)).filter((id) => id !== 0);
+  if (ids.length !== RAID_KIT_PRIMITIVE_NAMES.length) {
+    throw new Error(
+      `raidKitPrimitivesOf: ${String(RAID_KIT_PRIMITIVE_NAMES.length - ids.length)} raid-kit primitive name(s) ` +
+        'are not in this registry. A renamed primitive would silently stop raiders drilling it.',
+    );
+  }
+  return new Set(ids);
+}
+
 export function shippedContent(): ContentRegistry {
   cached ??= loadContent(shippedContentSource());
   return cached;
@@ -823,6 +850,9 @@ export function worldDeps(
     // wires; it does not compute.
     envelopes: envelopeResolver(registry, cells),
     facets: nodeFacetsFrom(registry),
+    // What a raider drills in `raid-readiness`. Every primitive that acts
+    // through a portal, named once here from the registry, never by id.
+    raidKitPrimitives: raidKitPrimitivesOf(registry),
     affinitiesOf: (species) => {
       const cached = affinityCache.get(species.id);
       if (cached !== undefined) return cached;

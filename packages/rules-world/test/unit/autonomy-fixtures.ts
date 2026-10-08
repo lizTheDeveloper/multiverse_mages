@@ -150,6 +150,7 @@ export function outlook(overrides: Partial<MageOutlook> = {}): MageOutlook {
     scribableTargets: [],
     applicableTargets: [],
     practiceTargets: [],
+    raidKitTargets: [],
     sustainableTargets: [],
     workingUrgency: 0,
     materials: 0,
@@ -183,6 +184,7 @@ export function richOutlook(overrides: Partial<MageOutlook> = {}): MageOutlook {
     // `remainingCost` zero for the same reason: practice has no project, only a
     // mastery that is higher this month than last.
     practiceTargets: [target(71, 1, 0)],
+    raidKitTargets: [],
     // `remainingCost` is ticks-before-lapse for this goal rather than a project
     // cost — the full authored duration for a working not yet lit, which is what
     // `24` is here. See `outlook.ts`.

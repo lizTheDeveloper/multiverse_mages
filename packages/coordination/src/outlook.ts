@@ -38,6 +38,7 @@ import {
   KNOWLEDGE_INSTANCE,
   LOCATION_KIND,
   MAGE,
+  MAGE_ROLE,
   UNIVERSITY,
   componentOf,
 } from '@mm/state';
@@ -119,6 +120,14 @@ export interface OutlookDeps {
    */
   readonly preferredUniversityFor: (current: Handle) => Handle;
   /**
+   * Primitive ids a raider drills, or absent.
+   *
+   * Absent leaves `raidKitTargets` empty and `raid-readiness` the targetless
+   * month it was before the list existed, so a world built for a knowledge
+   * test — or any build that does not wire it — behaves exactly as it did.
+   */
+  readonly raidKitPrimitives?: ReadonlySet<number> | undefined;
+  /**
    * The authored half of *"is this node worth casting at the world?"*, or
    * `undefined` on a build with no economy index wired.
    *
@@ -174,6 +183,13 @@ export function buildOutlook(
     scribableTargets: boundCandidates(scribableBy(mage, deps), species),
     applicableTargets: boundCandidates(applicableBy(mage, deps), species),
     practiceTargets: boundCandidates(practicableBy(mage, deps), species),
+    // Raiders only. Any mage may score `raid-readiness`, but only one the god
+    // named a raider has a kit to drill: the role is the player's lever, and a
+    // universe whose god never names one behaves exactly as it did before.
+    raidKitTargets:
+      row.roleId === MAGE_ROLE.raider
+        ? boundCandidates(raidKitOf(practicableBy(mage, deps), deps.raidKitPrimitives), species)
+        : [],
     sustainableTargets: boundCandidates(upkeep.targets, species),
     workingUrgency: upkeep.pressure,
 
@@ -387,6 +403,22 @@ export interface UniversityStanding {
  * `remainingCost` is `0` for every entry. There is no project: a month of
  * practice is spent and gone, and next month she may spend another.
  */
+/**
+ * The practicable nodes that carry a raid-kit primitive.
+ *
+ * Filtered from the same `practicableBy` list rather than gathered separately,
+ * so the two can never disagree about what she holds, what her ceiling allows,
+ * or which cells are permitted now. `raid-readiness` is practice aimed at the
+ * part of her knowledge that works through a portal, and nothing more.
+ */
+function raidKitOf(
+  practicable: readonly KnowledgeTarget[],
+  kit: ReadonlySet<number> | undefined,
+): KnowledgeTarget[] {
+  if (kit === undefined || kit.size === 0) return [];
+  return practicable.filter((target) => target.primitives.some((primitive) => kit.has(primitive)));
+}
+
 function practicableBy(mage: Handle, deps: OutlookDeps): KnowledgeTarget[] {
   const found: KnowledgeTarget[] = [];
   for (const nodeId of deps.gateway.practicableNodes(mage)) {

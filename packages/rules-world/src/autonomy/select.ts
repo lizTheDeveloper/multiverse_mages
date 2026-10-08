@@ -21,7 +21,7 @@ import { MAX_CANDIDATE_TARGETS } from './candidates.js';
 import type { FeasibilityOutcome } from './feasibility.js';
 import { isFeasible, maskGoals } from './feasibility.js';
 import type { GoalId } from './goals.js';
-import { GOAL, needsTarget } from './goals.js';
+import { GOAL, needsTarget, takesOptionalTarget } from './goals.js';
 import type { MageOutlook } from './outlook.js';
 import type { MageGoalCommitment, ReevaluationReason, ScheduleOptions } from './schedule.js';
 import { HYSTERESIS_MARGIN, displaces, reevaluationReason } from './schedule.js';
@@ -131,6 +131,8 @@ function targetsFor(goal: GoalId, outlook: MageOutlook): readonly KnowledgeTarge
       return outlook.practiceTargets;
     case GOAL.sustainWorking:
       return outlook.sustainableTargets;
+    case GOAL.raidReadiness:
+      return outlook.raidKitTargets;
     default:
       return [];
   }
@@ -156,7 +158,7 @@ export function chooseTarget(
   outlook: MageOutlook,
   weights: TargetAppealWeights,
 ): ContentId {
-  if (!needsTarget(goal)) return 0;
+  if (!needsTarget(goal) && !takesOptionalTarget(goal)) return 0;
   const candidates = targetsFor(goal, outlook);
   let best: { target: KnowledgeTarget; score: TargetScore } | undefined;
   for (const target of candidates) {
@@ -328,8 +330,16 @@ export function selectGoal(input: SelectionInput): Selection {
   }
 
   const sameGoal = incumbent !== undefined && !incumbentComplete && winner.goal === incumbent.goalId;
+  // An optional target is re-chosen when the one held is no longer on offer —
+  // a drilled spell at its ceiling, or a raider named before she had anything
+  // to drill. Without this a raider adopted at `targetNodeId: 0` keeps that
+  // zero for as long as she keeps the goal, which is her whole career.
+  const optionalTargetStale =
+    incumbent !== undefined &&
+    takesOptionalTarget(winner.goal) &&
+    !targetsFor(winner.goal, outlook).some((candidate) => candidate.nodeId === incumbent.targetNodeId);
   const targetNodeId =
-    sameGoal && incumbentFeasible
+    sameGoal && incumbentFeasible && !optionalTargetStale
       ? incumbent.targetNodeId
       : chooseTarget(winner.goal, outlook, input.appeal);
 

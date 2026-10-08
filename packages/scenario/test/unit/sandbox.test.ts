@@ -114,9 +114,14 @@ const ANCHOR_SEED = 20260813;
  * here so the size of the move is readable rather than only its fact.
  */
 const INERT_DEFAULT_HASHES: Readonly<Record<number, string>> = {
-  0: '0ceb9bffbc4b20f4',
-  200: 'cc89d97858673b71',
-  500: '27c0db075e966bf3',
+  // Re-measured 2026-10-08 on the raid-tuning branch. The previous set was
+  // `0ceb9bffbc4b20f4` / `cc89d97858673b71` / `27c0db075e966bf3`. Tick 0 moves
+  // because the content revision is in the hashed state and twelve raid
+  // constants and node.json's bolts changed; 200 and 500 move as well because the default scenario
+  // is raided by stand-ins, and stand-in raids now fight. No sandbox change.
+  0: '9f812e5bb2caf9d2',
+  200: 'd25ad53e1619d373',
+  500: '5dcbdae24eb43a7e',
 };
 
 /** Generous, for the reason `balance-telemetry.test.ts` gives at length. */

@@ -191,4 +191,4 @@ export { defineWorldSimulation, worldSystem } from './world-step.js';
  * diagnostic to get it. Two implementations of one definition need a test that
  * they agree, and that test needs to be able to call this one.
  */
-export { unwrittenNodeCount } from './world-step.js';
+export { settleRaidCasualties, unwrittenNodeCount } from './world-step.js';

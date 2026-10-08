@@ -105,6 +105,19 @@ const played = new Map<string, Awaited<ReturnType<typeof executeReferenceRunAsyn
  * declares it exists precisely to separate *"the verb does nothing"* from *"the
  * verb never ran"*.
  */
+/**
+ * The seed the looting arms play. `0x1234_5678` until 2026-10-08, when casts
+ * became lethal: on that seed `portal-rush`'s founding portal mage now dies on
+ * her first raid, the portal knowledge dies with her, and the second outbound
+ * raid — the one that looted — never opens. That is the raid working, not the
+ * claim failing, so the claim moved to a seed where an outbound raid still
+ * lands. Surveyed over ten seeds (`portal-rush`, these levels, 400 ticks):
+ * outbound raids gained foreign nodes on `0x00ab_cdef` (6), `0x0bad_f00d`,
+ * `0x0004_1000` and `0x0000_1000` (4 each), and none on `0x1234_5678`,
+ * `0x0bad_c0de`, `0x0000_022b`, `0x0a97_0001`, `0x2222_2222`, `0x1111_1111`.
+ */
+const LOOTING_SEED = 0x00ab_cdef;
+
 const LOOTING_LEVELS: Readonly<Record<string, number>> = Object.freeze({
   cohortSize: 12,
   foundingMages: 2,
@@ -136,19 +149,20 @@ const LOOTING_LEVELS: Readonly<Record<string, number>> = Object.freeze({
 async function runOf(
   strategy: string,
   levels: Readonly<Record<string, number>> = { cohortSize: 12, foundingMages: 2, foundingNodes: 4 },
+  seed = 0x1234_5678,
 ): Promise<Awaited<ReturnType<typeof executeReferenceRunAsync>>> {
-  const key = `${strategy}:${JSON.stringify(levels)}`;
+  const key = `${strategy}:${JSON.stringify(levels)}:${String(seed)}`;
   const cached = played.get(key);
   if (cached !== undefined) return cached;
   const result = await executeReferenceRunAsync(
     {
       coordinates: {
         sweepId: 'raid-engagement-test',
-        rootSeed: 0x1234_5678,
+        rootSeed: seed,
         cellIndex: 0,
         replicateIndex: 0,
       },
-      runSeed: 0x1234_5678,
+      runSeed: seed,
       levels: { ...levels },
       strategies: [strategy],
       worldTickCap: 400,
@@ -328,17 +342,22 @@ describe('a reference universe is raided', () => {
     expect(raided.instances).not.toBe((await play(seed, false)).instances);
   }, ARM_TIMEOUT_MS);
 
-  it('destroys nothing and steals nothing, which is a finding and not a design', async () => {
-    // The zero above, pinned so it cannot quietly stop being zero — in either
-    // direction. If `raid-engagement` gives raiders something to take, this is
-    // the test that fails and says so, and the assertion above becomes
-    // directional again.
+  it('kills, which it did not — the finding this pinned, retired', async () => {
+    // This pinned zero casualties and zero nodes lost across these seeds, *"so
+    // it cannot quietly stop being zero — in either direction"*. It stopped on
+    // 2026-10-08: the cheapest cast cost fp(3) of vigor against every mage's
+    // fp(1), so nobody in a raid ever cast; with casting affordable and hit
+    // points on node.json's scale, stand-in raids kill. The direction is now
+    // the assertion: across these seeds a raided reference universe loses
+    // mages. Nodes lost are reported by the record and not asserted — a mage's
+    // knowledge usually survives her in a colleague's head or on a shelf.
+    let casualties = 0;
     for (const seed of SEEDS) {
       const raided = await play(seed, true);
       expect(raided.raids.length).toBeGreaterThan(0);
-      expect(raided.raids.reduce((sum, raid) => sum + raid.nodesLostLocally, 0)).toBe(0);
-      expect(raided.raids.reduce((sum, raid) => sum + raid.localCasualties, 0)).toBe(0);
+      casualties += raided.raids.reduce((sum, raid) => sum + raid.localCasualties, 0);
     }
+    expect(casualties).toBeGreaterThan(0);
   }, ARM_TIMEOUT_MS);
 });
 
@@ -445,7 +464,7 @@ describe('looting reaches what research cannot', () => {
     // this universe could not have derived. Vision §8's *"raids reach what
     // research cannot"* is a claim about a god who forbids, and the reference
     // universe as this campaign leaves it forbids nothing.
-    const rushed = await runOf('portal-rush', LOOTING_LEVELS);
+    const rushed = await runOf('portal-rush', LOOTING_LEVELS, LOOTING_SEED);
     const outbound = rushed.rawRaids.filter((raid) => raid.outbound);
     expect(outbound.length).toBeGreaterThan(0);
     expect(outbound.reduce((sum, raid) => sum + raid.nodesGainedLocally, 0)).toBeGreaterThan(0);
@@ -474,7 +493,7 @@ describe('looting reaches what research cannot', () => {
     // founder's head — and a strategy that never submits action 14. It resolves
     // only inbound raids and gains nothing, which is what makes the arm above a
     // statement about *looting* rather than about the levels it plays.
-    const passive = await runOf('passive-control', LOOTING_LEVELS);
+    const passive = await runOf('passive-control', LOOTING_LEVELS, LOOTING_SEED);
     expect(passive.rawRaids.every((raid) => !raid.outbound)).toBe(true);
     expect(passive.rawRaids.reduce((sum, raid) => sum + raid.nodesGainedLocally, 0)).toBe(0);
   });

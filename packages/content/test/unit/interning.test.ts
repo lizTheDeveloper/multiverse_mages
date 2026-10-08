@@ -995,7 +995,17 @@ describe('contentRevision', () => {
     // literal is MEASURED with `node packages/content/bin/validate-content.mjs`
     // after `npx tsc --build --force` on the merged tree rather than chosen
     // between them.
-    expect(registry.contentRevision).toBe('cb4c1a3e43a67f81a6315c3590b749ef');
+    //
+    // cb4c1a3e43a67f81a6315c3590b749ef -> 62af9cbb6380c71d61aea08cdc4aceaf, the
+    // raid tuning of 2026-10-08: twelve `raid-constant.json` values — the
+    // hit-point family rescaled by 1/16, cast vigor made affordable, the portal
+    // shortened to 150 ± 30 ticks, the stand-in's arming cut from eight nodes to
+    // two, a summon's blow cut by 1/64 — their glosses, and every
+    // `direct-damage` magnitude in `node.json` multiplied by four. Every
+    // existing record keeps its id; the values are the point. Two universes
+    // either side of this revision would fight battles of different lethality,
+    // which is what the revision exists to refuse.
+    expect(registry.contentRevision).toBe('62af9cbb6380c71d61aea08cdc4aceaf');
   });
 
   it('is stable across loads of identical content', () => {

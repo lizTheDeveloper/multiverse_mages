@@ -247,3 +247,18 @@ export {
   separationRunSeeds,
   verdictOf,
 } from './species-separation.js';
+export type {
+  PeerAttackerPolicy,
+  PeerDefenderPolicy,
+  PeerPairResult,
+  PeerRaidMeasurement,
+  PeerSurveyArm,
+  PeerSurveySummary,
+} from './peer-raid-survey.js';
+export {
+  PEER_ATTACKER_POLICIES,
+  PEER_DEFENDER_POLICIES,
+  playPeerPair,
+  summarisePeerRaids,
+  surveyPeerArm,
+} from './peer-raid-survey.js';

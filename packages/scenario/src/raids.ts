@@ -91,6 +91,7 @@ import {
 } from '@mm/rules-raid';
 import type { ActionEconomyReport, RaidParticipant, RaidTuning } from '@mm/rules-raid';
 import type { AblationMask } from '@mm/coordination';
+import { settleRaidCasualties } from '@mm/coordination';
 import type { ContentCatalogue } from '@mm/agent-api';
 import {
   TERMINAL_REASON,
@@ -583,6 +584,10 @@ function resolveOneRaid(input: {
   }
 
   const applied = applyRaidOutcome(raid, outcome);
+  // The half of a death `rules-raid` cannot reach: goal, lessons, workings and
+  // affiliation are `coordination`'s. Both worlds, before anything reads them.
+  settleRaidCasualties(attacker.world);
+  settleRaidCasualties(host.world);
   closePortal(raid);
 
   const localSideValue = outbound ? ATTACKER : DEFENDER;

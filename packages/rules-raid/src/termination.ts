@@ -191,7 +191,18 @@ export function terminationOf(input: {
     return { reason: RAID_END_REASON.ceilingReached };
   }
   if (input.raid.portalStability <= 0) return { reason: RAID_END_REASON.portalCollapsed };
-  if (input.allObjectivesResolved) return { reason: RAID_END_REASON.objectivesResolved };
+  // **Not while a raider is still on the field.** Ending the raid the tick the
+  // last objective fell stranded every attacker standing in the defender's
+  // half — and the stranded-raider rule kills them and forfeits what they
+  // carried. Measured on live peer raids (`scripts/peer-raid-survey.mjs`,
+  // 2026-10-08): the only raids with any attacker casualties at all were the
+  // ones the attacker *won outright*, every raider lost to the sweep. Winning
+  // a raid was the one way to lose the warband. So a cleared field is the end
+  // only once the raiders have left it; until then they walk home under fire,
+  // and the portal can still close on them.
+  if (input.allObjectivesResolved && input.livingAttackers === 0) {
+    return { reason: RAID_END_REASON.objectivesResolved };
+  }
   if (input.livingAttackers === 0) {
     // An empty attacking side is two different endings and the histogram has to
     // be able to tell them apart: a warband that was killed, and a warband that

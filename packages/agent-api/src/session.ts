@@ -157,6 +157,16 @@ export interface Scenario {
    */
   readonly portalNodes?: readonly number[];
   /**
+   * The mastery at which a held portal node is usable, or absent.
+   *
+   * `rules-raid`'s `portalGate` asks for a *usable* holder — mind or palace, at
+   * or above `rules-magic`'s activation threshold — and §5 gives this package no
+   * edge to `rules-magic`, so the composition root supplies the number exactly
+   * as it supplies {@link portalNodes}. Absent keeps the older, looser reading
+   * (any mastery), which is what every scenario built before this field had.
+   */
+  readonly portalUsableMastery?: number;
+  /**
    * The world loop's last per-tick report, if the builder installed one.
    *
    * The same §1.1/§5 shape as {@link portalTargets} and for a related reason:
@@ -390,8 +400,10 @@ export function createSession(options: SessionOptions): AgentSession {
       : { invitableSpecies: scenario.invitableSpecies };
 
   /** Action 16's gate, spread for exactly the reason above. */
-  const portalNodes =
-    scenario.portalNodes === undefined ? {} : { portalNodes: scenario.portalNodes };
+  const portalNodes = {
+    ...(scenario.portalNodes === undefined ? {} : { portalNodes: scenario.portalNodes }),
+    ...(scenario.portalUsableMastery === undefined ? {} : { portalUsableMastery: scenario.portalUsableMastery }),
+  };
 
   let state: SimState | undefined;
   let cap = 0;

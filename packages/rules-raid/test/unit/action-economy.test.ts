@@ -328,29 +328,36 @@ function share(table: ReadonlyMap<string, number>, source: string): number {
   return total === 0 ? 0 : (table.get(source) ?? 0) / total;
 }
 
-describe('the positive control: cast direct-damage is marginal, and measurably so', () => {
+describe('the measured ordering of the combat sources, after the 2026-10-08 rescale', () => {
   const measured = twentySeeds();
 
-  it('reproduces the reported ordering on the hit-point measure', () => {
-    // The finding this evaluator exists to make measurable, restated over the
-    // engine rather than over a prototype: of every hit point removed, roughly
-    // half to soldiers, roughly a third to area denial, a few percent to bolts.
+  it('reproduces the measured ordering on the hit-point measure', () => {
+    // This block used to pin the opposite finding — soldiers ~48 %, fields ~a
+    // third, bolts ~2 % — and that finding was the scale mismatch the raid
+    // tuning of 2026-10-08 removed: `raid-constant.json` authored hit points 64
+    // times larger than `node.json` authors every combat magnitude, so a bolt
+    // was a rounding error against a mage's frame. With the hit-point family
+    // rescaled by 1/16 and bolts by 4, the same twenty seeds measure bolts
+    // 60.0 %, fields 39.4 %, soldiers 0.6 %. Both cast channels now matter;
+    // soldiers, whose ratio to a mage's frame did not move, no longer dominate
+    // a fight that is decided by the casts that previously could not happen.
     const bolt = share(measured.hp, COMBAT_SOURCE.directDamage);
     const field = share(measured.hp, COMBAT_SOURCE.areaDenial);
     const soldiers = share(measured.hp, COMBAT_SOURCE.soldierIntrinsic);
 
-    expect(bolt).toBeLessThan(0.1);
-    expect(field).toBeGreaterThan(bolt * 4);
-    expect(soldiers).toBeGreaterThan(bolt * 4);
+    expect(bolt).toBeGreaterThan(0.2);
+    expect(bolt).toBeLessThan(0.8);
+    expect(field).toBeGreaterThan(0.2);
+    expect(field).toBeGreaterThan(soldiers * 4);
   });
 
   it('ranks the same on action economy, and does not simply restate damage', () => {
     const boltDamage = share(measured.hp, COMBAT_SOURCE.directDamage);
     const boltDenial = share(measured.denied, COMBAT_SOURCE.directDamage);
 
-    // Marginal on the primary measure too — that is the control holding.
-    expect(boltDenial).toBeLessThan(0.15);
-    expect(boltDenial).toBeGreaterThan(0);
+    // A real share on the primary measure too — 69.1 % on these seeds.
+    expect(boltDenial).toBeGreaterThan(0.2);
+    expect(boltDenial).toBeLessThan(0.8);
     // And a *different* number from the damage share. Action economy that
     // agreed with damage to the decimal would be damage in a hat: it counts no
     // overkill, it weights an early removal above a late one, and it credits
@@ -380,36 +387,40 @@ describe('the positive control: cast direct-damage is marginal, and measurably s
     const attempts = measured.attempts.get(COMBAT_SOURCE.directDamage);
     expect(removed).toBeGreaterThan(0);
     expect(attempts?.hurting).toBeGreaterThan(100);
-    // The authored magnitudes are 96..768 at fp scale, against a mage's fp(64)
-    // of hit points. A landing bolt therefore removes at least ~48 raw after the
+    // The authored magnitudes are 384..3072 at fp scale since the 2026-10-08
+    // rescale (96..768 before it, x4), against a mage's fp(4) of hit points
+    // (fp(64) before it). A landing bolt therefore removes at least ~48 raw after the
     // heaviest permitted ward, so the mean removal per landing attempt has to
     // sit in that band. A zeroed lookup could not.
     const landing = (attempts?.hurting ?? 0) + (attempts?.removing ?? 0);
-    expect(removed / landing).toBeGreaterThan(48);
-    expect(removed / landing).toBeLessThan(768);
+    expect(removed / landing).toBeGreaterThan(192);
+    expect(removed / landing).toBeLessThan(3072);
   });
 
-  it('reports a threshold efficiency far below the field that shares its nodes', () => {
-    // The number the damage measure could not produce: a bolt almost never
-    // crosses from hurting to removing, and the field laid by the same cast
-    // does so an order of magnitude more often.
+  it('reports a threshold efficiency below the field that shares its nodes', () => {
+    // The number the damage measure could not produce. Measured 2026-10-08:
+    // a bolt crosses from hurting to removing on 42 % of its landings, the
+    // field laid by the same cast on 91 %. Before the rescale the bolt's figure
+    // was under 5 %, because it could not fell anybody.
     const bolt = measured.attempts.get(COMBAT_SOURCE.directDamage);
     const field = measured.attempts.get(COMBAT_SOURCE.areaDenial);
     const boltEfficiency = (bolt?.removing ?? 0) / ((bolt?.removing ?? 0) + (bolt?.hurting ?? 0));
     const fieldEfficiency = (field?.removing ?? 0) / ((field?.removing ?? 0) + (field?.hurting ?? 0));
 
-    expect(boltEfficiency).toBeLessThan(0.05);
-    expect(fieldEfficiency).toBeGreaterThan(boltEfficiency * 4);
+    expect(boltEfficiency).toBeGreaterThan(0.1);
+    expect(fieldEfficiency).toBeGreaterThan(boltEfficiency * 1.5);
   });
 
-  it('denies only a small share of the combatant-ticks a raid contains', () => {
-    // *"Combat does not decide the raid"*, as a number rather than as a
-    // survival-regret of zero: most of the action in a raid happens, and the
-    // raid is settled by objectives the raider walks to.
+  it('denies a real but partial share of the combatant-ticks a raid contains', () => {
+    // Before the rescale this pinned *"combat does not decide the raid"* below
+    // half. It now decides a good deal of it — 64.3 % of combatant-ticks denied
+    // on these seeds, all four mages a side armed with bolt-and-field nodes —
+    // and is still not the whole of it.
     let denied = 0;
     for (const value of measured.denied.values()) denied += value;
     expect(measured.span).toBeGreaterThan(0);
-    expect(denied / measured.span).toBeLessThan(0.5);
+    expect(denied / measured.span).toBeGreaterThan(0.2);
+    expect(denied / measured.span).toBeLessThan(0.9);
   });
 });
 

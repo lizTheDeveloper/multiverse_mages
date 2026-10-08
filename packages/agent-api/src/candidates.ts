@@ -125,6 +125,11 @@ export interface CandidateInput {
    * as not having it.
    */
   readonly portalNodes?: readonly number[];
+  /**
+   * Mastery below which a held portal node does not count, or absent for any
+   * mastery. See `Scenario.portalUsableMastery`.
+   */
+  readonly portalUsableMastery?: number;
 }
 
 /** Every parameterized action's list, each truncated to its pinned `k`. */
@@ -514,6 +519,11 @@ function holdsPortalMagic(input: CandidateInput): boolean {
     }
     if (!portal.has(row.nodeId)) continue;
     if (!living.has(row.locationId)) continue;
+    // Usably held, when the caller says what usable means. Without this the
+    // mask offered action 14 for as long as an *unpractised* portal node sat in
+    // a mind, while `rules-raid`'s gate refused it — the god paid and nothing
+    // opened. See `coordination`'s `usablyHeldNodeIds`, which asks the same.
+    if (input.portalUsableMastery !== undefined && row.mastery < input.portalUsableMastery) continue;
     const node = catalogue.node(row.nodeId);
     if (node === undefined) continue;
     if (permits(ruleset, node.cellId)) return true;

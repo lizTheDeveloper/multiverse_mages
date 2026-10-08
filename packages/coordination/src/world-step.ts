@@ -102,6 +102,7 @@ import { FP_ONE as FP_UNIT, TIME_MODE, floorDiv, mul } from '@mm/sim-core';
 import type { Handle, MageRecord, Ruleset } from '@mm/state';
 import {
   EFFORT_KIND,
+  GOAL_COMMITMENT,
   KNOWLEDGE_INSTANCE,
   LOCATION_KIND,
   MAGE,
@@ -328,6 +329,13 @@ export interface WorldStepDeps {
    * `resolveSpeciesAffinities`.
    */
   readonly facets: NodeFacetResolver;
+  /**
+   * Primitive ids a raider drills during `raid-readiness`, or absent.
+   *
+   * Absent is the build before the goal had an operation: a raider's month of
+   * readiness changes nothing. See `MageOutlook.raidKitTargets`.
+   */
+  readonly raidKitPrimitives?: ReadonlySet<number> | undefined;
   readonly affinitiesOf: (species: SpeciesRecord) => SpeciesAffinities;
   /**
    * How a species tilts the land mix it works, `fp` per land kind.
@@ -1909,6 +1917,7 @@ export function worldSystem(
             affinitiesOf: deps.affinitiesOf,
             emphasis: deps.emphasisFor?.(state, worldTick) ?? NO_EMPHASIS,
             preferredUniversityFor,
+            ...(deps.raidKitPrimitives === undefined ? {} : { raidKitPrimitives: deps.raidKitPrimitives }),
             // The authored half of applicability. Absent on a build with no
             // economy index, which makes `apply-magic` masked for every mage —
             // the same inert world such a build already had.
@@ -2828,6 +2837,7 @@ function killTheDead(
 ): { deaths: number; nodesLost: number } {
   const doomed: { mage: EntityHandle; row: MageRecord }[] = [];
 
+
   for (const { handle, row } of collectRecords(state, MAGE)) {
     if (row.alive === 0) continue;
     const species = phase.deps.speciesOf(row.speciesId);
@@ -3619,6 +3629,12 @@ function workOne(
       noteWorking(establishOrRenewWorking(state, mage, nodeId, worldTick, duration));
       return undefined;
     }
+    // A raider's month of readiness is practice on her raid kit — the target
+    // was chosen from `raidKitTargets`, a filter of `practiceTargets`, so every
+    // gate practice asks has already been asked. One arithmetic for both, so a
+    // drilled spell and a practised one cannot come to differ. A raider with
+    // nothing to drill carries `targetNodeId: 0` and returned above.
+    case GOAL.raidReadiness:
     case GOAL.practice:
       // The library does **not** multiply this, for the reason the branch above
       // gives about applied work: `libraryRateMultiplier` is named for the
@@ -4382,4 +4398,43 @@ function scribeThroughputFor(
     scribeRate: deps.primitives.scribeRate,
     scribeRateBonuses: [],
   });
+}
+
+/**
+ * Finishes the deaths a raid wrote and could not finish.
+ *
+ * `rules-raid`'s write-back sets a casualty's `alive` to `0` and empties her
+ * mind through the knowledge model, and that is all it can do: her goal
+ * commitment, her effort rows and her workings are `coordination`'s, and §5
+ * gives `rules-raid` no edge here. Until raids could kill (2026-10-08) nothing
+ * reached this; once they could, a raid casualty kept her commitment, kept her
+ * university, and left any student she was teaching paired with a corpse —
+ * found by `ui-recording.test.ts`, whose academy projection listed a lesson
+ * whose teacher no longer resolved.
+ *
+ * Called by the composition root (`scenario`'s raid system) on both worlds
+ * immediately after the write-back, so no frame and no later system ever sees a
+ * corpse mid-lesson. A dead mage still holding any of those is a raid casualty
+ * by construction — {@link killTheDead}'s own path clears all of them at the
+ * moment of death — so this matches nothing in a world without a lethal raid
+ * and draws nothing. Ascending handle order, so two peers destroy effort rows
+ * in one order. Returns how many it settled.
+ */
+export function settleRaidCasualties(state: SimState): number {
+  const efforts = new EffortLedger(state);
+  let settled = 0;
+  const commitments = componentOf(state, GOAL_COMMITMENT);
+  const mages = componentOf(state, MAGE);
+  for (const { handle, row } of collectRecords(state, MAGE)) {
+    if (row.alive !== 0) continue;
+    const unsettled =
+      row.universityId !== 0 || commitments.has(handle) || efforts.effortsInvolving(handle).length > 0;
+    if (!unsettled) continue;
+    clearCommitment(state, handle);
+    efforts.clearSubject(handle);
+    endWorkingsOf(state, handle);
+    mages.set(handle, 'universityId', 0);
+    settled += 1;
+  }
+  return settled;
 }

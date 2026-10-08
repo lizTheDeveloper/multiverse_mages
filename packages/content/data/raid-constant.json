@@ -1,16 +1,16 @@
 [
   {
     "id": "portal-stability-initial",
-    "value": 3072000,
+    "value": 153600,
     "unit": "raw",
-    "gloss": "Stability a portal opens with. A raw integer, not fp \u2014 it is a countdown, and the only arithmetic performed on it is subtraction of the decay. fp(3000) as written, which at the decay below is 3000 engagement ticks, five fictional minutes.",
+    "gloss": "Stability a portal opens with: a raw countdown, decremented by the decay below. fp(150), i.e. 150 engagement ticks. Was fp(3000), which outlived every raid twentyfold and made section 8's 'defender holds until the portal collapses' unreachable. Now a raider who turns home at withdraw-after-ticks makes it unless held up, and the portal can close on her. Measured: scripts/peer-raid-survey.mjs, 2026-10-08.",
     "tuningStatus": "untuned"
   },
   {
     "id": "portal-stability-jitter",
-    "value": 614400,
+    "value": 30720,
     "unit": "raw",
-    "gloss": "Half-width of the uniform jitter applied to the opening stability on stream 10, so two raids from one snapshot do not end on the same tick. fp(600), giving 2400-3600 ticks. The termination bound is computed from initial PLUS jitter, so jitter can never make a raid outlast its declared ceiling.",
+    "gloss": "Half-width of the uniform jitter on the opening stability (stream 10), so two raids from one snapshot do not end on one tick. fp(30), giving 120-180 ticks; narrowed with portal-stability-initial on 2026-10-08. The termination bound uses initial PLUS jitter, so jitter cannot outlast the ceiling.",
     "tuningStatus": "untuned"
   },
   {
@@ -141,16 +141,16 @@
   },
   {
     "id": "combatant-base-max-hp",
-    "value": 65536,
+    "value": 4096,
     "unit": "fp",
-    "gloss": "Hit points a mage combatant starts from before species and depth. fp(64).",
+    "gloss": "Hit points a mage combatant starts from before species and depth. fp(4). Rescaled by 1/16 on 2026-10-08 with the whole hit-point family, while node.json's direct-damage magnitudes were raised x4: a tier-1 bolt had needed ~400 casts to fell a novice. Ratios inside this family are unchanged. Measured: scripts/peer-raid-survey.mjs.",
     "tuningStatus": "untuned"
   },
   {
     "id": "combatant-hp-per-tier",
-    "value": 8192,
+    "value": 512,
     "unit": "fp",
-    "gloss": "Hit points added per tier of the deepest node the mage knows. fp(8) per tier, so a tier-7 archmage carries roughly twice a novice's.",
+    "gloss": "Hit points added per tier of the deepest node the mage knows. fp(0.5) per tier, so a tier-7 archmage carries roughly twice a novice's. Rescaled by 1/16 on 2026-10-08 with the whole hit-point family, while node.json's direct-damage magnitudes were raised x4: a tier-1 bolt had needed ~400 casts to fell a novice. Ratios inside this family are unchanged. Measured: scripts/peer-raid-survey.mjs.",
     "tuningStatus": "untuned"
   },
   {
@@ -162,30 +162,30 @@
   },
   {
     "id": "summon-max-hp",
-    "value": 24576,
+    "value": 1536,
     "unit": "fp",
-    "gloss": "Hit points of a summoned combatant. fp(24).",
+    "gloss": "Hit points of a summoned combatant. fp(1.5). Rescaled by 1/16 on 2026-10-08 with the whole hit-point family, while node.json's direct-damage magnitudes were raised x4: a tier-1 bolt had needed ~400 casts to fell a novice. Ratios inside this family are unchanged. Measured: scripts/peer-raid-survey.mjs.",
     "tuningStatus": "untuned"
   },
   {
     "id": "summon-damage",
-    "value": 2048,
+    "value": 32,
     "unit": "fp",
-    "gloss": "Direct damage a summon deals per tick to a target in range. fp(2). A summon holds no knowledge, so this is the only thing it does.",
+    "gloss": "Direct damage a summon deals per tick to a target in range. fp(0.03125). A summon holds no knowledge, so this is the only thing it does. Cut by 1/64 on 2026-10-08, four times harder than the rest of the hit-point family: an unarmed defender cannot hurt a summon at all, and at 1/16 one stand-in summoner cost six headless universes 50 mages in fourteen arrivals. Measured: scripts/peer-raid-survey.mjs.",
     "tuningStatus": "untuned"
   },
   {
     "id": "detachment-max-hp",
-    "value": 49152,
+    "value": 3072,
     "unit": "fp",
-    "gloss": "Hit points of a soldier detachment. fp(48) \u2014 tougher than a summon and softer than a mage, and it stands for a hundred people rather than one.",
+    "gloss": "Hit points of a soldier detachment. fp(3): tougher than a summon, softer than a mage, standing for a hundred people. Rescaled by 1/16 on 2026-10-08 with the whole hit-point family, while node.json's direct-damage magnitudes were raised x4: a tier-1 bolt had needed ~400 casts to fell a novice. Ratios inside this family are unchanged. Measured: scripts/peer-raid-survey.mjs.",
     "tuningStatus": "untuned"
   },
   {
     "id": "detachment-damage",
-    "value": 3072,
+    "value": 192,
     "unit": "fp",
-    "gloss": "Direct damage a soldier detachment deals per tick to a target in range. fp(3).",
+    "gloss": "Direct damage a soldier detachment deals per tick to a target in range. fp(0.1875). Rescaled by 1/16 on 2026-10-08 with the whole hit-point family, while node.json's direct-damage magnitudes were raised x4: a tier-1 bolt had needed ~400 casts to fell a novice. Ratios inside this family are unchanged. Measured: scripts/peer-raid-survey.mjs.",
     "tuningStatus": "untuned"
   },
   {
@@ -246,16 +246,16 @@
   },
   {
     "id": "cast-vigor-base",
-    "value": 2048,
+    "value": 128,
     "unit": "fp",
-    "gloss": "Vigor a cast costs before tier. fp(2). contracts.md section 2.3 gives a node a researchCost, a teachCost and a scribeCost and no cast cost, so the price of releasing a spell is derived from its tier here rather than invented as a fourth node field \u2014 a field this change has no authority to add and no measurement to author.",
+    "gloss": "Vigor a cast costs before tier. fp(0.125). Was fp(2): with the per-tier term the cheapest cast cost fp(3) against every mage's maxVigor of fp(1), so under a standard-cost tradition no world mage could ever cast and live raids measured zero cast attempts. Now a tier-1 caster has five casts per raid, a tier-4 caster two; vigor does not refill mid-raid. Measured: scripts/peer-raid-survey.mjs, 2026-10-08.",
     "tuningStatus": "untuned"
   },
   {
     "id": "cast-vigor-per-tier",
-    "value": 1024,
+    "value": 64,
     "unit": "fp",
-    "gloss": "Vigor added per tier of the node being cast. fp(1) a tier, so a tier-7 working costs five times a tier-1 one.",
+    "gloss": "Vigor added per tier of the node being cast. fp(0.0625) a tier. Lowered with cast-vigor-base on 2026-10-08; see its gloss.",
     "tuningStatus": "untuned"
   },
   {
@@ -288,9 +288,9 @@
   },
   {
     "id": "rival-raider-node-count",
-    "value": 8,
+    "value": 2,
     "unit": "count",
-    "gloss": "Combat-carrying nodes granted to each rival raider, at full mastery, drawn in content order from the nodes whose effects carry direct-damage, ward, concealment or knowledge-steal. Granted rather than researched because a rival built at world tick zero has researched nothing, and a warband that arrives holding no castable node is a walkover that would read as a balance result. Full mastery because CASTABLE_MASTERY is the activation threshold and an instance below it deploys inert.",
+    "gloss": "Nodes granted to each rival raider at full mastery, one primitive per slot (scenario's RAIDER_PRIMITIVES), shallowest carrier first. Granted because a rival built at tick zero has researched nothing. Was 8; lowered to 2 on 2026-10-08 when casts became lethal: live peer raiders measured 0.5-1.1 castable kit nodes each, and at 8 a stand-in arrival killed ~6 mages a raid, up to 20. A stand-in should stand in for a peer. Measured: scripts/peer-raid-survey.mjs.",
     "tuningStatus": "untuned"
   },
   {
@@ -379,9 +379,9 @@
   },
   {
     "id": "verb-mend-hit-points",
-    "value": 32768,
+    "value": 2048,
     "unit": "fp",
-    "gloss": "Hit points restored per raider by the mend verb, capped at the health she arrived with. fp(32) against a combatant-base-max-hp of fp(64) is half a raider's frame -- large enough that the buy is visible in survival, which is the observable section 5's first claim is stated in, and small enough that it is a reprieve rather than immortality.",
+    "gloss": "Hit points restored per raider by the mend verb, capped at the health she arrived with. fp(2), half a novice's frame: visible in survival, a reprieve rather than immortality. Rescaled by 1/16 on 2026-10-08 with the whole hit-point family, while node.json's direct-damage magnitudes were raised x4: a tier-1 bolt had needed ~400 casts to fell a novice. Ratios inside this family are unchanged. Measured: scripts/peer-raid-survey.mjs.",
     "tuningStatus": "untuned"
   },
   {
