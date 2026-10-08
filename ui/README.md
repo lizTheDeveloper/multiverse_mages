@@ -147,8 +147,12 @@ that is live and a loop that looks live.
 [`scripts/ui-smoke-actions.mjs`](../scripts/ui-smoke-actions.mjs) drives `app/` in a real browser
 against that lobby. It founds a universe on `setup.html`, then for each god action with targets
 (8–14, 16) opens the candidate panel and clicks a target, and for the three edicts (5–7) clicks the
-edict button on a cell. Every click must produce a toast, either success or a refusal in words,
-and must raise no page error. It exits `0` when every click passes, `1` on a page error, a toast that
+edict button on a cell, then opens a portal from the Raids tab when a seat is open. Every click must
+raise no page error and must produce a toast. It must be a **success** toast whenever the action was
+legal at the moment of the click; a refusal in words is accepted only when the action was not legal.
+The page's clock must keep advancing afterwards, and a portal must end in a raid report or a
+"No raid opened" card. Actions that are only refused get a second, patient pass (`--patience`
+seconds, default 120). A universe that reaches an ending stops the run without failing it. It exits `0` when every click passes, `1` on a page error, a toast that
 reads like a stack fragment, or a click with no answer, and `2` when the probe itself is broken
 (no lobby, no browser, or a page that never booted). An action with no target on offer during the wait
 is printed as `skip`, which is not a pass.

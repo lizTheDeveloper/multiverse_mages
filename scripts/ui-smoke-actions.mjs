@@ -50,6 +50,8 @@ const flag = (name, fallback) => {
 };
 const port = Number(flag('port', '8370'));
 const headed = args.includes('--headed');
+// How long the second pass waits for an action to become legal.
+const patienceMs = Number(flag('patience', '120')) * 1000;
 const base = `http://localhost:${port}`;
 
 const broken = (msg) => {
@@ -163,13 +165,27 @@ const toastsSince = (n) => page.evaluate((k) => window.__toasts.slice(k), n);
 
 /* One god action a month: wait until the page is not holding its controls and
    the clock has moved, so each click is judged on its own. */
+/** Thrown when the universe reaches an ending: a real outcome, not a defect. */
+class Ended extends Error {}
+const hasEnded = () => page.evaluate(() => document.getElementById('end-overlay')?.hidden === false);
 async function settle() {
+  if (await hasEnded()) throw new Ended('the universe ended');
   await page.waitForFunction(() => !document.body.classList.contains('held'), null, { timeout: 15_000 }).catch(() => {});
   await page.waitForTimeout(1200);
 }
 
-/** Clicks `locator`, then waits for the page's answer. */
-async function judge(label, click) {
+/** The world tick the page is showing, read off the topbar's year title. */
+const shownTick = () =>
+  page.evaluate(() => Number(/tick (\d+)/u.exec(document.getElementById('tick-val')?.title ?? '')?.[1] ?? NaN));
+
+/**
+ * Clicks, then judges the page's answer. A click must raise no page error,
+ * produce a toast, and leave the clock running: the year counter froze after
+ * a submit in two of three reports, while the server ran on. `expectSuccess`
+ * is set when the action was legal at the moment of the click, and then the
+ * toast must be the success one, not only an error.
+ */
+async function judge(label, click, { expectSuccess }) {
   const errorsBefore = pageErrors.length;
   const before = await toastCount();
   await click();
@@ -181,57 +197,108 @@ async function judge(label, click) {
   }
   await page.waitForTimeout(1500); // a crash in the repaint after the answer
   toasts = await toastsSince(before);
+  const tickAfter = await shownTick();
+  let moved = false;
+  for (let waited = 0; waited < 8000 && !moved; waited += 250) {
+    await page.waitForTimeout(250);
+    moved = (await shownTick()) > tickAfter;
+  }
   const errors = pageErrors.slice(errorsBefore);
   const crashToast = toasts.find((t) => t.error && CRASH.test(t.text));
+  const success = toasts.find((t) => !t.error);
   const row = { action: label, toasts: toasts.map((t) => `${t.error ? '[!] ' : ''}${t.text}`) };
   if (errors.length > 0) fail({ ...row, why: `page error: ${errors[0].split('\n').slice(0, 3).join(' | ')}` });
   else if (crashToast) fail({ ...row, why: `crash text in toast: ${crashToast.text}` });
   else if (toasts.length === 0) fail({ ...row, why: 'no feedback at all' });
-  else results.push({ ...row, verdict: 'ok' });
+  else if (expectSuccess && success === undefined) fail({ ...row, why: 'legal when clicked, but no success toast' });
+  else if (!moved && !(await hasEnded())) fail({ ...row, why: `the page's clock stopped at tick ${String(tickAfter)} after the click` });
+  else results.push({ ...row, verdict: 'ok', why: expectSuccess ? 'admitted, clock running' : 'refused in words, clock running' });
 }
 
-// Actions 8–16 that open a candidate panel. 15 has no targets — it fires from
-// its own button and is only legal at the end of a game.
-/** Opens action `aid` and clicks its first target; false when it has none. */
-async function target(aid, waitMs) {
+const isLegal = (aid) =>
+  page.evaluate((id) => document.querySelector(`.god-action[data-action-id="${id}"]`)?.dataset.state === 'legal', aid);
+
+/**
+ * Opens action `aid` and clicks its first target. Waits up to `waitMs` for the
+ * action to be legal, so the click reaches the server and not the page's own
+ * "not available". When `orRefusal` is set and it never became legal, clicks
+ * anyway: a refusal in words is still an answer. Returns false when the click
+ * was deferred or there was nothing to click.
+ */
+async function target(aid, waitMs, orRefusal) {
   await settle();
-  // Wait for favor and a target, so the click reaches the server rather than
-  // the page's own "not available" — but not forever: a refusal in words is
-  // still an answer.
   await page
     .waitForFunction((id) => document.querySelector(`.god-action[data-action-id="${id}"]`)?.dataset.state === 'legal', aid, { timeout: waitMs })
     .catch(() => {});
+  if (await hasEnded()) throw new Ended('the universe ended');
+  const legal = await isLegal(aid);
+  if (!legal && !orRefusal) return false;
   const label = await page.locator(`.god-action[data-action-id="${aid}"] span`).first().textContent();
   await page.click(`.god-action[data-action-id="${aid}"]`);
   await page.waitForTimeout(300);
   const items = page.locator('#cell-detail .cand-item');
   if ((await items.count()) === 0) return false;
-  await judge(`${aid} ${label}`, () => items.first().click());
+  await judge(`${aid} ${label}`, () => items.first().click(), { expectSuccess: legal });
   return true;
 }
-const untargeted = [];
-for (const aid of [8, 9, 10, 11, 12, 14, 16, 13]) {
-  if (!(await target(aid, 30_000))) untargeted.push(aid);
-}
-// A second pass for what had nothing to point at: the world may have grown some.
-for (const aid of untargeted) {
-  if (!(await target(aid, 60_000))) results.push({ action: `${aid}`, verdict: 'skip', why: 'no targets offered within the wait' });
-}
 
-// Edicts on a cell: walk the grid until each verb is on offer and enabled.
-for (const want of [5, 6, 7]) {
-  await settle();
-  const cells = page.locator('#grid70 span.c');
-  const n = await cells.count();
-  let done = false;
-  for (let i = 0; i < n && !done; i++) {
-    await cells.nth(i).click();
-    const btn = page.locator(`#cell-edicts .edict-btn[data-action="${want}"]:not([disabled])`);
-    if ((await btn.count()) === 0) continue;
-    await judge(`${want} ${(await btn.first().textContent())?.trim()}`, () => btn.first().click());
-    done = true;
+let endedEarly = false;
+try {
+  // Actions 8–16 that open a candidate panel. 15 has no targets — it fires from
+  // its own button and is only legal at the end of a game.
+  const deferred = [];
+  for (const aid of [9, 10, 11, 12, 8, 13, 14, 16]) {
+    if (!(await target(aid, 20_000, false))) deferred.push(aid);
   }
-  if (!done) results.push({ action: `${want} edict`, verdict: 'skip', why: 'no cell offers it enabled' });
+  // Edicts on a cell: walk the grid until each verb is on offer and enabled.
+  for (const want of [5, 6, 7]) {
+    await settle();
+    const cells = page.locator('#grid70 span.c');
+    const n = await cells.count();
+    let done = false;
+    for (let i = 0; i < n && !done; i++) {
+      await cells.nth(i).click();
+      const btn = page.locator(`#cell-edicts .edict-btn[data-action="${want}"]:not([disabled])`);
+      if ((await btn.count()) === 0) continue;
+      await judge(`${want} ${(await btn.first().textContent())?.trim()}`, () => btn.first().click(), { expectSuccess: true });
+      done = true;
+    }
+    if (!done) results.push({ action: `${want} edict`, verdict: 'skip', why: 'no cell offers it enabled' });
+  }
+
+  /* A portal from the Raids tab must end in a card — a raid report, or "No raid
+     opened" — after the panel's few polls. The submit's repaint threw before the
+     panel could record the portal as pending, so the card never came. */
+  {
+    await settle();
+    await page.click('#raids-tab');
+    const go = page.locator('#raids-host .raid-go:not([disabled])');
+    await go.first().waitFor({ timeout: 10_000 }).catch(() => {});
+    if ((await go.count()) === 0) {
+      results.push({ action: '14 portal from the Raids tab', verdict: 'skip', why: 'no seat open to raid' });
+    } else {
+      const cardsBefore = await page.locator('#raid-reports .raid-card').count();
+      await judge('14 portal from the Raids tab', () => go.first().click(), { expectSuccess: true });
+      const card = await page
+        .waitForFunction((k) => document.querySelectorAll('#raid-reports .raid-card').length > k, cardsBefore, { timeout: 20_000 })
+        .then(() => true, () => false);
+      if (!card) fail({ action: '14 portal from the Raids tab', why: 'no raid report and no "No raid opened" card' });
+    }
+  }
+
+  await page.click('.topbar .tab[data-tab="grid"]');
+  // A second, patient pass: change tradition, for one, costs more favor than a
+  // young universe has.
+  for (const aid of deferred) {
+    if (!(await target(aid, patienceMs, true))) results.push({ action: `${aid}`, verdict: 'skip', why: 'no targets offered within the wait' });
+  }
+} catch (e) {
+  if (!(e instanceof Ended)) {
+    for (const r of results) console.log(`${r.verdict.padEnd(4)}  ${r.action}${r.why ? `  — ${r.why}` : ''}`);
+    await browser.close();
+    broken(`the probe threw: ${e.message.split('\n').slice(0, 12).join('\n')}`);
+  }
+  endedEarly = true;
 }
 
 await browser.close();
@@ -244,6 +311,7 @@ if (pageErrors.length > 0) {
   console.log('\npage errors:');
   for (const e of pageErrors) console.log(e);
 }
+if (endedEarly) console.log('\nthe universe reached an ending before every action was tried; the rest were not judged');
 const judged = results.filter((r) => r.verdict !== 'skip').length;
 if (judged === 0) broken('no action could be clicked — every one was skipped');
 process.exit(failed || pageErrors.length > 0 ? 1 : 0);
