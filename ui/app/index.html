@@ -832,6 +832,14 @@ html, body { height: 100%; overflow: hidden; }
   *, *::before, *::after { animation: none !important; transition: none !important; }
 }
 
+body.held .god-action, body.held .axis-toggle, body.held .edict-btn, body.held .cand-item { opacity: .5; cursor: wait; }
+.store-note { margin-top: .25rem; font: italic 10px/1.4 var(--serif); color: var(--soft); }
+.boot-overlay { position: fixed; inset: 0; z-index: 10005; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: .8rem; background: var(--ground); }
+.boot-overlay[hidden] { display: none; }
+.boot-overlay .ring { width: 42px; height: 42px; border-radius: 50%; border: 2px solid var(--edge); border-top-color: var(--god); animation: bootSpin 1s linear infinite; }
+@keyframes bootSpin { to { transform: rotate(360deg); } }
+.boot-overlay .msg { font: 13px var(--mono); color: var(--ink); }
+.boot-overlay .sub { font: italic 12px var(--serif); color: var(--soft); max-width: 34rem; text-align: center; padding: 0 1.5rem; }
 .toast-container { position: fixed; top: .5rem; right: 1rem; z-index: 9999; display: flex; flex-direction: column; align-items: flex-end; gap: .4rem; pointer-events: none; }
 .toast { background: var(--panel); border: 1px solid var(--god); color: var(--god); padding: .5rem 1rem; font: 12px var(--mono); border-radius: 4px; opacity: 0; animation: toastIn .3s ease forwards; pointer-events: auto; box-shadow: 0 2px 8px rgba(0,0,0,0.4); }
 .toast.error { border-color: var(--loss); color: var(--loss); }
@@ -964,6 +972,11 @@ html, body { height: 100%; overflow: hidden; }
 </style>
 
 
+<div class="boot-overlay" id="boot-overlay" role="status" aria-live="polite">
+  <div class="ring"></div>
+  <div class="msg" id="boot-msg">Opening your universe…</div>
+  <div class="sub">Fetching its whole history from the server — a long-running universe takes a few seconds.</div>
+</div>
 <div class="toast-container" id="toast-container"></div>
 <div class="raid-reports" id="raid-reports" aria-live="assertive"></div>
 
@@ -1222,6 +1235,11 @@ for (let attempt = 0, wait = 1000; session === undefined; attempt += 1, wait = M
       // Sent on reads too: the owner's polling is what keeps a running
       // universe from being retired as abandoned.
       headers: () => ({ 'x-universe-token': universeToken }),
+      onProgress: (bytes, total) => {
+        const mb = (n) => (n / 1048576).toFixed(1);
+        const m = document.getElementById('boot-msg');
+        if (m) m.textContent = total ? `Opening your universe… ${mb(bytes)} of ${mb(total)} MB` : `Opening your universe… ${mb(bytes)} MB received`;
+      },
     });
   } catch (e) {
     if (e instanceof LiveSessionError && e.status === 404) universeGone();
@@ -1242,6 +1260,7 @@ for (let attempt = 0, wait = 1000; session === undefined; attempt += 1, wait = M
   }
 }
 document.getElementById('reconnect-banner')?.remove();
+document.getElementById('boot-overlay')?.setAttribute('hidden', '');
 
 const el = (id) => document.getElementById(id);
 
@@ -1282,7 +1301,7 @@ async function submitAction(kind, params, label, doneLabel = label) {
 // One god action from a panel (raids, edicts): waits out a submit already in
 // flight rather than racing it, reports the gate's answer, and repaints.
 async function act(kind, params, label) {
-  if (state.busy) {
+  if (state.busy || held()) {
     showToast('!Another action is waiting for this month\'s tick — try again in a moment.', 3500);
     return null;
   }
@@ -1293,7 +1312,7 @@ async function act(kind, params, label) {
     refreshRuleset();
     return payload;
   } catch (e) {
-    showToast(`!${label} — ${e?.message ?? 'the action failed'}`, 4500);
+    submitFailed(e, label);
     return null;
   } finally {
     state.busy = false;
@@ -1428,12 +1447,31 @@ function confirmAct({ title, price, body, note, denied = [] }) {
   });
 }
 
+// The server takes one god action per world tick. A second one in the same
+// month is refused with 409; say so, and hold the controls until the next
+// frame arrives rather than letting the player click into the same wall.
+function submitFailed(e, label) {
+  console.error('submit failed', e);
+  if (e instanceof LiveSessionError && e.status === 409 && /queued/u.test(e.message)) {
+    state.heldUntilFrame = session.frameCount;
+    showToast('!One act of god per month — an act is already waiting on this month. Try again next month.', 4500);
+    paint();
+    return;
+  }
+  if (e instanceof LiveSessionError && e.status === 409) {
+    showToast(`!${label} — the universe has ended; nothing more can be done in it.`, 4500);
+    return;
+  }
+  showToast(`!${label} — ${e?.message ?? 'the action failed'}`, 4500);
+}
+const held = () => state.heldUntilFrame !== undefined && session.frameCount <= state.heldUntilFrame;
+
 function busyToast() {
-  showToast('!Another action is waiting for this month\'s tick — try again in a moment.', 3500);
+  showToast('!One act of god per month — your last act is still waiting on this month. Try again next month.', 3500);
 }
 
 async function toggleAxis(kind, item) {
-  if (state.busy) { busyToast(); return; }
+  if (state.busy || held()) { busyToast(); return; }
   if (state.ended) { showToast(`!The universe has ended (${session.last().status()}) — nothing can be changed.`, 4000); return; }
   const on = axisOn(kind, item);
   const id = axisActionId(kind, on);
@@ -1449,15 +1487,14 @@ async function toggleAxis(kind, item) {
     denied: whyDenied(session.last(), session.content, id),
   });
   if (!confirmed) return;
-  if (state.busy) { busyToast(); return; }
+  if (state.busy || held()) { busyToast(); return; }
   state.busy = true;
   try {
     const payload = await submitAction(id, [item.bit + 1], verb, `${on ? 'Forbade' : 'Permitted'} ${item.name}`); // 1-based axis bit
     noteAdmitted(id, payload);
     refreshRuleset();
   } catch (e) {
-    console.error('submit failed', e);
-    showToast(`!Could not change ${item.name}: ${e?.message ?? e}`);
+    submitFailed(e, verb);
   } finally {
     state.busy = false;
     paint();
@@ -1687,8 +1724,7 @@ async function fireAscension() {
     state.selectedAction = null;
     paint();
   } catch (e) {
-    console.error('ascension failed', e);
-    showToast(`!Declare ascension failed: ${e?.message ?? e}`);
+    submitFailed(e, 'Declare ascension');
   }
   state.busy = false;
 }
@@ -1704,7 +1740,7 @@ const END_COPY = {
   },
   truncated: {
     title: 'The horizon — the universe is over',
-    cause: 'The run reached its step limit: a cutoff, not a ruin. It might have gone further; the caller said it would not.'
+    cause: 'Your universe lived out every year this server gives a universe. That is not a ruin: nothing failed, and it might have gone further. It simply ran out of time before it ascended.'
   }
 };
 function showEndScreen(f) {
@@ -1727,7 +1763,7 @@ function showEndScreen(f) {
     // holds at least one known node, permitted or not.
     + fact('cells with discoveries', `${census.withDiscoveries} of ${census.total}`
       + (census.withDiscoveriesPermitted === null ? '' : ` (${census.withDiscoveriesPermitted} still permitted)`))
-    + fact('nodes known', `${census.nodesKnown}, deepest tier ${deepest}`)
+    + fact('discoveries known', `${census.nodesKnown}${census.nodesKnown > 0 ? ` — the deepest at tier ${deepest} of ${Math.max(0, ...(session.content.nodes ?? []).map((n) => n.tier))}` : ''}`)
     + fact('worship', `tier ${r.worshipTier}`)
     + fact('universities', inst.universities)
     + fact('favor in the bank', r.favor.toFixed(r.favor < 10 ? 1 : 0))
@@ -1786,7 +1822,7 @@ el('cell-detail').addEventListener('click', async (ev) => {
   if (ev.target.closest('[data-close-mage]')) { state.selectedMage = null; paint(); return; }
   const item = ev.target.closest('.cand-item');
   if (!item) return;
-  if (state.busy) { busyToast(); return; }
+  if (state.busy || held()) { busyToast(); return; }
   const detEl = el('cell-detail');
   const slot = Number(item.dataset.slot);
   const cands = detEl._liveCands;
@@ -1822,8 +1858,7 @@ el('cell-detail').addEventListener('click', async (ev) => {
     state.selectedAction = null;
     paint();
   } catch (e) {
-    console.error('action failed', e);
-    showToast(`!${actionName} — ${e?.message ?? 'the action failed'}`);
+    submitFailed(e, actionName);
     item.style.opacity = '1';
   }
   state.busy = false;
@@ -2090,6 +2125,9 @@ function paint() {
   }
   for (const [tid, label] of techLabels) label.title = axisTitle('technique', techniques.find((x) => x.id === tid));
   for (const [fid, header] of formHeaders) header.title = axisTitle('form', forms.find((x) => x.id === fid));
+
+  // Held after a "one action per tick" refusal, until the next frame lands.
+  document.body.classList.toggle('held', held());
 
   // Grid cells — use godRuleset, not session ruleset
   paintGrid();
@@ -2646,6 +2684,19 @@ for (const action of displayOrder) {
   godActionsEl.append(btn);
 }
 
+/**
+ * Why a 0 under "grimoires" may be by design. Keyed by the tradition's
+ * published id: the session document names traditions but does not publish
+ * their store hook, and The Art of Memory's hook (`store: palace`) is the one
+ * that refuses scribing — knowledge lives in memory palaces and dies with the
+ * mage (rules-magic traditions/store.ts, `scribingAvailable: false`).
+ */
+function traditionStoreNote(f) {
+  const t = session.content.traditions?.find((x) => x.traditionId === f.ruleset().traditionId);
+  if (t?.id !== 'art-of-memory') return '';
+  return 'The Art of Memory keeps knowledge in its mages\' memory palaces. They never write grimoires, so no grimoires is expected here, not a fault, and what a mage knows dies with her.';
+}
+
 function selectAction(id) {
   state.selectedCell = null;
   state.selectedMage = null;
@@ -2778,6 +2829,8 @@ function paintGodPanel(f) {
     const libPct = Math.min(100, (inst.libraryDepth / 70) * 100);
     uniHtml += `<div class="uni-bar"><i style="width:${libPct}%;background:var(--ok)"></i></div>`;
     uniHtml += `<div class="uni-stat"><span>grimoires</span><span class="v">${inst.grimoires}</span></div>`;
+    const storeNote = traditionStoreNote(f);
+    if (storeNote) uniHtml += `<div class="store-note">${escapeFeed(storeNote)}</div>`;
 
     // Show academy roster if available
     if (acad) {
@@ -2883,6 +2936,7 @@ function paintGodPanel(f) {
   econHtml += `<div class="econ-row"><span>library</span><span class="v">${inst.libraryDepth} nodes</span></div>`;
   econHtml += `<div class="econ-row"><span>grimoires</span><span class="v">${inst.grimoires}</span></div>`;
   econHtml += `<div class="econ-row"><span>ratio</span><span class="v">${inst.libraryDepth > 0 ? (inst.grimoires / inst.libraryDepth).toFixed(1) : '—'} books/node</span></div>`;
+  if (traditionStoreNote(f)) econHtml += `<div class="store-note">${escapeFeed(traditionStoreNote(f))}</div>`;
 
   // Worship loop
   econHtml += '<div class="econ-section-label">worship → favor</div>';

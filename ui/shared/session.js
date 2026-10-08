@@ -1296,7 +1296,9 @@ function liveControls(base, doc, headers = () => ({})) {
       body: JSON.stringify(body ?? {}),
     });
     const payload = await res.json();
-    if (!res.ok) throw new Error(payload?.error ?? `${route} failed (${res.status})`);
+    /* A LiveSessionError, so a page can tell "one action per tick" (409)
+       from a refused token (401) without parsing the message. */
+    if (!res.ok) throw new LiveSessionError(payload?.error ?? `${route} failed (${res.status})`, res.status);
     return payload;
   };
 
@@ -1397,6 +1399,30 @@ function liveControls(base, doc, headers = () => ({})) {
  *
  *     openSession({ live: `/u/${id}`, headers: () => ({ 'x-universe-token': token }) })
  */
+/**
+ * A response body as JSON, reporting `(bytesSoFar, totalOrNull)` as it
+ * arrives. A late-game universe's whole spine is tens of megabytes, and a page
+ * that waits on it silently reads as a dead one.
+ */
+async function readWithProgress(res, onProgress) {
+  const total = Number(res.headers.get('content-length')) || null;
+  if (!res.body || typeof res.body.getReader !== 'function') return res.json();
+  const reader = res.body.getReader();
+  const chunks = [];
+  let received = 0;
+  for (;;) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    chunks.push(value);
+    received += value.length;
+    onProgress(received, total);
+  }
+  const bytes = new Uint8Array(received);
+  let at = 0;
+  for (const c of chunks) { bytes.set(c, at); at += c.length; }
+  return JSON.parse(new TextDecoder().decode(bytes));
+}
+
 export async function openSession(source = {}) {
   if (source.live !== undefined) {
     const base = String(source.live === true ? '' : source.live).replace(/\/+$/u, '');
@@ -1409,7 +1435,7 @@ export async function openSession(source = {}) {
         res.status,
       );
     }
-    const doc = await res.json();
+    const doc = typeof source.onProgress === 'function' ? await readWithProgress(res, source.onProgress) : await res.json();
     return buildSession(doc, liveControls(base, doc, headers));
   }
   const url = source.recording ?? '../session.json';

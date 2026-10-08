@@ -251,4 +251,25 @@ describe('stagnationReading rules out what the frames contradict', () => {
     expect(r.rules.find((x: { id: string }) => x.id === 'mageless').possible).toBe(true);
   });
 });
+describe('the ascension checklist reads each item from its own field', () => {
+  it('universities, cells with knowledge and nodes known are three different numbers', () => {
+    // 3 colleges (2 complete), 5 cells with knowledge, 11 nodes: every figure
+    // distinct, so an item reading its neighbour's field cannot pass.
+    const done = { college: { buildProgress: 1024 } };
+    const frame = {
+      clock: () => ({ worldTick: 100, era: 1 }),
+      resources: () => ({ worshipTier: 2 }),
+      knowledge: () => [3, 2, 2, 2, 2, 0].map((n, index) => ({ index, nodesKnown: n, deepestTier: n > 0 ? 1 : 0 })),
+      raw: {
+        mask: [],
+        academy: { universities: { 1: done, 2: done, 3: { college: { buildProgress: 512 } } }, permittedCells: [1] },
+      },
+    };
+    const c = explain.ascensionChecklist(frame, { ...content, ascension: { 'canon-breadth': 77, 'canon-cells': 18 } });
+    const value = (label: RegExp): string => [...c.mastery, ...c.canon].find((x: { label: string }) => label.test(x.label)).value;
+    expect(value(/^Completed universities$/u)).toBe('2');
+    expect(value(/^Cells with any knowledge/u)).toBe('5');
+    expect(value(/^Nodes known/u)).toBe('11');
+  });
+});
 /* eslint-enable @typescript-eslint/no-explicit-any */
