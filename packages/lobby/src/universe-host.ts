@@ -341,9 +341,16 @@ export class UniverseHost implements FrameRun {
 
   /**
    * What this universe leaves its player's next one, or `undefined` while it is
-   * still running (or never stepped). The scenario's own succession layer,
-   * `legacyRecordOf`, does the arithmetic; a universe stopped at the lobby's
-   * tick cap is the caller-known cutoff ending it names `endedAtCap`.
+   * still running (or never stepped). Computed from this universe's own state
+   * by the scenario's succession layer, `legacyRecordOf`, which also applies
+   * the content's retention and cap; nothing a client sends enters it.
+   *
+   * **The cutoff ending is paid only at the server's cap.** `tickCap` is
+   * client-chosen, so a universe created with `tickCap: 1` would otherwise
+   * "reach the tick cap" one tick in and claim `prestige-base-cutoff` — a
+   * second-long mint. Only a universe that ran to {@link DEFAULT_CAP} reached
+   * the cap the server set; a shorter one stopped early and leaves nothing.
+   * Stagnation and ascension are the rules' own endings and always count.
    */
   legacy(): LegacyRecord | undefined {
     const constants = this.#content.deps.god?.content.constants;
@@ -352,7 +359,7 @@ export class UniverseHost implements FrameRun {
       constants,
       scenarioId: REFERENCE_SCENARIO_ID,
       runSeed: this.seed,
-      endedAtCap: this.session.status() === 'truncated',
+      endedAtCap: this.session.status() === 'truncated' && this.cap === DEFAULT_CAP,
     });
   }
 

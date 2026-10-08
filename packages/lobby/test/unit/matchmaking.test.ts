@@ -240,40 +240,97 @@ describe('Lobby matchmaking', () => {
 
   describe('re-entry carries the ended universe’s legacy (vision §8a)', () => {
     const resources = OBSERVATION_BLOCKS.find((b) => b.name === 'resources')!;
+    const constants = referenceContent().deps.god!.content.constants;
     /** The universe row's prestige as the page reads it: `resources[4]` of the newest frame. */
     const prestige = (id: string): number => {
       const frames = lobby.universe(id)!.frames;
       return (frames[frames.length - 1]!.obs as number[])[resources.offset + 4]!;
     };
+    const carriedOf = (made: Made): number | null =>
+      (made as unknown as { carriedPrestige: number | null }).carriedPrestige;
+    /** Ticks until `id` ends by the rules (an untouched opening stagnates near tick 620). */
+    const runOut = (id: string): void => {
+      for (let i = 0; i < 4000 && lobby.universe(id)!.isAlive; i += 1) lobby.tickAll();
+      expect(lobby.universe(id)!.session.status()).toBe('stagnated');
+    };
     async function ended(): Promise<string> {
-      await start({ bubbleSize: 2 });
-      const old = (await create({ tickCap: 2 })).universeId;
-      for (let i = 0; i < 3; i += 1) lobby.tickAll();
-      expect(lobby.universe(old)!.isAlive).toBe(false);
+      await start({ bubbleSize: 2, idleAfterMs: 7 * 24 * 3_600_000 });
+      const old = (await create({ tickCap: undefined })).universeId;
+      runOut(old);
       return old;
     }
 
     it('seeds the new universe with the prestige its ended predecessor earned', async () => {
       const old = await ended();
-      const res = await replace(old);
-      const carried = (res as unknown as { carriedPrestige: number | null }).carriedPrestige;
-      expect(carried).toBeGreaterThan(0);
+      const expected = lobby.universe(old)!.legacy()!.carriedPrestige;
+      const res = await replace(old, { tickCap: undefined });
+      expect(carriedOf(res)).toBe(expected);
+      expect(expected).toBeGreaterThan(0);
       expect(prestige(res.universeId)).toBeGreaterThan(0);
       expect(lobby.universe(old)).toBeUndefined();
-    });
+    }, 60_000);
 
-    it('carries nothing without the owner’s token, and nothing from a universe still running', async () => {
+    it('pays a legacy once: retiring the same universe again carries nothing', async () => {
+      const old = await ended();
+      const token = tokens.get(old)!;
+      const first = await create({ retire: { universeId: old, token } });
+      expect(carriedOf(first)).toBeGreaterThan(0);
+      const second = await create({ retire: { universeId: old, token } });
+      expect(carriedOf(second)).toBeNull();
+      expect(prestige(second.universeId)).toBe(0);
+    }, 60_000);
+
+    it('carries nothing without the owner’s token, and leaves the universe in place', async () => {
       const old = await ended();
       const forged = await create({ retire: { universeId: old, token: 'ab'.repeat(32) } });
-      expect((forged as unknown as { carriedPrestige: unknown }).carriedPrestige).toBeNull();
+      expect(carriedOf(forged)).toBeNull();
       expect(prestige(forged.universeId)).toBe(0);
-      expect(lobby.universe(old)).toBeDefined(); // not retired either
+      expect(lobby.universe(old)).toBeDefined();
+    }, 60_000);
 
+    it('carries nothing from a universe retired while still running', async () => {
+      await start({ bubbleSize: 2 });
       const running = (await create()).universeId;
+      for (let i = 0; i < 5; i += 1) lobby.tickAll();
       const fresh = await replace(running);
-      expect((fresh as unknown as { carriedPrestige: unknown }).carriedPrestige).toBeNull();
+      expect(carriedOf(fresh)).toBeNull();
       expect(prestige(fresh.universeId)).toBe(0);
     });
+
+    it('carries nothing from a universe the client cut short with its own tickCap', async () => {
+      await start({ bubbleSize: 2 });
+      const short = (await create({ tickCap: 1 })).universeId;
+      lobby.tickAll();
+      lobby.tickAll();
+      expect(lobby.universe(short)!.session.status()).toBe('truncated');
+      const fresh = await replace(short);
+      expect(carriedOf(fresh)).toBeNull();
+      expect(prestige(fresh.universeId)).toBe(0);
+    });
+
+    it('a chain of quick deaths converges under the cap instead of stacking without bound', async () => {
+      await start({ bubbleSize: 2, idleAfterMs: 7 * 24 * 3_600_000 });
+      let id = (await create({ tickCap: undefined })).universeId;
+      const chain: number[] = [];
+      const earnedMax = constants.prestigeEarnMax;
+      for (let n = 0; n < 4; n += 1) {
+        runOut(id);
+        const made = await replace(id, { tickCap: undefined });
+        chain.push(carriedOf(made)!);
+        id = made.universeId;
+      }
+      // Each link replaces the last (prestige × retention + earned), so the
+      // gains shrink geometrically and the whole chain sits under both the
+      // content's cap and the recurrence's own fixed point.
+      const fixedPoint = Math.floor((earnedMax * 1024) / (1024 - constants.prestigeRetention));
+      for (const c of chain) {
+        expect(c).toBeGreaterThan(0);
+        expect(c).toBeLessThanOrEqual(constants.prestigeCap);
+        expect(c).toBeLessThanOrEqual(fixedPoint);
+      }
+      for (let n = 2; n < chain.length; n += 1) {
+        expect(chain[n]! - chain[n - 1]!).toBeLessThan(chain[n - 1]! - chain[n - 2]!);
+      }
+    }, 120_000);
   });
 });
-

@@ -265,7 +265,9 @@ export class Lobby {
       // over (vision §8a): an **ended** universe's legacy seeds the new one. A
       // universe retired while still running leaves nothing — abandoning a run
       // is not an ending, and paying for it would make "new universe" a way to
-      // mint prestige.
+      // mint prestige. A legacy is paid once: it is read and the universe (and
+      // its token) dropped in this one synchronous block, with no await between,
+      // so a second retire of the same id finds nothing to carry.
       let raiders: ReadonlySet<string> = new Set();
       let legacy: LegacyRecord | undefined;
       if (retire !== undefined && retire !== null && typeof retire === 'object') {
