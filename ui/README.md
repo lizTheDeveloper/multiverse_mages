@@ -139,6 +139,33 @@ twice from its seed — once with the action, once with a no-op — settle both 
 the two snapshot hashes and which observation slots differ. That is the difference between a loop
 that is live and a loop that looks live.
 
+### Smoke-checking every target click
+
+    node packages/lobby/bin/lobby.mjs --port 8370 --bubble-size 2 --tick-ms 250 &
+    npx -y -p playwright@1.57.0 node scripts/ui-smoke-actions.mjs --port 8370
+
+[`scripts/ui-smoke-actions.mjs`](../scripts/ui-smoke-actions.mjs) drives `app/` in a real browser
+against that lobby. It founds a universe on `setup.html`, then for each god action with targets
+(8–14, 16) opens the candidate panel and clicks a target, and for the three edicts (5–7) clicks the
+edict button on a cell, then opens a portal from the Raids tab when a seat is open. Every click must
+raise no page error and must produce a toast. It must be a **success** toast whenever the action was
+legal at the moment of the click; a refusal in words is accepted only when the action was not legal.
+The page's clock must keep advancing afterwards, and a portal must end in a raid report or a
+"No raid opened" card. Actions that are only refused get a second, patient pass (`--patience`
+seconds, default 120). A universe that reaches an ending stops the run without failing it. It exits `0` when every click passes, `1` on a page error, a toast that
+reads like a stack fragment, or a click with no answer, and `2` when the probe itself is broken
+(no lobby, no browser, or a page that never booted). An action with no target on offer during the wait
+is printed as `skip`, which is not a pass.
+
+It is **not in `npm run verify`**, because it needs a browser. Run it before merging anything that
+touches `app/` or `shared/session.js`. The tick is deliberately shorter than the page's one-second
+poll. With a shorter tick, the page is several frames behind when it submits. That case is what
+broke target clicks with `Cannot read properties of undefined (reading 'obs')`, and a slow lobby
+hides it. `packages/lobby/test/unit/live-client.test.ts` covers the same case without a browser.
+
+`--headed` shows the browser. `--executable PATH` names a Chromium if Playwright's pinned build
+is not cached. Otherwise the script tries the newest cached headless shell.
+
 ## Running them
 
     npm run ui        # builds both payloads, then serves the repository root on :8200
