@@ -1,0 +1,16 @@
+{
+  "$schema": "https://json.schemastore.org/tsconfig",
+  "//": "Typechecks the lobby's tests. Never emits into dist/.",
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "rootDir": "./test",
+    "types": ["node"],
+    "emitDeclarationOnly": true,
+    "outDir": "../../.tsbuild/lobby-test",
+    "tsBuildInfoFile": "../../.tsbuild/lobby-test.tsbuildinfo"
+  },
+  "include": ["test/**/*.ts"],
+  "references": [
+    { "path": "./tsconfig.json" }
+  ]
+}
