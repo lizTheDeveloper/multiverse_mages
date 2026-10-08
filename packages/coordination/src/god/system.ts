@@ -217,6 +217,21 @@ export interface GodTickReport {
     readonly cellsKnown: number;
     /** Universities at full `buildProgress`; only the god's funding creates one. */
     readonly completedUniversities: number;
+    /**
+     * Path B's counter: consecutive passing era boundaries, as the god record
+     * holds it after this tick. Reported so a probe can tell *which* path is
+     * closed without reading state — the four quantities above say how close
+     * Path A is and nothing at all about Path B's run.
+     */
+    readonly goodEraRun: number;
+    /**
+     * `libraryDependence` right now, fp — the Path B conjunct the four counts
+     * above cannot show. Computed on every tick for the report only; the era
+     * boundary computes its own at the boundary, and nothing reads this one.
+     */
+    readonly dependence: Fixed;
+    /** Nodes lost so far in the era now running — the last Path B conjunct. */
+    readonly eraNodesLost: number;
   };
 }
 
@@ -531,6 +546,7 @@ function outcomeSystem(
         {
           livingMages,
           worship,
+          worshipTier,
           // "A node newly entered the universe" is read as either count rising:
           // ever-known catches a genuinely new node, existing catches a
           // rediscovery or a re-taught one. The case both miss is a loss and a
@@ -635,6 +651,9 @@ function outcomeSystem(
           nodesKnown: known.length,
           cellsKnown: knownCells.size,
           completedUniversities: sources.completedUniversities,
+          goodEraRun: god.goodEraRun,
+          dependence: libraryDependence(known.length, knowledge.singleInstanceNodes().length),
+          eraNodesLost: god.eraNodesLost,
         },
       });
     },

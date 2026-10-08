@@ -51,6 +51,7 @@ export {
   NO_STANDING_ARMY,
   SCRIBES_PER_QUEUED_GRIMOIRE,
   computeOccupationDemand,
+  laborObligation,
   zeroPerOccupation,
 } from './demand.js';
 

@@ -316,6 +316,8 @@ export function libraryDependence(knownNodes: number, singleInstanceNodes: numbe
 export interface StagnationInputs {
   readonly livingMages: number;
   readonly worship: Fixed;
+  /** The worship tier this tick, compared against the god record's peak. */
+  readonly worshipTier: number;
   /** Whether a node newly entered the universe this tick. */
   readonly nodeEntered: boolean;
 }
@@ -347,8 +349,27 @@ export function stepStagnation(
   // The conjunctive one. The clock runs only while the universe is *both*
   // acquiring nothing and unworshipped, so a healthy custodian with a completed
   // graph resets it every tick and is never terminated as ruin.
+  //
+  // **And only while it has fallen from a height it once held.** The health
+  // floor's own gloss says stagnation must mean *decline*, not completion, and
+  // that worship is what separates the two — but a floor is a level, and a
+  // level cannot tell a universe that fell below it from one that was never
+  // above it. Measured on origin/main 95738881 (passive god, one founding
+  // species, the 2×2 opening, seeds 20260813–14, every species): **12 of 12**
+  // universes stagnated between world ticks 481 and 874, each by this clock,
+  // each at worship 0.45–1.25 against a floor of 2.0 that no one-species
+  // 2×2 universe reached in any run, and none of them declining — worship was
+  // flat or rising in every one. They had learnt their square (or, for four of
+  // them, could not learn past their founding node) and stopped, which is
+  // completion at a small scale. Requiring the tier to sit below the universe's
+  // own recorded peak is the decline the gloss describes, read off a field the
+  // god record already carries; a universe raided or forbidden down from where
+  // it stood still runs this clock exactly as before, and the low-worship and
+  // mageless clocks are untouched.
   const stasisTicks =
-    !inputs.nodeEntered && inputs.worship < constants.stagnationHealthFloor
+    !inputs.nodeEntered &&
+    inputs.worship < constants.stagnationHealthFloor &&
+    inputs.worshipTier < god.peakWorshipTier
       ? god.stasisTicks + 1
       : 0;
 
