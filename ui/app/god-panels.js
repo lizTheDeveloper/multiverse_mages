@@ -79,10 +79,11 @@ export function edictControls(f, content, cellId, { act, isBusy }) {
       className: 'edict-btn',
       'data-action': id,
       disabled: !legal || busy,
-      title: legal ? `${verb} (${priceText(content, id)})` : reasons.map((r) => r.text).join('; '),
+      title: legal ? `${verb} (${priceText(content, id)}, base price)` : reasons.map((r) => r.text).join('; '),
       onclick: () => act(id, params, verb),
     }, verb, h('span', { className: 'edict-price' }, priceText(content, id))),
-    h('div', { className: 'edict-gloss' }, gloss),
+    h('div', { className: 'edict-gloss' }, gloss,
+      ' Price shown is the base price: the server adds a surcharge soon after another permit, forbid or edict, and the exact surcharge is not published to this page.'),
     legal ? null : h('ul', { className: 'edict-why' },
       reasons.map((r) => h('li', {}, r.text, h('span', { className: 'edict-src' }, ` [${r.source}]`)))));
   return { sig, node };

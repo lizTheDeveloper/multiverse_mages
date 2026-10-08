@@ -65,10 +65,11 @@ export function renderUniversity(frame, container, content) {
       for (const [role, mages] of Object.entries(byRole)) {
         html += `<div style="font:9px var(--mono);color:var(--god);margin:.25rem 0 .1rem;text-transform:uppercase;letter-spacing:.08em">${role} (${mages.length})</div>`;
         for (const m of mages) {
-          const sp = species[m.speciesId] || `sp${m.speciesId}`;
+          // speciesId is a content id, not an index into content.species.
+          const sp = species.find((x) => x.speciesId === m.speciesId)?.name ?? 'unknown species';
           const ageYears = Math.floor(m.ageTicks / 12);
           const goalName = goals[m.goal?.goalId] || 'idle';
-          const targetNode = m.goal?.targetNodeId != null ? nodes[m.goal.targetNodeId] : null;
+          const targetNode = m.goal?.targetNodeId ? nodes.find((n) => n.nodeId === m.goal.targetNodeId) : null;
           const targetStr = targetNode ? targetNode.name || targetNode.id : '';
 
           html += `<div style="display:grid;grid-template-columns:1fr auto;gap:.15rem;padding:.15rem 0;border-bottom:1px solid color-mix(in srgb,var(--edge) 50%,transparent);font:10px var(--mono)">`;

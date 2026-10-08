@@ -56,6 +56,11 @@ body { margin: 0; background: var(--ground); color: var(--ink); }
 .species-card .sp-life { font: 10px var(--mono); color: var(--god); margin-top: .15rem; }
 .species-card .sp-desc { font: italic 12px var(--serif); color: var(--soft); margin-top: .3rem; line-height: 1.4; }
 .species-card.selected .sp-name { color: var(--ctl-charged-fg); }
+/* Everything on a selected (charged) card reads in the charged foreground:
+   the unselected greys and teals are unreadable on the charged background in
+   the light theme. */
+.species-card.selected .sp-life,
+.species-card.selected .sp-desc { color: var(--ctl-charged-fg); opacity: .9; }
 
 .tradition-row { display: flex; gap: .6rem; max-width: 56rem; width: 100%; flex-wrap: wrap; }
 .tradition-card {
@@ -69,6 +74,7 @@ body { margin: 0; background: var(--ground); color: var(--ink); }
 .tradition-card .tr-name { font: 600 .95rem var(--serif); color: var(--ink); }
 .tradition-card .tr-desc { font: italic 11px var(--serif); color: var(--soft); margin-top: .2rem; line-height: 1.4; }
 .tradition-card.selected .tr-name { color: var(--ctl-charged-fg); }
+.tradition-card.selected .tr-desc { color: var(--ctl-charged-fg); opacity: .9; }
 
 .setup-magic {
   max-width: 56rem; width: 100%;
@@ -85,14 +91,15 @@ body { margin: 0; background: var(--ground); color: var(--ink); }
 }
 .setup-toggle:hover { border-color: var(--god); }
 .setup-toggle.on { background: var(--ctl-charged-bg); color: var(--ctl-charged-fg); border-color: var(--ctl-charged-border); box-shadow: var(--glow-soft); }
-.setup-toggle .dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+.setup-toggle .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--hue, currentColor); }
+.setup-toggle.on .dot { width: 8px; height: 8px; box-shadow: 0 0 0 1px var(--ctl-charged-fg); }
 
 .setup-grid-preview {
   display: grid; grid-template-columns: 2.5rem repeat(14, 1fr); gap: 2px;
   font: 8px var(--mono);
 }
 .setup-grid-preview .rl { text-align: right; padding-right: .3rem; color: var(--faint); align-self: center; }
-.setup-grid-preview .rl.on { color: var(--ctl-charged-fg); }
+.setup-grid-preview .rl.on { color: var(--god); font-weight: 600; }
 .setup-grid-preview .h { text-align: center; color: var(--faint); writing-mode: vertical-lr; transform: rotate(180deg); height: 3rem; display: flex; align-items: center; justify-content: center; }
 .setup-grid-preview .h.on { color: var(--ctl-charged-fg); text-shadow: 0 0 6px currentColor; }
 .setup-grid-preview .gc {
@@ -309,7 +316,7 @@ function renderSetup() {
   // Form toggles
   const sf = el('setup-forms');
   sf.innerHTML = FORMS.map(f =>
-    `<button class="setup-toggle${setup.forms.has(f) ? ' on' : ''}" data-id="${f}" style="color:${setup.forms.has(f) ? `var(--${f})` : ''}">
+    `<button class="setup-toggle${setup.forms.has(f) ? ' on' : ''}" data-id="${f}" style="--hue:var(--${f})">
       <span class="dot"></span>${f}
     </button>`
   ).join('');
