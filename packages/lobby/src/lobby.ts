@@ -40,6 +40,7 @@ import type { Clock } from '@mm/server';
 import type { FrameDocument } from '../../../scripts/lib/frame-document.mjs';
 import { Bubble, type SeatOccupant } from './bubble.js';
 import { BodyTooLarge, Router, json, readBody, text } from './router.js';
+import { packHistory, slimFrame } from './history.js';
 import { DEFAULT_CAP, UniverseHost, validateConfig, type GodAction } from './universe-host.js';
 
 /** Vision §13: "small clears fast and churns tiers while large makes raids
@@ -123,6 +124,12 @@ export interface LobbyOptions {
   tickCap?: number;
   /** Suppress the startup banner (tests). */
   quiet?: boolean;
+  /**
+   * How many of each universe's newest frames keep their §4.4 sidecars; older
+   * ones are slimmed (`history.ts`). Default `FULL_FRAMES`. Tests set a huge
+   * one to hold an unslimmed run beside a slimmed one.
+   */
+  fullFrames?: number;
 }
 
 /** A submitted action, validated so a typo is a 400 and not a stack trace. */
@@ -176,6 +183,7 @@ export class Lobby {
   private readonly matchAfterMs: number;
   private readonly tickCap: number;
   private readonly quiet: boolean;
+  private readonly fullFrames: number | undefined;
   /** When each ended universe was first seen ended, by the lobby clock. */
   private endedAt = new Map<string, number>();
 
@@ -190,6 +198,10 @@ export class Lobby {
     this.matchAfterMs = bounded('matchAfterMs', opts.matchAfterMs, MATCH_AFTER_MS);
     this.tickCap = bounded('tickCap', opts.tickCap, DEFAULT_CAP);
     this.quiet = opts.quiet ?? false;
+    if (opts.fullFrames !== undefined && !(Number.isSafeInteger(opts.fullFrames) && opts.fullFrames >= 1)) {
+      throw new RangeError(`fullFrames must be a positive integer, not ${String(opts.fullFrames)}`);
+    }
+    this.fullFrames = opts.fullFrames;
     this.setupRoutes();
   }
 
@@ -295,7 +307,7 @@ export class Lobby {
       const host = new UniverseHost(config, this.doc, this.clock.now(), {
         seats: this.bubbleSize - 1,
         seatOf: (self, seat) => this.seatOf(self, seat),
-      }, { legacy, serverCap: this.tickCap });
+      }, { legacy, serverCap: this.tickCap, ...(this.fullFrames === undefined ? {} : { fullFrames: this.fullFrames }) });
       this.universes.set(host.id, host);
       const token = randomBytes(32);
       this.tokens.set(host.id, token);
@@ -492,9 +504,25 @@ export class Lobby {
     this.touchIfOwner(host, req);
 
     switch (`${req.method ?? 'GET'} ${route}`) {
-      case 'GET session.json':
+      case 'GET session.json': {
+        // `?pack=1`: every frame but the newest slimmed and sent as deltas
+        // (`history.ts`), the newest whole as `frames`, starting at `from`.
+        // What `ui/shared/session.js` asks for: a page paints from the newest
+        // frame and reads history through `obs` alone. Without it, every frame
+        // as stored — the shape `scripts/play-server.mjs` serves.
+        if (url.searchParams.get('pack') === '1') {
+          const from = host.frames.length - 1;
+          json(res, 200, {
+            ...this.doc.header(host),
+            history: packHistory(host.frames.slice(0, from).map(slimFrame)),
+            from,
+            frames: host.frames.slice(from),
+          });
+          return;
+        }
         json(res, 200, { ...this.doc.header(host), frames: host.frames });
         return;
+      }
       case 'GET frames': {
         const since = Math.max(0, Number(url.searchParams.get('since') ?? '0') || 0);
         const from = Math.min(since, host.frames.length);

@@ -523,7 +523,9 @@ class Frame {
    */
   candidateLists() {
     const out = new Map();
-    for (const [id, list] of Object.entries(this.raw.candidates)) {
+    // `?? {}`: a lobby frame older than its newest few is slim and carries no
+    // candidates (`packages/lobby/src/history.ts`) — no lists, not a crash.
+    for (const [id, list] of Object.entries(this.raw.candidates ?? {})) {
       out.set(
         Number(id),
         list.map((c, slot) => ({ slot, params: c.params ?? [] })),
@@ -1388,10 +1390,10 @@ function liveControls(base, doc, headers = () => ({})) {
      * exactly once, after a reset.
      */
     resync: async () => {
-      const res = await fetch(`${base}/live/session.json`, { headers: headers() });
+      const res = await fetch(`${base}/live/session.json?pack=1`, { headers: headers() });
       if (res.status === 404) throw new LiveSessionError('universe-gone', 404);
       if (!res.ok) return false;
-      const next = await res.json();
+      const next = unpackHistory(await res.json());
       doc.frames.length = 0;
       doc.frames.push(...next.frames);
       Object.assign(doc.provenance, next.provenance);
@@ -1462,11 +1464,53 @@ async function readWithProgress(res, onProgress) {
   return JSON.parse(new TextDecoder().decode(bytes));
 }
 
+/**
+ * A `session.json?pack=1` document as an ordinary one: `history` — the
+ * lobby's slim frames, as per-slot deltas — rebuilt into frames and put in
+ * front of `frames`, so frame `i` is world tick `i` exactly as before.
+ *
+ * The inverse of `packHistory` in `packages/lobby/src/history.ts`: an entry
+ * carries `obs` whole (the first) or `d`, `[slot, value, …]` against the frame
+ * before; `stocks`, `mask`, `status`, `ascension` and `founding` are carried
+ * forward when absent (`null` means the field went absent) and `sat` is empty
+ * when absent. The rebuilt frames have no sidecars, which every
+ * reader here already reports as absent. A document without `history` — a
+ * recording, `npm run play`, an older lobby — is returned untouched.
+ */
+export function unpackHistory(doc) {
+  if (!Array.isArray(doc.history)) return doc;
+  const rebuilt = [];
+  let prev;
+  for (const entry of doc.history) {
+    let obs;
+    if (Array.isArray(entry.obs)) obs = entry.obs;
+    else {
+      obs = prev.obs.slice();
+      const d = entry.d ?? [];
+      for (let i = 0; i < d.length; i += 2) obs[d[i]] = d[i + 1];
+    }
+    const frame = { obs, sat: entry.sat ?? [] };
+    for (const key of ['stocks', 'mask', 'status', 'ascension', 'founding']) {
+      const value = key in entry ? entry[key] : prev?.[key];
+      if (value !== undefined && value !== null) frame[key] = value;
+    }
+    rebuilt.push(frame);
+    prev = frame;
+  }
+  const frames = [...rebuilt, ...(doc.frames ?? [])];
+  delete doc.history;
+  delete doc.from;
+  doc.frames = frames;
+  return doc;
+}
+
 export async function openSession(source = {}) {
   if (source.live !== undefined) {
     const base = String(source.live === true ? '' : source.live).replace(/\/+$/u, '');
     const headers = typeof source.headers === 'function' ? source.headers : () => ({});
-    const res = await fetch(`${base}/live/session.json`, { headers: headers() });
+    // `pack=1` asks the lobby for its history as deltas; `npm run play`
+    // ignores the query and answers the whole document, which reads the same.
+    const res = await fetch(`${base}/live/session.json?pack=1`, { headers: headers() });
     if (!res.ok) {
       throw new LiveSessionError(
         `No live universe at ${base}/live/session.json (${res.status}). Start one with ` +
@@ -1474,7 +1518,9 @@ export async function openSession(source = {}) {
         res.status,
       );
     }
-    const doc = typeof source.onProgress === 'function' ? await readWithProgress(res, source.onProgress) : await res.json();
+    const doc = unpackHistory(
+      typeof source.onProgress === 'function' ? await readWithProgress(res, source.onProgress) : await res.json(),
+    );
     return buildSession(doc, liveControls(base, doc, headers));
   }
   const url = source.recording ?? '../session.json';
