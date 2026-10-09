@@ -311,9 +311,17 @@ level.** `referencePeakPopulation@portal-rush` reads +178 SE against its *old* s
 which was implausibly tight; against the new one (7 667) it is +1.7 SE. The sweep-level
 peak-population tolerance widened from 11.3 % to 43.0 % of the value. `@passive-control` is +22 SE
 old / +2.0 SE new. The one large level move is `@archivist` (15 744 → 49 542; +19 SE old, +7.2 SE
-new). An A/B on archivist and passive-control (4 replicates, exposure written at 0
-against 256) puts archivist's growth on **exposures persisting**: a defender who watched a raider
-cast now keeps the node, and archivist's final population was 26 892 against 14 955. Ascension arm
+new). It is exposure, exactly — with exposure written at 0 the gate's eight archivist runs reproduce
+the old baseline to the unit (peak 15 744, mean final population 9 385) — but **not** a growth
+effect. Archivist ascends around tick 1 201 in most runs; with exposure kept, two of the eight seeds
+stop ascending and run on to the 2 400 cap, where population compounds (44 198 and 49 542, against
+15 744 and 3 740 when they ascended). On the same seed the per-tick trajectory barely moves
+(universities 5, 8, 9, 14, 22, 35, 59, 104 at 200-tick marks, against 5, 8, 9, 13, 21, 35, 55, 95).
+Inbound raids: defender win rate 60 % against 52 %, nodes lost entirely 62 against 144 (exposed
+nodes keep existing), casualties 114 both, no books burned. On an independent 16-run archivist sweep
+the arms are close (peak 58 225 against 55 208; ascension 14 and 13 of 16), and `capitalSnowball`
+does not move (0.229 against 0.224 at tick 1 200). Why those two seeds stop ascending is not
+established. Ascension arm
 lines: median MDE 43.4 %, 67 of 80 below 100 %, fifteen blind (`BLIND_ARM_LINES`).
 **`referenceNodesGainedFinalQuarter` is blind again at sweep level (342.8 %).** The paragraph below
 is kept as history.
