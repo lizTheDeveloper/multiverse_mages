@@ -199,8 +199,15 @@ without transfer. The three verbs MUST produce distinct outcomes in the outcome 
 A stolen knowledge instance SHALL be created in the thief's universe only if the thief survives the
 raid and has withdrawn through the portal. Insertion MUST occur before existence is recomputed, so
 that a node whose last host instance was destroyed in the same raid survives in the thief's universe.
-The inserted instance MUST have zero mastery and an `acquiredTick` equal to the world tick at which
-the raid resumes.
+The inserted instance MUST have the research-default mastery (`DEFAULT_INITIAL_MASTERY`, below
+both the activation and the teach thresholds) and an `acquiredTick` equal to the world tick at which
+the raid resumes. (Amended 2026-10-09: it said zero mastery, and the decay sweep destroys a held
+instance at zero, so every stolen node vanished the world tick after the raid.)
+
+#### Scenario: A stolen node outlives the raid
+
+- **WHEN** a raider who stole a node returns alive and her universe runs 24 world ticks of decay
+- **THEN** she still holds the stolen node, and cannot cast or teach it until she practises it
 
 #### Scenario: Theft outruns loss
 

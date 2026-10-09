@@ -293,6 +293,9 @@ describe('arbitration is the host ruleset, and it does not leak', () => {
     const { raid } = build();
     const outcome = runRaid(raid);
     expect(outcome.forbiddenCastsBlocked).toBe(0);
+    // And the host took nothing off the table: the positive control for the
+    // masked count below.
+    expect(raid.arbiter.maskedByHost(RAID_SIDE.attacker)).toBe(0);
   });
 
   it('keeps a raider from casting what her host forbids, even though her home permits it', () => {
@@ -313,6 +316,9 @@ describe('arbitration is the host ruleset, and it does not leak', () => {
     const outcome = runRaid(raid);
     // Layer 2 never had to fire, which is the whole claim.
     expect(outcome.forbiddenCastsBlocked).toBe(0);
+    // But the rule did bite, and this is where it shows (2026-10-09): the
+    // round-4 playtest read the zero above as "the host ruleset never mattered".
+    expect(raid.arbiter.maskedByHost(RAID_SIDE.attacker)).toBe(1);
   });
 
   it('lets a raider cast what her own home forbids but the host permits', () => {

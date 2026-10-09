@@ -50,6 +50,8 @@ import { loadContent, shippedContentSource } from '@mm/content';
 import { GOD_ACTION, createSession } from '@mm/agent-api';
 import {
   PEER_ATTACKER_POLICIES,
+  explicitOpeningAxes,
+  foundingCandidates,
   playPeerPair,
   referenceScenario,
   PEER_DEFENDER_POLICIES,
@@ -74,6 +76,10 @@ const { values } = parseArgs({
     raids: { type: 'string', default: '1' },
     'defender-mages': { type: 'string' },
     standin: { type: 'boolean', default: false },
+    // `techniques:forms`, e.g. `rego,intellego:limen,mentem` — the defender is
+    // founded on that opening square, so a host ruleset can forbid the raiders'
+    // kit (§3). Peer arms only; a stand-in builds its own ruleset.
+    'host-square': { type: 'string', default: '' },
   },
 });
 
@@ -137,6 +143,16 @@ function loadWith(overrides, primitiveScales) {
 }
 
 const content = loadWith(overrides, primitiveScales);
+let defenderContent = content;
+if (values['host-square'] !== '') {
+  const [techniques, forms] = values['host-square'].split(':').map((list) => list.split(','));
+  if (techniques === undefined || forms === undefined || techniques.length === 0 || forms.length === 0) {
+    console.error(`BROKEN PROBE: --host-square ${values['host-square']} is not techniques:forms.`);
+    process.exit(1);
+  }
+  const axes = explicitOpeningAxes(content.registry, techniques, forms);
+  defenderContent = { ...content, axes, foundingNodeIds: foundingCandidates(content.registry, axes) };
+}
 const pairs = Number(values.pairs);
 const seed0 = Number(values.seed0);
 const preps = values.prep.split(',').map(Number);
@@ -160,7 +176,7 @@ for (const portalMagic of portalMagics) {
 
 const results = [];
 for (const arm of arms) {
-  const pairResults = await surveyPeerArm(content, arm, { pairs, seed0 });
+  const pairResults = await surveyPeerArm(content, arm, { pairs, seed0, ...(arm.mode === 'peer' ? { defenderContent } : {}) });
   const records = pairResults.flatMap((pair) => pair.raids);
   const refused = pairResults.reduce((n, pair) => n + pair.portalRefusals, 0);
   const favorLost = pairResults.reduce((n, pair) => n + pair.favorLostToRefusals, 0);
@@ -222,8 +238,8 @@ if (values.out !== undefined) {
 
 const cols = [
   'raids/pairs', 'atk win', 'reasons', 'ticks med', 'fielded', 'withdrawn', 'stranded',
-  'cas A', 'cas D', 'raids w/ cas', 'atk wins that took', 'new nodes', 'books home', 'lib inst lost',
-  'host nodes lost', 'attacks', 'host wiped', 'held to collapse', 'host ended', 'open tick med', 'refused presses', 'favor lost to refusals', 'kit/raider',
+  'cas A', 'cas D', 'raids w/ cas', 'atk wins that took', 'new nodes', 'of them from minds', 'books home', 'lib inst lost',
+  'host nodes lost', 'attacks', 'host wiped', 'held to collapse', 'host ended', 'open tick med', 'refused presses', 'favor lost to refusals', 'kit/raider', 'kit forbidden by host',
 ];
 const overrideText =
   overrides.size + primitiveScales.size === 0
@@ -231,7 +247,7 @@ const overrideText =
     : [...[...overrides].map(([k, v]) => `${k}=${v}`), ...[...primitiveScales].map(([k, v]) => `${k}×${v}`)].join(', ');
 console.log(
   `peer raid survey — ${values.date}; ${pairs} pairs from seed ${seed0}; ${raidsPerPair} raid(s) per pair; ` +
-    `defender founding mages ${values['defender-mages'] ?? 'reference'}; ${overrideText}`,
+    `defender founding mages ${values['defender-mages'] ?? 'reference'}; host square ${values['host-square'] || 'reference'}; ${overrideText}`,
 );
 console.log(`| mode | portal magic | prep | attacker | defender | ${cols.join(' | ')} |`);
 console.log(`|${'---|'.repeat(cols.length + 5)}`);
@@ -239,8 +255,8 @@ for (const { arm, summary: s, refused, favorLost } of results) {
   console.log(
     `| ${arm.mode} | ${arm.portalMagic} | ${arm.prep} | ${arm.attacker} | ${arm.defender} | ${s.raids}/${pairs} | ${s.attackerWinPct}% | ${s.reasons} | ` +
       `${s.medianTicks} | ${s.fielded} | ${s.withdrawn} | ${s.stranded} | ${s.casualtiesAttacker} | ${s.casualtiesDefender} | ` +
-      `${s.anyCasualtyPct}% | ${s.attackerWinsThatTookPct}% | ${s.nodesNew} | ${s.grimoiresCarried} | ${s.libraryInstancesLost} | ` +
-      `${s.hostNodesLost} | ${s.casts} | ${s.extinguished} | ${s.heldToCollapse} | ${s.hostsEnded} | ${s.medianReadyTick} | ${refused} | ${favorLost} | ${(s.kitPerRaiderX100 / 100).toFixed(2)} |`,
+      `${s.anyCasualtyPct}% | ${s.attackerWinsThatTookPct}% | ${s.nodesNew} | ${s.nodesStolenFromMinds} | ${s.grimoiresCarried} | ${s.libraryInstancesLost} | ` +
+      `${s.hostNodesLost} | ${s.casts} | ${s.extinguished} | ${s.heldToCollapse} | ${s.hostsEnded} | ${s.medianReadyTick} | ${refused} | ${favorLost} | ${(s.kitPerRaiderX100 / 100).toFixed(2)} | ${s.raiderNodesForbiddenByHost} |`,
   );
 }
 if (control !== undefined) {

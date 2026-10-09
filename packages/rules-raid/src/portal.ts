@@ -318,6 +318,7 @@ function spawnMage(
   const roster = raid.rosters[side];
   const held = mage.held;
   const legalNodes = raid.arbiter.legalNodeMask(held, CASTABLE_MASTERY);
+  raid.arbiter.noteMaskedByHost(side, held, CASTABLE_MASTERY);
   const defences = raid.arbiter.passiveDefences(
     held,
     CASTABLE_MASTERY,

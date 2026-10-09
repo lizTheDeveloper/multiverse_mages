@@ -94,6 +94,7 @@ import type { AblationMask } from '@mm/coordination';
 import { settleRaidCasualties } from '@mm/coordination';
 import type { ContentCatalogue } from '@mm/agent-api';
 import {
+  OBJECTIVE_STATUS,
   TERMINAL_REASON,
   captureRuleset,
   findUniverse,
@@ -180,8 +181,47 @@ export interface RaidRecord {
   /**
    * `permits()` refusals at the resolution choke point. The 0.7.0 zero-occurrence
    * claim; must read zero across every raid of every run.
+   *
+   * **A tripwire, not a measure of §3.** The legal-node mask removes forbidden
+   * nodes before any combatant can choose one, so this is zero whenever that
+   * mask works. What the host ruleset actually took away is
+   * {@link raiderNodesForbiddenByHost}.
    */
   readonly forbiddenCastsBlocked: number;
+  /**
+   * **§3 at work:** nodes the raiders could cast at home that the host's frozen
+   * ruleset forbids, summed over fielded raiders at portal open. They never
+   * reach a raider's hand inside the host. Added 2026-10-09: the round-4
+   * playtest read `forbiddenCastsBlocked`'s zeros as "the host rules never
+   * mattered", while two lobby squares that differ masked about 84 % of a
+   * warband's kit.
+   */
+  readonly raiderNodesForbiddenByHost: number;
+  /**
+   * Of {@link nodesTakenByAttacker}, the nodes that came by **reading a mind**
+   * (or a memory palace): a copy, which the victim keeps. The rest were looted
+   * books. Added 2026-10-09 because round 4 read "nodes taken" from an Art of
+   * Memory universe — which has no library — as losses it should have been
+   * immune to; the victim lost nothing but what died with its casualties.
+   */
+  readonly nodesStolenFromMinds: number;
+  /**
+   * **Why the victor is the victor.** `victorOf` gives the attacker the raid
+   * iff the objective value she took reaches the victory threshold of the
+   * total — no roll, no hit points. An attacker who captures the archmage and
+   * walks home wins with nothing carried and nobody killed; one who walks home
+   * having taken nothing loses. Round 4 saw identical-looking withdrawals
+   * (2 fielded, 2 withdrew, 0 lost, 0 taken) go once each way, because this
+   * was not in the record. Added 2026-10-09; report-only.
+   */
+  readonly objectiveValueTaken: number;
+  readonly objectiveValueTotal: number;
+  /**
+   * Each objective as `[kind, status, value]`, in field order — kind 1 library,
+   * 2 university, 3 archmage; status `OBJECTIVE_STATUS` (0 held, 1 captured,
+   * 2 looted, 3 destroyed).
+   */
+  readonly objectives: readonly (readonly [number, number, number])[];
   /**
    * **What happened inside the raid**, carried across the boundary rather than
    * recomputed on the far side of it.
@@ -634,12 +674,28 @@ function resolveOneRaid(input: {
     nodesGainedLocally: outbound ? countOf(applied.nodesGainedByRaider) : 0,
     attackerFavorCost: input.attackerFavorCost,
     forbiddenCastsBlocked: outcome.forbiddenCastsBlocked,
+    raiderNodesForbiddenByHost: raid.arbiter.maskedByHost(ATTACKER),
+    nodesStolenFromMinds: stolenFromMinds(outcome.knowledgeMovements, applied.nodesGainedByRaider),
+    objectiveValueTaken: outcome.objectives
+      .filter((o) => o.status !== OBJECTIVE_STATUS.held)
+      .reduce((sum, o) => sum + o.value, 0),
+    objectiveValueTotal: outcome.objectives.reduce((sum, o) => sum + o.value, 0),
+    objectives: outcome.objectives.map((o) => [o.kind, o.status, o.value] as const),
     // Passed through untouched. `resolveRaid` froze it at resolution and this
     // layer neither normalises nor re-sides it; see the field's own note.
     actionEconomy: outcome.actionEconomy,
   };
   deps.onRaid(record);
   return record;
+}
+
+/** Gained nodes that arrived by a delivered theft (`copied`), not a carried book. */
+function stolenFromMinds(
+  movements: readonly { readonly verb: string; readonly nodeId: ContentId; readonly forfeited: boolean }[],
+  gained: readonly ContentId[],
+): number {
+  const copied = new Set(movements.filter((m) => m.verb === 'copied' && !m.forfeited).map((m) => m.nodeId));
+  return gained.filter((nodeId) => copied.has(nodeId)).length;
 }
 
 function countOf(nodes: readonly ContentId[]): number {
