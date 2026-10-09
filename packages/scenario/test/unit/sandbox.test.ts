@@ -137,11 +137,17 @@ const ANCHOR_SEED = 20260813;
  * 500 move because a raider's practice is now her raid kit, drilled past the
  * activation threshold, and a raider with an uncastable kit node no longer
  * researches. No sandbox change.
+ *
+ * **Re-measured on `raid-loot-followup`, 2026-10-09**, over `be0700facf4feea6`
+ * at 500. Ticks 0 and 200 do not move; 500 does, because a stand-in's library
+ * now holds its founders' curriculum and a stolen or witnessed node arrives at
+ * the research default instead of zero (which decay destroyed). No sandbox
+ * change.
  */
 const INERT_DEFAULT_HASHES: Readonly<Record<number, string>> = {
   0: 'afe2c5d128181a59',
   200: '3a61cb74ea090e64',
-  500: 'be0700facf4feea6',
+  500: '6073469ca8330682',
 };
 
 /** Generous, for the reason `balance-telemetry.test.ts` gives at length. */
