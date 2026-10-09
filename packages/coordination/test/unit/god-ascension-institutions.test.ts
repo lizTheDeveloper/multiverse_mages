@@ -100,6 +100,7 @@ function facts(overrides: Partial<ApotheosisFacts> = {}): ApotheosisFacts {
     deepest: DEEPEST,
     worshipTier: C.ascensionTierGate,
     completedUniversities: C.ascensionInstitutions,
+    lootedNodesHeld: C.ascensionLootedNodes,
     ...overrides,
   };
 }

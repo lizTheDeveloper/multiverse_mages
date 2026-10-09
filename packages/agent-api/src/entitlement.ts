@@ -250,6 +250,13 @@ export const TRAIT_CLASSIFICATION: Readonly<
     expiresTick: undecided(),
     renewals: undecided(),
   },
+  // `ascension-needs-loot`'s section, world-schema revision 14: which instances
+  // came through a portal. `undecided()`. No observation channel carries it; the
+  // count both ascension paths gate on reaches an agent only folded into
+  // `declareAscension`'s mask bit, and the god report publishes it to the page.
+  // Whether a rival should see *which* of your books are plunder — and so which
+  // are worth raiding back — is a disclosure question nobody has ruled on.
+  'knowledge-provenance': { route: undecided() },
   'territory-holding': { kindId: undecided(), landUnits: undecided() },
   'university-site': { kindId: undecided() },
   // The entire rediscovery signal. An agent cannot distinguish a node never

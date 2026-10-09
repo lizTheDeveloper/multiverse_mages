@@ -653,6 +653,7 @@ function peakTierOf(session) {
 /** The guide's thresholds, used only when the session document does not publish `content.ascension`. */
 const GUIDE_ASCENSION = Object.freeze({
   'min-tick': 600, 'tier-gate': 4, 'summit-cells': 13, 'summit-copies': 2, institutions: 2, 'era-count': 4,
+  'looted-nodes': 1,
 });
 
 /**
@@ -689,6 +690,20 @@ export function ascensionChecklist(f, content) {
     target: `≥ ${a.institutions}`,
     status: completed === null ? 'unknown' : st(completed >= a.institutions),
     source: 'academy colleges, buildProgress ≥ 1',
+  };
+
+  // Both paths, since 2026-10-08: the universe must hold knowledge that came
+  // through a portal — stolen into a living mind, or a captured book still in
+  // existence. Only the server can tell plunder from home-grown knowledge, so
+  // without its reading this row is unknown rather than guessed.
+  const looted = g?.lootedNodesHeld;
+  const lootItem = {
+    label: 'Looted knowledge held (nodes taken through a portal)',
+    value: looted === undefined ? 'not shown here' : String(looted),
+    target: `≥ ${a['looted-nodes']}`,
+    status: looted === undefined ? 'unknown' : st(looted >= a['looted-nodes']),
+    source: 'frame.ascension.lootedNodesHeld (the server’s count)',
+    note: 'Raid another universe and bring something home: a spell a raider steals into her own mind, or a book your warband carries off. It counts while you hold it — if the thief dies or the book burns, it is gone.',
   };
 
   const nodesKnown = g?.nodesKnown ?? k.reduce((s, c) => s + c.nodesKnown, 0);
@@ -757,6 +772,7 @@ export function ascensionChecklist(f, content) {
     { label: 'Worship tier', value: String(r.worshipTier), target: `≥ ${a['tier-gate']}`, status: st(r.worshipTier >= a['tier-gate']), source: 'resources.worshipTier' },
     universitiesItem,
     summitItem,
+    lootItem,
   ];
   const canon = [
     g === undefined
@@ -782,6 +798,7 @@ export function ascensionChecklist(f, content) {
     canon.push({ label: 'Cells with any knowledge (at each boundary)', value: String(cellsKnown), target: `≥ ${a['canon-cells']}`, status: st(cellsKnown >= a['canon-cells']), source: g ? 'frame.ascension.cellsKnown' : 'knowledge.nodesKnown > 0' });
   }
   canon.push({ ...universitiesItem, label: 'Completed universities (at each boundary)' });
+  canon.push({ ...lootItem, label: 'Looted knowledge held (when you declare)' });
   const depMax = a['dependence-max'];
   canon.push(g === undefined
     ? {

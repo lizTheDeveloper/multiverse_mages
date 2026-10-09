@@ -1195,6 +1195,61 @@ export const KNOWLEDGE_FIDELITY_FIELDS_MATCH: KeysMatch<
 > = true;
 
 /**
+ * That a knowledge instance came through a portal (`vision.md` §8a, 2026-10-08).
+ *
+ * The author's rule: *ascension without raids should not be possible.* Both
+ * ascension paths therefore require the universe to **hold looted knowledge** —
+ * an instance a raider stole into her own mind, or a book her warband carried
+ * home — at the moment of declaring. Until this component nothing in state
+ * could say that: `acquiredTick` records *when* an instance arrived and nothing
+ * records *how*, and a stolen node is indistinguishable from a researched one
+ * the tick after the raid.
+ *
+ * ## A side table on the instance's own entity, for the reasons `knowledge-fidelity` gives
+ *
+ * Same two reasons, and they apply unchanged. A field appended to
+ * `knowledge-instance` adds no component *name*, so `worldSchemaVersionOf`
+ * would have nothing to key revision 14 on and every revision-13 save would
+ * fail the field-count check. And an absent row is the correct default and
+ * overwhelmingly the common case: every instance a universe researched, was
+ * taught, scribed or was granted is home-grown, and so is every instance in
+ * every save written before this component existed.
+ *
+ * ## It belongs to the instance, and dies with it
+ *
+ * The row hangs on the instance's entity, so `destroyInstance` — the one
+ * destroy path, whether the thief dies, the book burns, or a dormant memory
+ * decays to nothing — takes the row with it. That is the rule's whole teeth:
+ * **losing the looted knowledge un-qualifies the universe**, with no second
+ * bookkeeping step that could be forgotten. Shelving and withdrawal rewrite an
+ * instance's location in place (`setLocation`), so a captured book carried to a
+ * library is still the captured book.
+ *
+ * It does **not** propagate. A mage who studies a captured book, or a thief who
+ * teaches what she stole, makes a home-grown copy: the knowledge has been
+ * domesticated, and the condition asks whether the plunder itself is still held.
+ * Propagating would let one theft, taught once, survive the death of the thief
+ * and the loss of everything she carried — exactly the un-qualifying the rule
+ * requires.
+ */
+export const KNOWLEDGE_PROVENANCE = {
+  name: 'knowledge-provenance',
+  fields: {
+    route: 'u8',
+  },
+} as const satisfies ComponentSpec<ComponentFields>;
+
+export interface KnowledgeProvenanceRecord {
+  /** {@link LOOT_ROUTE}: `1` stolen into a mind, `2` a captured book. An absent row is home-grown. */
+  route: Enum8;
+}
+
+export const KNOWLEDGE_PROVENANCE_FIELDS_MATCH: KeysMatch<
+  KnowledgeProvenanceRecord,
+  typeof KNOWLEDGE_PROVENANCE
+> = true;
+
+/**
  * A working that stands after the cast, expires, and must be renewed
  * (`docs/design/vision.md` §4; the Muto glosses in `node.json`).
  *
@@ -1547,6 +1602,11 @@ export const WORLD_COMPONENTS = [
   // that one gates an effect on **who** still holds it, this one on **how long
   // ago** it was cast — and whoever merges it takes the next free number.
   STANDING_WORKING,
+  // Revision 14, `ascension-needs-loot` (2026-10-08). Appended, never inserted:
+  // `knowledge-provenance` hangs off a knowledge-instance handle and reads as if
+  // it belonged beside `KNOWLEDGE_INSTANCE`, and every revision-13 save on disk
+  // was written with twenty-seven sections.
+  KNOWLEDGE_PROVENANCE,
 ] as const satisfies readonly ComponentSpec<ComponentFields>[];
 
 /** Engagement-scale components, in snapshot order. */

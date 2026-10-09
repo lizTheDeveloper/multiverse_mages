@@ -67,6 +67,7 @@ export const REQUIRED_GOD_CONSTANTS: readonly string[] = Object.freeze([
   'ascension-institutions',
   'ascension-loss-fraction',
   'ascension-loss-max',
+  'ascension-looted-nodes',
   'ascension-min-tick',
   'ascension-summit-cells',
   'ascension-summit-copies',
@@ -477,6 +478,20 @@ export function checkGodConstants(
           'universities is satisfied by a universe with none, which is the reading the constant ' +
           'exists to refuse. Zero is the licensed setting for recovering the shipped predicate; ' +
           'below zero is not a weaker rule, it is a nonsensical one.',
+      ),
+    );
+  }
+
+  const looted = value('ascension-looted-nodes');
+  if (looted !== undefined && looted < 0) {
+    out.push(
+      problem(
+        file,
+        '',
+        `ascension-looted-nodes is ${String(looted)}. A negative count of looted nodes held is ` +
+          'satisfied by a universe that never raided, which is the reading the constant exists to ' +
+          'refuse (vision.md §8a, 2026-10-08). Zero is the licensed setting for recovering the ' +
+          'predicate without the loot conjunct; below zero is not a weaker rule.',
       ),
     );
   }

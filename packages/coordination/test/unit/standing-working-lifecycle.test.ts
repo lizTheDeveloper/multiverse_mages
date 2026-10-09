@@ -224,8 +224,11 @@ describe('an absent row is never lit, which is not the same as expired', () => {
     const envelope = decodeSnapshot(serializeState(state));
     const older = {
       ...envelope,
+      // `knowledge-provenance` (revision 14) goes too: a save from before
+      // `standing-working` predates it as well.
       components: envelope.components.filter(
-        (component) => component.name !== STANDING_WORKING.name,
+        (component) =>
+          component.name !== STANDING_WORKING.name && component.name !== 'knowledge-provenance',
       ),
     };
     // The fixture is the claim: this really is a save from before

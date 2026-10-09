@@ -187,6 +187,23 @@ export const HOLDER_KIND = {
 
 export type HolderKindValue = (typeof HOLDER_KIND)[keyof typeof HOLDER_KIND];
 
+/**
+ * How a knowledge instance came through a portal (`knowledge-provenance`).
+ *
+ * `0` is home-grown, per §0's null convention — and an instance with no
+ * provenance row at all reads the same way, which is the common case and every
+ * save written before the component existed. The two named routes are the two
+ * raid verbs that carry knowledge home (`vision.md` §8): a node **stolen** into
+ * a raider's mind, and a book **captured** from a host's library.
+ */
+export const LOOT_ROUTE = {
+  none: 0,
+  theft: 1,
+  capturedBook: 2,
+} as const;
+
+export type LootRouteValue = (typeof LOOT_ROUTE)[keyof typeof LOOT_ROUTE];
+
 /** `contracts.md` §1.1: how a run ended. `none` is 0, per §0's null convention. */
 export const TERMINAL_REASON = {
   none: 0,

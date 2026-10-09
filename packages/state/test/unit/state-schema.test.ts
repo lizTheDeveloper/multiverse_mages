@@ -205,6 +205,9 @@ describe('the world schema is stable in the way the snapshot format needs', () =
       // revision-11 save on disk was written with twenty-one sections and
       // expects the twenty-second to be the one it does not know.
       'standing-working',
+      // Appended by `ascension-needs-loot`, as world-schema revision 14: that a
+      // knowledge instance came through a portal. Last, for the same reason.
+      'knowledge-provenance',
     ]);
   });
 

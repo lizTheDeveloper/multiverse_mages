@@ -1020,7 +1020,12 @@ describe('contentRevision', () => {
     // `raid-readiness-mastery-floor` (640), the ceiling a raider's practice on a
     // raid-kit node may reach. Without it a researched portal node named for a
     // raid could not be held above the activation threshold.
-    expect(registry.contentRevision).toBe('f554ed8acc726e6032b658a49e98c107');
+    //
+    // f554ed8acc726e6032b658a49e98c107 -> 8e4977c35d2a7d4ce2cb5eaf950ed6ea, on `ascension-needs-loot`,
+    // 2026-10-09. **One new record**: the god constant `ascension-looted-nodes`
+    // (vision §8a — ascension without raids should not be possible). Measured,
+    // not chosen.
+    expect(registry.contentRevision).toBe('8e4977c35d2a7d4ce2cb5eaf950ed6ea');
   });
 
   it('is stable across loads of identical content', () => {

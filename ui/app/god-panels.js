@@ -128,7 +128,7 @@ export function ascensionNode(f, content, compact = false) {
     h('div', { className: 'asc-path' }, 'Mastery — all of:'),
     h('ul', { className: 'asc-list' }, c.mastery.map(item)),
     summitDetails(c, content),
-    h('div', { className: 'asc-path' }, 'Enduring Canon — at each of several era boundaries in a row:'),
+    h('div', { className: 'asc-path' }, 'Enduring Canon — at each of several era boundaries in a row, and loot in hand when you declare:'),
     h('ul', { className: 'asc-list' }, c.canon.map(item)),
     h('div', { className: 'asc-foot' },
       c.canon.some((it) => it.status === 'unknown') || c.mastery.some((it) => it.status === 'unknown')

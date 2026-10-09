@@ -137,6 +137,7 @@ describe('W6 verification — the identity values reproduce the pre-change predi
         deepest: DEEPEST,
         worshipTier: Math.floor(rand() * 6),
         completedUniversities: Math.floor(rand() * 4),
+        lootedNodesHeld: 0,
       };
       const shipped = apotheosisSatisfied(facts, IDENTITY);
       const onMain = apotheosisSatisfiedOnMain(facts, IDENTITY);
@@ -184,6 +185,7 @@ describe('W6 verification — the identity values reproduce the pre-change predi
       deepest: DEEPEST,
       worshipTier: C.ascensionTierGate,
       completedUniversities: C.ascensionInstitutions,
+      lootedNodesHeld: C.ascensionLootedNodes,
     };
     expect(apotheosisSatisfiedOnMain(facts, C)).toBe(true);
     expect(apotheosisSatisfied(facts, C)).toBe(false);

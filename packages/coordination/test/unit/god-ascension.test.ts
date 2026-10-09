@@ -49,6 +49,7 @@ import {
   legacyBudget,
   legacyGrant,
   libraryDependence,
+  lootHeld,
   prestigeEarned,
   qualifyingPath,
   stagnationRule,
@@ -110,6 +111,7 @@ function apotheosisFacts(overrides: Partial<ApotheosisFacts> = {}): ApotheosisFa
     deepest: deepestNodesByCell(SHALLOW.catalog, SHALLOW.cellOf),
     worshipTier: C.ascensionTierGate,
     completedUniversities: C.ascensionInstitutions,
+    lootedNodesHeld: C.ascensionLootedNodes,
     ...overrides,
   };
 }
@@ -213,6 +215,58 @@ describe('the minimum tick gates qualification, not merely declaration', () => {
     // The qualifying mage dies between ticks.
     expect(qualifyingPath(apotheosisFacts({ heldByLivingMage: new Set() }), god(), tick, C)).toBe(
       ASCENSION_PATH.none,
+    );
+  });
+});
+
+/**
+ * Vision §8a, the author's rule of 2026-10-08: *ascension without raids shouldn't
+ * be possible.* Both paths require looted knowledge held at qualification. Each
+ * assertion below holds every *other* conjunct of a path satisfied, so a removed
+ * or bypassed loot gate turns `none` into a path and fails it.
+ */
+describe('neither path qualifies without looted knowledge in hand', () => {
+  it('ships a gate that bites: at least one looted node is required', () => {
+    expect(C.ascensionLootedNodes).toBeGreaterThanOrEqual(1);
+  });
+
+  it('refuses Mastery to a universe that holds no plunder, however complete it is', () => {
+    const peaceful = apotheosisFacts({ lootedNodesHeld: 0 });
+    expect(apotheosisSatisfied(peaceful, C)).toBe(true);
+    expect(lootHeld(peaceful, C)).toBe(false);
+    expect(qualifyingPath(peaceful, god(), C.ascensionMinTick, C)).toBe(ASCENSION_PATH.none);
+  });
+
+  it('refuses the Enduring Canon to a universe that holds no plunder, however long its run', () => {
+    const peaceful = apotheosisFacts({ worshipTier: 0, lootedNodesHeld: 0 });
+    const record = god({ goodEraRun: C.ascensionEraCount * 4 });
+    expect(canonSatisfied(record, C)).toBe(true);
+    expect(qualifyingPath(peaceful, record, C.ascensionMinTick * 4, C)).toBe(ASCENSION_PATH.none);
+  });
+
+  it('opens both paths at the threshold and not one node below it', () => {
+    const tick = C.ascensionMinTick;
+    const below = C.ascensionLootedNodes - 1;
+    expect(qualifyingPath(apotheosisFacts({ lootedNodesHeld: below }), god(), tick, C)).toBe(ASCENSION_PATH.none);
+    expect(
+      qualifyingPath(apotheosisFacts({ lootedNodesHeld: C.ascensionLootedNodes }), god(), tick, C),
+    ).toBe(ASCENSION_PATH.apotheosis);
+    const canonOnly = (looted: number): ApotheosisFacts => apotheosisFacts({ worshipTier: 0, lootedNodesHeld: looted });
+    const run = god({ goodEraRun: C.ascensionEraCount });
+    expect(qualifyingPath(canonOnly(below), run, tick, C)).toBe(ASCENSION_PATH.none);
+    expect(qualifyingPath(canonOnly(C.ascensionLootedNodes), run, tick, C)).toBe(ASCENSION_PATH.canon);
+  });
+
+  it('lapses when the plunder is lost — the thief dies or the book burns', () => {
+    const tick = C.ascensionMinTick;
+    expect(qualifyingPath(apotheosisFacts(), god(), tick, C)).toBe(ASCENSION_PATH.apotheosis);
+    expect(qualifyingPath(apotheosisFacts({ lootedNodesHeld: 0 }), god(), tick, C)).toBe(ASCENSION_PATH.none);
+  });
+
+  it('recovers both paths exactly as they were at ascension-looted-nodes = 0', () => {
+    const off = { ...C, ascensionLootedNodes: 0 };
+    expect(qualifyingPath(apotheosisFacts({ lootedNodesHeld: 0 }), god(), C.ascensionMinTick, off)).toBe(
+      ASCENSION_PATH.apotheosis,
     );
   });
 });

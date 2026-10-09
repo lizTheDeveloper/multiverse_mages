@@ -137,11 +137,18 @@ const ANCHOR_SEED = 20260813;
  * 500 move because a raider's practice is now her raid kit, drilled past the
  * activation threshold, and a raider with an uncastable kit node no longer
  * researches. No sandbox change.
+ *
+ * **Re-measured 2026-10-09 on `ascension-needs-loot`, merged over the set above**
+ * (`afe2c5d128181a59` / `3a61cb74ea090e64` / `be0700facf4feea6`). No behaviour
+ * moved: world-schema revision 14 appends a `knowledge-provenance` section and
+ * the snapshot carries every section's name and layout, and
+ * `ascension-looted-nodes` is a new god constant, so the content revision in the
+ * snapshot moves too. No sandbox change.
  */
 const INERT_DEFAULT_HASHES: Readonly<Record<number, string>> = {
-  0: 'afe2c5d128181a59',
-  200: '3a61cb74ea090e64',
-  500: 'be0700facf4feea6',
+  0: '0ed3721633b80aeb',
+  200: 'befe6f4f7b15af85',
+  500: '6e8225eb69993c2e',
 };
 
 /** Generous, for the reason `balance-telemetry.test.ts` gives at length. */

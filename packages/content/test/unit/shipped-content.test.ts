@@ -168,7 +168,7 @@ describe('shipped content', () => {
       // this merge asserting 74 and `integration/group-e` 75. COUNTED on the
       // merged data file rather than chosen between them. 78 since S4 added
       // `stagnation-neglect-ticks`, the quiet clock's second window.
-      godConstants: 78,
+      godConstants: 79,
       // One per magnitude the raid rules read by name, checked in both
       // directions by the loader for the reason the god constants are. Five of
       // them are the composition root's rather than the engine's — how many

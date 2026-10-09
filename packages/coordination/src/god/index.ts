@@ -109,6 +109,7 @@ export {
   legacyBudget,
   legacyGrant,
   libraryDependence,
+  lootHeld,
   lossAllowance,
   masteredCellCount,
   prestigeEarned,

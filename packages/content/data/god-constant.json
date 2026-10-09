@@ -336,6 +336,13 @@
     "tuningStatus": "untuned"
   },
   {
+    "id": "ascension-looted-nodes",
+    "value": 1,
+    "unit": "count",
+    "gloss": "Distinct looted nodes both ascension paths require held at qualification: knowledge that came through a portal, stolen into a living mage's mind or carried home as a captured book. Vision \u00a78a, 2026-10-08: ascension without raids should not be possible \u2014 the one conjunct only a raid produces. Losing the plunder (thief dies, book burns) un-qualifies. Nodes, not instances: three stolen copies of one spell are one. Set to 0 to recover both paths as they were.",
+    "tuningStatus": "untuned"
+  },
+  {
     "id": "stagnation-mageless-ticks",
     "value": 60,
     "unit": "ticks",

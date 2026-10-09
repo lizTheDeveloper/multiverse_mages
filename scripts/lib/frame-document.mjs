@@ -160,6 +160,7 @@ function encodeGodReadings(report) {
       nodesKnown: p.nodesKnown,
       cellsKnown: p.cellsKnown,
       completedUniversities: p.completedUniversities,
+      lootedNodesHeld: p.lootedNodesHeld,
       masteredCells: p.masteredCells,
       // `[cellId, nodeId, holders, copies]` per permitted cell — tuples, not
       // objects, because seventy objects with four named keys were an eighth of

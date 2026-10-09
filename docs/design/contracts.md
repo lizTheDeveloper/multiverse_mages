@@ -463,6 +463,31 @@ decay tick below full, which is a reachable state and not a contrived one. Degra
 compounding down a chain and settle at a plateau, and `knowledgeHalfLife` would measure a decay that
 the rules had quietly stopped producing.
 
+**`knowledge-provenance` — that an instance came through a portal, and a deviation from this
+section as originally drawn.** Added by `ascension-needs-loot` on 2026-10-08, as world-schema revision
+14, when the author ruled that ascension without raids should not be possible (vision §8a): both
+ascension paths now require the universe to hold looted knowledge, and nothing in the table above
+can say how an instance arrived — `acquiredTick` says when, and a stolen node is indistinguishable
+from a researched one the tick after the raid.
+
+| Field | Type | Notes |
+|---|---|---|
+| `route` | `uint8` | `1` stolen into a mind (theft) · `2` a captured book. **An absent row is home-grown** |
+
+- **A sparse side table on the instance's own entity**, not a sixth field on the instance, for the
+  two reasons `knowledge-fidelity` gave: an appended *field* adds no component name for
+  `worldSchemaVersionOf` to key a revision on, and the absent row is the right default and the
+  overwhelmingly common case. Revision 13 → 14 appends an empty section: a save from before the
+  component holds nothing anyone can prove was looted, and must raid again before it can ascend.
+- **Written in exactly two places**, both in `rules-raid`'s write-back (`applyRaidOutcome`): the
+  theft insertion and the captured-book shelving. Exposure — what a *defender* learns by watching —
+  is not loot and is not marked: a universe that was only ever raided has not raided.
+- **It dies with the instance and does not propagate.** The row hangs on the instance's entity, so
+  the one destroy path takes it — a dead thief, a burned book, a dormant memory decayed to nothing
+  all un-qualify with no second bookkeeping step. Shelving rewrites location in place and keeps it.
+  Teaching what was stolen, or studying a captured book, makes a home-grown copy.
+- `sim-core`'s `SNAPSHOT_VERSION` does not move.
+
 **Derived, never stored:** whether a node "exists in the universe" is `count(instances of nodeId) > 0`,
 computed from an index maintained by the knowledge subsystem. Nothing may cache it in state.
 

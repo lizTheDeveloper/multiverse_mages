@@ -479,6 +479,30 @@ Design constraints this creates, to be honoured in `god-agency` and the balance 
 - Defeat is not the opposite of ascension. A universe that is raided to ruin does not "lose" —
   it stagnates, and stagnation is its own ending.
 
+**Ascension without raids is not possible** — the author's decision, 2026-10-08. Both paths,
+Mastery and Enduring Canon, additionally require the universe to **hold looted knowledge** at the
+moment of declaring: knowledge that came through a portal, either stolen into a mage's mind by theft
+(cell-gated — Intellego Mentem, Rego Nomen, §8) or carried home as a captured book. Every other
+conjunct of either path reads a quantity a universe reaches without ever meeting another — breadth
+and depth it drives to the ceiling of its ruleset on its own, worship that accrues whether or not
+the god acts, universities bought with favor — so without this the multiverse was optional to
+winning, and §8's whole second half a setting rather than a strategic axis. Holding is the test,
+not having once taken: the plunder counts while it survives, so a thief who dies or a book that
+burns closes the path until the universe raids again. Mechanically it is
+`ascension-looted-nodes` distinct looted nodes, read from `knowledge-provenance` — a row only a
+raid's write-back writes (`contracts.md` §1.5).
+
+The threshold is **one** looted node, and it was measured rather than chosen (2026-10-08, this
+branch merged over `raid-tuning` at `f88c8b9a`, `scripts/ascension-loot-probe.mjs`): a god who raids
+on purpose and then builds — `raid-then-open-then-build` against a live peer, seeds 11–16 — ascended
+in **2 of 6** runs, holding one and two looted nodes at the moment the path opened; at a threshold of
+two only **1 of 6** would have. The same bot pool that qualified in **23 of 87** headless runs without
+the conjunct qualifies in **0 of 87** with it, because a headless universe's only portal target is
+the stand-in rival and no raid on a stand-in has yet carried a book home (0 books in 21 outbound
+raids; the `raid-tuning` survey's stand-in arm agrees, 0 books against a live peer's 20). So the rule
+is reachable in the game it was written for and closed in the headless harness until a stand-in can
+be looted — a gap recorded here rather than tuned around.
+
 **Defeat is a re-entry, and it is already priced.** A universe ends; a player does not. Losing
 returns you to a fresh universe in a new bubble (§8b) rather than to a menu, and the legacy you
 carry is not zero: `prestige-base-stagnated` is **128**, and the constant's own gloss in
