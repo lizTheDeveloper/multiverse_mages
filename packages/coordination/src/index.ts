@@ -96,7 +96,7 @@ export type { NodeFacetResolver, NodeFacets } from './node-facets.js';
 export { UNKNOWN_NODE_FACETS, nodeFacetsFrom } from './node-facets.js';
 
 export type { OutlookDeps } from './outlook.js';
-export { buildOutlook, universityPreference } from './outlook.js';
+export { buildOutlook, raidKitTargetsFor, universityPreference } from './outlook.js';
 
 export type { AdmissionOptions, StudentAdmissions, StudentRefusal } from './admissions.js';
 export { admitStudentBodies } from './admissions.js';
@@ -191,4 +191,4 @@ export { defineWorldSimulation, worldSystem } from './world-step.js';
  * diagnostic to get it. Two implementations of one definition need a test that
  * they agree, and that test needs to be able to call this one.
  */
-export { unwrittenNodeCount } from './world-step.js';
+export { settleRaidCasualties, unwrittenNodeCount } from './world-step.js';

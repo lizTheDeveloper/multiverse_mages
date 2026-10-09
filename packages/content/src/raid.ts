@@ -113,6 +113,7 @@ export const REQUIRED_RAID_CONSTANTS: readonly string[] = Object.freeze([
   'portal-margin',
   'portal-stability-initial',
   'portal-stability-jitter',
+  'raid-readiness-mastery-floor',
   'resolution-onset-ticks',
   'rival-foreign-book-count',
   'rival-raider-count',

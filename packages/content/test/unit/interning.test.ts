@@ -1004,11 +1004,28 @@ describe('contentRevision', () => {
     // rewritten for the quiet clock. Measured with `npm run check:content` on
     // the tree, not chosen.
     //
-    // b1923b22... -> 891f30ea7555e665715ec7a180841a27, on `ascension-needs-loot`,
-    // 2026-10-08. **One record**: a new god constant, `ascension-looted-nodes`
+    // b1923b223d0686054a27a2aff163d8af -> f0885a0e674b8291093f28b513bd4ef9, the
+    // raid tuning of 2026-10-08, merged on top of the above: twelve
+    // `raid-constant.json` values — the hit-point family rescaled by 1/16,
+    // cast vigor made affordable, the portal shortened to 150 ± 30 ticks, the
+    // stand-in's arming cut from eight nodes to two, a summon's blow cut by
+    // 1/64 — their glosses, and every `direct-damage` magnitude in `node.json`
+    // multiplied by four. Every existing record keeps its id; the values are
+    // the point. Two universes either side of this revision would fight
+    // battles of different lethality, which is what the revision exists to
+    // refuse. Measured with `check:content` on the merged tree.
+    //
+    // f0885a0e674b8291093f28b513bd4ef9 -> f554ed8acc726e6032b658a49e98c107, on
+    // `raid-tuning`, 2026-10-08. **One new record**: the raid constant
+    // `raid-readiness-mastery-floor` (640), the ceiling a raider's practice on a
+    // raid-kit node may reach. Without it a researched portal node named for a
+    // raid could not be held above the activation threshold.
+    //
+    // f554ed8acc726e6032b658a49e98c107 -> 8e4977c35d2a7d4ce2cb5eaf950ed6ea, on `ascension-needs-loot`,
+    // 2026-10-09. **One new record**: the god constant `ascension-looted-nodes`
     // (vision §8a — ascension without raids should not be possible). Measured,
     // not chosen.
-    expect(registry.contentRevision).toBe('891f30ea7555e665715ec7a180841a27');
+    expect(registry.contentRevision).toBe('8e4977c35d2a7d4ce2cb5eaf950ed6ea');
   });
 
   it('is stable across loads of identical content', () => {

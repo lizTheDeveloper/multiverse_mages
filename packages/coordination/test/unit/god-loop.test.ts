@@ -43,6 +43,7 @@ import {
   LIBRARY,
   LOCATION_KIND,
   MAGE,
+  ASCENSION_PATH,
   TERMINAL_REASON,
   UNIVERSE,
   attachRecord,
@@ -66,7 +67,8 @@ import {
   sourceFor,
   traditionNamed,
 } from './world-fixtures.js';
-import { constants, costs, godlyWorldDeps, worshipMax } from './god-fixtures.js';
+import { constants, costs, godDeps, godlyWorldDeps, worshipMax } from './god-fixtures.js';
+import { prestigeEarned, writeGodState } from '../../src/god/index.js';
 
 const C = constants();
 const COSTS = costs();
@@ -483,5 +485,46 @@ describe('a tradition change is a knowledge-loss channel the report can see', ()
     // be indistinguishable from a mage's death or a burned library, which means
     // arriving in this counter and not in one of its own.
     expect(simulation.lastReport()?.nodesLost).toBe(1);
+  });
+});
+
+describe('an ascended universe is paid for its ending', () => {
+  it('writes a non-zero prestigeEarned on the tick action 15 ends the run', () => {
+    // Playtest round 3: two ascensions in a row carried 0.0 prestige. The
+    // ascension plan sets `terminalReason` in the intervention system, and the
+    // god-outcome system — the one that wrote `prestigeEarned` at termination —
+    // returns early once that is set, so an ascension was never priced.
+    const base = godlyWorldDeps(traditionId());
+    const god = godDeps();
+    const deps = { ...base, god: { ...god, content: { ...god.content, constants: { ...C, ascensionMinTick: 0 } } } };
+    const simulation = defineWorldSimulation(deps);
+    const { state } = seededWorld(simulation.schema, { rootSeed: ROOT_SEED });
+    const source = sourceFor(ROOT_SEED);
+    let current = step(state, [], source);
+    const universe = findUniverse(current);
+    writeGodState(current, universe, { ...godStateOrEmpty(current, universe), ascensionPath: ASCENSION_PATH.apotheosis });
+    expect(universeOf(current).prestigeEarned).toBe(0);
+
+    current = step(current, [{ kind: ACTION.declareAscension, params: [] }], source);
+
+    const row = universeOf(current);
+    expect(row.terminalReason).toBe(TERMINAL_REASON.ascensionApotheosis);
+    const after = godStateOrEmpty(current, universe);
+    expect(row.prestigeEarned).toBeGreaterThan(0);
+    expect(row.prestigeEarned).toBe(
+      prestigeEarned(
+        {
+          terminalReason: TERMINAL_REASON.ascensionApotheosis,
+          deepestTier: after.deepestTier,
+          erasSurvived: 0,
+          peakWorshipTier: after.peakWorshipTier,
+        },
+        C,
+      ),
+    );
+    // And it is written once: the frozen universe keeps it.
+    const earned = row.prestigeEarned;
+    for (let tick = 0; tick < 3; tick += 1) current = step(current, [], source);
+    expect(universeOf(current).prestigeEarned).toBe(earned);
   });
 });

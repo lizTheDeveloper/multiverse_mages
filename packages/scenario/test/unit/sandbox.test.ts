@@ -124,17 +124,31 @@ const ANCHOR_SEED = 20260813;
  * (`stagnation-neglect-ticks`) — content edits, so the content revision in the
  * tick-zero snapshot moves too.
  *
- * **Re-measured 2026-10-08 on `ascension-needs-loot`, merged over the set above**
- * (`ff256d65e8292850` / `c2cbcd3994257703` / `b08a9818e920e7bd`). No behaviour
- * moved: world-schema revision 14 appends a `knowledge-provenance` section —
- * empty in a universe nobody has raided — and the snapshot carries every
- * section's name and layout, and `ascension-looted-nodes` is a new god constant,
- * so the content revision in the snapshot moves too. No sandbox change.
+ * **Re-measured 2026-10-08 on `raid-tuning`, merged over the set above**
+ * (`ff256d65e8292850` / `c2cbcd3994257703` / `b08a9818e920e7bd`). Tick 0 moves
+ * because twelve raid constants and `node.json`'s bolts changed and the content
+ * revision is in the snapshot; 200 and 500 move as well because the default
+ * scenario is raided by stand-ins, and stand-in raids now fight. No sandbox
+ * change.
+ *
+ * **Re-measured again on `raid-tuning`, 2026-10-08**, over
+ * `67d8c7f341050448` / `7b01bd16253c249b` / `e635a83d59ccc5bd`. Tick 0 moves
+ * because one raid constant was added (`raid-readiness-mastery-floor`); 200 and
+ * 500 move because a raider's practice is now her raid kit, drilled past the
+ * activation threshold, and a raider with an uncastable kit node no longer
+ * researches. No sandbox change.
+ *
+ * **Re-measured 2026-10-09 on `ascension-needs-loot`, merged over the set above**
+ * (`afe2c5d128181a59` / `3a61cb74ea090e64` / `be0700facf4feea6`). No behaviour
+ * moved: world-schema revision 14 appends a `knowledge-provenance` section and
+ * the snapshot carries every section's name and layout, and
+ * `ascension-looted-nodes` is a new god constant, so the content revision in the
+ * snapshot moves too. No sandbox change.
  */
 const INERT_DEFAULT_HASHES: Readonly<Record<number, string>> = {
-  0: 'adbad21214e25a8e',
-  200: '92c64e7b3efc0812',
-  500: '1a281186ed91ecc1',
+  0: '0ed3721633b80aeb',
+  200: 'befe6f4f7b15af85',
+  500: '6e8225eb69993c2e',
 };
 
 /** Generous, for the reason `balance-telemetry.test.ts` gives at length. */

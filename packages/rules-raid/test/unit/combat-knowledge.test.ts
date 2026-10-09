@@ -226,8 +226,13 @@ function separation(
  * is what says the drop is the withdrawal clock and not the combat wiring.
  */
 const EXPECTED_ARMED_VERSUS_UNARMED = Object.freeze({
-  armedMean: 2016,
-  armedStandardError: 131,
+  // 2026-10-08: 2016 ± 131 → 7484 ± 522. The raid tuning of that date raised
+  // every direct-damage magnitude x4 and rescaled hit points by 1/16, so casts
+  // kill: an armed pair now fells 1.4 of its two bare defenders on average and
+  // runs out of targets. Per bolt thrown that is x4; in bolts thrown it is
+  // fewer (1871 at the old magnitudes), because there is less left standing.
+  armedMean: 7484,
+  armedStandardError: 522,
   unarmedMean: 0,
   unarmedStandardError: 0,
 });
@@ -250,7 +255,7 @@ describe('a warband that knows combat magic outfights one that does not', () => 
     const withCombat = summarise(armed, 'damageDealt');
     const without = summarise(unarmed, 'damageDealt');
 
-    expect(withCombat.mean).toBeGreaterThan(2000);
+    expect(withCombat.mean).toBeGreaterThan(4000);
     expect(without.mean).toBe(0);
 
     // The unarmed arm's standard error is exactly zero — thirty seeds, thirty
@@ -344,11 +349,14 @@ describe("§9's mask reaches a raid: one primitive off, everything else identica
     const unwarded = summarise(arm(base, 'ward'), 'hpRemovedByCasts').mean;
     const dealt = summarise(arm(base), 'damageDealt').mean;
 
-    // The magnitude *put on the field* is identical either way — ward scales
-    // what lands, not what is thrown — so this is the one arm where the primitive
-    // application ledger cannot see the effect and the action economy can.
-    expect(summarise(arm(base, 'ward'), 'damageDealt').mean).toBe(dealt);
-    expect(unwarded).toBe(dealt);
+    // Ward scales what lands, not what is thrown. This used to assert the
+    // thrown magnitude identical in both arms and every unwarded point landing;
+    // since casts became lethal (2026-10-08) an unwarded defender dies, the raid
+    // takes a different course, and a dead target cannot absorb overkill — so
+    // the two figures are now close rather than equal, and the claim that
+    // survives is the one the test is named for.
+    expect(dealt).toBeGreaterThan(0);
+    expect(unwarded).toBeLessThanOrEqual(summarise(arm(base, 'ward'), 'damageDealt').mean);
     expect(warded).toBeLessThan(unwarded * 0.6);
   });
 
@@ -368,7 +376,18 @@ describe("§9's mask reaches a raid: one primitive off, everything else identica
 
 describe('an ablated magnitude keeps its slot, so the two arms share a stream', () => {
   it('resolves on the identical engagement tick, seed by seed, with and without direct-damage', () => {
-    const base = { attackers: pairOf(ARMED), defenders: bareDefenders };
+    // Warded defenders, so that nobody dies in either arm. Since 2026-10-08 a
+    // bolt can kill, and a kill legitimately ends a raid sooner; with bare
+    // defenders the control arm resolved early on every seed it felled someone,
+    // which is the kill and not a stream that moved. Ward holds the course of
+    // the raid fixed so the stream is the only thing this compares.
+    const base = {
+      attackers: pairOf(ARMED),
+      defenders: [
+        { name: 'Defender-1', nodes: WARDS },
+        { name: 'Defender-2', nodes: WARDS },
+      ],
+    };
     const control = arm(base);
     const ablated = arm(base, 'direct-damage');
 

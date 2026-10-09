@@ -228,6 +228,23 @@ export const GOALS_NEEDING_A_TARGET: readonly GoalId[] = [
   GOAL.sustainWorking,
 ];
 
+/**
+ * Goals that **may** point at a node and are still a goal without one.
+ *
+ * `raid-readiness` alone. A raider with something to drill drills it — a held
+ * combat, theft or portal node below her practice ceiling — and a raider with
+ * nothing to drill still stands ready, which is the month the goal described
+ * before it had an operation. Kept out of {@link GOALS_NEEDING_A_TARGET} on
+ * purpose: that list makes an empty candidate list a reason to drop the
+ * commitment, and an empty kit is not a reason to stop being a raider.
+ */
+export const GOALS_TAKING_AN_OPTIONAL_TARGET: readonly GoalId[] = [GOAL.raidReadiness];
+
+/** Whether a goal carries a target when one is available, without needing one. */
+export function takesOptionalTarget(goal: GoalId): boolean {
+  return GOALS_TAKING_AN_OPTIONAL_TARGET.includes(goal);
+}
+
 /** Whether a goal is meaningless without a node to point it at. */
 export function needsTarget(goal: GoalId): boolean {
   return GOALS_NEEDING_A_TARGET.includes(goal);

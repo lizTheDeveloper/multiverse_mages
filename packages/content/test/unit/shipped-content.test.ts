@@ -179,7 +179,7 @@ describe('shipped content', () => {
       // `raid-engagement` authored: §2's two phase boundaries, what each of §3's
       // six verbs costs and does, the concealment ceiling, and the Vis a
       // raiding party carries.
-      raidConstants: 59,
+      raidConstants: 60,
       // Thirty-eight since `apply-magic` added `apply-output-per-month` and
       // `apply-ration-per-month`. Both are scalars rather than role-appeal rows
       // — they price what applied work makes and eats, not what a role wants —

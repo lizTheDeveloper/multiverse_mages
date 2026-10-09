@@ -79,7 +79,7 @@ import {
   defineWorldStateSchema,
   findUniverse,
 } from '@mm/state';
-import { KnowledgeSubsystem, MASTERY_MAX, MagicGrid } from '@mm/rules-magic';
+import { KnowledgeSubsystem, MASTERY_ACTIVATION_THRESHOLD, MASTERY_MAX, MagicGrid } from '@mm/rules-magic';
 import { readRaidTuning } from '@mm/rules-raid';
 
 import type { EngagementPolicy } from './raid-directives.js';
@@ -1586,6 +1586,17 @@ export function referenceScenario(
       scenarioId,
       catalogue: content.catalogue,
       portalTargets: options.peers?.seats ?? portalTargetIds(constants),
+      // A peer's seat holds a universe only while that universe runs; a seat
+      // whose universe ended must not be offered, or the god pays for a portal
+      // the raid system has nobody to open on. Stand-in seats always hold one.
+      ...(options.peers === undefined
+        ? {}
+        : {
+            openPortalTargets: (): readonly number[] => {
+              const peers = options.peers as PeerPortals;
+              return peers.seats.filter((seat) => peers.participant(seat) !== undefined);
+            },
+          }),
       // The roster the god may invite from, and it is every species the content
       // declares. `invitePlan` refuses one already living here, so a
       // single-species universe sees five candidates and an all-six universe
@@ -1604,6 +1615,10 @@ export function referenceScenario(
       // first would burn every round on a refusal — measured, and documented on
       // `inviteScholarCandidates`.
       portalNodes: [...(content.deps.god?.portalNodes ?? [])],
+      // Usable, not merely held — the same reading `rules-raid`'s gate and
+      // `coordination`'s resolver take, so the mask cannot offer a portal the
+      // rules then refuse.
+      portalUsableMastery: MASTERY_ACTIVATION_THRESHOLD,
       // The raiding half of the same wire. Both literals carry it or a run that
       // raids draws no ledger while a run that does not draws one — which reads
       // as "the economy stopped" rather than as two scenario objects that were

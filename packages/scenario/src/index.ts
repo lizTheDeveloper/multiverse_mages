@@ -44,6 +44,8 @@ export {
   explicitOpeningAxes,
   foundingCandidates,
   primitiveNamed,
+  RAID_KIT_PRIMITIVE_NAMES,
+  raidKitPrimitivesOf,
   scribingTraditionId,
   seededOpeningAxes,
   shippedContent,
@@ -58,6 +60,10 @@ export {
 
 export type { PeerPortals, RaidRecord, RaidSystemDeps } from './raids.js';
 export { participantOf, raidSystem } from './raids.js';
+export type { PortalHolder, PortalStanding } from './portal-standing.js';
+export { portalStandingOf } from './portal-standing.js';
+export type { Encouragement } from './encouragements.js';
+export { encouragementsOf } from './encouragements.js';
 
 export type { InvitationSource } from './invitation.js';
 export { invitationSources, reachableSpecies, speciesAliveIn } from './invitation.js';
@@ -250,3 +256,18 @@ export {
   separationRunSeeds,
   verdictOf,
 } from './species-separation.js';
+export type {
+  PeerAttackerPolicy,
+  PeerDefenderPolicy,
+  PeerPairResult,
+  PeerRaidMeasurement,
+  PeerSurveyArm,
+  PeerSurveySummary,
+} from './peer-raid-survey.js';
+export {
+  PEER_ATTACKER_POLICIES,
+  PEER_DEFENDER_POLICIES,
+  playPeerPair,
+  summarisePeerRaids,
+  surveyPeerArm,
+} from './peer-raid-survey.js';

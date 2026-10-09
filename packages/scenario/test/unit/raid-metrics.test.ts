@@ -360,7 +360,7 @@ describe('a raid reports what happened inside it, not only its shape', { timeout
     });
   });
 
-  it('finds no combat attempt at all — and that is now a reported zero', async () => {
+  it('finds combat attempts — the tripwire that was set for this, tripped', async () => {
     const result = await executeReferenceRunAsync(raidingTask(), { content });
     let attempts = 0;
     for (const observation of result.raids ?? []) {
@@ -369,27 +369,17 @@ describe('a raid reports what happened inside it, not only its shape', { timeout
       }
     }
 
-    // **A tripwire, not a result — and it watches one task, not the survey.**
-    // This assertion covers exactly the run above: `portal-rush`, seed 12,345,
-    // 400 world ticks. The wider claim it stands in for was a survey taken with
-    // `scripts/w144-ablation-visibility.mjs` on `b02892b` — all eight shipped
-    // strategies at two seeds each, 61 raids, 80,615 combatant-ticks, *zero*
-    // combat attempts — and that number is a statement about that ref, not a
-    // property this test enforces. Re-run the script rather than trusting it.
-    // The cause is `chooseIntent`'s
-    // priority order: theft outranks casting, and no shipped strategy grants a
-    // raider a combat node, so `firstCastableNode` returns nothing on every tick
-    // of every raid. That, and not the mask, is why an arm ablating one of the
-    // six cast-borne primitives still differences to zero here.
-    //
-    // When a strategy starts fielding an armed combatant this assertion fails,
-    // and the ablation arms in `combat-ablation-reaches-a-raid.test.ts` become
-    // writable for the first time. It is deliberately the thing that breaks.
-    expect(attempts).toBe(0);
-    // …which is why the companion metric is honestly unavailable rather than a
-    // ratio invented over an empty denominator.
-    expect(unavailable(result.outcome.metrics, 'combatThresholdEfficiency').reason).toBe(
-      UNAVAILABLE_REASON.noObservations,
-    );
+    // **This used to assert zero, as a tripwire** — `portal-rush`, seed 12,345,
+    // 400 world ticks, and a survey on `b02892b` of 61 raids with zero combat
+    // attempts — and it said *"when a strategy starts fielding an armed
+    // combatant this assertion fails … it is deliberately the thing that
+    // breaks."* It broke on 2026-10-08, and not because of the priority order it
+    // blamed: the cheapest cast cost fp(3) of vigor against every mage's fp(1),
+    // so `firstCastableNode` refused every candidate. With the raid tuning of
+    // that date a cast costs fp(0.1875) at tier 1, and this run casts.
+    expect(attempts).toBeGreaterThan(0);
+    // …which is why the companion metric is now measured rather than honestly
+    // unavailable over an empty denominator.
+    expect(measured(result.outcome.metrics, 'combatThresholdEfficiency')).toBeDefined();
   });
 });

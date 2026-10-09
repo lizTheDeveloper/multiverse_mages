@@ -829,11 +829,19 @@ const PORTAL_RUSH: StrategyDefinition = {
     // favor for the privilege. Measured before this line existed — 337 raids
     // across four runs and zero nodes taken from any of them.
     //
-    // `assignRoleCandidates` lists every living mage against each role it does
-    // not hold, in handle then role order, so a rotating slot index reaches
-    // `raider` about one submission in three. That is the coarsest instrument
-    // the action space offers and it is enough: the point of this bot is that
-    // it raids, not that it fields an optimal warband.
+    // `assignRoleCandidates` lists every living mage holding a portal node
+    // against `raider` first (#251, 2026-10-09), then every living mage against
+    // each role it does not hold, in handle then role order, cut to k = 32. So
+    // while a portal holder is not yet a raider a rotating slot index names her
+    // when it lands on slot 0, and past those slots it reaches `raider` about
+    // one submission in three. That is the coarsest instrument the action
+    // space offers and it is enough: the point of this bot is that it raids,
+    // not that it fields an optimal warband.
+    //
+    // Not a version bump: the preference order is unchanged, and `version` is
+    // bumped for that. What moved is the candidate list under the same
+    // preference, and the baselines that carry portal-rush were re-recorded on
+    // it with that change named in their rationale.
     { action: GOD_ACTION.assignRole, parameter: rotate(GOD_ACTION.assignRole, round, candidates) },
     // Tempo while the portal is unreachable: push the deepest cell and permit
     // the technique that would open more of it.

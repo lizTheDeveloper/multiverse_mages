@@ -96,9 +96,158 @@ const NO_CANDIDATE_HINT = {
   11: 'no university can be funded or founded',
   12: 'no permitted cell can be encouraged',
   13: 'no other tradition can be adopted',
-  14: 'no living mage holds a portal node in a permitted cell',
+  14: 'the server offers no portal this month',
   16: 'no species is available to invite — a scholar comes only through a portal, from a universe you can reach that holds a species you lack (and it needs portal magic)',
 };
+
+
+/**
+ * The portal gate's standing, as the server published it (`frame.portal`, with
+ * `content.portal`'s constants), in the page's terms — or `null` on a frame
+ * that does not carry it (a recording, an ended universe).
+ *
+ * Every verdict is the server's: `refusal` is `rules-raid`'s `portalGate`
+ * answer with the price left out, `usable` its count of holders at usable
+ * mastery. The page only turns mastery into a percentage of `masteryMax`.
+ */
+export function portalStanding(f, content) {
+  const p = f.raw?.portal;
+  const g = content.portal;
+  if (!p || !g) return null;
+  const pct = (m) => Math.round((m * 100) / g.masteryMax);
+  const nodeName = (id) => (content.nodes ?? []).find((n) => n.nodeId === id)?.name ?? `portal node ${id}`;
+  const holders = (p.holders ?? []).map(([handle, nodeId, mastery, roleId]) => ({
+    handle, nodeId, mastery, roleId, pct: pct(mastery), usable: mastery >= g.usableMastery,
+  }));
+  const shown = [...new Set(holders.map((x) => x.nodeId))];
+  // Name the node by the one most held; the shallowest portal node otherwise.
+  const lead = shown[0] ?? g.nodeIds?.[0];
+  return {
+    refusal: p.refusal ?? '',
+    held: p.held ?? holders.length,
+    usable: p.usable ?? holders.filter((x) => x.usable).length,
+    holders,
+    best: holders[0] ?? null,
+    needPct: pct(g.usableMastery),
+    raiders: p.raiders ?? 0,
+    drills: p.raiderDrillsPortal === true,
+    leadName: lead === undefined ? 'a portal node' : nodeName(lead),
+    nodeName,
+    /** `{held, usable}` for one portal node, or null for a node that is not one. */
+    ofNode: (id) => {
+      if (!(g.nodeIds ?? []).includes(id)) return null;
+      const row = p.byNode?.[String(id)];
+      return row ? { held: row[0], usable: row[1] } : { held: 0, usable: 0 };
+    },
+  };
+}
+
+/** A cell's name from content: "Rego Limen". */
+export function cellName(content, cellId) {
+  const c = (content.cells ?? []).find((x) => x.cellId === cellId);
+  if (!c) return `cell ${cellId}`;
+  const t = (content.techniques ?? []).find((x) => x.id === c.technique)?.name ?? c.technique;
+  const fm = (content.forms ?? []).find((x) => x.id === c.form)?.name ?? c.form;
+  return `${t} ${fm}`;
+}
+
+/**
+ * The cells a portal node's prerequisite chain runs through, from content's
+ * published research graph (`content.nodes[].prerequisites`) — and which of
+ * them `permitted` lacks. For the portal node whose chain is narrowest, so a
+ * player is told the cheapest way through. `null` when content publishes no
+ * portal nodes.
+ *
+ * Content, not a rule: the graph is what the header ships; the set of
+ * permitted cells is the server's (`academy.permittedCells`) on the play page
+ * and the opening square itself on setup.
+ */
+export function portalPrerequisiteCells(content, permitted) {
+  const ids = content.portal?.nodeIds ?? [];
+  if (ids.length === 0) return null;
+  const byId = new Map((content.nodes ?? []).map((n) => [n.nodeId, n]));
+  const allowed = new Set(permitted ?? []);
+  let best = null;
+  for (const id of ids) {
+    const cells = new Set();
+    const seen = new Set();
+    const walk = (nid) => {
+      if (seen.has(nid)) return;
+      seen.add(nid);
+      const n = byId.get(nid);
+      if (!n) return;
+      cells.add(n.cellId);
+      for (const pre of n.prerequisites ?? []) walk(pre);
+    };
+    walk(id);
+    const needed = [...cells].sort((a, b) => a - b);
+    const missing = needed.filter((c) => !allowed.has(c));
+    const row = { nodeId: id, name: byId.get(id)?.name ?? `node ${id}`, needed, missing };
+    if (best === null || row.missing.length < best.missing.length
+      || (row.missing.length === best.missing.length && row.needed.length < best.needed.length)) best = row;
+  }
+  return best;
+}
+
+/** "A portal needs Rego Limen and Intellego Limen; your … has Rego Limen only", or null when nothing is missing. */
+export function portalPrerequisiteText(content, permitted, whose = 'your ruleset') {
+  const r = portalPrerequisiteCells(content, permitted);
+  if (r === null || r.missing.length === 0) return null;
+  const list = (cells) => {
+    const names = cells.map((c) => cellName(content, c));
+    return names.length <= 1 ? (names[0] ?? '') : `${names.slice(0, -1).join(', ')} and ${names[names.length - 1]}`;
+  };
+  const have = r.needed.filter((c) => !r.missing.includes(c));
+  return `A portal needs ${list(r.needed)} (${r.name} and what it builds on); `
+    + (have.length === 0 ? `${whose} permits none of them.` : `${whose} permits ${list(have)} only.`);
+}
+
+/**
+ * The portal sentences for a dark (or falsely lit) action 14, each
+ * `{text, source, blocks}`. Built from the published standing; empty when the
+ * frame carries none.
+ */
+export function portalWhy(f, content) {
+  const st = portalStanding(f, content);
+  if (st === null) return [];
+  const out = [];
+  if (st.refusal === 'knowledge-lost') {
+    if (st.held === 0) {
+      const gap = portalPrerequisiteText(content, f.raw.academy?.permittedCells);
+      out.push({
+        text: `no living mage knows a portal node (${st.leadName} or another)${gap ? ` — ${gap}` : ''}`,
+        source: 'frame.portal.held', blocks: true,
+      });
+    } else {
+      out.push({
+        text: `${st.leadName} is held by ${st.held} mage${st.held === 1 ? '' : 's'}, best mastery ${st.best?.pct ?? 0}% — a portal needs one at ${st.needPct}% or more`,
+        source: 'frame.portal (rules-raid portalGate: knowledge-lost)', blocks: true,
+      });
+      const lever = portalLever(f, content, st);
+      if (lever) out.push({ text: lever, source: 'frame.portal.raiderDrillsPortal', blocks: false });
+    }
+  } else if (st.refusal === 'already-engaged') {
+    out.push({ text: 'a raid is already in flight', source: 'frame.portal.refusal', blocks: true });
+  }
+  return out;
+}
+
+/**
+ * How mastery can be raised, worded to be true on this server: a raider's
+ * readiness drills her own portal knowledge only when `frame.portal` says so.
+ */
+export function portalLever(f, content, st = portalStanding(f, content)) {
+  if (st === null || st.held === 0 || st.usable > 0) return null;
+  const RAIDER = roleId(content, 'raider');
+  if (st.drills) {
+    const drilling = st.holders.find((x) => x.roleId === RAIDER);
+    if (drilling) {
+      return `a raider who knows ${st.leadName} is drilling it (now ${drilling.pct}%, needs ${st.needPct}%) — her readiness months practise it, so her mastery holds where an unpractised holder's decays`;
+    }
+    return `name one of the mages who knows ${st.leadName} as a raider — her readiness drills practise it and hold her mastery up, where an unpractised holder's decays (naming a mage who does not know it drills nothing toward the portal)`;
+  }
+  return `mastery rises only while a mage practises a node she holds; on this server a raider's readiness does not drill portal magic, so naming raiders will not raise it`;
+}
 
 /**
  * The affordability facts behind a dark action, each with its source.
@@ -170,6 +319,14 @@ export function whyDenied(f, content, id) {
   if (PARAMETERIZED.has(id) && (!Array.isArray(cands) || cands.length === 0)) {
     const founding = id === 8 ? foundingWhy(f) : null;
     if (founding !== null) return [founding];
+    if (id === 14) {
+      const portal = portalWhy(f, content);
+      if (portal.length > 0) return portal.map(({ text, source }) => ({ text, source }));
+      const st = portalStanding(f, content);
+      if (st !== null && st.raiders === 0) {
+        return [{ text: 'no living raider — a portal sends your raiders through, and you have none', source: 'frame.portal.raiders' }];
+      }
+    }
     reasons.push({ text: `nothing to act on: ${NO_CANDIDATE_HINT[id] ?? 'no candidates'}`, source: `candidates[${id}] is empty` });
     return reasons;
   }
@@ -303,8 +460,19 @@ export function raidBlockers(f, content, seat, peer, raiders) {
   if (portalCell && Array.isArray(permitted) && !permitted.includes(portalCell.cellId)) {
     out.push({ text: 'Rego × Limen, the portal cell, is not permitted in your ruleset', source: 'academy.permittedCells', blocks: true });
   }
-  if ((f.raw.candidates?.['14'] ?? []).length === 0) {
-    out.push({ text: 'no living mage holds a portal node in a permitted cell', source: 'candidates[14] is empty', blocks: true });
+  const st = portalStanding(f, content);
+  const offered = (f.raw.candidates?.['14'] ?? []).length > 0;
+  // The gate's own refusal, when the server published it. Blocks even when the
+  // mask is lit: a server whose mask does not ask about mastery will take the
+  // price for a portal the gate then refuses, and open nothing.
+  const gateWhy = out.some((b) => b.source === 'academy.permittedCells') ? [] : portalWhy(f, content);
+  out.push(...gateWhy);
+  if (!offered && gateWhy.every((b) => !b.blocks)) {
+    if (st !== null && st.raiders === 0) {
+      out.push({ text: 'no living raider — a portal sends your raiders through, and you have none', source: 'frame.portal.raiders + candidates[14] is empty', blocks: true });
+    } else if (out.length === 0) {
+      out.push({ text: 'the server offers no portal this month', source: 'candidates[14] is empty', blocks: true });
+    }
   }
   if (out.length === 0 && !legal) {
     const money = affordability(f, content, 14).map((r) => ({ ...r, blocks: true }));
@@ -320,8 +488,9 @@ export function raidBlockers(f, content, seat, peer, raiders) {
   if (legal && slot < 0 && peer.state !== 'empty') {
     out.push({ text: 'the server offers no portal to this seat', source: 'candidates[14]', blocks: true });
   }
-  if (raiders === 0) {
-    out.push({ text: 'no raiders named — a raid sends your raiders, and you have none visible', source: 'mage roles in candidateDetail/academy', blocks: false });
+  const liveRaiders = st?.raiders ?? raiders;
+  if (liveRaiders === 0 && !out.some((b) => b.source.startsWith('frame.portal.raiders'))) {
+    out.push({ text: 'no raiders named — a raid sends your raiders, and you have none', source: st ? 'frame.portal.raiders' : 'mage roles in candidateDetail/academy', blocks: false });
   }
   return out;
 }

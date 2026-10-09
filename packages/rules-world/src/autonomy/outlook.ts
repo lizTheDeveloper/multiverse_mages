@@ -146,6 +146,28 @@ export interface MageOutlook {
    */
   readonly practiceTargets: readonly KnowledgeTarget[];
   /**
+   * The part of {@link practiceTargets} a raider drills: nodes carrying a
+   * primitive that does something through a portal — damage, denial, a summon,
+   * a blink, theft, corruption, or the portal itself.
+   *
+   * What makes `raid-readiness` a month of work rather than a month of nothing.
+   * Until this list existed the goal had no target and no operation, so the
+   * raider role — which weights it highest — steered a mage *away* from
+   * `practice` and let her combat knowledge decay below the castable threshold
+   * while she waited for a portal. Measured on live peer raids
+   * (`scripts/peer-raid-survey.mjs`, 2026-10-08): the castable combat kit of a
+   * universe shrank over its first thirty years whether or not its god
+   * encouraged research in combat cells, because research never makes a node
+   * castable — only practice does.
+   *
+   * A subset of `practiceTargets` and therefore under every one of its gates:
+   * nothing here is a node she does not already hold, so a raider can sharpen
+   * only what her universe researched. Empty when the coordinating layer is
+   * built without a raid-kit primitive set, which is every build before this
+   * field and leaves the goal exactly as inert as it was.
+   */
+  readonly raidKitTargets: readonly KnowledgeTarget[];
+  /**
    * Nodes she could spend the month **keeping standing**, already gated.
    *
    * The coordinating layer's gates, as with every other list here: an instance

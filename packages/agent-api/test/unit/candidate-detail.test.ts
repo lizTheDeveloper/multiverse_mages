@@ -33,7 +33,7 @@ import {
 import { GOAL_COMMITMENT, MAGE, MAGE_ROLE, attachRecord, cellIdAt, componentOf } from '@mm/state';
 import { describe, expect, it } from 'vitest';
 
-import { FIXTURE_CATALOGUE, FIXTURE_NODES, firstUniverse } from './fixtures.js';
+import { FIXTURE_CATALOGUE, FIXTURE_NODES, firstUniverse, universeWithRaider } from './fixtures.js';
 
 /**
  * The shipped fixture catalogue offers no founding grant at all: both of its
@@ -47,7 +47,7 @@ const GRANTABLE_CATALOGUE = buildCatalogue(
   [1, 2, 3],
 );
 
-const describeFixture = (world = firstUniverse(), portalTargets: readonly number[] = [1, 2]) => {
+const describeFixture = (world = universeWithRaider(), portalTargets: readonly number[] = [1, 2]) => {
   const lists = buildCandidates({
     state: world.state,
     catalogue: FIXTURE_CATALOGUE,
@@ -141,7 +141,7 @@ describe('the five shapes are five shapes', () => {
 
 describe('a mage descriptor is what tells one mage from another', () => {
   it('carries species, age, role, affiliation, personality, vigor and knowledge', () => {
-    const { world, detail } = describeFixture();
+    const { world, detail } = describeFixture(firstUniverse());
     const first = detail.mages.get(world.mages[0] as number);
     const second = detail.mages.get(world.mages[1] as number);
     expect(first).toBeDefined();
