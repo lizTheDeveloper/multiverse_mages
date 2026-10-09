@@ -67,8 +67,9 @@ const SHELVED = 'rl-open-the-portal';
  * make the tests order-dependent — but built from the same arguments, so every
  * block is talking about the same raid.
  */
-function sixMages(seed = 1): WarbandResult {
+function sixMages(seed = 1, tuningOverride?: Parameters<typeof resolveWarband>[0]['tuningOverride']): WarbandResult {
   return resolveWarband({
+    ...(tuningOverride === undefined ? {} : { tuningOverride }),
     attackers: [
       { name: 'Brannoc', nodes: [FIRE, MIND_READING] },
       { name: 'Sela', nodes: [MIND_READING] },
@@ -248,6 +249,19 @@ describe('capture has no representation, and that is the gap', () => {
   });
 });
 
+/**
+ * Mages a fire bolt or two can fell, on both sides.
+ *
+ * The wiped-warband case below used to occur under the shipped constants
+ * because ending a raid on its last objective stranded — and so killed — every
+ * raider still on the field. Since 2026-10-08 a cleared field no longer ends a
+ * raid while raiders are on it (`termination.ts`), so a warband now has to be
+ * *killed* to be wiped, and three raiders against three wardens rarely are on
+ * forty seeds. The claim is about settlement, not about lethality, so it is
+ * demonstrated where lethality is not in question.
+ */
+const FRAGILE = { combatantBaseMaxHp: 128, combatantHpPerTier: 0 } as const;
+
 describe('knowledge moves between universes, and the moves are readable', () => {
   it('takes a book off the host shelf and puts the node in the raider universe', () => {
     const result = sixMages();
@@ -276,7 +290,7 @@ describe('knowledge moves between universes, and the moves are readable', () => 
     // changed is that it takes a seed to demonstrate.
     let wiped;
     for (let seed = 1; seed <= 40 && wiped === undefined; seed += 1) {
-      const result = sixMages(seed);
+      const result = sixMages(seed, FRAGILE);
       const survivors = result.fates.filter(
         (fate) => fate.side === RAID_SIDE.attacker && !fate.died,
       );
@@ -314,8 +328,12 @@ describe('knowledge moves between universes, and the moves are readable', () => 
  * Measured on this tree: **173 of 180 raiders come home**, and **0 of 33 mind-
  * thefts are forfeited**, against 0 and 33-of-33 before. The seven who do not
  * come home are the control on the other side — the timer still takes people.
+ *
+ * **177 of 180 since 2026-10-08.** Two changes of that date move it in opposite
+ * directions: a raid no longer ends — stranding everyone on the field — the
+ * tick its last objective falls (up), and casts can now kill (down). Net +4.
  */
-const SIXTY_SEED_WITHDRAWALS = 173;
+const SIXTY_SEED_WITHDRAWALS = 177;
 
 describe('under the shipped constants, raiders come home', () => {
   it('brings most attackers back across sixty seeds and delivers their thefts', () => {

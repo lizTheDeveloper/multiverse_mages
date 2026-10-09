@@ -119,19 +119,33 @@ const BLIND_ARM_LINES: Readonly<Record<string, readonly string[]>> = {
   // every run saturated the observation's 4096 clamp, so it reads 4096 with a
   // standard error of zero (see `OBSERVATION_CLAMP`, and the baseline's own
   // SATURATION note). Tolerance is unchanged (k = 3).
+  // **Thirteen after the raid-tuning re-record, 2026-10-08,** taken over the
+  // S4 set above. Every 200-year run is raided by stand-ins, and since this
+  // change those raids kill and burn libraries, so the arms whose long-run
+  // knowledge and population are dominated by a few heavy raids widened.
+  // Left: `referenceGrimoires@uniform-random-legal`, `referenceKnowledgeInstances@passive-control`, `referenceKnowledgeInstances@permissive-breadth`, `referenceKnowledgeInstances@worship-maximizer`, `referenceLibraryDepth@passive-control`, `referenceLibraryDepth@worship-maximizer`, `referenceNodesGainedFinalQuarter@permissive-breadth`. Joined: `referenceKnowledgeInstances@portal-rush`, `referenceLibraryDepth@permissive-breadth`, `referenceLibraryDepth@uniform-random-legal`, `referenceNodesGainedFinalQuarter@archivist`, `referenceNodesGainedFinalQuarter@denial-warden`, `referencePeakPopulation@archivist`, `referencePopulation@uniform-random-legal`, `referencePopulationChange@uniform-random-legal`. Tolerance is unchanged (k = 3); the arms moved
+  // under a fixed instrument. Re-recorded once more after the #251 review
+  // (a raid no longer ends on its last defender; only a raid's own casualties
+  // are settled): `referenceLibraryDepth@uniform-random-legal` left,
+  // `referenceGrimoires@worship-maximizer` joined; still thirteen.
+  // **Twelve after the raid-tuning drill re-record, 2026-10-09.** A raider's
+  // practice became her kit, drilled past activation, and an unready raider
+  // stopped researching. `referenceKnowledgeInstances@portal-rush` (106.4 %)
+  // and `referencePeakPopulation@archivist` (146.5 %) left;
+  // `referenceGrimoires@uniform-random-legal` (101.1 %) joined.
   'balance/baselines/balance-gate-ascension-v1.baseline.json': [
     'referenceGrimoires@portal-rush',
     'referenceGrimoires@uniform-random-legal',
-    'referenceKnowledgeInstances@passive-control',
-    'referenceKnowledgeInstances@permissive-breadth',
-    'referenceKnowledgeInstances@worship-maximizer',
-    'referenceLibraryDepth@passive-control',
-    'referenceLibraryDepth@worship-maximizer',
+    'referenceGrimoires@worship-maximizer',
+    'referenceLibraryDepth@permissive-breadth',
+    'referenceNodesGainedFinalQuarter@archivist',
+    'referenceNodesGainedFinalQuarter@denial-warden',
     'referenceNodesGainedFinalQuarter@narrow-depth',
     'referenceNodesGainedFinalQuarter@passive-control',
-    'referenceNodesGainedFinalQuarter@permissive-breadth',
     'referenceNodesGainedFinalQuarter@portal-rush',
     'referenceNodesGainedFinalQuarter@worship-maximizer',
+    'referencePopulation@uniform-random-legal',
+    'referencePopulationChange@uniform-random-legal',
   ],
   'balance/baselines/balance-gate-v1.baseline.json': [],
   'balance/baselines/balance-gate-horizon-v1.baseline.json': [],
@@ -268,6 +282,15 @@ const BLIND_SWEEP_LINES: Readonly<Record<string, readonly string[]>> = {
   'balance/baselines/balance-gate-agency-v1.baseline.json': [],
   // Empty after the S4 re-record, 2026-10-08: the final-quarter gain went from
   // 100.7 % to 74.9 % MDE — a fed universe keeps learning in its last quarter.
+  // **Back to one after the raid-tuning re-record the same day: 144.9 %**
+  // (128.6 % before the #251 review re-record).
+  // Stand-in raids now kill and burn, so a run's final quarter can *lose*
+  // nodes, and the sweep mean fell to about 8 against a tolerance near 12.
+  // The README's fix stands — 128 or 256 replicates — and is not this
+  // change's to make.
+  // **Empty again after the drill re-record, 2026-10-09: 77.7 %.** Raiders who
+  // hold their kit usable defend and raid better, and the sweep mean rose to
+  // about 10.5 against a tolerance near 8.
   'balance/baselines/balance-gate-ascension-v1.baseline.json': [],
 };
 

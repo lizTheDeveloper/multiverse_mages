@@ -640,7 +640,7 @@ export class CoordinatingKnowledgeGateway implements KnowledgeGateway {
    * `practice.test.ts` pins it. What it is *not* is an implication of the
    * ceiling arithmetic, which is what this comment used to claim.
    */
-  practicableNodes(mage: MageHandle): readonly ContentId[] {
+  practicableNodes(mage: MageHandle, ceilingFloor: Fixed = 0): readonly ContentId[] {
     const rates = this.#ratesOf(mage);
     if (rates === undefined) return [];
     const found: ContentId[] = [];
@@ -648,7 +648,9 @@ export class CoordinatingKnowledgeGateway implements KnowledgeGateway {
       const node = this.#deps.catalog.node(nodeId);
       if (node === undefined || node.tier > rates.depthCeiling) continue;
       if (!permits(this.#deps.ruleset, this.#deps.cells.cellOf(nodeId))) continue;
-      if (mastery >= practiceCeiling(node.tier, rates.depthCeiling)) continue;
+      // `ceilingFloor` is the raid-readiness drill's (see `practice()`); zero
+      // for ordinary practice, which leaves this exactly as it was.
+      if (mastery >= Math.max(practiceCeiling(node.tier, rates.depthCeiling), ceilingFloor)) continue;
       found.push(nodeId);
     }
     return found.sort((a, b) => a - b);
@@ -670,7 +672,12 @@ export class CoordinatingKnowledgeGateway implements KnowledgeGateway {
    * A refusal — an interdicted cell, a node she has since lost — writes
    * nothing, exactly as `contributeResearch`'s does.
    */
-  contributePractice(mage: MageHandle, nodeId: ContentId, mageMonths: Fixed): PracticeOutcome | undefined {
+  contributePractice(
+    mage: MageHandle,
+    nodeId: ContentId,
+    mageMonths: Fixed,
+    ceilingFloor?: Fixed,
+  ): PracticeOutcome | undefined {
     const rates = this.#ratesOf(mage);
     if (rates === undefined) return undefined;
     const outcome = practice({
@@ -683,6 +690,7 @@ export class CoordinatingKnowledgeGateway implements KnowledgeGateway {
       effort: mageMonths,
       learnRate: rates.learnRate,
       depthCeiling: rates.depthCeiling,
+      ...(ceilingFloor === undefined ? {} : { ceilingFloor }),
     });
     // `gained > 0`, not merely "not refused": a mage already at her ceiling is
     // not a refusal — `practice.ts` says so in as many words — and counting her

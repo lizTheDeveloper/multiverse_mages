@@ -38,7 +38,7 @@ import {
 } from '@mm/agent-api';
 import { describe, expect, it } from 'vitest';
 
-import { FIXTURE_CATALOGUE, FIXTURE_NODES, firstUniverse, secondUniverse } from './fixtures.js';
+import { FIXTURE_CATALOGUE, FIXTURE_NODES, firstUniverse, secondUniverse, universeWithRaider } from './fixtures.js';
 
 describe('task 4.3 — the discrete action enumeration', () => {
   it('matches contracts.md §4.2 id for id', () => {
@@ -118,7 +118,7 @@ describe('candidate lists are deterministic and never longer than k', () => {
 
   it('never exceeds the pinned k', () => {
     const lists = buildCandidates({
-      state: firstUniverse().state,
+      state: universeWithRaider().state,
       catalogue: FIXTURE_CATALOGUE,
       portalTargets: Array.from({ length: 50 }, (_, index) => index + 1),
       // The portal gate, opened so that this measures truncation rather than
@@ -251,9 +251,22 @@ describe('candidate lists are deterministic and never longer than k', () => {
     expect(lists.get(GOD_ACTION.openPortal)).toEqual([]);
   });
 
-  it('offers the caller\'s targets once the gate opens', () => {
+  it('offers no target while no living mage is a raider, gate open or not', () => {
+    // Nobody to send. The base fixture's only raider is dead; the portal gate
+    // is open (mage 0 holds node 1). On `2464588b` this offered three targets
+    // and the press charged full price for a raid that fielded nobody.
     const lists = buildCandidates({
       state: firstUniverse().state,
+      catalogue: FIXTURE_CATALOGUE,
+      portalTargets: [1, 2, 3],
+      portalNodes: [1],
+    });
+    expect(lists.get(GOD_ACTION.openPortal)).toEqual([]);
+  });
+
+  it('offers the caller\'s targets once the gate opens', () => {
+    const lists = buildCandidates({
+      state: universeWithRaider().state,
       catalogue: FIXTURE_CATALOGUE,
       portalTargets: [3, 1, 2],
       portalNodes: [1],

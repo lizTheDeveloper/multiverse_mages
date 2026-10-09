@@ -174,6 +174,17 @@ export interface PracticeInputs {
   /** Defaults to {@link PRACTICE_GAIN_PER_MONTH}. */
   readonly gainPerMonth?: Fp;
   /**
+   * A floor under the practice ceiling, or absent for none.
+   *
+   * A raider practising a held raid-kit node practises up to at least this,
+   * whatever her depth headroom — raid-constant.json's
+   * `raid-readiness-mastery-floor`. Without it the ceiling for a node at the
+   * top of her reach is exactly the activation threshold, so a drilled portal
+   * node decayed back below 512 before the portal gate read it and never
+   * opened (measured 2026-10-08, round-3 playtest).
+   */
+  readonly ceilingFloor?: Fp;
+  /**
    * Defaults to {@link DEFAULT_TEACH_THRESHOLD}.
    *
    * **Reported against only.** It decides
@@ -236,7 +247,7 @@ export function practice(inputs: PracticeInputs): PracticeOutcome {
     return refuse({ reason: 'node-not-held', nodeId: inputs.nodeId, subject: inputs.subject });
   }
 
-  const ceiling = practiceCeiling(node.tier, inputs.depthCeiling);
+  const ceiling = Math.max(practiceCeiling(node.tier, inputs.depthCeiling), inputs.ceilingFloor ?? 0);
   const effort = Math.max(0, inputs.effort);
   const gain = mul(
     mul(inputs.gainPerMonth ?? PRACTICE_GAIN_PER_MONTH, effort),

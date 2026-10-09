@@ -38,6 +38,7 @@ import {
   KNOWLEDGE_INSTANCE,
   LOCATION_KIND,
   MAGE,
+  MAGE_ROLE,
   UNIVERSITY,
   componentOf,
 } from '@mm/state';
@@ -119,6 +120,16 @@ export interface OutlookDeps {
    */
   readonly preferredUniversityFor: (current: Handle) => Handle;
   /**
+   * Primitive ids a raider drills, or absent.
+   *
+   * Absent leaves `raidKitTargets` empty and `raid-readiness` the targetless
+   * month it was before the list existed, so a world built for a knowledge
+   * test — or any build that does not wire it — behaves exactly as it did.
+   */
+  readonly raidKitPrimitives?: ReadonlySet<number> | undefined;
+  /** The raid-readiness drill's practice-ceiling floor (`raid-readiness-mastery-floor`), or absent. */
+  readonly raidDrillFloor?: number | undefined;
+  /**
    * The authored half of *"is this node worth casting at the world?"*, or
    * `undefined` on a build with no economy index wired.
    *
@@ -156,6 +167,14 @@ export function buildOutlook(
   // about the boundary — a goal that is masked while its own pressure term
   // reads maximal, or the reverse.
   const upkeep = upkeepFor(mage, deps);
+  const kit = raidKitTargetsFor(row.roleId, practicableBy(mage, deps, deps.raidDrillFloor ?? 0), deps.raidKitPrimitives);
+  // A raider whose kit holds a node she cannot yet cast does not research.
+  // Scores alone could not get her there: measured, a gnome portal holder named
+  // raider scored research 1429 against readiness 1016, and her species and
+  // personality terms (384 + 405) are more than any readiness term can answer
+  // inside its bounds. So the frontier is closed to her until the kit is
+  // usable — the god named her for the portal, and the portal is the job.
+  const kitUnready = kitHoldsUnusable(mage, kit, deps);
 
   return {
     mage,
@@ -167,13 +186,22 @@ export function buildOutlook(
     normalizedAge: normalizedAge(ageInMonths(deps.worldTick, row.birthTick), lifespanMonths),
     universityId: row.universityId,
 
-    discoveryTargets: frontier.discovery,
-    rediscoveryTargets: frontier.rediscovery,
+    discoveryTargets: kitUnready ? [] : frontier.discovery,
+    rediscoveryTargets: kitUnready ? [] : frontier.rediscovery,
     teachableToMe: boundCandidates(teachableToMe(mage, deps), species),
     teachableByMe: boundCandidates(teachableByMe(mage, deps), species),
     scribableTargets: boundCandidates(scribableBy(mage, deps), species),
     applicableTargets: boundCandidates(applicableBy(mage, deps), species),
-    practiceTargets: boundCandidates(practicableBy(mage, deps), species),
+    // A raider with a kit to drill practises nothing else: her practice *is*
+    // the drill, whichever of `practice` or `raid-readiness` wins the month.
+    // Measured: a senescent raider's age row puts `raid-readiness` 384 below
+    // `practice`, so a drill reachable only through the readiness goal left a
+    // portal holder named raider at 47–49% mastery for 300 ticks.
+    practiceTargets: boundCandidates(kit.length > 0 ? kit : practicableBy(mage, deps), species),
+    // Raiders only. Any mage may score `raid-readiness`, but only one the god
+    // named a raider has a kit to drill: the role is the player's lever, and a
+    // universe whose god never names one behaves exactly as it did before.
+    raidKitTargets: boundCandidates(kit, species),
     sustainableTargets: boundCandidates(upkeep.targets, species),
     workingUrgency: upkeep.pressure,
 
@@ -387,9 +415,38 @@ export interface UniversityStanding {
  * `remainingCost` is `0` for every entry. There is no project: a month of
  * practice is spent and gone, and next month she may spend another.
  */
-function practicableBy(mage: Handle, deps: OutlookDeps): KnowledgeTarget[] {
+/**
+ * The practicable nodes that carry a raid-kit primitive, for a raider — and
+ * nothing for anyone else.
+ *
+ * Filtered from the same `practicableBy` list rather than gathered separately,
+ * so the two can never disagree about what she holds, what her ceiling allows,
+ * or which cells are permitted now. `raid-readiness` is practice aimed at the
+ * part of her knowledge that works through a portal, and nothing more.
+ */
+export function raidKitTargetsFor(
+  roleId: number,
+  practicable: readonly KnowledgeTarget[],
+  kit: ReadonlySet<number> | undefined,
+): KnowledgeTarget[] {
+  // Raiders only: any mage may score `raid-readiness`, but only one the god
+  // named a raider has a kit to drill. The role is the player's lever, and a
+  // universe whose god never names one behaves exactly as it did before.
+  if (roleId !== MAGE_ROLE.raider) return [];
+  if (kit === undefined || kit.size === 0) return [];
+  return practicable.filter((target) => target.primitives.some((primitive) => kit.has(primitive)));
+}
+
+/** Whether any of a raider's kit targets is below the activation threshold. */
+function kitHoldsUnusable(mage: Handle, kit: readonly KnowledgeTarget[], deps: OutlookDeps): boolean {
+  if (kit.length === 0) return false;
+  const castable = new Set(deps.gateway.castableNodes(mage));
+  return kit.some((target) => !castable.has(target.nodeId));
+}
+
+function practicableBy(mage: Handle, deps: OutlookDeps, ceilingFloor = 0): KnowledgeTarget[] {
   const found: KnowledgeTarget[] = [];
-  for (const nodeId of deps.gateway.practicableNodes(mage)) {
+  for (const nodeId of deps.gateway.practicableNodes(mage, ceilingFloor)) {
     const facets = deps.facetsOf(nodeId);
     found.push({
       nodeId,

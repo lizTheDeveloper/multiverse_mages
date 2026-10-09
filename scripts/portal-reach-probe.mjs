@@ -1,0 +1,234 @@
+#!/usr/bin/env node
+/*
+ * Multiverse Mages — how long until a god who wants to raid can?
+ * Copyright (C) 2026 Ann Kelner
+ *
+ * This program is free software: you can redistribute it and/or modify it under
+ * the terms of the GNU Affero General Public License as published by the Free
+ * Software Foundation, either version 3 of the License, or (at your option) any
+ * later version. See the LICENSE file at the repository root, or
+ * <https://www.gnu.org/licenses/>.
+ *
+ * SPDX-License-Identifier: AGPL-3.0-or-later
+ */
+
+/**
+ * Time to the first world tick on which action 14 is legal *and* `rules-raid`'s
+ * gate would open the portal, with **no founding portal magic**, so the way through has to
+ * be discovered. One universe per seed, headless (the stand-in seats give
+ * action 14 a target), under two god policies:
+ *
+ * - `idle` — names one raider at tick 12 (action 14 is refused while nobody
+ *   is a raider) and otherwise no-ops.
+ * - `seek-portal` — what a player who wants a raid does through the action
+ *   space: permit `rego` and `limen` if the opening lacks them (actions 1 and
+ *   3), grant the tier-1 roots of the portal's prerequisite closure (action 8),
+ *   encourage research in the closure's cells (action 12), and from the tick a
+ *   living mage holds a portal node name her a raider so she drills it. It
+ *   also names the one raider every policy names.
+ *
+ * Openings: the v1 rectangle, and three 2 × 2 squares founded the way
+ * `packages/lobby` founds a player's — one holding the whole closure, one
+ * holding only the portal's own cell, one holding neither (see `SQUARES`).
+ *
+ * Reports the first possible raid per seed, the median, and how many seeds
+ * never got there within the horizon. Deterministic. Exit `1` if the seeded
+ * control — the same universe with `foundingPortalMagic: 1` — does not open on
+ * within thirty ticks (favor is the only wait), because then "never" would be a
+ * broken probe.
+ *
+ *   node scripts/portal-reach-probe.mjs [--seeds 7000,7002,...] [--ticks 600]
+ */
+
+import { parseArgs } from 'node:util';
+
+import { GOD_ACTION, createSession } from '@mm/agent-api';
+import { MagicGrid } from '@mm/rules-magic';
+import { heldInstancesOf, portalGate } from '@mm/rules-raid';
+import { MAGE, MAGE_ROLE, collectRecords, findUniverse, readRulesetForObservation, permits } from '@mm/state';
+import {
+  explicitOpeningAxes,
+  foundingCandidates,
+  participantOf,
+  referenceContent,
+  referenceOptions,
+  referenceScenario,
+  speciesTable,
+} from '@mm/scenario';
+
+const { values } = parseArgs({
+  options: {
+    seeds: { type: 'string', default: '7000,7002,7004,7006,7008,7010' },
+    ticks: { type: 'string', default: '600' },
+  },
+});
+const seeds = values.seeds.split(',').map(Number);
+const ticks = Number(values.ticks);
+const content = referenceContent();
+const registry = content.registry;
+
+const PORTAL = registry.nodes.find((e) => e.record.effects.some((x) => x.primitive === 'portal') && e.record.tier === 4);
+if (PORTAL === undefined) throw new Error('no tier-4 portal node in content');
+/** The prerequisite closure of the shallowest portal node, by content id. */
+const closure = new Map();
+const byId = new Map(registry.nodes.map((e) => [e.record.id, e]));
+const walk = (entry) => {
+  if (closure.has(entry.contentId)) return;
+  closure.set(entry.contentId, entry);
+  for (const p of entry.record.prerequisites) walk(byId.get(p));
+};
+walk(PORTAL);
+const cellIdOf = new Map(registry.cells.map((e) => [e.record.id, e.contentId]));
+const closureCells = [...new Set([...closure.values()].map((e) => cellIdOf.get(e.record.cell)))];
+const roots = [...closure.values()].filter((e) => e.record.prerequisites.length === 0).map((e) => e.contentId);
+const techniqueId = (id) => registry.techniques.find((e) => e.record.id === id)?.contentId;
+const formId = (id) => registry.forms.find((e) => e.record.id === id)?.contentId;
+const NEEDED_TECHNIQUES = [...new Set([...closure.values()].map((e) => e.record.cell.split('-')[0]))];
+const NEEDED_FORMS = [...new Set([...closure.values()].map((e) => e.record.cell.split('-')[1]))];
+
+const grid = MagicGrid.from(registry);
+/** The raid system's own gate, affordability aside — the authority on whether a portal can open. */
+function gateOpen(state) {
+  const p = participantOf(state, content);
+  if (p === undefined) return false;
+  return portalGate({
+    attackerWorld: state, attackerRuleset: p.ruleset, registry, grid,
+    favor: Number.MAX_SAFE_INTEGER, favorCost: 0, alreadyEngaged: false, heldOf: (m) => heldInstancesOf(p, m),
+  }).open;
+}
+
+function portalHolder(state) {
+  const p = participantOf(state, content);
+  if (p === undefined) return 0;
+  for (const e of collectRecords(state, MAGE)) {
+    if (e.row.alive !== 1) continue;
+    for (const h of heldInstancesOf(p, e.handle)) {
+      if (registry.node(h.nodeId)?.effects.some((x) => x.primitive === 'portal') === true) return e.handle;
+    }
+  }
+  return 0;
+}
+
+/**
+ * Openings, the way `packages/lobby` founds a universe on a player's square:
+ * an explicit 2 × 2 swapped into the content's axes. `v1` is the full
+ * rectangle.
+ */
+const SQUARES = {
+  v1: undefined,
+  // One species, founders scaled to the reference total — exactly what
+  // `packages/lobby`'s universe host does since #246 — on a square that holds
+  // the whole closure, and on one that holds none of it.
+  'lobby human 2x2 rego,intellego x limen,mentem': [['rego', 'intellego'], ['limen', 'mentem'], 'human'],
+  'lobby human 2x2 creo,muto x animal,aquam': [['creo', 'muto'], ['animal', 'aquam'], 'human'],
+  // The whole closure inside the square: rego-limen and intellego-limen.
+  '2x2 rego,intellego x limen,mentem': [['rego', 'intellego'], ['limen', 'mentem']],
+  // The portal's own cell, but not the cell its prerequisite reads from.
+  '2x2 rego,perdo x limen,ignem': [['rego', 'perdo'], ['limen', 'ignem']],
+  // Neither: the god has to permit a technique and a form first.
+  '2x2 creo,muto x animal,aquam': [['creo', 'muto'], ['animal', 'aquam']],
+};
+const contentFor = new Map(
+  Object.entries(SQUARES).map(([name, square]) => {
+    if (square === undefined) return [name, content];
+    const axes = explicitOpeningAxes(registry, square[0], square[1]);
+    return [name, { ...content, axes, foundingNodeIds: foundingCandidates(registry, axes) }];
+  }),
+);
+
+/** The lobby's one-species founding options (see `packages/lobby/src/universe-host.ts`). */
+function lobbyOptions(speciesId) {
+  const { ids } = speciesTable(registry);
+  const wanted = registry.species.find((e) => e.record.id === speciesId);
+  const perSpecies = referenceOptions({ worldTickCap: 1 });
+  return {
+    foundingSpeciesMask: 1 << ids.indexOf(wanted.contentId),
+    foundingMages: perSpecies.foundingMages * ids.length,
+    cohortSize: perSpecies.cohortSize * ids.length,
+  };
+}
+
+function play(seed, policy, opening, portalMagic = 0) {
+  const live = {};
+  const run = referenceScenario(contentFor.get(opening), { onState: (s) => { live.s = s; } });
+  const species = SQUARES[opening]?.[2];
+  const session = createSession({ scenario: run.scenario, strategyId: `portal-reach-${policy}` });
+  const options = { foundingPortalMagic: portalMagic, ...(species === undefined ? {} : lobbyOptions(species)) };
+  session.reset(seed, { worldTickCap: 4000, options });
+  let named = false;
+  let anyRaider = false;
+  for (let t = 0; t < ticks; t += 1) {
+    // A universe that ended (stagnation, ascension) before its portal opened
+    // never got one: reported as `ended@t` rather than folded into "never".
+    if (session.status() !== 'running') return { ended: t };
+    // Possible means both: the mask offers it and the raid system's gate would
+    // open it. On a build where the mask is optimistic the gate is the one that
+    // matters; on this one they agree.
+    if (session.legalActions()[GOD_ACTION.openPortal] === 1 && live.s !== undefined && gateOpen(live.s)) return { at: t };
+    let action = { kind: GOD_ACTION.noop, params: [] };
+    // Every policy names one raider at tick 12 — the last raider candidate, so
+    // not the founding portal holder — because since 2026-10-08 action 14 is
+    // refused while nobody is a raider. A god who wants a raid names one; a
+    // probe that did not would measure the naming, not the portal.
+    if (!anyRaider && t >= 12 && session.legalActions()[GOD_ACTION.assignRole] === 1) {
+      let slot = -1;
+      (session.candidates().get(GOD_ACTION.assignRole) ?? []).forEach((c, index) => {
+        if (c.params[1] === MAGE_ROLE.raider) slot = index;
+      });
+      if (slot >= 0) {
+        session.submit({ kind: GOD_ACTION.assignRole, params: [slot] });
+        anyRaider = true;
+        continue;
+      }
+    }
+    if (policy === 'seek-portal' && live.s !== undefined) {
+      const state = live.s;
+      const ruleset = readRulesetForObservation(state, findUniverse(state));
+      const legal = session.legalActions();
+      const holder = portalHolder(state);
+      const unpermittedTechnique = NEEDED_TECHNIQUES.find((t2) => !closureCells.some((c) => permits(ruleset, c) && registry.cell(c)?.technique === t2));
+      const unpermittedForm = NEEDED_FORMS.find((f) => !closureCells.some((c) => permits(ruleset, c) && registry.cell(c)?.form === f));
+      const grant = (session.candidates().get(GOD_ACTION.grantFoundingKnowledge) ?? []).findIndex((c) => roots.includes(c.params[1]));
+      const encourage = (session.candidates().get(GOD_ACTION.encourageResearch) ?? []).findIndex((c) => closureCells.includes(c.params[0]));
+      if (holder !== 0 && !named && legal[GOD_ACTION.assignRole] === 1) {
+        const slot = (session.candidates().get(GOD_ACTION.assignRole) ?? []).findIndex((c) => c.params[0] === holder && c.params[1] === MAGE_ROLE.raider);
+        if (slot >= 0) { action = { kind: GOD_ACTION.assignRole, params: [slot] }; named = true; }
+      }
+      if (action.kind === GOD_ACTION.noop && unpermittedTechnique !== undefined && legal[GOD_ACTION.permitTechnique] === 1) {
+        action = { kind: GOD_ACTION.permitTechnique, params: [techniqueId(unpermittedTechnique)] };
+      } else if (action.kind === GOD_ACTION.noop && unpermittedForm !== undefined && legal[GOD_ACTION.permitForm] === 1) {
+        action = { kind: GOD_ACTION.permitForm, params: [formId(unpermittedForm)] };
+      } else if (action.kind === GOD_ACTION.noop && grant >= 0 && legal[GOD_ACTION.grantFoundingKnowledge] === 1) {
+        action = { kind: GOD_ACTION.grantFoundingKnowledge, params: [grant] };
+      } else if (action.kind === GOD_ACTION.noop && encourage >= 0 && legal[GOD_ACTION.encourageResearch] === 1) {
+        action = { kind: GOD_ACTION.encourageResearch, params: [encourage] };
+      }
+    }
+    session.submit(action);
+  }
+  return { never: true };
+}
+
+const control = play(seeds[0], 'idle', 'v1', 1).at ?? -1;
+if (control < 0 || control > 30) {
+  console.error(`BROKEN PROBE: with founding portal magic the gate should open within thirty ticks (favor is the only wait); first legal tick ${control}.`);
+  process.exit(1);
+}
+
+/** Median first tick, counting a universe that never got there as later than any that did. */
+const median = (xs) => {
+  const s = xs.map((x) => x.at ?? Infinity).sort((a, b) => a - b);
+  const m = s[(s.length - 1) >> 1];
+  return m === Infinity ? 'not reached' : String(m);
+};
+const cell = (x) => (x.at !== undefined ? String(x.at) : x.ended !== undefined ? `ended@${x.ended}` : '—');
+console.log(`closure: ${[...closure.values()].map((e) => `${e.record.id}(t${e.record.tier})`).join(', ')}`);
+console.log('| opening | policy | first possible raid, world tick, per seed (— never; ended@t universe ended first) | median | not reached (of seeds) |');
+console.log('|---|---|---|---|---|');
+for (const opening of Object.keys(SQUARES)) {
+  for (const policy of ['idle', 'seek-portal']) {
+    const firsts = seeds.map((seed) => play(seed, policy, opening));
+    console.log(`| ${opening} | ${policy} | ${firsts.map(cell).join(', ')} | ${median(firsts)} | ${firsts.filter((f) => f.at === undefined).length}/${seeds.length} |`);
+  }
+}
+console.log(`control (foundingPortalMagic 1): first legal tick ${control}`);

@@ -15,7 +15,7 @@
     "victor": 0,
     "reason": 3,
     "resolutionTick": 84,
-    "maxTicks": 2787,
+    "maxTicks": 139,
     "casualties": [
       {
         "side": 0,
@@ -85,19 +85,26 @@
       [
         "direct-damage",
         {
-          "attacker": 236928,
-          "defender": 240000,
-          "applications": 157
+          "attacker": 14592,
+          "defender": 14976,
+          "applications": 140
         }
       ]
     ],
     "actionEconomy": {
       "deniedTicks": [
         [
+          "direct-damage",
+          [
+            11,
+            14
+          ]
+        ],
+        [
           "soldier-intrinsic",
           [
-            76,
-            91
+            73,
+            85
           ]
         ]
       ],
@@ -105,15 +112,15 @@
         [
           "direct-damage",
           [
-            384,
-            384
+            1536,
+            1536
           ]
         ],
         [
           "soldier-intrinsic",
           [
-            234112,
-            237184
+            12928,
+            13312
           ]
         ]
       ],
@@ -130,12 +137,12 @@
           "soldier-intrinsic",
           {
             "removing": 7,
-            "hurting": 148,
+            "hurting": 131,
             "spent": 0
           }
         ]
       ],
-      "totalCombatantTicks": 505,
+      "totalCombatantTicks": 489,
       "removals": [
         4,
         3

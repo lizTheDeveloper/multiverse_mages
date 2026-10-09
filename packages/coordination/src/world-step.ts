@@ -329,6 +329,18 @@ export interface WorldStepDeps {
    * `resolveSpeciesAffinities`.
    */
   readonly facets: NodeFacetResolver;
+  /**
+   * Primitive ids a raider drills during `raid-readiness`, or absent.
+   *
+   * Absent is the build before the goal had an operation: a raider's month of
+   * readiness changes nothing. See `MageOutlook.raidKitTargets`.
+   */
+  readonly raidKitPrimitives?: ReadonlySet<number> | undefined;
+  /**
+   * The practice-ceiling floor for a raider's drill, `fp`, or absent for none.
+   * raid-constant.json's `raid-readiness-mastery-floor`. See `practice()`.
+   */
+  readonly raidDrillFloor?: number | undefined;
   readonly affinitiesOf: (species: SpeciesRecord) => SpeciesAffinities;
   /**
    * How a species tilts the land mix it works, `fp` per land kind.
@@ -1925,6 +1937,8 @@ export function worldSystem(
             affinitiesOf: deps.affinitiesOf,
             emphasis: deps.emphasisFor?.(state, worldTick) ?? NO_EMPHASIS,
             preferredUniversityFor,
+            ...(deps.raidKitPrimitives === undefined ? {} : { raidKitPrimitives: deps.raidKitPrimitives }),
+            ...(deps.raidDrillFloor === undefined ? {} : { raidDrillFloor: deps.raidDrillFloor }),
             // The authored half of applicability. Absent on a build with no
             // economy index, which makes `apply-magic` masked for every mage —
             // the same inert world such a build already had.
@@ -2844,6 +2858,7 @@ function killTheDead(
 ): { deaths: number; nodesLost: number } {
   const doomed: { mage: EntityHandle; row: MageRecord }[] = [];
 
+
   for (const { handle, row } of collectRecords(state, MAGE)) {
     if (row.alive === 0) continue;
     const species = phase.deps.speciesOf(row.speciesId);
@@ -3635,6 +3650,12 @@ function workOne(
       noteWorking(establishOrRenewWorking(state, mage, nodeId, worldTick, duration));
       return undefined;
     }
+    // A raider's month of readiness is practice on her raid kit — the target
+    // was chosen from `raidKitTargets`, a filter of `practiceTargets`, so every
+    // gate practice asks has already been asked. One arithmetic for both, so a
+    // drilled spell and a practised one cannot come to differ. A raider with
+    // nothing to drill carries `targetNodeId: 0` and returned above.
+    case GOAL.raidReadiness:
     case GOAL.practice:
       // The library does **not** multiply this, for the reason the branch above
       // gives about applied work: `libraryRateMultiplier` is named for the
@@ -3667,11 +3688,38 @@ function workOne(
             deps.practiceBonusesFor?.(state, worldTick, mage, nodeId) ?? NO_BONUSES,
           ),
         ),
+        // The drill practises past the activation threshold; ordinary practice
+        // keeps its own ceiling. Without the floor a drilled node at the top of
+        // a raider's reach stopped at exactly 512 and decayed below it before
+        // the portal gate read it.
+        drillFloorFor(state, mage, nodeId, commitment.goalId, deps),
       );
       return undefined;
     default:
       return undefined;
   }
+}
+
+/**
+ * The ceiling floor a month of practice on `nodeId` runs under: the drill floor
+ * for a raider practising a raid-kit node — under either goal, because the
+ * outlook makes a raider's practice targets her kit — and none otherwise.
+ */
+function drillFloorFor(
+  state: SimState,
+  mage: Handle,
+  nodeId: number,
+  goalId: number,
+  deps: WorldStepDeps,
+): Fixed | undefined {
+  const floor = deps.raidDrillFloor;
+  const kit = deps.raidKitPrimitives;
+  if (floor === undefined || kit === undefined || kit.size === 0) return undefined;
+  if (goalId !== GOAL.raidReadiness && goalId !== GOAL.practice) return undefined;
+  const store = componentOf(state, MAGE);
+  if (!store.has(mage as EntityHandle)) return undefined;
+  if ((store.get(mage as EntityHandle, 'roleId') as number) !== MAGE_ROLE.raider) return undefined;
+  return deps.facets(nodeId).primitives.some((primitive) => kit.has(primitive)) ? floor : undefined;
 }
 
 /** No source of a rate applies. Shared so the empty case allocates nothing. */
@@ -4398,4 +4446,40 @@ function scribeThroughputFor(
     scribeRate: deps.primitives.scribeRate,
     scribeRateBonuses: [],
   });
+}
+
+/**
+ * Finishes the deaths a raid wrote and could not finish.
+ *
+ * `rules-raid`'s write-back sets a casualty's `alive` to `0` and empties her
+ * mind through the knowledge model, and that is all it can do: her goal
+ * commitment, her effort rows and her workings are `coordination`'s, and §5
+ * gives `rules-raid` no edge here. Until raids could kill (2026-10-08) nothing
+ * reached this; once they could, a raid casualty kept her commitment, kept her
+ * university, and left any student she was teaching paired with a corpse —
+ * found by `ui-recording.test.ts`, whose academy projection listed a lesson
+ * whose teacher no longer resolved.
+ *
+ * Called by the composition root (`scenario`'s raid system) on each world
+ * immediately after the write-back, **with exactly that raid's casualties on
+ * that world** — never a sweep of every dead mage. Other paths kill without
+ * clearing these rows on purpose or by their own rules (`long-run.ts`'s
+ * `applyLossShock`, for one), and a sweep here would settle their dead too and
+ * change what those paths measure. A handle that is not a dead mage is
+ * skipped. Ascending handle order, so two peers destroy effort rows in one
+ * order. Returns how many it settled.
+ */
+export function settleRaidCasualties(state: SimState, casualties: readonly Handle[]): number {
+  const efforts = new EffortLedger(state);
+  let settled = 0;
+  const mages = componentOf(state, MAGE);
+  for (const handle of [...new Set(casualties)].sort((a, b) => a - b)) {
+    if (!mages.has(handle) || mages.get(handle, 'alive') !== 0) continue;
+    clearCommitment(state, handle);
+    efforts.clearSubject(handle);
+    endWorkingsOf(state, handle);
+    mages.set(handle, 'universityId', 0);
+    settled += 1;
+  }
+  return settled;
 }

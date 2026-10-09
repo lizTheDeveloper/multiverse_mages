@@ -21,7 +21,8 @@
  * the outcome JSON byte-for-byte against the committed record.
  *
  * The fixture covers terrain generation, deployment (soldiers and detachments),
- * combat (direct-damage across 157 applications), the theft system
+ * combat (direct-damage across 140 applications since the 2026-10-08 raid tuning;
+ * 157 before it), the theft system
  * (`im-read-the-surface` carried by the raider), library objectives, and
  * resolution with an attacker victory. The seed (42) was chosen because it
  * produces the richest combination of those paths.

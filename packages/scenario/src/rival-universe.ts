@@ -67,6 +67,7 @@
 import { KnowledgeSubsystem, MASTERY_MAX, portalHookSet, resolvePortalHooks, traditionTable } from '@mm/rules-magic';
 import type { ContentId, ContentRegistry, SpeciesRecord } from '@mm/content';
 import type { RaidParticipant } from '@mm/rules-raid';
+import { contributesMagnitude } from '@mm/rules-raid';
 import type { EntityHandle, SimState, WorldSchema } from '@mm/sim-core';
 import type { Ruleset } from '@mm/state';
 import {
@@ -142,12 +143,23 @@ export function requiredSpeciesOf(registry: ContentRegistry): (speciesId: number
  */
 const FOREIGN_BOOK_DURABILITY = 1792;
 
+/**
+ * What a stand-in raider is armed with, one primitive per grant slot.
+ *
+ * `area-denial` and `summon` joined on 2026-10-08. At eight nodes a raider
+ * they arrived anyway, riding on combination nodes; at two, granted
+ * shallowest-first by primitive, nothing carried them, and the ablation arms
+ * over those two would have asked a raid about nothing. `summon` is last, so
+ * a six-raider warband at two nodes a raider holds exactly one summoner.
+ */
 const RAIDER_PRIMITIVES: readonly string[] = Object.freeze([
   'direct-damage',
   'knowledge-steal',
   'ward',
   'concealment',
   'blink',
+  'area-denial',
+  'summon',
 ]);
 
 /** The magnitudes this file reads out of `raid-constant.json`. */
@@ -501,14 +513,36 @@ function armRaiders(
     .sort((a, b) => a - b);
 
   const armed = Math.min(constants.raiderCount, living.length);
+  // Which nodes, by primitive rather than by position. Slot `k` of raider `i`
+  // draws from the primitive `RAIDER_PRIMITIVES[(i + k) % 7]`, taking that
+  // primitive's `i`-th carrier in content order. At eight nodes a raider the
+  // old positional rotation happened to cover every primitive; at two
+  // (2026-10-08) it took the front of the list, which carried no
+  // `knowledge-steal` at all — a stand-in that could not steal, and ablation
+  // arms over steal, ward and blink that asked about nothing. By primitive,
+  // every one of the seven appears in a six-raider warband at any count >= 2.
+  //
+  // Shallowest first within a primitive, ties on id: live raiders were
+  // measured holding tier-1 and tier-2 kit, and a stand-in drawing tier-5
+  // area-denial-and-damage nodes killed ten times what a live warband does.
+  const tierOf = (nodeId: ContentId): number => content.registry.node(nodeId)?.tier ?? 0;
+  const byPrimitive = RAIDER_PRIMITIVES.map((primitive) =>
+    nodeIds
+      // Carriers that *contribute* the primitive, by `rules-raid`'s own test —
+      // the shallowest `knowledge-steal` nodes are `reveal`-mode marks that
+      // steal nothing, and a stand-in armed with one is armed with nothing.
+      .filter((nodeId) =>
+        content.registry.node(nodeId)?.effects.some((effect) => contributesMagnitude(effect, primitive)) === true,
+      )
+      .sort((a, b) => tierOf(a) - tierOf(b) || a - b),
+  );
   for (let index = 0; index < armed; index += 1) {
     const mage = living[index] as EntityHandle;
     mages.set(mage, 'roleId', MAGE_ROLE.raider);
     for (let slot = 0; slot < constants.raiderNodeCount; slot += 1) {
-      // Rotated by raider so the warband is not six copies of one loadout: a
-      // side whose every member holds the same node makes every ablation on a
-      // combat primitive an ablation on the whole warband.
-      const nodeId = nodeIds[(index * constants.raiderNodeCount + slot) % nodeIds.length] as ContentId;
+      const carriers = byPrimitive[(index + slot) % byPrimitive.length] ?? [];
+      const pool = carriers.length > 0 ? carriers : nodeIds;
+      const nodeId = pool[(index + Math.floor(slot / byPrimitive.length)) % pool.length] as ContentId;
       knowledge.createInstance({
         nodeId,
         locationKind: LOCATION_KIND.mind,

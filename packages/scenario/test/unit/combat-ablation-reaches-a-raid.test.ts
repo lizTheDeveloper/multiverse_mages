@@ -35,6 +35,13 @@
  *
  * ## Why `knowledge-steal`, and the finding behind that choice
  *
+ * **Historical as of 2026-10-08** — kept because the reasoning is how the gap
+ * was found. The measured cause turned out to be vigor rather than the priority
+ * order below: the cheapest cast cost fp(3) against every mage's fp(1), so
+ * `firstCastableNode` refused everything. The raid tuning of that date made
+ * casting affordable and all seven primitives now move reference raids; this
+ * file asserts that, with a raidless run as the control.
+ *
  * It is the only combat primitive whose neutralization changes a reference run
  * today, and the reason is worth writing down because it is a gap in the
  * scenario rather than in this wiring.
@@ -68,7 +75,7 @@
  * surveyed seeds; it now moves every seed that raids at all, because a theft is
  * only delivered by a thief who comes home and until raiders could withdraw,
  * every theft was forfeited with its thief. The control on the control moved
- * with it — see {@link UNMOVED_PRIMITIVES}.
+ * with it — see {@link COMBAT_PRIMITIVES}.
  *
  * The honest reading is not "the mask barely works". It is **"reference raids
  * contain no combat at all"**, which is a finding for whoever tunes raid
@@ -109,6 +116,12 @@ const HORIZON = 400;
 
 /**
  * Seeds whose raid log moves when `knowledge-steal` is neutralized.
+ *
+ * **Since 2026-10-08 the assertion over these is "at least one seed moves, per
+ * primitive"** rather than "every seed moves under `knowledge-steal`": with
+ * combat live, which primitive decides a given raid varies by seed, and seed
+ * `0x0000_022b`'s raid is now decided before theft matters. The survey history
+ * below is kept as the record it is.
  *
  * All four raid and all four move. This list used to be two, with the other two
  * held as a by-seed control; `withdraw-after-ticks` made thefts deliverable and
@@ -209,8 +222,9 @@ const SEEDS: readonly number[] = Object.freeze([
 ]);
 
 /**
- * The six combat primitives whose neutralization moves **nothing** — the
- * control on the control, by primitive rather than by seed.
+ * **Retired 2026-10-08.** This was `UNMOVED_PRIMITIVES`: the six combat
+ * primitives whose neutralization moved **nothing** — the control on the
+ * control, by primitive rather than by seed.
  *
  * A stronger control than the seed list it replaced, and a more honest one: it
  * says the mask is not a general perturbation that moves any run it is handed,
@@ -222,15 +236,25 @@ const SEEDS: readonly number[] = Object.freeze([
  * So this list is a live measurement of a gap, and it fails the day somebody
  * closes it — which is the correct thing for it to do, and the reason it is
  * asserted rather than written in a comment.
+ *
+ * It failed on 2026-10-08, as written: the cause was not the priority order but
+ * vigor — the cheapest cast cost fp(3) against every mage's fp(1) — and with the
+ * raid tuning of that date every one of the six moves the raid log. The list is
+ * now every combat primitive, asserted to move; the control on the control is a
+ * raidless run that none of them may touch.
  */
-const UNMOVED_PRIMITIVES: readonly string[] = Object.freeze([
+const COMBAT_PRIMITIVES: readonly string[] = Object.freeze([
   'direct-damage',
   'area-denial',
   'ward',
   'concealment',
   'blink',
   'summon',
+  'knowledge-steal',
 ]);
+
+/** A seed that resolves no raid at {@link HORIZON}: `0x0000_0001`, per the survey above. */
+const QUIET_SEED = 0x0000_0001;
 
 interface Played {
   readonly raidLog: string;
@@ -311,66 +335,51 @@ async function playOnce(seed: number, ablated?: string): Promise<Played> {
 }
 
 describe('§9’s mask crosses the scenario boundary into a raid', () => {
-  it.each(SEEDS)(
-    'neutralizing knowledge-steal changes the raid log on seed %i',
-    async (seed) => {
-      const control = await play(seed);
-      const ablated = await play(seed, 'knowledge-steal');
-
-      // The arm has to have reached the mechanic. A run that resolves no raid
-      // reports two identical empty logs and would pass a naive comparison while
-      // covering nothing — the same hollowing-out `raid-engagement.test.ts`
-      // guards its sentinel arm against.
-      expect(control.raidCount).toBeGreaterThan(0);
-      expect(ablated.raidCount).toBe(control.raidCount);
-
-      expect(ablated.raidLog).not.toBe(control.raidLog);
-    },
-    ARM_TIMEOUT_MS,
-  );
-
-  it.each(UNMOVED_PRIMITIVES)(
-    'leaves a run byte-identical when %s is neutralized',
+  it.each(COMBAT_PRIMITIVES)(
+    'neutralizing %s changes the raid log on at least one seed',
     async (primitive) => {
-      // The other direction, and it is what makes the assertion above mean
-      // something: the mask is not a general perturbation that moves any run it
-      // is handed. Six of the seven primitives move nothing on any seed, because
-      // nothing in a reference raid ever casts.
+      // Since 2026-10-08 reference raids contain combat: the cheapest cast used
+      // to cost fp(3) of vigor against every mage's fp(1), so nobody ever cast
+      // and six of these seven moved nothing (`UNMOVED_PRIMITIVES`, retired).
+      // Every one of them now reaches a raid that matters on these seeds.
+      let resolved = 0;
+      let moved = 0;
       for (const seed of SEEDS) {
         const control = await play(seed);
-        expect(control.raidCount, `seed ${String(seed)} resolved no raid`).toBeGreaterThan(0);
-        expect(
-          (await play(seed, primitive)).raidLog,
-          `${primitive} moved seed ${String(seed)} — a reference raid now contains combat`,
-        ).toBe(control.raidLog);
+        if (control.raidCount === 0) continue;
+        resolved += 1;
+        const ablated = await play(seed, primitive);
+        if (ablated.raidLog !== control.raidLog) moved += 1;
       }
+      // The arm has to have reached the mechanic. A run that resolves no raid
+      // reports two identical empty logs and would pass a naive comparison while
+      // covering nothing.
+      expect(resolved).toBeGreaterThan(0);
+      expect(moved, `${primitive} moved no seed`).toBeGreaterThan(0);
     },
     ARM_TIMEOUT_MS,
   );
+
+  it('leaves a run with no raid byte-identical, whatever is neutralized', async () => {
+    // The other direction, and what makes the assertion above mean something:
+    // the mask is not a general perturbation that moves any run it is handed.
+    // It acts on combat only through a raid, so a seed that never raids is
+    // untouched by any combat primitive's neutralization. Seed 1 resolves no
+    // raid at this horizon (surveyed below, 2026-08-16, and re-checked here).
+    const quiet = await play(QUIET_SEED);
+    expect(quiet.raidCount).toBe(0);
+    for (const primitive of COMBAT_PRIMITIVES) {
+      expect((await play(QUIET_SEED, primitive)).raidLog, `${primitive} moved a raidless run`).toBe(quiet.raidLog);
+    }
+  }, ARM_TIMEOUT_MS);
 });
 
-describe('why six of the seven combat primitives cannot be measured here', () => {
-  it.each(['direct-damage', 'concealment', 'blink'])(
-    'neutralizing %s changes nothing, because nobody ever swings',
-    async (primitive) => {
-      const seed = 0x0bad_c0de;
-      // The raid log now carries `actionEconomy`, so this comparison is a real
-      // one: before the record carried `actionEconomy` it could not have distinguished a live mask from a dead
-      // one, because the fields a combat primitive moves were not in it.
-      expect((await play(seed, primitive)).raidLog).toBe((await play(seed)).raidLog);
-    },
-    ARM_TIMEOUT_MS,
-  );
-
-  it('fields no warden — which is a symptom, and not the cause', async () => {
+describe('who defends', () => {
+  it('fields no warden under the passive strategy — and every researcher defends anyway', async () => {
     const played = await play(0x0bad_c0de);
     // `assign role` is god action 10 and the passive strategy never submits it,
-    // so every mage stays a `researcher`. That is worth asserting and it is
-    // **not** why the six are invisible: `DEFENDING_ROLES` includes
-    // `researcher`, so these mages do defend. The cause is that nobody on either
-    // side holds a combat node and theft outranks casting in `chooseIntent`, so
-    // no attempt is ever begun — pinned as a tripwire in `raid-metrics.test.ts`,
-    // where the record can now show it.
+    // so every mage stays a `researcher`. `DEFENDING_ROLES` includes
+    // `researcher`, so these mages do defend.
     expect(played.livingMages).toBeGreaterThan(0);
     expect(played.wardens).toBe(0);
   }, ARM_TIMEOUT_MS);

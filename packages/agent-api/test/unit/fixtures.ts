@@ -54,6 +54,7 @@ import {
   beginEngagement,
   captureRuleset,
   cellIdAt,
+  componentOf,
   createUniverse,
   defineWorldStateSchema,
 } from '@mm/state';
@@ -98,6 +99,20 @@ export interface FixtureWorld {
  * mages of two species at different depths, a university with a stocked
  * library.
  */
+/**
+ * {@link firstUniverse} with one **living** raider — its professor re-roled.
+ *
+ * Action 14 is masked until a living mage holds the raider role (2026-10-08:
+ * a portal with nobody to send charged full price and fielded no one). The
+ * base fixture's only raider is dead, which is right for every test about
+ * mortality and wrong for every test about portal targets, so those take this.
+ */
+export function universeWithRaider(): FixtureWorld {
+  const world = firstUniverse();
+  componentOf(world.state, MAGE).set(world.mages[1] as EntityHandle, 'roleId', MAGE_ROLE.raider);
+  return world;
+}
+
 export function firstUniverse(): FixtureWorld {
   const state = createState({
     rootSeed: 0x1111_0001,

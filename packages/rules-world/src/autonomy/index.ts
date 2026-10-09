@@ -79,6 +79,8 @@ export {
   GOAL_NAMES,
   isGoalId,
   needsTarget,
+  takesOptionalTarget,
+  GOALS_TAKING_AN_OPTIONAL_TARGET,
 } from './goals.js';
 
 export type { HistogramCell } from './histogram.js';

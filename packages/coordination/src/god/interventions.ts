@@ -63,7 +63,7 @@ import type { AxisChangeCounterRecord, LocationKindValue, MidRaidMark } from '@m
 import { FP_ONE, NULL_ENTITY, TIME_MODE, eraOf, floorDiv } from '@mm/sim-core';
 import type { Fixed } from '@mm/sim-core';
 import type { CellResolver, InstanceView, KnowledgeSubsystem, NodeCatalog } from '@mm/rules-magic';
-import { changeTradition } from '@mm/rules-magic';
+import { MASTERY_ACTIVATION_THRESHOLD, changeTradition } from '@mm/rules-magic';
 import type { SpeciesRecord } from '@mm/content';
 import type { MaterialKind, StepRng } from '@mm/rules-world';
 import { MATERIAL_KINDS, createMage, createUniversity, zeroAmounts } from '@mm/rules-world';
@@ -81,6 +81,7 @@ import {
   LIBRARY,
   LOCATION_KIND,
   MAGE,
+  MAGE_ROLE,
   MATERIAL_STOCK,
   RULE_CHANGE_KIND,
   RULE_SCOPE,
@@ -1363,6 +1364,11 @@ function portalPlan(
 ): Plan | undefined {
   if (targetId === undefined || targetId === 0) return undefined;
   if (portalMagicHolder(state, universe, deps) === 0) return undefined;
+  // Nobody to send: refused before payment, as the mask refuses it. See
+  // `agent-api`'s `portalCandidates`.
+  if (!collectRecords(state, MAGE).some(({ row }) => row.alive !== 0 && row.roleId === MAGE_ROLE.raider)) {
+    return undefined;
+  }
 
   return {
     cost: interventionCost(ACTION.openPortal, deps.god.costs),
@@ -1400,7 +1406,7 @@ function portalMagicHolder(
   const ruleset = readRulesetForObservation(state, universe);
   for (const { handle, row } of collectRecords(state, MAGE)) {
     if (row.alive === 0) continue;
-    for (const nodeId of heldNodeIds(state, handle)) {
+    for (const nodeId of usablyHeldNodeIds(state, handle)) {
       if (!deps.catalog.node(nodeId)) continue;
       const cellId = deps.cells.cellOf(nodeId);
       if (!isCellId(cellId) || !permits(ruleset, cellId)) continue;
@@ -1578,12 +1584,27 @@ function isLivingMage(state: SimState, mageId: number): boolean {
 }
 
 /** Node ids a mage holds in mind or palace. §1.5 locates both by mage handle. */
-function heldNodeIds(state: SimState, mage: EntityHandle): number[] {
+/**
+ * Nodes a mage holds **usably** — in her mind or palace, at or above the
+ * activation threshold.
+ *
+ * The predicate behind actions 14 and 16, and it has to be the same one
+ * `rules-raid`'s `portalGate` asks, or the two disagree. They did: this read
+ * every held instance at any mastery, the raid system's gate reads only usable
+ * ones, and an unpractised portal node decays below the threshold in about a
+ * hundred world ticks. Measured on the reference universe with
+ * `foundingPortalMagic: 1` (`scripts/peer-raid-survey.mjs`, 2026-10-08): from
+ * that tick on the mask offered action 14, the god paid for it, and no raid
+ * opened. A legal action that charges and does nothing is the worst shape a
+ * mask can take, so the mask now refuses what the gate would.
+ */
+function usablyHeldNodeIds(state: SimState, mage: EntityHandle): number[] {
   const found: number[] = [];
   for (const { row } of collectRecords(state, KNOWLEDGE_INSTANCE)) {
     if (row.locationKind !== LOCATION_KIND.mind && row.locationKind !== LOCATION_KIND.palace) {
       continue;
     }
+    if (row.mastery < MASTERY_ACTIVATION_THRESHOLD) continue;
     if (row.locationId === mage) found.push(row.nodeId);
   }
   return found;
