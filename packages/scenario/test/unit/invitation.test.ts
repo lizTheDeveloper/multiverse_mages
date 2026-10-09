@@ -88,9 +88,18 @@ describe('action 16 asked directly, past the mask', () => {
     const refused = askEveryMonth(founded, DWARF, 120);
     expect(refused.seen).toEqual([HUMAN]);
 
-    // The positive control: the same universe, a reachable species, and she comes.
-    const admitted = askEveryMonth(refused.state, ELF, 120);
+    // The positive control: the same founding, a reachable species, and she
+    // comes. Asked from the founding rather than after the 120 refused months
+    // because action 16 also needs a *usable* portal node (#251), and with no
+    // raider to drill it the founders' node decays below the activation
+    // threshold inside those months — the case pinned just below.
+    const admitted = askEveryMonth(founded, ELF, 120);
     expect(admitted.seen).toEqual([HUMAN, ELF].sort((a, b) => a - b));
+
+    // Both conditions, and the second one bites: the same reachable species,
+    // asked after the portal node has decayed below use, does not come.
+    const decayed = askEveryMonth(refused.state, ELF, 120);
+    expect(decayed.seen).toEqual([HUMAN]);
   });
 
   it('refuses every species in a universe with no portal at all', () => {
