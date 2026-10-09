@@ -141,7 +141,7 @@ const content = referenceContent();
 const { encodeFrame, header, declaredCheats } = frameDocument(content, 'scripts/play-server.mjs');
 
 const observeInto = (r) => {
-  r.frames.push(encodeFrame(r.session));
+  r.frames.push(encodeFrame(r.session, { godReport: r.godReport }));
 };
 
 /**
@@ -177,7 +177,7 @@ let run = null;
  * carries the new provenance.
  */
 function newRun(seed, cap, sandbox = null) {
-  const { scenario, sandbox: sheet } = referenceScenario(content, {
+  const { scenario, sandbox: sheet, lastGodReport } = referenceScenario(content, {
     raids: true,
     ...(sandbox === null ? {} : { sandbox }),
   });
@@ -189,6 +189,7 @@ function newRun(seed, cap, sandbox = null) {
     session,
     sandbox,
     sheet: sheet ?? null,
+    godReport: lastGodReport,
     frames: [],
     log: [],
     startedAt: Date.now(),

@@ -230,7 +230,7 @@ export function mountRaids(o) {
     h('div', { className: 'raid-card-head' },
       h('span', { className: 'raid-card-title' }, d.inbound ? `⚠ ${d.title}` : d.title),
       h('button', { type: 'button', className: 'raid-card-close', title: 'Dismiss this report', 'aria-label': 'Dismiss', onclick: () => dismiss(key) }, '×')),
-    h('div', { className: `raid-card-outcome ${d.weWon ? 'won' : 'lost'}` }, d.outcome),
+    h('div', { className: `raid-card-outcome ${d.empty ? 'empty' : d.weWon ? 'won' : 'lost'}` }, d.outcome),
     h('dl', {}, d.rows.map(([k, v]) => [h('dt', {}, k), h('dd', {}, v)])));
     model.cards.push({ key, node, inbound: d.inbound });
     reports.append(node);
@@ -334,7 +334,7 @@ export function mountRaids(o) {
         const label = m ? vocab.who(m) : `mage #${row.handle & 0xfffff}`;
         ul.append(h('li', {},
           h('button', {
-            type: 'button', className: 'raid-btn', disabled: f.raw.mask[10] !== 1 || o.isBusy(),
+            type: 'button', className: 'raid-btn', disabled: !f.isLegal(10) || o.isBusy(),
             title: deny10 || 'Make this mage a raider',
             onclick: async () => { await act(10, [slot], `Named a raider: ${label}`); lastSig = ''; paint(); },
           }, 'Make raider'),
