@@ -490,7 +490,18 @@ winning, and §8's whole second half a setting rather than a strategic axis. Hol
 not having once taken: the plunder counts while it survives, so a thief who dies or a book that
 burns closes the path until the universe raids again. Mechanically it is
 `ascension-looted-nodes` distinct looted nodes, read from `knowledge-provenance` — a row only a
-raid's write-back writes (`contracts.md` §1.5). LOOT_MEASUREMENT_PLACEHOLDER
+raid's write-back writes (`contracts.md` §1.5).
+
+The threshold is **one** looted node, and it was measured rather than chosen (2026-10-08, this
+branch merged over `raid-tuning` at `f88c8b9a`, `scripts/ascension-loot-probe.mjs`): a god who raids
+on purpose and then builds — `raid-then-open-then-build` against a live peer, seeds 11–16 — ascended
+in **2 of 6** runs, holding one and two looted nodes at the moment the path opened; at a threshold of
+two only **1 of 6** would have. The same bot pool that qualified in **23 of 87** headless runs without
+the conjunct qualifies in **0 of 87** with it, because a headless universe's only portal target is
+the stand-in rival and no raid on a stand-in has yet carried a book home (0 books in 21 outbound
+raids; the `raid-tuning` survey's stand-in arm agrees, 0 books against a live peer's 20). So the rule
+is reachable in the game it was written for and closed in the headless harness until a stand-in can
+be looted — a gap recorded here rather than tuned around.
 
 **Defeat is a re-entry, and it is already priced.** A universe ends; a player does not. Losing
 returns you to a fresh universe in a new bubble (§8b) rather than to a menu, and the legacy you

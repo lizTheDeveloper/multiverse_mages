@@ -42,7 +42,7 @@ import { GOD_ACTION, createSession } from '@mm/agent-api';
 import { BOT_POOL_REGISTRY, policyFor } from '@mm/mc-harness';
 import { agentRng } from '@mm/agent-api';
 import { KNOWLEDGE_PROVENANCE, LOOT_ROUTE, MAGE_ROLE, TERMINAL_REASON, componentOf } from '@mm/state';
-import { referenceContent, referenceScenario, shippedContent } from '@mm/scenario';
+import { participantOf, referenceContent, referenceScenario, shippedContent } from '@mm/scenario';
 
 const { values } = parseArgs({
   options: {
@@ -52,6 +52,9 @@ const { values } = parseArgs({
     k: { type: 'string', default: '' },
     arms: { type: 'string', default: 'shipped,off' },
     'portal-magic': { type: 'string', default: '' },
+    // Play against a live peer universe (seat 1) instead of the headless
+    // stand-in. The peer plays this strategy too, on seed + 1000.
+    peer: { type: 'string', default: '' },
   },
 });
 
@@ -111,9 +114,17 @@ function play(registry, strategyId, seed) {
   if (definition === undefined) throw new Error(`no strategy ${innerId}`);
   let routes = { theft: 0, book: 0 };
   let tapped = { theft: 0, book: 0 };
-  const { scenario, lastGodReport, raids } = referenceScenario(referenceContent(registry), {
+  const content = referenceContent(registry);
+  const live = {};
+  const peerId = values.peer;
+  const peered = peerId !== '';
+  const { scenario, lastGodReport, raids } = referenceScenario(content, {
     raids: true,
+    ...(peered
+      ? { peers: { seats: [1], participant: () => (live.b === undefined ? undefined : participantOf(live.b, content)) } }
+      : {}),
     onState: (state) => {
+      live.a = state;
       const store = componentOf(state, KNOWLEDGE_PROVENANCE);
       let theft = 0;
       let book = 0;
@@ -129,6 +140,22 @@ function play(registry, strategyId, seed) {
     worldTickCap: ticks,
     ...(values['portal-magic'] === '' ? {} : { options: { foundingPortalMagic: Number(values['portal-magic']) } }),
   });
+  let peerSession;
+  let peerPolicy;
+  if (peered) {
+    const runB = referenceScenario(content, {
+      raids: true,
+      onState: (state) => {
+        live.b = state;
+      },
+      peers: { seats: [1], participant: () => (live.a === undefined ? undefined : participantOf(live.a, content)) },
+    });
+    peerSession = createSession({ scenario: runB.scenario, strategyId: peerId });
+    peerSession.reset(seed + 1000, { worldTickCap: ticks });
+    const peerDef = BOT_POOL_REGISTRY.get(peerId);
+    if (peerDef === undefined) throw new Error(`no strategy ${peerId}`);
+    peerPolicy = policyFor(peerDef, { runSeed: seed + 1000, agentSlotIndex: 0, rng: agentRng({ runSeed: seed + 1000, agentSlotIndex: 0, strategyId: peerId }) });
+  }
   const inner = policyFor(definition, { runSeed: seed, agentSlotIndex: 0, rng: agentRng({ runSeed: seed, agentSlotIndex: 0, strategyId: innerId }) });
   let lootNow = 0;
   const policy = composite ? raidThen(inner, () => lootNow) : inner;
@@ -145,6 +172,10 @@ function play(registry, strategyId, seed) {
   let status = 'running';
   for (; tick < ticks; tick += 1) {
     const choice = policy(session.observe(), session.legalActions(), 0, session.candidates());
+    if (peerSession !== undefined && peerSession.status() === 'running') {
+      const p = peerPolicy(peerSession.observe(), peerSession.legalActions(), 0, peerSession.candidates());
+      peerSession.submit(p.parameter === undefined ? { kind: p.action } : { kind: p.action, params: [p.parameter] });
+    }
     const result = session.submit(choice.parameter === undefined ? { kind: choice.action } : { kind: choice.action, params: [choice.parameter] });
     const report = lastGodReport();
     if (report !== undefined) {
