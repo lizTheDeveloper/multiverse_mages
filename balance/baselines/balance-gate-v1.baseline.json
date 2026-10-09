@@ -1,7 +1,7 @@
 {
   "baselineFormatVersion": 1,
   "configurationHash": "4e4532ef15feeb3b64f123b87ad060bc3318768c915c8ebf6097b5958799b1d0",
-  "contentHash": "0a60ddd81004b135e49cf69569a1944b32871ce01ac3bc2c391d118ad422ba80",
+  "contentHash": "36682249bc8bf34d4496e9e8288ce4ed2604f3e80eefb0576ced3ad2b4be5bca",
   "kind": "gate",
   "metrics": [
     {"aggregation":"mean","definitionVersion":1,"metricId":"referenceGrimoires","sampleSize":200,"standardError":5.7252358030041,"standardErrorMethod":"stratified-by-cell","status":"measured","tolerance":17.1757074090123,"unit":"grimoires","value":392.815},
@@ -16,11 +16,13 @@
   ],
   "notes": [
     "This is a pre-0.5.0 measurement on a degenerate universe (single-species per arm, scripted strategies). It is not a balance claim; release-plan.md forbids balance claims before 0.5.0.",
-    "Still pre-0.5.0: a measurement, not a balance claim. Re-recorded by the raid-tuning PR; see its body for the survey tables and the falsifiable claim."
+    "Still pre-0.5.0: a measurement, not a balance claim. Re-recorded by the raid-tuning PR; see its body for the survey tables and the falsifiable claim.",
+    "Re-sealed 2026-10-09: PROVENANCE ONLY. No metric in this file was re-measured and no metric value changed — every metric line below is the one sealed under contentHash 0a60ddd81004b135e49cf69569a1944b32871ce01ac3bc2c391d118ad422ba80, byte for byte. provenance.contentHash f554ed8acc726e6032b658a49e98c107 → 8e4977c35d2a7d4ce2cb5eaf950ed6ea. A verification sweep of 200 runs was executed for the sole purpose of establishing that every gated metric was still inside the tolerance committed here (k = 3); its numbers were read and discarded, and the largest movement it saw was every gated metric read exactly its committed value. So read these values as a measurement of the build the PREVIOUS provenance names, re-sealed against the current one — not as a measurement taken against the current one.",
+    "ascension-needs-loot (2026-10-09): content moved by one god constant, ascension-looted-nodes, and world-schema revision 14 appended knowledge-provenance. This horizon is below ascension-min-tick (600), so the loot conjunct cannot act here; provenance-only."
   ],
   "provenance": {
     "buildVersion": "0.9.0",
-    "contentHash": "f554ed8acc726e6032b658a49e98c107",
+    "contentHash": "8e4977c35d2a7d4ce2cb5eaf950ed6ea",
     "metricDefinitionVersions": {"ascensionRate":1,"capitalSnowball":1,"combatActionEconomy":1,"combatThresholdEfficiency":1,"illegalActionRate":1,"inboundRaidTempoLoss":1,"knowledgeHalfLife":1,"libraryDependence":1,"lossShockRecovery":1,"materialGradeProfile":1,"prestigeAdvantage":2,"raidInitiationCost":1,"raidLengthDistribution":1,"referenceConservationBreaches":1,"referenceGrimoires":1,"referenceKnowledgeInstances":1,"referenceLibraryDepth":1,"referenceLivingMages":1,"referenceNodesGained":1,"referenceNodesGainedFinalQuarter":1,"referenceNodesKnown":1,"referencePeakPopulation":1,"referencePopulation":1,"referencePopulationChange":1,"roleAssignmentDemographicCost":1,"speciesCellOccupancy":1,"speciesGridVersatility":1,"timeToTierBySpecies":1,"winRateByPrimitive":2,"worshipSnowball":2},
     "observationLayoutDigest": "46182c35d829b205",
     "observationSchemaVersion": 1,
