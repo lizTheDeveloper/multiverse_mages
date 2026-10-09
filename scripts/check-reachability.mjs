@@ -205,6 +205,13 @@ const EXCLUDED_PACKAGES = [
       'repository imports it, and that is the boundary the package exists to be.',
   },
   {
+    name: 'lobby',
+    reason:
+      'The live lobby: the process players actually play against, serving `ui/` and every ' +
+      'frame a page reads. Its callers into `scenario` are production calls (a frame’s portal ' +
+      'standing, a universe’s legacy); its own exports are consumed by its `bin/` and tests.',
+  },
+  {
     name: 'gym-bridge',
     reason:
       'The RL bridge. Same shape as `server` — its client is a Python process on the other end ' +

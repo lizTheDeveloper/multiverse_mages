@@ -210,10 +210,26 @@ async function judge(label, click, { expectSuccess }) {
   if (errors.length > 0) fail({ ...row, why: `page error: ${errors[0].split('\n').slice(0, 3).join(' | ')}` });
   else if (crashToast) fail({ ...row, why: `crash text in toast: ${crashToast.text}` });
   else if (toasts.length === 0) fail({ ...row, why: 'no feedback at all' });
+  // The run's own ending can land between the legality check and the click
+  // (a fast lobby reaches its cap mid-probe); a refusal that says so is an
+  // answer in words, not a silent click.
+  else if (expectSuccess && success === undefined && toasts.some((t) => /has ended/u.test(t.text)) && (await serverSaysEnded())) {
+    results.push({ ...row, verdict: 'ok', why: 'the universe ended as it was clicked; refused in words' });
+  }
   else if (expectSuccess && success === undefined) fail({ ...row, why: 'legal when clicked, but no success toast' });
   else if (!moved && !(await hasEnded())) fail({ ...row, why: `the page's clock stopped at tick ${String(tickAfter)} after the click` });
   else results.push({ ...row, verdict: 'ok', why: expectSuccess ? 'admitted, clock running' : 'refused in words, clock running' });
 }
+
+/** The server's own answer — not the page's — to whether this universe has ended. */
+const serverSaysEnded = () =>
+  page.evaluate(async () => {
+    const id = localStorage.getItem('mm.universeId');
+    if (!id) return false;
+    const res = await fetch(`/u/${encodeURIComponent(id)}/live/legacy`);
+    if (!res.ok) return false;
+    return (await res.json()).status !== 'running';
+  }).catch(() => false);
 
 const isLegal = (aid) =>
   page.evaluate((id) => document.querySelector(`.god-action[data-action-id="${id}"]`)?.dataset.state === 'legal', aid);
@@ -297,7 +313,69 @@ try {
     }
   }
 
+  /* Playtest round 3, finding 2: a raider named from the Raids tab must be
+     counted. The panel's count is the server's (`frame.portal.raiders`), and
+     the feed must confirm the role a month later. */
+  {
+    await settle();
+    await page.click('#raids-tab');
+    await page.waitForTimeout(1500);
+    const count = () => page.evaluate(() => Number(/Your raiders \((\d+)\)/u.exec(document.getElementById('raids-host')?.innerText ?? '')?.[1] ?? NaN));
+    const name = page.locator('#raids-host .raid-nameable .raid-btn:not([disabled])');
+    if ((await name.count()) === 0) {
+      results.push({ action: '10 name a raider from the Raids tab', verdict: 'skip', why: 'no mage offered the raider role' });
+    } else {
+      const before = await count();
+      await judge('10 name a raider from the Raids tab', () => name.first().click(), { expectSuccess: true });
+      let after = before;
+      for (let waited = 0; waited < 8000 && !(after > before); waited += 500) {
+        await page.waitForTimeout(500);
+        after = await count();
+      }
+      const fed = await page.evaluate(() => /is now a raider/u.test(document.getElementById('activity-feed')?.innerText ?? ''));
+      if (!(after > before) && !fed) fail({ action: '10 name a raider from the Raids tab', why: `raider count stayed ${before} → ${after}, and no feed line confirmed the role` });
+      else results.push({ action: '10 raider counted', verdict: 'ok', why: `raiders ${before} → ${after}${fed ? ', feed confirmed' : ''}` });
+    }
+  }
+
   await page.click('.topbar .tab[data-tab="grid"]');
+
+  /* Finding 6: the encourage-research list keeps its order between repaints,
+     and the click lands on the cell that was clicked — the toast and the feed
+     name the same cell. */
+  {
+    await settle();
+    await page.click('.god-action[data-action-id="12"]');
+    await page.waitForTimeout(400);
+    const labels = () => page.locator('#cell-detail .cand-item').evaluateAll((els) => els.map((e) => e.dataset.label));
+    const first = await labels();
+    await page.waitForTimeout(2500);
+    const second = await labels();
+    const sameSet = first.length === second.length && first.every((l) => second.includes(l));
+    if (sameSet && first.join('|') !== second.join('|')) {
+      fail({ action: '12 target order', why: `the list reordered between repaints: ${first.join(', ')} → ${second.join(', ')}` });
+    } else {
+      results.push({ action: '12 target order', verdict: 'ok', why: sameSet ? 'stable across repaints' : 'the set changed; order not compared' });
+    }
+    const items = page.locator('#cell-detail .cand-item');
+    if ((await items.count()) > 1 && (await isLegal(12))) {
+      const want = await items.nth(1).getAttribute('data-label');
+      const toastsBefore = await toastCount();
+      await items.nth(1).click();
+      await page.waitForTimeout(2000);
+      const toasts = await toastsSince(toastsBefore);
+      const ok = toasts.find((t) => !t.error);
+      if (ok && !ok.text.endsWith(want ?? '\u0000')) fail({ action: '12 encourage research lands', why: `clicked ${want}, toast said ${ok.text}` });
+      let fed = false;
+      for (let waited = 0; waited < 10_000 && !fed; waited += 500) {
+        await page.waitForTimeout(500);
+        fed = await page.evaluate((w) => (document.getElementById('activity-feed')?.innerText ?? '').includes(`Encouraged research in ${w}`), want);
+      }
+      if (ok && !fed) fail({ action: '12 encourage research result', why: `no feed line for ${want}` });
+      else results.push({ action: '12 encourage research lands', verdict: ok ? 'ok' : 'skip', why: ok ? `${want}, toast and feed agree` : 'refused' });
+    }
+  }
+
   // A second, patient pass: change tradition, for one, costs more favor than a
   // young universe has.
   for (const aid of deferred) {
@@ -313,6 +391,51 @@ try {
 }
 
 await browser.close();
+
+/* Finding 3: a new universe survives a browser that is killed right after
+   Begin. A persistent profile, killed by the PIDs this probe started (never by
+   name), must reopen on the universe just founded, not the one it left. */
+{
+  const { mkdtempSync } = await import('node:fs');
+  const { execFileSync } = await import('node:child_process');
+  const dir = mkdtempSync(path.join(os.tmpdir(), 'mm-smoke-profile-'));
+  const exe = flag('executable', undefined) ?? cachedChromium();
+  const open = () => chromium.launchPersistentContext(dir, { headless: true, ...(exe ? { executablePath: exe } : {}) });
+  const idOf = (p) => p.evaluate(() => localStorage.getItem('mm.universeId'));
+  async function found(p) {
+    await p.waitForURL(/setup\.html/u, { timeout: 30_000 });
+    await p.click('.species-card');
+    await p.click('#begin-btn');
+    await p.waitForURL((u) => !u.pathname.endsWith('setup.html'), { timeout: 30_000 });
+    await p.waitForSelector('#god-actions .god-action', { timeout: 60_000 });
+  }
+  try {
+    let ctx = await open();
+    let p = ctx.pages()[0] ?? (await ctx.newPage());
+    await p.goto(`${base}/ui/app/`);
+    await found(p);
+    const old = await idOf(p);
+    await p.waitForTimeout(12_000); // long enough for the old pair to reach disk
+    await p.click('#restart-btn');
+    await found(p);
+    const fresh = await idOf(p);
+    let pids = [];
+    try { pids = execFileSync('pgrep', ['-f', dir]).toString().trim().split(/\s+/u).map(Number).filter(Boolean); } catch { /* none */ }
+    if (pids.length === 0) broken('could not find the persistent browser this probe started');
+    for (const pid of pids) { try { process.kill(pid, 'SIGKILL'); } catch { /* already gone */ } }
+    await new Promise((r) => setTimeout(r, 1000));
+    ctx = await open();
+    p = ctx.pages()[0] ?? (await ctx.newPage());
+    await p.goto(`${base}/ui/app/`);
+    await p.waitForSelector('#god-actions .god-action', { timeout: 60_000 }).catch(() => {});
+    const reopened = await idOf(p);
+    await ctx.close();
+    if (reopened === fresh) results.push({ action: 'new universe survives a killed browser', verdict: 'ok', why: 'reopened on the new universe' });
+    else fail({ action: 'new universe survives a killed browser', why: reopened === old ? 'reopened on the OLD universe' : `reopened on ${String(reopened)}` });
+  } catch (e) {
+    fail({ action: 'new universe survives a killed browser', why: `the check threw: ${e.message.split('\n')[0]}` });
+  }
+}
 
 for (const r of results) {
   console.log(`${r.verdict.padEnd(4)}  ${r.action}${r.why ? `  — ${r.why}` : ''}`);

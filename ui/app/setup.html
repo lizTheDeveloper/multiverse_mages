@@ -187,6 +187,8 @@ body { margin: 0; background: var(--ground); color: var(--ink); }
     <div class="setup-grid-preview" id="setup-grid-preview"></div>
   </div>
 
+  <p class="setup-note setup-portal" id="setup-portal" role="status" hidden></p>
+
   <div class="setup-section-label"><label for="universe-name">Name your universe (optional)</label></div>
   <div class="name-row">
     <input id="universe-name" type="text" maxlength="32" autocomplete="off" spellcheck="false"
@@ -198,7 +200,7 @@ body { margin: 0; background: var(--ground); color: var(--ink); }
   <p class="setup-rule" id="setup-rule" role="status"></p>
   <button class="begin-btn" id="begin-btn" disabled>Begin</button>
   <p class="setup-error" id="setup-error" role="alert"></p>
-  <p class="setup-note">The server keeps time: your universe runs from the moment you begin — one month per second at the default speed — whether or not this tab is open.</p>
+  <p class="setup-note">The server keeps time: your universe runs from the moment you begin — <span id="setup-pace">at the pace this server sets</span> — whether or not this tab is open.</p>
 </div>
 
 <div class="toast-container" id="toast-container"></div>
@@ -219,6 +221,8 @@ body { margin: 0; background: var(--ground); color: var(--ink); }
  */
 
 import { mountThemeControl } from '../shared/theme.js';
+import { saveIdentity } from '../shared/identity.js';
+import { portalPrerequisiteText } from './explain.js';
 
 const el = (id) => document.getElementById(id);
 mountThemeControl(el('theme-host'));
@@ -377,7 +381,31 @@ function renderSetup() {
     ? `To begin: ${missing.join(', ')}.`
     : 'Ready: two techniques and two forms make your opening four cells.';
   el('setup-rule').classList.toggle('unmet', missing.length > 0);
+  paintPortalNeed();
 }
+
+// What raiding needs from the opening square, from the research graph content
+// publishes (`/api/content`): a portal node and every prerequisite under it,
+// cell by cell. Rego Limen alone does not open a portal — the shallowest portal
+// node builds on a node in Intellego Limen — and a player who opened elsewhere
+// was locked out of raiding without being told (playtest round 3).
+let shippedContent = null;
+function paintPortalNeed() {
+  const p = el('setup-portal');
+  if (!p) return;
+  if (shippedContent === null || setup.techniques.size === 0 || setup.forms.size === 0) { p.hidden = true; return; }
+  const opening = shippedContent.cells
+    .filter((c) => setup.techniques.has(c.technique) && setup.forms.has(c.form))
+    .map((c) => c.cellId);
+  const text = portalPrerequisiteText(shippedContent, opening, 'your opening');
+  p.textContent = text === null
+    ? 'Your opening can reach a portal: every cell the portal’s research chain runs through is in it.'
+    : `${text} You can permit more cells later, at a price, to raid.`;
+  p.hidden = false;
+}
+fetch('/api/content').then((r) => (r.ok ? r.json() : null)).then((b) => {
+  if (b?.content?.portal) { shippedContent = b.content; paintPortalNeed(); }
+}).catch(() => { /* the line is advice; without content it is not shown */ });
 
 renderSetup();
 
@@ -455,17 +483,10 @@ el('begin-btn').addEventListener('click', async () => {
     // the universe across reloads and visits; if it is refused (a private
     // window), sessionStorage keeps it for this tab only, and the game page
     // says so.
-    const keep = (storage) => {
-      try {
-        storage.setItem('mm.universeId', body.universeId);
-        storage.setItem('mm.universeToken', body.token);
-        return true;
-      } catch {
-        return false;
-      }
-    };
-    const kept = (() => { try { return keep(localStorage); } catch { return false; } })()
-      || (() => { try { return keep(sessionStorage); } catch { return false; } })();
+    // Written to IndexedDB as well, and awaited: the navigation below must not
+    // outrun it (see ../shared/identity.js — a lazily flushed localStorage
+    // write lost a new universe to a browser closed right after Begin).
+    const kept = await saveIdentity(body.universeId, body.token);
     if (!kept) {
       throw new Error('This browser refuses to store anything for this page, so it could not keep your universe. Allow site storage and try again.');
     }
@@ -476,6 +497,15 @@ el('begin-btn').addEventListener('click', async () => {
     el('weave-overlay').setAttribute('hidden', '');
   }
 });
+// The pace this server actually runs at, as it publishes it — not a default.
+fetch('/api/bubbles').then((r) => (r.ok ? r.json() : null)).then((b) => {
+  const ms = b?.tickMs;
+  if (typeof ms !== 'number' || ms <= 0) return;
+  const perSec = 1000 / ms;
+  el('setup-pace').textContent = perSec >= 0.95 && perSec <= 1.05 ? 'one month per second on this server'
+    : perSec > 1 ? `${perSec < 10 ? perSec.toFixed(1) : Math.round(perSec)} months per second on this server`
+    : `one month every ${(ms / 1000).toFixed(ms < 10000 ? 1 : 0)} seconds on this server`;
+}).catch(() => { /* the sentence keeps its general wording */ });
 if (new URLSearchParams(location.search).has('gone')) {
   el('setup-error').textContent = 'That universe no longer exists — the server may have restarted. Choose again.';
 }
