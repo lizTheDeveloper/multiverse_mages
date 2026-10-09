@@ -90,6 +90,7 @@ import {
   resolveGodContent,
   universeEffectIndex,
   buildWorkingDurations,
+  readTendedFaucetWeights,
   vitalityIndex,
 } from '@mm/coordination';
 
@@ -905,17 +906,15 @@ export function worldDeps(
     // for. The holder predicate is `rules-raid`'s own — a gate-enabling
     // `portal` effect at `CASTABLE_MASTERY` — so a keeper is exactly a mage the
     // portal gate would count.
-    tended: {
-      portalNodes: new Set(
+    tended: readTendedFaucetWeights(
+      registry,
+      new Set(
         registry.nodes
           .filter(({ record }) => record.effects.some((effect) => enablesGate(effect, COMBAT_PRIMITIVES.portal)))
           .map(({ contentId }) => contentId),
       ),
-      usableMastery: CASTABLE_MASTERY,
-      passagePerKeeper: registry.autonomyWeight('passage-per-keeper'),
-      maxKeepers: registry.autonomyWeight('passage-keepers-max'),
-      researchInsightPerMonth: registry.autonomyWeight('research-insight-per-month'),
-    },
+      CASTABLE_MASTERY,
+    ),
     store: storeHookOf(registry, traditionId),
     acquire: acquireHookOf(registry, traditionId),
     // …and the same two, for whichever tradition the universe holds *now*.

@@ -79,6 +79,33 @@ export interface TendedFaucetWeights {
   readonly researchInsightPerMonth: Fixed;
 }
 
+/** Anything that can answer an `autonomy-weight.json` id by name. */
+export interface TendedWeightSource {
+  autonomyWeight(id: string): number;
+}
+
+/**
+ * Reads the three scalars by their {@link REQUIRED_TENDED_WEIGHTS} ids, once.
+ *
+ * Eager for `readApplicationWeights`' reason: the source throws on an
+ * undeclared id, so a content mistake fails at assembly rather than on the
+ * first tick a keeper keeps a threshold.
+ */
+export function readTendedFaucetWeights(
+  source: TendedWeightSource,
+  portalNodes: ReadonlySet<number>,
+  usableMastery: number,
+): TendedFaucetWeights {
+  const [perKeeper, maxKeepers, researchInsight] = REQUIRED_TENDED_WEIGHTS.map((id) => source.autonomyWeight(id));
+  return Object.freeze({
+    portalNodes,
+    usableMastery,
+    passagePerKeeper: perKeeper ?? 0,
+    maxKeepers: maxKeepers ?? 0,
+    researchInsightPerMonth: researchInsight ?? 0,
+  });
+}
+
 /** What the faucets produced this tick, and who produced it. */
 export interface TendedOutcome {
   readonly yielded: MaterialAmounts;
