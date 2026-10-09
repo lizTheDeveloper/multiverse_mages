@@ -225,7 +225,46 @@ describe('Lobby', () => {
       lobby.tickAll();
     }
     expect(lobby.universe(mine)?.isAlive).toBe(true);
+    // Ended, visibly — not dropped. Playtest round 4: an idle universe that
+    // vanished left its bubble-mates' seat silently changing hands. Its last
+    // frame says `abandoned`, nothing is legal, and it leaves no legacy.
+    const left = lobby.universe(theirs)!;
+    expect(left.isAlive).toBe(false);
+    expect(left.status).toBe('abandoned');
+    const frames = (await (await fetch(`${base}/u/${theirs}/live/frames?since=0`)).json()) as {
+      frames: { status?: string; mask?: number[] }[];
+    };
+    const last = frames.frames[frames.frames.length - 1]!;
+    expect(last.status).toBe('abandoned');
+    expect(last.mask!.every((m) => m === 0)).toBe(true);
+    expect(((await (await fetch(`${base}/u/${theirs}/live/legacy`)).json()) as { status: string; legacy: unknown })).toMatchObject({
+      status: 'abandoned',
+      legacy: null,
+    });
+    // A submit is refused in words, not queued on a world that no longer runs.
+    const sub = await fetch(`${base}/u/${theirs}/live/submit`, {
+      method: 'POST',
+      headers: { 'x-universe-token': tokens.get(theirs)! },
+      body: JSON.stringify({ kind: 0, params: [] }),
+    });
+    expect(sub.status).toBe(409);
+  });
+
+  it('drops an abandoned universe when its slot is wanted', async () => {
+    await start({ idleAfterMs: 5000, maxUniverses: 2 });
+    const mine = await create();
+    const theirs = await create();
+    for (let i = 0; i < 6; i += 1) {
+      clock.advance(1000);
+      await fetch(`${base}/u/${mine}/live/frames?since=0`, { headers: { 'x-universe-token': tokens.get(mine)! } });
+      lobby.tickAll();
+    }
+    expect(lobby.universe(theirs)?.status).toBe('abandoned');
+    // The lobby is full, but one of its two universes has ended: it makes room.
+    const third = await create();
+    expect(lobby.universe(third)?.isAlive).toBe(true);
     expect(lobby.universe(theirs)).toBeUndefined();
+    expect(lobby.universe(mine)?.isAlive).toBe(true);
   });
 
   it('retires the universe a player leaves when they create the next', async () => {
@@ -375,11 +414,25 @@ describe('Lobby', () => {
     expect(attacker.log.find((r) => r.outbound)!.target).toEqual({ universeId: b, name: 'Quiet Fen', species: 'Human' });
 
     const defender = await getJson<{
-      inbound: { fromUniverseId: string; fromName: string; record: { outbound: boolean } }[];
+      inbound: {
+        fromUniverseId: string;
+        fromName: string;
+        record: { outbound: boolean; victor: number; objectives: { kind: number; status: number }[]; casualtiesBySide: number[] };
+        arrivedTick: number;
+      }[];
     }>(`/u/${b}/live/raids`);
     expect(defender.inbound).toHaveLength(1);
     expect(defender.inbound[0]!.fromUniverseId).toBe(a);
     expect(defender.inbound[0]!.fromName).toBe('The Ember Court');
     expect(defender.inbound[0]!.record.outbound).toBe(true);
+    // What was taken, so the defender's report can say why the victor is who
+    // it is (playtest round 4: two withdrawals read as opposite verdicts).
+    const objectives = defender.inbound[0]!.record.objectives;
+    expect(objectives.length).toBeGreaterThan(0);
+    for (const o of objectives) expect(o).toEqual({ kind: expect.any(Number), status: expect.any(Number) });
+    expect(defender.inbound[0]!.record.casualtiesBySide).toHaveLength(2);
+    // Dated by the defender's own clock as well as the attacker's.
+    // B steps after A in the same tickAll, so the raid lands on B's tick before its own step.
+    expect(defender.inbound[0]!.arrivedTick).toBe(lobby.universe(b)!.worldTick - 1);
   }, 120_000);
 });

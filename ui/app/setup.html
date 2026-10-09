@@ -222,7 +222,7 @@ body { margin: 0; background: var(--ground); color: var(--ink); }
 
 import { mountThemeControl } from '../shared/theme.js';
 import { saveIdentity } from '../shared/identity.js';
-import { portalPrerequisiteText } from './explain.js';
+import { portalDepthWarning, portalPrerequisiteText } from './explain.js';
 
 const el = (id) => document.getElementById(id);
 mountThemeControl(el('theme-host'));
@@ -398,9 +398,12 @@ function paintPortalNeed() {
     .filter((c) => setup.techniques.has(c.technique) && setup.forms.has(c.form))
     .map((c) => c.cellId);
   const text = portalPrerequisiteText(shippedContent, opening, 'your opening');
-  p.textContent = text === null
-    ? 'Your opening can reach a portal: every cell the portal’s research chain runs through is in it.'
-    : `${text} You can permit more cells later, at a price, to raid.`;
+  // A statement about cells only. Whether mages get there is theirs: a species
+  // whose research ceiling is below the portal node never will (round 4).
+  const depth = setup.species ? portalDepthWarning(shippedContent, setup.species) : null;
+  p.textContent = (text === null
+    ? 'In principle your opening can reach a portal: every cell the portal’s research chain runs through is in it. That is about cells only — your mages still have to research the chain and master the node.'
+    : `${text} You can permit more cells later, at a price, to raid.`) + (depth ? ` ${depth}` : '');
   p.hidden = false;
 }
 fetch('/api/content').then((r) => (r.ok ? r.json() : null)).then((b) => {

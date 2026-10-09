@@ -160,6 +160,33 @@ export interface RaidRecord {
    */
   readonly nodesTakenByAttacker: number;
   /**
+   * Every objective on the field and how it ended — `OBJECTIVE_KIND` and
+   * `OBJECTIVE_STATUS` values, in the raid's own order. Raid-relative.
+   *
+   * The victor is decided by objective value taken, not by nodes, and not by
+   * how the raid ended: an attacker who captures a university and walks home
+   * with no new node has won. Without this a report could say only *that* the
+   * attackers won, and two withdrawals with zero casualties and zero nodes
+   * read as one raid won and one lost for no visible reason (playtest round 4).
+   * Carried as the two enum values only; `value` is a tuning number.
+   */
+  readonly objectives: readonly { readonly kind: number; readonly status: number }[];
+  /**
+   * Mages each side lost for good, `[attacker, defender]` by `RAID_SIDE`.
+   * Raid-relative, unlike {@link RaidRecord.localCasualties}: the record a
+   * defender's page reads is the attacker's, and without the defender's half
+   * it could only say "watch your population" (playtest round 4).
+   */
+  readonly casualtiesBySide: readonly [number, number];
+  /** Nodes the defending universe no longer has any instance of. Raid-relative. */
+  readonly nodesLostByDefender: number;
+  /**
+   * Knowledge instances that left the defender, by verb — a mind read
+   * (`copied`), a grimoire carried off (`moved`), a book burned (`destroyed`) —
+   * counting only thefts a raider brought home; burning needs no one to.
+   */
+  readonly knowledgeTaken: { readonly copied: number; readonly moved: number; readonly destroyed: number };
+  /**
    * Mid-raid ruleset changes this god actually made, and the favor they cost.
    *
    * The seam's own instrument. Unmasking actions 1–4 and routing them to
@@ -635,6 +662,17 @@ function resolveOneRaid(input: {
     raidersWithdrawn: outcome.raidersWithdrawn,
     raidersStranded: outcome.raidersStranded,
     nodesTakenByAttacker: countOf(applied.nodesGainedByRaider),
+    objectives: outcome.objectives.map((o) => ({ kind: o.kind, status: o.status })),
+    casualtiesBySide: [
+      outcome.casualties.filter((c) => c.side === ATTACKER).length,
+      outcome.casualties.filter((c) => c.side === DEFENDER).length,
+    ],
+    nodesLostByDefender: countOf(applied.nodesLostByHost),
+    knowledgeTaken: {
+      copied: outcome.knowledgeMovements.filter((m) => m.verb === 'copied' && !m.forfeited).length,
+      moved: outcome.knowledgeMovements.filter((m) => m.verb === 'moved' && !m.forfeited).length,
+      destroyed: outcome.knowledgeMovements.filter((m) => m.verb === 'destroyed').length,
+    },
     // `nodesLostByHost` is the host's loss and `nodesGainedByRaider` the
     // attacker's gain, both computed by the write-back rather than by
     // `resolveRaid`, which hardcodes both to `[]`.

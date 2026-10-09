@@ -17,6 +17,9 @@
  * universe through `setup.html`, then for every god action that takes a target
  * opens its candidate panel and clicks a target, and for the three edicts
  * (dispensation, interdiction, revoke) clicks the edict button on a cell.
+ * First, it has its bubble-mate raid it twice and checks the inbound reports:
+ * one card at a time ("1 of 2"), never over a seat's Raid button, dismissed by
+ * × and Esc for good (playtest round 4).
  *
  * Each click must end in a visible answer — a success toast or a refusal toast
  * in words — and must raise no page error. Exit codes:
@@ -143,12 +146,14 @@ try {
 }
 
 /* A bubble-mate, so a portal and an invitation have someone to point at. Made
-   over the API: it is a second player, not this page. */
-await fetch(`${base}/api/create`, {
+   over the API: it is a second player, not this page. It is founded with portal
+   magic (Rego × Limen and a founder who knows it) so that it can raid this page
+   — playtest round 4's inbound reports are checked below. */
+const mate = await fetch(`${base}/api/create`, {
   method: 'POST',
   headers: { 'content-type': 'application/json' },
-  body: JSON.stringify({ species: 'elf', tradition: 'true-naming', techniques: ['creo'], forms: ['ignem'] }),
-}).catch(() => {});
+  body: JSON.stringify({ species: 'elf', tradition: 'true-naming', techniques: ['creo', 'rego'], forms: ['ignem', 'limen'], foundingPortalMagic: 1 }),
+}).then((r) => r.json(), () => null);
 
 // Every toast the page shows, in order — they fade, so they are recorded.
 await page.evaluate(() => {
@@ -269,8 +274,119 @@ async function target(aid, waitMs, orRefusal) {
   return true;
 }
 
+/**
+ * Drives the bubble-mate over HTTP, with its own token, until it has raided
+ * this page `want` times: names raiders (action 10), then opens a portal
+ * (action 14) on the seat this page sits in. Resolves to the number of raids
+ * this page's own `/live/raids` lists as inbound.
+ */
+async function raidThisPage(want, deadlineMs) {
+  const me = await page.evaluate(() => localStorage.getItem('mm.universeId'));
+  if (!mate?.universeId || !me) return 0;
+  const json = async (p, init) => (await fetch(`${base}${p}`, init)).json();
+  const head = await json(`/u/${mate.universeId}/live/session.json`);
+  const raider = Number(Object.entries(head.content.mageRoles).find(([, n]) => n === 'raider')?.[0]);
+  const latest = async () => {
+    const h = await json(`/u/${mate.universeId}/live/frames?since=999999999`);
+    const t = await json(`/u/${mate.universeId}/live/frames?since=${h.from - 1}`);
+    return t.frames[t.frames.length - 1];
+  };
+  const submit = (kind, params) => json(`/u/${mate.universeId}/live/submit`, {
+    method: 'POST', headers: { 'x-universe-token': mate.token }, body: JSON.stringify({ kind, params }),
+  });
+  const inbound = async () => (await json(`/u/${me}/live/raids`)).inbound?.length ?? 0;
+  const until = Date.now() + deadlineMs;
+  while (Date.now() < until && (await inbound()) < want) {
+    const seats = (await json(`/u/${mate.universeId}/live/raids`)).seats ?? {};
+    const seat = Number(Object.entries(seats).find(([, v]) => (typeof v === 'string' ? v : v?.universeId) === me)?.[0]);
+    const f = await latest();
+    if (f.status !== undefined && f.status !== 'running') break;
+    const portal = (f.candidates?.['14'] ?? []).findIndex((c) => c.params[0] === seat);
+    if ((f.portal?.raiders ?? 0) >= 1 && f.mask[14] === 1 && portal >= 0) {
+      await submit(14, [portal]);
+      continue;
+    }
+    const slot = (f.candidates?.['10'] ?? []).findIndex((c) => c.params[1] === raider);
+    if (slot >= 0 && f.mask[10] === 1 && (f.portal?.raiders ?? 0) < 3) {
+      await submit(10, [slot]);
+      continue;
+    }
+    await new Promise((r) => setTimeout(r, 200));
+  }
+  return inbound();
+}
+
+/** The report queue as the page shows it: `{ shown, of }` (0 of 0 when empty). */
+const reportQueue = () => page.evaluate(() => {
+  const card = document.querySelector('#raid-reports:not([hidden]) .raid-card');
+  const m = /of (\d+)/u.exec(card?.querySelector('.raid-card-count')?.textContent ?? '');
+  return { shown: card ? 1 : 0, of: card ? Number(m?.[1] ?? 1) : 0, key: card?.dataset.key ?? null };
+});
+
+/** Every Raids-tab button that is the topmost element at its own centre: nothing lies over it. */
+const coveredSeatButtons = () => page.evaluate(() => [...document.querySelectorAll('#raids-host .raid-btn')]
+  .filter((b) => {
+    b.scrollIntoView({ block: 'nearest' });
+    const r = b.getBoundingClientRect();
+    const top = document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2);
+    return !(top && (top === b || b.contains(top)));
+  })
+  .map((b) => b.textContent.trim()));
+
 let endedEarly = false;
 try {
+  /* Playtest round 4, finding 1: two inbound raid reports stacked over the
+     middle of the screen, covered the Raids tab's seat buttons and blocked a
+     counter-raid, and would not go away. Now they queue ("1 of 2"), × and Esc
+     dismiss them for good, and a seat's Raid button is never under one. */
+  {
+    const n = await raidThisPage(2, 150_000);
+    if (n < 2) {
+      results.push({ action: 'inbound raid reports', verdict: 'skip', why: `the bubble-mate raided this page ${n} time(s) in the wait, not 2` });
+    } else {
+      const label = 'inbound raid reports';
+      let q = await reportQueue();
+      for (let waited = 0; waited < 20_000 && q.of < 2; waited += 500) {
+        await page.waitForTimeout(500);
+        q = await reportQueue();
+      }
+      const stacked = await page.locator('#raid-reports .raid-card').count();
+      await page.click('#raids-tab');
+      await page.waitForTimeout(1500);
+      const covered = await coveredSeatButtons();
+      const seatButtons = await page.locator('#raids-host .raid-go').count();
+      const docked = await page.evaluate(() => document.getElementById('raid-reports')?.parentElement?.id === 'panel-raids');
+      await page.click('#raid-reports .raid-card-close');
+      await page.waitForTimeout(300);
+      const afterX = await reportQueue();
+      await page.keyboard.press('Escape');
+      await page.waitForTimeout(300);
+      const afterEsc = await reportQueue();
+      await page.reload();
+      await page.waitForSelector('#god-actions .god-action', { timeout: 60_000 });
+      await page.waitForTimeout(6000);
+      const afterReload = await reportQueue();
+      if (q.of !== 2 || stacked !== 1) fail({ action: label, why: `expected one card reading "1 of 2", saw ${stacked} card(s), queue ${q.of}` });
+      else if (seatButtons === 0) fail({ action: label, why: 'the Raids tab shows no seat Raid button' });
+      else if (covered.length > 0) fail({ action: label, why: `a report covers Raids-tab buttons: ${covered.join(', ')}` });
+      else if (!docked) fail({ action: label, why: 'the report did not dock inside the Raids tab' });
+      else if (afterX.of !== 1) fail({ action: label, why: `× left ${afterX.of} report(s), expected 1` });
+      else if (afterEsc.of !== 0) fail({ action: label, why: `Esc left ${afterEsc.of} report(s), expected 0` });
+      else if (afterReload.of !== 0) fail({ action: label, why: `a reload brought back ${afterReload.of} dismissed report(s)` });
+      else results.push({ action: label, verdict: 'ok', why: 'queued 1 of 2, seat Raid button clickable, × and Esc dismiss, reload keeps them dismissed' });
+      // The page was reloaded: its toast recorder went with it.
+      await page.evaluate(() => {
+        window.__toasts = [];
+        new MutationObserver((muts) => {
+          for (const m of muts) for (const n of m.addedNodes) {
+            if (n.classList?.contains('toast')) window.__toasts.push({ text: n.textContent, error: n.classList.contains('error') });
+          }
+        }).observe(document.getElementById('toast-container'), { childList: true });
+      });
+      await page.click('.topbar .tab[data-tab="grid"]');
+    }
+  }
+
   // Actions 8–16 that open a candidate panel. 15 has no targets — it fires from
   // its own button and is only legal at the end of a game.
   const deferred = [];
@@ -304,11 +420,14 @@ try {
     if ((await go.count()) === 0) {
       results.push({ action: '14 portal from the Raids tab', verdict: 'skip', why: 'no seat open to raid' });
     } else {
-      const cardsBefore = await page.locator('#raid-reports .raid-card').count();
+      // Reports queue one at a time, so a new one shows as the queue growing.
+      const before = await reportQueue();
       await judge('14 portal from the Raids tab', () => go.first().click(), { expectSuccess: true });
-      const card = await page
-        .waitForFunction((k) => document.querySelectorAll('#raid-reports .raid-card').length > k, cardsBefore, { timeout: 20_000 })
-        .then(() => true, () => false);
+      let card = false;
+      for (let waited = 0; waited < 20_000 && !card; waited += 500) {
+        await page.waitForTimeout(500);
+        card = (await reportQueue()).of > before.of;
+      }
       if (!card) fail({ action: '14 portal from the Raids tab', why: 'no raid report and no "No raid opened" card' });
     }
   }

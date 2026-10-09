@@ -551,11 +551,13 @@ html, body { height: 100%; overflow: hidden; }
   background: color-mix(in srgb, var(--sunk) 40%, transparent);
   color: var(--faint);
   opacity: 0.3;
-  cursor: default;
+  /* Still a button: a forbidden cell is where a dispensation is offered. */
+  cursor: pointer;
 }
 .grid70 .c[data-off="true"]:hover {
-  opacity: 0.5;
+  opacity: 0.7;
   box-shadow: none;
+  border-color: var(--faint);
 }
 .grid70 .c[data-off="false"] {
   /* Permitted but empty: an open, dashed frame in the form's colour — clearly
@@ -924,7 +926,18 @@ body.held .god-action, body.held .axis-toggle, body.held .edict-btn, body.held .
 .raid-btn:not(:disabled) { border-color: var(--ctl-charged-border); background: var(--ctl-charged-bg); color: var(--ctl-charged-fg); }
 .raid-btn:disabled { opacity: .45; cursor: not-allowed; }
 .raid-btn:focus-visible, .edict-btn:focus-visible, .raid-card-close:focus-visible { outline: 2px solid var(--god); outline-offset: 1px; }
-.raid-reports { position: fixed; top: 3rem; left: 50%; transform: translateX(-50%); z-index: 9000; display: flex; flex-direction: column; gap: .5rem; width: min(30rem, calc(100vw - 2rem)); max-height: calc(100vh - 4rem); overflow-y: auto; }
+/* One report at a time (raid-panel.js). In a corner on most tabs; inside the
+   Raids tab, above the seats, when that tab is open — never over a seat's
+   Raid button. */
+.raid-reports { position: fixed; right: 1rem; bottom: 2.5rem; z-index: 9000; width: min(24rem, calc(100vw - 2rem)); max-height: min(60vh, 26rem); overflow-y: auto; }
+.raid-reports[hidden] { display: none; }
+.raid-reports.docked { position: static; width: auto; max-height: none; overflow: visible; margin: 0 0 .8rem; }
+.raid-reports.docked .raid-card { box-shadow: none; }
+.raid-card-count { font: 10px var(--mono); color: var(--faint); margin-left: auto; white-space: nowrap; }
+.raid-card-hint { color: var(--faint); }
+.raid-card-foot { display: flex; justify-content: space-between; align-items: center; gap: .5rem; margin-top: .4rem; font: 10px var(--mono); }
+.raid-card-all { border: 1px solid var(--edge); background: var(--sunk); color: var(--soft); border-radius: 3px; cursor: pointer; font: 10px var(--mono); padding: .1rem .5rem; }
+.raid-card-all:focus-visible { outline: 2px solid var(--god); outline-offset: 1px; }
 .raid-card { background: var(--panel); border: 1px solid var(--god); border-radius: 6px; padding: .6rem .75rem; box-shadow: 0 4px 18px rgba(0,0,0,.45); font: 11px/1.45 var(--sans); color: var(--soft); }
 .raid-card.inbound { border: 2px solid var(--loss); }
 .raid-card.warn { border-color: var(--warn); }
@@ -948,7 +961,16 @@ body.held .god-action, body.held .axis-toggle, body.held .edict-btn, body.held .
 .edict-btn:not(:disabled) .edict-price { color: var(--ctl-charged-fg); opacity: .85; }
 .edict-gloss { color: var(--faint); margin-top: .25rem; font: 10px/1.4 var(--sans); }
 .edict-why { margin: .25rem 0 0; padding-left: 1rem; color: var(--warn); font: 10px/1.4 var(--sans); }
-.edict-slot[data-kind] { cursor: pointer; }
+.edict-slot { cursor: pointer; background: transparent; }
+.edict-slot[data-empty="true"] { color: var(--soft); }
+.edict-slot[data-empty="true"]:hover, .edict-slot[data-empty="true"][aria-pressed="true"] { border-style: solid; border-color: var(--god); color: var(--god); }
+.edict-slot:focus-visible { outline: 2px solid var(--god); outline-offset: 1px; }
+.edict-pick { font: 11px/1.5 var(--sans); color: var(--ink); }
+.choose-target { font: 400 1rem var(--serif); color: var(--god); margin: .4rem 0 0; outline: none; }
+.choose-target.blocked { color: var(--warn); font-size: .9rem; }
+.choose-target-sub { font: 10px var(--mono); color: var(--soft); margin-bottom: .3rem; }
+.edict-pick p { margin: .3rem 0 .5rem; }
+body.edict-picking .grid70 .c { outline: 1px dashed var(--god); outline-offset: 1px; }
 .mage-row { padding: .2rem 0; border-bottom: 1px solid color-mix(in srgb, var(--edge) 50%, transparent); cursor: pointer; }
 .mage-row:hover .mage-row-head { color: var(--god); }
 .mage-row-head { font: 10px var(--mono); color: var(--ink); }
@@ -996,7 +1018,7 @@ body.held .god-action, body.held .axis-toggle, body.held .edict-btn, body.held .
   <div class="sub">Fetching its whole history from the server — a long-running universe takes a few seconds.</div>
 </div>
 <div class="toast-container" id="toast-container"></div>
-<div class="raid-reports" id="raid-reports" aria-live="assertive"></div>
+<div class="raid-reports" id="raid-reports" aria-live="assertive" hidden></div>
 
 
 <!-- Hidden *and* inert, with an empty title, until an ending fills it: a
@@ -1042,11 +1064,15 @@ body.held .god-action, body.held .axis-toggle, body.held .edict-btn, body.held .
       <li><b>Edicts</b> are one-off exceptions to your own rules (permit one forbidden cell, forbid one permitted one). There are only a few slots.</li>
     </ul>
 
-    <h3>Raids, passage and the portal</h3>
+    <h3>Raiding</h3>
     <ul>
-      <li>A raid sends your <b>raiders</b> through a portal to one of the universes in your portal seats (the <b>Raids</b> tab). Opening one needs the portal cell, <b>Rego Limen</b>, permitted and a mage who holds a portal node well enough to use it.</li>
-      <li>It costs <b>favor</b> and <b>passage</b>. Passage is the raid currency — what holding a threshold open is made of. You start with enough for two portals; after that it comes from two places: every mage who holds a portal node <em>keeps a threshold</em> and yields a little passage each month (up to four count), and mages who cast <b>Intellego Limen</b>, <b>Fatum</b> or <b>Umbra</b> at the world make more. The <b>Economy</b> panel lists who is making it.</li>
-      <li>A raid costs <b>tempo</b>: after a portal opens, the next cannot open for a few years while the threshold is gathered again. Each seat card shows your passage against the price and how long the portal has left to recharge.</li>
+      <li><b>What a portal needs.</b> The portal cell is <b>Rego × Limen</b>, and its shallowest portal node builds on knowledge in <b>Intellego × Limen</b> — so both cells must be permitted for your mages to research one. A species can only research as deep as its own ceiling; a people whose ceiling is below the portal node's tier cannot reach it themselves.</li>
+      <li><b>Mastery.</b> A mage who knows a portal node must hold it at <span class="guide-portal-mastery">the mastery the server sets (50% on this server's content)</span> before a portal opens. Mastery fades unless it is practised. <b>Name a holder a raider</b> (Raids tab → Portal knowledge, or Name a raider): a raider's readiness months drill her portal node and hold it up.</li>
+      <li><b>Opening one.</b> On the Raids tab each bubble-mate sits in a portal seat; press its <b>Raid</b> button. It costs favor and passage (the price is on the tab) and sends your raiders through to take libraries, universities and knowledge.</li>
+      <li><b>Reports.</b> Every raid, either way, ends in a report: one at a time, in the corner (or at the top of the Raids tab). × or Esc dismisses it; every report stays in Raid history. Who won is decided by how much of what was on the field the raiders took, not by how the raid ended.</li>
+      <li><b>Defending.</b> When you are raided, every graduated mage fights — wardens, professors, researchers, raiders and populace; students stay out. The raid is fought under <em>your</em> ruleset: a cast your law forbids is stopped, whoever tries it.</li>
+      <li><b>Passage</b> is the raid currency — what holding a threshold open is made of. You start with enough for two portals; after that, every mage who holds a portal node at usable mastery <em>keeps a threshold</em> and yields a little passage each month (up to four count), and mages who cast <b>Intellego Limen</b>, <b>Fatum</b> or <b>Umbra</b> at the world make more. The <b>Economy</b> panel lists who is making it.</li>
+      <li><b>Tempo.</b> A raid costs time: after a portal opens, the next cannot open for a few years while the threshold is gathered again. Each seat card shows your passage against the price and how long the portal has left to recharge.</li>
       <li><b>Insight</b> pays for blessings and speeds teaching. Research makes a little; casting Intellego Mentem or Imaginem makes more. <b>Food</b> feeds your people: when the granary runs dry the feed says so, and births slow until it refills.</li>
     </ul>
 
@@ -1056,8 +1082,8 @@ body.held .god-action, body.held .axis-toggle, body.held .edict-btn, body.held .
       <li><b>Activity feed</b> (under the grid) — discoveries, deaths, library growth, as they happen.</li>
       <li><b>Knowledge tab</b> — the full research tree: what is known, what is next, what is gated.</li>
       <li><b>World tab</b> — your mages, the university, the portal, and the soul of the place.</li>
-      <li><b>Raids tab</b> — the universes in your portal seats, how strong they look, your raiders, and every raid either way. A raid on you also pops up a report you have to dismiss.</li>
-      <li><b>Edicts</b> — click a cell: a forbidden one offers a <em>dispensation</em> (open just it), a permitted one an <em>interdiction</em> (close just it), and a cell an edict holds offers <em>revoke</em>.</li>
+      <li><b>Raids tab</b> — the universes in your portal seats, how strong they look, your raiders, and every raid either way. A raid on you also brings up a report: × or Esc dismisses it, and it stays in Raid history.</li>
+      <li><b>Edicts</b> — click a free <b>+ edict</b> slot under Edicts (left), or any cell on the grid: a forbidden cell offers a <em>dispensation</em> (open just it), a permitted one an <em>interdiction</em> (close just it), and a cell an edict holds offers <em>revoke</em>. You have one slot, plus one per worship tier.</li>
       <li><b>Console tab</b> — the raw state: every action's legality, resources, provenance.</li>
     </ul>
 
@@ -1138,7 +1164,7 @@ body.held .god-action, body.held .axis-toggle, body.held .edict-btn, body.held .
           </div>
           <div class="cell-detail-col">
             <div class="cell-detail" id="cell-detail">
-              <span class="hint">Select a cell on the grid</span>
+              <span class="hint">Click any cell on the grid for its detail and its edicts (open or close just that cell)</span>
             </div>
             <div id="cell-edicts" hidden></div>
           </div>
@@ -1314,7 +1340,7 @@ async function submitAction(kind, params, label, doneLabel = label, expect) {
   const payload = await session.submit(kind, params, expect);
   if (payload && payload.admitted === false) {
     showToast(`!${label} — refused: ${rejectionText(kind, payload.rejection)}.`, 5000);
-  } else {
+  } else if (doneLabel !== null) {
     showToast(doneLabel);
   }
   return payload;
@@ -1328,8 +1354,10 @@ async function act(kind, params, label, expect) {
   }
   state.busy = true;
   try {
-    const payload = await submitAction(kind, params, label, label, expect);
+    const law = CONSTITUTIONAL.has(kind) ? lawBefore() : null;
+    const payload = await submitAction(kind, params, label, law === null ? label : null, expect);
     if (payload && payload.admitted !== false) watchEffect(kind, expect, label.replace(/^[^:]*:\s*/u, ''));
+    if (law !== null && payload && payload.admitted !== false) watchLaw(law, label, `${label}: done`);
     noteAdmitted(kind, payload);
     refreshRuleset();
     return payload;
@@ -1387,7 +1415,7 @@ function godPermits(techId, formId) {
 function refreshRuleset() { godRuleset = liveRuleset(); }
 /** The Raids tab controller; mounted near the end of this script. */
 let raids = null;
-const state = { tab: 'grid', selectedCell: null, selectedAction: null, selectedMage: null, hoverAxis: null, busy: false, weaving: false, ended: false };
+const state = { tab: 'grid', selectedCell: null, selectedAction: null, selectedMage: null, hoverAxis: null, busy: false, weaving: false, ended: false, edictPick: false };
 
 // ================================================================ LIVE STATE
 // No precomputed series in live mode — we only have the current frame
@@ -1406,6 +1434,7 @@ for (const btn of document.querySelectorAll('.topbar .tab')) {
     for (const p of document.querySelectorAll('.center-panel')) {
       p.classList.toggle('active', p.id === `panel-${state.tab}`);
     }
+    raids?.place();
     paint();
   });
 }
@@ -1426,7 +1455,7 @@ function noteAdmitted(kind, payload) {
   lastConstitutionalTick = session.last().clock().worldTick;
 }
 function surchargeNote() {
-  const base = 'Base price from content. The server adds a surcharge if another permit, forbid or edict landed only a few months before; the exact surcharge is not published to this page.';
+  const base = 'Base price from content. The server adds a surcharge if another permit, forbid or edict landed only a few months before, and each recent change to the same technique or form raises its price again; neither is published to this page. If the real price is more than your favor, the act is refused when the month resolves and nothing is charged — the page will say so.';
   if (lastConstitutionalTick === null) return base;
   const ago = session.last().clock().worldTick - lastConstitutionalTick;
   return `${base} Your last one from this page was ${ago} month${ago === 1 ? '' : 's'} ago.`;
@@ -1512,7 +1541,9 @@ async function toggleAxis(kind, item) {
   if (state.busy || held()) { busyToast(); return; }
   state.busy = true;
   try {
-    const payload = await submitAction(id, [item.bit + 1], verb, `${on ? 'Forbade' : 'Permitted'} ${item.name}`); // 1-based axis bit
+    const law = lawBefore();
+    const payload = await submitAction(id, [item.bit + 1], verb, null); // 1-based axis bit
+    if (payload && payload.admitted !== false) watchLaw(law, verb, `${on ? 'Forbade' : 'Permitted'} ${item.name}`);
     noteAdmitted(id, payload);
     refreshRuleset();
   } catch (e) {
@@ -1557,10 +1588,13 @@ for (const t of techniques) {
     c.className = `c f-${f.id}`;
     c.title = `${t.name} ${f.name}`;
     c.addEventListener('click', () => {
+      const picking = state.edictPick === true;
+      state.edictPick = false;
       state.selectedCell = `${t.id}-${f.id}`;
       state.selectedAction = null;
       state.selectedMage = null;
       paint();
+      if (picking) el('cell-edicts')?.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
     });
     gridEl.append(c);
     cellNodes.set(`${t.id}-${f.id}`, c);
@@ -1681,6 +1715,13 @@ function setHelp(open) {
   helpModal.hidden = !open;
 }
 if (helpBtn) helpBtn.addEventListener('click', () => setHelp(true));
+// The guide's portal threshold, from the content this server publishes.
+{
+  const pm = session.content.portal;
+  if (pm && pm.masteryMax > 0) {
+    for (const g of document.querySelectorAll('.guide-portal-mastery')) g.textContent = `${Math.round((pm.usableMastery * 100) / pm.masteryMax)}% mastery or more`;
+  }
+}
 const helpClose = el('help-close');
 if (helpClose) helpClose.addEventListener('click', () => setHelp(false));
 helpModal?.addEventListener('click', (ev) => { if (ev.target === helpModal) setHelp(false); });
@@ -1769,6 +1810,10 @@ const END_COPY = {
   truncated: {
     title: 'The horizon — the universe is over',
     cause: 'Your universe lived out every year this server gives a universe. That is not a ruin: nothing failed, and it might have gone further. It simply ran out of time before it ascended.'
+  },
+  abandoned: {
+    title: 'Abandoned — the universe is over',
+    cause: 'Nobody with this universe’s key looked in on it for long enough that the server ended it, so its slot could go to someone playing. It is not one of the rules’ endings and carries nothing into your next universe.'
   }
 };
 function showEndScreen(f) {
@@ -2210,6 +2255,55 @@ function diffAndLog(curr) {
   prevSnapshot = snap;
 }
 
+// ================================================================ DID THE LAW CHANGE?
+// A permit, forbid or edict the gate admits can still be refused when the month
+// resolves: the mask asks whether *some* axis is affordable, but the resolver
+// prices *this* one — its own recent changes raise its price (hysteresis), and
+// an act soon after another carries the unease surcharge. The resolver refuses
+// before charging, and the frame shows only that nothing changed. Playtest
+// round 4: "Permit Creo → Confirm" toasted "Permitted Creo" over a grid that
+// stayed at four cells. So the page says what the act did only once the ruleset
+// in a later frame shows it, and says plainly when it shows nothing.
+const lawWatches = [];
+function lawSig(f) {
+  const r = f.ruleset();
+  return JSON.stringify([
+    r.techniques.map((t) => t.permitted), r.forms.map((x) => x.permitted),
+    r.edicts.map((e) => (e.empty ? null : [e.kindName, e.cellId])),
+  ]);
+}
+function lawBefore() {
+  const f = session.last();
+  return { sig: lawSig(f), tick: f.clock().worldTick };
+}
+function watchLaw(before, verb, doneText) {
+  lawWatches.push({ ...before, verb, doneText });
+  settleLaw();
+}
+function settleLaw() {
+  if (lawWatches.length === 0) return;
+  const f = session.last();
+  const tick = f.clock().worldTick;
+  for (let i = lawWatches.length - 1; i >= 0; i -= 1) {
+    const w = lawWatches[i];
+    if (tick <= w.tick) continue; // the month it was submitted on has not resolved in a frame this page holds
+    lawWatches.splice(i, 1);
+    if (lawSig(f) !== w.sig) {
+      const lit = cellCensus(f).permitted;
+      const text = `${w.doneText}${typeof lit === 'number' ? ` — ${lit} cell${lit === 1 ? '' : 's'} now permitted` : ''}`;
+      showToast(text);
+      pushFeed({ tick, type: 'god', key: `law-${w.tick}-${w.verb}`, text: () => text });
+    } else {
+      const text = `${w.verb} did not take effect: the server accepted it, then refused it when the month resolved, and charged nothing. `
+        + 'Most likely its real price was more than your favor — each recent change to the same technique, form or cell raises its price, '
+        + 'and an act soon after another carries a surcharge; this page sees only the base price.';
+      showToast(`!${text}`, 6000);
+      pushFeed({ tick, type: 'god', key: `law-${w.tick}-${w.verb}`, text: () => text });
+    }
+  }
+  renderFeed();
+}
+
 // ================================================================ WHAT AN ACT DID
 // Bless, encourage research and assign role change nothing a player can see at
 // a glance, so each admitted one is followed for a month or a few and the feed
@@ -2313,7 +2407,9 @@ function paint() {
 
   // Activity feed — diff this frame against the previous
   catchUpFeed();
+  settleLaw();
   renderFeed();
+  document.body.classList.toggle('edict-picking', state.edictPick === true);
 
   // Topbar
   const tick12 = Math.floor(clock.worldTick / 12);
@@ -2333,16 +2429,18 @@ function paint() {
 
   // Resources
   const r = f.resources();
-  const resBar = (k, v, max) =>
-    `<div class="res-row"><span class="k">${k}</span>`
+  // Two places under 1: carried prestige is often a fraction, and "0.0" over
+  // a carried 0.04 read as the carry-over never arriving (playtest round 4).
+  const resBar = (k, v, max, title = '') =>
+    `<div class="res-row"${title ? ` title="${escapeFeed(title)}"` : ''}><span class="k">${k}</span>`
     + `<span class="res-track"><i style="width:${Math.min(100, (v / max) * 100)}%"></i></span>`
-    + `<span class="v">${v.toFixed(v < 10 ? 1 : 0)}</span></div>`;
+    + `<span class="v">${v.toFixed(v > 0 && v < 1 ? 2 : v < 10 ? 1 : 0)}</span></div>`;
   el('resources').innerHTML =
     resBar('favor', r.favor, peak.favor)
     + resBar('worship', r.worship, Math.max(1, peak.favor / 10))
     + resBar('matl', r.materials, 3200)
     + `<div class="res-row"><span class="k">tier</span><span></span><span class="v">${r.worshipTier}</span></div>`
-    + resBar('prestige', r.prestige, 20);
+    + resBar('prestige', r.prestige, 20, 'Prestige carried in from the universe you left. It is set when a universe begins and does not change during it.');
 
   // Institutions — painted by paintGodPanel into the right sidebar
 
@@ -2450,7 +2548,13 @@ function paintCellDetail(f, knowledgeCells, rules) {
   }
 
   if (!state.selectedCell) {
-    detEl.innerHTML = '<span class="hint">Select a cell on the grid</span>';
+    detEl.innerHTML = state.edictPick
+      ? '<div class="edict-pick" role="status"><div class="cell-name">Choose a cell for your edict</div>'
+        + '<p>Click a cell on the grid. A <b>forbidden</b> (hatched) cell offers a <em>dispensation</em> that opens just that cell; '
+        + 'a <b>permitted</b> cell offers an <em>interdiction</em> that closes just it. The edict button appears below the cell’s detail.</p>'
+        + '<button type="button" class="detail-close" data-cancel-pick="1">cancel</button></div>'
+      : '<span class="hint">Click any cell on the grid for its detail and its edicts (open or close just that cell)</span>';
+    detEl.querySelector('[data-cancel-pick]')?.addEventListener('click', () => { state.edictPick = false; paint(); });
     return;
   }
   const [tid, fid] = state.selectedCell.split('-');
@@ -2649,7 +2753,11 @@ function paintActionCandidates(f, detEl) {
     html += `<div class="portal-why" style="font:10px/1.4 var(--sans);color:${b.blocks ? 'var(--warn)' : 'var(--soft)'};margin:.2rem 0" title="read from ${esc(b.source)}">${esc(b.text.replace(/^./u, (c) => c.toUpperCase()))}.</div>`;
   }
   if (cands.length > 0) {
-    html += `<div style="font:9px var(--mono);color:var(--god);margin-bottom:.3rem">${f.isLegal(aid) && gateBlocks.length === 0 ? 'Click a target to do it' : 'Not available this tick — see why above'}</div>`;
+    // Playtest round 4: after clicking an action, the player could not tell
+    // that the next step was choosing a target. Said as a heading, every time.
+    const ready = f.isLegal(aid) && gateBlocks.length === 0;
+    html += `<h3 class="choose-target${ready ? '' : ' blocked'}" tabindex="-1">${ready ? `Choose a target (${cands.length})` : 'Targets — not available this tick, see why above'}</h3>`
+      + `<div class="choose-target-sub">${ready ? 'Click one of the rows below to do it.' : 'The list is shown so you can see who it would reach.'}</div>`;
   }
 
   if (cands.length > 0) {
@@ -3032,12 +3140,44 @@ function traditionStoreNote(f) {
   return 'The Art of Memory keeps knowledge in its mages\' memory palaces. They never write grimoires, so no grimoires is expected here, not a fault, and what a mage knows dies with her.';
 }
 
+/** An empty edict slot was clicked: the next cell clicked is the edict's. */
+function startEdictPick() {
+  state.edictPick = true;
+  state.selectedCell = null;
+  state.selectedMage = null;
+  state.selectedAction = null;
+  state.grantMode = false;
+  showGridTab();
+  paint();
+  el('cell-detail')?.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+}
+/** Opens a cell's detail and its edict controls, on the Grid tab. */
+function openCellForEdict(key) {
+  state.edictPick = false;
+  state.selectedCell = key;
+  state.selectedAction = null;
+  state.selectedMage = null;
+  showGridTab();
+  paint();
+  el('cell-edicts')?.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+}
+function showGridTab() {
+  if (state.tab !== 'grid') document.querySelector('.topbar .tab[data-tab="grid"]')?.click();
+}
+
 function selectAction(id) {
+  state.edictPick = false;
   state.selectedCell = null;
   state.selectedMage = null;
   state.selectedAction = id;
   state.grantMode = id === 8;
+  // The targets are drawn in the Grid tab's detail panel: open it, bring the
+  // list into view and put focus on its heading, from whichever tab was open.
+  showGridTab();
   paint();
+  const det = el('cell-detail');
+  det?.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+  det?.querySelector('.choose-target')?.focus({ preventScroll: true });
 }
 function closeAction() {
   state.selectedAction = null;
@@ -3148,31 +3288,35 @@ function paintGodPanel(f) {
   const usedEdicts = rules.edicts.filter(e => !e.empty).length;
   el('edict-count').textContent = `${usedEdicts} / ${Math.min(budget, 8)}`;
 
-  edictEl.innerHTML = '';
-  for (let i = 0; i < Math.min(budget, 8); i++) {
-    const e = rules.edicts[i];
-    const slot = document.createElement('div');
-    slot.className = 'edict-slot';
-    if (e && !e.empty) {
-      slot.dataset.kind = e.kindName;
-      const cellName = e.cell ? `${e.cell.technique.slice(0,2)}·${e.cell.form.slice(0,3)}` : '?';
-      slot.textContent = `${e.kindName === 'dispensation' ? '◇' : '×'} ${cellName}`;
-      slot.title = `${e.kindName}: ${e.cell ? `${e.cell.technique} ${e.cell.form}` : 'unknown cell'} — click to revoke it`;
-      if (e.cell) {
-        slot.addEventListener('click', () => {
-          state.selectedCell = `${e.cell.technique}-${e.cell.form}`;
-          state.selectedAction = null;
-          state.selectedMage = null;
-          state.tab = 'grid';
-          document.querySelector('.topbar .tab[data-tab="grid"]')?.click();
-          paint();
-        });
+  // Every slot is a button (playtest round 4: "0/3 slots", and no way to find
+  // how to spend one). A filled slot opens its cell, where Revoke is; an empty
+  // one asks the player to choose a cell. Rebuilt only when the slots change,
+  // so a button is never replaced between press and release.
+  const slotCount = Math.min(budget, 8);
+  const slotSig = JSON.stringify([slotCount, rules.edicts.slice(0, slotCount).map((e) => (e && !e.empty ? [e.kindName, e.cellId] : null)), state.edictPick === true]);
+  if (edictEl.dataset.sig !== slotSig) {
+    edictEl.dataset.sig = slotSig;
+    edictEl.innerHTML = '';
+    for (let i = 0; i < slotCount; i++) {
+      const e = rules.edicts[i];
+      const slot = document.createElement('button');
+      slot.type = 'button';
+      slot.className = 'edict-slot';
+      if (e && !e.empty) {
+        slot.dataset.kind = e.kindName;
+        const cellName = e.cell ? `${e.cell.technique.slice(0,2)}·${e.cell.form.slice(0,3)}` : '?';
+        slot.textContent = `${e.kindName === 'dispensation' ? '◇' : '×'} ${cellName}`;
+        slot.title = `${e.kindName}: ${e.cell ? `${e.cell.technique} ${e.cell.form}` : 'unknown cell'} — click to open the cell, where you can revoke it`;
+        if (e.cell) slot.addEventListener('click', () => openCellForEdict(`${e.cell.technique}-${e.cell.form}`));
+      } else {
+        slot.dataset.empty = 'true';
+        slot.setAttribute('aria-pressed', String(state.edictPick === true));
+        slot.textContent = '+ edict';
+        slot.title = `Edict slot ${i + 1} is free — click, then choose a cell on the grid: a forbidden cell can be opened (dispensation), a permitted one closed (interdiction)`;
+        slot.addEventListener('click', startEdictPick);
       }
-    } else {
-      slot.textContent = '—';
-      slot.title = `Edict slot ${i + 1}: empty`;
+      edictEl.append(slot);
     }
-    edictEl.append(slot);
   }
 
   // University panel — use academy() for rich data
@@ -3333,9 +3477,14 @@ const TERRITORIES = [
 function worldMageAt(ev) {
   const hits = worldCanvas._hits ?? [];
   let best = null;
+  // The sprites are small and walk between frames, so a click takes the
+  // nearest mage within a generous reach rather than demanding a pixel-exact
+  // hit (playtest round 4: sixty clicks on the map, no dossier). Measured: a
+  // click on a sprite's centre already opened one.
+  const reach = (hit) => Math.max(24, hit.r * 2);
   for (const hit of hits) {
     const d = Math.hypot(ev.offsetX - hit.x, ev.offsetY - hit.y);
-    if (d <= hit.r && (best === null || d < best.d)) best = { ...hit, d };
+    if (d <= reach(hit) && (best === null || d < best.d)) best = { ...hit, d };
   }
   return best;
 }
@@ -3567,7 +3716,7 @@ function renderWorld(f) {
   // Stats overlay bottom-left
   wCtx.fillStyle = isDark ? 'rgba(255,255,255,0.35)' : 'rgba(0,0,0,0.3)';
   wCtx.font = '10px ui-monospace, monospace';
-  wCtx.fillText(`${worldMages.length} mages · ${inst.libraryDepth} nodes in the library · ${inst.grimoires} grimoires · click a mage to see who she is`, 10, H - 10);
+  wCtx.fillText(`${worldMages.length} mages · ${inst.libraryDepth} nodes in the library · ${inst.grimoires} grimoires · click a figure to see who she is`, 10, H - 10);
   // Where each sprite was drawn, for the click handler below.
   worldCanvas._hits = worldMages.map((wm) => {
     const sz = (vocab.speciesById.get(wm.species)?.id === 'gnome') ? 14 : (vocab.speciesById.get(wm.species)?.id === 'draconic') ? 22 : 18;
