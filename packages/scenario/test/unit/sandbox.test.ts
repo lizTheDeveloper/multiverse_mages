@@ -123,11 +123,18 @@ const ANCHOR_SEED = 20260813;
  * the tier-4 cap, and the stagnation clock gained a neglect window
  * (`stagnation-neglect-ticks`) — content edits, so the content revision in the
  * tick-zero snapshot moves too.
+ *
+ * **Re-measured 2026-10-08 on `ascension-needs-loot`, merged over the set above**
+ * (`ff256d65e8292850` / `c2cbcd3994257703` / `b08a9818e920e7bd`). No behaviour
+ * moved: world-schema revision 14 appends a `knowledge-provenance` section —
+ * empty in a universe nobody has raided — and the snapshot carries every
+ * section's name and layout, and `ascension-looted-nodes` is a new god constant,
+ * so the content revision in the snapshot moves too. No sandbox change.
  */
 const INERT_DEFAULT_HASHES: Readonly<Record<number, string>> = {
-  0: 'ff256d65e8292850',
-  200: 'c2cbcd3994257703',
-  500: 'b08a9818e920e7bd',
+  0: 'adbad21214e25a8e',
+  200: '92c64e7b3efc0812',
+  500: '1a281186ed91ecc1',
 };
 
 /** Generous, for the reason `balance-telemetry.test.ts` gives at length. */
