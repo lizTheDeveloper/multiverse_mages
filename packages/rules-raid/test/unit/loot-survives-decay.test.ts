@@ -24,9 +24,10 @@
 import { describe, expect, it } from 'vitest';
 
 import { decayHeldKnowledge } from '@mm/rules-magic';
+import { applyRaidOutcome, runRaid } from '@mm/rules-raid';
 import { LOCATION_KIND } from '@mm/state';
 
-import { grid, ruleset } from './raid-fixture.js';
+import { buildRaid, grid, nodeId, ruleset } from './raid-fixture.js';
 import { resolveWarband } from './warband.js';
 
 /** Two in-game years of decay after the raid. */
@@ -89,5 +90,42 @@ describe('a theft outlives the raid', () => {
     // Positive control: thefts were delivered at all.
     expect(delivered).toBeGreaterThan(0);
     expect(survived).toBe(delivered);
+  });
+});
+
+describe('an exposure outlives the raid', () => {
+  it(`keeps the node a defender saw cast ${String(HOLD_TICKS)} ticks later`, () => {
+    // `verbs.test.ts`'s exposure raid: a raider casting a node the host lacks.
+    // Exposure wrote mastery 0 until 2026-10-09 and was destroyed the next
+    // tick, so a raided universe never kept its attacker's repertoire, which
+    // `raid-engagement.md` says it must ("you have been teaching them").
+    const { raid, hostWorld, hostKnowledge } = buildRaid({
+      withHostUniverse: true,
+      raiderNodes: ['pt-crumble'],
+      hostNodes: [FIRE],
+    });
+    const outcome = runRaid(raid);
+    applyRaidOutcome(raid, outcome);
+    const exposed = nodeId('pt-crumble');
+    const held = (): number =>
+      hostKnowledge
+        .instances()
+        .map((instance) => hostKnowledge.read(instance))
+        .filter((view) => view.nodeId === exposed && view.locationKind === LOCATION_KIND.mind).length;
+    // Positive control: the raid did expose the host to the node.
+    expect(outcome.exposures.some((e) => e.nodeId === exposed)).toBe(true);
+    expect(held()).toBeGreaterThan(0);
+
+    for (let tick = 1; tick <= HOLD_TICKS; tick += 1) {
+      decayHeldKnowledge({
+        knowledge: hostKnowledge,
+        cells: grid,
+        ruleset: ruleset({}),
+        elapsedTicks: 1,
+        worldTick: hostWorld.clock.worldTick + tick,
+        retentionOf: () => 1024,
+      });
+    }
+    expect(held()).toBeGreaterThan(0);
   });
 });

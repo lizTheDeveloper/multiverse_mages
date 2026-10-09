@@ -232,6 +232,19 @@ instance at zero, so every stolen node vanished the world tick after the raid.)
 - **THEN** the instance exists in her universe, counts toward that node's existence, and is uncastable
   there until the cell is permitted
 
+### Requirement: A defender keeps what she saw a raider cast
+
+A node a defending mage learned by watching a raider cast it (exposure, `docs/design/raid-engagement.md`)
+SHALL be inserted into her mind at the research-default mastery, the same mastery stolen knowledge
+receives, and MUST persist under ordinary decay. (Added 2026-10-09: exposure wrote mastery zero, which
+the decay sweep destroyed the next tick, so a raided universe never kept its attacker's repertoire.)
+
+#### Scenario: An exposed node outlives the raid
+
+- **WHEN** a defending mage is exposed to a node during a raid and her universe runs 24 world ticks of
+  decay
+- **THEN** she still holds the exposed node
+
 ### Requirement: The outcome record supplies the balance harness
 
 Each raid SHALL emit an outcome record naming the victor, the resolution tick, per-side casualties,

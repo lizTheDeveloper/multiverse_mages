@@ -306,9 +306,12 @@ proportional change in that metric the gate would report as `regressed`. Anythin
 **Re-measured 2026-10-09 on `raid-loot-followup`, over `fd8a02f0`.** All four gates were
 regenerated: a stand-in rival's library now holds its curriculum, and a stolen or witnessed node
 arrives at the research-default mastery instead of zero, so it survives decay. The 5-year, 20-year
-and agency gates moved at most 3.1 SE. **The 200-year gate moved a great deal:**
-`referencePeakPopulation@portal-rush` +178 SE, `@passive-control` +22 SE, `@archivist` +19 SE
-(15 744 → 49 542). An A/B on archivist and passive-control (4 replicates, exposure written at 0
+and agency gates moved at most 3.1 SE. **On the 200-year gate the change is mostly spread, not
+level.** `referencePeakPopulation@portal-rush` reads +178 SE against its *old* standard error of 73,
+which was implausibly tight; against the new one (7 667) it is +1.7 SE. The sweep-level
+peak-population tolerance widened from 11.3 % to 43.0 % of the value. `@passive-control` is +22 SE
+old / +2.0 SE new. The one large level move is `@archivist` (15 744 → 49 542; +19 SE old, +7.2 SE
+new). An A/B on archivist and passive-control (4 replicates, exposure written at 0
 against 256) puts archivist's growth on **exposures persisting**: a defender who watched a raider
 cast now keeps the node, and archivist's final population was 26 892 against 14 955. Ascension arm
 lines: median MDE 43.4 %, 67 of 80 below 100 %, fifteen blind (`BLIND_ARM_LINES`).
