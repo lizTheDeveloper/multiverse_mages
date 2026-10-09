@@ -242,9 +242,9 @@ export function portalLever(f, content, st = portalStanding(f, content)) {
   if (st.drills) {
     const drilling = st.holders.find((x) => x.roleId === RAIDER);
     if (drilling) {
-      return `a raider who knows ${st.leadName} is drilling it (now ${drilling.pct}%) — her readiness months raise her mastery toward ${st.needPct}%`;
+      return `a raider who knows ${st.leadName} is drilling it (now ${drilling.pct}%, needs ${st.needPct}%) — her readiness months practise it, so her mastery holds where an unpractised holder's decays`;
     }
-    return `name one of the mages who knows ${st.leadName} as a raider — her readiness drills will raise her mastery (naming a mage who does not know it drills nothing toward the portal)`;
+    return `name one of the mages who knows ${st.leadName} as a raider — her readiness drills practise it and hold her mastery up, where an unpractised holder's decays (naming a mage who does not know it drills nothing toward the portal)`;
   }
   return `mastery rises only while a mage practises a node she holds; on this server a raider's readiness does not drill portal magic, so naming raiders will not raise it`;
 }
