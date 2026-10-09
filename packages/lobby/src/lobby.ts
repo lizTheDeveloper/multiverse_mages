@@ -233,7 +233,14 @@ export class Lobby {
     for (const [id, host] of this.universes) {
       host.tick();
       if (host.isAlive) {
-        if (now - host.lastTouched > this.idleAfterMs) this.evict(id);
+        // Ended, visibly, rather than dropped: its bubble-mates' seat reads
+        // `abandoned` instead of silently changing hands. It is dropped
+        // `evictAfterMs` later like any ended universe, or sooner when its
+        // slot is wanted (see `makeRoom`).
+        if (now - host.lastTouched > this.idleAfterMs) {
+          host.abandon();
+          this.endedAt.set(id, now);
+        }
         continue;
       }
       const ended = this.endedAt.get(id) ?? now;
@@ -241,6 +248,25 @@ export class Lobby {
       if (now - ended > this.evictAfterMs) this.evict(id);
     }
     this.match();
+  }
+
+  /**
+   * Frees one slot by dropping the universe that ended longest ago, if any has.
+   * An ended universe is kept readable for `evictAfterMs`, and an abandoned
+   * one now ends rather than vanishing; neither may keep a live player out.
+   */
+  private makeRoom(): void {
+    let oldest: string | undefined;
+    let at = Number.POSITIVE_INFINITY;
+    for (const [id, host] of this.universes) {
+      if (host.isAlive) continue;
+      const ended = this.endedAt.get(id) ?? this.clock.now();
+      if (ended < at) {
+        at = ended;
+        oldest = id;
+      }
+    }
+    if (oldest !== undefined) this.evict(oldest);
   }
 
   /** Drops a universe and frees its slot. Its bubble seat stays, empty. */
@@ -314,6 +340,7 @@ export class Lobby {
           this.evict(old);
         }
       }
+      if (this.universes.size >= this.maxUniverses) this.makeRoom();
       if (this.universes.size >= this.maxUniverses) {
         json(res, 503, { error: FULL });
         return;
@@ -587,7 +614,7 @@ export class Lobby {
         json(res, 200, {
           universeId: host.id,
           name: host.name,
-          status: host.session.status(),
+          status: host.status,
           worldTick: host.worldTick,
           serverCap: host.serverCap,
           legacy: legacy ?? null,
@@ -603,7 +630,7 @@ export class Lobby {
           return;
         }
         if (!host.isAlive) {
-          json(res, 409, { error: `the episode is over (${host.session.status()})` });
+          json(res, 409, { error: `the episode is over (${host.status})` });
           return;
         }
         const q = host.enqueue(action);
