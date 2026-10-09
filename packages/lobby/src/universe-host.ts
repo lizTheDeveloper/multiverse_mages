@@ -26,6 +26,7 @@ import {
   foundingCandidates,
   legacyRecordOf,
   participantOf,
+  portalStandingOf,
   referenceContent,
   referenceOptions,
   referenceScenario,
@@ -60,6 +61,16 @@ export interface UniverseConfig {
 export interface GodAction {
   kind: number;
   params?: number[];
+  /**
+   * The chosen candidate's own params, as the page saw them. A slot index is
+   * resolved against the tick the action is admitted on, and a list that
+   * reordered in between — a mage born, an encouraged cell re-ranked — sent
+   * the click to a different target (playtest round 3: a second "encourage
+   * research" landed on the wrong cell). With `expect`, the slot is re-found
+   * by these params at admission, and refused as `target-moved` if no slot
+   * holds them any more.
+   */
+  expect?: number[];
 }
 
 export interface Outcome {
@@ -215,6 +226,22 @@ export function defaultUniverseName(id: string, speciesName: string): string {
   return `${speciesName} ${NAME_NOUNS[h % NAME_NOUNS.length] ?? 'Reach'}`;
 }
 
+/**
+ * The slot of action `kind` whose params are `expect` in the current candidate
+ * list: `slot` itself when it still holds them, else the first that does, else
+ * `undefined`.
+ */
+export function resolveSlot(session: AgentSession, kind: number, slot: number, expect: readonly number[]): number | undefined {
+  const list = session.candidates().get(kind) ?? [];
+  const same = (i: number): boolean => {
+    const p = list[i]?.params ?? [];
+    return p.length === expect.length && p.every((v, k) => v === expect[k]);
+  };
+  if (slot >= 0 && slot < list.length && same(slot)) return slot;
+  for (let i = 0; i < list.length; i += 1) if (same(i)) return i;
+  return undefined;
+}
+
 const NO_PEERS: PeerSeats = { seats: 0, seatOf: () => undefined };
 
 export class UniverseHost implements FrameRun {
@@ -335,7 +362,18 @@ export class UniverseHost implements FrameRun {
         foundingPortalMagic: config.foundingPortalMagic === 1 ? 1 : 0,
       },
     });
-    this.frames.push(doc.encodeFrame(this.session, { godReport: this.#godReport }));
+    this.frames.push(doc.encodeFrame(this.session, this.#extras()));
+  }
+
+  /**
+   * What a frame carries beyond the session's own projections: the god report,
+   * and the portal gate's standing read off this universe's current state.
+   */
+  #extras(): Parameters<FrameDocument['encodeFrame']>[1] {
+    return {
+      godReport: this.#godReport,
+      portalStanding: () => (this.#state === undefined ? undefined : portalStandingOf(this.#state, this.#content)),
+    };
   }
 
   /** World ticks stepped so far. */
@@ -381,9 +419,24 @@ export class UniverseHost implements FrameRun {
       queued?.resolve({ admitted: false, rejection: `episode-${status}`, status });
       return;
     }
-    const action = queued?.action ?? { kind: GOD_ACTION.noop };
+    let action: GodAction = queued?.action ?? { kind: GOD_ACTION.noop };
+    let moved = false;
+    if (action.expect !== undefined && action.params?.length === 1) {
+      const slot = resolveSlot(this.session, action.kind, action.params[0] ?? -1, action.expect);
+      if (slot === undefined) {
+        moved = true;
+        action = { kind: GOD_ACTION.noop };
+      } else {
+        action = { kind: action.kind, params: [slot] };
+      }
+    }
     const result = this.session.submit({ kind: action.kind, params: action.params ?? [] });
-    this.frames.push(this.#doc.encodeFrame(this.session, { godReport: this.#godReport }));
+    if (moved) {
+      this.frames.push(this.#doc.encodeFrame(this.session, this.#extras()));
+      queued?.resolve({ admitted: false, rejection: 'target-moved', status: String(result.status) });
+      return;
+    }
+    this.frames.push(this.#doc.encodeFrame(this.session, this.#extras()));
     // The frame that just left the full window keeps only what the
     // observation readers use. One per tick, so the window never needs a sweep.
     const leaving = this.frames.length - 1 - this.#fullFrames;

@@ -303,6 +303,7 @@ html, body { height: 100%; overflow: hidden; }
 .god-action:hover { border-color: var(--god); background: color-mix(in srgb, var(--god) 6%, var(--sunk)); }
 .god-action:focus-visible { outline: 2px solid var(--god); outline-offset: 1px; }
 .god-action .cost {
+  white-space: nowrap;
   margin-left: auto;
   font-variant-numeric: tabular-nums;
   font-size: 9px;
@@ -344,6 +345,7 @@ html, body { height: 100%; overflow: hidden; }
   color: var(--loss);
 }
 .god-action .cand-badge {
+  white-space: nowrap;
   font: 700 8px var(--mono);
   background: var(--god);
   color: var(--ground);
@@ -912,6 +914,9 @@ body.held .god-action, body.held .axis-toggle, body.held .edict-btn, body.held .
 .raid-why li.advice { color: var(--warn); }
 .raid-src, .edict-src { color: var(--faint); font: 9px var(--mono); }
 .raid-ok { color: var(--ok); margin: .2rem 0 0; }
+.raid-ok-inline { color: var(--ok); }
+.raid-lever { color: var(--ink); margin: .2rem 0 .4rem; font-style: italic; }
+.raid-portal-summary { margin: .1rem 0 .2rem; }
 .raid-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 3px; }
 .raid-list li { font: 10px var(--mono); color: var(--ink); }
 .raid-list li.raid-in { color: var(--loss); }
@@ -994,9 +999,12 @@ body.held .god-action, body.held .axis-toggle, body.held .edict-btn, body.held .
 <div class="raid-reports" id="raid-reports" aria-live="assertive"></div>
 
 
-<div class="end-overlay" id="end-overlay" hidden>
+<!-- Hidden *and* inert, with an empty title, until an ending fills it: a
+     script or screen reader reading the page must not find "the universe is
+     over" in a universe that is running (playtest round 3). -->
+<div class="end-overlay" id="end-overlay" hidden inert aria-hidden="true">
   <div class="end-card" role="dialog" aria-modal="true" aria-labelledby="end-title">
-    <h2 id="end-title">The universe is over</h2>
+    <h2 id="end-title"></h2>
     <p class="end-sub" id="end-sub"></p>
     <dl class="end-facts" id="end-facts"></dl>
     <p class="end-legacy" id="end-legacy"></p>
@@ -1020,7 +1028,7 @@ body.held .god-action, body.held .axis-toggle, body.held .edict-btn, body.held .
 
     <h3>Time</h3>
     <ul>
-      <li>The server keeps time — one month per second at the default speed (the bar at the bottom shows the speed this server is actually running) — even when you close the tab. You can't pause it; that is the point.</li>
+      <li>The server keeps time — <span class="guide-pace">at whatever speed this server runs (the bar at the bottom shows it, measured)</span> — even when you close the tab. You can't pause it; that is the point.</li>
       <li>The <b>year</b> counter in the topbar is the clock. If it is not moving, the episode is over (the badge says so).</li>
       <li>A god action takes effect on the next month. One per month: a second click in the same month is refused.</li>
       <li>Reloading, or coming back later in the same browser, returns you to the same universe. <b>new universe</b> (bottom right) leaves it and lets you choose again.</li>
@@ -1193,8 +1201,9 @@ import { mountThemeControl } from '../shared/theme.js';
 import { LiveSessionError, openSession, reconstructedCharge, units, mageVocabulary, candidateNamer, cellCensus, nodeHolders } from '../shared/session.js';
 import { mountRaids } from './raid-panel.js';
 import { edictControls, ascensionNode, paintAscension } from './god-panels.js';
-import { whyDenied, whyDeniedText, foundingWhy, traditionChangeReading, priceText, priceOf, namedMages, stagnationReading } from './explain.js';
+import { whyDenied, whyDeniedText, foundingWhy, traditionChangeReading, priceText, priceOf, namedMages, stagnationReading, portalStanding, portalLever, portalWhy } from './explain.js';
 import { h } from './dom.js';
+import { loadIdentity, forgetIdentity } from '../shared/identity.js';
 
 // ================================================================ BOOT
 // The lobby keeps time. This page joins the universe this browser created on
@@ -1206,37 +1215,24 @@ import { h } from './dom.js';
 // anyone switch a player onto another universe (session fixation), and a token
 // in a URL leaks through history and referrers. Any query or fragment is
 // dropped unread.
-const KEY = 'mm.universeId';
-const TOKEN_KEY = 'mm.universeToken';
-const storageOf = (name) => { try { return window[name]; } catch { return null; } };
-const read = (storage) => {
-  try {
-    const id = storage?.getItem(KEY);
-    const token = storage?.getItem(TOKEN_KEY);
-    return id && token ? { id, token } : null;
-  } catch { return null; }
-};
-const forget = () => {
-  for (const name of ['localStorage', 'sessionStorage']) {
-    try { storageOf(name)?.removeItem(KEY); storageOf(name)?.removeItem(TOKEN_KEY); } catch { /* refused */ }
-  }
-};
+// Read through `identity.js`, which keeps the pair in IndexedDB as well as
+// localStorage: a localStorage write reaches disk seconds late, and a browser
+// closed in that window brought back the universe the player had just left.
 if (location.search !== '' || location.hash !== '') history.replaceState(null, '', location.pathname);
-const persistent = read(storageOf('localStorage'));
-const identity = persistent ?? read(storageOf('sessionStorage'));
+const identity = await loadIdentity();
 if (identity === null) {
   location.replace('./setup.html');
   throw new Error('no universe yet');
 }
 const universeId = identity.id;
 const universeToken = identity.token;
-const tabOnly = persistent === null;
+const tabOnly = identity.tabOnly;
 let session;
 const isLive = true;
 /** The server no longer has this universe: forget it and say why on setup. */
 function universeGone() {
-  forget();
-  location.replace('./setup.html?gone=1');
+  // Remembered as left, so a store that still holds it cannot bring it back.
+  forgetIdentity(universeId).finally(() => location.replace('./setup.html?gone=1'));
   throw new Error('universe gone');
 }
 // Only a 404 means the universe is gone. A network error, a 502 from the proxy
@@ -1288,6 +1284,7 @@ const REJECT_HINTS = {
   'parameter-out-of-range': 'that target is not valid this tick',
   'missing-slot': 'no target was chosen',
   'unknown-action': 'this server does not know that action',
+  'target-moved': 'that target is no longer on offer — the world moved on while this list was on screen. Nothing was spent; the list is redrawn',
 };
 /**
  * The gate's refusal in words. For `masked` the gate says only "no", so the
@@ -1303,8 +1300,8 @@ function rejectionText(kind, rejection) {
   }
   return REJECT_HINTS[rejection] ?? 'the world refused it this tick';
 }
-async function submitAction(kind, params, label, doneLabel = label) {
-  const payload = await session.submit(kind, params);
+async function submitAction(kind, params, label, doneLabel = label, expect) {
+  const payload = await session.submit(kind, params, expect);
   if (payload && payload.admitted === false) {
     showToast(`!${label} — refused: ${rejectionText(kind, payload.rejection)}.`, 5000);
   } else {
@@ -1314,14 +1311,15 @@ async function submitAction(kind, params, label, doneLabel = label) {
 }
 // One god action from a panel (raids, edicts): waits out a submit already in
 // flight rather than racing it, reports the gate's answer, and repaints.
-async function act(kind, params, label) {
+async function act(kind, params, label, expect) {
   if (state.busy || held()) {
     showToast('!Another action is waiting for this month\'s tick — try again in a moment.', 3500);
     return null;
   }
   state.busy = true;
   try {
-    const payload = await submitAction(kind, params, label);
+    const payload = await submitAction(kind, params, label, label, expect);
+    if (payload && payload.admitted !== false) watchEffect(kind, expect, label.replace(/^[^:]*:\s*/u, ''));
     noteAdmitted(kind, payload);
     refreshRuleset();
     return payload;
@@ -1692,8 +1690,10 @@ function weaveNewUniverse() {
     sessionStorage.setItem('mm.retireId', universeId);
     sessionStorage.setItem('mm.retireToken', universeToken);
   } catch { /* refused: it idles out instead */ }
-  forget();
-  location.href = './setup.html';
+  // Forgotten, and remembered as left, before the page moves: a pair that
+  // lingered in a store the browser had not yet flushed would otherwise be
+  // read back as this browser's universe the next time it opened.
+  forgetIdentity(universeId).finally(() => { location.href = './setup.html'; });
 }
 const restartBtn = el('restart-btn');
 if (restartBtn) {
@@ -1805,6 +1805,8 @@ function showEndScreen(f) {
         h('b', {}, x.possible ? 'possible — ' : 'ruled out — '), `${x.text}: ${x.evidence}.`))));
   }
   o.hidden = false;
+  o.inert = false;
+  o.removeAttribute('aria-hidden');
 }
 /**
  * What this ending carries into the next universe, as the server will pay it:
@@ -1843,15 +1845,21 @@ function legacySentence(legacy) {
     + (parts.length === 0 ? '.' : ` — a head start of ${parts.join(', ')}.`);
 }
 const endOverlay = el('end-overlay');
+function hideEndOverlay() {
+  if (!endOverlay) return;
+  endOverlay.setAttribute('hidden', '');
+  endOverlay.inert = true;
+  endOverlay.setAttribute('aria-hidden', 'true');
+}
 if (el('end-begin')) {
   el('end-begin').addEventListener('click', () => {
-    endOverlay?.setAttribute('hidden', '');
+    hideEndOverlay();
     weaveNewUniverse();
   });
 }
 if (el('end-review')) {
   el('end-review').addEventListener('click', () => {
-    endOverlay?.setAttribute('hidden', '');
+    hideEndOverlay();
   });
 }
 // The detail panel's inline Declare button (see paintActionCandidates'
@@ -1891,6 +1899,13 @@ el('cell-detail').addEventListener('click', async (ev) => {
     showToast(`!${actionName} — not available: ${whyDenied(session.last(), session.content, aid).map((r) => r.text).join('; ') || 'the server refuses it this tick'}.`, 5000);
     return;
   }
+  if (aid === 14) {
+    const gate = portalWhy(session.last(), session.content).filter((b) => b.blocks);
+    if (gate.length > 0) {
+      showToast(`!${actionName} — not sent: ${gate.map((b) => b.text).join('; ')}. The price would be taken and nothing would open.`, 6000);
+      return;
+    }
+  }
   // Changing tradition is the costliest act there is, and most of what it
   // costs is not its price: say what it does before it is sent.
   if (aid === 13) {
@@ -1916,7 +1931,9 @@ el('cell-detail').addEventListener('click', async (ev) => {
     // made every candidate click reject `empty-slot` and look like a dead
     // button. (doc-comment in session.js: "the parameter submitted is still
     // the slot index".)
-    const payload = await session.submit(aid, [slot]);
+    let expect;
+    try { expect = JSON.parse(item.dataset.expect ?? 'null'); } catch { expect = undefined; }
+    const payload = await session.submit(aid, [slot], Array.isArray(expect) ? expect : undefined);
     if (payload && payload.admitted === false) {
       showToast(`!${actionName} (${candLabel}) — refused: ${rejectionText(aid, payload.rejection)}.`, 5000);
       item.style.opacity = '1';
@@ -1924,6 +1941,7 @@ el('cell-detail').addEventListener('click', async (ev) => {
       return;
     }
     showToast(`${actionName}: ${candLabel}`);
+    watchEffect(aid, Array.isArray(expect) ? expect : cands[slot]?.params, candLabel);
     noteAdmitted(aid, payload);
     refreshRuleset();
     state.selectedAction = null;
@@ -2034,6 +2052,9 @@ function snapshotFrame(f) {
     grimoires: inst.grimoires,
     universities: inst.universities,
     known: knownNodeSet(f.raw.ascension?.knownNodes),
+    // Living raiders, the server's count (`frame.portal`); absent on a slimmed
+    // history frame, and then compared with nothing.
+    raiders: typeof f.raw.portal?.raiders === 'number' ? f.raw.portal.raiders : null,
   };
 }
 
@@ -2146,7 +2167,67 @@ function diffAndLog(curr) {
     const total = snap.universities;
     pushFeed({ tick, type: 'action', n: snap.universities - prev.universities, text: (n) => `${n} universit${s(n, 'y', 'ies')} founded (${total} in all)` });
   }
+  // A raider who dies leaves the role empty, and nothing else says so: a
+  // player who named one and later found "Your raiders (0)" read it as the
+  // naming not sticking (playtest round 3) — measured, the role held and the
+  // mages died. Said here, from the server's count of living raiders.
+  if (snap.raiders !== null && prev.raiders !== null && snap.raiders < prev.raiders) {
+    const left = snap.raiders;
+    pushFeed({ tick, type: 'death', key: 'raiders', n: prev.raiders - snap.raiders,
+      text: (n) => `${n} of your raiders ${n === 1 ? 'is' : 'are'} gone — ${left} living raider${left === 1 ? '' : 's'} left` });
+  }
+  settleWatches(curr);
   prevSnapshot = snap;
+}
+
+// ================================================================ WHAT AN ACT DID
+// Bless, encourage research and assign role change nothing a player can see at
+// a glance, so each admitted one is followed for a month or a few and the feed
+// says what the frames then show (playtest round 3: "no effect afterwards").
+// Read only from published frames — the mage's own descriptor and her goal.
+const watches = [];
+const WATCH_TICKS = { 9: 1, 10: 1, 12: 3 };
+function mageIn(f, handle) { return namedMages(f).get(handle); }
+function cellOfNode(id) { return vocab.nodeById.get(id)?.cellId; }
+function researchersIn(f, cellId) {
+  let n = 0;
+  for (const m of namedMages(f).values()) if (m.goal && m.goal.targetNodeId && cellOfNode(m.goal.targetNodeId) === cellId) n += 1;
+  return n;
+}
+function watchEffect(aid, params, label) {
+  if (!(aid in WATCH_TICKS) || !Array.isArray(params)) return;
+  const f = session.last();
+  const tick = f.clock().worldTick;
+  const before = aid === 12 ? { n: researchersIn(f, params[0]) } : { m: mageIn(f, params[0]) };
+  watches.push({ aid, params, label, tick, before });
+}
+function settleWatches(f) {
+  const tick = f.clock().worldTick;
+  for (let i = watches.length - 1; i >= 0; i -= 1) {
+    const w = watches[i];
+    if (tick < w.tick + WATCH_TICKS[w.aid]) continue;
+    watches.splice(i, 1);
+    const pct = (m) => `${Math.round((100 * m.vigor) / Math.max(1, m.maxVigor))}%`;
+    let text;
+    if (w.aid === 9) {
+      const m = mageIn(f, w.params[0]);
+      text = m === undefined
+        ? `Blessed ${w.label} — she is no longer in the lists this page can see`
+        : `Blessed ${w.label}: vigor ${w.before.m ? `${pct(w.before.m)} → ` : ''}${pct(m)}; she is ${vocab.doing(m).replace(/^now /u, '')}`;
+    } else if (w.aid === 10) {
+      const m = mageIn(f, w.params[0]);
+      const want = vocab.roleName(w.params[1]);
+      text = m === undefined
+        ? `Named ${w.label} — she is no longer in the lists this page can see, so her new role cannot be confirmed`
+        : m.roleId === w.params[1]
+          ? `${w.label.replace(/ →.*$/u, '')} is now a ${want}; she is ${vocab.doing(m).replace(/^now /u, '')}`
+          : `${w.label.replace(/ →.*$/u, '')} is not a ${want}: her role reads ${vocab.roleName(m.roleId)}`;
+    } else {
+      const after = researchersIn(f, w.params[0]);
+      text = `Encouraged research in ${w.label}: ${w.before.n} → ${after} visible mage${after === 1 ? '' : 's'} now working toward a node there`;
+    }
+    pushFeed({ tick, type: 'god', key: `${w.aid}-${w.tick}-${w.params.join(',')}`, text: () => text });
+  }
 }
 
 /**
@@ -2173,7 +2254,7 @@ function catchUpFeed() {
 
 const FEED_ICONS = {
   discovery: '✦', death: '†', birth: '↑', library: '📖',
-  scribed: '✎', 'knowledge-loss': '✕', rediscovery: '↺', action: '⚡', raid: '⚔', 'raid-in': '⚠',
+  scribed: '✎', 'knowledge-loss': '✕', rediscovery: '↺', action: '⚡', raid: '⚔', 'raid-in': '⚠', god: '☉',
 };
 const escapeFeed = (v) => String(v ?? '').replace(/[&<>"']/g, (c) => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' })[c]);
 
@@ -2208,6 +2289,9 @@ function paint() {
   el('tick-val').title = `year ${tick12} (tick ${clock.worldTick}) — 12 ticks = 1 year`;
   paintStatusBadge(clock, f);
   el('pace-note').textContent = `the world runs on the server — ${paceText()}, whether or not you are watching`;
+  // The guide states the measured pace too, not a default this server may not run at.
+  const measured = paceText();
+  if (measured !== 'speed being measured') for (const g of document.querySelectorAll('.guide-pace')) g.textContent = `${measured.replace(/ \(measured\)$/u, '')}, as measured on this server`;
   // The tradition the universe was founded with (or changed to), by name.
   const tradId = f.ruleset().traditionId;
   const trad = session.content.traditions?.find((t) => t.traditionId === tradId);
@@ -2371,6 +2455,7 @@ function paintCellDetail(f, knowledgeCells, rules) {
   const knownCount = kc?.nodesKnown ?? 0;
 
   let nodeListHtml = '';
+  const portalNow = portalStanding(f, session.content);
   if (cellNodes_.length > 0) {
     nodeListHtml = '<div style="display:flex;flex-direction:column;gap:2px;margin-top:.4rem">';
     for (const n of cellNodes_) {
@@ -2379,7 +2464,12 @@ function paintCellDetail(f, knowledgeCells, rules) {
       const where = nodeHolders(f, n.nodeId);
       const listed = where.minds.length + where.shelves.length;
       const known = where.visible ? listed > 0 : n.tier <= (kc?.deepestTier ?? 0) && knownCount > 0;
-      const whereText = !where.visible || listed === 0 ? ''
+      // A portal node says how many minds hold it and how many of them at the
+      // mastery the portal gate needs — the server's count, every mind.
+      const portalHeld = portalNow?.ofNode(n.nodeId) ?? null;
+      const whereText = portalHeld !== null && portalHeld.held > 0
+        ? `${portalHeld.held} mind${portalHeld.held === 1 ? '' : 's'} · ${portalHeld.usable} usable (≥${portalNow.needPct}%)`
+        : !where.visible || listed === 0 ? ''
         : [where.minds.length ? `${where.minds.length} mind${where.minds.length === 1 ? '' : 's'}` : '',
            where.shelves.length ? `${where.shelves.reduce((a, x) => a + x.copies, 0)} on library shelves` : ''].filter(Boolean).join(' · ');
       nodeListHtml += `<div style="padding:.2rem .4rem;border:1px solid ${known ? 'color-mix(in srgb, var(--god) 30%, var(--edge))' : 'var(--edge)'};border-radius:3px;background:${known ? 'color-mix(in srgb, var(--god) 6%, var(--plate))' : 'var(--plate)'};font:10px var(--mono)">
@@ -2490,8 +2580,15 @@ function paintActionCandidates(f, detEl) {
     + `<button type="button" class="detail-close" data-close-action="1" title="Close this action">close ✕</button></div>`;
   html += `<div class="cell-knowledge">${cands.length} target${cands.length !== 1 ? 's' : ''} · costs ${esc(priceText(session.content, aid))}`
     + `${CONSTITUTIONAL.has(aid) ? ' (base price; + surcharge if soon after another constitutional act)' : ''}</div>`;
+  // The portal gate's own refusal, which a lit mask does not rule out: a mask
+  // that does not ask about mastery would take the price and open nothing.
+  const gateBlocks = aid === 14 ? portalWhy(f, session.content).filter((b) => b.blocks) : [];
+  const gateAdvice = aid === 14 ? portalWhy(f, session.content).filter((b) => !b.blocks) : [];
+  for (const b of [...gateBlocks, ...gateAdvice]) {
+    html += `<div class="portal-why" style="font:10px/1.4 var(--sans);color:${b.blocks ? 'var(--warn)' : 'var(--soft)'};margin:.2rem 0" title="read from ${esc(b.source)}">${esc(b.text.replace(/^./u, (c) => c.toUpperCase()))}.</div>`;
+  }
   if (cands.length > 0) {
-    html += `<div style="font:9px var(--mono);color:var(--god);margin-bottom:.3rem">${f.isLegal(aid) ? 'Click a target to do it' : 'Not available this tick — see why above'}</div>`;
+    html += `<div style="font:9px var(--mono);color:var(--god);margin-bottom:.3rem">${f.isLegal(aid) && gateBlocks.length === 0 ? 'Click a target to do it' : 'Not available this tick — see why above'}</div>`;
   }
 
   if (cands.length > 0) {
@@ -2500,11 +2597,26 @@ function paintActionCandidates(f, detEl) {
     // by name. Never a raw id or a JSON blob.
     html += '<div style="display:flex;flex-direction:column;gap:3px;margin-top:.4rem">';
     const shown = Math.min(cands.length, 20);
-    for (let ci = 0; ci < shown; ci++) {
+    // Shown in a stable order — by the candidate's own params (a cell, a mage,
+    // a seat) — not in the server's ranking, which moves as the world does: a
+    // list that re-ranked after one "encourage research" put a different cell
+    // under the player's next click. The server's slot index still rides on
+    // each row, and the params go with the submit as `expect`, so the lobby
+    // re-finds the slot at admission if the list moved in between.
+    const byParams = (a, b) => {
+      const pa = cands[a]?.params ?? [];
+      const pb = cands[b]?.params ?? [];
+      for (let k = 0; k < Math.max(pa.length, pb.length); k += 1) {
+        if ((pa[k] ?? -1) !== (pb[k] ?? -1)) return (pa[k] ?? -1) - (pb[k] ?? -1);
+      }
+      return a - b;
+    };
+    const order = Array.from({ length: shown }, (_, i) => i).sort(byParams);
+    for (const ci of order) {
       const named = namer(view, aid, ci, cands[ci]?.params ?? []);
       const head = named?.head ?? `target ${ci + 1}`;
       const sub = named?.sub ?? '';
-      html += `<div class="cand-item" data-slot="${ci}" data-label="${esc(head)}" style="cursor:pointer;padding:.25rem .4rem;border:1px solid var(--edge);border-radius:3px;background:var(--plate);font:10px var(--mono)">
+      html += `<div class="cand-item" data-slot="${ci}" data-expect="${esc(JSON.stringify(cands[ci]?.params ?? []))}" data-label="${esc(head)}" style="cursor:pointer;padding:.25rem .4rem;border:1px solid var(--edge);border-radius:3px;background:var(--plate);font:10px var(--mono)">
         <div style="color:var(--ink)">${esc(head)}</div>
         ${sub ? `<div style="color:var(--faint)">${esc(sub)}</div>` : ''}
       </div>`;
@@ -2533,7 +2645,7 @@ function paintActionCandidates(f, detEl) {
       ? 'No mages to act on yet — they are born as the run warms.'
       : aid === 13
       ? `The tradition may not be changed this tick — usually the cost is beyond reach (${priceText(session.content, 13)}).`
-      : 'Nothing is available for this action this tick. Advance time, or look at another glowing action.';
+      : 'Nothing is available for this action this month. The server keeps time — wait for the world to move on, or look at another glowing action.';
     const m = f.actions().find((a) => a.id === aid);
     const ascensionLegal = ascension && m && m.legal;
     const hint = ascension && !over
@@ -2653,11 +2765,33 @@ function renderKnowledge(f) {
           + `<dd style="color:var(--faint)">${where.cellCopies} cop${where.cellCopies === 1 ? 'y' : 'ies'} of knowledge in this whole cell, counting every mind, palace and book.</dd>`
           + `<dd style="font-style:italic;color:var(--faint)">Not shown: ${escapeKnowledge(where.gaps.join('; '))}.</dd>`
         : `<dd>${escapeKnowledge(where.gaps.join('; '))}</dd>`)
+      + portalMasteryHtml(f, nodeKey(selected))
       + `<dt>Prerequisites</dt><dd class="detail-prereqs">${prereqHtml}</dd></dl></aside>`;
   })() : `<aside class="knowledge-detail"><div class="detail-kicker">The frontier</div><h3>Choose a named discovery</h3><p class="detail-gloss">Bright tiles are knowledge your civilization holds. The breathing outlines are the next secrets its scholars can reach.</p></aside>`;
   const knownTotal = nodes.filter(isKnown).length;
   const frontierTotal = nodes.filter(isResearchable).length;
   host.innerHTML = `<div class="knowledge-intro"><h2>The Book of What Is Known</h2><p>${knownTotal} known discoveries · ${frontierTotal} secrets ready to pursue. The deeper art remains in fog.</p></div><div class="knowledge-layout"><div class="school-list">${schoolsHtml}</div>${detail}</div>`;
+}
+
+/**
+ * For a portal node: who holds it and at what mastery, against the mastery the
+ * portal gate needs (`frame.portal`, `content.portal`). Empty for other nodes.
+ */
+function portalMasteryHtml(f, nodeId) {
+  const st = portalStanding(f, session.content);
+  const counts = st?.ofNode(nodeId);
+  if (!st || !counts) return '';
+  const esc = escapeKnowledge;
+  const mages = namedMages(f);
+  const rows = st.holders.filter((x) => x.nodeId === nodeId).slice(0, 8).map((x) => {
+    const m = mages.get(x.handle);
+    return `<span class="mage-click" data-handle="${x.handle}" style="cursor:pointer;text-decoration:underline;color:var(--god)">${esc(m ? vocab.who(m) : `mage #${x.handle & 0xfffff}`)}</span> ${x.pct}%${x.usable ? ' ✓' : ''}`;
+  });
+  const lever = portalLever(f, session.content, st);
+  return `<dt>Portal mastery</dt>`
+    + `<dd class="portal-mastery">${counts.held} mind${counts.held === 1 ? '' : 's'} hold it · ${counts.usable} at usable mastery — a portal needs one holder at ${st.needPct}% or more.</dd>`
+    + (rows.length ? `<dd>${rows.join(', ')}${counts.held > rows.length ? `, and ${counts.held - rows.length} more` : ''}</dd>` : '')
+    + (lever ? `<dd style="font-style:italic">${esc(lever.replace(/^./u, (c) => c.toUpperCase()))}.</dd>` : '');
 }
 
 el('knowledge-list').addEventListener('click', (event) => {
@@ -2803,7 +2937,10 @@ for (const action of displayOrder) {
   btn.className = `god-action${action.tier === 4 ? ' tier4' : ''}`;
   btn.dataset.actionId = action.id;
   const displayCost = action.cost > 0 ? (action.cost / 1024).toFixed(action.cost >= 1024 ? 0 : 1) : 'free';
-  btn.innerHTML = `<span>${action.name}</span><span class="cost">${displayCost}</span>`;
+  // Labelled, not two bare numbers side by side: "bless mage 2 18" read as
+  // nothing in particular (playtest round 3). The price is favor; the badge
+  // below counts the targets on offer this month.
+  btn.innerHTML = `<span>${action.name}</span><span class="cost" title="base price in favor">${displayCost === 'free' ? 'free' : `${displayCost} favor`}</span>`;
   btn.setAttribute('aria-pressed', 'false');
   // A click always opens the action in the detail panel — its targets, its
   // price, and (when it is dark) why. Clicking the open action again keeps it
@@ -2855,7 +2992,9 @@ function paintGodPanel(f) {
     const action = GOD_COSTS.find(a => a.id === aid);
     if (!action) continue;
     const mask = actions.find(a => a.id === aid);
-    const legal = mask ? mask.legal : false;
+    // Open portal stays dark while the gate itself refuses, lit mask or not.
+    const gateShut = aid === 14 && portalWhy(f, session.content).some((b) => b.blocks);
+    const legal = (mask ? mask.legal : false) && !gateShut;
     const affordable = favor >= action.cost / 1024;
 
     if (!legal) btn.dataset.state = 'denied';
@@ -2867,7 +3006,9 @@ function paintGodPanel(f) {
     // A dark button says why, from the mask and the candidates (explain.js).
     btn.title = legal
       ? `${action.name} — costs ${priceText(session.content, aid)} (base price). Click to see its targets.`
-      : `${whyDeniedText(f, session.content, aid)}. Click for details.`;
+      : gateShut
+        ? `Not available — ${portalWhy(f, session.content).filter((b) => b.blocks).map((b) => b.text).join('; ')}. Click for details.`
+        : `${whyDeniedText(f, session.content, aid)}. Click for details.`;
     // Founding knowledge is dark for long stretches for one of two reasons that
     // read nothing alike; say which on the button itself, not only on hover.
     if (aid === 8) {
@@ -2895,7 +3036,8 @@ function paintGodPanel(f) {
         badge.className = 'cand-badge';
         btn.append(badge);
       }
-      badge.textContent = String(cands.length);
+      badge.textContent = `${cands.length} target${cands.length === 1 ? '' : 's'}`;
+      badge.title = `${cands.length} target${cands.length === 1 ? '' : 's'} on offer this month`;
       badge.style.display = '';
     } else if (badge) {
       badge.style.display = 'none';

@@ -58,6 +58,8 @@ export {
 
 export type { PeerPortals, RaidRecord, RaidSystemDeps } from './raids.js';
 export { participantOf, raidSystem } from './raids.js';
+export type { PortalHolder, PortalStanding } from './portal-standing.js';
+export { portalGateNodeIds, portalStandingOf } from './portal-standing.js';
 
 export type { DirectiveLog, EngagementPolicy, TranslatedDirective } from './raid-directives.js';
 export {

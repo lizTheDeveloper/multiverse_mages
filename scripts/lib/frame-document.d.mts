@@ -5,7 +5,7 @@
  */
 
 import type { AgentSession } from '@mm/agent-api';
-import type { ReferenceContent } from '@mm/scenario';
+import type { PortalStanding, ReferenceContent } from '@mm/scenario';
 
 /** What `header()` reads: the run's coordinates and its frame spine. */
 export interface FrameRun {
@@ -25,9 +25,14 @@ export interface FrameHeader {
 }
 
 export interface FrameDocument {
-  encodeFrame(session: AgentSession, extras?: { readonly godReport?: () => unknown }): Record<string, unknown>;
+  encodeFrame(
+    session: AgentSession,
+    extras?: { readonly godReport?: () => unknown; readonly portalStanding?: () => PortalStanding | undefined },
+  ): Record<string, unknown>;
   header(run: FrameRun): FrameHeader;
   declaredCheats(spec: unknown): string[];
+  /** The header's content block alone — the same for every universe. */
+  content(): Record<string, unknown>;
 }
 
 export function frameDocument(content: ReferenceContent, recordedBy: string): FrameDocument;

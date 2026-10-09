@@ -125,6 +125,12 @@ export interface LobbyOptions {
   /** Suppress the startup banner (tests). */
   quiet?: boolean;
   /**
+   * The world-tick interval the bin drives `tickAll` at, published on
+   * `/api/bubbles` so a page can state the pace it will run at rather than a
+   * default. Pacing only; nothing here reads it. Absent publishes `null`.
+   */
+  tickMs?: number;
+  /**
    * How many of each universe's newest frames keep their §4.4 sidecars; older
    * ones are slimmed (`history.ts`). Default `FULL_FRAMES`. Tests set a huge
    * one to hold an unslimmed run beside a slimmed one.
@@ -135,13 +141,19 @@ export interface LobbyOptions {
 /** A submitted action, validated so a typo is a 400 and not a stack trace. */
 const toAction = (body: unknown, actionSpaceSize: number): GodAction | null => {
   if (body === null || typeof body !== 'object') return null;
-  const b = body as { kind?: unknown; params?: unknown };
+  const b = body as { kind?: unknown; params?: unknown; expect?: unknown };
   const kind = Number(b.kind);
   if (!Number.isInteger(kind) || kind < 0 || kind >= actionSpaceSize) return null;
   const raw: unknown[] = Array.isArray(b.params) ? (b.params as unknown[]) : [];
   const params = raw.map(Number);
   if (!params.every(Number.isInteger)) return null;
-  return { kind, params };
+  // `expect`: the candidate's own params as the page saw them. Optional; see
+  // `UniverseHost.tick`, which re-finds the slot by them at admission.
+  if (b.expect === undefined) return { kind, params };
+  if (!Array.isArray(b.expect) || b.expect.length > 8) return null;
+  const expect = (b.expect as unknown[]).map(Number);
+  if (!expect.every(Number.isInteger)) return null;
+  return { kind, params, expect };
 };
 
 const parse = (body: string): unknown => {
@@ -182,6 +194,7 @@ export class Lobby {
   private readonly idleAfterMs: number;
   private readonly matchAfterMs: number;
   private readonly tickCap: number;
+  private readonly tickMs: number | null;
   private readonly quiet: boolean;
   private readonly fullFrames: number | undefined;
   /** When each ended universe was first seen ended, by the lobby clock. */
@@ -198,6 +211,7 @@ export class Lobby {
     this.matchAfterMs = bounded('matchAfterMs', opts.matchAfterMs, MATCH_AFTER_MS);
     this.tickCap = bounded('tickCap', opts.tickCap, DEFAULT_CAP);
     this.quiet = opts.quiet ?? false;
+    this.tickMs = opts.tickMs ?? null;
     if (opts.fullFrames !== undefined && !(Number.isSafeInteger(opts.fullFrames) && opts.fullFrames >= 1)) {
       throw new RangeError(`fullFrames must be a positive integer, not ${String(opts.fullFrames)}`);
     }
@@ -365,7 +379,15 @@ export class Lobby {
         universes: this.universes.size,
         maxUniverses: this.maxUniverses,
         bubbleSize: this.bubbleSize,
+        tickMs: this.tickMs,
       });
+    });
+
+    // The shipped content block every universe's header carries — published
+    // alone so a page with no universe yet (setup) can read the research
+    // graph. Content only; no universe, no state.
+    this.router.get('/api/content', (_req, res) => {
+      json(res, 200, { content: this.doc.content() });
     });
 
     this.router.get('/api/ladder', (_req, res) => {
@@ -577,7 +599,7 @@ export class Lobby {
         if (!this.authorized(host.id, req, res)) return;
         const action = toAction(parse(await readBody(req)), host.session.actionSpaceSize);
         if (action === null) {
-          json(res, 400, { error: 'body must be {kind:int within the session action space, params:int[]}' });
+          json(res, 400, { error: 'body must be {kind:int within the session action space, params:int[], expect?:int[]}' });
           return;
         }
         if (!host.isAlive) {

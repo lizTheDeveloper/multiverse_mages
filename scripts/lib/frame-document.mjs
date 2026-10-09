@@ -34,6 +34,8 @@ import {
 } from '../../packages/agent-api/dist/index.js';
 import { GOAL_NAMES } from '../../packages/rules-world/dist/index.js';
 import { MAGE_ROLE } from '../../packages/state/dist/index.js';
+import { CASTABLE_MASTERY, COMBAT_PRIMITIVES, enablesGate } from '../../packages/rules-raid/dist/index.js';
+import { MASTERY_MAX } from '../../packages/rules-magic/dist/index.js';
 
 /** The one non-invertible-rule guard `record-session.mjs` documents at length. */
 const INVERTIBLE = new Set(['ratio', 'flag']);
@@ -68,6 +70,15 @@ const cellIdByStringId = new Map(registry.cells.map(({ contentId, record: c }) =
  * index already uses.
  */
 const nodeIdByStringId = new Map(registry.nodes.map(({ contentId, record: n }) => [n.id, contentId]));
+
+/**
+ * The nodes that open a portal: a gate-enabling `portal` effect, by
+ * `rules-raid`'s own `enablesGate` — the predicate `portalGate` counts holders
+ * with. Content, so it goes in the header.
+ */
+const portalNodeIds = registry.nodes
+  .filter(({ record: n }) => n.effects.some((e) => enablesGate(e, COMBAT_PRIMITIVES.portal)))
+  .map(({ contentId }) => contentId);
 
 /**
  * An authored prerequisite list, interned.
@@ -160,6 +171,42 @@ function encodeGodReadings(report) {
       // `Infinity` (no budget row) does not survive JSON; null says "unbounded".
       grantsRemaining: Number.isFinite(report.founding.grantsRemaining) ? report.founding.grantsRemaining : null,
       unknownRoots: report.founding.unknownRoots,
+    },
+  };
+}
+
+/** How many portal holders a frame lists by name; the counts cover the rest. */
+const PORTAL_HOLDERS_LISTED = 24;
+
+/**
+ * `scenario`'s portal standing, as JSON — why action 14 is or is not open, in
+ * the gate's own terms. Absent when the caller passed no source (a recording)
+ * or the universe has ended.
+ *
+ * Holders are `[handle, nodeId, mastery, roleId]` tuples, strongest first and
+ * cut at {@link PORTAL_HOLDERS_LISTED}: a lobby keeps every frame it serves,
+ * and a late universe can hold a portal node in hundreds of minds. `held`,
+ * `usable` and `byNode` count all of them. Only the newest frame is read, so
+ * `packages/lobby/src/history.ts` does not keep it on old frames.
+ */
+function encodePortal(standing) {
+  if (standing === undefined) return {};
+  const byNode = {};
+  for (const x of standing.holders) {
+    const row = (byNode[x.nodeId] ??= [0, 0]);
+    row[0] += 1;
+    if (x.usable) row[1] += 1;
+  }
+  return {
+    portal: {
+      refusal: standing.refusal,
+      held: standing.holders.length,
+      usable: standing.holders.filter((x) => x.usable).length,
+      // `nodeId: [minds holding it, of them at usable mastery]`, every holder counted.
+      byNode,
+      holders: standing.holders.slice(0, PORTAL_HOLDERS_LISTED).map((x) => [x.handle, x.nodeId, x.mastery, x.roleId]),
+      raiders: standing.livingRaiders,
+      raiderDrillsPortal: standing.raiderDrillsPortal,
     },
   };
 }
@@ -257,6 +304,7 @@ function encodeFrame(session, extras = {}) {
      */
     academy: encodeAcademy(session.academy()),
     ...encodeGodReadings(extras.godReport?.()),
+    ...encodePortal(extras.portalStanding?.()),
     mask: [...mask],
     candidates: Object.fromEntries(
       [...candidates].map(([action, list]) => [action, [...(list ?? [])]]),
@@ -315,6 +363,158 @@ function encodeCandidateDetail(detail) {
 }
 
 /**
+ * The content block of the header: the same in every universe this content
+ * builds, so it is built once. Also served alone (`/api/content`) for a page
+ * that has no universe yet — setup's portal-prerequisite line.
+ */
+let contentCache;
+function contentBlock() {
+  contentCache ??= {
+    techniques: registry.techniques.map(({ record: t }) => ({ bit: t.bit, id: t.id, name: t.name })),
+    forms: registry.forms.map(({ record: f }) => ({ bit: f.bit, id: f.id, name: f.name })),
+    cells: registry.cells.map(({ contentId, record: c }) => ({
+      cellId: contentId,
+      id: c.id,
+      technique: c.technique,
+      form: c.form,
+      classicalLabels: c.classicalLabels || [],
+      nodeCount: (c.nodes ?? []).length,
+    })),
+    species: registry.species.map(({ contentId, record: s }) => ({
+      speciesId: contentId,
+      id: s.id,
+      name: s.name,
+      /**
+       * §1.3's depth ceiling — the deepest tier this species can research at
+       * all. `gatherFrontier` applies it *after* the gateway's prerequisite
+       * and legality filter, so a frontier drawn without it overstates what a
+       * gnome of forty can actually begin. Content, like the graph above.
+       */
+      depthCeiling: s.depthCeiling,
+    })),
+    actionCosts: Object.fromEntries(
+      registry.godCosts.map(({ record: g }) => [g.actionId, g.favorCost]),
+    ),
+    /**
+     * The second currency of each priced action, `fp` per material kind, as
+     * `god-cost.json` authors it — so a page can say *"costs 6 favor and 4
+     * essence"* instead of only the favor half. Content, not a rule: the mask
+     * still decides whether the god can pay. Additive; not in a recording's
+     * content block, so a page reads it with `??`.
+     */
+    actionMaterialCosts: Object.fromEntries(
+      registry.godCosts
+        .filter(({ record: g }) => g.materialCost !== undefined)
+        .map(({ record: g }) => [g.actionId, { ...g.materialCost }]),
+    ),
+    /**
+     * The ascension thresholds from `god-constant.json` (`ascension-*`), keyed
+     * by the id without its prefix. Published so the play page's checklist
+     * states the bars content sets rather than a hand-copied set that a retune
+     * would silently falsify. The qualification itself stays the server's
+     * (mask entry 15). Additive, like `actionMaterialCosts`.
+     */
+    ascension: Object.fromEntries(
+      registry.godConstants
+        .filter(({ record: c }) => c.id.startsWith('ascension-'))
+        .map(({ record: c }) => [c.id.slice('ascension-'.length), c.value]),
+    ),
+  /**
+   * Every node, so a founding grant can say *which* node it would found.
+   *
+   * `agent-api`'s catalogue carries a node's cell and tier and deliberately no
+   * name — it is a projection for an encoder, and §5 keeps `@mm/content` out
+   * of a package a renderer imports. A *name* is content, and this is where
+   * content is published to the client. `cellId` rides along so a page can
+   * place the node on the grid it is already drawing.
+   */
+  nodes: registry.nodes.map(({ contentId, record: n }) => ({
+    nodeId: contentId,
+    id: n.id,
+    name: n.name,
+    gloss: n.gloss || '',
+    cellId: cellIdByStringId.get(n.cell) ?? 0,
+    tier: n.tier,
+    /**
+     * §2.3's prerequisite edges, interned — **the research graph, which no
+     * client has ever been shipped.**
+     *
+     * The grid the pages draw is seventy cells of counts, and a count cannot
+     * say what comes next. 300 nodes carry 292 edges between them, 36 of which
+     * cross cells, and every one of those was invisible: a page could show
+     * that a college knows four nodes in *creo animal* and not that the fifth
+     * is gated behind a node in a cell the god has forbidden.
+     *
+     * This is **content**, published where content is published. Nothing about
+     * the observation moves — `OBSERVATION_SIZE` is 400, the digest is
+     * 46182c35d829b205, no schema revision, no baseline — because a header is
+     * not a frame and the graph is the same in every universe this content
+     * builds.
+     *
+     * What it buys is that "what could this college learn next" becomes set
+     * arithmetic a client can do: a node is within reach when every id in this
+     * list is held and its cell is in the frame's `academy.permittedCells`,
+     * which is the same filter `CoordinatingKnowledgeGateway.researchFrontier`
+     * applies. The *rule* — which cells are permitted — is still computed by
+     * `agent-api`; only the graph walk is here.
+     */
+    prerequisites: internPrerequisites(n),
+  })),
+  /**
+   * `MAGE_ROLE`'s words. §1.2 stores a role as a `u8` and the enum lives in
+   * `@mm/state`; publishing the mapping here keeps the client from carrying a
+   * hand-copied table that a fifth role would silently break.
+   */
+  mageRoles: Object.fromEntries(Object.entries(MAGE_ROLE).map(([name, id]) => [id, name])),
+  /**
+   * `rules-world`'s permanent goal registry, by id — what a mage is currently
+   * working on. `@mm/state` records why the table cannot live anywhere else:
+   * *"it would be a second copy of a table whose whole contract is that there
+   * is one"*. This script may read it because a script is not a package; the
+   * projection that carries `goalId` may not, and does not.
+   */
+  goals: { ...GOAL_NAMES },
+    candidateSlots: { ...CANDIDATE_SLOTS },
+    /**
+     * The portal gate's constants: which nodes open a portal, and the mastery
+     * a holder needs (`rules-raid`'s `CASTABLE_MASTERY`, out of `MASTERY_MAX`).
+     * Published so a page can say *"best mastery 31% — needs 50%"* from the
+     * rules' numbers rather than a hand-copied half. Additive; read with `??`.
+     */
+    portal: { nodeIds: portalNodeIds, usableMastery: CASTABLE_MASTERY, masteryMax: MASTERY_MAX },
+    /**
+     * The traditions, so the console can name action 13's parameter. Not in a
+     * recording's content block; additive, and `session.js` reads it with `??`.
+     */
+    traditions: registry.traditions.map(({ contentId, record: t }) => ({
+      traditionId: contentId,
+      id: t.id,
+      name: t.name ?? t.id,
+      /**
+       * The four hooks as content authors them (`kind` and `params`), so the
+       * change-tradition confirm can say what a switch does — which store
+       * kind holds knowledge where — from content rather than a hand-copied
+       * table. Additive; read with `??`.
+       */
+      hooks: Object.fromEntries(
+        Object.entries(t.hooks ?? {}).map(([hook, v]) => [hook, { kind: v.kind, params: { ...(v.params ?? {}) } }]),
+      ),
+    })),
+    /**
+     * `tradition-shock` and `tradition-shock-ticks` from `god-constant.json`:
+     * how hard and how long a tradition change holds the worship target
+     * down. Content, published so the confirm step states it. Additive.
+     */
+    traditionChange: Object.fromEntries(
+      registry.godConstants
+        .filter(({ record: c }) => c.id === 'tradition-shock' || c.id === 'tradition-shock-ticks')
+        .map(({ record: c }) => [c.id === 'tradition-shock' ? 'shock' : 'shockTicks', c.value]),
+    ),
+  };
+  return contentCache;
+}
+
+/**
  * The static half of the document: everything `ui/shared/session.js` reads that
  * is not a frame.
  *
@@ -361,143 +561,9 @@ function header(r) {
     },
     layout: OBSERVATION_BLOCKS.map((b) => ({ name: b.name, offset: b.offset, size: b.size })),
     actions: Object.fromEntries(Object.entries(GOD_ACTION).map(([k, v]) => [v, k])),
-    content: {
-      techniques: registry.techniques.map(({ record: t }) => ({ bit: t.bit, id: t.id, name: t.name })),
-      forms: registry.forms.map(({ record: f }) => ({ bit: f.bit, id: f.id, name: f.name })),
-      cells: registry.cells.map(({ contentId, record: c }) => ({
-        cellId: contentId,
-        id: c.id,
-        technique: c.technique,
-        form: c.form,
-        classicalLabels: c.classicalLabels || [],
-        nodeCount: (c.nodes ?? []).length,
-      })),
-      species: registry.species.map(({ contentId, record: s }) => ({
-        speciesId: contentId,
-        id: s.id,
-        name: s.name,
-        /**
-         * §1.3's depth ceiling — the deepest tier this species can research at
-         * all. `gatherFrontier` applies it *after* the gateway's prerequisite
-         * and legality filter, so a frontier drawn without it overstates what a
-         * gnome of forty can actually begin. Content, like the graph above.
-         */
-        depthCeiling: s.depthCeiling,
-      })),
-      actionCosts: Object.fromEntries(
-        registry.godCosts.map(({ record: g }) => [g.actionId, g.favorCost]),
-      ),
-      /**
-       * The second currency of each priced action, `fp` per material kind, as
-       * `god-cost.json` authors it — so a page can say *"costs 6 favor and 4
-       * essence"* instead of only the favor half. Content, not a rule: the mask
-       * still decides whether the god can pay. Additive; not in a recording's
-       * content block, so a page reads it with `??`.
-       */
-      actionMaterialCosts: Object.fromEntries(
-        registry.godCosts
-          .filter(({ record: g }) => g.materialCost !== undefined)
-          .map(({ record: g }) => [g.actionId, { ...g.materialCost }]),
-      ),
-      /**
-       * The ascension thresholds from `god-constant.json` (`ascension-*`), keyed
-       * by the id without its prefix. Published so the play page's checklist
-       * states the bars content sets rather than a hand-copied set that a retune
-       * would silently falsify. The qualification itself stays the server's
-       * (mask entry 15). Additive, like `actionMaterialCosts`.
-       */
-      ascension: Object.fromEntries(
-        registry.godConstants
-          .filter(({ record: c }) => c.id.startsWith('ascension-'))
-          .map(({ record: c }) => [c.id.slice('ascension-'.length), c.value]),
-      ),
-    /**
-     * Every node, so a founding grant can say *which* node it would found.
-     *
-     * `agent-api`'s catalogue carries a node's cell and tier and deliberately no
-     * name — it is a projection for an encoder, and §5 keeps `@mm/content` out
-     * of a package a renderer imports. A *name* is content, and this is where
-     * content is published to the client. `cellId` rides along so a page can
-     * place the node on the grid it is already drawing.
-     */
-    nodes: registry.nodes.map(({ contentId, record: n }) => ({
-      nodeId: contentId,
-      id: n.id,
-      name: n.name,
-      gloss: n.gloss || '',
-      cellId: cellIdByStringId.get(n.cell) ?? 0,
-      tier: n.tier,
-      /**
-       * §2.3's prerequisite edges, interned — **the research graph, which no
-       * client has ever been shipped.**
-       *
-       * The grid the pages draw is seventy cells of counts, and a count cannot
-       * say what comes next. 300 nodes carry 292 edges between them, 36 of which
-       * cross cells, and every one of those was invisible: a page could show
-       * that a college knows four nodes in *creo animal* and not that the fifth
-       * is gated behind a node in a cell the god has forbidden.
-       *
-       * This is **content**, published where content is published. Nothing about
-       * the observation moves — `OBSERVATION_SIZE` is 400, the digest is
-       * 46182c35d829b205, no schema revision, no baseline — because a header is
-       * not a frame and the graph is the same in every universe this content
-       * builds.
-       *
-       * What it buys is that "what could this college learn next" becomes set
-       * arithmetic a client can do: a node is within reach when every id in this
-       * list is held and its cell is in the frame's `academy.permittedCells`,
-       * which is the same filter `CoordinatingKnowledgeGateway.researchFrontier`
-       * applies. The *rule* — which cells are permitted — is still computed by
-       * `agent-api`; only the graph walk is here.
-       */
-      prerequisites: internPrerequisites(n),
-    })),
-    /**
-     * `MAGE_ROLE`'s words. §1.2 stores a role as a `u8` and the enum lives in
-     * `@mm/state`; publishing the mapping here keeps the client from carrying a
-     * hand-copied table that a fifth role would silently break.
-     */
-    mageRoles: Object.fromEntries(Object.entries(MAGE_ROLE).map(([name, id]) => [id, name])),
-    /**
-     * `rules-world`'s permanent goal registry, by id — what a mage is currently
-     * working on. `@mm/state` records why the table cannot live anywhere else:
-     * *"it would be a second copy of a table whose whole contract is that there
-     * is one"*. This script may read it because a script is not a package; the
-     * projection that carries `goalId` may not, and does not.
-     */
-    goals: { ...GOAL_NAMES },
-      candidateSlots: { ...CANDIDATE_SLOTS },
-      /**
-       * The traditions, so the console can name action 13's parameter. Not in a
-       * recording's content block; additive, and `session.js` reads it with `??`.
-       */
-      traditions: registry.traditions.map(({ contentId, record: t }) => ({
-        traditionId: contentId,
-        id: t.id,
-        name: t.name ?? t.id,
-        /**
-         * The four hooks as content authors them (`kind` and `params`), so the
-         * change-tradition confirm can say what a switch does — which store
-         * kind holds knowledge where — from content rather than a hand-copied
-         * table. Additive; read with `??`.
-         */
-        hooks: Object.fromEntries(
-          Object.entries(t.hooks ?? {}).map(([hook, v]) => [hook, { kind: v.kind, params: { ...(v.params ?? {}) } }]),
-        ),
-      })),
-      /**
-       * `tradition-shock` and `tradition-shock-ticks` from `god-constant.json`:
-       * how hard and how long a tradition change holds the worship target
-       * down. Content, published so the confirm step states it. Additive.
-       */
-      traditionChange: Object.fromEntries(
-        registry.godConstants
-          .filter(({ record: c }) => c.id === 'tradition-shock' || c.id === 'tradition-shock-ticks')
-          .map(({ record: c }) => [c.id === 'tradition-shock' ? 'shock' : 'shockTicks', c.value]),
-      ),
-    },
+    content: contentBlock(),
   };
 }
 
-return { encodeFrame, header, declaredCheats };
+return { encodeFrame, header, declaredCheats, content: contentBlock };
 }

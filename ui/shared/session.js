@@ -1400,8 +1400,13 @@ function liveControls(base, doc, headers = () => ({})) {
       return true;
     },
     /** One god action, one tick. Resolves to what the admission gate said. */
-    submit: async (kind, params = []) =>
-      absorb(await post('submit', { kind, params: [...params] })),
+    /*
+     * `expect`, when given, is the chosen candidate's own params: the lobby
+     * re-finds the slot by them at admission, so a list that reordered between
+     * this frame and the server's tick cannot send the click to another target.
+     */
+    submit: async (kind, params = [], expect) =>
+      absorb(await post('submit', { kind, params: [...params], ...(Array.isArray(expect) ? { expect: [...expect] } : {}) })),
     /** `n` ticks of nothing, which is what a universe does on its own. */
     advance: async (ticks = 1) => absorb(await post('advance', { ticks })),
     /**
