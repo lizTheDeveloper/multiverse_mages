@@ -210,6 +210,12 @@ async function judge(label, click, { expectSuccess }) {
   if (errors.length > 0) fail({ ...row, why: `page error: ${errors[0].split('\n').slice(0, 3).join(' | ')}` });
   else if (crashToast) fail({ ...row, why: `crash text in toast: ${crashToast.text}` });
   else if (toasts.length === 0) fail({ ...row, why: 'no feedback at all' });
+  // The run's own ending can land between the legality check and the click
+  // (a fast lobby reaches its cap mid-probe); a refusal that says so is an
+  // answer in words, not a silent click.
+  else if (expectSuccess && success === undefined && toasts.some((t) => /has ended/u.test(t.text))) {
+    results.push({ ...row, verdict: 'ok', why: 'the universe ended as it was clicked; refused in words' });
+  }
   else if (expectSuccess && success === undefined) fail({ ...row, why: 'legal when clicked, but no success toast' });
   else if (!moved && !(await hasEnded())) fail({ ...row, why: `the page's clock stopped at tick ${String(tickAfter)} after the click` });
   else results.push({ ...row, verdict: 'ok', why: expectSuccess ? 'admitted, clock running' : 'refused in words, clock running' });
