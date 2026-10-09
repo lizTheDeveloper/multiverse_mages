@@ -238,7 +238,18 @@ async function target(aid, waitMs, orRefusal) {
   await page.waitForTimeout(300);
   const items = page.locator('#cell-detail .cand-item');
   if ((await items.count()) === 0) return false;
-  await judge(`${aid} ${label}`, () => items.first().click(), { expectSuccess: legal });
+  // Some acts (change tradition) ask first: a confirm step is part of the
+  // click, so the probe confirms it — or, if the page disables Confirm and says
+  // why, cancels — and then judges the answer as before.
+  const clickAndConfirm = async () => {
+    await items.first().click();
+    const modal = page.locator('.confirm-modal');
+    if (await modal.waitFor({ timeout: 1500 }).then(() => true, () => false)) {
+      const ok = modal.locator('.confirm-ok:not([disabled])');
+      await ((await ok.count()) > 0 ? ok.click() : modal.locator('.alt').click());
+    }
+  };
+  await judge(`${aid} ${label}`, clickAndConfirm, { expectSuccess: legal });
   return true;
 }
 

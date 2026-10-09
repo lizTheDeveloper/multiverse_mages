@@ -129,6 +129,20 @@ const REGISTERED: ReadonlyMap<string, string> = new Map([
   ],
   ['age:normalizedAge', 'The same normalization, per mage rather than per cohort.'],
   [
+    'god:foundingGrantsRemaining',
+    'A whole number of grants earned: fewer self-discovered nodes than one ' +
+      'grant\'s accrual earns nothing yet, and the count is recomputed from the ' +
+      'running total every call, so nothing is lost. Seen since the god report ' +
+      'started publishing it every tick; the mask and `grantPlan` read the same.',
+  ],
+  [
+    'ascension:lossAllowance',
+    'A whole number of nodes an era may lose. A small canon floors the share to ' +
+      'zero and `max` with `ascension-loss-max` takes over, which is the stated ' +
+      'intent. Seen every tick since the god report publishes the allowance; ' +
+      'the era boundary calls it too.',
+  ],
+  [
     'target-appeal:personalityTargetTerm',
     'The floor *is* the meaning. `floorDiv(ambition - FP_ONE, ' +
       'ambitionDivisor)` is how far a personality sits from the neutral ' +

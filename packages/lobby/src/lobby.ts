@@ -526,6 +526,25 @@ export class Lobby {
         });
         return;
       }
+      case 'GET legacy': {
+        // What this universe would carry into its player's next one if they
+        // left it now (vision §8a), read by the ending screen and by setup
+        // before "Weave a new universe" spends it. `legacy: null` while it is
+        // still running, or when it stopped short of the server's cap — the
+        // same answer `/api/create`'s retire would act on, from the same
+        // `legacy()`. `carriedIn` is what this universe itself began with.
+        const legacy = host.legacy();
+        json(res, 200, {
+          universeId: host.id,
+          name: host.name,
+          status: host.session.status(),
+          worldTick: host.worldTick,
+          serverCap: host.serverCap,
+          legacy: legacy ?? null,
+          carriedIn: host.carriedIn,
+        });
+        return;
+      }
       case 'POST submit': {
         if (!this.authorized(host.id, req, res)) return;
         const action = toAction(parse(await readBody(req)), host.session.actionSpaceSize);

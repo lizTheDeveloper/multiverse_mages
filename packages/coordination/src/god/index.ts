@@ -119,5 +119,5 @@ export {
 
 export { godState, writeGodState } from './god-state.js';
 
-export type { GodDeps, GodSimulation, GodTickReport } from './system.js';
+export type { GodDeps, GodSimulation, GodTickReport, SummitReading } from './system.js';
 export { frozenWhenTerminal, godSystems } from './system.js';

@@ -236,9 +236,13 @@ export class UniverseHost implements FrameRun {
   /** The founding species' display name. */
   readonly speciesName: string;
   lastTouched: number;
+  /** The prestige (fp) the previous universe's ending carried into this one; `null` for none. */
+  readonly carriedIn: number | null;
 
   readonly #content: ReferenceContent;
   readonly #raids: () => readonly RaidRecord[];
+  /** The scenario's god report, so frames carry the ascension readings. */
+  readonly #godReport: () => unknown;
   readonly #doc: FrameDocument;
   /** This universe's current state: what a peer's raid reads and writes. */
   #state: Parameters<typeof participantOf>[0] | undefined;
@@ -263,6 +267,7 @@ export class UniverseHost implements FrameRun {
     host: { readonly legacy?: LegacyRecord | undefined; readonly serverCap?: number } = {},
   ) {
     const legacy = host.legacy;
+    this.carriedIn = legacy?.carriedPrestige ?? null;
     this.serverCap = host.serverCap ?? DEFAULT_CAP;
     this.config = config;
     this.#doc = doc;
@@ -293,6 +298,7 @@ export class UniverseHost implements FrameRun {
       },
     });
     this.#raids = run.raids;
+    this.#godReport = run.lastGodReport;
     this.session = createSession({ scenario: run.scenario, strategyId: 'lobby-universe' });
 
     const { ids } = speciesTable(base.registry);
@@ -322,7 +328,7 @@ export class UniverseHost implements FrameRun {
         foundingPortalMagic: config.foundingPortalMagic === 1 ? 1 : 0,
       },
     });
-    this.frames.push(doc.encodeFrame(this.session));
+    this.frames.push(doc.encodeFrame(this.session, { godReport: this.#godReport }));
   }
 
   /** World ticks stepped so far. */
@@ -370,7 +376,7 @@ export class UniverseHost implements FrameRun {
     }
     const action = queued?.action ?? { kind: GOD_ACTION.noop };
     const result = this.session.submit({ kind: action.kind, params: action.params ?? [] });
-    this.frames.push(this.#doc.encodeFrame(this.session));
+    this.frames.push(this.#doc.encodeFrame(this.session, { godReport: this.#godReport }));
     queued?.resolve({
       admitted: result.admitted,
       ...(result.rejection === undefined ? {} : { rejection: String(result.rejection) }),
