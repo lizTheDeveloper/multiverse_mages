@@ -130,11 +130,18 @@ const ANCHOR_SEED = 20260813;
  * revision is in the snapshot; 200 and 500 move as well because the default
  * scenario is raided by stand-ins, and stand-in raids now fight. No sandbox
  * change.
+ *
+ * **Re-measured again on `raid-tuning`, 2026-10-08**, over
+ * `67d8c7f341050448` / `7b01bd16253c249b` / `e635a83d59ccc5bd`. Tick 0 moves
+ * because one raid constant was added (`raid-readiness-mastery-floor`); 200 and
+ * 500 move because a raider's practice is now her raid kit, drilled past the
+ * activation threshold, and a raider with an uncastable kit node no longer
+ * researches. No sandbox change.
  */
 const INERT_DEFAULT_HASHES: Readonly<Record<number, string>> = {
-  0: '67d8c7f341050448',
-  200: '7b01bd16253c249b',
-  500: 'e635a83d59ccc5bd',
+  0: 'afe2c5d128181a59',
+  200: '3a61cb74ea090e64',
+  500: 'be0700facf4feea6',
 };
 
 /** Generous, for the reason `balance-telemetry.test.ts` gives at length. */

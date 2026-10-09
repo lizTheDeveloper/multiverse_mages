@@ -336,6 +336,11 @@ export interface WorldStepDeps {
    * readiness changes nothing. See `MageOutlook.raidKitTargets`.
    */
   readonly raidKitPrimitives?: ReadonlySet<number> | undefined;
+  /**
+   * The practice-ceiling floor for a raider's drill, `fp`, or absent for none.
+   * raid-constant.json's `raid-readiness-mastery-floor`. See `practice()`.
+   */
+  readonly raidDrillFloor?: number | undefined;
   readonly affinitiesOf: (species: SpeciesRecord) => SpeciesAffinities;
   /**
    * How a species tilts the land mix it works, `fp` per land kind.
@@ -1933,6 +1938,7 @@ export function worldSystem(
             emphasis: deps.emphasisFor?.(state, worldTick) ?? NO_EMPHASIS,
             preferredUniversityFor,
             ...(deps.raidKitPrimitives === undefined ? {} : { raidKitPrimitives: deps.raidKitPrimitives }),
+            ...(deps.raidDrillFloor === undefined ? {} : { raidDrillFloor: deps.raidDrillFloor }),
             // The authored half of applicability. Absent on a build with no
             // economy index, which makes `apply-magic` masked for every mage —
             // the same inert world such a build already had.
@@ -3682,11 +3688,38 @@ function workOne(
             deps.practiceBonusesFor?.(state, worldTick, mage, nodeId) ?? NO_BONUSES,
           ),
         ),
+        // The drill practises past the activation threshold; ordinary practice
+        // keeps its own ceiling. Without the floor a drilled node at the top of
+        // a raider's reach stopped at exactly 512 and decayed below it before
+        // the portal gate read it.
+        drillFloorFor(state, mage, nodeId, commitment.goalId, deps),
       );
       return undefined;
     default:
       return undefined;
   }
+}
+
+/**
+ * The ceiling floor a month of practice on `nodeId` runs under: the drill floor
+ * for a raider practising a raid-kit node — under either goal, because the
+ * outlook makes a raider's practice targets her kit — and none otherwise.
+ */
+function drillFloorFor(
+  state: SimState,
+  mage: Handle,
+  nodeId: number,
+  goalId: number,
+  deps: WorldStepDeps,
+): Fixed | undefined {
+  const floor = deps.raidDrillFloor;
+  const kit = deps.raidKitPrimitives;
+  if (floor === undefined || kit === undefined || kit.size === 0) return undefined;
+  if (goalId !== GOAL.raidReadiness && goalId !== GOAL.practice) return undefined;
+  const store = componentOf(state, MAGE);
+  if (!store.has(mage as EntityHandle)) return undefined;
+  if ((store.get(mage as EntityHandle, 'roleId') as number) !== MAGE_ROLE.raider) return undefined;
+  return deps.facets(nodeId).primitives.some((primitive) => kit.has(primitive)) ? floor : undefined;
 }
 
 /** No source of a rate applies. Shared so the empty case allocates nothing. */

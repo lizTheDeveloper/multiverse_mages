@@ -1014,7 +1014,13 @@ describe('contentRevision', () => {
     // the point. Two universes either side of this revision would fight
     // battles of different lethality, which is what the revision exists to
     // refuse. Measured with `check:content` on the merged tree.
-    expect(registry.contentRevision).toBe('f0885a0e674b8291093f28b513bd4ef9');
+    //
+    // f0885a0e674b8291093f28b513bd4ef9 -> f554ed8acc726e6032b658a49e98c107, on
+    // `raid-tuning`, 2026-10-08. **One new record**: the raid constant
+    // `raid-readiness-mastery-floor` (640), the ceiling a raider's practice on a
+    // raid-kit node may reach. Without it a researched portal node named for a
+    // raid could not be held above the activation threshold.
+    expect(registry.contentRevision).toBe('f554ed8acc726e6032b658a49e98c107');
   });
 
   it('is stable across loads of identical content', () => {

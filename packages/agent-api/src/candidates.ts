@@ -154,7 +154,7 @@ function candidatesFor(action: number, input: CandidateInput): Candidate[] {
     case GOD_ACTION.blessMage:
       return blessCandidates(input.state);
     case GOD_ACTION.assignRole:
-      return assignRoleCandidates(input.state);
+      return assignRoleCandidates(input);
     case GOD_ACTION.fundUniversity:
       return fundUniversityCandidates(input.state);
     case GOD_ACTION.encourageResearch:
@@ -303,19 +303,47 @@ function blessCandidates(state: SimState): Candidate[] {
  * than a slot that is illegal — the illegal one at least increments a counter
  * the harness reports.
  */
-function assignRoleCandidates(state: SimState): Candidate[] {
+function assignRoleCandidates(input: CandidateInput): Candidate[] {
+  const { state } = input;
   // `GOD_ASSIGNABLE_MAGE_ROLES`, not every value in `MAGE_ROLE`. W193 appended
   // `student`, which the god may not assign; deriving the list from the enum
   // would have widened action 10's candidate space by one slot per mage and
   // moved every trained policy's action distribution for a role that would then
   // have been refused by `interventions.ts` anyway.
   const roles = [...GOD_ASSIGNABLE_MAGE_ROLES].sort((a, b) => a - b);
+  // **Portal-node holders' raider slot first** (2026-10-08). The list is cut to
+  // `k` = 32 slots, which is eight mages' worth in ascending handle order, so in
+  // a universe of thirty the mage who researched the portal — usually a late
+  // handle — could not be named a raider at all, and naming her a raider is the
+  // only way to keep her portal node drilled past the activation threshold
+  // (round-3 playtest: no raid in ~470 game-years). Any mastery counts here,
+  // because a decayed holder is exactly the one who needs drilling. The rest of
+  // the list follows unchanged, minus the pairs already offered.
+  const holders = portalHolders(input);
   const found: Candidate[] = [];
+  for (const mage of livingMages(state)) {
+    if (holders.has(mage.handle) && mage.roleId !== MAGE_ROLE.raider) {
+      found.push({ params: [mage.handle, MAGE_ROLE.raider] });
+    }
+  }
   for (const mage of livingMages(state)) {
     for (const roleId of roles) {
       if (roleId === mage.roleId) continue;
+      if (roleId === MAGE_ROLE.raider && holders.has(mage.handle)) continue;
       found.push({ params: [mage.handle, roleId] });
     }
+  }
+  return found;
+}
+
+/** Living mages holding any portal-carrying node in mind or palace, at any mastery. */
+function portalHolders(input: CandidateInput): ReadonlySet<number> {
+  const portal = new Set(input.portalNodes ?? []);
+  const found = new Set<number>();
+  if (portal.size === 0) return found;
+  for (const { row } of collectRecords(input.state, KNOWLEDGE_INSTANCE)) {
+    if (row.locationKind !== LOCATION_KIND.mind && row.locationKind !== LOCATION_KIND.palace) continue;
+    if (portal.has(row.nodeId)) found.add(row.locationId);
   }
   return found;
 }

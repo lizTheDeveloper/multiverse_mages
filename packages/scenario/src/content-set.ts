@@ -853,6 +853,7 @@ export function worldDeps(
     // What a raider drills in `raid-readiness`. Every primitive that acts
     // through a portal, named once here from the registry, never by id.
     raidKitPrimitives: raidKitPrimitivesOf(registry),
+    raidDrillFloor: registry.raidConstant('raid-readiness-mastery-floor'),
     affinitiesOf: (species) => {
       const cached = affinityCache.get(species.id);
       if (cached !== undefined) return cached;

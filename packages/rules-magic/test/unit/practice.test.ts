@@ -196,6 +196,22 @@ describe('practice — the ceiling that keeps a population stratified', () => {
     for (let i = 0; i < 100; i += 1) instance = practice(inputs(knowledge, { depthCeiling: 1 })).instance;
     expect(knowledge.read(instance).mastery).toBe(DEFAULT_TEACH_THRESHOLD);
   });
+
+  it('lets a ceiling floor (the raid drill) carry that same mage past teachable, and no further', () => {
+    const knowledge = fixture(DEFAULT_INITIAL_MASTERY);
+    let instance = 0;
+    for (let i = 0; i < 100; i += 1) {
+      instance = practice(inputs(knowledge, { depthCeiling: 1, ceilingFloor: 640 })).instance;
+    }
+    expect(knowledge.read(instance).mastery).toBe(640);
+  });
+
+  it('never lowers a ceiling that is already above the floor', () => {
+    const knowledge = fixture(DEFAULT_INITIAL_MASTERY);
+    let instance = 0;
+    for (let i = 0; i < 100; i += 1) instance = practice(inputs(knowledge, { ceilingFloor: 640 })).instance;
+    expect(knowledge.read(instance).mastery).toBe(practiceCeiling(1, 3));
+  });
 });
 
 describe('practice — what it refuses', () => {

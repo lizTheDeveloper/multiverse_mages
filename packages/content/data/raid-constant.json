@@ -411,5 +411,12 @@
     "unit": "fp",
     "gloss": "Vis a raiding party carries through the portal. A portable, lootable stock, seeded once and never refilled -- running out is what ends an over-extended raid. AUTHORED CONTENT RATHER THAN A WORLD BALANCE, and deliberately so: the economy spec amendment records that Vis production and storage land with the economy capability, and reading a stock that does not exist yet would be a fourth resource invented here rather than one chosen. fp(64) buys sixteen of the cheaper verb.",
     "tuningStatus": "untuned"
+  },
+  {
+    "id": "raid-readiness-mastery-floor",
+    "value": 640,
+    "unit": "fp",
+    "gloss": "The mastery a raider's practice on a held raid-kit node can reach, whatever her depth headroom. fp(0.625): the activation threshold fp(0.5) plus sixteen months of decay at human retention. Added 2026-10-08: without it the practice ceiling for a node at the top of her reach was exactly the threshold, so a drilled portal node decayed back below 512 before the portal gate read it, and naming its holder a raider never opened a portal.",
+    "tuningStatus": "untuned"
   }
 ]

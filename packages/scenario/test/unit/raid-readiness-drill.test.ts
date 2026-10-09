@@ -29,10 +29,11 @@ import { GOD_ACTION, createSession } from '@mm/agent-api';
 import { raidKitTargetsFor } from '@mm/coordination';
 import type { KnowledgeTarget } from '@mm/rules-world';
 import { GOAL } from '@mm/rules-world';
+import { MASTERY_ACTIVATION_THRESHOLD } from '@mm/rules-magic';
 import type { SimState } from '@mm/sim-core';
 import { GOAL_COMMITMENT, KNOWLEDGE_INSTANCE, LOCATION_KIND, MAGE_ROLE, collectRecords, componentOf } from '@mm/state';
 
-import { referenceContent, referenceScenario } from '@mm/scenario';
+import { explicitOpeningAxes, foundingCandidates, referenceContent, referenceScenario } from '@mm/scenario';
 
 const target = (nodeId: number, primitives: number[]): KnowledgeTarget =>
   ({ nodeId, tier: 1, remainingCost: 0, cellId: 1, formId: 1, primitives, libraryHolds: false }) as KnowledgeTarget;
@@ -134,4 +135,98 @@ describe('a raider drilling', () => {
     expect(drillTicks).toBeGreaterThan(0);
     expect(drilledUp).toBeGreaterThan(0);
   }, 600_000);
+});
+
+/**
+ * The round-4 playtest finding, as a test: a mage who researched `Open the
+ * Portal` and was named raider sat at 47–49% mastery for 300 ticks and never
+ * crossed {@link MASTERY_ACTIVATION_THRESHOLD}, so the portal she was named for
+ * never opened.
+ *
+ * Target, stated: **usable within 24 ticks (two in-game years) of being named.**
+ * Measured on this branch: within three ticks on all eight seeds 7000–7014
+ * (one tick on seven). Before it,
+ * never on any of them — two things stopped her, and each seed below fails on
+ * one of them:
+ *
+ * - the drill could not pass the practice ceiling, which at the top of her reach
+ *   *is* 512, and decay took her back under it the same tick (fixed by the
+ *   `raid-readiness-mastery-floor` constant);
+ * - a researcher by species and temperament never chose to drill at all —
+ *   research scored 1429 against readiness 1016 for seed 7002's gnome (fixed by
+ *   closing the research frontier to a raider whose kit she cannot yet cast).
+ */
+describe('a portal holder named raider', () => {
+  const N = 24;
+  const content = (() => {
+    const base = referenceContent();
+    const axes = explicitOpeningAxes(base.registry, ['rego', 'intellego'], ['limen', 'mentem']);
+    return { ...base, axes, foundingNodeIds: foundingCandidates(base.registry, axes) };
+  })();
+  const portalNodes = new Set(
+    content.registry.nodes
+      .filter((entry) => entry.record.effects.some((effect) => effect.primitive === 'portal'))
+      .map((entry) => entry.contentId),
+  );
+  const portalMastery = (state: SimState, mage: number): number => {
+    let best = 0;
+    for (const [nodeId, mastery] of mind(state, mage)) if (portalNodes.has(nodeId)) best = Math.max(best, mastery);
+    return best;
+  };
+
+  for (const seed of [7002, 7006, 7010]) {
+    it(`reaches usable mastery within ${String(N)} ticks of being named (seed ${String(seed)})`, async () => {
+      const live: { s?: SimState } = {};
+      const run = referenceScenario(content, {
+        onState: (s) => {
+          live.s = s;
+        },
+      });
+      const session = createSession({ scenario: run.scenario, strategyId: 'portal-drill' });
+      session.reset(seed, { worldTickCap: 4000, options: { foundingPortalMagic: 0 } });
+
+      let holder = 0;
+      let namedAt = -1;
+      let usableAfter = -1;
+      for (let tick = 0; tick < 400 && session.status() === 'running'; tick += 1) {
+        let action: { kind: number; params: number[] } = { kind: GOD_ACTION.noop, params: [] };
+        const state = live.s;
+        if (state !== undefined && holder === 0) {
+          for (const { row } of collectRecords(state, KNOWLEDGE_INSTANCE)) {
+            if (row.locationKind === LOCATION_KIND.mind && portalNodes.has(row.nodeId)) {
+              holder = row.locationId;
+              break;
+            }
+          }
+        }
+        // Named once she holds it below usable: researched, then let slip.
+        if (
+          state !== undefined &&
+          holder !== 0 &&
+          namedAt < 0 &&
+          portalMastery(state, holder) < MASTERY_ACTIVATION_THRESHOLD &&
+          session.legalActions()[GOD_ACTION.assignRole] === 1
+        ) {
+          const offered = session.candidates().get(GOD_ACTION.assignRole) ?? [];
+          const slot = offered.findIndex((c) => c.params[0] === holder && c.params[1] === MAGE_ROLE.raider);
+          if (slot >= 0) {
+            action = { kind: GOD_ACTION.assignRole, params: [slot] };
+            namedAt = tick;
+          }
+        }
+        session.submit(action);
+        if (namedAt >= 0 && tick > namedAt && portalMastery(live.s as SimState, holder) >= MASTERY_ACTIVATION_THRESHOLD) {
+          usableAfter = tick - namedAt;
+          break;
+        }
+        if (namedAt >= 0 && tick - namedAt > N) break;
+        if (tick % 12 === 11) await new Promise((resolve) => setImmediate(resolve));
+      }
+      // Positive controls: somebody researched the node, and the god named her.
+      expect(holder, 'nobody researched a portal node').not.toBe(0);
+      expect(namedAt, 'the holder was never offered as a raider below usable mastery').toBeGreaterThanOrEqual(0);
+      expect(usableAfter, `raider at ${String(portalMastery(live.s as SimState, holder))} after ${String(N)} ticks`).toBeGreaterThan(0);
+      expect(usableAfter).toBeLessThanOrEqual(N);
+    }, 600_000);
+  }
 });
