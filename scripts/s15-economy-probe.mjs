@@ -27,7 +27,9 @@
  * Policies: `idle`; `steward@N` (fund two universities, grant, bless,
  * encourage — every N ticks); `active@N` (the steward, then any permit,
  * dispensation or role); `raider@N` (opens the portal cell if the opening
- * lacks it, names raiders, presses action 14 whenever offered, else steward).
+ * lacks it, keeps three raiders alive (portal-holders first, so the drill
+ * keeps their node usable), points research at the portal's cells once in 24
+ * ticks, presses action 14 whenever offered, and otherwise saves).
  *
  * Writes exactly the file named by `--out`; one JSON line per run on stdout.
  *
@@ -51,6 +53,7 @@ import {
   speciesAliveIn,
   speciesTable,
   participantOf,
+  portalStandingOf,
 } from '@mm/scenario';
 
 const arg = (name, fallback) => {
@@ -135,15 +138,28 @@ function makePolicy(kind, every) {
       if (!(ruleset.permittedForms & (1 << FORM_LIMEN)) && legal(GOD_ACTION.permitForm)) return { kind: GOD_ACTION.permitForm, params: [FORM_LIMEN + 1] };
       if (!(ruleset.permittedTechniques & (1 << TECH_REGO)) && legal(GOD_ACTION.permitTechnique)) return { kind: GOD_ACTION.permitTechnique, params: [TECH_REGO + 1] };
     }
-    // Keep raiders named so the portal has somebody to send.
-    if (kind === 'raider' && legal(GOD_ACTION.assignRole)) {
-      const list = candidates.get(GOD_ACTION.assignRole) ?? [];
-      const slot = list.findIndex((c) => c.params[1] === 3);
-      if (slot >= 0 && (run.__raiderAssigns ?? 0) < 3) {
-        run.__raiderAssigns = (run.__raiderAssigns ?? 0) + 1;
-        return { kind: GOD_ACTION.assignRole, params: [slot] };
+    // Keep three raiders alive, portal-holders first — a named holder's
+    // readiness drills her portal node, which is what keeps it usable and her
+    // a threshold keeper.
+    if (kind === 'raider' && legal(GOD_ACTION.assignRole) && run.__box.state !== undefined) {
+      const standing = portalStandingOf(run.__box.state, run.__content);
+      if ((standing?.livingRaiders ?? 0) < 3) {
+        const list = candidates.get(GOD_ACTION.assignRole) ?? [];
+        const holders = new Set((standing?.holders ?? []).filter((h) => h.roleId !== 3).map((h) => h.handle));
+        let slot = list.findIndex((c) => c.params[1] === 3 && holders.has(c.params[0]));
+        if (slot < 0) slot = list.findIndex((c) => c.params[1] === 3);
+        if (slot >= 0) return { kind: GOD_ACTION.assignRole, params: [slot] };
       }
     }
+    // Invest in the portal: point research at its two cells.
+    if (kind === 'raider' && legal(GOD_ACTION.encourageResearch)) {
+      const slot = (candidates.get(GOD_ACTION.encourageResearch) ?? []).findIndex((c) => PORTAL_CELLS.includes(c.params[0]));
+      if (slot >= 0 && t % 24 === 0) return { kind: GOD_ACTION.encourageResearch, params: [slot] };
+    }
+    // A raider saves: it spends on nothing but the portal, its cell and its
+    // warband. At a price of 16 favor a god who blesses every chance it gets
+    // never holds 16 (measured: 0 raids), and that is a choice, not a ceiling.
+    if (kind === 'raider') return { kind: GOD_ACTION.noop };
     const universities = session.playerState().institutions.universityCount;
     const completed = run.lastGodReport()?.ascensionProgress.completedUniversities ?? 0;
     if (legal(GOD_ACTION.fundUniversity)) {
@@ -184,6 +200,9 @@ function parsePolicy(spec) {
 const REG = referenceContent(LOADED).registry;
 const FORM_LIMEN = REG.forms.find((e) => e.record.id === 'limen').record.bit;
 const TECH_REGO = REG.techniques.find((e) => e.record.id === 'rego').record.bit;
+const PORTAL_CELLS = REG.cells
+  .filter(({ record }) => record.id === 'rego-limen' || record.id === 'intellego-limen')
+  .map(({ contentId }) => contentId);
 const KINDS = ['food', 'stone', 'vellum', 'labor', 'essence', 'insight', 'passage'];
 
 function runPair(openingId, spec, seed) {
@@ -196,6 +215,7 @@ function runPair(openingId, spec, seed) {
   });
   cells.a = lobbyUniverse(opening, seed, peersFor('b'));
   cells.a.run.__box = cells.a.box;
+  cells.a.run.__content = cells.a.content;
   cells.b = lobbyUniverse(OPENINGS['cr-ht'], seed + 7919, peersFor('a'));
   const policyA = parsePolicy(spec);
   const policyB = parsePolicy('steward@12');

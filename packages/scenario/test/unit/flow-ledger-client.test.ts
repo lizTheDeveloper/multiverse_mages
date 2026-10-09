@@ -72,6 +72,7 @@ interface RawLedger {
   readonly sink: Record<string, number>;
   readonly land: Record<string, number>;
   readonly applied: Record<string, number>;
+  readonly tended?: Record<string, number>;
   readonly spilled: Record<string, number>;
   readonly short: Record<string, boolean>;
   readonly claimants: readonly {
@@ -202,7 +203,8 @@ describe('control 1 — the sidecar reconciles, on a real run', () => {
 
   it('composes each side out of the parts it publishes, so a map can draw them', () => {
     // What the flow map needs and what it would be wrong about if these did not
-    // hold: the faucet is exactly the two sources it names, and the sink is
+    // hold: the faucet is exactly the three sources it names (land, applied, and since the raid economy
+    // the tended faucets), and the sink is
     // exactly the claimants plus the ceiling spill. A source or a sink that
     // reached the total and not the breakdown would draw as an arrow going
     // nowhere.
@@ -211,7 +213,7 @@ describe('control 1 — the sidecar reconciles, on a real run', () => {
       const flow = frame.flow as RawLedger;
       for (const kind of Object.keys(flow.faucet)) {
         expect(flow.faucet[kind], `faucet ${kind} at ${String(flow.worldTick)}`).toBe(
-          (flow.land[kind] ?? 0) + (flow.applied[kind] ?? 0),
+          (flow.land[kind] ?? 0) + (flow.applied[kind] ?? 0) + (flow.tended?.[kind] ?? 0),
         );
         const paid = flow.claimants
           .filter((row) => row.kind === kind)

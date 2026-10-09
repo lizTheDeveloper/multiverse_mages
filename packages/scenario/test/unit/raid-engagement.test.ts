@@ -115,8 +115,18 @@ const played = new Map<string, Awaited<ReturnType<typeof executeReferenceRunAsyn
  * outbound raids gained foreign nodes on `0x00ab_cdef` (6), `0x0bad_f00d`,
  * `0x0004_1000` and `0x0000_1000` (4 each), and none on `0x1234_5678`,
  * `0x0bad_c0de`, `0x0000_022b`, `0x0a97_0001`, `0x2222_2222`, `0x1111_1111`.
+ *
+ * `0x00ab_cdef` until 2026-10-09, when the raid economy (playtest round 4) gave
+ * every portal-holder a passage faucet, put a cooldown on the portal and
+ * quartered favor regeneration. The same ten-seed survey on that tree:
+ * `portal-rush` now opens 3–5 outbound raids per seed where it opened 0–2, and
+ * eight seeds of ten bring home foreign nodes — `0x0a97_0001` and `0x2222_2222`
+ * (10), `0x1234_5678` and `0x0000_022b` (8), `0x0bad_f00d`, `0x0004_1000`,
+ * `0x0000_1000` and `0x1111_1111` (4) — and two do not: `0x0bad_c0de` (no
+ * outbound raid) and `0x00ab_cdef` (5 outbound, 0 nodes). The claim moved to
+ * `0x0bad_f00d`, a seed that looted on both trees.
  */
-const LOOTING_SEED = 0x00ab_cdef;
+const LOOTING_SEED = 0x0bad_f00d;
 
 const LOOTING_LEVELS: Readonly<Record<string, number>> = Object.freeze({
   cohortSize: 12,
@@ -449,7 +459,9 @@ describe('looting reaches what research cannot', () => {
     // `foundingPortalMagic` puts the universe at action 14's gate rather than
     // upstream of it.
     //
-    // Measured on this tree at these coordinates, 400 ticks:
+    // Measured at these coordinates on `0x00ab_cdef`, 400 ticks, before the
+    // raid economy (2026-10-09) — a historical record; see `LOOTING_SEED` for
+    // the survey on the current tree:
     //
     // | arm | raids | outbound | nodes gained |
     // |---|---:|---:|---:|

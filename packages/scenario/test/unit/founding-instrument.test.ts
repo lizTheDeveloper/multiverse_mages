@@ -30,13 +30,14 @@
  * `step` clones. It said **0 universities founded on a run that founded 195**.
  *
  * So the control is not "some strategy founds something". It is a prediction:
- * favor opens at 0, `favor-regen-base` is fp 1024 per tick, `found-university-cost`
- * is fp 10240, and worship lags upward from nothing — so a god who saves for
- * exactly one thing crosses the price in the region of ten world ticks. Measured
- * on this build the ledger opens tick 9 at 10463 and the university appears that
- * tick. {@link FOUNDING_WINDOW} is that prediction with room for a retune of the
- * regen constants; a probe founding at tick 0 or tick 300 fails it, where
- * *"non-zero"* would have passed either.
+ * favor opens at 0, `favor-regen-base` is fp 256 per tick (fp 1024 until the raid
+ * economy quartered it, 2026-10-09), `found-university-cost` is fp 10240, and
+ * worship lags upward from nothing — so a god who saves for exactly one thing
+ * crosses the price inside forty world ticks, sooner as worship rises. Measured
+ * at fp 1024 the university appeared at tick 9; at fp 256 it appears at tick 28.
+ * {@link FOUNDING_WINDOW} is that prediction with room for a retune of the regen
+ * constants; a probe founding at tick 0 or tick 300 fails it, where *"non-zero"*
+ * would have passed either.
  */
 
 import { describe, expect, it } from 'vitest';
@@ -53,9 +54,10 @@ import {
  *
  * Wide enough to survive a modest retune of `favor-regen-base` or the worship
  * lag, narrow enough that an instrument reading the starting position (tick 0)
- * or one firing on noise late in the run fails. The measured value is 9.
+ * or one firing on noise late in the run fails. The measured value is 28 (it was
+ * 9 at four times the regeneration, and the window moved with the constant).
  */
-const FOUNDING_WINDOW = { min: 5, max: 25 } as const;
+const FOUNDING_WINDOW = { min: 15, max: 50 } as const;
 
 const content = referenceContent();
 const audits = auditFounding({ content });

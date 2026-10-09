@@ -167,14 +167,18 @@ const KNOWN_SHADOWED: Readonly<Record<string, string>> = Object.freeze({
   // measures the edit rather than the rule, and moves every balance baseline.
   // Every number below is from `auditPool` on this tree, printed by the first
   // test in this file.
-  'narrow-depth/8':
-    'grantFoundingKnowledge is fourth in a four-entry list, behind forbidTechnique (legal on ' +
-    '515/600 ticks, submitted on all 515), forbidForm (541/600, submitted 26) and ' +
-    'encourageResearch (599/600, submitted 58) — 599 submissions over 600 rounds, so the tail of ' +
-    'the list is reached on one round in six hundred and the mask offers action 8 on 11. This is ' +
-    "the `narrow-depth` half of the incident that made this file: it is the strategy whose " +
-    'preference list was read by hand, months apart, and found never to ask for this verb. It ' +
-    'asks now and still never gets it.',
+  // `narrow-depth/8` was here and is **gone on `raid-economy`, 2026-10-09** —
+  // and not because it was fixed. At a quartered favor regeneration the
+  // strategy's forbids drain the pool, so `grantFoundingKnowledge` (12 favor) is
+  // never affordable: `auditPool` reports it `0/600 legal, unreachable`. A verb
+  // the mask never offers cannot be shadowed. It is still the strategy that
+  // never plays action 8; the reason is now the price, not the list order.
+  'worship-maximizer/11':
+    'fundUniversity is second, behind blessMage — legal on 593/600 ticks and submitted on all ' +
+    '555 rounds the strategy acted on, since the raid economy (2026-10-09) gave insight a faucet ' +
+    'in research and blessing stopped being priced out. fundUniversity is legal on 590/600 and ' +
+    'never reached. Before that change blessMage was legal on a handful of ticks and the tail of ' +
+    'the list was reached; the preference order did not move, the number under it did.',
   'denial-warden/2':
     'forbidTechnique is listed but never submitted — something ahead of it in the preference ' +
     'list is legal every time it is. Re-appeared after floor wiring changed the tick arithmetic.',
