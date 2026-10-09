@@ -33,7 +33,7 @@ import { RAID_END_REASON, readRaidTuning } from '@mm/rules-raid';
 import { BASE_MAX_VIGOR } from '@mm/rules-world';
 import { RAID_SIDE } from '@mm/state';
 
-import { playPeerPair, referenceContent, type PeerRaidMeasurement } from '@mm/scenario';
+import { playPeerPair, playPeerPairAsync, referenceContent, type PeerRaidMeasurement } from '@mm/scenario';
 
 const content = referenceContent();
 const SEED0 = 7000;
@@ -84,8 +84,8 @@ describe('a mage can afford to cast in a raid', () => {
 });
 
 describe('live peer raids after a preparation window (seeds 7000–7005)', () => {
-  // One pair per test, so the worker hands the event loop back between them —
-  // a single synchronous minute trips vitest's 60 s RPC timeout (see
+  // One pair per test, each yielding to the event loop once a world year — a
+  // single synchronous minute trips vitest's 60 s RPC timeout (see
   // `vitest.config.ts`). The bands are asserted over the collected raids last.
   const raids: PeerRaidMeasurement[] = [];
   const ARMS = [
@@ -96,8 +96,8 @@ describe('live peer raids after a preparation window (seeds 7000–7005)', () =>
     for (let i = 0; i < PAIRS; i += 1) {
       it(
         `plays pair ${String(i)} under ${arm.attacker}`,
-        () => {
-          raids.push(...playPeerPair(content, arm, SEED0 + 2 * i, SEED0 + 2 * i + 1).raids);
+        async () => {
+          raids.push(...(await playPeerPairAsync(content, arm, SEED0 + 2 * i, SEED0 + 2 * i + 1)).raids);
         },
         SLOW,
       );

@@ -259,6 +259,7 @@ export {
   PEER_ATTACKER_POLICIES,
   PEER_DEFENDER_POLICIES,
   playPeerPair,
+  playPeerPairAsync,
   summarisePeerRaids,
   surveyPeerArm,
 } from './peer-raid-survey.js';

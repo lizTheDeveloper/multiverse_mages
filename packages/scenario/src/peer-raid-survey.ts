@@ -250,6 +250,41 @@ export function playPeerPair(
   seedA: number,
   seedB: number,
 ): PeerPairResult {
+  const steps = peerPairSteps(content, arm, seedA, seedB);
+  for (;;) {
+    const next = steps.next();
+    if (next.done === true) return next.value;
+  }
+}
+
+/**
+ * {@link playPeerPair}, handing the event loop back once a world year.
+ *
+ * The repository's convention for long arms (`annihilation.ts`): a test runner
+ * worker that runs an unbroken synchronous minute cannot answer vitest's RPC
+ * and reports a timeout that is not a test failure. Same pair, same result.
+ */
+export async function playPeerPairAsync(
+  content: ReferenceContent,
+  arm: PeerSurveyArm,
+  seedA: number,
+  seedB: number,
+): Promise<PeerPairResult> {
+  const steps = peerPairSteps(content, arm, seedA, seedB);
+  for (let n = 1; ; n += 1) {
+    const next = steps.next();
+    if (next.done === true) return next.value;
+    if (n % 12 === 0) await new Promise<void>((resolve) => setImmediate(resolve));
+  }
+}
+
+/** The pair, one world tick per `yield`. */
+function* peerPairSteps(
+  content: ReferenceContent,
+  arm: PeerSurveyArm,
+  seedA: number,
+  seedB: number,
+): Generator<void, PeerPairResult, void> {
   const live: Live = {};
   const peered = arm.mode === 'peer';
   const runA = referenceScenario(content, {
@@ -330,7 +365,10 @@ export function playPeerPair(
   };
 
   // Idle until raiders can be named.
-  while (tick < NAME_FROM_TICK) step({ kind: GOD_ACTION.noop, params: [] });
+  while (tick < NAME_FROM_TICK) {
+    step({ kind: GOD_ACTION.noop, params: [] });
+    yield;
+  }
 
   // Naming, first: a raider named early has the preparation window to drill.
   const want = arm.attacker === 'all-in' ? SIDE_CAP : 6;
@@ -342,6 +380,7 @@ export function playPeerPair(
     if (offered.length === 0 || a.legalActions()[GOD_ACTION.assignRole] !== 1) {
       if (offered.length === 0 && named > 0) break;
       step({ kind: GOD_ACTION.noop, params: [] });
+      yield;
       continue;
     }
     let pick = offered[0];
@@ -352,11 +391,15 @@ export function playPeerPair(
         .sort((x, y) => y.score - x.score || x.slot - y.slot)[0];
     }
     step({ kind: GOD_ACTION.assignRole, params: [pick?.slot ?? 0] });
+    yield;
     named += 1;
   }
 
   // Preparation: research encouraged in the portal's cell and the combat cells.
-  for (let i = 0; i < arm.prep; i += 1) step(encourage(a));
+  for (let i = 0; i < arm.prep; i += 1) {
+    step(encourage(a));
+    yield;
+  }
 
   // Waiting for the gate, and pressing it — `arm.raids` times, the god raiding
   // again whenever the mask allows. A press the mask allowed that opened
@@ -374,6 +417,7 @@ export function playPeerPair(
     const portalSlot = (a.candidates().get(GOD_ACTION.openPortal) ?? []).findIndex((c) => c.params[0] === 1);
     if (a.legalActions()[GOD_ACTION.openPortal] !== 1 || portalSlot < 0 || live.a === undefined) {
       step({ kind: GOD_ACTION.noop, params: [] });
+      yield;
       continue;
     }
     const before = {
@@ -444,6 +488,7 @@ export function playPeerPair(
     }
     if (running(b)) b?.submit(defenderMove());
     tick += 1;
+    yield;
   }
   return { raids: measured, portalRefusals: refusalsInPair, favorLostToRefusals: favorLostInPair };
 }
