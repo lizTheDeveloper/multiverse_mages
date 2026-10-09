@@ -87,6 +87,13 @@ export interface InboundRaid {
   /** The attacker's name when it raided — kept, because the attacker may since have left. */
   readonly fromName: string;
   readonly record: RaidRecord;
+  /**
+   * The defender's own world tick when the raid reached it. `record.worldTick`
+   * is the attacker's clock, and two universes founded at different times read
+   * different years: a raid reported "in year 40" to a defender in year 6 read
+   * as decades late (playtest round 4).
+   */
+  readonly arrivedTick: number;
 }
 
 /** Who sits in a portal seat of `self`, or `undefined` for an empty seat. */
@@ -330,7 +337,7 @@ export class UniverseHost implements FrameRun {
         onOutbound: (seat, record) => {
           const target = peers.seatOf(this, seat);
           if (target === undefined) return;
-          target.inbound.push({ fromUniverseId: this.id, fromName: this.name, record });
+          target.inbound.push({ fromUniverseId: this.id, fromName: this.name, record, arrivedTick: target.worldTick });
           this.#targets.set(record.raidId, { universeId: target.id, name: target.name, species: target.speciesName });
         },
         // Action 16's roster: a second species arrives only from a seat whose
@@ -391,7 +398,40 @@ export class UniverseHost implements FrameRun {
   }
 
   get isAlive(): boolean {
-    return this.session.status() === 'running';
+    return !this.#abandoned && this.session.status() === 'running';
+  }
+
+  /** Set once by {@link abandon}; never cleared. */
+  #abandoned = false;
+
+  /**
+   * The episode status a client is told: the session's, or `abandoned` once
+   * the lobby has ended this universe for want of its owner.
+   */
+  get status(): string {
+    return this.#abandoned ? 'abandoned' : this.session.status();
+  }
+
+  /**
+   * Ends a running universe its owner has left (the lobby's idle rule), with a
+   * terminal frame that says so. Its bubble-mates saw a seat simply change when
+   * an idle universe was dropped at once (playtest round 4); an ended universe
+   * is visible as one — its last frame reads `abandoned` — and is dropped later
+   * with the other ended ones. Not an ending of the rules': it leaves no legacy.
+   *
+   * The terminal frame repeats the last one (same world state, same clock)
+   * with the new status and nothing legal, so a page polling for new frames
+   * receives it.
+   */
+  abandon(): void {
+    if (!this.isAlive) return;
+    this.#abandoned = true;
+    const last = this.frames[this.frames.length - 1] ?? {};
+    const mask = Array.isArray(last.mask) ? last.mask.map(() => 0) : last.mask;
+    this.frames.push({ ...last, status: 'abandoned', mask });
+    const queued = this.#queued;
+    this.#queued = null;
+    queued?.resolve({ admitted: false, rejection: 'episode-abandoned', status: 'abandoned' });
   }
 
   /** This universe as a raid target, or `undefined` when it cannot be one. */
@@ -436,7 +476,7 @@ export class UniverseHost implements FrameRun {
     const queued = this.#queued;
     this.#queued = null;
     if (!this.isAlive) {
-      const status = this.session.status();
+      const status = this.status;
       queued?.resolve({ admitted: false, rejection: `episode-${status}`, status });
       return;
     }
@@ -487,7 +527,7 @@ export class UniverseHost implements FrameRun {
    */
   legacy(): LegacyRecord | undefined {
     const constants = this.#content.deps.god?.content.constants;
-    if (this.isAlive || this.#state === undefined || constants === undefined) return undefined;
+    if (this.isAlive || this.#abandoned || this.#state === undefined || constants === undefined) return undefined;
     return legacyRecordOf(this.#state, {
       constants,
       scenarioId: REFERENCE_SCENARIO_ID,

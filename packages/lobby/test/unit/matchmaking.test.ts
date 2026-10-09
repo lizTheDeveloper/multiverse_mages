@@ -187,7 +187,7 @@ describe('Lobby matchmaking', () => {
       return { a: a!, b: b!, x: bubbleOf(a!), y: bubbleOf(e) };
     }
     const raidedBy = (victim: string, attacker: string): void => {
-      lobby.universe(victim)!.inbound.push({ fromUniverseId: attacker, fromName: 'x', record: {} as RaidRecord });
+      lobby.universe(victim)!.inbound.push({ fromUniverseId: attacker, fromName: 'x', record: {} as RaidRecord, arrivedTick: 0 });
     };
 
     it('is placed in the loneliest open bubble when nobody raided them (control)', async () => {

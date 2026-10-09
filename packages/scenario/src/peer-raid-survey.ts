@@ -120,8 +120,8 @@ export interface PeerRaidMeasurement {
   readonly attackAttempts: number;
   /** Nodes new to the attacker's universe (the `RaidRecord` reading). */
   readonly nodesTakenByAttacker: number;
-  /** Of `nodesTakenByAttacker`, those read out of a mind or palace (a copy). */
-  readonly nodesStolenFromMinds: number;
+  /** Instances read out of a mind or palace and brought home (a copy; `knowledgeTaken.copied`). */
+  readonly instancesReadFromMinds: number;
   /** Raider nodes castable at home that the host's ruleset forbids (§3 at work). */
   readonly raiderNodesForbiddenByHost: number;
   /** Objective value taken and on offer; the victor rule reads these. */
@@ -464,7 +464,7 @@ function* peerPairSteps(
         casualtiesDefender: record.actionEconomy.removals[RAID_SIDE.defender],
         attackAttempts,
         nodesTakenByAttacker: record.nodesTakenByAttacker,
-        nodesStolenFromMinds: record.nodesStolenFromMinds,
+        instancesReadFromMinds: record.knowledgeTaken.copied,
         raiderNodesForbiddenByHost: record.raiderNodesForbiddenByHost,
         objectiveValueTaken: record.objectiveValueTaken,
         objectiveValueTotal: record.objectiveValueTotal,
@@ -564,8 +564,8 @@ export interface PeerSurveySummary {
   readonly casualtiesDefender: number;
   readonly anyCasualtyPct: number;
   readonly nodesNew: number;
-  /** Of `nodesNew`, read out of a mind or palace. */
-  readonly nodesStolenFromMinds: number;
+  /** Instances read out of minds or palaces and brought home. */
+  readonly instancesReadFromMinds: number;
   /** Raider nodes castable at home that the host forbade, summed. */
   readonly raiderNodesForbiddenByHost: number;
   readonly grimoiresCarried: number;
@@ -607,7 +607,7 @@ export function summarisePeerRaids(records: readonly PeerRaidMeasurement[]): Pee
     casualtiesDefender: sum((r) => r.casualtiesDefender),
     anyCasualtyPct: pct(records.filter((r) => r.casualtiesAttacker + r.casualtiesDefender > 0).length, records.length),
     nodesNew: sum((r) => r.nodesTakenByAttacker),
-    nodesStolenFromMinds: sum((r) => r.nodesStolenFromMinds),
+    instancesReadFromMinds: sum((r) => r.instancesReadFromMinds),
     raiderNodesForbiddenByHost: sum((r) => r.raiderNodesForbiddenByHost),
     grimoiresCarried: sum((r) => r.grimoiresCarried),
     libraryInstancesLost: sum((r) => r.libraryInstancesLost),

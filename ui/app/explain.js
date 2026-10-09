@@ -49,6 +49,11 @@ export const RAID_END_REASON_TEXT = Object.freeze({
   5: { id: 'raidersWithdrew', text: 'the raiders withdrew through the portal' },
 });
 
+/** `OBJECTIVE_KIND` in packages/rules-raid/src/objectives.ts, as a noun. */
+export const RAID_OBJECTIVE_KIND_NAME = Object.freeze({ 1: 'library', 2: 'university', 3: 'archmage' });
+/** `OBJECTIVE_STATUS` in packages/state/src/enums.ts, as a past participle. `held` (0) is untaken. */
+export const RAID_OBJECTIVE_STATUS_NAME = Object.freeze({ 0: 'held', 1: 'captured', 2: 'looted', 3: 'destroyed' });
+
 /** The cell the portal gate reads (`PORTAL_CELL_ID` in packages/rules-raid/src/portal.ts). */
 export const PORTAL_CELL = 'rego-limen';
 
@@ -140,6 +145,27 @@ export function portalStanding(f, content) {
       return row ? { held: row[0], usable: row[1] } : { held: 0, usable: 0 };
     },
   };
+}
+
+/**
+ * Whether a species can research a portal node at all, from content alone:
+ * the shallowest portal node's tier against the species' `depthCeiling`. A
+ * mage cannot research a node deeper than her species' ceiling (the gateway's
+ * frontier refuses it). Returns a sentence when it cannot, else `null` — and
+ * `null` too when content does not publish what the answer needs.
+ *
+ * Playtest round 4: setup told an Orc start "your opening can reach a portal";
+ * Orcs research to tier 3 and the shallowest portal node is tier 4.
+ */
+export function portalDepthWarning(content, speciesKey) {
+  const sp = (content.species ?? []).find((x) => x.id === speciesKey || x.speciesId === speciesKey);
+  const ids = content.portal?.nodeIds ?? [];
+  const tiers = (content.nodes ?? []).filter((n) => ids.includes(n.nodeId) && Number.isInteger(n.tier)).map((n) => n.tier);
+  if (!sp || !Number.isInteger(sp.depthCeiling) || tiers.length === 0) return null;
+  const shallowest = Math.min(...tiers);
+  if (sp.depthCeiling >= shallowest) return null;
+  const name = sp.name ?? sp.id;
+  return `${name} mages research no deeper than tier ${sp.depthCeiling}, and the shallowest portal node is tier ${shallowest}: your own people cannot learn to open a portal.`;
 }
 
 /** A cell's name from content: "Rego Limen". */
@@ -505,7 +531,7 @@ export function raidBlockers(f, content, seat, peer, raiders) {
  * `nodesGainedLocally` are the attacker's own and are only shown to the
  * attacker.
  */
-export function describeRaid(record, perspective, otherLabel) {
+export function describeRaid(record, perspective, otherLabel, { arrivedTick } = {}) {
   const weAttacked = perspective === 'outbound';
   const attackerWon = record.victor === RAID_SIDE.attacker;
   const weWon = weAttacked === attackerWon;
@@ -521,35 +547,126 @@ export function describeRaid(record, perspective, otherLabel) {
   // A portal with nobody sent through it ends "side eliminated" on the first
   // tick, which read as a victory over raiders who never existed.
   const empty = record.raidersFielded === 0;
+  const taken = takenObjectives(record, weAttacked ? 'their' : 'your');
   const outcome = empty
     ? weAttacked
       ? 'You opened a portal but sent nobody through — no raider of yours was ready, so nothing happened beyond the portal’s cost.'
       : 'They opened a portal but sent nobody through — nothing happened.'
-    : `${weWon ? 'You won' : 'You lost'}: the ${attackerWon ? 'attackers' : 'defenders'} carried it, because ${reason.text}.`;
+    : `${weWon ? 'You won' : 'You lost'}: ${raidVerdict(record, attackerWon, taken, weAttacked)}`;
+  // `record.worldTick` is the attacker's clock. A defender founded at another
+  // time reads another year, and "year 40" in a defender's year 6 read as a
+  // raid decades late (playtest round 4); the lobby says when it arrived here.
+  const when = weAttacked
+    ? `your year ${year} (tick ${record.worldTick})`
+    : Number.isInteger(arrivedTick)
+      ? `your year ${Math.floor(arrivedTick / 12)} (their year ${year})`
+      : `their year ${year} — their clock, not yours`;
+  const died = record.raidersFielded - record.raidersWithdrawn - record.raidersStranded;
   const rows = [
-    ['when', `year ${year} (tick ${record.worldTick}), ${record.engagementTicks} engagement ticks`],
+    ['when', `${when}, ${record.engagementTicks} engagement ticks`],
+    ['how it ended', reason.text],
     [weAttacked ? 'your raiders' : 'their raiders',
-      `${record.raidersFielded} fielded · ${record.raidersWithdrawn} withdrew home · ${record.raidersStranded} stranded`],
-    ['combatants lost', ours === undefined ? 'not in the record'
-      : `yours ${ours} · theirs ${theirs}`],
-    ['nodes the attackers took', String(record.nodesTakenByAttacker)],
+      `${record.raidersFielded} sent · ${record.raidersWithdrawn} came home · ${record.raidersStranded} stranded${died > 0 ? ` · ${died} fell fighting` : ''}`],
   ];
-  if (weAttacked) {
+  const bySide = Array.isArray(record.casualtiesBySide) ? record.casualtiesBySide : null;
+  if (bySide !== null) {
+    const [att, def] = bySide;
+    rows.push(['mages lost for good', weAttacked ? `yours ${att} · theirs ${def}` : `yours ${def} · theirs ${att}`]);
+  } else if (weAttacked) {
     rows.push(['your mages lost for good', String(record.localCasualties)]);
-    rows.push(['nodes your raiders brought home', String(record.nodesGainedLocally)]);
-    rows.push(['nodes your universe lost entirely', String(record.nodesLostLocally)]);
-    rows.push(['portal cost', `${num(units(record.attackerFavorCost))} favor`]);
   } else {
-    rows.push(['your mages lost for good', 'not in the attacker\'s record — watch your population']);
+    rows.push(['your mages lost for good', 'not in this server’s record — watch your population']);
   }
-  return { title, outcome, reasonId: reason.id, weWon, empty, rows, inbound: !weAttacked };
+  rows.push(['combatants removed in the fight', ours === undefined ? 'not in the record' : `yours ${ours} · theirs ${theirs}`]);
+  rows.push(['objectives taken', taken === null ? 'not in the record' : taken.length === 0 ? 'none' : taken.join(', ')]);
+  const k = record.knowledgeTaken;
+  rows.push(['knowledge taken', k && typeof k === 'object'
+    ? `${k.copied} read from minds · ${k.moved} book${k.moved === 1 ? '' : 's'} carried off · ${k.destroyed} book${k.destroyed === 1 ? '' : 's'} burned · ${record.nodesTakenByAttacker} node${record.nodesTakenByAttacker === 1 ? '' : 's'} new to the attackers`
+    : `${record.nodesTakenByAttacker} node${record.nodesTakenByAttacker === 1 ? '' : 's'} new to the attackers`]);
+  if (Number.isInteger(record.nodesLostByDefender)) {
+    rows.push([weAttacked ? 'nodes they lost entirely' : 'nodes you lost entirely', String(record.nodesLostByDefender)]);
+  }
+  // The host's ruleset arbitrates every cast in a raid (vision §8). The record
+  // counts the casts its law stopped; which cells did it is not carried.
+  if (Number.isInteger(record.forbiddenCastsBlocked)) {
+    const n = record.forbiddenCastsBlocked;
+    rows.push(['fought under', `${weAttacked ? `${otherLabel}’s` : 'your'} ruleset — ${n} cast${n === 1 ? '' : 's'} it forbids ${n === 1 ? 'was' : 'were'} stopped`]);
+  }
+  if (weAttacked) {
+    rows.push(['nodes your raiders brought home', String(record.nodesGainedLocally)]);
+    rows.push(['portal cost', `${num(units(record.attackerFavorCost))} favor`]);
+  }
+  return { title, outcome, reasonId: reason.id, reasonText: reason.text, weWon, empty, rows, inbound: !weAttacked };
+}
+
+/**
+ * The objectives a raid took, as `"your library (looted)"`, or `null` when the
+ * record is from a server that did not carry them.
+ */
+function takenObjectives(record, whose) {
+  if (!Array.isArray(record.objectives)) return null;
+  return record.objectives
+    .filter((o) => o && o.status !== 0)
+    .map((o) => `${whose} ${RAID_OBJECTIVE_KIND_NAME[o.kind] ?? `objective of kind ${o.kind}`} (${RAID_OBJECTIVE_STATUS_NAME[o.status] ?? `status ${o.status}`})`);
+}
+
+/**
+ * Why the server's victor is who it is, in words that follow the record.
+ *
+ * The victor is not decided by how the raid ended. `rules-raid`'s `victorOf`
+ * gives the attackers the raid when the objective value they took (captured,
+ * looted or destroyed) reaches a threshold of what was on the field, and the
+ * defenders otherwise — so a withdrawal can be either side's win, and a report
+ * that said "the attackers carried it, because the raiders withdrew" for one
+ * raid and "the defenders carried it, because the raiders withdrew" for the
+ * next read as a contradiction (playtest round 4). This says what was taken,
+ * then how it ended, and never which side won on its own: that is `victor`'s.
+ */
+function raidVerdict(record, attackerWon, taken, weAttacked) {
+  const they = weAttacked ? 'your raiders' : 'the raiders';
+  const nodes = record.nodesTakenByAttacker;
+  const list = taken === null || taken.length === 0
+    ? null
+    : taken.length === 1 ? taken[0] : `${taken.slice(0, -1).join(', ')} and ${taken[taken.length - 1]}`;
+  const carried = nodes > 0 ? `${nodes} node${nodes === 1 ? '' : 's'} new to them` : null;
+  const what = [list, carried].filter((x) => x !== null).join(', carrying ') || null;
+  const withdrew = record.reason === 5;
+  const ended = `The raid ended because ${RAID_END_REASON_TEXT[record.reason]?.text ?? 'of an end reason this page does not know'}.`;
+  if (attackerWon) {
+    if (what === null) {
+      return withdrew
+        ? `${they} took enough of what they came for to count as a win, and withdrew through the portal with it.`
+        : `${they} took enough of what they came for to count as a win. ${ended}`;
+    }
+    return withdrew
+      ? `${they} took what they came for — ${what} — and withdrew through the portal with it.`
+      : `${they} took what they came for: ${what}. ${ended}`;
+  }
+  if (taken !== null && taken.length === 0 && nodes === 0) {
+    return withdrew ? `${they} withdrew through the portal empty-handed.` : `${they} took nothing. ${ended}`;
+  }
+  // Loot short of a win: say both, so a loss with ten nodes carried off does
+  // not read as a bug (playtest round 4).
+  if (nodes > 0) {
+    const objectives = list === null ? 'none of the objectives' : `only ${list}`;
+    return `${they} fell short of a win — ${objectives} — but carried ${carried} home${withdrew ? ' through the portal' : `. ${ended}`}${withdrew ? '.' : ''}`;
+  }
+  if (what === null) {
+    return withdrew
+      ? `${they} did not take enough to count as a win, and withdrew through the portal.`
+      : `${they} did not take enough to count as a win. ${ended}`;
+  }
+  return withdrew
+    ? `${they} took too little to count as a win — only ${what} — and withdrew through the portal.`
+    : `${they} took too little to count as a win: only ${what}. ${ended}`;
 }
 
 /** A one-line feed entry for a raid. Only numbers and a hex label. */
 export function raidFeedText(record, perspective, otherLabel) {
   const d = describeRaid(record, perspective, otherLabel);
   if (d.empty) return `${d.title} — a portal opened, but nobody came through`;
-  return `${d.title} — ${d.weWon ? 'won' : 'lost'} (${d.reasonId}); ${record.raidersFielded} raider(s), ${record.nodesTakenByAttacker} node(s) taken`;
+  const n = record.nodesTakenByAttacker;
+  return `${d.title} — ${d.weWon ? 'you won' : 'you lost'}; ${d.reasonText}; ${record.raidersFielded} raider${record.raidersFielded === 1 ? '' : 's'} sent, ${n} node${n === 1 ? '' : 's'} new to the attackers`;
 }
 
 /**

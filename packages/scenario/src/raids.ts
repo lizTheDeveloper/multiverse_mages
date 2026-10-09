@@ -160,6 +160,33 @@ export interface RaidRecord {
    */
   readonly nodesTakenByAttacker: number;
   /**
+   * Every objective on the field and how it ended — `OBJECTIVE_KIND` and
+   * `OBJECTIVE_STATUS` values, in the raid's own order. Raid-relative.
+   *
+   * The victor is decided by objective value taken, not by nodes, and not by
+   * how the raid ended: an attacker who captures a university and walks home
+   * with no new node has won. Without this a report could say only *that* the
+   * attackers won, and two withdrawals with zero casualties and zero nodes
+   * read as one raid won and one lost for no visible reason (playtest round 4).
+   * Carried as the two enum values only; `value` is a tuning number.
+   */
+  readonly objectives: readonly { readonly kind: number; readonly status: number }[];
+  /**
+   * Mages each side lost for good, `[attacker, defender]` by `RAID_SIDE`.
+   * Raid-relative, unlike {@link RaidRecord.localCasualties}: the record a
+   * defender's page reads is the attacker's, and without the defender's half
+   * it could only say "watch your population" (playtest round 4).
+   */
+  readonly casualtiesBySide: readonly [number, number];
+  /** Nodes the defending universe no longer has any instance of. Raid-relative. */
+  readonly nodesLostByDefender: number;
+  /**
+   * Knowledge instances that left the defender, by verb — a mind read
+   * (`copied`), a grimoire carried off (`moved`), a book burned (`destroyed`) —
+   * counting only thefts a raider brought home; burning needs no one to.
+   */
+  readonly knowledgeTaken: { readonly copied: number; readonly moved: number; readonly destroyed: number };
+  /**
    * Mid-raid ruleset changes this god actually made, and the favor they cost.
    *
    * The seam's own instrument. Unmasking actions 1–4 and routing them to
@@ -198,30 +225,18 @@ export interface RaidRecord {
    */
   readonly raiderNodesForbiddenByHost: number;
   /**
-   * Of {@link nodesTakenByAttacker}, the nodes that came by **reading a mind**
-   * (or a memory palace): a copy, which the victim keeps. The rest were looted
-   * books. Added 2026-10-09 because round 4 read "nodes taken" from an Art of
-   * Memory universe — which has no library — as losses it should have been
-   * immune to; the victim lost nothing but what died with its casualties.
-   */
-  readonly nodesStolenFromMinds: number;
-  /**
    * **Why the victor is the victor.** `victorOf` gives the attacker the raid
    * iff the objective value she took reaches the victory threshold of the
    * total — no roll, no hit points. An attacker who captures the archmage and
    * walks home wins with nothing carried and nobody killed; one who walks home
    * having taken nothing loses. Round 4 saw identical-looking withdrawals
-   * (2 fielded, 2 withdrew, 0 lost, 0 taken) go once each way, because this
-   * was not in the record. Added 2026-10-09; report-only.
+   * (2 fielded, 2 withdrew, 0 lost, 0 taken) go once each way. {@link objectives}
+   * says which objectives fell; these two carry the values the rule compares,
+   * so a reader can recompute the victor from the record alone. Added
+   * 2026-10-09; report-only.
    */
   readonly objectiveValueTaken: number;
   readonly objectiveValueTotal: number;
-  /**
-   * Each objective as `[kind, status, value]`, in field order — kind 1 library,
-   * 2 university, 3 archmage; status `OBJECTIVE_STATUS` (0 held, 1 captured,
-   * 2 looted, 3 destroyed).
-   */
-  readonly objectives: readonly (readonly [number, number, number])[];
   /**
    * **What happened inside the raid**, carried across the boundary rather than
    * recomputed on the far side of it.
@@ -667,6 +682,17 @@ function resolveOneRaid(input: {
     raidersWithdrawn: outcome.raidersWithdrawn,
     raidersStranded: outcome.raidersStranded,
     nodesTakenByAttacker: countOf(applied.nodesGainedByRaider),
+    objectives: outcome.objectives.map((o) => ({ kind: o.kind, status: o.status })),
+    casualtiesBySide: [
+      outcome.casualties.filter((c) => c.side === ATTACKER).length,
+      outcome.casualties.filter((c) => c.side === DEFENDER).length,
+    ],
+    nodesLostByDefender: countOf(applied.nodesLostByHost),
+    knowledgeTaken: {
+      copied: outcome.knowledgeMovements.filter((m) => m.verb === 'copied' && !m.forfeited).length,
+      moved: outcome.knowledgeMovements.filter((m) => m.verb === 'moved' && !m.forfeited).length,
+      destroyed: outcome.knowledgeMovements.filter((m) => m.verb === 'destroyed').length,
+    },
     // `nodesLostByHost` is the host's loss and `nodesGainedByRaider` the
     // attacker's gain, both computed by the write-back rather than by
     // `resolveRaid`, which hardcodes both to `[]`.
@@ -675,27 +701,16 @@ function resolveOneRaid(input: {
     attackerFavorCost: input.attackerFavorCost,
     forbiddenCastsBlocked: outcome.forbiddenCastsBlocked,
     raiderNodesForbiddenByHost: raid.arbiter.maskedByHost(ATTACKER),
-    nodesStolenFromMinds: stolenFromMinds(outcome.knowledgeMovements, applied.nodesGainedByRaider),
     objectiveValueTaken: outcome.objectives
       .filter((o) => o.status !== OBJECTIVE_STATUS.held)
       .reduce((sum, o) => sum + o.value, 0),
     objectiveValueTotal: outcome.objectives.reduce((sum, o) => sum + o.value, 0),
-    objectives: outcome.objectives.map((o) => [o.kind, o.status, o.value] as const),
     // Passed through untouched. `resolveRaid` froze it at resolution and this
     // layer neither normalises nor re-sides it; see the field's own note.
     actionEconomy: outcome.actionEconomy,
   };
   deps.onRaid(record);
   return record;
-}
-
-/** Gained nodes that arrived by a delivered theft (`copied`), not a carried book. */
-function stolenFromMinds(
-  movements: readonly { readonly verb: string; readonly nodeId: ContentId; readonly forfeited: boolean }[],
-  gained: readonly ContentId[],
-): number {
-  const copied = new Set(movements.filter((m) => m.verb === 'copied' && !m.forfeited).map((m) => m.nodeId));
-  return gained.filter((nodeId) => copied.has(nodeId)).length;
 }
 
 function countOf(nodes: readonly ContentId[]): number {

@@ -19,8 +19,7 @@
  *   the host took off the table is `raiderNodesForbiddenByHost`.
  * - Identical-looking withdrawals were won once by each side. The victor is
  *   objective value taken against the threshold; the record now carries it.
- * - "Nodes taken" from an Art of Memory universe read as loot; the record now
- *   says how many were read out of minds (a copy the victim keeps).
+ * (Mind reads, books carried and books burned are `knowledgeTaken`, from #257.)
  */
 
 import { describe, expect, it } from 'vitest';
@@ -70,7 +69,6 @@ describe('a raid record explains itself', () => {
         // The victor rule, recomputed from the record alone.
         const attackerWon = r.objectiveValueTotal > 0 && r.objectiveValueTaken * 1024 >= r.objectiveValueTotal * threshold;
         expect(r.victor).toBe(attackerWon ? RAID_SIDE.attacker : RAID_SIDE.defender);
-        expect(r.nodesStolenFromMinds).toBeLessThanOrEqual(r.nodesTakenByAttacker);
       }
     },
     SLOW,

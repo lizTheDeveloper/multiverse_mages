@@ -238,7 +238,7 @@ if (values.out !== undefined) {
 
 const cols = [
   'raids/pairs', 'atk win', 'reasons', 'ticks med', 'fielded', 'withdrawn', 'stranded',
-  'cas A', 'cas D', 'raids w/ cas', 'atk wins that took', 'new nodes', 'of them from minds', 'books home', 'lib inst lost',
+  'cas A', 'cas D', 'raids w/ cas', 'atk wins that took', 'new nodes', 'read from minds', 'books home', 'lib inst lost',
   'host nodes lost', 'attacks', 'host wiped', 'held to collapse', 'host ended', 'open tick med', 'refused presses', 'favor lost to refusals', 'kit/raider', 'kit forbidden by host',
 ];
 const overrideText =
@@ -255,7 +255,7 @@ for (const { arm, summary: s, refused, favorLost } of results) {
   console.log(
     `| ${arm.mode} | ${arm.portalMagic} | ${arm.prep} | ${arm.attacker} | ${arm.defender} | ${s.raids}/${pairs} | ${s.attackerWinPct}% | ${s.reasons} | ` +
       `${s.medianTicks} | ${s.fielded} | ${s.withdrawn} | ${s.stranded} | ${s.casualtiesAttacker} | ${s.casualtiesDefender} | ` +
-      `${s.anyCasualtyPct}% | ${s.attackerWinsThatTookPct}% | ${s.nodesNew} | ${s.nodesStolenFromMinds} | ${s.grimoiresCarried} | ${s.libraryInstancesLost} | ` +
+      `${s.anyCasualtyPct}% | ${s.attackerWinsThatTookPct}% | ${s.nodesNew} | ${s.instancesReadFromMinds} | ${s.grimoiresCarried} | ${s.libraryInstancesLost} | ` +
       `${s.hostNodesLost} | ${s.casts} | ${s.extinguished} | ${s.heldToCollapse} | ${s.hostsEnded} | ${s.medianReadyTick} | ${refused} | ${favorLost} | ${(s.kitPerRaiderX100 / 100).toFixed(2)} | ${s.raiderNodesForbiddenByHost} |`,
   );
 }
