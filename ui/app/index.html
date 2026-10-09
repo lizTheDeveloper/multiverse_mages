@@ -1058,7 +1058,7 @@ body.edict-picking .grid70 .c { outline: 1px dashed var(--god); outline-offset: 
 
     <h3>What you actually do</h3>
     <ul>
-      <li><b>Permit / forbid techniques and forms</b> — the rows and columns of the grid (click a row or column label, or the toggles on the left). This is your main lever: a permitted cell can be researched, a forbidden one cannot — by you <em>or anyone who invades you</em>.</li>
+      <li><b>Permit / forbid techniques and forms</b> — the rows and columns of the grid (click a row or column label, or the toggles on the left). This is your main lever: a permitted cell can be researched, a forbidden one cannot — by you <em>or anyone who invades you</em> — and what your mages already know in a forbidden cell fades and is eventually lost.</li>
       <li><b>God Actions</b> (left sidebar): glowing buttons are legal and affordable right now. Click one, then click a <b>candidate</b> in the panel next to the grid to execute. Faded buttons are denied; dotted ones cost more favor than you have.</li>
       <li><b>Favor</b> is the currency for god actions. It regenerates each tick, faster when mages are productive. Big actions (changing a tradition, inviting a scholar) cost a lot — let it build up.</li>
       <li><b>Edicts</b> are one-off exceptions to your own rules (permit one forbidden cell, forbid one permitted one). There are only a few slots.</li>
@@ -1528,7 +1528,7 @@ async function toggleAxis(kind, item) {
   const id = axisActionId(kind, on);
   const verb = `${on ? 'Forbid' : 'Permit'} ${item.name}`;
   const body = on
-    ? `Every cell in the ${item.name} ${kind === 'technique' ? 'row' : 'column'} closes (unless an edict holds it open). What your mages already know there is kept, but stops growing.`
+    ? `Every cell in the ${item.name} ${kind === 'technique' ? 'row' : 'column'} closes (unless an edict holds it open). What your mages already know there fades without practice and is lost when it reaches nothing — forbidding costs knowledge over time. No new research happens there.`
     : `Opens the ${item.name} ${kind === 'technique' ? 'row' : 'column'} wherever its ${kind === 'technique' ? 'form' : 'technique'} is also permitted. Hover the toggle to see which cells light.`;
   const confirmed = await confirmAct({
     title: `${verb}?`,
@@ -2058,8 +2058,10 @@ function paintGrid() {
 
     node.dataset.off = String(!permitted && !ghost);
     node.dataset.live = String(permitted && c.live);
-    // Knowledge in a forbidden cell is kept, not lost: it is drawn (dimmed) so
-    // the grid counts the same cells the ending screen does.
+    // Knowledge in a forbidden cell is not lost at once — it fades without
+    // practice and is destroyed at zero mastery (stream 2, playtest round 4:
+    // gnome holders lose it in ~8 ticks). While it lasts it is drawn (dimmed),
+    // so the grid counts the same cells the ending screen does.
     node.dataset.known = String(c.live);
     node.dataset.ghost = String(ghost);
     node.dataset.sel = String(state.selectedCell === `${c.technique}-${c.form}`);
@@ -2069,7 +2071,7 @@ function paintGrid() {
     node.title = `${name}\n${permitted
       ? (c.live ? `permitted · ${c.nodesKnown} node${c.nodesKnown === 1 ? '' : 's'} known, deepest tier ${c.deepestTier}` : 'permitted · nothing discovered here yet')
       : ghost ? 'would be permitted'
-      : c.live ? `forbidden · ${c.nodesKnown} node${c.nodesKnown === 1 ? '' : 's'} still known here, but no new research` : 'forbidden'}`;
+      : c.live ? `forbidden · ${c.nodesKnown} node${c.nodesKnown === 1 ? '' : 's'} still known here, fading without practice; no new research` : 'forbidden'}`;
   }
 
   const nTech = Object.values(godRuleset.techniques).filter(Boolean).length;
@@ -2624,7 +2626,7 @@ function paintCellDetail(f, knowledgeCells, rules) {
     + (kc && kc.live
       ? `<div class="cell-knowledge">${kc.nodesKnown} of ${cellNodes_.length} nodes known, deepest tier ${kc.deepestTier}</div>`
       : `<div class="cell-knowledge">${enabled ? `Permitted — ${cellNodes_.length} nodes to discover, none known yet` : 'Forbidden — nothing known here'}</div>`)
-    + (kc && kc.live && !enabled ? `<div class="cell-knowledge" style="color:var(--warn)">Forbidden: what is known here is kept, but no new research happens.</div>` : '')
+    + (kc && kc.live && !enabled ? `<div class="cell-knowledge" style="color:var(--warn)">Forbidden: what is known here fades without practice and is lost when it reaches nothing; no new research happens.</div>` : '')
     + nodeListHtml;
 }
 

@@ -60,7 +60,7 @@ export function edictControls(f, content, cellId, { act, isBusy }) {
     id = 6;
     params = [cellId];
     verb = 'Interdiction — close this cell';
-    gloss = 'Forbids just this cell while its technique and form stay permitted. Uses one edict slot.';
+    gloss = 'Forbids just this cell while its technique and form stay permitted. What your mages know in it then fades without practice and is lost when it reaches nothing. Uses one edict slot.';
   } else {
     id = 5;
     params = [cellId];
