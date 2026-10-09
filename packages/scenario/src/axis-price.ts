@@ -30,7 +30,7 @@
  *
  * The price is read in **two** places that must never disagree: `coordination`'s
  * {@link https | interventionCost} charges it, and `agent-api`'s mask refuses an
- * action the god cannot pay for. `cheapestAxisMultiplier`'s docstring already
+ * action the god cannot pay for. `axisActionPrice`'s docstring already
  * names the symptom of a drift between them — *"one action in a thousand
  * admitted by the mask and refused by the resolver"*.
  *

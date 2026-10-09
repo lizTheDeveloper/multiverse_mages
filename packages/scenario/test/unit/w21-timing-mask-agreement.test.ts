@@ -18,7 +18,7 @@
  * other, so `sound-design.md` §5.2's unease multiplier is implemented twice —
  * once where an action's affordability is *judged* (the mask) and once where its
  * price is *charged* (the resolver). That is the same situation
- * `cheapestAxisMultiplier` is in for hysteresis, and the same remedy applies: a
+ * `axisActionPrice` is in for hysteresis, and the same remedy applies: a
  * test that fails when the two drift, since an import cannot.
  *
  * **This file lives in `scenario` and not beside either implementation, and §5

@@ -22,7 +22,7 @@
  *    `interventionCost` charges and `catalogue.costs` is what the legality mask
  *    refuses on. A scale reaching one and not the other produces an action the
  *    mask admits and the resolver refuses — the exact drift
- *    `cheapestAxisMultiplier`'s docstring warns about — and nothing would throw.
+ *    `axisActionPrice`'s docstring warns about — and nothing would throw.
  * 3. **Only the four axis actions move.** A scale that also moved a grant or a
  *    blessing would be a different experiment reported as this one.
  * 4. **Permit/forbid symmetry survives.** `content/src/god.ts` makes it a checked

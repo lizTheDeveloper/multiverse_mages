@@ -77,12 +77,13 @@
  */
 
 import type { Action, SimState } from '@mm/sim-core';
-import { GRID_FORM_COUNT, GRID_TECHNIQUE_COUNT } from '@mm/state';
+import { GRID_FORM_COUNT, GRID_TECHNIQUE_COUNT, findUniverse, readUniverse } from '@mm/state';
 
 import { GOD_ACTION, PARAMETERIZED_ACTIONS, candidateSlotCount, isGodAction } from './actions.js';
+import type { ActionCostTable } from './catalogue.js';
 import type { CandidateInput } from './candidates.js';
 import { buildCandidates, candidateAt } from './candidates.js';
-import { isLegal, legalityMask } from './mask.js';
+import { axisActionPrice, isLegal, legalityMask, submissionPrice } from './mask.js';
 
 /** A submission the gate turned away, and why. */
 export interface RejectedAction {
@@ -142,7 +143,21 @@ export type RejectionReason =
    * pool spent one round in five naming technique `0`, for the whole life of
    * every balance measurement, with every metric reporting a clean run.
    */
-  | 'parameter-out-of-range';
+  | 'parameter-out-of-range'
+  /**
+   * Actions 1–4: the chosen axis would change nothing (permitting a permitted
+   * axis, forbidding a forbidden one). The mask's byte says *some* axis can be
+   * changed; this says the one named cannot.
+   */
+  | 'not-a-change'
+  /**
+   * Actions 1–4: the chosen axis's own price — its hysteresis, any mid-raid
+   * revert surcharge, the unease — exceeds the pool, though a cheaper axis is
+   * affordable and so the mask byte is lit. Refused here, with a reason a page
+   * can show, rather than admitted and then refused by the resolver in silence
+   * (stream 13, PR #257: three of sixteen toggles in one run did nothing).
+   */
+  | 'unaffordable';
 
 /** The outcome of screening one tick's submissions. */
 export interface AdmissionResult {
@@ -213,6 +228,23 @@ export function admit(input: GateInput, submissions: readonly Action[]): Admissi
         reject(action, 'parameter-out-of-range');
         continue;
       }
+      // The chosen axis is one the act would change: the mask byte says only
+      // that *some* axis is.
+      const costs = input.catalogue?.costs;
+      if (
+        costs !== undefined &&
+        action.kind >= GOD_ACTION.permitTechnique &&
+        action.kind <= GOD_ACTION.forbidForm &&
+        params[0] !== undefined &&
+        axisActionPrice(state, costs, action.kind, params[0]) === undefined
+      ) {
+        reject(action, 'not-a-change');
+        continue;
+      }
+      if (unaffordableChoice(state, costs, action.kind, params)) {
+        reject(action, 'unaffordable');
+        continue;
+      }
       admitted.push({ kind: action.kind, params });
       continue;
     }
@@ -230,10 +262,34 @@ export function admit(input: GateInput, submissions: readonly Action[]): Admissi
       reject(action, 'empty-slot');
       continue;
     }
+    // Funding versus founding share one id and one byte; the slot says which.
+    if (unaffordableChoice(state, input.catalogue?.costs, action.kind, candidate.params)) {
+      reject(action, 'unaffordable');
+      continue;
+    }
     admitted.push({ kind: action.kind, params: [...candidate.params] });
   }
 
   return { admitted, rejected, mask };
+}
+
+/**
+ * Whether the chosen target's own price exceeds the pool, for the actions whose
+ * price varies by target ({@link submissionPrice}). The mask byte judged the
+ * cheapest target; the resolver will price this one. Stream 13 (PR #257): a
+ * gate that admitted the dearer choice let the resolver refuse it silently.
+ */
+function unaffordableChoice(
+  state: SimState,
+  costs: ActionCostTable | undefined,
+  kind: number,
+  params: readonly number[],
+): boolean {
+  if (costs === undefined) return false;
+  const price = submissionPrice(state, costs, kind, params);
+  if (price === undefined) return false;
+  const universe = findUniverse(state);
+  return universe !== 0 && price > readUniverse(state, universe).favor;
 }
 
 /**

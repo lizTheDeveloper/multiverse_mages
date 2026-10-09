@@ -105,6 +105,7 @@ import {
   godStateOrEmpty,
   inEngagement,
   readEdicts,
+  findMidRaidMark,
   readMidRaidMarks,
   readUniverse,
   revertSurcharge,
@@ -404,16 +405,9 @@ function cheapestPrice(
   switch (action) {
     case GOD_ACTION.permitTechnique:
     case GOD_ACTION.forbidTechnique:
-      return mul(
-        mul(base, cheapestAxisMultiplier(state, AXIS_KIND.technique, GRID_TECHNIQUE_COUNT, costs)),
-        unease,
-      );
     case GOD_ACTION.permitForm:
     case GOD_ACTION.forbidForm:
-      return mul(
-        mul(base, cheapestAxisMultiplier(state, AXIS_KIND.form, GRID_FORM_COUNT, costs)),
-        unease,
-      );
+      return cheapestAxisPrice(state, costs, action);
     case GOD_ACTION.issueDispensation:
     case GOD_ACTION.issueInterdiction:
       return mul(base, unease);
@@ -457,32 +451,105 @@ function cheapestPrice(
 }
 
 /**
- * The smallest hysteresis multiplier across an axis family, in `fp`.
+ * What action 1–4 costs on **one** axis, all in, or `undefined` when the act
+ * would change nothing there (permitting a permitted axis, forbidding a
+ * forbidden one, or an id outside the axis).
  *
- * A god who has flipped one technique twice may still flip a different one at
- * the base price, so the cheapest flip available is the least-recently-churned
- * axis.
- *
- * Returned in `fp` and applied through the same `mul` `god-agency`'s
- * `interventionCost` uses, rather than divided out here into a whole-number
- * factor. Dividing first is correct only while `hysteresisStep` happens to be
- * `fp(1024)`; the moment a retune makes it anything else, the mask would price
- * an action a unit under what the rules charge, and the symptom would be one
- * action in a thousand admitted by the mask and refused by the resolver.
+ * The resolver's own arithmetic, restated in its order: `base × hysteresis` of
+ * *that* axis (`interventionCost`), then the mid-raid revert surcharge if this
+ * act undoes a change made under fire (`axisPlan`), then §5.2's unease
+ * (`timedCost`). Before this the mask priced an axis act at the **cheapest**
+ * axis's hysteresis and never at the surcharge, so a god holding enough for one
+ * axis was offered — and admitted — a toggle on another the resolver then
+ * refused: three of sixteen toggles in one measured run silently did nothing
+ * (stream 13, PR #257). The gate now asks this for the axis actually chosen.
  */
-function cheapestAxisMultiplier(
+export function axisActionPrice(
   state: SimState,
-  axisKind: number,
-  axisCount: number,
   costs: ActionCostTable,
-): number {
-  let lowest = FP_ONE;
-  for (let bit = 0; bit < axisCount; bit += 1) {
-    const count = axisChangeCount(state, axisKind, bit);
-    const multiplier = FP_ONE + count * costs.hysteresisStep;
-    if (bit === 0 || multiplier < lowest) lowest = multiplier;
+  action: number,
+  axisId: number | undefined,
+): number | undefined {
+  const technique = action === GOD_ACTION.permitTechnique || action === GOD_ACTION.forbidTechnique;
+  const form = action === GOD_ACTION.permitForm || action === GOD_ACTION.forbidForm;
+  if (!technique && !form) return undefined;
+  const count = technique ? GRID_TECHNIQUE_COUNT : GRID_FORM_COUNT;
+  if (axisId === undefined || !Number.isInteger(axisId) || axisId < 1 || axisId > count) return undefined;
+  const universe = findUniverse(state);
+  if (universe === 0) return undefined;
+  const bit = axisId - 1;
+  const record = readUniverse(state, universe);
+  const mask = technique ? record.permittedTechniques : record.permittedForms;
+  const permitting = action === GOD_ACTION.permitTechnique || action === GOD_ACTION.permitForm;
+  if (((mask & (1 << bit)) !== 0) === permitting) return undefined;
+
+  const base = costs.byAction[action] ?? 0;
+  const hysteresis = FP_ONE + axisChangeCount(state, technique ? AXIS_KIND.technique : AXIS_KIND.form, bit) * costs.hysteresisStep;
+  const ordinary = mul(base, hysteresis);
+  const mark = findMidRaidMark(state, technique ? RULE_SCOPE.technique : RULE_SCOPE.form, bit);
+  const undoes =
+    mark !== undefined && mark.changeKind === (permitting ? RULE_CHANGE_KIND.forbid : RULE_CHANGE_KIND.permit);
+  const priced = undoes ? revertSurcharge(ordinary, mark.paidCost, costs.midRaidRevertMultiplier ?? FP_ONE) : ordinary;
+  return mul(priced, uneaseMultiplier(state, costs, action));
+}
+
+/**
+ * The favor price of one **resolved** submission — the action with the
+ * parameters the resolver will see — for the actions whose price varies by
+ * target, or `undefined` when this function has no per-target answer (a flat
+ * price, which the mask byte already judged exactly).
+ *
+ * - 1–4: {@link axisActionPrice} on the chosen axis (`undefined` there means
+ *   not-a-change, and the caller asks that separately).
+ * - 7: the chosen edict's revoke, surcharged if a raid left it — `revokePlan`.
+ * - 11: founding (target `0`) at `foundUniversity`, funding at the base.
+ *
+ * The gate asks this for what was actually chosen, so an act the mask byte lit
+ * for a cheaper target is refused with `'unaffordable'` rather than admitted
+ * and refused by the resolver in silence.
+ */
+export function submissionPrice(
+  state: SimState,
+  costs: ActionCostTable,
+  action: number,
+  params: readonly number[],
+): number | undefined {
+  if (action >= GOD_ACTION.permitTechnique && action <= GOD_ACTION.forbidForm) {
+    return axisActionPrice(state, costs, action, params[0]);
   }
-  return lowest;
+  const base = costs.byAction[action] ?? 0;
+  if (action === GOD_ACTION.revokeEdict) {
+    const index = params[0];
+    if (index === undefined || index < 0) return undefined;
+    const rows = collectRecords(state, EDICT).sort((a, b) => a.handle - b.handle);
+    const target = rows[index];
+    if (target === undefined) return undefined;
+    const mark = findMidRaidMark(state, RULE_SCOPE.cell, target.row.cellId);
+    const wasForbid = target.row.kind === EDICT_KIND.interdiction;
+    const discharges =
+      mark !== undefined && mark.changeKind === (wasForbid ? RULE_CHANGE_KIND.forbid : RULE_CHANGE_KIND.permit);
+    const priced = discharges ? revertSurcharge(base, mark.paidCost, costs.midRaidRevertMultiplier ?? FP_ONE) : base;
+    return mul(priced, uneaseMultiplier(state, costs, action));
+  }
+  if (action === GOD_ACTION.fundUniversity) {
+    return params[0] === 0 ? costs.foundUniversity : base;
+  }
+  return undefined;
+}
+
+/**
+ * The cheapest axis act of this kind the god could take, priced per axis by
+ * {@link axisActionPrice}; `+Infinity` when no axis would change.
+ */
+function cheapestAxisPrice(state: SimState, costs: ActionCostTable, action: number): number {
+  const technique = action === GOD_ACTION.permitTechnique || action === GOD_ACTION.forbidTechnique;
+  const count = technique ? GRID_TECHNIQUE_COUNT : GRID_FORM_COUNT;
+  let cheapest = Number.POSITIVE_INFINITY;
+  for (let axisId = 1; axisId <= count; axisId += 1) {
+    const price = axisActionPrice(state, costs, action, axisId);
+    if (price !== undefined && price < cheapest) cheapest = price;
+  }
+  return cheapest;
 }
 
 /**
@@ -491,7 +558,7 @@ function cheapestAxisMultiplier(
  * `fp(1024)` — nothing owing — for every other action, for a universe that has
  * never changed its own law, and for a cost table built before the rule
  * existed. The arithmetic is `coordination/god/timing.ts`'s `interventionPhase`
- * restated, for the reason `cheapestAxisMultiplier` restates hysteresis:
+ * restated, for the reason `axisActionPrice` restates hysteresis:
  * `contracts.md` §5 gives neither package an edge to the other, and the two are
  * bound by a test rather than by an import.
  */
@@ -515,7 +582,7 @@ function uneaseMultiplier(state: SimState, costs: ActionCostTable, action: numbe
  *
  * Ordinary while any *unmarked* edict stands, because the mask's contract is
  * "there is a parameter this god can afford" rather than "every parameter is
- * affordable" — the same reading `cheapestAxisMultiplier` takes one case up.
+ * affordable" — the same reading `cheapestAxisPrice` takes one case up.
  * When every standing edict is one a raid left, the cheapest revoke really is a
  * surcharged one, and reporting the base there would admit an action the
  * resolver refuses.

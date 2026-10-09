@@ -337,7 +337,7 @@ export function interventionPhase(
   //
   // Not an oversight and not timidity. `contracts.md` §4.2 makes affordability a
   // *mask* condition, and `agent-api`'s mask reprices every action itself — it
-  // models the hysteresis multiplier in `cheapestAxisMultiplier` precisely so
+  // models the hysteresis multiplier in `axisActionPrice` precisely so
   // that no action is admitted by the mask and refused by the resolver. A
   // surcharge charged here and invisible there would not be a cost at all: it
   // would be an illegal-action counter, which is exactly the defect integration

@@ -160,7 +160,7 @@ export type { Candidate, CandidateInput, CandidateLists } from './candidates.js'
 export { buildCandidates, candidateAt } from './candidates.js';
 
 export type { EngagementStance, MaskInput } from './mask.js';
-export { ENGAGEMENT_ACTIONS, isLegal, legalityMask, unaffordableReason } from './mask.js';
+export { ENGAGEMENT_ACTIONS, axisActionPrice, isLegal, legalityMask, submissionPrice, unaffordableReason } from './mask.js';
 
 export type { AdmissionResult, GateInput, RejectedAction, RejectionReason } from './gate.js';
 export { admit } from './gate.js';
