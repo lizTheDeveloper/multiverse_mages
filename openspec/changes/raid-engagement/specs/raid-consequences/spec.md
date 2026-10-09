@@ -223,7 +223,8 @@ instance at zero, so every stolen node vanished the world tick after the raid.)
 #### Scenario: Stolen knowledge starts unmastered
 
 - **WHEN** a stolen instance is inserted into the thief's universe
-- **THEN** its mastery is zero, so it cannot be taught onward without further study
+- **THEN** its mastery is the research default — below the teach and activation thresholds — so it
+  cannot be cast or taught onward without further study
 
 #### Scenario: Stolen knowledge may be inert at home
 
