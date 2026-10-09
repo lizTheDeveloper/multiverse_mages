@@ -29,7 +29,7 @@ const GLOSS = {
   13: 'Ruinous. Costs 65,536 favor.',
   14: 'Open a portal to another universe',
   15: 'End the run gloriously',
-  16: 'Recruit a foreign scholar',
+  16: 'Recruit a scholar of a species a bubble-mate holds',
   5: 'Permit one cell whose axis is forbidden',
   6: 'Forbid one cell whose axes are permitted',
   7: 'Free an edict slot',

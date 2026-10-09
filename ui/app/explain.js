@@ -97,7 +97,7 @@ const NO_CANDIDATE_HINT = {
   12: 'no permitted cell can be encouraged',
   13: 'no other tradition can be adopted',
   14: 'no living mage holds a portal node in a permitted cell',
-  16: 'no species is available to invite (it needs portal magic, and a species you do not already have)',
+  16: 'no species is available to invite — a scholar comes only through a portal, from a universe you can reach that holds a species you lack (and it needs portal magic)',
 };
 
 /**

@@ -59,6 +59,9 @@ export {
 export type { PeerPortals, RaidRecord, RaidSystemDeps } from './raids.js';
 export { participantOf, raidSystem } from './raids.js';
 
+export type { InvitationSource } from './invitation.js';
+export { invitationSources, reachableSpecies, speciesAliveIn } from './invitation.js';
+
 export type { DirectiveLog, EngagementPolicy, TranslatedDirective } from './raid-directives.js';
 export {
   admitsRuleChange,

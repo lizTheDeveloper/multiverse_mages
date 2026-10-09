@@ -317,6 +317,18 @@ fertility, and technique/form affinities.
 | **Gnome** | ~350y | Highest curiosity, discovery and *rediscovery* bonuses, poor retention. Erratic geniuses. |
 | **Orc** | ~60y | Low magical aptitude, high build-rate and martial capability, high fertility. |
 
+**Inter-universal travel is the only way to get multiple races.** *(Decision by the author,
+2026-10-08.)* A universe is founded with one species. A second may arrive only through a portal,
+from a universe that actually holds that species: god action 16 (invite scholar) offers exactly the
+species alive in the universes behind this universe's portal seats, and nothing else does it. Before
+this, action 16 offered every species the content declares, gated only on portal magic, and
+playtesters gathered all six without meeting a universe of five of them. A universe whose
+bubble-mates are all its own species therefore stays single-species, and one with no portal magic —
+or no seats — never gains a second. Headless Monte Carlo runs point their portals at stand-in rivals
+founded with every species, so their roster is still all six and no baseline moved. Whether the
+scholar should *leave* her home universe when she comes (migration rather than a copy) is open; see
+§13.
+
 **Universities are generic capacity; specialization is emergent** — a university becomes known for
 Rego Terram because that is what its library holds and its professors know, not because it declared
 a discipline. The decisive reason is mechanical: the observation block for institutions is fixed at
@@ -766,6 +778,15 @@ Tracked for resolution during the changes that need them, not blocking:
 - **Bubble size, rejoin tier, and what "cleared" means** when rivals are eliminating each other
   too. Raised by `openspec/changes/colonization` and unresolved; bubble size is the sharp one,
   since small clears fast and churns tiers while large makes raids frequent and promotion rare.
+- **Does an invited scholar leave her home universe?** §6's 2026-10-08 rule says a second species
+  arrives only from a reachable universe that holds it, and action 16 now enforces exactly that —
+  but she arrives as a *new* mage, and the source universe loses nobody. Migration (removing a mage
+  of that species from the source) would make the invitation a cost to the bubble-mate and give a
+  last-of-her-kind universe a reason to refuse. It was not built: it writes into another universe's
+  state from outside its step, as a peer raid's write-back already does, and that needs the same
+  replay story `pvp-server`'s snapshot exchange is meant to close; and it raises a consent question
+  (may a bubble-mate's god block it?) that is the author's. The arrival also creates no cohort, so an
+  invited species cannot breed here — whether it should is the same question one step further.
 - **Confirm or replace the names.** §8b uses *bubble*, *promotion*, and *prestige* strictly as a
   noun. `openspec/changes/colonization` proposes `bubbleTier` for the index and offers *echelon*,
   *sphere* and *rank* as alternatives. The point is only that two mechanics may not share one
