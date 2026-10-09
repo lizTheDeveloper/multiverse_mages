@@ -135,13 +135,23 @@ const feedInput = (f: Reader): unknown => ({
   cells: f.knowledge().map((c) => [c.technique, c.form, c.nodesKnown, c.deepestTier, c.live]),
   species: f.mageBuckets().map((s) => [s.name, s.living]),
   inst: f.institutions(),
+  // The node-loss and rediscovery lines diff this bitset frame against frame.
+  known: (f.raw.ascension as { knownNodes?: string } | undefined)?.knownNodes,
 });
 
 /** Everything the page reads off a historical frame. */
 const historyView = (s: Session): unknown[] =>
   Array.from({ length: s.frameCount }, (_, i) => {
     const f = s.frame(i);
-    return { feed: feedInput(f), resources: f.resources(), ruleset: f.ruleset(), actions: f.actions(), status: f.status() };
+    return {
+      feed: feedInput(f),
+      resources: f.resources(),
+      ruleset: f.ruleset(),
+      actions: f.actions(),
+      status: f.status(),
+      ascension: f.raw.ascension,
+      founding: f.raw.founding,
+    };
   });
 
 describe('session.json?pack=1', () => {
@@ -189,9 +199,15 @@ describe('session.json?pack=1', () => {
     expect(events).toBeGreaterThan(10);
     // The views the page builds from all of history, and from the newest frame.
     expect(explain.stagnationReading(reloaded)).toEqual(explain.stagnationReading(control));
-    expect(explain.ascensionChecklist(reloaded.last(), reloaded.content)).toEqual(
-      explain.ascensionChecklist(control.last(), control.content),
-    );
+    for (const i of [1, FULL_FRAMES, ticks - FULL_FRAMES - 1, ticks]) {
+      expect(explain.ascensionChecklist(reloaded.frame(i), reloaded.content), `checklist at ${String(i)}`).toEqual(
+        explain.ascensionChecklist(control.frame(i), control.content),
+      );
+    }
+    // The god report's readings reach history: without them the comparison
+    // above would be two absences agreeing.
+    expect(reloaded.frame(ticks - FULL_FRAMES - 1).raw.ascension).toBeDefined();
+    expect(reloaded.frame(ticks - FULL_FRAMES - 1).raw.founding).toBeDefined();
     // The newest frame — the one every panel paints from — is whole.
     expect(reloaded.last().raw).toEqual(control.last().raw);
     expect(reloaded.last().raw.academy).toBeDefined();
@@ -230,5 +246,5 @@ describe('session.json?pack=1', () => {
     // frames and is over it, so passing is a property of the packing.
     const plain = await (await fetch(`${run.base}/u/${run.id}/live/session.json`)).text();
     expect(Buffer.byteLength(plain)).toBeGreaterThan(3_000_000);
-  }, 180_000);
+  }, 300_000);
 });

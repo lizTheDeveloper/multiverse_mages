@@ -81,6 +81,7 @@ import {
   collectRecords,
   componentOf,
   findUniverse,
+  foundingGrantsRemaining,
   permits,
   readEdicts,
   readRulesetForObservation,
@@ -92,6 +93,7 @@ import {
   deepestNodesByCell,
   eraBoundaryPassed,
   libraryDependence,
+  lossAllowance,
   masteredCellCount,
   prestigeEarned,
   qualifyingPath,
@@ -255,7 +257,48 @@ export interface GodTickReport {
     readonly dependence: Fixed;
     /** Nodes lost so far in the era now running — the last Path B conjunct. */
     readonly eraNodesLost: number;
+    /**
+     * How many nodes this era may lose and still pass — `lossAllowance` over
+     * `nodesKnown` right now. Published so a page states the bar the rule will
+     * apply rather than re-deriving the floor-or-fraction arithmetic itself.
+     */
+    readonly eraLossAllowance: number;
+    /**
+     * Path A, per permitted cell: the cell's deepest authored node, how many
+     * *living* mages hold it in mind or palace, and how many instances of it
+     * exist anywhere. `masteredCells` is the count of rows with `holders >= 1`
+     * and `copies >= ascension-summit-copies`; these rows are why it is that
+     * number. Ascending by cell id.
+     */
+    readonly summits: readonly SummitReading[];
+    /**
+     * Every node with at least one live instance, ascending — the set
+     * `nodesKnown` counts. Already computed for the era boundary; carried so a
+     * client can name the node that was lost or rediscovered rather than only
+     * see a per-cell count move (which a loss and a gain in one cell hide).
+     */
+    readonly knownNodes: readonly number[];
   };
+  /**
+   * Why "grant founding knowledge" is or is not available, as the two facts the
+   * mask conjoins: founding grants left in the budget (`Infinity` when the
+   * universe carries no `grant-budget` row), and how many root nodes — no
+   * prerequisites — in permitted cells have no instance anywhere. Report-only.
+   */
+  readonly founding: {
+    readonly grantsRemaining: number;
+    readonly unknownRoots: number;
+  };
+}
+
+/** One permitted cell's summit, as `GodTickReport.ascensionProgress.summits` lists it. */
+export interface SummitReading {
+  readonly cellId: number;
+  readonly nodeId: number;
+  /** Living mages holding the node in mind or palace. */
+  readonly holders: number;
+  /** Live instances of the node anywhere in the universe. */
+  readonly copies: number;
 }
 
 /** The pair of systems, plus the last tick's report. Built once per run. */
@@ -694,6 +737,13 @@ function outcomeSystem(
           goodEraRun: god.goodEraRun,
           dependence: libraryDependence(known.length, knowledge.singleInstanceNodes().length),
           eraNodesLost: god.eraNodesLost,
+          eraLossAllowance: lossAllowance(known.length, constants),
+          summits: summitReadings(state, apotheosisFacts),
+          knownNodes: [...known].sort((a, b) => a - b),
+        },
+        founding: {
+          grantsRemaining: foundingGrantsRemaining(state, universe),
+          unknownRoots: unknownPermittedRoots(deps, apotheosisFacts),
         },
       });
     },
@@ -784,6 +834,56 @@ function yieldSources(knowledge: KnowledgeSubsystem, deps: GodDeps): Fixed[] {
     if (knowledge.instanceCount(nodeId) > 0) found.push(...magnitudes);
   }
   return found;
+}
+
+/**
+ * Path A's per-cell readings, for the report only. One walk of the instances,
+ * counting distinct living holders of the summit nodes and nothing else; no
+ * rule reads the result.
+ */
+function summitReadings(
+  state: SimState,
+  facts: { readonly deepest: DeepestByCell; readonly permitsCell: (cellId: number) => boolean; readonly instanceCount: (nodeId: number) => number },
+): SummitReading[] {
+  const summitCell = new Map<number, number>();
+  for (const [cellId, nodeId] of facts.deepest) {
+    if (facts.permitsCell(cellId)) summitCell.set(nodeId, cellId);
+  }
+  const holders = new Map<number, Set<number>>();
+  const mageStore = componentOf(state, MAGE);
+  for (const { row } of collectRecords(state, KNOWLEDGE_INSTANCE)) {
+    if (!summitCell.has(row.nodeId)) continue;
+    if (row.locationKind !== LOCATION_KIND.mind && row.locationKind !== LOCATION_KIND.palace) continue;
+    const mage = row.locationId as EntityHandle;
+    if (!mageStore.has(mage) || mageStore.get(mage, 'alive') === 0) continue;
+    let set = holders.get(row.nodeId);
+    if (set === undefined) {
+      set = new Set();
+      holders.set(row.nodeId, set);
+    }
+    set.add(mage);
+  }
+  const out: SummitReading[] = [];
+  for (const [nodeId, cellId] of summitCell) {
+    out.push({ cellId, nodeId, holders: holders.get(nodeId)?.size ?? 0, copies: facts.instanceCount(nodeId) });
+  }
+  return out.sort((a, b) => a.cellId - b.cellId);
+}
+
+/** Root nodes (no prerequisites) in permitted cells with no live instance. Report-only. */
+function unknownPermittedRoots(
+  deps: GodDeps,
+  facts: { readonly permitsCell: (cellId: number) => boolean; readonly instanceCount: (nodeId: number) => number },
+): number {
+  let count = 0;
+  for (let nodeId = 1; nodeId <= deps.catalog.nodeCount; nodeId += 1) {
+    const node = deps.catalog.node(nodeId);
+    if (node === undefined || node.prerequisites.length > 0) continue;
+    const cellId = deps.cells.cellOf(nodeId);
+    if (cellId <= 0 || !facts.permitsCell(cellId)) continue;
+    if (facts.instanceCount(nodeId) === 0) count += 1;
+  }
+  return count;
 }
 
 function nodesHeldByLivingMages(state: SimState): ReadonlySet<number> {

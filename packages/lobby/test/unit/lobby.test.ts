@@ -240,6 +240,32 @@ describe('Lobby', () => {
     expect(lobby.universe(old)).toBeUndefined();
   });
 
+  it('publishes the legacy an ended universe will carry, and carries exactly that into the next', async () => {
+    // The server's cap, not the config's: only a run that reached the cap the
+    // server set is paid the cutoff ending.
+    await start({ tickCap: 3 });
+    const old = await create({ tickCap: 3 });
+    const running = await getJson<{ legacy: unknown; carriedIn: unknown }>(`/u/${old}/live/legacy`);
+    expect(running).toMatchObject({ status: 'running', legacy: null, carriedIn: null });
+    for (let i = 0; i < 3; i += 1) lobby.tickAll();
+    const ended = await getJson<{ status: string; legacy: { carriedPrestige: number } | null }>(`/u/${old}/live/legacy`);
+    expect(ended.status).toBe('truncated');
+    expect(ended.legacy?.carriedPrestige).toBeGreaterThan(0);
+    const r = (await (await post('/api/create', { ...cfg, tickCap: 3, retire: { universeId: old, token: tokens.get(old) } })).json()) as {
+      universeId: string;
+      carriedPrestige: number;
+    };
+    expect(r.carriedPrestige).toBe(ended.legacy?.carriedPrestige);
+    const next = await getJson<{ carriedIn: number }>(`/u/${r.universeId}/live/legacy`);
+    expect(next.carriedIn).toBe(ended.legacy?.carriedPrestige);
+    // And the frame's prestige resource, which the page's prestige bar reads.
+    const d = await getJson<{ layout: { name: string; offset: number; size: number }[]; frames: { obs: number[] }[] }>(
+      `/u/${r.universeId}/live/session.json`,
+    );
+    const block = d.layout.find((b) => b.name === 'resources')!;
+    expect(d.frames[0]!.obs[block.offset + 4]).toBe(ended.legacy?.carriedPrestige);
+  });
+
   it('refuses a tickCap above the default over HTTP', async () => {
     await start();
     const r = await post('/api/create', { ...cfg, tickCap: 100_000 });

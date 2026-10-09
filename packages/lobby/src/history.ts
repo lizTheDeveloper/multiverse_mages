@@ -39,8 +39,16 @@
  */
 export const FULL_FRAMES = 64;
 
-/** The fields a slim frame keeps — every one an observation reader needs. */
-const KEPT = ['obs', 'sat', 'stocks', 'mask', 'status'] as const;
+/**
+ * The fields a slim frame keeps: every one an observation reader needs, plus
+ * the god report's `ascension` and `founding` readings — the feed diffs
+ * `ascension.knownNodes` frame against frame to report a node lost or
+ * rediscovered, so history must carry it.
+ */
+const KEPT = ['obs', 'sat', 'stocks', 'mask', 'status', 'ascension', 'founding'] as const;
+
+/** Fields carried forward from the frame before when a packed entry omits them. */
+const CARRIED = ['stocks', 'mask', 'status', 'ascension', 'founding'] as const;
 
 type RawFrame = Record<string, unknown>;
 
@@ -61,8 +69,9 @@ const sameJson = (a: unknown, b: unknown): boolean => JSON.stringify(a) === JSON
  * Frames as deltas against the frame before.
  *
  * Each entry is `{ d: [slot, value, slot, value, …] }` — the `obs` slots that
- * changed — plus `stocks`, `mask` or `status` only when they changed, and `sat`
- * only when it is non-empty. The first entry carries `obs` whole and every
+ * changed — plus `stocks`, `mask`, `status`, `ascension` or `founding` only
+ * when they changed (`null` when one went absent), and `sat` only when it is
+ * non-empty. The first entry carries `obs` whole and every
  * carried-forward field. Sidecars are not packed: pass slim frames.
  *
  * The inverse is `unpackHistory` in `ui/shared/session.js`; the lobby's
@@ -82,8 +91,10 @@ export function packHistory(frames: readonly RawFrame[]): RawFrame[] {
       for (let i = 0; i < obs.length; i += 1) if (obs[i] !== before[i]) d.push(i, obs[i] as number);
       entry.d = d;
     }
-    for (const key of ['stocks', 'mask', 'status'] as const) {
-      if (prev === undefined || !sameJson(prev[key], f[key])) entry[key] = f[key];
+    for (const key of CARRIED) {
+      // `null` stands for "absent here, though the frame before had it", so a
+      // field that disappears is not carried forward by mistake.
+      if (prev === undefined || !sameJson(prev[key], f[key])) entry[key] = f[key] ?? null;
     }
     if (Array.isArray(f.sat) && f.sat.length > 0) entry.sat = f.sat;
     out.push(entry);
