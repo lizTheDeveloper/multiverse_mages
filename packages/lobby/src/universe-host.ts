@@ -37,6 +37,7 @@ import {
 import type { UniverseRef as ServerUniverseRef } from '@mm/server';
 
 import type { FrameDocument, FrameRun } from '../../../scripts/lib/frame-document.mjs';
+import { FULL_FRAMES, slimFrame } from './history.js';
 
 export interface UniverseRef extends Omit<ServerUniverseRef, 'universeId' | 'bubbleId'> {
   universeId: string;
@@ -249,6 +250,8 @@ export class UniverseHost implements FrameRun {
   /** Who each outbound raid hit, by raid id, as they were when it opened. */
   readonly #targets = new Map<number, { universeId: string; name: string; species: string }>();
   #queued: { action: GodAction; resolve: (o: Outcome) => void } | null = null;
+  /** Newest frames that keep their sidecars; older ones are slimmed. See `history.ts`. */
+  readonly #fullFrames: number;
 
   /**
    * @param host.legacy - What the player's previous, **ended** universe left
@@ -258,14 +261,18 @@ export class UniverseHost implements FrameRun {
    *   {@link DEFAULT_CAP} by default). A config's own `tickCap` may only
    *   shorten a run, and a run that stops short of this cap is not paid the
    *   cutoff ending — see {@link legacy}.
+   * @param host.fullFrames - How many of the newest frames keep their §4.4
+   *   sidecars ({@link FULL_FRAMES} by default). Tests pass a huge one to get
+   *   an unslimmed run to compare against.
    */
   constructor(
     config: UniverseConfig,
     doc: FrameDocument,
     now: number,
     peers: PeerSeats = NO_PEERS,
-    host: { readonly legacy?: LegacyRecord | undefined; readonly serverCap?: number } = {},
+    host: { readonly legacy?: LegacyRecord | undefined; readonly serverCap?: number; readonly fullFrames?: number } = {},
   ) {
+    this.#fullFrames = host.fullFrames ?? FULL_FRAMES;
     const legacy = host.legacy;
     this.carriedIn = legacy?.carriedPrestige ?? null;
     this.serverCap = host.serverCap ?? DEFAULT_CAP;
@@ -377,6 +384,10 @@ export class UniverseHost implements FrameRun {
     const action = queued?.action ?? { kind: GOD_ACTION.noop };
     const result = this.session.submit({ kind: action.kind, params: action.params ?? [] });
     this.frames.push(this.#doc.encodeFrame(this.session, { godReport: this.#godReport }));
+    // The frame that just left the full window keeps only what the
+    // observation readers use. One per tick, so the window never needs a sweep.
+    const leaving = this.frames.length - 1 - this.#fullFrames;
+    if (leaving >= 0) this.frames[leaving] = slimFrame(this.frames[leaving] ?? {});
     queued?.resolve({
       admitted: result.admitted,
       ...(result.rejection === undefined ? {} : { rejection: String(result.rejection) }),
