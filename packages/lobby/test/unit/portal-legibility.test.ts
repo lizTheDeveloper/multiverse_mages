@@ -30,6 +30,7 @@ import type { Server } from 'node:http';
 import { afterEach, describe, expect, it } from 'vitest';
 
 import { GOD_ACTION } from '@mm/agent-api';
+import * as scenarioModule from '@mm/scenario';
 import { referenceContent } from '@mm/scenario';
 import { manualClock } from '@mm/server';
 
@@ -78,6 +79,7 @@ interface Frame {
   candidateDetail: { byAction: Record<string, { handle?: number; toRoleId?: number; cellId?: number }[]> };
   academy: { permittedCells: number[] };
   portal?: PortalSidecar;
+  encouraged?: [number, number][];
   status: string;
 }
 
@@ -85,8 +87,8 @@ let server: Server | undefined;
 let base = '';
 let lobby: Lobby;
 
-async function start(): Promise<void> {
-  lobby = new Lobby({ doc, clock: manualClock(0), maxUniverses: 4, quiet: true, bubbleSize: 2, tickMs: 250 });
+async function start(extra: { fullFrames?: number } = {}): Promise<void> {
+  lobby = new Lobby({ doc, clock: manualClock(0), maxUniverses: 4, quiet: true, bubbleSize: 2, tickMs: 250, ...extra });
   server = await lobby.listen(0);
   const addr = server.address();
   base = `http://127.0.0.1:${String(typeof addr === 'object' && addr ? addr.port : 0)}`;
@@ -149,7 +151,12 @@ describe('the portal gate is published', () => {
     expect(p.holders[0]![2]).toBeGreaterThan(0);
     expect(Object.values(p.byNode).reduce((n, [held]) => n + held, 0)).toBe(p.held);
     expect(p.raiders).toBe(0);
-    expect(typeof p.raiderDrillsPortal).toBe('boolean');
+    // Pinned against an independent sign of the raid-readiness drill, so a
+    // renamed `raidKitPrimitives` cannot leave the flag silently false.
+    // #251 ships the drill with `scenario`'s `RAID_KIT_PRIMITIVE_NAMES`.
+    const kitNames = (scenarioModule as Record<string, unknown>)['RAID_KIT_PRIMITIVE_NAMES'];
+    const drillShipped = Array.isArray(kitNames) && kitNames.includes('portal');
+    expect(p.raiderDrillsPortal).toBe(drillShipped);
   });
 
   it('says mastery, not absence, when the gate refuses for knowledge — the round-3 blocker', async () => {
@@ -229,12 +236,32 @@ describe('a submit with expect lands on the target the page chose', () => {
     expect(resolveSlot(host.session, GOD_ACTION.encourageResearch, 0, [999_999])).toBeUndefined();
     const moved = await submit(id, { kind: GOD_ACTION.encourageResearch, params: [0], expect: want });
     expect(moved.admitted).toBe(true);
+    // And the encouragement landed on the cell the player clicked, not on the
+    // stale slot 0's cell — read off the world itself.
+    const encouraged = ((await latest(id)).encouraged ?? []).map(([cellId]) => cellId);
+    expect(encouraged).toContain(want[0]);
+    if (list[0]!.params[0] !== want[0]) expect(encouraged).not.toContain(list[0]!.params[0]);
 
     const favorBefore = (await getJson<{ frames: { obs: number[] }[] }>(`/u/${id}/live/frames?since=0`)).frames.at(-1)!.obs[36];
     const gone = await submit(id, { kind: GOD_ACTION.encourageResearch, params: [0], expect: [999_999] });
     expect(gone).toMatchObject({ admitted: false, rejection: 'target-moved' });
     const favorAfter = (await getJson<{ frames: { obs: number[] }[] }>(`/u/${id}/live/frames?since=0`)).frames.at(-1)!.obs[36];
     expect(favorAfter).toBeGreaterThanOrEqual(favorBefore!);
+  });
+
+  it('keeps slimming history while every tick is a target-moved refusal', async () => {
+    // Review of #254: a target-moved tick returned before the slimming step,
+    // so a client sending a vanished target every tick kept every frame full.
+    await start({ fullFrames: 5 });
+    const id = await create({ foundingPortalMagic: 0 });
+    for (let i = 0; i < 40; i += 1) {
+      const answer = await submit(id, { kind: GOD_ACTION.encourageResearch, params: [0], expect: [999_999] });
+      expect(answer.rejection).toBe('target-moved');
+    }
+    const frames = lobby.universe(id)!.frames;
+    expect(frames.length).toBe(41);
+    const full = frames.filter((f) => 'candidateDetail' in f).length;
+    expect(full).toBeLessThanOrEqual(5 + 1);
   });
 
   it('publishes the tick interval it was given', async () => {

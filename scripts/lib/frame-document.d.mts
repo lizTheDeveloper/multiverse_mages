@@ -5,7 +5,7 @@
  */
 
 import type { AgentSession } from '@mm/agent-api';
-import type { PortalStanding, ReferenceContent } from '@mm/scenario';
+import type { Encouragement, PortalStanding, ReferenceContent } from '@mm/scenario';
 
 /** What `header()` reads: the run's coordinates and its frame spine. */
 export interface FrameRun {
@@ -27,7 +27,9 @@ export interface FrameHeader {
 export interface FrameDocument {
   encodeFrame(
     session: AgentSession,
-    extras?: { readonly godReport?: () => unknown; readonly portalStanding?: () => PortalStanding | undefined },
+    extras?: { readonly godReport?: () => unknown; readonly portalStanding?: () => PortalStanding | undefined;
+      readonly encouragements?: () => readonly Encouragement[] | undefined;
+    },
   ): Record<string, unknown>;
   header(run: FrameRun): FrameHeader;
   declaredCheats(spec: unknown): string[];

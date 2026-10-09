@@ -2224,7 +2224,9 @@ function settleWatches(f) {
           : `${w.label.replace(/ →.*$/u, '')} is not a ${want}: her role reads ${vocab.roleName(m.roleId)}`;
     } else {
       const after = researchersIn(f, w.params[0]);
-      text = `Encouraged research in ${w.label}: ${w.before.n} → ${after} visible mage${after === 1 ? '' : 's'} now working toward a node there`;
+      const live = (f.raw.encouraged ?? []).find(([cellId]) => cellId === w.params[0]);
+      text = `Encouraged research in ${w.label}: ${w.before.n} → ${after} visible mage${after === 1 ? '' : 's'} now working toward a node there`
+        + (live ? `; the encouragement lasts until year ${Math.floor(live[1] / 12)}` : '');
     }
     pushFeed({ tick, type: 'god', key: `${w.aid}-${w.tick}-${w.params.join(',')}`, text: () => text });
   }

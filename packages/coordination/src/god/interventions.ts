@@ -1543,8 +1543,12 @@ function ascensionPlan(
       // it returns before doing anything once `terminalReason` is set — and
       // this plan sets it one system earlier. So every ascended universe
       // carried `prestigeEarned` 0 into its successor: measured from a live
-      // lobby, two ascensions in a row carried 0.0 prestige. Same function,
-      // same god-state inputs as the stagnation write.
+      // lobby, two ascensions in a row carried 0.0 prestige. Same function as
+      // the stagnation write, but its god-state inputs (`deepestTier`,
+      // `peakWorshipTier`) are as god-outcome left them at the end of the
+      // *previous* tick — this runs before that system updates them — so they
+      // lag the ending by one tick. Both only ever rise, so the lag can only
+      // under-pay by what changed in the final month.
       store.set(
         universe,
         'prestigeEarned',

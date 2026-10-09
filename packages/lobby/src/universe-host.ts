@@ -26,6 +26,7 @@ import {
   foundingCandidates,
   legacyRecordOf,
   participantOf,
+  encouragementsOf,
   portalStandingOf,
   referenceContent,
   referenceOptions,
@@ -380,6 +381,7 @@ export class UniverseHost implements FrameRun {
     return {
       godReport: this.#godReport,
       portalStanding: () => (this.#state === undefined ? undefined : portalStandingOf(this.#state, this.#content)),
+      encouragements: () => (this.#state === undefined ? undefined : encouragementsOf(this.#state)),
     };
   }
 
@@ -450,16 +452,19 @@ export class UniverseHost implements FrameRun {
       }
     }
     const result = this.session.submit({ kind: action.kind, params: action.params ?? [] });
-    if (moved) {
-      this.frames.push(this.#doc.encodeFrame(this.session, this.#extras()));
-      queued?.resolve({ admitted: false, rejection: 'target-moved', status: String(result.status) });
-      return;
-    }
     this.frames.push(this.#doc.encodeFrame(this.session, this.#extras()));
     // The frame that just left the full window keeps only what the
     // observation readers use. One per tick, so the window never needs a sweep.
     const leaving = this.frames.length - 1 - this.#fullFrames;
     if (leaving >= 0) this.frames[leaving] = slimFrame(this.frames[leaving] ?? {});
+    // A target that moved away ticks as a no-op through the same path as any
+    // other tick — one frame, and the slimming above — and only its answer
+    // differs. An early return here once skipped the slimming, so a client
+    // sending a vanished target every tick kept every frame full.
+    if (moved) {
+      queued?.resolve({ admitted: false, rejection: 'target-moved', status: String(result.status) });
+      return;
+    }
     queued?.resolve({
       admitted: result.admitted,
       ...(result.rejection === undefined ? {} : { rejection: String(result.rejection) }),

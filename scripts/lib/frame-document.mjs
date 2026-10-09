@@ -305,6 +305,12 @@ function encodeFrame(session, extras = {}) {
     academy: encodeAcademy(session.academy()),
     ...encodeGodReadings(extras.godReport?.()),
     ...encodePortal(extras.portalStanding?.()),
+    // Live encouragements (action 12), `[cellId, expiryTick]`: the research
+    // focus a player bought and when it lapses. Absent without a source.
+    ...(() => {
+      const live = extras.encouragements?.();
+      return live === undefined ? {} : { encouraged: live.map((e) => [e.cellId, e.expiryTick]) };
+    })(),
     mask: [...mask],
     candidates: Object.fromEntries(
       [...candidates].map(([action, list]) => [action, [...(list ?? [])]]),

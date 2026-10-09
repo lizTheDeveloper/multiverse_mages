@@ -82,14 +82,41 @@ export interface PortalStanding {
   readonly raiderDrillsPortal: boolean;
 }
 
-/** Interned node ids carrying a gate-enabling `portal` effect. */
-export function portalGateNodeIds(content: ReferenceContent): readonly ContentId[] {
-  return content.registry.nodes
-    .filter(({ record }) => record.effects.some((effect) => enablesGate(effect, COMBAT_PRIMITIVES.portal)))
-    .map(({ contentId }) => contentId);
+/** What is built once per registry: the grid and the portal node set. */
+interface PerRegistry {
+  readonly grid: MagicGrid;
+  readonly portalNodes: ReadonlySet<ContentId>;
+}
+const perRegistry = new WeakMap<object, PerRegistry>();
+function cached(content: ReferenceContent): PerRegistry {
+  let hit = perRegistry.get(content.registry);
+  if (hit === undefined) {
+    const portalNodes = new Set(
+      content.registry.nodes
+        .filter(({ record }) => record.effects.some((effect) => enablesGate(effect, COMBAT_PRIMITIVES.portal)))
+        .map(({ contentId }) => contentId),
+    );
+    hit = { grid: MagicGrid.from(content.registry), portalNodes };
+    perRegistry.set(content.registry, hit);
+  }
+  return hit;
 }
 
-const grids = new WeakMap<object, MagicGrid>();
+/**
+ * Whether the world loop's raider drill covers `portal`: `worldDeps`'
+ * `raidKitPrimitives` (the raid-readiness drill, #251) holds the interned
+ * `portal` primitive. Read by property presence because a build without the
+ * drill has no such field at all — and then the answer is false, which is the
+ * truth there. `portal-legibility.test.ts` pins this against an independent
+ * signal of the drill (`rules-world`'s `takesOptionalTarget`), so a renamed
+ * field cannot leave it silently false.
+ */
+function raiderDrillsPortal(content: ReferenceContent): boolean {
+  const deps: object = content.deps;
+  if (!('raidKitPrimitives' in deps)) return false;
+  const kit = deps.raidKitPrimitives;
+  return kit instanceof Set && kit.has(content.registry.intern('primitive', COMBAT_PRIMITIVES.portal));
+}
 
 /**
  * The portal gate's standing for the universe in `state`, or `undefined` when
@@ -98,12 +125,7 @@ const grids = new WeakMap<object, MagicGrid>();
 export function portalStandingOf(state: SimState, content: ReferenceContent): PortalStanding | undefined {
   const participant = participantOf(state, content);
   if (participant === undefined) return undefined;
-  const portalNodes = new Set(portalGateNodeIds(content));
-  let grid = grids.get(content.registry);
-  if (grid === undefined) {
-    grid = MagicGrid.from(content.registry);
-    grids.set(content.registry, grid);
-  }
+  const { grid, portalNodes } = cached(content);
 
   const holders: PortalHolder[] = [];
   let livingRaiders = 0;
@@ -135,17 +157,12 @@ export function portalStandingOf(state: SimState, content: ReferenceContent): Po
     heldOf: (mage) => heldInstancesOf(participant, mage),
   });
 
-  // `raidKitPrimitives` arrives with the raid-readiness drill; a build without
-  // it leaves readiness targetless, and naming a raider raises nothing.
-  const kit = (content.deps as unknown as { readonly raidKitPrimitives?: ReadonlySet<number> }).raidKitPrimitives;
-  const raiderDrillsPortal = kit?.has(content.registry.intern('primitive', COMBAT_PRIMITIVES.portal)) ?? false;
-
   return {
     usableMastery: CASTABLE_MASTERY,
     masteryMax: MASTERY_MAX,
     refusal: gate.refusal,
     holders,
     livingRaiders,
-    raiderDrillsPortal,
+    raiderDrillsPortal: raiderDrillsPortal(content),
   };
 }

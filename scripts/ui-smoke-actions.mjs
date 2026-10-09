@@ -213,13 +213,23 @@ async function judge(label, click, { expectSuccess }) {
   // The run's own ending can land between the legality check and the click
   // (a fast lobby reaches its cap mid-probe); a refusal that says so is an
   // answer in words, not a silent click.
-  else if (expectSuccess && success === undefined && toasts.some((t) => /has ended/u.test(t.text))) {
+  else if (expectSuccess && success === undefined && toasts.some((t) => /has ended/u.test(t.text)) && (await serverSaysEnded())) {
     results.push({ ...row, verdict: 'ok', why: 'the universe ended as it was clicked; refused in words' });
   }
   else if (expectSuccess && success === undefined) fail({ ...row, why: 'legal when clicked, but no success toast' });
   else if (!moved && !(await hasEnded())) fail({ ...row, why: `the page's clock stopped at tick ${String(tickAfter)} after the click` });
   else results.push({ ...row, verdict: 'ok', why: expectSuccess ? 'admitted, clock running' : 'refused in words, clock running' });
 }
+
+/** The server's own answer — not the page's — to whether this universe has ended. */
+const serverSaysEnded = () =>
+  page.evaluate(async () => {
+    const id = localStorage.getItem('mm.universeId');
+    if (!id) return false;
+    const res = await fetch(`/u/${encodeURIComponent(id)}/live/legacy`);
+    if (!res.ok) return false;
+    return (await res.json()).status !== 'running';
+  }).catch(() => false);
 
 const isLegal = (aid) =>
   page.evaluate((id) => document.querySelector(`.god-action[data-action-id="${id}"]`)?.dataset.state === 'legal', aid);
