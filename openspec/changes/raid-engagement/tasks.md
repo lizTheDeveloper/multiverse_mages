@@ -95,7 +95,7 @@
 - [x] 8.9 Implement node loss on last-instance destruction with existence recomputed from the index and never cached
 - [x] 8.10 Implement `knowledge-steal` attempts gated by `permits` against the host snapshot, resolved on stream 9, stacking by maximum
 - [x] 8.11 Implement the three distinct verbs — mind theft copies, grimoire looting moves, burning destroys — with distinct outcome-record entries
-- [x] 8.12 Implement theft retention conditional on the thief surviving and withdrawing, inserting instances at zero mastery before existence recomputation
+- [x] 8.12 Implement theft retention conditional on the thief surviving and withdrawing, inserting instances at the research-default mastery (zero until 2026-10-09, which decay destroyed the next tick) before existence recomputation
 - [x] 8.13 Test theft-outruns-loss: a stolen node whose last host instance is destroyed in the same raid survives abroad and is lost at home
 - [x] 8.14 Test that a raider returning with a node her own universe forbids gains a real but inert instance
 

@@ -26,7 +26,8 @@
  * 3. **Instance destruction and transfer.** Burned libraries lose their
  *    contents; looted grimoires *move* rather than vanish.
  * 4. **Theft insertion.** What a surviving raider took is created in her
- *    universe at zero mastery.
+ *    universe at {@link LOOTED_INITIAL_MASTERY} — the research default, which
+ *    survives decay. Zero did not: it was destroyed the next world tick.
  * 5. **Existence recomputation.** Both universes' node existence is recomputed
  *    from the instance index — never cached (§1.5) — and the nodes that fell to
  *    zero are recorded.
@@ -71,7 +72,7 @@ import {
 } from '@mm/state';
 import { CORRUPTION, destroyGrimoire, setFidelity } from '@mm/rules-magic';
 
-import { EXPOSURE_LOCATION_KIND } from './exposure.js';
+import { EXPOSURE_LOCATION_KIND, LOOTED_INITIAL_MASTERY } from './exposure.js';
 import { OBJECTIVE_KIND } from './objectives.js';
 import type { Raid } from './raid.js';
 import { existingNodes, isAlive } from './raid.js';
@@ -157,10 +158,11 @@ export function applyRaidOutcome(raid: Raid, outcome: RaidOutcome): AppliedConse
       // The world tick the raid resumes at, which is the tick it paused at:
       // a raid consumes zero world ticks.
       acquiredTick: raid.attacker.world.clock.worldTick,
-      // Zero mastery. She has the shape of it and not the practice, so she
-      // cannot teach it onward without further study — which is what keeps
-      // theft from being a shortcut past the whole knowledge model.
-      mastery: 0,
+      // The research default: she has the shape of it and not the practice, so
+      // she cannot cast or teach it onward without further study — which is
+      // what keeps theft from being a shortcut past the whole knowledge model.
+      // Not zero, which the next decay sweep destroys. See the constant.
+      mastery: LOOTED_INITIAL_MASTERY,
     });
     gained.push(movement.nodeId);
   }
@@ -168,9 +170,9 @@ export function applyRaidOutcome(raid: Raid, outcome: RaidOutcome): AppliedConse
   // ---- 4a. Exposure: what the host learned by watching (§3). ----
   //
   // After casualties, and the recipient was chosen at resolution against the
-  // living set as it stood then. At `mastery: 0`, where theft writes too: she
-  // saw the shape of it and not the practice, so she cannot teach it onward
-  // without further study. It counts toward existence (§1.5) immediately, and
+  // living set as it stood then. At `LOOTED_INITIAL_MASTERY`, where theft writes
+  // too: she saw the shape of it and not the practice, so she cannot teach it
+  // onward without further study. It counts toward existence (§1.5) immediately, and
   // that is the part that bites a repeat raider.
   for (const exposure of outcome.exposures) {
     if (!componentOf(raid.host.world, MAGE).has(exposure.learnedBy)) continue;
@@ -180,7 +182,7 @@ export function applyRaidOutcome(raid: Raid, outcome: RaidOutcome): AppliedConse
       locationKind: EXPOSURE_LOCATION_KIND,
       locationId: exposure.learnedBy,
       acquiredTick: worldTick,
-      mastery: 0,
+      mastery: LOOTED_INITIAL_MASTERY,
     });
   }
 

@@ -53,11 +53,12 @@
  * No eligible recipient — every defending mage dead, or every one of them
  * already knows it — means no exposure, rather than a node inserted nowhere.
  *
- * **At mastery zero**, which is where theft writes too. She saw the shape of it
- * and not the practice: she cannot teach it onward without further study, which
- * is what keeps exposure from being a shortcut past the whole knowledge model.
- * It still counts toward existence (§1.5), which is the part that bites — a
- * universe raided twice by the same attacker has been handed her repertoire.
+ * **At {@link LOOTED_INITIAL_MASTERY}**, which is where theft writes too. She
+ * saw the shape of it and not the practice: she cannot teach it onward without
+ * further study, which is what keeps exposure from being a shortcut past the
+ * whole knowledge model. It still counts toward existence (§1.5), which is the
+ * part that bites — a universe raided twice by the same attacker has been
+ * handed her repertoire.
  *
  * ## Attacker to defender, and not the other way
  *
@@ -69,6 +70,8 @@
  */
 
 import type { ContentId } from '@mm/content';
+import { DEFAULT_INITIAL_MASTERY } from '@mm/rules-magic';
+import type { Fixed } from '@mm/sim-core';
 import type { Handle } from '@mm/state';
 import { LOCATION_KIND, MAGE, collectRecords } from '@mm/state';
 
@@ -186,3 +189,28 @@ export function exposureMovements(
 
 /** The location an exposed instance is created at: a mind, never a book. */
 export const EXPOSURE_LOCATION_KIND = LOCATION_KIND.mind;
+
+/**
+ * The mastery a node arrives at when it crosses a portal into a mind — stolen
+ * by a raider, or learned by a defender watching one cast. `fp`.
+ *
+ * **`DEFAULT_INITIAL_MASTERY`, the mastery a mage's own research produces, and
+ * not zero.** It was zero until 2026-10-09, and zero is destruction: the decay
+ * sweep destroys any held instance whose mastery reaches `0`, and `0` decays to
+ * `0`, so every stolen or witnessed node vanished on the first world tick after
+ * the raid that delivered it — every looted node observed in #256's probes was
+ * a captured book. §8 makes theft a real, cell-gated mechanic, and a theft that
+ * cannot outlive the raid is not one.
+ *
+ * Why the research default rather than the victim's mastery or the activation
+ * threshold: it keeps the reason zero was chosen. It is below both the teach
+ * and the activation thresholds (`512`), so she still has the shape and not
+ * the practice — she cannot cast it or teach it onward until she practises it,
+ * which is what keeps theft from being a shortcut past the knowledge model. And
+ * it is exactly what she would hold had she worked the node out herself, so a
+ * theft is never worth more than the research it stands in for, nor less. A
+ * held instance's decay floor is `retention / 4` (128–384 across shipped
+ * species), clamped to the mastery it meets, so a looted node settles at the
+ * lower of `256` and her floor and stays there — never at zero.
+ */
+export const LOOTED_INITIAL_MASTERY: Fixed = DEFAULT_INITIAL_MASTERY;

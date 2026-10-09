@@ -54,7 +54,9 @@ import {
   stepEngagement,
   verbCost,
   verbSide,
+  LOOTED_INITIAL_MASTERY,
 } from '@mm/rules-raid';
+import { MASTERY_ACTIVATION_THRESHOLD } from '@mm/rules-magic';
 
 import { buildRaid, nodeId } from './raid-fixture.js';
 
@@ -480,7 +482,7 @@ describe('§5: the muster decisions change the outcome', () => {
 });
 
 describe('§3: exposure, and the choice it is', () => {
-  it('teaches the host a node it did not have, outright, at mastery zero', () => {
+  it('teaches the host a node it did not have, outright, below the teach threshold', () => {
     const { raid, hostWorld, hostKnowledge } = buildRaid({
       withHostUniverse: true,
       raiderNodes: ['pt-crumble'],
@@ -507,9 +509,12 @@ describe('§3: exposure, and the choice it is', () => {
       .map((instance) => hostKnowledge.read(instance));
     const learned = held.find((view) => view.nodeId === exposure.nodeId);
     expect(learned).toBeDefined();
-    // Mastery zero, where theft writes too: she saw the shape and not the
-    // practice, so she cannot teach it onward without further study.
-    expect(learned?.mastery).toBe(0);
+    // `LOOTED_INITIAL_MASTERY`, where theft writes too: she saw the shape and
+    // not the practice, so she cannot teach it onward without further study.
+    // Zero until 2026-10-09, which the next decay sweep destroyed.
+    expect(learned?.mastery).toBe(LOOTED_INITIAL_MASTERY);
+    expect(learned!.mastery).toBeGreaterThan(0);
+    expect(learned!.mastery).toBeLessThan(MASTERY_ACTIVATION_THRESHOLD);
     expect(componentOf(hostWorld, MAGE).has(exposure.learnedBy)).toBe(true);
   });
 

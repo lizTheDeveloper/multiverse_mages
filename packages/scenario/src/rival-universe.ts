@@ -73,6 +73,7 @@ import type { Ruleset } from '@mm/state';
 import {
   GRIMOIRE,
   HOLDER_KIND,
+  KNOWLEDGE_INSTANCE,
   LIBRARY,
   LOCATION_KIND,
   MAGE,
@@ -341,8 +342,16 @@ export function buildRival(input: {
   // `fromState`: `buildReferenceState` has already written the founding grant
   // through its own subsystem, so a fresh index would start blind to it.
   const knowledge = KnowledgeSubsystem.fromState(world, content.deps.catalog.nodeCount);
+  // Read before `armRaiders`, so the shelf is the founders' curriculum and not
+  // the warband's kit.
+  const curriculum = foundingCurriculum(world);
   armRaiders(world, knowledge, content, constants);
+  // Foreign books first. `settleLibrary` carries in ascending shelf order up to
+  // `looted-grimoires-per-raid`, so the order is the raiders' choice: the books
+  // their own god could never permit are the reason for the trip, and the
+  // curriculum is what they take when there is nothing better on the shelf.
   shelveForeignBooks(world, knowledge, content, constants, input.targetId, input.localRuleset);
+  shelveCurriculum(world, knowledge, curriculum);
 
   const universe = findUniverse(world);
   const ruleset = captureRuleset(world, universe);
@@ -468,25 +477,65 @@ function shelveForeignBooks(
 
   for (let index = 0; index < constants.foreignBookCount; index += 1) {
     const nodeId = foreign[(targetId * constants.foreignBookCount + index) % foreign.length] as ContentId;
-    const grimoire = world.entities.create();
-    attachRecord(world, GRIMOIRE, grimoire, {
-      nodeId,
-      durability: FOREIGN_BOOK_DURABILITY,
-      holderKind: HOLDER_KIND.library,
-      holderId: library,
-    });
-    // §1.5 keeps exactly one instance per written copy, and a shelved book's
-    // instance is at the *library*. The grimoire is named at creation because
-    // the pairing is the invariant, not an association added afterwards.
-    knowledge.createInstance({
-      nodeId,
-      locationKind: LOCATION_KIND.library,
-      locationId: library,
-      acquiredTick: 0,
-      mastery: MASTERY_MAX,
-      grimoire,
-    });
+    shelveBook(world, knowledge, library, nodeId);
   }
+}
+
+/** Every distinct node a rival's founders hold in mind, ascending. */
+function foundingCurriculum(world: SimState): readonly ContentId[] {
+  const found = new Set<ContentId>();
+  for (const { row } of collectRecords(world, KNOWLEDGE_INSTANCE)) {
+    if (row.locationKind === LOCATION_KIND.mind) found.add(row.nodeId as ContentId);
+  }
+  return [...found].sort((a, b) => a - b);
+}
+
+/**
+ * Shelves one book of every node the rival's founders hold: its curriculum.
+ *
+ * **Added 2026-10-09, because a stand-in's library held nothing.** Its only
+ * books were {@link shelveForeignBooks}', and those are drawn from cells the
+ * raider's ruleset forbids — none, for the reference universe, whose opening
+ * permits all seventy cells. So the library objective of every headless raid
+ * was empty: 0 books carried home in 21 outbound stand-in raids, against about
+ * two a raid from a live peer, whose library holds the curriculum it scribed.
+ * Once ascension required looted knowledge (vision §8a), that made every
+ * headless run's ascension rate zero by construction.
+ *
+ * A live universe's library is its curriculum, so this is the stand-in made to
+ * look like the peer it stands in for, not a new reward: the books are mostly
+ * nodes the raider's own universe already knows, exactly as between two peers.
+ * Shelved at the archive durability, for the reason
+ * {@link FOREIGN_BOOK_DURABILITY} gives.
+ */
+function shelveCurriculum(world: SimState, knowledge: KnowledgeSubsystem, curriculum: readonly ContentId[]): void {
+  const library = firstLibrary(world);
+  if (library === 0) return;
+  for (const nodeId of curriculum) shelveBook(world, knowledge, library, nodeId);
+}
+
+/**
+ * One grimoire and its paired library instance. §1.5 keeps exactly one instance
+ * per written copy, and a shelved book's instance is at the *library*. The
+ * grimoire is named at creation because the pairing is the invariant, not an
+ * association added afterwards.
+ */
+function shelveBook(world: SimState, knowledge: KnowledgeSubsystem, library: EntityHandle, nodeId: ContentId): void {
+  const grimoire = world.entities.create();
+  attachRecord(world, GRIMOIRE, grimoire, {
+    nodeId,
+    durability: FOREIGN_BOOK_DURABILITY,
+    holderKind: HOLDER_KIND.library,
+    holderId: library,
+  });
+  knowledge.createInstance({
+    nodeId,
+    locationKind: LOCATION_KIND.library,
+    locationId: library,
+    acquiredTick: 0,
+    mastery: MASTERY_MAX,
+    grimoire,
+  });
 }
 
 /** The rival's own library handle, or `0`. `buildReferenceState` founds exactly one. */

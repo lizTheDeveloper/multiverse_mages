@@ -180,7 +180,9 @@ Three consequences follow, and they are why exposure earns its place over being 
   a rule that says "you may not raid too often."
 - **It is the only knowledge-transfer channel that costs the source nothing to give and everything to
   have given.** Teaching at home requires a living teacher above the mastery threshold; theft writes
-  at `mastery: 0`. Exposure is a third path, and it runs backwards along the attack.
+  at the research default (`DEFAULT_INITIAL_MASTERY`, below the teach threshold — it was `mastery: 0`
+  until 2026-10-09, which the decay sweep destroyed the next tick). Exposure is a third path, it
+  writes at the same mastery, and it runs backwards along the attack.
 - **It makes a restrained raid a real strategy.** Winning with your cheapest spells preserves your
   edge. Winning with your deepest ones spends it. That is a decision inside the fight rather than
   before it.

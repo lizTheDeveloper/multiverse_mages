@@ -79,7 +79,7 @@ import type { Fixed, RngStream } from '@mm/sim-core';
 import { FP_ONE, floorDiv, nextBounded } from '@mm/sim-core';
 import type { AblationMask, ClampCounters } from '@mm/primitives';
 import { neutralizedMagnitude, rollStackedProbability, stackMagnitudes } from '@mm/primitives';
-import type { RulesetSnapshot } from '@mm/state';
+import type { RaidSideValue, RulesetSnapshot } from '@mm/state';
 import { LOCATION_KIND, permits } from '@mm/state';
 import type { CastPolicy, ConsumptionRecorder, CostPolicy, MagicGrid } from '@mm/rules-magic';
 import { castCost, expendOnCast, nodeEffectRecords, requireRegistryNode } from '@mm/rules-magic';
@@ -344,6 +344,7 @@ export class CastArbiter {
   readonly #castProfiles = new Map<ContentId, CastProfile>();
   readonly #castEffects = new Map<ContentId, CastEffects>();
   #forbiddenCastsBlocked = 0;
+  readonly #maskedByHost: [number, number] = [0, 0];
 
   constructor(options: {
     readonly hostRuleset: RulesetSnapshot;
@@ -384,6 +385,36 @@ export class CastArbiter {
    */
   get forbiddenCastsBlocked(): number {
     return this.#forbiddenCastsBlocked;
+  }
+
+  /**
+   * Nodes the host ruleset took off the table at portal open, by side: what a
+   * fielded mage could cast at home — held in mind or palace at the activation
+   * threshold — and the host's frozen snapshot forbids. Summed per mage.
+   *
+   * **This is the number that shows §3 at work, not
+   * {@link forbiddenCastsBlocked}.** Layer 1 removes these nodes before anyone
+   * can choose them, so the blocked-cast counter stays zero by design (it is a
+   * tripwire for layer 1 failing). Round-4 playtest: zero in all 94 raids,
+   * read as "the host's rules never mattered", while lobby squares that differ
+   * mask about 84 % of a raider's kit (measured 2026-10-09). Added then.
+   */
+  maskedByHost(side: RaidSideValue): number {
+    return this.#maskedByHost[side];
+  }
+
+  /** Counts, for {@link maskedByHost}, one mage's usable nodes the host forbids. */
+  noteMaskedByHost(side: RaidSideValue, held: Iterable<HeldInstance>, activationThreshold: Fixed): void {
+    const masked = new Set<ContentId>();
+    for (const instance of held) {
+      if (instance.locationKind !== LOCATION_KIND.mind && instance.locationKind !== LOCATION_KIND.palace) {
+        continue;
+      }
+      if (instance.mastery < activationThreshold) continue;
+      if (this.#permitsNode(instance.nodeId)) continue;
+      masked.add(instance.nodeId);
+    }
+    this.#maskedByHost[side] += masked.size;
   }
 
   /** Whether the fault injector has disabled layer 1 for this raid. */

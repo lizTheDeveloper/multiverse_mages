@@ -120,6 +120,13 @@ export interface PeerRaidMeasurement {
   readonly attackAttempts: number;
   /** Nodes new to the attacker's universe (the `RaidRecord` reading). */
   readonly nodesTakenByAttacker: number;
+  /** Instances read out of a mind or palace and brought home (a copy; `knowledgeTaken.copied`). */
+  readonly instancesReadFromMinds: number;
+  /** Raider nodes castable at home that the host's ruleset forbids (§3 at work). */
+  readonly raiderNodesForbiddenByHost: number;
+  /** Objective value taken and on offer; the victor rule reads these. */
+  readonly objectiveValueTaken: number;
+  readonly objectiveValueTotal: number;
   /** Grimoires that arrived in the attacker's universe as loot. */
   readonly grimoiresCarried: number;
   /** Library-held instances the host no longer has. `-1` in `standin` mode. */
@@ -249,6 +256,12 @@ export async function playPeerPair(
   arm: PeerSurveyArm,
   seedA: number,
   seedB: number,
+  /**
+   * The defender's content, when its opening square differs from the
+   * attacker's — how the survey measures a host ruleset that forbids a
+   * raider's kit (§3). Defaults to `content`.
+   */
+  defenderContent: ReferenceContent = content,
 ): Promise<PeerPairResult> {
   // One implementation, driven one way. The pair runs as a generator that
   // yields once a world tick, and this hands the event loop back once a world
@@ -256,7 +269,7 @@ export async function playPeerPair(
   // worker that runs an unbroken synchronous minute cannot answer vitest's RPC
   // and reports a timeout that is not a test failure (measured: a 51 s pair
   // under load). Callers that do not care await it like any other promise.
-  const steps = peerPairSteps(content, arm, seedA, seedB);
+  const steps = peerPairSteps(content, arm, seedA, seedB, defenderContent);
   for (let n = 1; ; n += 1) {
     const next = steps.next();
     if (next.done === true) return next.value;
@@ -270,6 +283,7 @@ function* peerPairSteps(
   arm: PeerSurveyArm,
   seedA: number,
   seedB: number,
+  defenderContent: ReferenceContent,
 ): Generator<void, PeerPairResult, void> {
   const live: Live = {};
   const peered = arm.mode === 'peer';
@@ -281,7 +295,7 @@ function* peerPairSteps(
       ? {
           peers: {
             seats: [1],
-            participant: () => (live.b === undefined ? undefined : participantOf(live.b, content)),
+            participant: () => (live.b === undefined ? undefined : participantOf(live.b, defenderContent)),
           },
         }
       : {}),
@@ -292,7 +306,7 @@ function* peerPairSteps(
 
   let b: AgentSession | undefined;
   if (peered) {
-    const runB = referenceScenario(content, {
+    const runB = referenceScenario(defenderContent, {
       onState: (s) => {
         live.b = s;
       },
@@ -450,6 +464,10 @@ function* peerPairSteps(
         casualtiesDefender: record.actionEconomy.removals[RAID_SIDE.defender],
         attackAttempts,
         nodesTakenByAttacker: record.nodesTakenByAttacker,
+        instancesReadFromMinds: record.knowledgeTaken.copied,
+        raiderNodesForbiddenByHost: record.raiderNodesForbiddenByHost,
+        objectiveValueTaken: record.objectiveValueTaken,
+        objectiveValueTotal: record.objectiveValueTotal,
         grimoiresCarried: unownedGrimoires(live.a) - before.loot,
         libraryInstancesLost: live.b === undefined ? -1 : before.hostLibrary - libraryInstances(live.b),
         hostNodesLost,
@@ -500,11 +518,24 @@ export function hostEnded(state: SimState): boolean {
 export async function surveyPeerArm(
   content: ReferenceContent,
   arm: PeerSurveyArm,
-  options: { readonly pairs: number; readonly seed0: number },
+  options: {
+    readonly pairs: number;
+    readonly seed0: number;
+    /** The defender's content when its opening square differs; see {@link playPeerPair}. */
+    readonly defenderContent?: ReferenceContent;
+  },
 ): Promise<PeerPairResult[]> {
   const out: PeerPairResult[] = [];
   for (let i = 0; i < options.pairs; i += 1) {
-    out.push(await playPeerPair(content, arm, options.seed0 + 2 * i, options.seed0 + 2 * i + 1));
+    out.push(
+      await playPeerPair(
+        content,
+        arm,
+        options.seed0 + 2 * i,
+        options.seed0 + 2 * i + 1,
+        options.defenderContent ?? content,
+      ),
+    );
   }
   return out;
 }
@@ -533,6 +564,10 @@ export interface PeerSurveySummary {
   readonly casualtiesDefender: number;
   readonly anyCasualtyPct: number;
   readonly nodesNew: number;
+  /** Instances read out of minds or palaces and brought home. */
+  readonly instancesReadFromMinds: number;
+  /** Raider nodes castable at home that the host forbade, summed. */
+  readonly raiderNodesForbiddenByHost: number;
   readonly grimoiresCarried: number;
   readonly libraryInstancesLost: number;
   readonly hostNodesLost: number;
@@ -572,6 +607,8 @@ export function summarisePeerRaids(records: readonly PeerRaidMeasurement[]): Pee
     casualtiesDefender: sum((r) => r.casualtiesDefender),
     anyCasualtyPct: pct(records.filter((r) => r.casualtiesAttacker + r.casualtiesDefender > 0).length, records.length),
     nodesNew: sum((r) => r.nodesTakenByAttacker),
+    instancesReadFromMinds: sum((r) => r.instancesReadFromMinds),
+    raiderNodesForbiddenByHost: sum((r) => r.raiderNodesForbiddenByHost),
     grimoiresCarried: sum((r) => r.grimoiresCarried),
     libraryInstancesLost: sum((r) => r.libraryInstancesLost),
     hostNodesLost: sum((r) => r.hostNodesLost),

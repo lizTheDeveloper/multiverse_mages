@@ -105,7 +105,9 @@ that asserts it most directly.
 | Reading a mind copies, looting a grimoire moves, burning destroys > Burning gives nothing to the attacker | `packages/rules-raid/test/unit/knowledge-corruption.test.ts` |
 | Reading a mind copies, looting a grimoire moves, burning destroys > A memory palace cannot be looted | `packages/rules-magic/test/unit/palace-mortality.test.ts` |
 | Stolen knowledge is retained only by a raider who returns alive > Theft outruns loss | `packages/rules-raid/test/unit/raid-fidelity.test.ts` |
+| A defender keeps what she saw a raider cast > An exposed node outlives the raid | `packages/rules-raid/test/unit/loot-survives-decay.test.ts` |
 | Stolen knowledge is retained only by a raider who returns alive > A killed thief loses what she took | `packages/rules-raid/test/unit/raid-engine.test.ts` |
+| Stolen knowledge is retained only by a raider who returns alive > A stolen node outlives the raid | `packages/rules-raid/test/unit/loot-survives-decay.test.ts` |
 | Stolen knowledge is retained only by a raider who returns alive > Stolen knowledge starts unmastered | `packages/rules-raid/test/unit/verbs.test.ts` |
 | Stolen knowledge is retained only by a raider who returns alive > Stolen knowledge may be inert at home | `packages/rules-raid/test/unit/portal-gate.test.ts` |
 | The outcome record supplies the balance harness > Every raid emits a record | `packages/scenario/test/unit/raid-metrics.test.ts` |

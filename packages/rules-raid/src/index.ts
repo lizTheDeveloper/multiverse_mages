@@ -102,6 +102,7 @@ export {
 export type { ExposureRecord } from './exposure.js';
 export {
   EXPOSURE_LOCATION_KIND,
+  LOOTED_INITIAL_MASTERY,
   ExposureRegister,
   exposedNodes,
   exposureMovements,

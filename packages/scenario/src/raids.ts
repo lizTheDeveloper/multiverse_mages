@@ -94,6 +94,7 @@ import type { AblationMask } from '@mm/coordination';
 import { settleRaidCasualties } from '@mm/coordination';
 import type { ContentCatalogue } from '@mm/agent-api';
 import {
+  OBJECTIVE_STATUS,
   TERMINAL_REASON,
   captureRuleset,
   findUniverse,
@@ -207,8 +208,35 @@ export interface RaidRecord {
   /**
    * `permits()` refusals at the resolution choke point. The 0.7.0 zero-occurrence
    * claim; must read zero across every raid of every run.
+   *
+   * **A tripwire, not a measure of §3.** The legal-node mask removes forbidden
+   * nodes before any combatant can choose one, so this is zero whenever that
+   * mask works. What the host ruleset actually took away is
+   * {@link raiderNodesForbiddenByHost}.
    */
   readonly forbiddenCastsBlocked: number;
+  /**
+   * **§3 at work:** nodes the raiders could cast at home that the host's frozen
+   * ruleset forbids, summed over fielded raiders at portal open. They never
+   * reach a raider's hand inside the host. Added 2026-10-09: the round-4
+   * playtest read `forbiddenCastsBlocked`'s zeros as "the host rules never
+   * mattered", while two lobby squares that differ masked about 84 % of a
+   * warband's kit.
+   */
+  readonly raiderNodesForbiddenByHost: number;
+  /**
+   * **Why the victor is the victor.** `victorOf` gives the attacker the raid
+   * iff the objective value she took reaches the victory threshold of the
+   * total — no roll, no hit points. An attacker who captures the archmage and
+   * walks home wins with nothing carried and nobody killed; one who walks home
+   * having taken nothing loses. Round 4 saw identical-looking withdrawals
+   * (2 fielded, 2 withdrew, 0 lost, 0 taken) go once each way. {@link objectives}
+   * says which objectives fell; these two carry the values the rule compares,
+   * so a reader can recompute the victor from the record alone. Added
+   * 2026-10-09; report-only.
+   */
+  readonly objectiveValueTaken: number;
+  readonly objectiveValueTotal: number;
   /**
    * **What happened inside the raid**, carried across the boundary rather than
    * recomputed on the far side of it.
@@ -672,6 +700,11 @@ function resolveOneRaid(input: {
     nodesGainedLocally: outbound ? countOf(applied.nodesGainedByRaider) : 0,
     attackerFavorCost: input.attackerFavorCost,
     forbiddenCastsBlocked: outcome.forbiddenCastsBlocked,
+    raiderNodesForbiddenByHost: raid.arbiter.maskedByHost(ATTACKER),
+    objectiveValueTaken: outcome.objectives
+      .filter((o) => o.status !== OBJECTIVE_STATUS.held)
+      .reduce((sum, o) => sum + o.value, 0),
+    objectiveValueTotal: outcome.objectives.reduce((sum, o) => sum + o.value, 0),
     // Passed through untouched. `resolveRaid` froze it at resolution and this
     // layer neither normalises nor re-sides it; see the field's own note.
     actionEconomy: outcome.actionEconomy,

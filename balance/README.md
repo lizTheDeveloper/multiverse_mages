@@ -288,20 +288,43 @@ proportional change in that metric the gate would report as `regressed`. Anythin
 
 | metric | 5-year gate | 20-year gate | 20-year agency gate | 200-year gate |
 |---|---|---|---|---|
-| `referenceGrimoires` | 4.4 % | 7.9 % | 17.3 % | 18.9 % |
-| `referenceKnowledgeInstances` | 2.4 % | 5.1 % | 10.7 % | 32.6 % |
-| `referenceLibraryDepth` | 17.4 % | 16.5 % | 20.7 % | 30.1 % |
-| `referenceLivingMages` | 1.5 % | 2.5 % | 3.7 % | 15.5 % |
-| `referenceNodesGained` | 0.9 % | 2.7 % | 4.2 % | 14.5 % |
-| `referenceNodesGainedFinalQuarter` | — | 8.5 % | 18.9 % | 77.7 % |
-| `referenceNodesKnown` | 0.8 % | 2.6 % | 4.1 % | 14.3 % |
-| `referencePeakPopulation` | 0.0 % | 15.4 % | 13.1 % | 11.3 % |
-| `referencePopulation` | 1.0 % | 1.9 % | 3.5 % | 17.5 % |
-| `referencePopulationChange` | 4.3 % | 9.3 % | 15.4 % | 17.6 % |
+| `referenceGrimoires` | 4.3 % | 7.7 % | 17.3 % | 17.7 % |
+| `referenceKnowledgeInstances` | 2.4 % | 4.9 % | 10.4 % | 38.4 % |
+| `referenceLibraryDepth` | 17.1 % | 16.1 % | 20.3 % | 34.0 % |
+| `referenceLivingMages` | 1.5 % | 2.5 % | 3.7 % | 16.0 % |
+| `referenceNodesGained` | 0.9 % | 2.7 % | 4.1 % | 13.1 % |
+| `referenceNodesGainedFinalQuarter` | — | 9.3 % | 18.1 % | 342.8 % |
+| `referenceNodesKnown` | 0.9 % | 2.6 % | 4.0 % | 12.9 % |
+| `referencePeakPopulation` | 0.0 % | 16.2 % | 7.5 % | 43.0 % |
+| `referencePopulation` | 1.0 % | 2.0 % | 3.7 % | 13.9 % |
+| `referencePopulationChange` | 4.3 % | 9.4 % | 15.9 % | 14.0 % |
 | runs | 200 | 200 | 64 | 64 |
 | plays a god verb | no | no | **yes** | **yes** |
 | wall clock, 4 workers | 4 s | 27 s | **10 s** | **830–1154 s** |
 
+
+**Re-measured 2026-10-09 on `raid-loot-followup`, over `fd8a02f0`.** All four gates were
+regenerated: a stand-in rival's library now holds its curriculum, and a stolen or witnessed node
+arrives at the research-default mastery instead of zero, so it survives decay. The 5-year, 20-year
+and agency gates moved at most 3.1 SE. **On the 200-year gate the change is mostly spread, not
+level.** `referencePeakPopulation@portal-rush` reads +178 SE against its *old* standard error of 73,
+which was implausibly tight; against the new one (7 667) it is +1.7 SE. The sweep-level
+peak-population tolerance widened from 11.3 % to 43.0 % of the value. `@passive-control` is +22 SE
+old / +2.0 SE new. The one large level move is `@archivist` (15 744 → 49 542; +19 SE old, +7.2 SE
+new). It is exposure, exactly — with exposure written at 0 the gate's eight archivist runs reproduce
+the old baseline to the unit (peak 15 744, mean final population 9 385) — but **not** a growth
+effect. Archivist ascends around tick 1 201 in most runs; with exposure kept, two of the eight seeds
+stop ascending and run on to the 2 400 cap, where population compounds (44 198 and 49 542, against
+15 744 and 3 740 when they ascended). On the same seed the per-tick trajectory barely moves
+(universities 5, 8, 9, 14, 22, 35, 59, 104 at 200-tick marks, against 5, 8, 9, 13, 21, 35, 55, 95).
+Inbound raids: defender win rate 60 % against 52 %, nodes lost entirely 62 against 144 (exposed
+nodes keep existing), casualties 114 both, no books burned. On an independent 16-run archivist sweep
+the arms are close (peak 58 225 against 55 208; ascension 14 and 13 of 16), and `capitalSnowball`
+does not move (0.229 against 0.224 at tick 1 200). Why those two seeds stop ascending is not
+established. Ascension arm
+lines: median MDE 43.4 %, 67 of 80 below 100 %, fifteen blind (`BLIND_ARM_LINES`).
+**`referenceNodesGainedFinalQuarter` is blind again at sweep level (342.8 %).** The paragraph below
+is kept as history.
 
 **Re-measured 2026-10-09 on `raid-tuning`, after the raider-drill fix.** All four gates were
 regenerated: a raider's practice is now her raid kit, drilled past the activation threshold, an
