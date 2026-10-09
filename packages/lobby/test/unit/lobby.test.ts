@@ -14,6 +14,8 @@ import { frameDocument } from '../../../../scripts/lib/frame-document.mjs';
 import { Lobby, type LobbyOptions } from '../../src/lobby.js';
 
 const doc = frameDocument(referenceContent(), 'lobby');
+const speciesIdOf = (id: string): number =>
+  referenceContent().registry.species.find((e) => e.record.id === id)!.contentId;
 const cfg = { species: 'elf', tradition: 'true-naming', techniques: ['creo'], forms: ['ignem'], seed: 3, tickCap: 50 };
 
 interface Frame {
@@ -292,7 +294,10 @@ describe('Lobby', () => {
     // Aggregates only: no id, no name, nothing to pick a victim by.
     for (const id of [a, b]) expect(raw).not.toContain(id);
     expect(raw).not.toMatch(/name|members|universeId/u);
-    const seat = (id: string): unknown => ({ universeId: id, name: expect.any(String), species: 'Elf' });
+    // `speciesIds` is what the seat's universe holds now — the roster action 16
+    // may invite from it. An elf universe that has not met anyone holds elves.
+    const elf = speciesIdOf('elf');
+    const seat = (id: string): unknown => ({ universeId: id, name: expect.any(String), species: 'Elf', speciesIds: [elf] });
     expect((await getJson<{ seats: unknown }>(`/u/${a}/live/raids`)).seats).toEqual({ '1': seat(b) });
     expect((await getJson<{ seats: unknown }>(`/u/${b}/live/raids`)).seats).toEqual({ '1': seat(a) });
   });
@@ -362,7 +367,9 @@ describe('Lobby', () => {
     const attacker = await getJson<{ seats: Record<string, unknown>; log: { outbound: boolean; target?: unknown }[] }>(
       `/u/${a}/live/raids`,
     );
-    expect(attacker.seats).toEqual({ '1': { universeId: b, name: 'Quiet Fen', species: 'Human' } });
+    expect(attacker.seats).toEqual({
+      '1': { universeId: b, name: 'Quiet Fen', species: 'Human', speciesIds: expect.arrayContaining([speciesIdOf('human')]) },
+    });
     expect(attacker.log.filter((r) => r.outbound)).toHaveLength(1);
     // The report names whom it hit, as they were when the portal opened.
     expect(attacker.log.find((r) => r.outbound)!.target).toEqual({ universeId: b, name: 'Quiet Fen', species: 'Human' });

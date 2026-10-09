@@ -19,6 +19,13 @@ export interface SeatOccupant {
   universeId: string;
   name: string;
   species: string;
+  /**
+   * Interned ids of every species alive there now — what action 16 could
+   * invite from this seat (the author's rule of 2026-10-08: a second species
+   * arrives only through a portal from a universe that holds it). Empty once
+   * the universe has ended.
+   */
+  speciesIds: number[];
 }
 
 export class Bubble {
@@ -103,7 +110,10 @@ export class Bubble {
     const out: Record<string, SeatOccupant | null> = {};
     for (let seat = 1; seat <= seats; seat += 1) {
       const h = this.seatOf(selfId, seat);
-      out[String(seat)] = h === undefined ? null : { universeId: h.id, name: h.name, species: h.speciesName };
+      out[String(seat)] =
+        h === undefined
+          ? null
+          : { universeId: h.id, name: h.name, species: h.speciesName, speciesIds: [...(h.speciesAlive() ?? [])] };
     }
     return out;
   }
