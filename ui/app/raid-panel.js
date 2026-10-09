@@ -65,6 +65,12 @@ export function mountRaids(o) {
 
   const model = {
     seats: {},
+    /**
+     * Seat → `{ name, speciesIds }` for every seated universe: who you could
+     * invite a scholar from (action 16). A second species arrives only through
+     * a portal from a universe that holds it — the author's rule of 2026-10-08.
+     */
+    holdings: {},
     /** Universe id → its public name, for every universe ever seen in a seat or a raid. */
     names: new Map(),
     log: [],
@@ -111,9 +117,14 @@ export function mountRaids(o) {
     const raw = body.seats && typeof body.seats === 'object' ? body.seats : {};
     const before = model.seats;
     model.seats = {};
+    model.holdings = {};
     for (const [seat, v] of Object.entries(raw)) {
       const id = typeof v === 'string' ? v : (v && typeof v.universeId === 'string' ? v.universeId : null);
       model.seats[seat] = id;
+      // `speciesIds` is absent from an older server; such a seat names no one.
+      if (id && v && Array.isArray(v.speciesIds)) {
+        model.holdings[seat] = { name: typeof v.name === 'string' ? v.name : shortId(id), speciesIds: v.speciesIds.filter(Number.isInteger) };
+      }
       if (id && v && typeof v.name === 'string') model.names.set(id, v.name);
     }
     // A bubble-mate whose universe left the server (its player left and it
@@ -527,6 +538,24 @@ export function mountRaids(o) {
 
   return {
     paint,
+    /**
+     * Where action 16 could fetch each species from: `{ loaded, seatCount,
+     * sourceOf(speciesId) }`, where `sourceOf` gives the lowest seat whose
+     * universe holds that species, as `{ seat, name }`, or `null`.
+     */
+    invitation: () => ({
+      loaded: model.loaded,
+      seatCount: Object.keys(model.seats).length,
+      held: [...new Set(Object.values(model.holdings).flatMap((x) => x.speciesIds))],
+      sourceOf(speciesId) {
+        const seats = Object.keys(model.holdings).map(Number).sort((a, b) => a - b);
+        for (const seat of seats) {
+          const holding = model.holdings[String(seat)];
+          if (holding.speciesIds.includes(speciesId)) return { seat, name: holding.name };
+        }
+        return null;
+      },
+    }),
     stop: () => { stopped = true; clearTimeout(raidsTimer); clearTimeout(peerTimer); },
   };
 }

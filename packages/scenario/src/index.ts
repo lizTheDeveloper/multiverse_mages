@@ -61,6 +61,9 @@ export { participantOf, raidSystem } from './raids.js';
 export type { PortalHolder, PortalStanding } from './portal-standing.js';
 export { portalGateNodeIds, portalStandingOf } from './portal-standing.js';
 
+export type { InvitationSource } from './invitation.js';
+export { invitationSources, reachableSpecies, speciesAliveIn } from './invitation.js';
+
 export type { DirectiveLog, EngagementPolicy, TranslatedDirective } from './raid-directives.js';
 export {
   admitsRuleChange,

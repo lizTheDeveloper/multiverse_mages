@@ -146,6 +146,20 @@ export interface GodDeps {
    * nothing rather than by branching.
    */
   readonly invitableSpecies?: ReadonlySet<number>;
+  /**
+   * The roster **as it stands this tick**, or absent.
+   *
+   * Present, it supersedes {@link invitableSpecies} and is asked once per world
+   * tick, before the actions resolve. It exists because the roster stopped being
+   * a fact about the multiverse and became a fact about *who is reachable now*:
+   * the author's rule of 2026-10-08 is that a second species may arrive only
+   * through a portal from a universe that actually holds it, and the universes
+   * behind a lobby's portal seats gain and lose species while this one runs.
+   *
+   * Absent — every headless build, every test world — reads the static field
+   * exactly as before, so no committed baseline takes a different branch.
+   */
+  readonly invitableSpeciesNow?: () => ReadonlySet<number>;
   /** The species table, for the traits an arriving scholar is built from. */
   readonly speciesOf?: (speciesId: number) => SpeciesRecord | undefined;
   /**
@@ -406,7 +420,8 @@ function interventionSystem(
         knowledge: deps.knowledgeFor(ctx.state),
         edictBudgetMax: EDICT_BUDGET_MAX,
         portalNodes: deps.portalNodes,
-        invitableSpecies: deps.invitableSpecies ?? EMPTY_SPECIES_ROSTER,
+        invitableSpecies:
+          deps.invitableSpeciesNow?.() ?? deps.invitableSpecies ?? EMPTY_SPECIES_ROSTER,
         speciesOf: deps.speciesOf ?? (() => undefined),
         rng: ctx.rng,
         territoryKinds: deps.territoryKinds ?? [],

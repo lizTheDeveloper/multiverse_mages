@@ -2562,6 +2562,35 @@ function paintMageDossier(f, detEl, handle) {
     + `<div style="font:italic 9px var(--serif);color:var(--faint)">Mages in this world have no names, and how long she has left is not something you can see.</div>`;
 }
 
+/**
+ * Where action 16's candidate species comes from: the lowest portal seat whose
+ * universe holds it, as `{ seat, name }`, or `null` (no seats, or the raids
+ * panel has not read them yet). A candidate's parameter is the species id.
+ */
+function inviteSourceOf(speciesId) {
+  if (!Number.isInteger(speciesId) || !raids?.invitation) return null;
+  return raids.invitation().sourceOf(speciesId);
+}
+
+/**
+ * Why action 16 offers nobody. A second species arrives only through a portal,
+ * from a universe that holds it (the author's rule of 2026-10-08), so the first
+ * question is whether any reachable universe holds a species you lack.
+ */
+function inviteEmptyReason(f) {
+  const inv = raids?.invitation?.();
+  if (inv?.loaded) {
+    if (inv.seatCount === 0) {
+      return 'You have no portal seats, so no universe you can reach holds another species — and a second people can only arrive through a portal.';
+    }
+    const resident = new Set(f.mageBuckets().filter((b) => b.living > 0).map((b) => session.content.species?.[b.species]?.speciesId));
+    if (!inv.held.some((id) => !resident.has(id))) {
+      return 'No universe you can reach holds another species. A scholar comes only through a portal, from a bubble-mate whose universe has her people.';
+    }
+  }
+  return 'A bubble-mate holds a species you lack, but inviting a scholar also needs a living mage who holds portal magic in a permitted cell, and the favor to pay.';
+}
+
 function paintActionCandidates(f, detEl) {
   const aid = state.selectedAction;
   const action = GOD_COSTS.find(a => a.id === aid);
@@ -2615,7 +2644,14 @@ function paintActionCandidates(f, detEl) {
     for (const ci of order) {
       const named = namer(view, aid, ci, cands[ci]?.params ?? []);
       const head = named?.head ?? `target ${ci + 1}`;
-      const sub = named?.sub ?? '';
+      let sub = named?.sub ?? '';
+      // A scholar comes from a universe that holds her species (the author's
+      // rule of 2026-10-08), so say which one. Headless servers have no seats
+      // and the line is left off.
+      if (aid === 16) {
+        const from = inviteSourceOf(cands[ci]?.params?.[0]);
+        if (from) sub = `from ${from.name}, seat ${from.seat}`;
+      }
       html += `<div class="cand-item" data-slot="${ci}" data-expect="${esc(JSON.stringify(cands[ci]?.params ?? []))}" data-label="${esc(head)}" style="cursor:pointer;padding:.25rem .4rem;border:1px solid var(--edge);border-radius:3px;background:var(--plate);font:10px var(--mono)">
         <div style="color:var(--ink)">${esc(head)}</div>
         ${sub ? `<div style="color:var(--faint)">${esc(sub)}</div>` : ''}
@@ -2645,6 +2681,8 @@ function paintActionCandidates(f, detEl) {
       ? 'No mages to act on yet — they are born as the run warms.'
       : aid === 13
       ? `The tradition may not be changed this tick — usually the cost is beyond reach (${priceText(session.content, 13)}).`
+      : aid === 16
+      ? inviteEmptyReason(f)
       : 'Nothing is available for this action this month. The server keeps time — wait for the world to move on, or look at another glowing action.';
     const m = f.actions().find((a) => a.id === aid);
     const ascensionLegal = ascension && m && m.legal;

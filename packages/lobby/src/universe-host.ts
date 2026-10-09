@@ -30,6 +30,7 @@ import {
   referenceContent,
   referenceOptions,
   referenceScenario,
+  speciesAliveIn,
   speciesTable,
   type LegacyRecord,
   type RaidRecord,
@@ -263,6 +264,8 @@ export class UniverseHost implements FrameRun {
   readonly name: string;
   /** The founding species' display name. */
   readonly speciesName: string;
+  /** The founding species' interned id: what this universe holds before its first step. */
+  readonly #foundingSpeciesId: number;
   lastTouched: number;
   /** The prestige (fp) the previous universe's ending carried into this one; `null` for none. */
   readonly carriedIn: number | null;
@@ -329,6 +332,9 @@ export class UniverseHost implements FrameRun {
           target.inbound.push({ fromUniverseId: this.id, fromName: this.name, record });
           this.#targets.set(record.raidId, { universeId: target.id, name: target.name, species: target.speciesName });
         },
+        // Action 16's roster: a second species arrives only from a seat whose
+        // universe holds it (the author's rule of 2026-10-08).
+        speciesIn: (seat) => peers.seatOf(this, seat)?.speciesAlive(),
       },
     });
     this.#raids = run.raids;
@@ -339,6 +345,7 @@ export class UniverseHost implements FrameRun {
     const wanted = base.registry.species.find((e) => e.record.id === config.species);
     if (wanted === undefined) throw new Error(`species must be one of the shipped species, not ${config.species}`);
     this.speciesName = wanted.record.name;
+    this.#foundingSpeciesId = wanted.contentId;
     this.name = config.name ?? defaultUniverseName(this.id, this.speciesName);
     const foundingSpeciesMask = 1 << ids.indexOf(wanted.contentId);
     // Founders and starting cohorts are counted **per species**, so founding
@@ -388,6 +395,18 @@ export class UniverseHost implements FrameRun {
   /** This universe as a raid target, or `undefined` when it cannot be one. */
   participant(): ReturnType<typeof participantOf> {
     return this.#state === undefined || !this.isAlive ? undefined : participantOf(this.#state, this.#content);
+  }
+
+  /**
+   * Interned ids of the species with a living mage here, ascending, or
+   * `undefined` when this universe has ended — an ended universe is no portal's
+   * destination, so it sends nobody. Before the first step the session has
+   * produced no state for {@link participant} to read, and the answer is the one
+   * species the universe was founded with.
+   */
+  speciesAlive(): readonly number[] | undefined {
+    if (!this.isAlive) return undefined;
+    return this.#state === undefined ? [this.#foundingSpeciesId] : speciesAliveIn(this.#state);
   }
 
   /**
