@@ -96,13 +96,8 @@ const NO_CANDIDATE_HINT = {
   11: 'no university can be funded or founded',
   12: 'no permitted cell can be encouraged',
   13: 'no other tradition can be adopted',
-<<<<<<< HEAD
   14: 'the server offers no portal this month',
-  16: 'no species is available to invite (it needs portal magic, and a species you do not already have)',
-=======
-  14: 'no living mage holds a portal node in a permitted cell',
   16: 'no species is available to invite — a scholar comes only through a portal, from a universe you can reach that holds a species you lack (and it needs portal magic)',
->>>>>>> origin/main
 };
 
 
