@@ -186,10 +186,10 @@ export function buildOutlook(
     // Raiders only. Any mage may score `raid-readiness`, but only one the god
     // named a raider has a kit to drill: the role is the player's lever, and a
     // universe whose god never names one behaves exactly as it did before.
-    raidKitTargets:
-      row.roleId === MAGE_ROLE.raider
-        ? boundCandidates(raidKitOf(practicableBy(mage, deps), deps.raidKitPrimitives), species)
-        : [],
+    raidKitTargets: boundCandidates(
+      raidKitTargetsFor(row.roleId, practicableBy(mage, deps), deps.raidKitPrimitives),
+      species,
+    ),
     sustainableTargets: boundCandidates(upkeep.targets, species),
     workingUrgency: upkeep.pressure,
 
@@ -404,17 +404,23 @@ export interface UniversityStanding {
  * practice is spent and gone, and next month she may spend another.
  */
 /**
- * The practicable nodes that carry a raid-kit primitive.
+ * The practicable nodes that carry a raid-kit primitive, for a raider — and
+ * nothing for anyone else.
  *
  * Filtered from the same `practicableBy` list rather than gathered separately,
  * so the two can never disagree about what she holds, what her ceiling allows,
  * or which cells are permitted now. `raid-readiness` is practice aimed at the
  * part of her knowledge that works through a portal, and nothing more.
  */
-function raidKitOf(
+export function raidKitTargetsFor(
+  roleId: number,
   practicable: readonly KnowledgeTarget[],
   kit: ReadonlySet<number> | undefined,
 ): KnowledgeTarget[] {
+  // Raiders only: any mage may score `raid-readiness`, but only one the god
+  // named a raider has a kit to drill. The role is the player's lever, and a
+  // universe whose god never names one behaves exactly as it did before.
+  if (roleId !== MAGE_ROLE.raider) return [];
   if (kit === undefined || kit.size === 0) return [];
   return practicable.filter((target) => target.primitives.some((primitive) => kit.has(primitive)));
 }

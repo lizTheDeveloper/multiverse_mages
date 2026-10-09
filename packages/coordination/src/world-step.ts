@@ -102,7 +102,6 @@ import { FP_ONE as FP_UNIT, TIME_MODE, floorDiv, mul } from '@mm/sim-core';
 import type { Handle, MageRecord, Ruleset } from '@mm/state';
 import {
   EFFORT_KIND,
-  GOAL_COMMITMENT,
   KNOWLEDGE_INSTANCE,
   LOCATION_KIND,
   MAGE,
@@ -4428,24 +4427,21 @@ function scribeThroughputFor(
  * found by `ui-recording.test.ts`, whose academy projection listed a lesson
  * whose teacher no longer resolved.
  *
- * Called by the composition root (`scenario`'s raid system) on both worlds
- * immediately after the write-back, so no frame and no later system ever sees a
- * corpse mid-lesson. A dead mage still holding any of those is a raid casualty
- * by construction — {@link killTheDead}'s own path clears all of them at the
- * moment of death — so this matches nothing in a world without a lethal raid
- * and draws nothing. Ascending handle order, so two peers destroy effort rows
- * in one order. Returns how many it settled.
+ * Called by the composition root (`scenario`'s raid system) on each world
+ * immediately after the write-back, **with exactly that raid's casualties on
+ * that world** — never a sweep of every dead mage. Other paths kill without
+ * clearing these rows on purpose or by their own rules (`long-run.ts`'s
+ * `applyLossShock`, for one), and a sweep here would settle their dead too and
+ * change what those paths measure. A handle that is not a dead mage is
+ * skipped. Ascending handle order, so two peers destroy effort rows in one
+ * order. Returns how many it settled.
  */
-export function settleRaidCasualties(state: SimState): number {
+export function settleRaidCasualties(state: SimState, casualties: readonly Handle[]): number {
   const efforts = new EffortLedger(state);
   let settled = 0;
-  const commitments = componentOf(state, GOAL_COMMITMENT);
   const mages = componentOf(state, MAGE);
-  for (const { handle, row } of collectRecords(state, MAGE)) {
-    if (row.alive !== 0) continue;
-    const unsettled =
-      row.universityId !== 0 || commitments.has(handle) || efforts.effortsInvolving(handle).length > 0;
-    if (!unsettled) continue;
+  for (const handle of [...new Set(casualties)].sort((a, b) => a - b)) {
+    if (!mages.has(handle) || mages.get(handle, 'alive') !== 0) continue;
     clearCommitment(state, handle);
     efforts.clearSubject(handle);
     endWorkingsOf(state, handle);

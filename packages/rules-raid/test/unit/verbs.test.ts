@@ -447,7 +447,11 @@ describe('§5: the muster decisions change the outcome', () => {
     // about the engine — see `verbs.ts` on `mend`, and the report on
     // concealment, which the intrinsic-damage path does not consult at all.
     expect(seedsThatDiffer('attacker')).toBeGreaterThanOrEqual(6);
-    expect(totals('attacker').attackers).toBeGreaterThan(totals('none').attackers);
+    // **Raiders who got home, not raiders alive at close** (2026-10-08). A raid
+    // now ends on its own terms only once no raider is left on the field, so
+    // "alive at close" is zero by construction in every arm. What mending buys
+    // is raiders who walk out: raiders lost on these seeds 5 -> 4.
+    expect(totals('attacker').raidersLost).toBeLessThan(totals('none').raidersLost);
   });
 
   it('drains the Vis it spends, and the stock is what stops the spending', () => {

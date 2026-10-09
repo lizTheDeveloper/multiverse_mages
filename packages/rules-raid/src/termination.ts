@@ -191,33 +191,30 @@ export function terminationOf(input: {
     return { reason: RAID_END_REASON.ceilingReached };
   }
   if (input.raid.portalStability <= 0) return { reason: RAID_END_REASON.portalCollapsed };
-  // **Not while a raider is still on the field.** Ending the raid the tick the
-  // last objective fell stranded every attacker standing in the defender's
-  // half — and the stranded-raider rule kills them and forfeits what they
-  // carried. Measured on live peer raids (`scripts/peer-raid-survey.mjs`,
-  // 2026-10-08): the only raids with any attacker casualties at all were the
-  // ones the attacker *won outright*, every raider lost to the sweep. Winning
-  // a raid was the one way to lose the warband. So a cleared field is the end
-  // only once the raiders have left it; until then they walk home under fire,
-  // and the portal can still close on them.
-  if (input.allObjectivesResolved && input.livingAttackers === 0) {
-    return { reason: RAID_END_REASON.objectivesResolved };
-  }
-  if (input.livingAttackers === 0) {
-    // An empty attacking side is two different endings and the histogram has to
-    // be able to tell them apart: a warband that was killed, and a warband that
-    // went home. `withdrawnAttackers > 0` distinguishes them, and the tie —
-    // some withdrew, the rest died — reads as a withdrawal, because a raid in
-    // which anybody got out is one the timer ended rather than the defender.
-    if ((input.withdrawnAttackers ?? 0) > 0) {
-      return { reason: RAID_END_REASON.raidersWithdrew };
-    }
-    return { reason: RAID_END_REASON.sideEliminated, eliminated: RAID_SIDE.attacker };
-  }
-  if (input.livingDefenders === 0) {
+  // **Never while a raider is still on the field.** Ending the raid the tick
+  // the last objective fell — or the tick the last defender fell — stranded
+  // every attacker standing in the defender's half, and the stranded-raider
+  // rule kills them and forfeits what they carried. Measured on live peer
+  // raids (`scripts/peer-raid-survey.mjs`, 2026-10-08): the only raids with
+  // any attacker casualties at all were the ones the attacker *won outright*.
+  // Winning was the one way to lose the warband. So a raid ends on its own
+  // terms only once the raiders have left the field; until then they walk
+  // home — under fire, if anyone is left to fire — and the portal, which
+  // still decays every tick, can close on them. The walk home happens in the
+  // watch-only resolution phase (`phases.ts`, `phaseOf`): a cleared field
+  // enters resolution, so no ruleset change can be made while they leave.
+  if (input.livingAttackers > 0) return undefined;
+  if (input.allObjectivesResolved) return { reason: RAID_END_REASON.objectivesResolved };
+  const withdrew = (input.withdrawnAttackers ?? 0) > 0;
+  // An empty attacking side is several endings and the histogram has to be
+  // able to tell them apart: the defence fell and the warband went home; the
+  // warband went home; the warband was killed. A raid in which anybody got out
+  // is one the timer or the raiders ended rather than the defender.
+  if (input.livingDefenders === 0 && withdrew) {
     return { reason: RAID_END_REASON.sideEliminated, eliminated: RAID_SIDE.defender };
   }
-  return undefined;
+  if (withdrew) return { reason: RAID_END_REASON.raidersWithdrew };
+  return { reason: RAID_END_REASON.sideEliminated, eliminated: RAID_SIDE.attacker };
 }
 
 /**

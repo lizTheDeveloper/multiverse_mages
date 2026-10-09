@@ -389,7 +389,7 @@ describe('the measured ordering of the combat sources, after the 2026-10-08 resc
     expect(attempts?.hurting).toBeGreaterThan(100);
     // The authored magnitudes are 384..3072 at fp scale since the 2026-10-08
     // rescale (96..768 before it, x4), against a mage's fp(4) of hit points
-    // (fp(64) before it). A landing bolt therefore removes at least ~48 raw after the
+    // (fp(64) before it). A landing bolt therefore removes at least ~192 raw after the
     // heaviest permitted ward, so the mean removal per landing attempt has to
     // sit in that band. A zeroed lookup could not.
     const landing = (attempts?.hurting ?? 0) + (attempts?.removing ?? 0);
