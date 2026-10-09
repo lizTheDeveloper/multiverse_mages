@@ -163,13 +163,14 @@ describe('unclassifiedTraits (step 2)', () => {
     // count. The count is the point of the test, so it moves with the field
     // set rather than being loosened to `>=`;
     // `docs/design/observable-trait-inventory.md` is the document this is
-    // keeping honest.
+    // keeping honest. And `portal-recharge`'s one, for the raid cooldown at
+    // revision 14 (playtest round 4), making **132**.
     //
     // Every literal any single branch carried here was wrong for the union.
     // W182 reached 113 on its own tree, Group E reached 120, and
     // `material-economy` reached 112; the merged tree is none of those, because
     // each branch counted its own additions over a base missing the others'.
-    expect(traits).toBe(131);
+    expect(traits).toBe(132);
 
     let classified = 0;
     for (const rows of Object.values(TRAIT_CLASSIFICATION)) {
@@ -224,7 +225,10 @@ describe('unclassifiedTraits (step 2)', () => {
     // Both additions move this bucket by exactly the amount they moved the
     // trait count by — 2 and 5, against 126 and 131 — so no existing row was
     // reclassified to absorb them, which is what the paired assertion is for.
-    expect(byReason.get('not-yet-decided')).toBe(89);
+    //
+    // And 89 + `portal-recharge`'s one = **90**: the raid cooldown gates the
+    // god's next portal through the mask, and its tick reaches no slot.
+    expect(byReason.get('not-yet-decided')).toBe(90);
     expect(byReason.get('internal-bookkeeping')).toBe(6);
     // Unused until there is an opponent-facing projection to hide anything
     // from. Asserted at zero so that the day it stops being zero is a diff.

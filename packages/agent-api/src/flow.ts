@@ -171,6 +171,7 @@ export interface FlowReportSource {
   readonly sinkByKind: FlowAmounts;
   readonly producedByKind: FlowAmounts;
   readonly appliedByKind: FlowAmounts;
+  readonly tendedByKind: FlowAmounts;
   readonly spilledByKind: FlowAmounts;
   readonly shortKinds: Readonly<Record<string, boolean>>;
   readonly conservationBreaches: readonly FlowBreach[];
@@ -182,6 +183,7 @@ export interface FlowReportSource {
   readonly magesApplying: number;
   readonly economicNodes: number;
   readonly buildRateSources: number;
+  readonly thresholdKeepers: number;
   readonly subsistenceShortfallShare: number;
   readonly teachingFundedShare: number;
   readonly libraryUpkeepOwed: number;
@@ -216,7 +218,7 @@ export interface FlowLedger {
   readonly godSpend: FlowAmounts;
   /** The stocks written at the end of it. */
   readonly closing: FlowAmounts;
-  /** Everything created this tick, per kind: `land + applied`. */
+  /** Everything created this tick, per kind: `land + applied + tended`. */
   readonly faucet: FlowAmounts;
   /** Everything destroyed this tick, per kind: every claimant, plus the spill. */
   readonly sink: FlowAmounts;
@@ -224,6 +226,12 @@ export interface FlowLedger {
   readonly land: FlowAmounts;
   /** Applied magic's basket, routed to a kind by the node's form. New supply. */
   readonly applied: FlowAmounts;
+  /**
+   * The faucets every universe has (`coordination`'s `tended-faucets.ts`): passage
+   * from the mages keeping a portal threshold, insight from research paid for.
+   * New supply, like {@link applied}.
+   */
+  readonly tended: FlowAmounts;
   /** What each kind lost to the stock ceiling. On the sink side, and separately readable. */
   readonly spilled: FlowAmounts;
   /** Which kinds could not pay a claimant this tick. */
@@ -269,6 +277,8 @@ export interface FlowLedger {
     readonly magesApplying: number;
     readonly economicNodes: number;
     readonly buildRateSources: number;
+    /** Living mages keeping a portal threshold — what {@link FlowLedger.tended}'s passage is paid for. */
+    readonly thresholdKeepers: number;
   };
 }
 
@@ -332,6 +342,7 @@ export function describeFlow(
     sink: amounts(report.sinkByKind),
     land: amounts(report.producedByKind),
     applied: amounts(report.appliedByKind),
+    tended: amounts(report.tendedByKind),
     spilled: amounts(report.spilledByKind),
     short: flags(report.shortKinds),
     claimants: report.claimantFlows.map((row) => ({ ...row })),
@@ -352,6 +363,7 @@ export function describeFlow(
       magesApplying: report.magesApplying,
       economicNodes: report.economicNodes,
       buildRateSources: report.buildRateSources,
+      thresholdKeepers: report.thresholdKeepers,
     },
   };
 }

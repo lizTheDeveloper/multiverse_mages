@@ -36,7 +36,7 @@
 import type { ContentId } from '@mm/content';
 import type { EntityHandle, SimState } from '@mm/sim-core';
 import { TIME_MODE } from '@mm/sim-core';
-import { MAGE, MAGE_ROLE, collectRecords } from '@mm/state';
+import { MAGE, MAGE_ROLE, collectRecords, findUniverse, portalReadyTick, portalRechargeRemaining } from '@mm/state';
 import { MASTERY_MAX, MagicGrid } from '@mm/rules-magic';
 import type { PortalRefusal } from '@mm/rules-raid';
 import { CASTABLE_MASTERY, COMBAT_PRIMITIVES, enablesGate, heldInstancesOf, portalGate } from '@mm/rules-raid';
@@ -80,6 +80,14 @@ export interface PortalStanding {
    * raise her mastery only when this says it works.
    */
   readonly raiderDrillsPortal: boolean;
+  /**
+   * World ticks until action 14 may be taken again (`raid-cooldown-ticks`,
+   * `portal-recharge`), `0` when it may be taken now. The same reader the mask
+   * and the resolver ask, so a page that prints it prints their answer.
+   */
+  readonly rechargeRemaining: number;
+  /** The first world tick the portal may open again; `0` when none was ever paid for. */
+  readonly rechargeReadyTick: number;
 }
 
 /** What is built once per registry: the grid and the portal node set. */
@@ -164,5 +172,7 @@ export function portalStandingOf(state: SimState, content: ReferenceContent): Po
     holders,
     livingRaiders,
     raiderDrillsPortal: raiderDrillsPortal(content),
+    rechargeRemaining: portalRechargeRemaining(state, findUniverse(state), state.clock.worldTick),
+    rechargeReadyTick: portalReadyTick(state, findUniverse(state)),
   };
 }

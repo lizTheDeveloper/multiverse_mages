@@ -1042,6 +1042,14 @@ body.held .god-action, body.held .axis-toggle, body.held .edict-btn, body.held .
       <li><b>Edicts</b> are one-off exceptions to your own rules (permit one forbidden cell, forbid one permitted one). There are only a few slots.</li>
     </ul>
 
+    <h3>Raids, passage and the portal</h3>
+    <ul>
+      <li>A raid sends your <b>raiders</b> through a portal to one of the universes in your portal seats (the <b>Raids</b> tab). Opening one needs the portal cell, <b>Rego Limen</b>, permitted and a mage who holds a portal node well enough to use it.</li>
+      <li>It costs <b>favor</b> and <b>passage</b>. Passage is the raid currency — what holding a threshold open is made of. You start with enough for two portals; after that it comes from two places: every mage who holds a portal node <em>keeps a threshold</em> and yields a little passage each month (up to four count), and mages who cast <b>Intellego Limen</b>, <b>Fatum</b> or <b>Umbra</b> at the world make more. The <b>Economy</b> panel lists who is making it.</li>
+      <li>A raid costs <b>tempo</b>: after a portal opens, the next cannot open for a few years while the threshold is gathered again. Each seat card shows your passage against the price and how long the portal has left to recharge.</li>
+      <li><b>Insight</b> pays for blessings and speeds teaching. Research makes a little; casting Intellego Mentem or Imaginem makes more. <b>Food</b> feeds your people: when the granary runs dry the feed says so, and births slow until it refills.</li>
+    </ul>
+
     <h3>Reading the screen</h3>
     <ul>
       <li><b>Grid tab</b> — the 70 cells. Lit cells are permitted <em>and known</em>; the number is how many nodes are known. Hover a row or column to see what permitting it would unlock. Click a cell for its detail.</li>
@@ -1201,7 +1209,7 @@ import { mountThemeControl } from '../shared/theme.js';
 import { LiveSessionError, openSession, reconstructedCharge, units, mageVocabulary, candidateNamer, cellCensus, nodeHolders } from '../shared/session.js';
 import { mountRaids } from './raid-panel.js';
 import { edictControls, ascensionNode, paintAscension } from './god-panels.js';
-import { whyDenied, whyDeniedText, foundingWhy, traditionChangeReading, priceText, priceOf, namedMages, stagnationReading, portalStanding, portalLever, portalWhy } from './explain.js';
+import { whyDenied, whyDeniedText, foundingWhy, traditionChangeReading, priceText, priceOf, namedMages, stagnationReading, portalStanding, portalLever, portalWhy, economyProducers } from './explain.js';
 import { h } from './dom.js';
 import { loadIdentity, forgetIdentity } from '../shared/identity.js';
 
@@ -2055,6 +2063,11 @@ function snapshotFrame(f) {
     // Living raiders, the server's count (`frame.portal`); absent on a slimmed
     // history frame, and then compared with nothing.
     raiders: typeof f.raw.portal?.raiders === 'number' ? f.raw.portal.raiders : null,
+    // The share of this month's subsistence the granary could not meet (0..1),
+    // from the flow ledger; null on a frame without one.
+    famine: typeof f.flow()?.pressure?.subsistenceShortfallShare === 'number' ? f.flow().pressure.subsistenceShortfallShare : null,
+    // Ticks until the portal may open again (`raid-cooldown-ticks`); null when unpublished.
+    recharge: typeof f.raw.portal?.recharge === 'number' ? f.raw.portal.recharge : null,
   };
 }
 
@@ -2175,6 +2188,21 @@ function diffAndLog(curr) {
     const left = snap.raiders;
     pushFeed({ tick, type: 'death', key: 'raiders', n: prev.raiders - snap.raiders,
       text: (n) => `${n} of your raiders ${n === 1 ? 'is' : 'are'} gone — ${left} living raider${left === 1 ? '' : 's'} left` });
+  }
+  // Famine has a consequence that existed and was invisible: a universe that
+  // cannot feed itself carries fewer people (`carrying-capacity.ts` cuts K by
+  // the unfed share), so births slow and stop. Said when it starts and ends
+  // (playtest round 4: "shortage food" with no visible consequence).
+  if (snap.famine !== null && prev.famine !== null) {
+    if (snap.famine > 0 && prev.famine === 0) {
+      const pct = Math.max(1, Math.round(snap.famine * 100));
+      pushFeed({ tick, type: 'death', key: 'famine', text: () => `Famine: the granary is empty and ${pct}% of the people go unfed — fewer can be carried, so births slow until food returns` });
+    } else if (snap.famine === 0 && prev.famine > 0) {
+      pushFeed({ tick, type: 'birth', key: 'famine-over', text: () => 'The famine is over: the granary feeds everyone again' });
+    }
+  }
+  if (snap.recharge !== null && prev.recharge !== null && snap.recharge === 0 && prev.recharge > 0) {
+    pushFeed({ tick, type: 'raid', key: 'recharged', text: () => 'The portal has recharged — it can open again (if you hold the passage and favor)' });
   }
   settleWatches(curr);
   prevSnapshot = snap;
@@ -3216,12 +3244,12 @@ function paintGodPanel(f) {
       </div>`;
     }
 
-    // Producers
+    // Producers, by kind: who made each material this month, and what would
+    // make passage or insight when nothing does (playtest round 4).
     econHtml += '<div class="econ-section-label">producers</div>';
-    if (fl.producers) {
-      for (const [k, v] of Object.entries(fl.producers)) {
-        if (v > 0) econHtml += `<div class="econ-row"><span>${k}</span><span class="v">${v}</span></div>`;
-      }
+    for (const row of economyProducers(fl)) {
+      econHtml += `<div class="econ-row" style="align-items:flex-start"><span style="color:${kindHues[row.kind] || 'var(--god)'}">${escapeFeed(row.kind)}</span>`
+        + `<span class="v" style="text-align:right;white-space:normal">${row.sources.map(escapeFeed).join('<br>')}</span></div>`;
     }
 
     // Claimants — who is consuming materials, with proportional bars
@@ -3251,6 +3279,10 @@ function paintGodPanel(f) {
     const shortKinds = Object.entries(fl.short).filter(([, v]) => v);
     if (shortKinds.length > 0) {
       econHtml += `<div class="econ-row" style="color:var(--loss)"><span>shortage</span><span class="v">${shortKinds.map(([k]) => k).join(', ')}</span></div>`;
+    }
+    const unfed = fl.pressure?.subsistenceShortfallShare ?? 0;
+    if (unfed > 0) {
+      econHtml += `<div class="econ-row" style="color:var(--loss)"><span>famine</span><span class="v">${Math.max(1, Math.round(unfed * 100))}% unfed — births slowed</span></div>`;
     }
   } else {
     // Fallback when flow() is not available

@@ -39,6 +39,7 @@ import { decodeSnapshot, encodeSnapshot, rngFromRootSeed, serializeState, step }
 import {
   KNOWLEDGE_INSTANCE,
   LOCATION_KIND,
+  PORTAL_RECHARGE,
   STANDING_WORKING,
   attachRecord,
   componentOf,
@@ -224,8 +225,10 @@ describe('an absent row is never lit, which is not the same as expired', () => {
     const envelope = decodeSnapshot(serializeState(state));
     const older = {
       ...envelope,
+      // `portal-recharge` (revision 14) goes too: it arrived after
+      // `standing-working`, so a save from before the latter has neither.
       components: envelope.components.filter(
-        (component) => component.name !== STANDING_WORKING.name,
+        (component) => component.name !== STANDING_WORKING.name && component.name !== PORTAL_RECHARGE.name,
       ),
     };
     // The fixture is the claim: this really is a save from before

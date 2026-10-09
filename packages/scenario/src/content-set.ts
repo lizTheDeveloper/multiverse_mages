@@ -80,7 +80,7 @@ import {
   territoryExtent,
 } from '@mm/rules-world';
 import type { CombatEffectIndex } from '@mm/rules-raid';
-import { combatEffectIndex } from '@mm/rules-raid';
+import { CASTABLE_MASTERY, COMBAT_PRIMITIVES, combatEffectIndex, enablesGate } from '@mm/rules-raid';
 import type { WorldStepDeps } from '@mm/coordination';
 import {
   academicEffectIndex,
@@ -900,6 +900,22 @@ export function worldDeps(
       registry,
       god.costs.materialByAction[GOD_ACTION.fundUniversity]?.labor ?? 0,
     ),
+    // The two faucets every universe has (playtest round 4): passage from the
+    // mages who keep a portal threshold, insight from research the archive paid
+    // for. The holder predicate is `rules-raid`'s own — a gate-enabling
+    // `portal` effect at `CASTABLE_MASTERY` — so a keeper is exactly a mage the
+    // portal gate would count.
+    tended: {
+      portalNodes: new Set(
+        registry.nodes
+          .filter(({ record }) => record.effects.some((effect) => enablesGate(effect, COMBAT_PRIMITIVES.portal)))
+          .map(({ contentId }) => contentId),
+      ),
+      usableMastery: CASTABLE_MASTERY,
+      passagePerKeeper: registry.autonomyWeight('passage-per-keeper'),
+      maxKeepers: registry.autonomyWeight('passage-keepers-max'),
+      researchInsightPerMonth: registry.autonomyWeight('research-insight-per-month'),
+    },
     store: storeHookOf(registry, traditionId),
     acquire: acquireHookOf(registry, traditionId),
     // …and the same two, for whichever tradition the universe holds *now*.

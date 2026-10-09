@@ -66,6 +66,7 @@ import {
   collectRecords,
   findUniverse,
   permits,
+  portalRechargeRemaining,
   readUniverse,
 } from '@mm/state';
 
@@ -467,6 +468,13 @@ function portalCandidates(input: CandidateInput): Candidate[] {
   // says nothing happened — reported from a live lobby as "No raid opened".
   // `coordination`'s `portalPlan` refuses the same case, so the two agree.
   if (!hasLivingRaider(input.state)) return [];
+  // Still recharging from the last portal (`raid-cooldown-ticks`, vision §8's
+  // tempo). The resolver's `portalPlan` reads the same row through the same
+  // reader against the same tick, so a portal this offers is one it accepts.
+  const universe = findUniverse(input.state);
+  if (universe !== 0 && portalRechargeRemaining(input.state, universe as EntityHandle, input.state.clock.worldTick) > 0) {
+    return [];
+  }
   return [...new Set(input.portalTargets ?? [])]
     .filter((target) => Number.isInteger(target) && target !== 0)
     .sort((a, b) => a - b)

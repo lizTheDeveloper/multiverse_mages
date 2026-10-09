@@ -83,6 +83,7 @@ import {
   MAGE,
   MAGE_ROLE,
   MATERIAL_STOCK,
+  PORTAL_RECHARGE,
   RULE_CHANGE_KIND,
   RULE_SCOPE,
   TERMINAL_REASON,
@@ -101,6 +102,7 @@ import {
   isCellId,
   revertSurcharge,
   permits,
+  portalRechargeRemaining,
   readEdicts,
   readRulesetForObservation,
   readUniverse,
@@ -559,7 +561,7 @@ function planOf(
     case ACTION.changeTradition:
       return traditionPlan(state, universe, params[0], worldTick, deps);
     case ACTION.openPortal:
-      return portalPlan(state, universe, params[0], deps);
+      return portalPlan(state, universe, params[0], worldTick, deps);
     case ACTION.declareAscension:
       return ascensionPlan(state, universe, worldTick, deps);
     case ACTION.inviteScholar:
@@ -1360,9 +1362,14 @@ function portalPlan(
   state: SimState,
   universe: EntityHandle,
   targetId: number | undefined,
+  worldTick: number,
   deps: InterventionDeps,
 ): Plan | undefined {
   if (targetId === undefined || targetId === 0) return undefined;
+  // Still recharging from the last portal (`raid-cooldown-ticks`). Refused
+  // before payment, as the mask refuses it — see `agent-api`'s
+  // `portalCandidates`, which reads the same row through the same reader.
+  if (portalRechargeRemaining(state, universe, worldTick) > 0) return undefined;
   if (portalMagicHolder(state, universe, deps) === 0) return undefined;
   // Nobody to send: refused before payment, as the mask refuses it. See
   // `agent-api`'s `portalCandidates`.
@@ -1373,9 +1380,23 @@ function portalPlan(
   return {
     cost: interventionCost(ACTION.openPortal, deps.god.costs),
     apply: () => {
+      // The tempo `vision.md` §8 says a raid costs, charged as a wait. Written
+      // only here, inside the paid apply: a refused or unaffordable portal
+      // starts no cooldown, so a god is never made to wait for nothing.
+      writePortalReadyTick(state, universe, worldTick + Math.max(deps.god.constants.raidCooldownTicks, 0));
       deps.requestEngagement();
     },
   };
+}
+
+/** Writes `portal-recharge`, creating the row on the first paid portal. */
+function writePortalReadyTick(state: SimState, universe: EntityHandle, readyTick: number): void {
+  const store = componentOf(state, PORTAL_RECHARGE);
+  if (!store.has(universe)) {
+    attachRecord(state, PORTAL_RECHARGE, universe, { readyTick });
+    return;
+  }
+  store.set(universe, 'readyTick', readyTick);
 }
 
 /**

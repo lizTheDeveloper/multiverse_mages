@@ -205,6 +205,10 @@ describe('the world schema is stable in the way the snapshot format needs', () =
       // revision-11 save on disk was written with twenty-one sections and
       // expects the twenty-second to be the one it does not know.
       'standing-working',
+      // Appended by the raid economy (playtest round 4), as world-schema
+      // revision 14: when the god may next open a portal. Universe state, and
+      // last for the reason every addition above is.
+      'portal-recharge',
     ]);
   });
 

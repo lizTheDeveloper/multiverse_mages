@@ -52,6 +52,7 @@ import {
   MATERIAL_STOCK,
   MID_RAID_CHANGE,
   STANDING_WORKING,
+  PORTAL_RECHARGE,
   OBJECTIVE,
   OBJECTIVE_STATUS,
   OCCUPATION,
@@ -332,6 +333,9 @@ export function populatedWorld(): PopulatedWorld {
     expiresTick: 84,
     renewals: 2,
   });
+
+  // A portal paid for at tick 40, so the raid cooldown (revision 14) round-trips.
+  attachRecord(state, PORTAL_RECHARGE, universe, { readyTick: 88 });
 
   assertEveryWorldComponentPopulated(state);
   // Union of both branches' handles. The auto-merge left *two* return

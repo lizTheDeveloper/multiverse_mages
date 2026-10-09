@@ -157,6 +157,9 @@ export {
   sweepLapsedWorkings,
 } from './standing-workings.js';
 
+export type { TendedFaucetWeights, TendedOutcome } from './tended-faucets.js';
+export { NO_TENDING, REQUIRED_TENDED_WEIGHTS, tendedYield, thresholdKeepers } from './tended-faucets.js';
+
 export type {
   AcademicEffectIndex,
   AcademicRateBonuses,

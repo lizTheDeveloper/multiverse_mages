@@ -1020,7 +1020,15 @@ describe('contentRevision', () => {
     // `raid-readiness-mastery-floor` (640), the ceiling a raider's practice on a
     // raid-kit node may reach. Without it a researched portal node named for a
     // raid could not be held above the activation threshold.
-    expect(registry.contentRevision).toBe('f554ed8acc726e6032b658a49e98c107');
+    //
+    // f554ed8acc726e6032b658a49e98c107 -> 07bb52ccf2a1bb54e4de4d883791cdb2, on
+    // `raid-economy`, 2026-10-09 (playtest round 4). **Four new records** —
+    // the god constant `raid-cooldown-ticks` (48) and the autonomy weights
+    // `passage-per-keeper` (128), `passage-keepers-max` (4) and
+    // `research-insight-per-month` (128) — and two values: `favor-regen-base`
+    // 1024 -> 256 and `favor-per-worship` 512 -> 128, with their glosses.
+    // Measured with `check:content` on the tree.
+    expect(registry.contentRevision).toBe('07bb52ccf2a1bb54e4de4d883791cdb2');
   });
 
   it('is stable across loads of identical content', () => {

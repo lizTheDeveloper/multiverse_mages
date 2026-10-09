@@ -207,6 +207,8 @@ function encodePortal(standing) {
       holders: standing.holders.slice(0, PORTAL_HOLDERS_LISTED).map((x) => [x.handle, x.nodeId, x.mastery, x.roleId]),
       raiders: standing.livingRaiders,
       raiderDrillsPortal: standing.raiderDrillsPortal,
+      // Ticks until action 14 may be taken again (`raid-cooldown-ticks`); 0 = now.
+      recharge: standing.rechargeRemaining ?? 0,
     },
   };
 }

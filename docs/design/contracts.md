@@ -209,6 +209,24 @@ from Limen, Fatum and Umbra — and `MATERIAL_STOCK` gains one `i32` field each.
   unchanged, and the four new kinds are withheld until a named per-kind block is added to
   `PlayerState`, which is not the vector.
 
+**`portal-recharge` — the raid cooldown, world-schema revision 14, recorded 2026-10-09 on
+`raid-economy`.** Playtest round 4 (main `0cc40e9c`) saw one god open 46 portals in a hundred
+in-game years: §8 makes a raid's cost *tempo* — world time pauses for both sides — and a live peer
+raid resolves inside one world tick, so the attacker paid favor and passage and nothing else.
+
+- **One `i32` row on the universe, `readyTick`**, written by `coordination`'s `portalPlan` inside
+  the *paid* apply as `worldTick + raid-cooldown-ticks` (`god-constant.json`). A refused portal
+  starts no cooldown.
+- **Three readers, one function.** `@mm/state`'s `portalRechargeRemaining` is asked by
+  `agent-api`'s portal candidates (the mask), by `portalPlan` (the resolver), and by `scenario`'s
+  raid system, which opens an outbound raid only if the row says the portal was paid for *this*
+  tick — so a press the resolver refused can neither charge nor open a raid for free.
+- **No row means ready**, which is what every save before revision 14 describes; the migration
+  appends an empty section. `SNAPSHOT_VERSION` does not move, for the reason given above.
+- **Not a cap on how often a universe may be raided.** §8 bounds griefing by the cost of re-entry,
+  not by a frequency cap, and this is the attacker's tempo only: a defender with several
+  bubble-mates can still be raided by each of them.
+
 **A terminated universe is frozen in its component rows, and not in its clock.** `god-agency`'s
 ascension spec asks that *"no world tick may further alter the universe's state"* and that a
 stepped, ascended universe's *snapshot hash is unchanged*. The first is implemented and tested: a

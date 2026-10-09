@@ -131,6 +131,13 @@ export const REQUIRED_AUTONOMY_WEIGHTS = [
   // `REQUIRED_PRODUCTION_WEIGHTS` reads it by name, which is why the id is a
   // contract checked in both directions while the value stays untuned.
   'labor-share-of-month',
+  // The two faucets every universe has (playtest round 4, `coordination`'s
+  // `tended-faucets.ts`): passage from the mages who keep a portal threshold,
+  // insight from research the archive paid for. Read by name, so the ids are a
+  // contract checked in both directions while the values stay untuned.
+  'passage-per-keeper',
+  'passage-keepers-max',
+  'research-insight-per-month',
 ] as const;
 
 /** The scalar ids that must be at least 1, because they are divisors. */

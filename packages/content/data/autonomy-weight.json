@@ -369,5 +369,26 @@
     "unit": "fp",
     "gloss": "The fraction of a laborer's month that is hands for hire rather than work on the land. One part in sixteen, which at MATERIALS_PER_LABORER of 16 is exactly one fp of labor per neutral laborer per tick \u2014 the same unit as SUBSISTENCE_PER_PERSON. It is an allocation, not new supply: the land half is base minus this. Untuned.",
     "tuningStatus": "untuned"
+  },
+  {
+    "id": "passage-per-keeper",
+    "value": 128,
+    "unit": "fp",
+    "gloss": "Passage one keeper yields per world tick: a living mage holding a permitted portal node at usable mastery. 1.5 a year, so one keeper earns a 16-passage portal in about eleven years and the maximum below in under three. Before this the only passage faucet was three tier-1 Intellego nodes, and a universe without them never made any (playtest round 4).",
+    "tuningStatus": "untuned"
+  },
+  {
+    "id": "passage-keepers-max",
+    "value": 4,
+    "unit": "raw",
+    "gloss": "Keepers counted at most. A library full of portal-holders is not a passage mint: past four the god's investment is in raiders and combat magic, not in more thresholds.",
+    "tuningStatus": "untuned"
+  },
+  {
+    "id": "research-insight-per-month",
+    "value": 128,
+    "unit": "fp",
+    "gloss": "Insight one research mage-month the archive paid for yields: about 5 a year in a lobby universe, two blessings' worth, and 32 times what a month of teaching spends. Before this only Mentem and Imaginem made insight, and a stock under one blessing's price for 75-95% of every run left bless dead (playtest round 4; 16 measured too thin, scripts/s15-economy-probe.mjs).",
+    "tuningStatus": "untuned"
   }
 ]

@@ -34,7 +34,7 @@
  */
 
 import { h, fill } from './dom.js';
-import { describeRaid, namedMages, portalLever, portalPrerequisiteText, portalStanding, priceText, raidBlockers, raidFeedText, roleId, shortId, whyDeniedText } from './explain.js';
+import { describeRaid, namedMages, portalLever, portalPrerequisiteText, portalStanding, priceOf, priceText, raidBlockers, rechargeText, raidFeedText, roleId, shortId, whyDeniedText } from './explain.js';
 
 const RAIDS_POLL_MS = 3000;
 const PEER_POLL_MS = 10000;
@@ -467,6 +467,25 @@ export function mountRaids(o) {
     paint();
   }
 
+  /**
+   * What this god holds against the portal's price, and the cooldown: "passage
+   * 12 / 16 · favor 30 / 16 · ready". Passage is the raid currency and the one
+   * the page must make visible — playtest round 4 ran out of it after two raids
+   * without anything on screen saying it existed.
+   */
+  function yourPortalText(f) {
+    const price = priceOf(content, 14);
+    const parts = [];
+    const passageNeed = price.materials?.passage ?? 0;
+    const passageHave = Math.floor((f.raw.stocks?.passage ?? 0) / 1024);
+    if (passageNeed > 0) parts.push(`passage ${passageHave} / ${passageNeed}`);
+    if (price.favor > 0) parts.push(`favor ${Math.floor(f.resources().favor)} / ${price.favor}`);
+    const st = portalStanding(f, content);
+    const recharge = st?.recharge ?? 0;
+    parts.push(recharge > 0 ? rechargeText(recharge).replace(/^the portal is recharging — /u, 'recharging: ').replace(/ \(a raid.*$/u, '') : 'recharged');
+    return parts.join(' · ');
+  }
+
   function seatCard(f, seat, raiderCount) {
     const id = model.seats[String(seat)];
     const p = id ? model.peers.get(id) : undefined;
@@ -501,6 +520,8 @@ export function mountRaids(o) {
       row('worship', `tier ${pf.resources().worshipTier}`);
       row('as of', `their year ${Math.floor(pf.clock().worldTick / 12)}`);
     }
+
+    row('your portal', yourPortalText(f));
 
     const why = h('ul', { className: 'raid-why' });
     for (const b of blockers) {

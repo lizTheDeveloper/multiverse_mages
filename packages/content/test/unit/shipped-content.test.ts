@@ -167,8 +167,9 @@ describe('shipped content', () => {
       // constants and no side's literal was a count of the union: HEAD reached
       // this merge asserting 74 and `integration/group-e` 75. COUNTED on the
       // merged data file rather than chosen between them. 78 since S4 added
-      // `stagnation-neglect-ticks`, the quiet clock's second window.
-      godConstants: 78,
+      // `stagnation-neglect-ticks`, the quiet clock's second window. 79 since
+      // the raid economy added `raid-cooldown-ticks` (playtest round 4).
+      godConstants: 79,
       // One per magnitude the raid rules read by name, checked in both
       // directions by the loader for the reason the god constants are. Five of
       // them are the composition root's rather than the engine's — how many
@@ -208,8 +209,10 @@ describe('shipped content', () => {
       // wrong once the tree held all the branches; the count read off the data
       // file is the only thing here that is evidence. The discipline is
       // unchanged either way — every weight is read by name, so one nothing
-      // reads fails the load.
-      autonomyWeights: 47,
+      // reads fails the load. 50 since the raid economy (playtest round 4)
+      // added `passage-per-keeper`, `passage-keepers-max` and
+      // `research-insight-per-month` — counted on the data file.
+      autonomyWeights: 50,
       gradeEdges: 2,
       // w20/compositional-content: 7 tracks, 2 rituals.
       tracks: 7,

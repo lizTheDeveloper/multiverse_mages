@@ -201,7 +201,11 @@ describe('two independent agent processes play one authoritative match', () => {
       '--seed',
       '7',
       '--steps',
-      '6',
+      // Twenty-four, not six: at the raid economy's quartered favor regeneration
+      // (playtest round 4) six or twelve months buys neither policy anything the other
+      // does not also buy, so the two universes stayed byte-identical and the
+      // divergence check below could not tell slots apart.
+      '24',
       '--policy',
       'lowest',
     ]);
@@ -211,8 +215,8 @@ describe('two independent agent processes play one authoritative match', () => {
     // Both played the whole match and neither bailed out.
     expect(a.summary.reason).toBe('truncated');
     expect(b.summary.reason).toBe('truncated');
-    expect(a.summary.ticksApplied).toBe(6);
-    expect(b.summary.ticksApplied).toBe(6);
+    expect(a.summary.ticksApplied).toBe(24);
+    expect(b.summary.ticksApplied).toBe(24);
     expect(a.summary.slot).toBe(0);
     expect(b.summary.slot).toBe(1);
 

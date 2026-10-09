@@ -51,6 +51,7 @@ import {
   EVER_KNOWN,
   GOD_STATE,
   GRANT_BUDGET,
+  PORTAL_RECHARGE,
   UPHEAVAL,
   AXIS_CHANGE_COUNTER,
   componentOf,
@@ -90,6 +91,29 @@ export function readGodState(
 /** The god-state row, or a zeroed one. For readers that do not care which. */
 export function godStateOrEmpty(state: SimState, universe: EntityHandle): GodStateRecord {
   return readGodState(state, universe) ?? EMPTY_GOD_STATE;
+}
+
+// ---------------------------------------------------------------------------
+// The raid cooldown (`portal-recharge`, world-schema revision 14).
+// ---------------------------------------------------------------------------
+
+/**
+ * The first world tick on which action 14 may be taken again, or `0` when no
+ * portal has been paid for — no row means ready.
+ *
+ * One reader for both layers that ask: `coordination`'s resolver and
+ * `agent-api`'s mask compare this against the same tick, so they cannot
+ * disagree about whether the portal is recharging.
+ */
+export function portalReadyTick(state: SimState, universe: EntityHandle): number {
+  const store = state.component(PORTAL_RECHARGE.name);
+  if (!store.has(universe)) return 0;
+  return readRecord(state, PORTAL_RECHARGE, universe).readyTick;
+}
+
+/** World ticks until action 14 may be taken again; `0` when it may be taken now. */
+export function portalRechargeRemaining(state: SimState, universe: EntityHandle, worldTick: number): number {
+  return Math.max(portalReadyTick(state, universe) - worldTick, 0);
 }
 
 // ---------------------------------------------------------------------------

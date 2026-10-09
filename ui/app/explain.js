@@ -131,6 +131,8 @@ export function portalStanding(f, content) {
     needPct: pct(g.usableMastery),
     raiders: p.raiders ?? 0,
     drills: p.raiderDrillsPortal === true,
+    /** World ticks until the portal may open again (`raid-cooldown-ticks`); 0 = now. */
+    recharge: Number.isInteger(p.recharge) ? p.recharge : 0,
     leadName: lead === undefined ? 'a portal node' : nodeName(lead),
     nodeName,
     /** `{held, usable}` for one portal node, or null for a node that is not one. */
@@ -229,7 +231,20 @@ export function portalWhy(f, content) {
   } else if (st.refusal === 'already-engaged') {
     out.push({ text: 'a raid is already in flight', source: 'frame.portal.refusal', blocks: true });
   }
+  if (st.recharge > 0) out.push({ text: rechargeText(st.recharge), source: 'frame.portal.recharge', blocks: true });
   return out;
+}
+
+/**
+ * The raid cooldown in words. A raid costs tempo (vision §8): after a portal
+ * the threshold must be gathered again before another opens.
+ */
+export function rechargeText(ticks) {
+  const years = Math.floor(ticks / 12);
+  const months = ticks % 12;
+  const span = [years > 0 ? `${years} year${years === 1 ? '' : 's'}` : '', months > 0 ? `${months} month${months === 1 ? '' : 's'}` : '']
+    .filter(Boolean).join(' ');
+  return `the portal is recharging — ${span} until it can open again (a raid costs tempo: one portal every few years)`;
 }
 
 /**
@@ -823,4 +838,44 @@ export function ascensionChecklist(f, content) {
     canon,
     summits,
   };
+}
+
+/**
+ * Who made each material this month, from the flow ledger (`f.flow()`, display
+ * units): `[{ kind, total, sources: [text…] }]`, one row per kind that was made
+ * or that a priced verb needs and nothing makes.
+ *
+ * Playtest round 4: passage — the raid currency — ran out after two raids and
+ * the ECONOMY panel listed only `magesApplying` and `economicNodes`, so nothing
+ * on screen said what makes it. This names the producers by kind, and names
+ * the way to get one when a kind the god spends has none.
+ */
+export function economyProducers(fl) {
+  if (!fl) return [];
+  const rate = (v) => `+${v >= 1 ? v.toFixed(1) : v.toFixed(2)}/mo`;
+  const keepers = fl.producers?.thresholdKeepers;
+  const casting = fl.producers?.magesApplying ?? 0;
+  const out = [];
+  for (const kind of fl.kinds ?? []) {
+    const land = fl.land?.[kind] ?? 0;
+    const applied = fl.applied?.[kind] ?? 0;
+    const tended = fl.tended?.[kind] ?? 0;
+    const sources = [];
+    if (land > 0) sources.push(`the populace's land ${rate(land)}`);
+    if (applied > 0) sources.push(`magic cast at the world ${rate(applied)} (${casting} mage${casting === 1 ? '' : 's'} casting)`);
+    if (tended > 0 && kind === 'passage') {
+      sources.push(`${keepers ?? '?'} mage${keepers === 1 ? '' : 's'} keeping a portal threshold ${rate(tended)}`);
+    } else if (tended > 0 && kind === 'insight') {
+      sources.push(`research ${rate(tended)}`);
+    } else if (tended > 0) {
+      sources.push(`tended ${rate(tended)}`);
+    }
+    if (sources.length === 0 && kind === 'passage') {
+      sources.push('nothing — a mage who holds a portal node keeps a threshold and yields passage; so does casting Intellego Limen, Fatum or Umbra');
+    } else if (sources.length === 0 && kind === 'insight') {
+      sources.push('nothing — research yields insight, and so does casting Intellego Mentem or Imaginem');
+    }
+    if (sources.length > 0) out.push({ kind, total: land + applied + tended, sources });
+  }
+  return out;
 }

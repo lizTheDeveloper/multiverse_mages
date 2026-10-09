@@ -106,16 +106,16 @@
   },
   {
     "id": "favor-regen-base",
-    "value": 1024,
+    "value": 256,
     "unit": "fp",
-    "gloss": "Favor a universe regenerates per world tick with no worship at all. Non-zero deliberately: a zero floor makes a bad start unrecoverable and produces long, uninformative Monte Carlo runs.",
+    "gloss": "Favor a universe regenerates per world tick with no worship at all. Non-zero deliberately: a zero floor makes a bad start unrecoverable. Quartered from fp(1) with favor-per-worship (playtest round 4): favor sat at its cap after year 5 in every lobby universe and a god acting every 6 months spent 6% of it; now 54-70% (scripts/s15-economy-probe.mjs).",
     "tuningStatus": "untuned"
   },
   {
     "id": "favor-per-worship",
-    "value": 512,
+    "value": 128,
     "unit": "fp",
-    "gloss": "Favor per unit of worship per world tick. With the ceiling above, a maximally worshipped universe regenerates 5.5\u00d7 a bare one. Lowered third in the worshipSnowball retune order.",
+    "gloss": "Favor per unit of worship per world tick. With the ceiling above, a maximally worshipped universe regenerates 5.5\u00d7 a bare one. Quartered with favor-regen-base so the ratio holds (playtest round 4: favor was never a constraint). Lowered third in the worshipSnowball retune order.",
     "tuningStatus": "untuned"
   },
   {
@@ -543,6 +543,13 @@
     "value": 4096,
     "unit": "fp",
     "gloss": "Cost of unmaking a ruleset change made during a raid, as a multiple of the larger of the ordinary action price and what the change cost inside the engagement. fp(4) -- 'substantially more', four rather than two because the decision should sometimes stand unwanted: a doubling is an inconvenience, a quadrupling is a reason to keep a constitution you regret. The first favor drain attached to a decision rather than to existing.",
+    "tuningStatus": "untuned"
+  },
+  {
+    "id": "raid-cooldown-ticks",
+    "value": 48,
+    "unit": "ticks",
+    "gloss": "World ticks after a paid portal before action 14 may be taken again \u2014 four world years. Vision \u00a78 makes a raid's cost tempo: a raid pauses world time for both sides. A live lobby resolves a peer raid inside one tick, so that pause never happened and one god raided 46 times in a century (playtest round 4). This is the tempo, charged as a wait.",
     "tuningStatus": "untuned"
   }
 ]

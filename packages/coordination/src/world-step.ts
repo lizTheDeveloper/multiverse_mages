@@ -256,6 +256,8 @@ import {
   establishOrRenewWorking,
   sweepLapsedWorkings,
 } from './standing-workings.js';
+import type { TendedFaucetWeights, TendedOutcome } from './tended-faucets.js';
+import { NO_TENDING, tendedYield, thresholdKeepers } from './tended-faucets.js';
 
 /** `fp(1.0)`. `buildProgress` at which a university is complete (`contracts.md` §1.4). */
 const FP_ONE = FP_UNIT;
@@ -518,6 +520,13 @@ export interface WorldStepDeps {
    * `material-economy`'s sink for `labor`. Required for the same reason.
    */
   readonly hiredLabour: HiredLabourWeights;
+  /**
+   * The two faucets every universe has — passage from the mages who keep a
+   * portal threshold, insight from research the archive paid for. See
+   * `tended-faucets.ts`. Optional: absent, the world makes neither, which is
+   * every hand-built test world and the build before playtest round 4.
+   */
+  readonly tended?: TendedFaucetWeights | undefined;
   /**
    * What share of a laborer's month is hands for hire rather than work on the
    * land. Read from content.
@@ -1221,6 +1230,14 @@ export interface WorldStepReport {
   readonly materialsApplied: Fixed;
   /** The same, split by kind, so a stone universe reads apart from a fed one. */
   readonly appliedByKind: MaterialAmounts;
+  /**
+   * What the faucets every universe has made this tick, by kind, `fp`:
+   * passage from the threshold's keepers, insight from research paid for. See
+   * `tended-faucets.ts`. Zero on a world built without them.
+   */
+  readonly tendedByKind: MaterialAmounts;
+  /** Living mages keeping a portal threshold — holding a permitted portal node usably. */
+  readonly thresholdKeepers: number;
   /** Mages who spent this month applying magic rather than studying it. */
   readonly magesApplying: number;
   /** Food those mages ate, `fp`. Part of this tick's subsistence claim. */
@@ -1889,6 +1906,20 @@ export function worldSystem(
       const applicationRationsOwed = applicationRations(work.applyingMages, deps.application);
       for (const kind of MATERIAL_KINDS) stock[kind] += work.applied[kind];
 
+      // ---- 5b. The faucets every universe has -------------------------------
+      // Passage from the threshold's keepers, insight from research paid for.
+      // Settled beside the applied channel and for its reason — a month has to
+      // be spent before it has made anything — and in the ledger as a faucet of
+      // its own below, so the conservation assertion covers it.
+      const tending: TendedOutcome =
+        deps.tended === undefined
+          ? NO_TENDING
+          : (() => {
+              const keepers = thresholdKeepers(state, ruleset, deps.cells, deps.tended);
+              return { keepers, yielded: tendedYield(keepers, work.researchMonthsGranted, deps.tended) };
+            })();
+      for (const kind of MATERIAL_KINDS) stock[kind] += tending.yielded[kind];
+
       // ---- 6. Autonomy -------------------------------------------------------
       // What a mage believes the treasury holds when she chooses a goal.
       //
@@ -2136,8 +2167,9 @@ export function worldSystem(
       const faucet = zeroAmounts();
       const sink = zeroAmounts();
       for (const kind of MATERIAL_KINDS) {
-        // Faucets: the land (phase 1) and applied magic (phase 5a).
-        faucet[kind] = produced[kind] + work.applied[kind];
+        // Faucets: the land (phase 1), applied magic (phase 5a) and the
+        // tended faucets (phase 5b).
+        faucet[kind] = produced[kind] + work.applied[kind] + tending.yielded[kind];
         // Sinks: every claimant paid in phase 9, plus the ceiling spill. A
         // spill is on this side because `applyStockCeiling` **returns** what did
         // not fit rather than dropping it; a silent truncation would read here
@@ -2324,6 +2356,8 @@ export function worldSystem(
         materialsApplied: totalAmount(work.applied),
         appliedByKind: work.applied,
         magesApplying: work.applyingMages,
+        tendedByKind: tending.yielded,
+        thresholdKeepers: tending.keepers,
         applicationRations: applicationRationsOwed,
         effortsInFlight: efforts.size,
         libraryUpkeepOwed: upkeepOwed,
@@ -2973,6 +3007,8 @@ interface WorkPhaseOutcome {
   readonly teachingShare: Fixed;
   /** Mages who spent the month applying magic. What the rations are owed for. */
   readonly applyingMages: number;
+  /** Research mage-months the archive paid for, `fp` — what `tended-faucets.ts` reads. */
+  readonly researchMonthsGranted: Fixed;
   /** Mages whose `universityId` changed this tick. */
   readonly magesAffiliated: number;
   /** Mages whose first-choice university had no free seat. */
@@ -3207,6 +3243,7 @@ function spendTheMonth(
     workingsRenewed,
     applied,
     applyingMages,
+    researchMonthsGranted: grantedMonths,
     magesAffiliated: affiliation.moved,
     affiliationsRefused: affiliation.refused,
     monthsByGoal,

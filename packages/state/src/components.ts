@@ -768,6 +768,38 @@ export interface BarPhaseRecord {
 
 export const BAR_PHASE_FIELDS_MATCH: KeysMatch<BarPhaseRecord, typeof BAR_PHASE> = true;
 
+/**
+ * When a universe's god may next open a portal (world-schema revision 14).
+ *
+ * `vision.md` §8 makes a raid's cost **tempo**: entering one pauses world time
+ * for both participants while everyone else keeps researching. A live lobby
+ * resolves a peer raid inside one world tick, so that pause never happened and
+ * the attacker paid favor and passage and nothing else — playtest round 4 saw
+ * one god raid 46 times in a hundred years. This row is the tempo, charged as a
+ * wait: action 14 writes `readyTick = worldTick + raid-cooldown-ticks` when it
+ * is paid for, and the mask and the resolver both refuse the action strictly
+ * before it.
+ *
+ * Its own component rather than a `god-state` field for `bar-phase`'s reason:
+ * an appended component is an empty section on an older save, where an added
+ * field reshapes a section every save already carries. **No row means ready**,
+ * which is what every save written before revision 14 describes — none of them
+ * had a cooldown to be inside.
+ */
+export const PORTAL_RECHARGE = {
+  name: 'portal-recharge',
+  fields: {
+    readyTick: 'i32',
+  },
+} as const satisfies ComponentSpec<ComponentFields>;
+
+export interface PortalRechargeRecord {
+  /** The first world tick on which action 14 may be taken again. */
+  readyTick: Tick;
+}
+
+export const PORTAL_RECHARGE_FIELDS_MATCH: KeysMatch<PortalRechargeRecord, typeof PORTAL_RECHARGE> = true;
+
 // ---------------------------------------------------------------------------
 // §1.2 Mage. §1.3 Populace cohort.
 // ---------------------------------------------------------------------------
@@ -1547,6 +1579,10 @@ export const WORLD_COMPONENTS = [
   // that one gates an effect on **who** still holds it, this one on **how long
   // ago** it was cast — and whoever merges it takes the next free number.
   STANDING_WORKING,
+  // Revision 14, appended for the reason every line above gives. `portal-recharge`
+  // is universe state and reads as if it belonged beside `BAR_PHASE`; section
+  // order is this list's order, so it goes last.
+  PORTAL_RECHARGE,
 ] as const satisfies readonly ComponentSpec<ComponentFields>[];
 
 /** Engagement-scale components, in snapshot order. */

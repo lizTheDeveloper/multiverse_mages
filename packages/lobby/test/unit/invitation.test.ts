@@ -31,6 +31,9 @@ import { UniverseHost, type UniverseConfig } from '../../src/universe-host.js';
 
 const shipped = referenceContent();
 const doc = frameDocument(shipped, 'test');
+const RAIDER = Number(
+  Object.entries((doc.content() as { mageRoles: Record<string, string> }).mageRoles).find(([, n]) => n === 'raider')![0],
+);
 const speciesId = (id: string): number => shipped.registry.species.find((e) => e.record.id === id)!.contentId;
 
 /** Holds a portal node from the first tick: `rego-limen` is the portal's cell. */
@@ -71,6 +74,23 @@ async function invitingEveryMonth(
   const seen = new Set<number>(self.speciesAlive() ?? []);
   const offers = new Set<number>();
   let admitted = 0;
+  // Name the founding portal-holder a raider first, so her readiness drill
+  // holds her portal mastery up. At the raid economy's quartered favor
+  // regeneration (playtest round 4) the 24-favor invitation is affordable only
+  // around tick 63, and an undrilled founding portal node decays shut by ~72:
+  // without the drill the gate and the price never overlap and the positive
+  // control below would fail for want of favor, not for the roster.
+  self.tick();
+  mate.tick();
+  const holder = (self.frames[self.frames.length - 1] as { portal?: { holders: number[][] } }).portal?.holders[0]?.[0];
+  const assign = (self.session.candidates().get(GOD_ACTION.assignRole) ?? []).findIndex(
+    (c) => c.params[0] === holder && c.params[1] === RAIDER,
+  );
+  if (assign >= 0) {
+    self.enqueue({ kind: GOD_ACTION.assignRole, params: [assign] });
+    self.tick();
+    mate.tick();
+  }
   for (let t = 0; t < ticks && self.isAlive; t += 1) {
     for (const id of offered(self)) offers.add(id);
     const queued = self.enqueue({ kind: GOD_ACTION.inviteScholar, params: [0] });

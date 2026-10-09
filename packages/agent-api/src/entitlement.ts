@@ -371,6 +371,13 @@ export const TRAIT_CLASSIFICATION: Readonly<
     uneaseUntilTick: undecided(),
     lastConstitutionalTick: undecided(),
   },
+  // The raid cooldown (world-schema revision 14). `undecided()` on `bar-phase`'s
+  // argument: it gates the god's next portal and the agent is subject to it
+  // through the mask without a slot showing the tick. The page reads it from
+  // the portal standing, a projection that reaches no slot.
+  'portal-recharge': {
+    readyTick: undecided(),
+  },
   // `raid-engagement.md` §1's mark on a ruleset change made during a raid. All
   // five `undecided()`, on `grant-budget`'s and `bar-phase`'s argument: the mark
   // sets what unmaking the change will cost, and the agent is subject to that

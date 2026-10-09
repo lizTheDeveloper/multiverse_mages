@@ -97,6 +97,7 @@ import {
   TERMINAL_REASON,
   captureRuleset,
   findUniverse,
+  portalReadyTick,
   readUniverse,
 } from '@mm/state';
 
@@ -352,6 +353,7 @@ export function raidSystem(deps: RaidSystemDeps): System {
   const { content, constants } = deps;
   const targets = deps.peers?.seats ?? portalTargetIds(constants);
   const portalCost = content.deps.god?.content.costs.byAction[OPEN_PORTAL_ACTION] ?? 0;
+  const cooldown = Math.max(content.deps.god?.content.constants.raidCooldownTicks ?? 0, 0);
 
   return {
     name: 'raids',
@@ -423,6 +425,12 @@ export function raidSystem(deps: RaidSystemDeps): System {
           heldOf: (mage: EntityHandle) => heldInstancesOf(local, mage),
         });
         if (!gate.open) return;
+        // **Paid this tick**, witnessed by the recharge row `portalPlan` writes
+        // inside its paid apply (`raid-cooldown-ticks`). The mask and the
+        // resolver read the same row, so they agree; this is the third reader,
+        // and it closes the other direction of "never charge for nothing" —
+        // an action 14 the resolver refused must not open a raid for free.
+        if (cooldown > 0 && portalReadyTick(ctx.state, universe) !== worldTick + cooldown) return;
       }
 
       // Derived, never drawn from a stream that another subsystem shares, and

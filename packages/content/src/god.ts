@@ -111,6 +111,7 @@ export const REQUIRED_GOD_CONSTANTS: readonly string[] = Object.freeze([
   'prestige-per-tier',
   'prestige-per-worship-tier',
   'prestige-retention',
+  'raid-cooldown-ticks',
   'stagnation-health-floor',
   'stagnation-mageless-ticks',
   'stagnation-neglect-ticks',

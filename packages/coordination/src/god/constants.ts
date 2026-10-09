@@ -105,6 +105,12 @@ export interface GodConstants {
    * only favor drain in the game attached to a decision rather than to existing.
    */
   readonly midRaidRevertMultiplier: Fp;
+  /**
+   * World ticks after a paid portal before action 14 may be taken again —
+   * `vision.md` §8's tempo, charged as a wait because a live lobby resolves a
+   * raid inside one world tick. Written to `portal-recharge` by `portalPlan`.
+   */
+  readonly raidCooldownTicks: number;
 
   // The timing rule. `sound-design.md` §5.2's eight bars — see `timing.ts`.
   readonly uneaseBars: number;
@@ -291,6 +297,7 @@ export function resolveGodConstants(registry: ContentRegistry): GodConstants {
     hysteresisDecayTicks: value('hysteresis-decay-ticks'),
     hysteresisStep: value('hysteresis-step'),
     midRaidRevertMultiplier: value('mid-raid-revert-multiplier'),
+    raidCooldownTicks: value('raid-cooldown-ticks'),
 
     uneaseBars: value('unease-bars'),
     uneaseStep: value('unease-step'),

@@ -91,6 +91,7 @@ import {
   MATERIAL_GRADE,
   MATERIAL_STOCK,
   MID_RAID_CHANGE,
+  PORTAL_RECHARGE,
   STANDING_WORKING,
   TERRITORY_HOLDING,
   UNIVERSE,
@@ -198,7 +199,7 @@ import {
  * **Append; never renumber.** A revision number is what a migration step is
  * keyed on, so reusing one silently applies the wrong repair to a save.
  */
-export const WORLD_SCHEMA_VERSION = 13;
+export const WORLD_SCHEMA_VERSION = 14;
 
 /**
  * The world-schema revision an envelope was written by.
@@ -216,6 +217,9 @@ export const WORLD_SCHEMA_VERSION = 13;
  */
 export function worldSchemaVersionOf(envelope: SnapshotEnvelope): number {
   const carried = new Set(envelope.components.map((component) => component.name));
+  // **Revision 14's marker is `portal-recharge`, and it leads the chain** —
+  // newest marker first, for the reason the note under it gives.
+  if (carried.has(PORTAL_RECHARGE.name)) return 14;
   // **Revision 13's marker is `standing-working`, and it leads the chain** —
   // `docs/design/sim-rigor-2026-08-15.md` §4.4 step 3, newest marker first. A
   // revision-13 envelope also carries `knowledge-fidelity` and every marker
@@ -946,6 +950,24 @@ export const addStandingWorking: WorldSchemaMigration = {
   },
 };
 
+/**
+ * Revision 13 → 14: append an empty `portal-recharge` section.
+ *
+ * Empty is the whole repair. No row means the portal is ready, and every save
+ * written before revision 14 was written by a build with no raid cooldown, so
+ * none of them was inside one.
+ */
+export const addPortalRecharge: WorldSchemaMigration = {
+  from: 13,
+  to: 14,
+  migrate(envelope) {
+    return {
+      ...envelope,
+      components: [...envelope.components, emptySection(PORTAL_RECHARGE)],
+    };
+  },
+};
+
 /** Every step this build knows, ascending by source revision. */
 export const WORLD_SCHEMA_MIGRATIONS: readonly WorldSchemaMigration[] = [
   addGoalCommitment,
@@ -960,6 +982,7 @@ export const WORLD_SCHEMA_MIGRATIONS: readonly WorldSchemaMigration[] = [
   addKnowledgeFidelity,
   addMaterialGrade,
   addStandingWorking,
+  addPortalRecharge,
 ];
 
 /**

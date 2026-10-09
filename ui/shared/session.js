@@ -172,7 +172,7 @@ const FLOW_BASKETS = ['opening', 'closing', 'faucet', 'sink', 'land', 'applied',
  * before the world tick reads its opening stock — so a page missing it is
  * missing an inflow arrow, not an unbalanced ledger.
  */
-const FLOW_OPTIONAL_BASKETS = ['godSpend'];
+const FLOW_OPTIONAL_BASKETS = ['godSpend', 'tended'];
 
 /** The scalar pressures, each fp. */
 const FLOW_PRESSURES = [
@@ -190,6 +190,13 @@ const FLOW_PRESSURES = [
 
 /** The counts beside them, which are counts and are not fp. */
 const FLOW_PRODUCERS = ['magesApplying', 'economicNodes', 'buildRateSources'];
+
+/**
+ * Counts a frame may carry and need not: `thresholdKeepers` arrived with the
+ * tended faucets (playtest round 4), after recordings that lack it. Present is
+ * copied, absent is absent — not `0`, which would claim nobody keeps a threshold.
+ */
+const FLOW_OPTIONAL_PRODUCERS = ['thresholdKeepers'];
 
 const finiteNumber = (value) => typeof value === 'number' && Number.isFinite(value);
 
@@ -665,7 +672,10 @@ class Frame {
       pressure: Object.fromEntries(FLOW_PRESSURES.map((f) => [f, units(raw.pressure[f])])),
       /* Counts of things, so they stay integers. `units` on a headcount would
          report sixteen mages as 0.015625. */
-      producers: Object.fromEntries(FLOW_PRODUCERS.map((f) => [f, raw.producers[f]])),
+      producers: Object.fromEntries([
+        ...FLOW_PRODUCERS.map((f) => [f, raw.producers[f]]),
+        ...FLOW_OPTIONAL_PRODUCERS.filter((f) => finiteNumber(raw.producers[f])).map((f) => [f, raw.producers[f]]),
+      ]),
     };
   }
 
