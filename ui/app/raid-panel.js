@@ -252,48 +252,128 @@ export function mountRaids(o) {
   }
 
   // ------------------------------------------------------------- report cards
+  /*
+   * Reports are a queue, shown one at a time ("1 of N"). Playtest round 4:
+   * two inbound raids stacked two cards over the middle of the screen, on top
+   * of the Raids tab's seat buttons, so the player could not counter-raid; and
+   * dismissing the top one revealed an identical one beneath, which read as
+   * "× does nothing". Now:
+   *
+   * - one card, docked inside the Raids tab above the seats when that tab is
+   *   open, and a small card in the bottom-right corner on every other tab —
+   *   never over a seat's Raid button;
+   * - × or Esc dismisses the shown report and brings up the next;
+   * - "Acknowledge all" empties the queue;
+   * - an inbound dismissal is remembered by raid id across reloads, as before.
+   *   Every report is also in the Raid history list and the activity feed, so
+   *   dismissing one loses nothing.
+   */
   function card(record, perspective, label, key) {
     const d = describeRaid(record, perspective, label);
-    const node = h('section', {
-      className: `raid-card${d.inbound ? ' inbound' : ''}`,
-      role: d.inbound ? 'alert' : 'status',
-      'aria-label': d.title,
-    },
-    h('div', { className: 'raid-card-head' },
-      h('span', { className: 'raid-card-title' }, d.inbound ? `⚠ ${d.title}` : d.title),
-      h('button', { type: 'button', className: 'raid-card-close', title: 'Dismiss this report', 'aria-label': 'Dismiss', onclick: () => dismiss(key) }, '×')),
-    h('div', { className: `raid-card-outcome ${d.empty ? 'empty' : d.weWon ? 'won' : 'lost'}` }, d.outcome),
-    h('dl', {}, d.rows.map(([k, v]) => [h('dt', {}, k), h('dd', {}, v)])));
-    model.cards.push({ key, node, inbound: d.inbound });
-    reports.append(node);
-    alarm();
+    model.cards.push({
+      key,
+      inbound: d.inbound,
+      warn: false,
+      title: d.inbound ? `⚠ ${d.title}` : d.title,
+      body: () => [
+        h('div', { className: `raid-card-outcome ${d.empty ? 'empty' : d.weWon ? 'won' : 'lost'}` }, d.outcome),
+        h('dl', {}, d.rows.map(([k, v]) => [h('dt', {}, k), h('dd', {}, v)])),
+      ],
+    });
+    renderReports();
   }
 
   function noRaidCard(pending) {
-    const key = `none:${pending.tick}`;
-    const node = h('section', { className: 'raid-card warn', role: 'status' },
-      h('div', { className: 'raid-card-head' },
-        h('span', { className: 'raid-card-title' }, 'No raid opened'),
-        h('button', { type: 'button', className: 'raid-card-close', 'aria-label': 'Dismiss', onclick: () => dismiss(key) }, '×')),
-      h('div', {}, `The server admitted your portal to seat ${pending.seat} in year ${Math.floor(pending.tick / 12)}, but no raid was recorded. `
+    model.cards.push({
+      key: `none:${pending.tick}`,
+      inbound: false,
+      warn: true,
+      title: 'No raid opened',
+      body: () => [h('div', {}, `The server admitted your portal to seat ${pending.seat} in year ${Math.floor(pending.tick / 12)}, but no raid was recorded. `
         + 'The portal also needs a mage who knows a portal node well enough to cast it — see Portal knowledge on the Raids tab for who holds one and at what mastery — '
-        + 'and a raider to send. Check your favor and passage: the price may have been taken.'));
-    model.cards.push({ key, node, inbound: false });
-    reports.append(node);
+        + 'and a raider to send. Check your favor and passage: the price may have been taken.')],
+    });
+    renderReports();
+  }
+
+  function remember(key) {
+    if (!key.startsWith('in:')) return;
+    // Another tab of this universe may have dismissed others since this one loaded.
+    for (const k of loadSeen(dismissedKey)) dismissed.add(k);
+    dismissed.add(key);
+    saveSeen(dismissedKey, dismissed);
   }
 
   function dismiss(key) {
     const i = model.cards.findIndex((c) => c.key === key);
-    if (i >= 0) {
-      model.cards[i].node.remove();
-      model.cards.splice(i, 1);
-    }
-    if (key.startsWith('in:')) {
-      dismissed.add(key);
-      saveSeen(dismissedKey, dismissed);
-    }
-    alarm();
+    if (i >= 0) model.cards.splice(i, 1);
+    remember(key);
+    renderReports();
   }
+
+  function dismissAll() {
+    for (const c of model.cards.splice(0)) remember(c.key);
+    renderReports();
+  }
+
+  /** Docked in the Raids tab when it is open; a corner card otherwise. */
+  function placeReports() {
+    const panel = host.closest('.center-panel');
+    const docked = panel?.classList.contains('active') ?? false;
+    if (docked && reports.parentElement !== panel) panel.prepend(reports);
+    if (!docked && reports.parentElement !== document.body) document.body.append(reports);
+    reports.classList.toggle('docked', docked);
+  }
+
+  let shownKey = null;
+  function renderReports() {
+    placeReports();
+    const c = model.cards[0];
+    alarm();
+    if (c === undefined) {
+      shownKey = null;
+      reports.replaceChildren();
+      reports.hidden = true;
+      return;
+    }
+    reports.hidden = false;
+    const n = model.cards.length;
+    const sig = `${c.key}|${n}`;
+    if (shownKey === sig) return;
+    const refocus = reports.contains(document.activeElement);
+    shownKey = sig;
+    const close = h('button', {
+      type: 'button', className: 'raid-card-close', title: 'Dismiss this report (Esc)', 'aria-label': 'Dismiss this report', onclick: () => dismiss(c.key),
+    }, '×');
+    const node = h('section', {
+      className: `raid-card${c.inbound ? ' inbound' : ''}${c.warn ? ' warn' : ''}`,
+      role: c.inbound ? 'alert' : 'status',
+      'aria-label': c.title,
+      'data-key': c.key,
+    },
+    h('div', { className: 'raid-card-head' },
+      h('span', { className: 'raid-card-title' }, c.title),
+      h('span', { className: 'raid-card-count', title: 'Reports waiting to be read' }, `1 of ${n}`),
+      close),
+    ...c.body(),
+    h('div', { className: 'raid-card-foot' },
+      h('span', { className: 'raid-card-hint' }, 'Esc dismisses · every report stays in Raid history'),
+      n > 1 ? h('button', { type: 'button', className: 'raid-card-all', onclick: dismissAll }, `Acknowledge all ${n}`) : null));
+    reports.replaceChildren(node);
+    if (refocus) close.focus();
+  }
+
+  // Esc dismisses the shown report — unless a dialog (a confirm step, the
+  // guide) is open, which Esc belongs to first, or the player is typing.
+  window.addEventListener('keydown', (ev) => {
+    if (ev.key !== 'Escape' || model.cards.length === 0 || ev.defaultPrevented) return;
+    if (document.querySelector('.confirm-modal')) return;
+    const help = document.getElementById('help-modal');
+    if (help && !help.hidden) return;
+    const t = ev.target;
+    if (t instanceof HTMLElement && (t.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/u.test(t.tagName))) return;
+    dismiss(model.cards[0].key);
+  }, true); // capture: runs before the guide's own Esc handler closes it
 
   function alarm() {
     const n = model.cards.filter((c) => c.inbound).length;
@@ -303,6 +383,7 @@ export function mountRaids(o) {
 
   // ------------------------------------------------------------- the panel
   function paint() {
+    placeReports();
     const f = session.last();
     if (!f) return;
     const visible = host.closest('.center-panel')?.classList.contains('active') ?? true;
@@ -538,6 +619,8 @@ export function mountRaids(o) {
 
   return {
     paint,
+    /** Re-docks the report card after a tab change (paint() runs only on the Raids tab). */
+    place: placeReports,
     /**
      * Where action 16 could fetch each species from: `{ loaded, seatCount,
      * sourceOf(speciesId) }`, where `sourceOf` gives the lowest seat whose

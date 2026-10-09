@@ -375,11 +375,20 @@ describe('Lobby', () => {
     expect(attacker.log.find((r) => r.outbound)!.target).toEqual({ universeId: b, name: 'Quiet Fen', species: 'Human' });
 
     const defender = await getJson<{
-      inbound: { fromUniverseId: string; fromName: string; record: { outbound: boolean } }[];
+      inbound: {
+        fromUniverseId: string;
+        fromName: string;
+        record: { outbound: boolean; victor: number; objectives: { kind: number; status: number }[] };
+      }[];
     }>(`/u/${b}/live/raids`);
     expect(defender.inbound).toHaveLength(1);
     expect(defender.inbound[0]!.fromUniverseId).toBe(a);
     expect(defender.inbound[0]!.fromName).toBe('The Ember Court');
     expect(defender.inbound[0]!.record.outbound).toBe(true);
+    // What was taken, so the defender's report can say why the victor is who
+    // it is (playtest round 4: two withdrawals read as opposite verdicts).
+    const objectives = defender.inbound[0]!.record.objectives;
+    expect(objectives.length).toBeGreaterThan(0);
+    for (const o of objectives) expect(o).toEqual({ kind: expect.any(Number), status: expect.any(Number) });
   }, 120_000);
 });

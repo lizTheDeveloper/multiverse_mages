@@ -159,6 +159,18 @@ export interface RaidRecord {
    */
   readonly nodesTakenByAttacker: number;
   /**
+   * Every objective on the field and how it ended — `OBJECTIVE_KIND` and
+   * `OBJECTIVE_STATUS` values, in the raid's own order. Raid-relative.
+   *
+   * The victor is decided by objective value taken, not by nodes, and not by
+   * how the raid ended: an attacker who captures a university and walks home
+   * with no new node has won. Without this a report could say only *that* the
+   * attackers won, and two withdrawals with zero casualties and zero nodes
+   * read as one raid won and one lost for no visible reason (playtest round 4).
+   * Carried as the two enum values only; `value` is a tuning number.
+   */
+  readonly objectives: readonly { readonly kind: number; readonly status: number }[];
+  /**
    * Mid-raid ruleset changes this god actually made, and the favor they cost.
    *
    * The seam's own instrument. Unmasking actions 1–4 and routing them to
@@ -627,6 +639,7 @@ function resolveOneRaid(input: {
     raidersWithdrawn: outcome.raidersWithdrawn,
     raidersStranded: outcome.raidersStranded,
     nodesTakenByAttacker: countOf(applied.nodesGainedByRaider),
+    objectives: outcome.objectives.map((o) => ({ kind: o.kind, status: o.status })),
     // `nodesLostByHost` is the host's loss and `nodesGainedByRaider` the
     // attacker's gain, both computed by the write-back rather than by
     // `resolveRaid`, which hardcodes both to `[]`.

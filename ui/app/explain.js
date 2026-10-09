@@ -49,6 +49,11 @@ export const RAID_END_REASON_TEXT = Object.freeze({
   5: { id: 'raidersWithdrew', text: 'the raiders withdrew through the portal' },
 });
 
+/** `OBJECTIVE_KIND` in packages/rules-raid/src/objectives.ts, as a noun. */
+export const RAID_OBJECTIVE_KIND_NAME = Object.freeze({ 1: 'library', 2: 'university', 3: 'archmage' });
+/** `OBJECTIVE_STATUS` in packages/state/src/enums.ts, as a past participle. `held` (0) is untaken. */
+export const RAID_OBJECTIVE_STATUS_NAME = Object.freeze({ 0: 'held', 1: 'captured', 2: 'looted', 3: 'destroyed' });
+
 /** The cell the portal gate reads (`PORTAL_CELL_ID` in packages/rules-raid/src/portal.ts). */
 export const PORTAL_CELL = 'rego-limen';
 
@@ -521,18 +526,21 @@ export function describeRaid(record, perspective, otherLabel) {
   // A portal with nobody sent through it ends "side eliminated" on the first
   // tick, which read as a victory over raiders who never existed.
   const empty = record.raidersFielded === 0;
+  const taken = takenObjectives(record, weAttacked ? 'their' : 'your');
   const outcome = empty
     ? weAttacked
       ? 'You opened a portal but sent nobody through — no raider of yours was ready, so nothing happened beyond the portal’s cost.'
       : 'They opened a portal but sent nobody through — nothing happened.'
-    : `${weWon ? 'You won' : 'You lost'}: the ${attackerWon ? 'attackers' : 'defenders'} carried it, because ${reason.text}.`;
+    : `${weWon ? 'You won' : 'You lost'}: ${raidVerdict(record, attackerWon, taken, weAttacked)}`;
   const rows = [
     ['when', `year ${year} (tick ${record.worldTick}), ${record.engagementTicks} engagement ticks`],
+    ['how it ended', reason.text],
     [weAttacked ? 'your raiders' : 'their raiders',
       `${record.raidersFielded} fielded · ${record.raidersWithdrawn} withdrew home · ${record.raidersStranded} stranded`],
     ['combatants lost', ours === undefined ? 'not in the record'
       : `yours ${ours} · theirs ${theirs}`],
-    ['nodes the attackers took', String(record.nodesTakenByAttacker)],
+    ['objectives taken', taken === null ? 'not in the record' : taken.length === 0 ? 'none' : taken.join(', ')],
+    ['nodes new to the attackers', String(record.nodesTakenByAttacker)],
   ];
   if (weAttacked) {
     rows.push(['your mages lost for good', String(record.localCasualties)]);
@@ -543,6 +551,62 @@ export function describeRaid(record, perspective, otherLabel) {
     rows.push(['your mages lost for good', 'not in the attacker\'s record — watch your population']);
   }
   return { title, outcome, reasonId: reason.id, weWon, empty, rows, inbound: !weAttacked };
+}
+
+/**
+ * The objectives a raid took, as `"your library (looted)"`, or `null` when the
+ * record is from a server that did not carry them.
+ */
+function takenObjectives(record, whose) {
+  if (!Array.isArray(record.objectives)) return null;
+  return record.objectives
+    .filter((o) => o && o.status !== 0)
+    .map((o) => `${whose} ${RAID_OBJECTIVE_KIND_NAME[o.kind] ?? `objective of kind ${o.kind}`} (${RAID_OBJECTIVE_STATUS_NAME[o.status] ?? `status ${o.status}`})`);
+}
+
+/**
+ * Why the server's victor is who it is, in words that follow the record.
+ *
+ * The victor is not decided by how the raid ended. `rules-raid`'s `victorOf`
+ * gives the attackers the raid when the objective value they took (captured,
+ * looted or destroyed) reaches a threshold of what was on the field, and the
+ * defenders otherwise — so a withdrawal can be either side's win, and a report
+ * that said "the attackers carried it, because the raiders withdrew" for one
+ * raid and "the defenders carried it, because the raiders withdrew" for the
+ * next read as a contradiction (playtest round 4). This says what was taken,
+ * then how it ended, and never which side won on its own: that is `victor`'s.
+ */
+function raidVerdict(record, attackerWon, taken, weAttacked) {
+  const they = weAttacked ? 'your raiders' : 'the raiders';
+  const nodes = record.nodesTakenByAttacker;
+  const list = taken === null || taken.length === 0
+    ? null
+    : taken.length === 1 ? taken[0] : `${taken.slice(0, -1).join(', ')} and ${taken[taken.length - 1]}`;
+  const carried = nodes > 0 ? `${nodes} node${nodes === 1 ? '' : 's'} new to them` : null;
+  const what = [list, carried].filter((x) => x !== null).join(', carrying ') || null;
+  const withdrew = record.reason === 5;
+  const ended = `The raid ended because ${RAID_END_REASON_TEXT[record.reason]?.text ?? 'of an end reason this page does not know'}.`;
+  if (attackerWon) {
+    if (what === null) {
+      return withdrew
+        ? `${they} took enough of what they came for to count as a win, and withdrew through the portal with it.`
+        : `${they} took enough of what they came for to count as a win. ${ended}`;
+    }
+    return withdrew
+      ? `${they} took what they came for — ${what} — and withdrew through the portal with it.`
+      : `${they} took what they came for: ${what}. ${ended}`;
+  }
+  if (taken !== null && taken.length === 0 && nodes === 0) {
+    return withdrew ? `${they} withdrew through the portal empty-handed.` : `${they} took nothing. ${ended}`;
+  }
+  if (what === null) {
+    return withdrew
+      ? `${they} did not take enough to count as a win, and withdrew through the portal.`
+      : `${they} did not take enough to count as a win. ${ended}`;
+  }
+  return withdrew
+    ? `${they} took too little to count as a win — only ${what} — and withdrew through the portal.`
+    : `${they} took too little to count as a win: only ${what}. ${ended}`;
 }
 
 /** A one-line feed entry for a raid. Only numbers and a hex label. */
