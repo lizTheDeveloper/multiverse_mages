@@ -44,6 +44,8 @@ export {
   explicitOpeningAxes,
   foundingCandidates,
   primitiveNamed,
+  RAID_KIT_PRIMITIVE_NAMES,
+  raidKitPrimitivesOf,
   scribingTraditionId,
   seededOpeningAxes,
   shippedContent,
