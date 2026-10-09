@@ -33,7 +33,7 @@ import { RAID_END_REASON, readRaidTuning } from '@mm/rules-raid';
 import { BASE_MAX_VIGOR } from '@mm/rules-world';
 import { RAID_SIDE } from '@mm/state';
 
-import { playPeerPair, playPeerPairAsync, referenceContent, type PeerRaidMeasurement } from '@mm/scenario';
+import { playPeerPair, referenceContent, type PeerRaidMeasurement } from '@mm/scenario';
 
 const content = referenceContent();
 const SEED0 = 7000;
@@ -97,7 +97,7 @@ describe('live peer raids after a preparation window (seeds 7000–7005)', () =>
       it(
         `plays pair ${String(i)} under ${arm.attacker}`,
         async () => {
-          raids.push(...(await playPeerPairAsync(content, arm, SEED0 + 2 * i, SEED0 + 2 * i + 1)).raids);
+          raids.push(...(await playPeerPair(content, arm, SEED0 + 2 * i, SEED0 + 2 * i + 1)).raids);
         },
         SLOW,
       );
@@ -127,7 +127,7 @@ describe('live peer raids after a preparation window (seeds 7000–7005)', () =>
 
   it(
     'reads casualties under the lethal degenerate end (positive control)',
-    () => {
+    async () => {
       const lethal = contentWith(
         new Map([
           ['cast-vigor-base', 1],
@@ -136,7 +136,7 @@ describe('live peer raids after a preparation window (seeds 7000–7005)', () =>
           ['combatant-hp-per-tier', 1],
         ]),
       );
-      const { raids } = playPeerPair(lethal, { mode: 'peer', prep: 0, attacker: 'fresh', defender: 'idle' }, SEED0, SEED0 + 1);
+      const { raids } = await playPeerPair(lethal, { mode: 'peer', prep: 0, attacker: 'fresh', defender: 'idle' }, SEED0, SEED0 + 1);
       expect(raids).toHaveLength(1);
       const r = raids[0] as PeerRaidMeasurement;
       expect(r.attackAttempts).toBeGreaterThan(0);

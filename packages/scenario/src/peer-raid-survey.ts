@@ -244,32 +244,18 @@ interface Live {
  * `arm.raids` (default one), and none if the attacker never opened a portal
  * inside the window.
  */
-export function playPeerPair(
-  content: ReferenceContent,
-  arm: PeerSurveyArm,
-  seedA: number,
-  seedB: number,
-): PeerPairResult {
-  const steps = peerPairSteps(content, arm, seedA, seedB);
-  for (;;) {
-    const next = steps.next();
-    if (next.done === true) return next.value;
-  }
-}
-
-/**
- * {@link playPeerPair}, handing the event loop back once a world year.
- *
- * The repository's convention for long arms (`annihilation.ts`): a test runner
- * worker that runs an unbroken synchronous minute cannot answer vitest's RPC
- * and reports a timeout that is not a test failure. Same pair, same result.
- */
-export async function playPeerPairAsync(
+export async function playPeerPair(
   content: ReferenceContent,
   arm: PeerSurveyArm,
   seedA: number,
   seedB: number,
 ): Promise<PeerPairResult> {
+  // One implementation, driven one way. The pair runs as a generator that
+  // yields once a world tick, and this hands the event loop back once a world
+  // year — the repository's convention for long arms (`annihilation.ts`). A
+  // worker that runs an unbroken synchronous minute cannot answer vitest's RPC
+  // and reports a timeout that is not a test failure (measured: a 51 s pair
+  // under load). Callers that do not care await it like any other promise.
   const steps = peerPairSteps(content, arm, seedA, seedB);
   for (let n = 1; ; n += 1) {
     const next = steps.next();
@@ -511,14 +497,14 @@ export function hostEnded(state: SimState): boolean {
 }
 
 /** Every pair of one arm. Seeds are `seed0 + 2i` and `seed0 + 2i + 1`. */
-export function surveyPeerArm(
+export async function surveyPeerArm(
   content: ReferenceContent,
   arm: PeerSurveyArm,
   options: { readonly pairs: number; readonly seed0: number },
-): PeerPairResult[] {
+): Promise<PeerPairResult[]> {
   const out: PeerPairResult[] = [];
   for (let i = 0; i < options.pairs; i += 1) {
-    out.push(playPeerPair(content, arm, options.seed0 + 2 * i, options.seed0 + 2 * i + 1));
+    out.push(await playPeerPair(content, arm, options.seed0 + 2 * i, options.seed0 + 2 * i + 1));
   }
   return out;
 }

@@ -158,13 +158,14 @@ for (const portalMagic of portalMagics) {
   }
 }
 
-const results = arms.map((arm) => {
-  const pairResults = surveyPeerArm(content, arm, { pairs, seed0 });
+const results = [];
+for (const arm of arms) {
+  const pairResults = await surveyPeerArm(content, arm, { pairs, seed0 });
   const records = pairResults.flatMap((pair) => pair.raids);
   const refused = pairResults.reduce((n, pair) => n + pair.portalRefusals, 0);
   const favorLost = pairResults.reduce((n, pair) => n + pair.favorLostToRefusals, 0);
-  return { arm, records, refused, favorLost, summary: summarisePeerRaids(records) };
-});
+  results.push({ arm, records, refused, favorLost, summary: summarisePeerRaids(records) });
+}
 
 /**
  * The two positive controls, run on the same content as the survey.
@@ -179,7 +180,7 @@ const results = arms.map((arm) => {
  *    reports no attack and no casualty, the survey's combat columns cannot read
  *    a positive, and every zero they print is unreadable.
  */
-function controls() {
+async function controls() {
   // The stand-in at its old, heavy arming — eight nodes a raider — because that
   // is the configuration known to loot. The shipped arming is a tuning choice
   // (two since 2026-10-08) and a control must not depend on one.
@@ -199,13 +200,13 @@ function controls() {
     ]),
     new Map(),
   );
-  const pair = playPeerPair(lethal, { mode: 'peer', prep: 0, attacker: 'fresh', defender: 'idle' }, seed0, seed0 + 1);
+  const pair = await playPeerPair(lethal, { mode: 'peer', prep: 0, attacker: 'fresh', defender: 'idle' }, seed0, seed0 + 1);
   const lethalCasualties = pair.raids.reduce((n, r) => n + r.casualtiesAttacker + r.casualtiesDefender, 0);
   const lethalAttacks = pair.raids.reduce((n, r) => n + r.attackAttempts, 0);
   return { standinTaken, lethalCasualties, lethalAttacks };
 }
 
-const control = values['no-control'] ? undefined : controls();
+const control = values['no-control'] ? undefined : await controls();
 
 if (values.out !== undefined) {
   const report = {
