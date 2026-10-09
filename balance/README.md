@@ -288,20 +288,32 @@ proportional change in that metric the gate would report as `regressed`. Anythin
 
 | metric | 5-year gate | 20-year gate | 20-year agency gate | 200-year gate |
 |---|---|---|---|---|
-| `referenceGrimoires` | 4.4 % | 7.9 % | 17.3 % | 18.9 % |
-| `referenceKnowledgeInstances` | 2.4 % | 5.1 % | 10.7 % | 32.6 % |
-| `referenceLibraryDepth` | 17.4 % | 16.5 % | 20.7 % | 30.1 % |
-| `referenceLivingMages` | 1.5 % | 2.5 % | 3.7 % | 15.5 % |
-| `referenceNodesGained` | 0.9 % | 2.7 % | 4.2 % | 14.5 % |
-| `referenceNodesGainedFinalQuarter` | — | 8.5 % | 18.9 % | 77.7 % |
-| `referenceNodesKnown` | 0.8 % | 2.6 % | 4.1 % | 14.3 % |
-| `referencePeakPopulation` | 0.0 % | 15.4 % | 13.1 % | 11.3 % |
-| `referencePopulation` | 1.0 % | 1.9 % | 3.5 % | 17.5 % |
-| `referencePopulationChange` | 4.3 % | 9.3 % | 15.4 % | 17.6 % |
+| `referenceGrimoires` | 4.3 % | 7.7 % | 17.3 % | 17.7 % |
+| `referenceKnowledgeInstances` | 2.4 % | 4.9 % | 10.4 % | 38.4 % |
+| `referenceLibraryDepth` | 17.1 % | 16.1 % | 20.3 % | 34.0 % |
+| `referenceLivingMages` | 1.5 % | 2.5 % | 3.7 % | 16.0 % |
+| `referenceNodesGained` | 0.9 % | 2.7 % | 4.1 % | 13.1 % |
+| `referenceNodesGainedFinalQuarter` | — | 9.3 % | 18.1 % | 342.8 % |
+| `referenceNodesKnown` | 0.9 % | 2.6 % | 4.0 % | 12.9 % |
+| `referencePeakPopulation` | 0.0 % | 16.2 % | 7.5 % | 43.0 % |
+| `referencePopulation` | 1.0 % | 2.0 % | 3.7 % | 13.9 % |
+| `referencePopulationChange` | 4.3 % | 9.4 % | 15.9 % | 14.0 % |
 | runs | 200 | 200 | 64 | 64 |
 | plays a god verb | no | no | **yes** | **yes** |
 | wall clock, 4 workers | 4 s | 27 s | **10 s** | **830–1154 s** |
 
+
+**Re-measured 2026-10-09 on `raid-loot-followup`, over `fd8a02f0`.** All four gates were
+regenerated: a stand-in rival's library now holds its curriculum, and a stolen or witnessed node
+arrives at the research-default mastery instead of zero, so it survives decay. The 5-year, 20-year
+and agency gates moved at most 3.1 SE. **The 200-year gate moved a great deal:**
+`referencePeakPopulation@portal-rush` +178 SE, `@passive-control` +22 SE, `@archivist` +19 SE
+(15 744 → 49 542). An A/B on archivist and passive-control (4 replicates, exposure written at 0
+against 256) puts archivist's growth on **exposures persisting**: a defender who watched a raider
+cast now keeps the node, and archivist's final population was 26 892 against 14 955. Ascension arm
+lines: median MDE 43.4 %, 67 of 80 below 100 %, fifteen blind (`BLIND_ARM_LINES`).
+**`referenceNodesGainedFinalQuarter` is blind again at sweep level (342.8 %).** The paragraph below
+is kept as history.
 
 **Re-measured 2026-10-09 on `raid-tuning`, after the raider-drill fix.** All four gates were
 regenerated: a raider's practice is now her raid kit, drilled past the activation threshold, an

@@ -128,24 +128,38 @@ const BLIND_ARM_LINES: Readonly<Record<string, readonly string[]>> = {
   // (a raid no longer ends on its last defender; only a raid's own casualties
   // are settled): `referenceLibraryDepth@uniform-random-legal` left,
   // `referenceGrimoires@worship-maximizer` joined; still thirteen.
-  // **Twelve after the raid-tuning drill re-record, 2026-10-09.** A raider's
-  // practice became her kit, drilled past activation, and an unready raider
-  // stopped researching. `referenceKnowledgeInstances@portal-rush` (106.4 %)
-  // and `referencePeakPopulation@archivist` (146.5 %) left;
-  // `referenceGrimoires@uniform-random-legal` (101.1 %) joined.
+  // **Fifteen after the raid-loot follow-up re-record, 2026-10-09.** A
+  // stand-in's library now holds books and a stolen or witnessed node survives
+  // decay, and the 200-year populations grew a great deal (PR body). Left:
+  // `referenceGrimoires@worship-maximizer`, `referenceLibraryDepth@permissive-breadth`,
+  // `referenceNodesGainedFinalQuarter@archivist`, and both `@uniform-random-legal`
+  // population lines. Joined: `referenceGrimoires@archivist` (103.1 %),
+  // `referenceGrimoires@passive-control` (at the 4096 clamp),
+  // `referenceKnowledgeInstances@worship-maximizer` (121.5 %),
+  // `referenceLibraryDepth@uniform-random-legal` (102.4 %) and `@worship-maximizer`
+  // (124.2 %), `referenceNodesGainedFinalQuarter@permissive-breadth` (114.6 %),
+  // and `referencePopulation@archivist` / `referencePopulationChange@archivist`
+  // (133.7 % / 134.7 %). The drill re-record's twelve are kept below as history:
+  // grimoires@portal-rush, @uniform-random-legal, @worship-maximizer;
+  // libraryDepth@permissive-breadth; final quarter @archivist, @denial-warden,
+  // @narrow-depth, @passive-control, @portal-rush, @worship-maximizer;
+  // population and populationChange @uniform-random-legal.
   'balance/baselines/balance-gate-ascension-v1.baseline.json': [
+    'referenceGrimoires@archivist',
+    'referenceGrimoires@passive-control',
     'referenceGrimoires@portal-rush',
     'referenceGrimoires@uniform-random-legal',
-    'referenceGrimoires@worship-maximizer',
-    'referenceLibraryDepth@permissive-breadth',
-    'referenceNodesGainedFinalQuarter@archivist',
+    'referenceKnowledgeInstances@worship-maximizer',
+    'referenceLibraryDepth@uniform-random-legal',
+    'referenceLibraryDepth@worship-maximizer',
     'referenceNodesGainedFinalQuarter@denial-warden',
     'referenceNodesGainedFinalQuarter@narrow-depth',
     'referenceNodesGainedFinalQuarter@passive-control',
+    'referenceNodesGainedFinalQuarter@permissive-breadth',
     'referenceNodesGainedFinalQuarter@portal-rush',
     'referenceNodesGainedFinalQuarter@worship-maximizer',
-    'referencePopulation@uniform-random-legal',
-    'referencePopulationChange@uniform-random-legal',
+    'referencePopulation@archivist',
+    'referencePopulationChange@archivist',
   ],
   'balance/baselines/balance-gate-v1.baseline.json': [],
   'balance/baselines/balance-gate-horizon-v1.baseline.json': [],
@@ -291,7 +305,11 @@ const BLIND_SWEEP_LINES: Readonly<Record<string, readonly string[]>> = {
   // **Empty again after the drill re-record, 2026-10-09: 77.7 %.** Raiders who
   // hold their kit usable defend and raid better, and the sweep mean rose to
   // about 10.5 against a tolerance near 8.
-  'balance/baselines/balance-gate-ascension-v1.baseline.json': [],
+  // **Blind again after the raid-loot follow-up re-record, 2026-10-09:
+  // 342.8 %.** The sweep mean of the final-quarter gain fell to about 3.9
+  // against a tolerance near 13: populations now peak far higher and earlier,
+  // and a peaked universe's last quarter is noise. The README's fix stands.
+  'balance/baselines/balance-gate-ascension-v1.baseline.json': ['referenceNodesGainedFinalQuarter'],
 };
 
 /**

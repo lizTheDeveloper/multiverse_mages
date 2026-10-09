@@ -1,19 +1,19 @@
 {
   "baselineFormatVersion": 1,
   "configurationHash": "aa74eef219106c40a8253e9a23c28911cd09f244ce05cd104ee3bd0c8cbea191",
-  "contentHash": "e801e320948c3eb2acf2a0058001e0604e6afe0dd5ca32a35a2788236d6abf28",
+  "contentHash": "28af371ef7b6f1c3b6a630e9df83298544413355dc4178b0c9a85ce062719b5a",
   "kind": "gate",
   "metrics": [
-    {"aggregation":"mean","definitionVersion":1,"metricId":"referenceGrimoires","sampleSize":200,"standardError":9.169796500312472,"standardErrorMethod":"stratified-by-cell","status":"measured","tolerance":27.509389500937417,"unit":"grimoires","value":349.925},
-    {"aggregation":"mean","definitionVersion":1,"metricId":"referenceKnowledgeInstances","sampleSize":200,"standardError":26.86815193245166,"standardErrorMethod":"stratified-by-cell","status":"measured","tolerance":80.60445579735497,"unit":"instances","value":1588.035},
-    {"aggregation":"mean","definitionVersion":1,"metricId":"referenceLibraryDepth","sampleSize":200,"standardError":1.3374293801688282,"standardErrorMethod":"stratified-by-cell","status":"measured","tolerance":4.0122881405064845,"unit":"nodes","value":24.36},
-    {"aggregation":"mean","definitionVersion":1,"metricId":"referenceLivingMages","sampleSize":200,"standardError":0.40221009333888363,"standardErrorMethod":"stratified-by-cell","status":"measured","tolerance":1.2066302800166508,"unit":"mages","value":49.155},
-    {"aggregation":"mean","definitionVersion":1,"metricId":"referenceNodesGained","sampleSize":200,"standardError":0.8047974773766609,"standardErrorMethod":"stratified-by-cell","status":"measured","tolerance":2.414392432129983,"unit":"nodes","value":90.27},
-    {"aggregation":"mean","definitionVersion":1,"metricId":"referenceNodesGainedFinalQuarter","sampleSize":200,"standardError":0.38936237777228794,"standardErrorMethod":"stratified-by-cell","status":"measured","tolerance":1.1680871333168639,"unit":"nodes","value":13.8},
-    {"aggregation":"mean","definitionVersion":1,"metricId":"referenceNodesKnown","sampleSize":200,"standardError":0.8047974773766609,"standardErrorMethod":"stratified-by-cell","status":"measured","tolerance":2.414392432129983,"unit":"nodes","value":92.77},
-    {"aggregation":"max","definitionVersion":1,"metricId":"referencePeakPopulation","sampleSize":200,"standardError":16.915000000000006,"standardErrorMethod":"jackknife","status":"measured","tolerance":50.74500000000002,"unit":"people","value":330},
-    {"aggregation":"mean","definitionVersion":1,"metricId":"referencePopulation","sampleSize":200,"standardError":1.1774284500987908,"standardErrorMethod":"stratified-by-cell","status":"measured","tolerance":3.5322853502963723,"unit":"people","value":181.93},
-    {"aggregation":"mean","definitionVersion":1,"metricId":"referencePopulationChange","sampleSize":200,"standardError":1.1774284500987908,"standardErrorMethod":"stratified-by-cell","status":"measured","tolerance":3.5322853502963723,"unit":"people","value":37.93}
+    {"aggregation":"mean","definitionVersion":1,"metricId":"referenceGrimoires","sampleSize":200,"standardError":8.884774094724397,"standardErrorMethod":"stratified-by-cell","status":"measured","tolerance":26.65432228417319,"unit":"grimoires","value":347.765},
+    {"aggregation":"mean","definitionVersion":1,"metricId":"referenceKnowledgeInstances","sampleSize":200,"standardError":25.758937482048474,"standardErrorMethod":"stratified-by-cell","status":"measured","tolerance":77.27681244614541,"unit":"instances","value":1590.08},
+    {"aggregation":"mean","definitionVersion":1,"metricId":"referenceLibraryDepth","sampleSize":200,"standardError":1.367014846970118,"standardErrorMethod":"stratified-by-cell","status":"measured","tolerance":4.101044540910354,"unit":"nodes","value":25.46},
+    {"aggregation":"mean","definitionVersion":1,"metricId":"referenceLivingMages","sampleSize":200,"standardError":0.4032887758600453,"standardErrorMethod":"stratified-by-cell","status":"measured","tolerance":1.2098663275801358,"unit":"mages","value":49.13},
+    {"aggregation":"mean","definitionVersion":1,"metricId":"referenceNodesGained","sampleSize":200,"standardError":0.814277568881566,"standardErrorMethod":"stratified-by-cell","status":"measured","tolerance":2.442832706644698,"unit":"nodes","value":91.84},
+    {"aggregation":"mean","definitionVersion":1,"metricId":"referenceNodesGainedFinalQuarter","sampleSize":200,"standardError":0.4353921525827173,"standardErrorMethod":"stratified-by-cell","status":"measured","tolerance":1.3061764577481518,"unit":"nodes","value":14.01},
+    {"aggregation":"mean","definitionVersion":1,"metricId":"referenceNodesKnown","sampleSize":200,"standardError":0.814277568881566,"standardErrorMethod":"stratified-by-cell","status":"measured","tolerance":2.442832706644698,"unit":"nodes","value":94.34},
+    {"aggregation":"max","definitionVersion":1,"metricId":"referencePeakPopulation","sampleSize":200,"standardError":17.910000000000014,"standardErrorMethod":"jackknife","status":"measured","tolerance":53.73000000000005,"unit":"people","value":331},
+    {"aggregation":"mean","definitionVersion":1,"metricId":"referencePopulation","sampleSize":200,"standardError":1.205083831447558,"standardErrorMethod":"stratified-by-cell","status":"measured","tolerance":3.615251494342674,"unit":"people","value":182.345},
+    {"aggregation":"mean","definitionVersion":1,"metricId":"referencePopulationChange","sampleSize":200,"standardError":1.205083831447558,"standardErrorMethod":"stratified-by-cell","status":"measured","tolerance":3.615251494342674,"unit":"people","value":38.345}
   ],
   "notes": [
     "This is a pre-0.5.0 measurement on a degenerate universe (single-species per arm, scripted strategies). It is not a balance claim; release-plan.md forbids balance claims before 0.5.0.",
@@ -27,22 +27,22 @@
     "observationSchemaVersion": 1,
     "rngRegistryHash": "50bf1a07d2c80ac6d2e8bf3b048f7d6db17fd6f5326c61aee721c0efdc9a6ef3"
   },
-  "rationale": "Raid tuning of 2026-10-08 (PR #251, branch raid-tuning at b7e57b5c, over main c5c29abc). CONTENT: cast vigor fp(3) -> fp(0.1875) against every mage's fp(1); hit-point family /16 and node.json direct-damage x4; summon blow /64; portal 150 +/- 30 ticks; stand-in rival armed with 2 nodes a raider, one primitive per slot, instead of 8; new raid constant raid-readiness-mastery-floor fp(0.625). CODE: a raid ends on its own terms only once no raider is on the field; action 14 and 16 count only usably held portal nodes (mastery >= activation), and 14 also needs a living raider and a seat holding a running universe; raid-readiness drills a raider's held combat/theft/portal nodes (raiders only); a raider's practice targets are her kit, practised up to the floor, and a raider with an uncastable kit node does not research; action 10 offers portal-node holders' raider slot first; a raid's own casualties are settled like ordinary deaths. Every run here is raided by stand-ins, which before could not kill and now kill about three mages an arrival (scripts/standin-lethality-probe.mjs: 0 -> 42 deaths in 14 arrivals, six seeds, 600 ticks). The movement is that behaviour landing on purpose, not a regression.",
+  "rationale": "Raid loot follow-up of 2026-10-09 (branch raid-loot-followup at 83bb45a3, over main fd8a02f0). CODE: the headless stand-in rival's library now shelves one book of every node its founders hold (its curriculum), after the foreign books, so outbound raids on stand-ins can carry books home (before: 0 in every measured raid, because the reference universe forbids no cell and the foreign shelf was empty); theft and exposure now write the node at the research-default mastery 256 instead of 0, which the decay sweep destroyed the next tick. Every gated run is raided by and raids stand-ins, so the movement is that behaviour landing on purpose, not a regression.",
   "rootSeed": 20260811,
   "runCount": 200,
   "supersededDeltas": [
-    {"delta":0,"deltaInStandardErrors":0,"metricId":"referenceGrimoires","previousValue":349.925,"value":349.925},
-    {"delta":0,"deltaInStandardErrors":0,"metricId":"referenceKnowledgeInstances","previousValue":1588.035,"value":1588.035},
-    {"delta":0,"deltaInStandardErrors":0,"metricId":"referenceLibraryDepth","previousValue":24.36,"value":24.36},
-    {"delta":0,"deltaInStandardErrors":0,"metricId":"referenceLivingMages","previousValue":49.155,"value":49.155},
-    {"delta":0,"deltaInStandardErrors":0,"metricId":"referenceNodesGained","previousValue":90.27,"value":90.27},
-    {"delta":0,"deltaInStandardErrors":0,"metricId":"referenceNodesGainedFinalQuarter","previousValue":13.8,"value":13.8},
-    {"delta":0,"deltaInStandardErrors":0,"metricId":"referenceNodesKnown","previousValue":92.77,"value":92.77},
-    {"delta":0,"deltaInStandardErrors":0,"metricId":"referencePeakPopulation","previousValue":330,"value":330},
-    {"delta":0,"deltaInStandardErrors":0,"metricId":"referencePopulation","previousValue":181.93,"value":181.93},
-    {"delta":0,"deltaInStandardErrors":0,"metricId":"referencePopulationChange","previousValue":37.93,"value":37.93}
+    {"delta":-2.160000000000025,"deltaInStandardErrors":-0.23555593626602514,"metricId":"referenceGrimoires","previousValue":349.925,"value":347.765},
+    {"delta":2.0449999999998454,"deltaInStandardErrors":0.07611241759913792,"metricId":"referenceKnowledgeInstances","previousValue":1588.035,"value":1590.08},
+    {"delta":1.1000000000000014,"deltaInStandardErrors":0.8224733330302231,"metricId":"referenceLibraryDepth","previousValue":24.36,"value":25.46},
+    {"delta":-0.02499999999999858,"deltaInStandardErrors":-0.062156570444229835,"metricId":"referenceLivingMages","previousValue":49.155,"value":49.13},
+    {"delta":1.5700000000000074,"deltaInStandardErrors":1.9508013433610911,"metricId":"referenceNodesGained","previousValue":90.27,"value":91.84},
+    {"delta":0.20999999999999908,"deltaInStandardErrors":0.5393433263930139,"metricId":"referenceNodesGainedFinalQuarter","previousValue":13.8,"value":14.01},
+    {"delta":1.5700000000000074,"deltaInStandardErrors":1.9508013433610911,"metricId":"referenceNodesKnown","previousValue":92.77,"value":94.34},
+    {"delta":1,"deltaInStandardErrors":0.05911912503694943,"metricId":"referencePeakPopulation","previousValue":330,"value":331},
+    {"delta":0.41499999999999204,"deltaInStandardErrors":0.3524630307388716,"metricId":"referencePopulation","previousValue":181.93,"value":182.345},
+    {"delta":0.41499999999999915,"deltaInStandardErrors":0.35246303073887764,"metricId":"referencePopulationChange","previousValue":37.93,"value":38.345}
   ],
-  "supersedes": "f109ee651759eb2bf5fb759e412fd0e78d2a92858d914257b9bc241f321ebda8",
+  "supersedes": "e801e320948c3eb2acf2a0058001e0604e6afe0dd5ca32a35a2788236d6abf28",
   "sweepId": "balance-gate-horizon-v1",
   "toleranceK": 3
 }
