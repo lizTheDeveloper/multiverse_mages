@@ -1,7 +1,7 @@
 {
   "baselineFormatVersion": 1,
   "configurationHash": "4e4532ef15feeb3b64f123b87ad060bc3318768c915c8ebf6097b5958799b1d0",
-  "contentHash": "e31c8997281060dd5f632691a0e5fde6cf9db306b175d6761df84f1b76f59a59",
+  "contentHash": "0a60ddd81004b135e49cf69569a1944b32871ce01ac3bc2c391d118ad422ba80",
   "kind": "gate",
   "metrics": [
     {"aggregation":"mean","definitionVersion":1,"metricId":"referenceGrimoires","sampleSize":200,"standardError":5.7252358030041,"standardErrorMethod":"stratified-by-cell","status":"measured","tolerance":17.1757074090123,"unit":"grimoires","value":392.815},
@@ -20,13 +20,13 @@
   ],
   "provenance": {
     "buildVersion": "0.9.0",
-    "contentHash": "f0885a0e674b8291093f28b513bd4ef9",
+    "contentHash": "f554ed8acc726e6032b658a49e98c107",
     "metricDefinitionVersions": {"ascensionRate":1,"capitalSnowball":1,"combatActionEconomy":1,"combatThresholdEfficiency":1,"illegalActionRate":1,"inboundRaidTempoLoss":1,"knowledgeHalfLife":1,"libraryDependence":1,"lossShockRecovery":1,"materialGradeProfile":1,"prestigeAdvantage":2,"raidInitiationCost":1,"raidLengthDistribution":1,"referenceConservationBreaches":1,"referenceGrimoires":1,"referenceKnowledgeInstances":1,"referenceLibraryDepth":1,"referenceLivingMages":1,"referenceNodesGained":1,"referenceNodesGainedFinalQuarter":1,"referenceNodesKnown":1,"referencePeakPopulation":1,"referencePopulation":1,"referencePopulationChange":1,"roleAssignmentDemographicCost":1,"speciesCellOccupancy":1,"speciesGridVersatility":1,"timeToTierBySpecies":1,"winRateByPrimitive":2,"worshipSnowball":2},
     "observationLayoutDigest": "46182c35d829b205",
     "observationSchemaVersion": 1,
     "rngRegistryHash": "50bf1a07d2c80ac6d2e8bf3b048f7d6db17fd6f5326c61aee721c0efdc9a6ef3"
   },
-  "rationale": "Raid tuning of 2026-10-08 (PR #251, branch raid-tuning at 41d0b023, over main 945fb135). CONTENT: cast vigor fp(3) -> fp(0.1875) against every mage's fp(1); hit-point family /16 and node.json direct-damage x4; summon blow /64; portal 150 +/- 30 ticks; stand-in rival armed with 2 nodes a raider, one primitive per slot, instead of 8. CODE: a raid ends on its own terms only once no raider is on the field (no stranding on the last objective or the last defender); action 14 and 16 count only usably held portal nodes (mastery >= activation), and 14 also needs a living raider and a seat holding a running universe; raid-readiness drills a raider's held combat/theft/portal nodes (raiders only); a raid's own casualties are settled like ordinary deaths (goal, lessons, workings, affiliation). Every run here is raided by stand-ins, which before could not kill and now kill about three mages an arrival (scripts/standin-lethality-probe.mjs: 0 -> 42 deaths in 14 arrivals, six seeds, 600 ticks). The movement is that behaviour landing on purpose, not a regression.",
+  "rationale": "Raid tuning of 2026-10-08 (PR #251, branch raid-tuning at b7e57b5c, over main c5c29abc). CONTENT: cast vigor fp(3) -> fp(0.1875) against every mage's fp(1); hit-point family /16 and node.json direct-damage x4; summon blow /64; portal 150 +/- 30 ticks; stand-in rival armed with 2 nodes a raider, one primitive per slot, instead of 8; new raid constant raid-readiness-mastery-floor fp(0.625). CODE: a raid ends on its own terms only once no raider is on the field; action 14 and 16 count only usably held portal nodes (mastery >= activation), and 14 also needs a living raider and a seat holding a running universe; raid-readiness drills a raider's held combat/theft/portal nodes (raiders only); a raider's practice targets are her kit, practised up to the floor, and a raider with an uncastable kit node does not research; action 10 offers portal-node holders' raider slot first; a raid's own casualties are settled like ordinary deaths. Every run here is raided by stand-ins, which before could not kill and now kill about three mages an arrival (scripts/standin-lethality-probe.mjs: 0 -> 42 deaths in 14 arrivals, six seeds, 600 ticks). The movement is that behaviour landing on purpose, not a regression.",
   "rootSeed": 20260811,
   "runCount": 200,
   "supersededDeltas": [
@@ -40,7 +40,7 @@
     {"delta":0,"deltaInStandardErrors":0,"metricId":"referencePopulation","previousValue":117.155,"value":117.155},
     {"delta":0,"deltaInStandardErrors":0,"metricId":"referencePopulationChange","previousValue":-26.845,"value":-26.845}
   ],
-  "supersedes": "aa8a6601287055aa73ad1e71ef88b8a4db1d4610af89d092a078ddaf28563c03",
+  "supersedes": "e31c8997281060dd5f632691a0e5fde6cf9db306b175d6761df84f1b76f59a59",
   "sweepId": "balance-gate-v1",
   "toleranceK": 3
 }

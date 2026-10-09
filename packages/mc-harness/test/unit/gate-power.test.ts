@@ -128,10 +128,15 @@ const BLIND_ARM_LINES: Readonly<Record<string, readonly string[]>> = {
   // (a raid no longer ends on its last defender; only a raid's own casualties
   // are settled): `referenceLibraryDepth@uniform-random-legal` left,
   // `referenceGrimoires@worship-maximizer` joined; still thirteen.
+  // **Twelve after the raid-tuning drill re-record, 2026-10-09.** A raider's
+  // practice became her kit, drilled past activation, and an unready raider
+  // stopped researching. `referenceKnowledgeInstances@portal-rush` (106.4 %)
+  // and `referencePeakPopulation@archivist` (146.5 %) left;
+  // `referenceGrimoires@uniform-random-legal` (101.1 %) joined.
   'balance/baselines/balance-gate-ascension-v1.baseline.json': [
     'referenceGrimoires@portal-rush',
+    'referenceGrimoires@uniform-random-legal',
     'referenceGrimoires@worship-maximizer',
-    'referenceKnowledgeInstances@portal-rush',
     'referenceLibraryDepth@permissive-breadth',
     'referenceNodesGainedFinalQuarter@archivist',
     'referenceNodesGainedFinalQuarter@denial-warden',
@@ -139,7 +144,6 @@ const BLIND_ARM_LINES: Readonly<Record<string, readonly string[]>> = {
     'referenceNodesGainedFinalQuarter@passive-control',
     'referenceNodesGainedFinalQuarter@portal-rush',
     'referenceNodesGainedFinalQuarter@worship-maximizer',
-    'referencePeakPopulation@archivist',
     'referencePopulation@uniform-random-legal',
     'referencePopulationChange@uniform-random-legal',
   ],
@@ -284,7 +288,10 @@ const BLIND_SWEEP_LINES: Readonly<Record<string, readonly string[]>> = {
   // nodes, and the sweep mean fell to about 8 against a tolerance near 12.
   // The README's fix stands — 128 or 256 replicates — and is not this
   // change's to make.
-  'balance/baselines/balance-gate-ascension-v1.baseline.json': ['referenceNodesGainedFinalQuarter'],
+  // **Empty again after the drill re-record, 2026-10-09: 77.7 %.** Raiders who
+  // hold their kit usable defend and raid better, and the sweep mean rose to
+  // about 10.5 against a tolerance near 8.
+  'balance/baselines/balance-gate-ascension-v1.baseline.json': [],
 };
 
 /**
