@@ -124,12 +124,15 @@ const BLIND_ARM_LINES: Readonly<Record<string, readonly string[]>> = {
   // change those raids kill and burn libraries, so the arms whose long-run
   // knowledge and population are dominated by a few heavy raids widened.
   // Left: `referenceGrimoires@uniform-random-legal`, `referenceKnowledgeInstances@passive-control`, `referenceKnowledgeInstances@permissive-breadth`, `referenceKnowledgeInstances@worship-maximizer`, `referenceLibraryDepth@passive-control`, `referenceLibraryDepth@worship-maximizer`, `referenceNodesGainedFinalQuarter@permissive-breadth`. Joined: `referenceKnowledgeInstances@portal-rush`, `referenceLibraryDepth@permissive-breadth`, `referenceLibraryDepth@uniform-random-legal`, `referenceNodesGainedFinalQuarter@archivist`, `referenceNodesGainedFinalQuarter@denial-warden`, `referencePeakPopulation@archivist`, `referencePopulation@uniform-random-legal`, `referencePopulationChange@uniform-random-legal`. Tolerance is unchanged (k = 3); the arms moved
-  // under a fixed instrument.
+  // under a fixed instrument. Re-recorded once more after the #251 review
+  // (a raid no longer ends on its last defender; only a raid's own casualties
+  // are settled): `referenceLibraryDepth@uniform-random-legal` left,
+  // `referenceGrimoires@worship-maximizer` joined; still thirteen.
   'balance/baselines/balance-gate-ascension-v1.baseline.json': [
     'referenceGrimoires@portal-rush',
+    'referenceGrimoires@worship-maximizer',
     'referenceKnowledgeInstances@portal-rush',
     'referenceLibraryDepth@permissive-breadth',
-    'referenceLibraryDepth@uniform-random-legal',
     'referenceNodesGainedFinalQuarter@archivist',
     'referenceNodesGainedFinalQuarter@denial-warden',
     'referenceNodesGainedFinalQuarter@narrow-depth',
@@ -275,11 +278,12 @@ const BLIND_SWEEP_LINES: Readonly<Record<string, readonly string[]>> = {
   'balance/baselines/balance-gate-agency-v1.baseline.json': [],
   // Empty after the S4 re-record, 2026-10-08: the final-quarter gain went from
   // 100.7 % to 74.9 % MDE — a fed universe keeps learning in its last quarter.
-  // **Back to one after the raid-tuning re-record the same day: 128.6 %.**
+  // **Back to one after the raid-tuning re-record the same day: 144.9 %**
+  // (128.6 % before the #251 review re-record).
   // Stand-in raids now kill and burn, so a run's final quarter can *lose*
-  // nodes (portal-rush's arm reads -27.6), and the sweep mean fell to 8.9
-  // against a tolerance of 11.5. The README's fix stands — 128 or 256
-  // replicates — and is not this change's to make.
+  // nodes, and the sweep mean fell to about 8 against a tolerance near 12.
+  // The README's fix stands — 128 or 256 replicates — and is not this
+  // change's to make.
   'balance/baselines/balance-gate-ascension-v1.baseline.json': ['referenceNodesGainedFinalQuarter'],
 };
 
