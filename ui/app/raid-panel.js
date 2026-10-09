@@ -156,10 +156,12 @@ export function mountRaids(o) {
       const key = `in:${shortId(entry.fromUniverseId)}:${r.raidId}`;
       if (fed.has(key)) continue;
       fed.add(key);
-      onFeed(r.worldTick, raidFeedText(r, 'inbound', inboundLabel(entry)), true);
+      // The feed is in this universe's years: the record's tick is the attacker's clock.
+      const here = Number.isInteger(entry.arrivedTick) ? entry.arrivedTick : (session.last()?.clock().worldTick ?? r.worldTick);
+      onFeed(here, raidFeedText(r, 'inbound', inboundLabel(entry)), true);
       // An inbound raid stays on screen until it is dismissed — across reloads,
       // which is why only a dismissal is remembered.
-      if (!dismissed.has(key)) card(r, 'inbound', inboundLabel(entry), key);
+      if (!dismissed.has(key)) card(r, 'inbound', inboundLabel(entry), key, entry.arrivedTick);
     }
     if (model.pending !== null) {
       if (log.length > model.pending.logLength) {
@@ -221,8 +223,16 @@ export function mountRaids(o) {
             p.state = 'gone';
           } else if (last.raw) {
             p.frame = session.decode(last.raw);
+            const was = p.state;
             p.state = p.frame.status() === 'running' ? 'running' : 'ended';
             p.status = p.frame.status();
+            // Said once, in words: an ending is not a seat silently changing.
+            // `abandoned` is the lobby's — its player left and it idled out.
+            if (p.state === 'ended' && was !== 'ended') {
+              onFeed(session.last()?.clock().worldTick ?? 0, p.status === 'abandoned'
+                ? `${universeLabel(id)} was abandoned by its player — it has ended and can no longer be raided`
+                : `${universeLabel(id)} has ended (${p.status}) — it can no longer be raided`, false);
+            }
           }
           p.backoff = PEER_POLL_MS;
           p.wait = now + PEER_POLL_MS;
@@ -268,8 +278,8 @@ export function mountRaids(o) {
    *   Every report is also in the Raid history list and the activity feed, so
    *   dismissing one loses nothing.
    */
-  function card(record, perspective, label, key) {
-    const d = describeRaid(record, perspective, label);
+  function card(record, perspective, label, key, arrivedTick) {
+    const d = describeRaid(record, perspective, label, { arrivedTick });
     model.cards.push({
       key,
       inbound: d.inbound,
@@ -382,8 +392,23 @@ export function mountRaids(o) {
   }
 
   // ------------------------------------------------------------- the panel
+  // The panel is rebuilt whenever what it shows changes, and the month changes
+  // every tick: a rebuild between a button's press and its release swallows
+  // the click, with no toast because nothing was sent (playtest round 4: "no
+  // toast" naming a raider). No rebuild while a pointer is down in the panel;
+  // the release repaints.
+  let pressed = false;
+  host.addEventListener('pointerdown', () => { pressed = true; });
+  window.addEventListener('pointerup', () => {
+    if (!pressed) return;
+    pressed = false;
+    setTimeout(paint, 0);
+  }, true);
+  window.addEventListener('pointercancel', () => { pressed = false; }, true);
+
   function paint() {
     placeReports();
+    if (pressed) return;
     const f = session.last();
     if (!f) return;
     const visible = host.closest('.center-panel')?.classList.contains('active') ?? true;
@@ -393,10 +418,16 @@ export function mountRaids(o) {
     const raiders = [...mages.values()].filter((m) => m.roleId === RAIDER);
     const st = portalStanding(f, content);
     const roleRows = f.raw.candidateDetail?.byAction?.['10'] ?? [];
-    const nameable = roleRows
-      .map((row, slot) => ({ row, slot }))
-      .filter(({ row }) => row.toRoleId === RAIDER)
-      .slice(0, 8);
+    // Portal holders first — best mastery, then youngest — then everyone else
+    // the server offers the raider role, in its order. Playtest round 4: the
+    // list was the first eight raider slots, and showed eight mages at 25%
+    // while six holders at 63–79% sat in Portal knowledge with no button.
+    const offered = roleRows.map((row, slot) => ({ row, slot })).filter(({ row }) => row.toRoleId === RAIDER);
+    const ranked = rankedHolders(st, mages, RAIDER).filter((x) => offered.some(({ row }) => row.handle === x.handle));
+    const nameable = [
+      ...ranked.map((x) => offered.find(({ row }) => row.handle === x.handle)),
+      ...offered.filter(({ row }) => !ranked.some((x) => x.handle === row.handle)),
+    ].slice(0, Math.max(8, ranked.length));
     const seats = Object.keys(model.seats).map(Number).sort((a, b) => a - b);
 
     const view = {
@@ -468,11 +499,13 @@ export function mountRaids(o) {
       children.push(hl);
       const lever = portalLever(f, content, st);
       if (lever) children.push(h('p', { className: 'raid-lever' }, lever.replace(/^./u, (c) => c.toUpperCase()) + '.'));
-      // One click: the strongest holder who is not yet a raider and whom the
-      // server offers the raider role this month.
-      const pick = st.drills && st.usable === 0
-        ? st.holders.find((x) => x.roleId !== RAIDER && roleRows.some((row) => row.handle === x.handle && row.toRoleId === RAIDER))
-        : undefined;
+      // One click: the best holder who is not yet a raider and whom the server
+      // offers the raider role this month — whether or not anyone is usable
+      // yet. Best is highest mastery now; among equals, the youngest, who has
+      // the most years left to drill it. The server publishes no mastery
+      // trajectory, and nothing in the rules makes the young learn faster, so
+      // the page claims neither.
+      const pick = ranked[0];
       if (pick) {
         const m = mages.get(pick.handle);
         const label = m ? vocab.who(m) : `mage #${pick.handle & 0xfffff}`;
@@ -480,7 +513,8 @@ export function mountRaids(o) {
           type: 'button', className: 'raid-btn raid-name-holder', disabled: !f.isLegal(10) || o.isBusy(),
           title: deny10Text(f) || `Make ${label} a raider (${priceText(content, 10)})`,
           onclick: () => nameRaider(pick.handle, label),
-        }, `Make ${label} a raider`), h('span', { className: 'raid-muted' }, ` — she knows ${st.nodeName(pick.nodeId)} at ${pick.pct}%`)));
+        }, `Make ${label} a raider`), h('span', { className: 'raid-muted' },
+          ` — she knows ${st.nodeName(pick.nodeId)} at ${pick.pct}%, the best of the holders who are not raiders yet${ranked.length > 1 ? ' (highest mastery; among equals, the youngest)' : ''}`)));
       }
     }
 
@@ -512,12 +546,15 @@ export function mountRaids(o) {
     const hist = h('ul', { className: 'raid-list' });
     const all = [
       ...model.log.map((r) => ({ r, p: 'outbound', label: seatOfRecord(r) })),
-      ...model.inbound.filter((e) => e?.record).map((e) => ({ r: e.record, p: 'inbound', label: inboundLabel(e) })),
-    ].sort((a, b) => b.r.worldTick - a.r.worldTick);
-    for (const { r, p, label } of all) {
-      const d = describeRaid(r, p, label);
+      ...model.inbound.filter((e) => e?.record).map((e) => ({ r: e.record, p: 'inbound', label: inboundLabel(e), at: e.arrivedTick })),
+    ].map((x) => ({ ...x, here: Number.isInteger(x.at) ? x.at : x.p === 'outbound' ? x.r.worldTick : null }))
+      // Newest first, in this universe's years; an inbound raid from a server
+      // that did not say when it arrived sorts by the attacker's clock.
+      .sort((a, b) => (b.here ?? b.r.worldTick) - (a.here ?? a.r.worldTick));
+    for (const { r, p, label, at, here } of all) {
+      const d = describeRaid(r, p, label, { arrivedTick: at });
       hist.append(h('li', { className: p === 'inbound' ? 'raid-in' : '' },
-        h('b', {}, d.title), ` — year ${Math.floor(r.worldTick / 12)}. `, d.outcome));
+        h('b', {}, d.title), here === null ? ` — their year ${Math.floor(r.worldTick / 12)}. ` : ` — year ${Math.floor(here / 12)}. `, d.outcome));
     }
     if (all.length === 0) hist.append(h('li', { className: 'raid-muted' }, 'No raids yet, either way.'));
     children.push(hist);
@@ -641,6 +678,22 @@ export function mountRaids(o) {
     }),
     stop: () => { stopped = true; clearTimeout(raidsTimer); clearTimeout(peerTimer); },
   };
+}
+
+/**
+ * Portal holders who are not raiders, best first: highest mastery now, then
+ * the youngest (most years left to drill it), then by handle for a stable order.
+ */
+function rankedHolders(st, mages, RAIDER) {
+  if (st === null) return [];
+  const age = (x) => mages.get(x.handle)?.ageTicks ?? Number.POSITIVE_INFINITY;
+  const best = new Map();
+  for (const x of st.holders) {
+    if (x.roleId === RAIDER) continue;
+    const had = best.get(x.handle);
+    if (had === undefined || x.mastery > had.mastery) best.set(x.handle, x);
+  }
+  return [...best.values()].sort((a, b) => b.mastery - a.mastery || age(a) - age(b) || a.handle - b.handle);
 }
 
 function loadSeen(key) {

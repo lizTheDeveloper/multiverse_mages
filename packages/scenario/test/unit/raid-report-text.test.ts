@@ -129,6 +129,69 @@ describe('a withdrawal reads as the victor the record names', () => {
   });
 });
 
+describe('the report is a full ledger (playtest round 4, second pass)', () => {
+  const full = {
+    ...quiet,
+    victor: RAID_SIDE.defender,
+    reason: RAID_END_REASON.raidersWithdrew,
+    raidersFielded: 4,
+    raidersWithdrawn: 2,
+    raidersStranded: 1,
+    nodesTakenByAttacker: 10,
+    forbiddenCastsBlocked: 3,
+    objectives: [{ kind: OBJECTIVE_KIND.library, status: OBJECTIVE_STATUS.held }],
+    casualtiesBySide: [1, 2],
+    nodesLostByDefender: 1,
+    knowledgeTaken: { copied: 7, moved: 3, destroyed: 2 },
+  };
+
+  it('a loss with loot says both, on the attacker’s side', () => {
+    expect(explain.describeRaid(full, 'outbound', 'Quiet Fen').outcome).toBe(
+      'You lost: your raiders fell short of a win — none of the objectives — but carried 10 nodes new to them home through the portal.',
+    );
+  });
+
+  it('each side’s dead, the knowledge by verb, and the host’s ruleset', () => {
+    const rows = Object.fromEntries(explain.describeRaid(full, 'inbound', 'Raiding Court', { arrivedTick: 75 }).rows);
+    expect(rows['their raiders']).toBe('4 sent · 2 came home · 1 stranded · 1 fell fighting');
+    expect(rows['mages lost for good']).toBe('yours 2 · theirs 1');
+    expect(rows['knowledge taken']).toBe('7 read from minds · 3 books carried off · 2 books burned · 10 nodes new to the attackers');
+    expect(rows['nodes you lost entirely']).toBe('1');
+    expect(rows['fought under']).toBe('your ruleset — 3 casts it forbids were stopped');
+    const out = Object.fromEntries(explain.describeRaid(full, 'outbound', 'Quiet Fen').rows);
+    expect(out['mages lost for good']).toBe('yours 1 · theirs 2');
+    expect(out['fought under']).toBe('Quiet Fen’s ruleset — 3 casts it forbids were stopped');
+  });
+
+  it('an inbound raid is dated by the defender’s own clock', () => {
+    // The record's tick is the attacker's: "year 40" in a defender's year 6.
+    const late = { ...full, worldTick: 490 };
+    const when = (extra: unknown) => Object.fromEntries(explain.describeRaid(late, 'inbound', 'X', extra).rows).when as string;
+    expect(when({ arrivedTick: 75 })).toMatch(/^your year 6 \(their year 40\)/u);
+    expect(when({})).toMatch(/^their year 40 — their clock, not yours/u);
+  });
+
+  it('the feed line is in words, not an outcome code', () => {
+    const line = explain.raidFeedText(full, 'inbound', 'X') as string;
+    expect(line).not.toMatch(/raidersWithdrew|\(\w+[A-Z]\w*\)/u);
+    expect(line).toContain('the raiders withdrew through the portal');
+  });
+});
+
+describe('setup is honest about a species that cannot reach a portal', () => {
+  const content = {
+    species: [{ speciesId: 6, id: 'orc', name: 'Orc', depthCeiling: 3 }, { speciesId: 5, id: 'human', name: 'Human', depthCeiling: 4 }],
+    portal: { nodeIds: [316, 322], usableMastery: 512, masteryMax: 1024 },
+    nodes: [{ nodeId: 316, tier: 4 }, { nodeId: 322, tier: 5 }],
+  };
+  it('names the ceiling and the tier for Orcs, and says nothing for Humans', () => {
+    expect(explain.portalDepthWarning(content, 'orc')).toBe(
+      'Orc mages research no deeper than tier 3, and the shallowest portal node is tier 4: your own people cannot learn to open a portal.',
+    );
+    expect(explain.portalDepthWarning(content, 'human')).toBeNull();
+  });
+});
+
 describe('no report contradicts its record', () => {
   it('over every side, end reason and perspective', () => {
     for (const victor of [RAID_SIDE.attacker, RAID_SIDE.defender]) {

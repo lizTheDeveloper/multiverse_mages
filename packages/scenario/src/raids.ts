@@ -171,6 +171,21 @@ export interface RaidRecord {
    */
   readonly objectives: readonly { readonly kind: number; readonly status: number }[];
   /**
+   * Mages each side lost for good, `[attacker, defender]` by `RAID_SIDE`.
+   * Raid-relative, unlike {@link RaidRecord.localCasualties}: the record a
+   * defender's page reads is the attacker's, and without the defender's half
+   * it could only say "watch your population" (playtest round 4).
+   */
+  readonly casualtiesBySide: readonly [number, number];
+  /** Nodes the defending universe no longer has any instance of. Raid-relative. */
+  readonly nodesLostByDefender: number;
+  /**
+   * Knowledge instances that left the defender, by verb — a mind read
+   * (`copied`), a grimoire carried off (`moved`), a book burned (`destroyed`) —
+   * counting only thefts a raider brought home; burning needs no one to.
+   */
+  readonly knowledgeTaken: { readonly copied: number; readonly moved: number; readonly destroyed: number };
+  /**
    * Mid-raid ruleset changes this god actually made, and the favor they cost.
    *
    * The seam's own instrument. Unmasking actions 1–4 and routing them to
@@ -640,6 +655,16 @@ function resolveOneRaid(input: {
     raidersStranded: outcome.raidersStranded,
     nodesTakenByAttacker: countOf(applied.nodesGainedByRaider),
     objectives: outcome.objectives.map((o) => ({ kind: o.kind, status: o.status })),
+    casualtiesBySide: [
+      outcome.casualties.filter((c) => c.side === ATTACKER).length,
+      outcome.casualties.filter((c) => c.side === DEFENDER).length,
+    ],
+    nodesLostByDefender: countOf(applied.nodesLostByHost),
+    knowledgeTaken: {
+      copied: outcome.knowledgeMovements.filter((m) => m.verb === 'copied' && !m.forfeited).length,
+      moved: outcome.knowledgeMovements.filter((m) => m.verb === 'moved' && !m.forfeited).length,
+      destroyed: outcome.knowledgeMovements.filter((m) => m.verb === 'destroyed').length,
+    },
     // `nodesLostByHost` is the host's loss and `nodesGainedByRaider` the
     // attacker's gain, both computed by the write-back rather than by
     // `resolveRaid`, which hardcodes both to `[]`.
