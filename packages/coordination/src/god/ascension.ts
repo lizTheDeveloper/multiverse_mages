@@ -108,6 +108,14 @@ export interface ApotheosisFacts {
   readonly worshipTier: number;
   /** Universities standing at `buildProgress >= 1` right now. */
   readonly completedUniversities: number;
+  /**
+   * Distinct nodes of which the universe holds at least one **looted** instance
+   * right now — one carrying a `knowledge-provenance` row: stolen into a living
+   * mage's mind, or a captured book still in existence. Read by both paths, not
+   * only Path A, through {@link lootHeld}; it lives on these facts because they
+   * are the one bundle of the tick's projections that `qualifyingPath` takes.
+   */
+  readonly lootedNodesHeld: number;
 }
 
 /**
@@ -199,6 +207,36 @@ export function canonSatisfied(god: GodStateRecord, constants: GodConstants): bo
   return god.goodEraRun >= constants.ascensionEraCount;
 }
 
+/**
+ * Whether the universe holds enough looted knowledge to ascend by **either**
+ * path — the author's rule of 2026-10-08 (vision §8a): *"ascension without raids
+ * shouldn't be possible."*
+ *
+ * A conjunct on qualification rather than a third path's precondition, so it
+ * applies to Mastery and to Enduring Canon alike and the mask follows it down:
+ * `declareAscension` reads the `ascensionPath` this feeds, and a universe whose
+ * thief dies or whose captured book burns stops qualifying on the next world
+ * tick.
+ *
+ * **Every other conjunct in both paths reads a quantity a universe can reach
+ * without ever meeting another.** Knowledge breadth and depth the universe
+ * drives to the ceiling of its ruleset on its own; worship accrues from mages
+ * and universities whether or not the god acts; universities are bought with
+ * favor. Without this a god could ascend having never opened a portal, and §8's
+ * whole second half — the multiverse as the strategic axis — would be optional
+ * to winning. This is the one input to either path that only a raid produces,
+ * because `knowledge-provenance` is written in exactly two places, both in
+ * `rules-raid`'s write-back.
+ *
+ * Distinct nodes rather than instances: the condition asks whether the
+ * universe holds plunder, and three stolen copies of one spell are one piece of
+ * someone else's knowledge. At `ascension-looted-nodes = 0` this is always true
+ * and both paths are exactly the predicates that shipped before it.
+ */
+export function lootHeld(facts: ApotheosisFacts, constants: GodConstants): boolean {
+  return facts.lootedNodesHeld >= constants.ascensionLootedNodes;
+}
+
 /** Which path, if any, a universe currently qualifies on. */
 export function qualifyingPath(
   facts: ApotheosisFacts,
@@ -211,6 +249,9 @@ export function qualifyingPath(
   // universe satisfying Path A at tick 400 has not "first met" the condition at
   // 400 in any sense the harness can use.
   if (worldTick < constants.ascensionMinTick) return ASCENSION_PATH.none;
+  // Both paths, before either is asked: a universe that holds no plunder
+  // qualifies for nothing, however it would otherwise have won.
+  if (!lootHeld(facts, constants)) return ASCENSION_PATH.none;
   if (apotheosisSatisfied(facts, constants)) return ASCENSION_PATH.apotheosis;
   if (canonSatisfied(god, constants)) return ASCENSION_PATH.canon;
   return ASCENSION_PATH.none;

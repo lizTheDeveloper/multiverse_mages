@@ -67,7 +67,9 @@ import {
   ERA_EVALUATION,
   EVER_KNOWN,
   KNOWLEDGE_INSTANCE,
+  KNOWLEDGE_PROVENANCE,
   LOCATION_KIND,
+  LOOT_ROUTE,
   MAGE,
   POPULACE_COHORT,
   TERMINAL_REASON,
@@ -242,6 +244,12 @@ export interface GodTickReport {
     readonly cellsKnown: number;
     /** Universities at full `buildProgress`; only the god's funding creates one. */
     readonly completedUniversities: number;
+    /**
+     * Distinct looted nodes held — the conjunct both paths share since
+     * 2026-10-08, compared against `ascension-looted-nodes`. The same number
+     * qualification read this tick, not a second walk.
+     */
+    readonly lootedNodesHeld: number;
     /**
      * Path B's counter: consecutive passing era boundaries, as the god record
      * holds it after this tick. Reported so a probe can tell *which* path is
@@ -594,6 +602,7 @@ function outcomeSystem(
         deepest,
         worshipTier,
         completedUniversities: sources.completedUniversities,
+        lootedNodesHeld: lootedNodesHeld(state),
       };
       const path = qualifyingPath(apotheosisFacts, god, ctx.tick, constants);
       god = {
@@ -734,6 +743,7 @@ function outcomeSystem(
           nodesKnown: known.length,
           cellsKnown: knownCells.size,
           completedUniversities: sources.completedUniversities,
+          lootedNodesHeld: apotheosisFacts.lootedNodesHeld,
           goodEraRun: god.goodEraRun,
           dependence: libraryDependence(known.length, knowledge.singleInstanceNodes().length),
           eraNodesLost: god.eraNodesLost,
@@ -898,6 +908,37 @@ function nodesHeldByLivingMages(state: SimState): ReadonlySet<number> {
     held.add(row.nodeId);
   }
   return held;
+}
+
+/**
+ * Distinct nodes of which a looted instance survives — the quantity both
+ * ascension paths gate on (`lootHeld`).
+ *
+ * Walks the provenance rows, which are few (only a raid writes one), rather than
+ * every instance. A row whose instance is gone cannot be found here because the
+ * row died with its entity; the `has` guard is defence against a future destroy
+ * path that forgets that, so a dangling row reads as *not held* rather than as
+ * plunder that outlived its book. A stolen node in a mind counts only while its
+ * holder lives, the same reading `nodesHeldByLivingMages` gives Path A: a dead
+ * thief holds nothing.
+ */
+function lootedNodesHeld(state: SimState): number {
+  const provenance = componentOf(state, KNOWLEDGE_PROVENANCE);
+  if (provenance.size === 0) return 0;
+  const instances = componentOf(state, KNOWLEDGE_INSTANCE);
+  const mageStore = componentOf(state, MAGE);
+  const nodes = new Set<number>();
+  provenance.forEach((_row, handle) => {
+    if (provenance.get(handle, 'route') === LOOT_ROUTE.none) return;
+    if (!instances.has(handle)) return;
+    const kind = instances.get(handle, 'locationKind');
+    if (kind === LOCATION_KIND.mind || kind === LOCATION_KIND.palace) {
+      const mage = instances.get(handle, 'locationId') as EntityHandle;
+      if (!mageStore.has(mage) || mageStore.get(mage, 'alive') === 0) return;
+    }
+    nodes.add(instances.get(handle, 'nodeId'));
+  });
+  return nodes.size;
 }
 
 /** The deepest node tier any living mage holds, for `prestigeEarned`. */

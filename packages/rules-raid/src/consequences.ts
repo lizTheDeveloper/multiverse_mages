@@ -56,7 +56,9 @@ import {
   COMBATANT_SOURCE_KIND,
   GRIMOIRE,
   HOLDER_KIND,
+  KNOWLEDGE_PROVENANCE,
   LOCATION_KIND,
+  LOOT_ROUTE,
   MAGE,
   MID_RAID_CHANGE,
   OBJECTIVE_STATUS,
@@ -150,7 +152,7 @@ export function applyRaidOutcome(raid: Raid, outcome: RaidOutcome): AppliedConse
     if (movement.verb !== 'copied' || movement.forfeited) continue;
     const thief = thiefMageOf(raid, movement.byCombatant);
     if (thief === 0) continue;
-    raid.attacker.knowledge.createInstance({
+    const stolen = raid.attacker.knowledge.createInstance({
       nodeId: movement.nodeId,
       locationKind: LOCATION_KIND.mind,
       locationId: thief,
@@ -162,6 +164,12 @@ export function applyRaidOutcome(raid: Raid, outcome: RaidOutcome): AppliedConse
       // theft from being a shortcut past the whole knowledge model.
       mastery: 0,
     });
+    // `0` when §4b's exclusion refused the node outright: nothing arrived, so
+    // nothing is marked. Otherwise the instance is plunder, and says so — the
+    // one fact both ascension paths ask of it (`knowledge-provenance`).
+    if (stolen !== 0) {
+      attachRecord(raid.attacker.world, KNOWLEDGE_PROVENANCE, stolen, { route: LOOT_ROUTE.theft });
+    }
     gained.push(movement.nodeId);
   }
 
@@ -431,7 +439,7 @@ function shelveLoot(
     holderKind: HOLDER_KIND.unowned,
     holderId: 0,
   });
-  raid.attacker.knowledge.createInstance({
+  const captured = raid.attacker.knowledge.createInstance({
     nodeId,
     locationKind: LOCATION_KIND.grimoire,
     locationId: grimoire,
@@ -444,6 +452,11 @@ function shelveLoot(
     mastery,
     grimoire,
   });
+  // A captured book is plunder for as long as it survives. The row hangs on the
+  // instance, so it is shelved with it and burns with it (`knowledge-provenance`).
+  if (captured !== 0) {
+    attachRecord(world, KNOWLEDGE_PROVENANCE, captured, { route: LOOT_ROUTE.capturedBook });
+  }
 }
 
 /** The world mage behind a combatant handle, or `0` if there is none. */

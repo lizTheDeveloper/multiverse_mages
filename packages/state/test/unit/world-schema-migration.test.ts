@@ -47,6 +47,7 @@ import {
   GRANT_BUDGET,
   KNOWLEDGE_FIDELITY,
   STANDING_WORKING,
+  KNOWLEDGE_PROVENANCE,
   MAGE,
   MATERIAL_GRADE,
   MATERIAL_STOCK,
@@ -150,25 +151,25 @@ function withLegacyMaterialsField(
 /** The world as a build that had never heard of goal commitments saw it. */
 function revisionOneEnvelope(): SnapshotEnvelope {
   return withLegacyMaterialsField(
-    envelopeWithout(GOAL_COMMITMENT.name, EFFORT_PROGRESS.name, MATERIAL_STOCK.name, ...GOD_SECTIONS, GRANT_BUDGET.name, BAR_PHASE.name, MID_RAID_CHANGE.name, ...SITING_SECTIONS, KNOWLEDGE_FIDELITY.name, MATERIAL_GRADE.name, STANDING_WORKING.name),
+    envelopeWithout(GOAL_COMMITMENT.name, EFFORT_PROGRESS.name, MATERIAL_STOCK.name, ...GOD_SECTIONS, GRANT_BUDGET.name, BAR_PHASE.name, MID_RAID_CHANGE.name, ...SITING_SECTIONS, KNOWLEDGE_FIDELITY.name, MATERIAL_GRADE.name, STANDING_WORKING.name, KNOWLEDGE_PROVENANCE.name),
   );
 }
 
 /** The world as the build that added the goal commitment, and nothing after it, saw it. */
 function revisionTwoEnvelope(): SnapshotEnvelope {
   return withLegacyMaterialsField(
-    envelopeWithout(EFFORT_PROGRESS.name, MATERIAL_STOCK.name, ...GOD_SECTIONS, GRANT_BUDGET.name, BAR_PHASE.name, MID_RAID_CHANGE.name, ...SITING_SECTIONS, KNOWLEDGE_FIDELITY.name, MATERIAL_GRADE.name, STANDING_WORKING.name),
+    envelopeWithout(EFFORT_PROGRESS.name, MATERIAL_STOCK.name, ...GOD_SECTIONS, GRANT_BUDGET.name, BAR_PHASE.name, MID_RAID_CHANGE.name, ...SITING_SECTIONS, KNOWLEDGE_FIDELITY.name, MATERIAL_GRADE.name, STANDING_WORKING.name, KNOWLEDGE_PROVENANCE.name),
   );
 }
 
 /** The world as the last build before the god had verbs saw it. */
 function revisionThreeEnvelope(): SnapshotEnvelope {
-  return withLegacyMaterialsField(envelopeWithout(MATERIAL_STOCK.name, ...GOD_SECTIONS, GRANT_BUDGET.name, BAR_PHASE.name, MID_RAID_CHANGE.name, ...SITING_SECTIONS, KNOWLEDGE_FIDELITY.name, MATERIAL_GRADE.name, STANDING_WORKING.name));
+  return withLegacyMaterialsField(envelopeWithout(MATERIAL_STOCK.name, ...GOD_SECTIONS, GRANT_BUDGET.name, BAR_PHASE.name, MID_RAID_CHANGE.name, ...SITING_SECTIONS, KNOWLEDGE_FIDELITY.name, MATERIAL_GRADE.name, STANDING_WORKING.name, KNOWLEDGE_PROVENANCE.name));
 }
 
 /** The world as the last build before the economy differentiated into kinds saw it. */
 function revisionFourEnvelope(materialsValue: number = LEGACY_MATERIALS_VALUE): SnapshotEnvelope {
-  return withLegacyMaterialsField(envelopeWithout(MATERIAL_STOCK.name, GRANT_BUDGET.name, BAR_PHASE.name, MID_RAID_CHANGE.name, ...SITING_SECTIONS, KNOWLEDGE_FIDELITY.name, MATERIAL_GRADE.name, STANDING_WORKING.name), materialsValue);
+  return withLegacyMaterialsField(envelopeWithout(MATERIAL_STOCK.name, GRANT_BUDGET.name, BAR_PHASE.name, MID_RAID_CHANGE.name, ...SITING_SECTIONS, KNOWLEDGE_FIDELITY.name, MATERIAL_GRADE.name, STANDING_WORKING.name, KNOWLEDGE_PROVENANCE.name), materialsValue);
 }
 
 /**
@@ -214,7 +215,7 @@ function withThreeKindStock(envelope: SnapshotEnvelope): SnapshotEnvelope {
 /** The world as the last build whose founding grants were unlimited saw it. */
 function revisionFiveEnvelope(): SnapshotEnvelope {
   return withThreeKindStock(
-    envelopeWithout(GRANT_BUDGET.name, BAR_PHASE.name, MID_RAID_CHANGE.name, ...SITING_SECTIONS, KNOWLEDGE_FIDELITY.name, MATERIAL_GRADE.name, STANDING_WORKING.name),
+    envelopeWithout(GRANT_BUDGET.name, BAR_PHASE.name, MID_RAID_CHANGE.name, ...SITING_SECTIONS, KNOWLEDGE_FIDELITY.name, MATERIAL_GRADE.name, STANDING_WORKING.name, KNOWLEDGE_PROVENANCE.name),
   );
 }
 
@@ -230,28 +231,28 @@ function revisionFiveEnvelope(): SnapshotEnvelope {
  */
 function revisionSixEnvelope(): SnapshotEnvelope {
   return withThreeKindStock(
-    envelopeWithout(BAR_PHASE.name, MID_RAID_CHANGE.name, ...SITING_SECTIONS, KNOWLEDGE_FIDELITY.name, MATERIAL_GRADE.name, STANDING_WORKING.name),
+    envelopeWithout(BAR_PHASE.name, MID_RAID_CHANGE.name, ...SITING_SECTIONS, KNOWLEDGE_FIDELITY.name, MATERIAL_GRADE.name, STANDING_WORKING.name, KNOWLEDGE_PROVENANCE.name),
   );
 }
 
 /** The world as the last build before the god's law had a clock saw it. */
 function revisionSevenEnvelope(): SnapshotEnvelope {
-  return envelopeWithout(BAR_PHASE.name, MID_RAID_CHANGE.name, ...SITING_SECTIONS, KNOWLEDGE_FIDELITY.name, MATERIAL_GRADE.name, STANDING_WORKING.name);
+  return envelopeWithout(BAR_PHASE.name, MID_RAID_CHANGE.name, ...SITING_SECTIONS, KNOWLEDGE_FIDELITY.name, MATERIAL_GRADE.name, STANDING_WORKING.name, KNOWLEDGE_PROVENANCE.name);
 }
 
 /** The world as the last build that believed a raid was frozen policy saw it. */
 function revisionEightEnvelope(): SnapshotEnvelope {
-  return envelopeWithout(MID_RAID_CHANGE.name, ...SITING_SECTIONS, KNOWLEDGE_FIDELITY.name, MATERIAL_GRADE.name, STANDING_WORKING.name);
+  return envelopeWithout(MID_RAID_CHANGE.name, ...SITING_SECTIONS, KNOWLEDGE_FIDELITY.name, MATERIAL_GRADE.name, STANDING_WORKING.name, KNOWLEDGE_PROVENANCE.name);
 }
 
 /** The world as the last build in which a university stood nowhere saw it. */
 function revisionNineEnvelope(): SnapshotEnvelope {
-  return envelopeWithout(...SITING_SECTIONS, KNOWLEDGE_FIDELITY.name, MATERIAL_GRADE.name, STANDING_WORKING.name);
+  return envelopeWithout(...SITING_SECTIONS, KNOWLEDGE_FIDELITY.name, MATERIAL_GRADE.name, STANDING_WORKING.name, KNOWLEDGE_PROVENANCE.name);
 }
 
 /** The world as the last build before scribing fidelity saw it. */
 function revisionTenEnvelope(): SnapshotEnvelope {
-  return envelopeWithout(KNOWLEDGE_FIDELITY.name, MATERIAL_GRADE.name, STANDING_WORKING.name);
+  return envelopeWithout(KNOWLEDGE_FIDELITY.name, MATERIAL_GRADE.name, STANDING_WORKING.name, KNOWLEDGE_PROVENANCE.name);
 }
 
 /**
@@ -266,7 +267,7 @@ function revisionTenEnvelope(): SnapshotEnvelope {
  * excludes both.
  */
 function revisionElevenEnvelope(): SnapshotEnvelope {
-  return envelopeWithout(MATERIAL_GRADE.name, STANDING_WORKING.name);
+  return envelopeWithout(MATERIAL_GRADE.name, STANDING_WORKING.name, KNOWLEDGE_PROVENANCE.name);
 }
 
 /**
@@ -278,8 +279,13 @@ function revisionElevenEnvelope(): SnapshotEnvelope {
  * because 12 is now a real revision and the walk below it has to be shown to
  * pass through it rather than over it.
  */
+/** Revision **13**: everything up to `standing-working`, and no provenance. */
+function revisionThirteenEnvelope(): SnapshotEnvelope {
+  return envelopeWithout(KNOWLEDGE_PROVENANCE.name);
+}
+
 function revisionTwelveEnvelope(): SnapshotEnvelope {
-  return envelopeWithout(STANDING_WORKING.name);
+  return envelopeWithout(STANDING_WORKING.name, KNOWLEDGE_PROVENANCE.name);
 }
 
 describe('the hole at revision 12 is filled, and the bridge over it is narrowed', () => {
@@ -313,6 +319,7 @@ describe('the hole at revision 12 is filled, and the bridge over it is narrowed'
     // `material-grade` in silence.
     expect(carried).toContain(MATERIAL_GRADE.name);
     expect(carried).toContain(STANDING_WORKING.name);
+    expect(carried).toContain(KNOWLEDGE_PROVENANCE.name);
   });
 
   it('registers a step from 12, and no step that spans more than one revision', () => {
@@ -369,6 +376,7 @@ describe('the world-schema revision is read off the snapshot itself', () => {
     // would read every current save as a 12. The line above and the line below
     // are what separates the two orders.
     expect(worldSchemaVersionOf(revisionTwelveEnvelope())).toBe(12);
+    expect(worldSchemaVersionOf(revisionThirteenEnvelope())).toBe(13);
     expect(worldSchemaVersionOf(stateToEnvelope(populatedWorld().state))).toBe(
       WORLD_SCHEMA_VERSION,
     );
@@ -381,7 +389,7 @@ describe('the world-schema revision is read off the snapshot itself', () => {
     // hash in the project and fails the fixtures with a version error rather
     // than a behaviour diff.
     expect(SNAPSHOT_VERSION).toBe(1);
-    expect(WORLD_SCHEMA_VERSION).toBe(13);
+    expect(WORLD_SCHEMA_VERSION).toBe(14);
   });
 });
 
@@ -1010,6 +1018,9 @@ describe('an older save loads into a current world', () => {
       // makes from the behavioural end: an old save has no working standing, and
       // therefore has none lapsing.
       STANDING_WORKING,
+      // And revision 14's: a revision-1 save holds no instance anyone can prove
+      // came through a portal.
+      KNOWLEDGE_PROVENANCE,
     ];
     for (const spec of godSpecs) {
       const store = componentOf(state, spec);
@@ -1084,6 +1095,7 @@ describe('an older save loads into a current world', () => {
       // short only the second, which is what makes the pair non-redundant.
       [encodeSnapshot(revisionElevenEnvelope()), /material-grade/],
       [encodeSnapshot(revisionTwelveEnvelope()), /standing-working/],
+      [encodeSnapshot(revisionThirteenEnvelope()), /knowledge-provenance/],
     ] as const) {
       expect(() => loadWorldSnapshot(bytes, defineWorldStateSchema())).not.toThrow();
       expect(() => envelopeToState(decodeSnapshot(bytes), defineWorldStateSchema())).toThrow(
@@ -1129,12 +1141,13 @@ describe('migrating a revision-6 world snapshot forward', () => {
     // which is the property section order depends on, and the name it carries is
     // whichever component most recently arrived.
     const declared = WORLD_COMPONENTS.map((spec) => spec.name);
-    expect(declared[declared.length - 1]).toBe(STANDING_WORKING.name);
-    // And `material-grade`, revision 12, is now its predecessor —
+    expect(declared[declared.length - 1]).toBe(KNOWLEDGE_PROVENANCE.name);
+    expect(declared[declared.length - 2]).toBe(STANDING_WORKING.name);
+    // And `material-grade`, revision 12, preceded `standing-working` —
     // `knowledge-fidelity` held that slot on `w/exp-duration`, which did not
     // carry revision 12. Pinned as a pair so the next append has to move both
     // lines and cannot quietly leave one describing an older tree.
-    expect(declared[declared.length - 2]).toBe(MATERIAL_GRADE.name);
+    expect(declared[declared.length - 3]).toBe(MATERIAL_GRADE.name);
   });
 
   it('leaves the container format version exactly where it found it', () => {

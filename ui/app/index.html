@@ -1056,7 +1056,7 @@ body.held .god-action, body.held .axis-toggle, body.held .edict-btn, body.held .
 
     <h3>Winning — declaring ascension</h3>
     <ul>
-      <li><b>Declare ascension</b> (bottom of the God Actions list, free) lights up the moment your universe meets <em>either</em> ending: a <b>Mastery</b> path (a tier-4 worshipped world holding 13 permitted cells whose deepest node a living mage holds, with at least two copies of each surviving, and two completed universities standing) or an <b>Enduring Canon</b> path (four consecutive eras in which the library held most of what it knew and lost no more than two nodes).</li>
+      <li><b>Declare ascension</b> (bottom of the God Actions list, free) lights up the moment your universe meets <em>either</em> ending: a <b>Mastery</b> path (a tier-4 worshipped world holding 13 permitted cells whose deepest node a living mage holds, with at least two copies of each surviving, and two completed universities standing) or an <b>Enduring Canon</b> path (four consecutive eras in which the library held most of what it knew and lost no more than two nodes). <b>Both paths also need plunder:</b> no universe ascends without raiding. You must hold at least one piece of <b>looted knowledge</b> when you declare — a spell one of your raiders stole into her own mind, or a book your warband carried home through a portal. It counts only while you keep it: if the thief dies or the book burns, the path closes until you raid again.</li>
       <li>The <b>Ascension</b> panel on the right is the checklist: each bar with your current value, and a <b>?</b> where the frame does not show the value yet. The Canon is also checked against breadth — how many nodes and cells the universe knows at each era boundary.</li>
       <li>It can light at the earliest in <b>year 50</b>. Worship tier is the long pole — it climbs from a productive, well-taught populace, so build mages and universities and keep the world busy.</li>
       <li>When it lights, press its <b>Declare</b> button — that is the win. If the universe ever stagnates instead (no mages, or long unworshipped and unchanging), the episode ends the other way, and the ending screen tells you which happened and what you left behind.</li>
@@ -2539,7 +2539,7 @@ function paintActionCandidates(f, detEl) {
     const hint = ascension && !over
       ? ascensionLegal
         ? 'The path is open and the moment is now — press Declare, or its button on the left.'
-        : 'Not yet: the world has not qualified. Mastery needs worship tier 4, two completed universities, and 13 permitted cells whose deepest node a living mage holds, with at least two copies of it surviving (in minds or the library). The Enduring Canon needs four clean eras in a row. It can open at the earliest in year 50.'
+        : 'Not yet: the world has not qualified. Mastery needs worship tier 4, two completed universities, and 13 permitted cells whose deepest node a living mage holds, with at least two copies of it surviving (in minds or the library). The Enduring Canon needs four clean eras in a row. Either way you must hold looted knowledge — something your raiders brought home through a portal. It can open at the earliest in year 50.'
       : why;
     html += `<div style="font:11px/1.5 var(--sans);color:${ascensionLegal ? 'var(--god)' : 'var(--soft)'};margin-top:.4rem">${hint}</div>`;
     if (ascensionLegal) {

@@ -52,6 +52,7 @@ import {
   MATERIAL_STOCK,
   MID_RAID_CHANGE,
   STANDING_WORKING,
+  KNOWLEDGE_PROVENANCE,
   OBJECTIVE,
   OBJECTIVE_STATUS,
   OCCUPATION,
@@ -332,6 +333,10 @@ export function populatedWorld(): PopulatedWorld {
     expiresTick: 84,
     renewals: 2,
   });
+
+  // The shelved instance came through a portal as a captured book, so
+  // `knowledge-provenance` is in the round-trip with a non-zero route.
+  attachRecord(state, KNOWLEDGE_PROVENANCE, instance, { route: 2 });
 
   assertEveryWorldComponentPopulated(state);
   // Union of both branches' handles. The auto-merge left *two* return

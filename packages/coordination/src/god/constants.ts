@@ -157,6 +157,13 @@ export interface GodConstants {
    * university past the scenario's seeded academy was bought.
    */
   readonly ascensionInstitutions: number;
+  /**
+   * Distinct looted nodes both paths require held at qualification — knowledge
+   * that came through a portal, stolen into a mind or carried home as a book
+   * (`knowledge-provenance`). Vision §8a, 2026-10-08: ascension without raids
+   * should not be possible.
+   */
+  readonly ascensionLootedNodes: number;
 
   // Stagnation.
   readonly stagnationMagelessTicks: number;
@@ -326,6 +333,7 @@ export function resolveGodConstants(registry: ContentRegistry): GodConstants {
     ascensionCanonCells: value('ascension-canon-cells'),
     ascensionLossFraction: value('ascension-loss-fraction'),
     ascensionInstitutions: value('ascension-institutions'),
+    ascensionLootedNodes: value('ascension-looted-nodes'),
 
     stagnationMagelessTicks: value('stagnation-mageless-ticks'),
     stagnationWorshipFloor: value('stagnation-worship-floor'),

@@ -88,6 +88,7 @@ import {
   GOD_STATE,
   GRANT_BUDGET,
   KNOWLEDGE_FIDELITY,
+  KNOWLEDGE_PROVENANCE,
   MATERIAL_GRADE,
   MATERIAL_STOCK,
   MID_RAID_CHANGE,
@@ -116,6 +117,7 @@ import {
  * | 11       | `scribing-fidelity` | adds `knowledge-fidelity` (`docs/design/scribing-fidelity.md`) |
  * | 12       | `material-grade`    | adds `material-grade` — **not in this tree**; see the note below |
  * | 13       | `working-duration`  | adds `standing-working` — an effect that expires unless renewed |
+ * | 14       | `ascension-needs-loot` | adds `knowledge-provenance` — an instance that came through a portal |
  *
  * The table above is the walk, in order, and it is the only place the order is
  * stated. It was rewritten on the `material-economy` combine because four
@@ -197,8 +199,16 @@ import {
  *
  * **Append; never renumber.** A revision number is what a migration step is
  * keyed on, so reusing one silently applies the wrong repair to a save.
+ *
+ * Revision 14 appends `knowledge-provenance` (`ascension-needs-loot`,
+ * 2026-10-08), and its absent section is the benign kind again: no row means
+ * home-grown. A save written before the component existed was written by a
+ * build that could not record a theft, so it has no instance this build can
+ * prove came through a portal — and a universe loaded from one must raid again
+ * before it can ascend. That is the rule applied to old saves and new alike,
+ * not a grandfather clause.
  */
-export const WORLD_SCHEMA_VERSION = 13;
+export const WORLD_SCHEMA_VERSION = 14;
 
 /**
  * The world-schema revision an envelope was written by.
@@ -230,6 +240,10 @@ export function worldSchemaVersionOf(envelope: SnapshotEnvelope): number {
   // revision-13 envelope carries both components, so testing 12 first would
   // read every current save as a 12 and walk it through a migration it has
   // already had, silently.
+  // **Revision 14's marker is `knowledge-provenance`, and it leads the chain**,
+  // newest marker first (§4.4 step 3): a revision-14 envelope carries
+  // `standing-working` and every marker below it too.
+  if (carried.has(KNOWLEDGE_PROVENANCE.name)) return 14;
   if (carried.has(STANDING_WORKING.name)) return 13;
   // **Revision 12's marker is `material-grade`.** It led the chain until
   // revision 13 arrived one merge later, and it now sits directly beneath
@@ -946,6 +960,27 @@ export const addStandingWorking: WorldSchemaMigration = {
   },
 };
 
+/**
+ * Revision 13 → 14: append an empty `knowledge-provenance` section.
+ *
+ * Empty, and here that is the obvious repair rather than an argued one: an
+ * absent row means *home-grown*, and a build that could not record a theft
+ * wrote no instance anyone can prove was looted. Synthesising rows — say for
+ * every instance acquired on a tick a raid resolved — would invent plunder the
+ * save never recorded and could hand a migrated universe an ascension it had
+ * not earned under this rule.
+ */
+export const addKnowledgeProvenance: WorldSchemaMigration = {
+  from: 13,
+  to: 14,
+  migrate(envelope) {
+    return {
+      ...envelope,
+      components: [...envelope.components, emptySection(KNOWLEDGE_PROVENANCE)],
+    };
+  },
+};
+
 /** Every step this build knows, ascending by source revision. */
 export const WORLD_SCHEMA_MIGRATIONS: readonly WorldSchemaMigration[] = [
   addGoalCommitment,
@@ -960,6 +995,7 @@ export const WORLD_SCHEMA_MIGRATIONS: readonly WorldSchemaMigration[] = [
   addKnowledgeFidelity,
   addMaterialGrade,
   addStandingWorking,
+  addKnowledgeProvenance,
 ];
 
 /**

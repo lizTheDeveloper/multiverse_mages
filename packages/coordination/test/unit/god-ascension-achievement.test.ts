@@ -102,6 +102,7 @@ function facts(mastered: number, copies = 2, overrides: Partial<ApotheosisFacts>
     deepest: DEEPEST,
     worshipTier: C.ascensionTierGate,
     completedUniversities: C.ascensionInstitutions,
+    lootedNodesHeld: C.ascensionLootedNodes,
     ...overrides,
   };
 }

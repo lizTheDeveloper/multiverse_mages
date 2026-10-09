@@ -1003,7 +1003,12 @@ describe('contentRevision', () => {
     // `stagnation-neglect-ticks` (1200), with `stagnation-stasis-ticks`' gloss
     // rewritten for the quiet clock. Measured with `npm run check:content` on
     // the tree, not chosen.
-    expect(registry.contentRevision).toBe('b1923b223d0686054a27a2aff163d8af');
+    //
+    // b1923b22... -> 891f30ea7555e665715ec7a180841a27, on `ascension-needs-loot`,
+    // 2026-10-08. **One record**: a new god constant, `ascension-looted-nodes`
+    // (vision §8a — ascension without raids should not be possible). Measured,
+    // not chosen.
+    expect(registry.contentRevision).toBe('891f30ea7555e665715ec7a180841a27');
   });
 
   it('is stable across loads of identical content', () => {

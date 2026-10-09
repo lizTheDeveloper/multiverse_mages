@@ -467,6 +467,19 @@ Design constraints this creates, to be honoured in `god-agency` and the balance 
 - Defeat is not the opposite of ascension. A universe that is raided to ruin does not "lose" —
   it stagnates, and stagnation is its own ending.
 
+**Ascension without raids is not possible** — the author's decision, 2026-10-08. Both paths,
+Mastery and Enduring Canon, additionally require the universe to **hold looted knowledge** at the
+moment of declaring: knowledge that came through a portal, either stolen into a mage's mind by theft
+(cell-gated — Intellego Mentem, Rego Nomen, §8) or carried home as a captured book. Every other
+conjunct of either path reads a quantity a universe reaches without ever meeting another — breadth
+and depth it drives to the ceiling of its ruleset on its own, worship that accrues whether or not
+the god acts, universities bought with favor — so without this the multiverse was optional to
+winning, and §8's whole second half a setting rather than a strategic axis. Holding is the test,
+not having once taken: the plunder counts while it survives, so a thief who dies or a book that
+burns closes the path until the universe raids again. Mechanically it is
+`ascension-looted-nodes` distinct looted nodes, read from `knowledge-provenance` — a row only a
+raid's write-back writes (`contracts.md` §1.5). LOOT_MEASUREMENT_PLACEHOLDER
+
 **Defeat is a re-entry, and it is already priced.** A universe ends; a player does not. Losing
 returns you to a fresh universe in a new bubble (§8b) rather than to a menu, and the legacy you
 carry is not zero: `prestige-base-stagnated` is **128**, and the constant's own gloss in
