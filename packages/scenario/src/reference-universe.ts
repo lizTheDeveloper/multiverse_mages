@@ -88,6 +88,7 @@ import { createMage, defaultSiteKind, siteUniversity } from '@mm/rules-world';
 import type {
   AblationMask,
   GodConstants,
+  GodDeps,
   GodTickReport,
   WorldStepReport,
 } from '@mm/coordination';
@@ -121,6 +122,7 @@ import { BalanceTelemetryRecorder, balanceTelemetrySystem } from './balance-tele
 import type { BalanceRunTelemetry } from './balance-telemetry.js';
 import type { PeerPortals, RaidRecord } from './raids.js';
 import { raidSystem } from './raids.js';
+import { reachableSpecies } from './invitation.js';
 import { portalTargetIds, readRivalConstants } from './rival-universe.js';
 
 /** `fp(1.0)`, spelled out where a record reads as a game value. */
@@ -1387,6 +1389,36 @@ export interface ReferenceScenarioOptions {
 }
 
 /**
+ * The god deps override that puts action 16's roster under the author's rule of
+ * 2026-10-08 — a second species arrives only through a portal from a universe
+ * that holds it — or `{}` where the content's static roster already obeys it.
+ *
+ * - **Live peers:** the roster is read each tick from the seats
+ *   ({@link reachableSpecies}).
+ * - **No raids, or no portal targets:** nothing is reachable, so nobody can be
+ *   invited. A raidless scenario's mask already held 16 shut (it names no
+ *   roster), so for any run driven through a session this changes nothing; it
+ *   closes the rules-side door a direct `step` could still have walked through.
+ * - **Headless with stand-in rivals:** `{}` — every stand-in is founded with
+ *   every species, so the static all-species roster is exactly the reachable
+ *   one, and the spread being empty keeps the deps object byte-identical.
+ */
+function invitationRoster(
+  content: ReferenceContent,
+  raiding: boolean,
+  peers: PeerPortals | undefined,
+): { readonly god?: GodDeps } {
+  const god = content.deps.god;
+  if (god === undefined) return {};
+  if (raiding && peers !== undefined) {
+    return { god: { ...god, invitableSpeciesNow: () => new Set(reachableSpecies(peers)) } };
+  }
+  const noTargets = raiding && readRivalConstants(content.registry).universeCount === 0;
+  if (!raiding || noTargets) return { god: { ...god, invitableSpecies: new Set<number>() } };
+  return {};
+}
+
+/**
  * Builds one reference scenario.
  *
  * **One per run, not one per process.** The world simulation it installs holds a
@@ -1400,8 +1432,11 @@ export function referenceScenario(
   content: ReferenceContent = referenceContent(),
   options: ReferenceScenarioOptions = {},
 ): ReferenceRun {
+  const raiding = options.raids ?? true;
+  const peers = options.peers;
   const simulation = defineWorldSimulation({
     ...content.deps,
+    ...invitationRoster(content, raiding, peers),
     ...(options.ablation === undefined ? {} : { ablation: options.ablation }),
     // Spread conditionally rather than assigned, so an absent option leaves the
     // key off entirely and every control run takes the byte-identical
@@ -1409,7 +1444,6 @@ export function referenceScenario(
     // one field up.
     ...(options.leak === undefined ? {} : { leak: options.leak }),
   });
-  const raiding = options.raids ?? true;
 
   // The sandbox, resolved once. Four reads follow — the schema builder, the
   // system list, the scenario id, the founding cheats — and every one of them
@@ -1567,7 +1601,15 @@ export function referenceScenario(
       // declares. `invitePlan` refuses one already living here, so a
       // single-species universe sees five candidates and an all-six universe
       // sees none — which is the asymmetry the mechanic is for.
-      invitableSpecies: [...(content.deps.god?.invitableSpecies ?? [])],
+      //
+      // With live peers that is no longer true: the author's rule of 2026-10-08
+      // admits a species only from a universe behind a portal seat that holds
+      // it, so the roster is read live and the static field is left off — see
+      // `invitation.ts`. Headless, the stand-in rivals hold every species, so
+      // the static roster *is* the reachable one and stays byte-identical.
+      ...(peers === undefined
+        ? { invitableSpecies: [...(content.deps.god?.invitableSpecies ?? [])] }
+        : { invitableSpeciesNow: () => reachableSpecies(peers) }),
       // Action 16's gate, so the mask can see it. Without this the mask would
       // be optimistic by one predicate and a policy listing the invitation
       // first would burn every round on a refusal — measured, and documented on

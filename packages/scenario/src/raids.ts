@@ -296,6 +296,15 @@ export interface PeerPortals {
   participant(seat: number): RaidParticipant | undefined;
   /** An outbound raid against a seat resolved, so the host can tell the defender. */
   onOutbound?(seat: number, record: RaidRecord): void;
+  /**
+   * Interned ids of the species alive in a seat's universe, or `undefined` for
+   * an empty or ended seat. Optional: absent, the scenario reads them from
+   * {@link participant}'s world, which is correct and costs a knowledge-index
+   * rebuild per seat per ask — a host that holds the states already should
+   * answer directly. Action 16's roster is built from this
+   * (`invitation.ts`): a second species arrives only from a seat that holds it.
+   */
+  speciesIn?(seat: number): readonly number[] | undefined;
 }
 
 /**

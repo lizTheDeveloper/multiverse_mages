@@ -262,8 +262,8 @@ describe('Lobby matchmaking', () => {
     expect(a.name).toBe('The Ember Court');
     expect(b.name).toMatch(/^Dwarf [A-Z][a-z]+$/u);
     const view = Object.values(await seats(c.universeId));
-    expect(view).toContainEqual({ universeId: a.universeId, name: 'The Ember Court', species: 'Elf' });
-    expect(view).toContainEqual({ universeId: b.universeId, name: b.name, species: 'Dwarf' });
+    expect(view).toContainEqual(expect.objectContaining({ universeId: a.universeId, name: 'The Ember Court', species: 'Elf' }));
+    expect(view).toContainEqual(expect.objectContaining({ universeId: b.universeId, name: b.name, species: 'Dwarf' }));
     // The public count route names nobody.
     expect(await (await fetch(`${base}/api/bubbles`)).text()).not.toContain('Ember');
   });

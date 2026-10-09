@@ -161,6 +161,20 @@ export interface Scenario {
    */
   readonly invitableSpecies?: readonly number[];
   /**
+   * The roster **as it stands now**, or absent.
+   *
+   * Present, it supersedes {@link invitableSpecies} and is asked each time the
+   * candidate lists are built — once per observed tick and once per submission.
+   * A lobby universe's roster is the species alive in the universes behind its
+   * portal seats (the author's rule of 2026-10-08: a second species arrives only
+   * through a portal from a universe that holds it), and those universes change
+   * while this one runs, so a list fixed at construction would be wrong by the
+   * second month.
+   *
+   * Absent reads the static field exactly as before.
+   */
+  readonly invitableSpeciesNow?: () => readonly number[];
+  /**
    * Node ids carrying the `portal` primitive, for action 16's gate.
    *
    * Content, not state, and §5 gives `agent-api` no edge to the effect tables —
@@ -408,11 +422,19 @@ export function createSession(options: SessionOptions): AgentSession {
   const portalTargetsNow = (): { portalTargets?: readonly number[] } =>
     scenario.openPortalTargets === undefined ? staticPortalTargets : { portalTargets: scenario.openPortalTargets() };
 
-  /** The alliance roster, spread for exactly the reason above. */
-  const invitableSpecies =
+  /**
+   * The alliance roster, spread for exactly the reason above — and a function,
+   * because a scenario may supply it live ({@link Scenario.invitableSpeciesNow}).
+   * Without the callback this returns the same object every time, so the
+   * static path is the expression it always was.
+   */
+  const staticInvitable =
     scenario.invitableSpecies === undefined
       ? {}
       : { invitableSpecies: scenario.invitableSpecies };
+  const liveInvitable = scenario.invitableSpeciesNow;
+  const invitableSpecies = (): { readonly invitableSpecies?: readonly number[] } =>
+    liveInvitable === undefined ? staticInvitable : { invitableSpecies: liveInvitable() };
 
   /** Action 16's gate, spread for exactly the reason above. */
   const portalNodes = {
@@ -469,7 +491,7 @@ export function createSession(options: SessionOptions): AgentSession {
       state: current,
       catalogue: scenario.catalogue,
       ...portalTargetsNow(),
-      ...invitableSpecies,
+      ...invitableSpecies(),
       ...portalNodes,
       truncated: atCap(current),
     });
@@ -571,7 +593,7 @@ export function createSession(options: SessionOptions): AgentSession {
           state: current,
           catalogue: scenario.catalogue,
           ...portalTargetsNow(),
-          ...invitableSpecies,
+          ...invitableSpecies(),
           ...portalNodes,
         },
         [action],
