@@ -34,7 +34,7 @@
  */
 
 import { h, fill } from './dom.js';
-import { describeRaid, namedMages, priceText, raidBlockers, raidFeedText, roleId, shortId, whyDeniedText } from './explain.js';
+import { describeRaid, namedMages, portalLever, portalPrerequisiteText, portalStanding, priceText, raidBlockers, raidFeedText, roleId, shortId, whyDeniedText } from './explain.js';
 
 const RAIDS_POLL_MS = 3000;
 const PEER_POLL_MS = 10000;
@@ -115,6 +115,7 @@ export function mountRaids(o) {
   function absorb(body) {
     // A seat is `{universeId, name, species}` or null (a bare id from an older server).
     const raw = body.seats && typeof body.seats === 'object' ? body.seats : {};
+    const before = model.seats;
     model.seats = {};
     model.holdings = {};
     for (const [seat, v] of Object.entries(raw)) {
@@ -125,6 +126,17 @@ export function mountRaids(o) {
         model.holdings[seat] = { name: typeof v.name === 'string' ? v.name : shortId(id), speciesIds: v.speciesIds.filter(Number.isInteger) };
       }
       if (id && v && typeof v.name === 'string') model.names.set(id, v.name);
+    }
+    // A bubble-mate whose universe left the server (its player left and it
+    // idled out, or it ended and was dropped) empties its seat, or a newcomer
+    // takes it. Said in the feed, not changed silently under the player.
+    if (model.loaded) {
+      const tick = typeof body.worldTick === 'number' ? body.worldTick : (session.last()?.clock().worldTick ?? 0);
+      for (const [seat, was] of Object.entries(before)) {
+        const now = model.seats[seat] ?? null;
+        if (!was || was === now) continue;
+        leftNotice(was, tick, now === null ? `seat ${seat} is empty now` : `${universeLabel(now)} sits in seat ${seat} now`);
+      }
     }
     const log = Array.isArray(body.log) ? body.log.filter((r) => r && r.outbound === true) : [];
     const inbound = Array.isArray(body.inbound) ? body.inbound : [];
@@ -163,6 +175,14 @@ export function mountRaids(o) {
     syncPeers();
   }
 
+  /** Universes already announced as gone, so a seat change and a 404 say it once. */
+  const announcedLeft = new Set();
+  function leftNotice(id, tick, rest) {
+    if (announcedLeft.has(id)) return;
+    announcedLeft.add(id);
+    onFeed(tick, `${universeLabel(id)} left your bubble — ${rest}`, false);
+  }
+
   /** A universe as the page names it: its public name and short id, as plain text. */
   function universeLabel(id, name) {
     const n = typeof name === 'string' && name !== '' ? name : model.names.get(id);
@@ -197,6 +217,7 @@ export function mountRaids(o) {
         try {
           const last = await peerLast(id);
           if (last.gone) {
+            if (p.state !== 'gone') leftNotice(id, session.last()?.clock().worldTick ?? 0, 'it has left the server');
             p.state = 'gone';
           } else if (last.raw) {
             p.frame = session.decode(last.raw);
@@ -255,8 +276,8 @@ export function mountRaids(o) {
         h('span', { className: 'raid-card-title' }, 'No raid opened'),
         h('button', { type: 'button', className: 'raid-card-close', 'aria-label': 'Dismiss', onclick: () => dismiss(key) }, '×')),
       h('div', {}, `The server admitted your portal to seat ${pending.seat} in year ${Math.floor(pending.tick / 12)}, but no raid was recorded. `
-        + 'The portal also needs a mage who can actually cast her portal node, and how well a mage knows a node is not visible yet — '
-        + 'check your favor and passage: the price may have been taken.'));
+        + 'The portal also needs a mage who knows a portal node well enough to cast it — see Portal knowledge on the Raids tab for who holds one and at what mastery — '
+        + 'and a raider to send. Check your favor and passage: the price may have been taken.'));
     model.cards.push({ key, node, inbound: false });
     reports.append(node);
   }
@@ -289,6 +310,7 @@ export function mountRaids(o) {
 
     const mages = namedMages(f);
     const raiders = [...mages.values()].filter((m) => m.roleId === RAIDER);
+    const st = portalStanding(f, content);
     const roleRows = f.raw.candidateDetail?.byAction?.['10'] ?? [];
     const nameable = roleRows
       .map((row, slot) => ({ row, slot }))
@@ -306,6 +328,7 @@ export function mountRaids(o) {
       raiders: raiders.map((m) => m.handle), nameable: nameable.map(({ row, slot }) => [row.handle, slot]),
       log: model.log.length, inbound: model.inbound.length, err: model.error, busy: o.isBusy(),
       favor: Math.floor(f.resources().favor), passage: f.raw.stocks?.passage,
+      portal: f.raw.portal ?? null, permitted: f.raw.academy?.permittedCells ?? null,
     };
     const sig = JSON.stringify(view);
     if (sig === lastSig) return;
@@ -324,14 +347,61 @@ export function mountRaids(o) {
     for (const seat of seats) seatList.append(seatCard(f, seat, raiders.length));
     children.push(seatList);
 
-    // Raiders
-    children.push(h('h2', { className: 'raid-h' }, `Your raiders (${raiders.length} visible)`));
-    children.push(h('p', { className: 'raid-muted' },
-      'Mages named in this frame’s candidate lists and college rosters; a very large population may hold raiders this list does not show.'));
-    const rl = h('ul', { className: 'raid-list' });
-    for (const m of raiders) rl.append(h('li', {}, vocab.who(m), h('span', { className: 'raid-muted' }, ` — ${vocab.knows(m)}`)));
-    if (raiders.length === 0) rl.append(h('li', { className: 'raid-muted' }, 'None yet. Name one below.'));
+    // Raiders. The count is the server's (`frame.portal.raiders`, every living
+    // raider); the list can name only the mages this frame's candidate lists
+    // and college rosters describe.
+    const raiderTotal = st?.raiders ?? raiders.length;
+    children.push(h('h2', { className: 'raid-h' }, `Your raiders (${raiderTotal})`));
+    if (raiderTotal > raiders.length) {
+      children.push(h('p', { className: 'raid-muted' },
+        `${raiderTotal - raiders.length} of them ${raiderTotal - raiders.length === 1 ? 'is' : 'are'} not in this month’s candidate lists or college rosters, so not named below.`));
+    }
+    const rl = h('ul', { className: 'raid-list raid-raiders' });
+    for (const m of raiders) {
+      const holds = st?.holders.find((x) => x.handle === m.handle);
+      rl.append(h('li', { 'data-handle': m.handle }, vocab.who(m),
+        h('span', { className: 'raid-muted' }, ` — ${vocab.knows(m)}`),
+        holds ? h('span', { className: holds.usable ? 'raid-ok-inline' : 'raid-muted' }, ` · ${st.nodeName(holds.nodeId)} at ${holds.pct}% mastery${holds.usable ? ' (usable)' : ` (needs ${st.needPct}%)`}`) : null));
+    }
+    if (raiderTotal === 0) rl.append(h('li', { className: 'raid-muted' }, 'None yet. Name one below.'));
     children.push(rl);
+
+    // Portal knowledge: who holds a portal node and how well, against the
+    // mastery the gate needs — the one condition no other panel shows.
+    children.push(h('h3', { className: 'raid-h3' }, 'Portal knowledge'));
+    const gap = portalPrerequisiteText(content, f.raw.academy?.permittedCells);
+    if (gap) children.push(h('p', { className: 'raid-muted raid-prereq' }, gap));
+    if (st === null) {
+      children.push(h('p', { className: 'raid-muted' }, 'This server does not publish portal mastery.'));
+    } else if (st.held === 0) {
+      children.push(h('p', { className: 'raid-muted' }, 'No living mage knows a portal node yet.'));
+    } else {
+      children.push(h('p', { className: 'raid-portal-summary' },
+        `${st.leadName}: ${st.held} mind${st.held === 1 ? '' : 's'} · ${st.usable} usable — a portal needs one holder at ${st.needPct}% mastery or more.`));
+      const hl = h('ul', { className: 'raid-list raid-holders' });
+      for (const x of st.holders.slice(0, 6)) {
+        const m = mages.get(x.handle);
+        hl.append(h('li', {}, m ? vocab.who(m) : `mage #${x.handle & 0xfffff}`,
+          h('span', { className: 'raid-muted' }, ` — ${st.nodeName(x.nodeId)} at ${x.pct}%${x.roleId === RAIDER ? ', a raider' : ''}`)));
+      }
+      children.push(hl);
+      const lever = portalLever(f, content, st);
+      if (lever) children.push(h('p', { className: 'raid-lever' }, lever.replace(/^./u, (c) => c.toUpperCase()) + '.'));
+      // One click: the strongest holder who is not yet a raider and whom the
+      // server offers the raider role this month.
+      const pick = st.drills && st.usable === 0
+        ? st.holders.find((x) => x.roleId !== RAIDER && roleRows.some((row) => row.handle === x.handle && row.toRoleId === RAIDER))
+        : undefined;
+      if (pick) {
+        const m = mages.get(pick.handle);
+        const label = m ? vocab.who(m) : `mage #${pick.handle & 0xfffff}`;
+        children.push(h('p', {}, h('button', {
+          type: 'button', className: 'raid-btn raid-name-holder', disabled: !f.isLegal(10) || o.isBusy(),
+          title: deny10Text(f) || `Make ${label} a raider (${priceText(content, 10)})`,
+          onclick: () => nameRaider(pick.handle, label),
+        }, `Make ${label} a raider`), h('span', { className: 'raid-muted' }, ` — she knows ${st.nodeName(pick.nodeId)} at ${pick.pct}%`)));
+      }
+    }
 
     children.push(h('h3', { className: 'raid-h3' }, `Name a raider (assign role, ${priceText(content, 10)})`));
     const deny10 = whyDeniedText(f, content, 10);
@@ -339,17 +409,19 @@ export function mountRaids(o) {
       children.push(h('p', { className: 'raid-muted' },
         deny10 || 'No mage is offered the raider role this tick (the assign-role list holds 32 options, three per mage, so later mages may be cut off).'));
     } else {
-      const ul = h('ul', { className: 'raid-list' });
-      for (const { row, slot } of nameable) {
+      const ul = h('ul', { className: 'raid-list raid-nameable' });
+      for (const { row } of nameable) {
         const m = mages.get(row.handle);
         const label = m ? vocab.who(m) : `mage #${row.handle & 0xfffff}`;
+        const holds = st?.holders.find((x) => x.handle === row.handle);
         ul.append(h('li', {},
           h('button', {
             type: 'button', className: 'raid-btn', disabled: !f.isLegal(10) || o.isBusy(),
             title: deny10 || 'Make this mage a raider',
-            onclick: async () => { await act(10, [slot], `Named a raider: ${label}`); lastSig = ''; paint(); },
+            onclick: () => nameRaider(row.handle, label),
           }, 'Make raider'),
-          ' ', label, m ? h('span', { className: 'raid-muted' }, ` — ${vocab.knows(m)}`) : null));
+          ' ', label, m ? h('span', { className: 'raid-muted' }, ` — ${vocab.knows(m)}`) : null,
+          holds ? h('span', { className: 'raid-muted' }, ` · ${st.nodeName(holds.nodeId)} at ${holds.pct}%`) : null));
       }
       children.push(ul);
     }
@@ -370,6 +442,29 @@ export function mountRaids(o) {
     children.push(hist);
 
     fill(host, children);
+  }
+
+  function deny10Text(f) { return whyDeniedText(f, content, 10); }
+
+  /**
+   * Names `handle` a raider. The slot is looked up in the newest frame at the
+   * moment of the click, and the candidate's params ride along as `expect`, so
+   * the lobby re-finds the slot at admission: a list that moved under the
+   * click once made a raider of nobody (or a warden of somebody).
+   */
+  async function nameRaider(handle, label) {
+    const f = session.last();
+    const rows = f.raw.candidateDetail?.byAction?.['10'] ?? [];
+    const slot = rows.findIndex((row) => row.handle === handle && row.toRoleId === RAIDER);
+    if (slot < 0) {
+      o.onFeed?.(f.clock().worldTick, `${label} is no longer offered the raider role this month`, false);
+      lastSig = '';
+      paint();
+      return;
+    }
+    await act(10, [slot], `Named a raider: ${label}`, [handle, RAIDER]);
+    lastSig = '';
+    paint();
   }
 
   function seatCard(f, seat, raiderCount) {
@@ -422,7 +517,7 @@ export function mountRaids(o) {
           title: blocked ? blockers.filter((b) => b.blocks).map((b) => b.text).join('; ') : `Open a portal to seat ${seat} (${priceText(content, 14)})`,
           onclick: async () => {
             const logLength = model.log.length;
-            const payload = await act(14, [slot], `Opened a portal to ${label}`);
+            const payload = await act(14, [slot], `Opened a portal to ${label}`, [seat]);
             if (payload && payload.admitted !== false) {
               model.pending = { seat, tick: f.clock().worldTick, polls: 0, logLength };
               clearTimeout(raidsTimer);

@@ -99,6 +99,7 @@ const lobby = new Lobby({
   idleAfterMs: idleMs,
   matchAfterMs: matchMs,
   tickCap,
+  tickMs,
 });
 await lobby.listen(port);
 // The one wall-clock driver: pacing only (authoritative-lockstep spec, l.97).

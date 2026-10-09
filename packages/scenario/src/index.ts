@@ -58,6 +58,10 @@ export {
 
 export type { PeerPortals, RaidRecord, RaidSystemDeps } from './raids.js';
 export { participantOf, raidSystem } from './raids.js';
+export type { PortalHolder, PortalStanding } from './portal-standing.js';
+export { portalStandingOf } from './portal-standing.js';
+export type { Encouragement } from './encouragements.js';
+export { encouragementsOf } from './encouragements.js';
 
 export type { InvitationSource } from './invitation.js';
 export { invitationSources, reachableSpecies, speciesAliveIn } from './invitation.js';

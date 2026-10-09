@@ -60,7 +60,7 @@
 
 import type { Action, EntityHandle, SimState } from '@mm/sim-core';
 import type { AxisChangeCounterRecord, LocationKindValue, MidRaidMark } from '@mm/state';
-import { FP_ONE, NULL_ENTITY, TIME_MODE, floorDiv } from '@mm/sim-core';
+import { FP_ONE, NULL_ENTITY, TIME_MODE, eraOf, floorDiv } from '@mm/sim-core';
 import type { Fixed } from '@mm/sim-core';
 import type { CellResolver, InstanceView, KnowledgeSubsystem, NodeCatalog } from '@mm/rules-magic';
 import { changeTradition } from '@mm/rules-magic';
@@ -108,6 +108,7 @@ import type { TerritoryKind } from '@mm/rules-world';
 import { defaultSiteKind, siteUniversity, territoryHoldings } from '@mm/rules-world';
 
 import { ACTION } from './actions.js';
+import { prestigeEarned } from './ascension.js';
 import type { TraditionResolver } from '../traditions.js';
 import type { ActionMaterialCost, GodContent } from './constants.js';
 import { hysteresisMultiplier, inertFraction, interventionCost, upheavalShock } from './favor.js';
@@ -1531,13 +1532,35 @@ function ascensionPlan(
   return {
     cost: 0,
     apply: () => {
-      store.set(universe, 'ascended', 1);
-      store.set(
-        universe,
-        'terminalReason',
+      const terminalReason =
         god.ascensionPath === ASCENSION_PATH.apotheosis
           ? TERMINAL_REASON.ascensionApotheosis
-          : TERMINAL_REASON.ascensionCanon,
+          : TERMINAL_REASON.ascensionCanon;
+      store.set(universe, 'ascended', 1);
+      store.set(universe, 'terminalReason', terminalReason);
+      // What the ending is worth, written here because nothing later will.
+      // `system.ts`'s god-outcome writes `prestigeEarned` at termination, but
+      // it returns before doing anything once `terminalReason` is set — and
+      // this plan sets it one system earlier. So every ascended universe
+      // carried `prestigeEarned` 0 into its successor: measured from a live
+      // lobby, two ascensions in a row carried 0.0 prestige. Same function as
+      // the stagnation write, but its god-state inputs (`deepestTier`,
+      // `peakWorshipTier`) are as god-outcome left them at the end of the
+      // *previous* tick — this runs before that system updates them — so they
+      // lag the ending by one tick. Both only ever rise, so the lag can only
+      // under-pay by what changed in the final month.
+      store.set(
+        universe,
+        'prestigeEarned',
+        prestigeEarned(
+          {
+            terminalReason,
+            deepestTier: god.deepestTier,
+            erasSurvived: eraOf(worldTick),
+            peakWorshipTier: god.peakWorshipTier,
+          },
+          deps.god.constants,
+        ),
       );
       writeGodState(state, universe, { ...god, terminalTick: worldTick });
     },
