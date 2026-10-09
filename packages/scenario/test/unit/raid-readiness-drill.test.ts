@@ -158,6 +158,9 @@ describe('a raider drilling', () => {
  */
 describe('a portal holder named raider', () => {
   const N = 24;
+  /** Ticks watched after she first reaches usable mastery, and how many may fall short. */
+  const HOLD = 48;
+  const MAX_SLIPS = 4;
   const content = (() => {
     const base = referenceContent();
     const axes = explicitOpeningAxes(base.registry, ['rego', 'intellego'], ['limen', 'mentem']);
@@ -175,7 +178,7 @@ describe('a portal holder named raider', () => {
   };
 
   for (const seed of [7002, 7006, 7010]) {
-    it(`reaches usable mastery within ${String(N)} ticks of being named (seed ${String(seed)})`, async () => {
+    it(`reaches usable mastery within ${String(N)} ticks of being named, and holds it (seed ${String(seed)})`, async () => {
       const live: { s?: SimState } = {};
       const run = referenceScenario(content, {
         onState: (s) => {
@@ -188,6 +191,8 @@ describe('a portal holder named raider', () => {
       let holder = 0;
       let namedAt = -1;
       let usableAfter = -1;
+      let held = 0;
+      let slipped = 0;
       for (let tick = 0; tick < 400 && session.status() === 'running'; tick += 1) {
         let action: { kind: number; params: number[] } = { kind: GOD_ACTION.noop, params: [] };
         const state = live.s;
@@ -215,11 +220,15 @@ describe('a portal holder named raider', () => {
           }
         }
         session.submit(action);
-        if (namedAt >= 0 && tick > namedAt && portalMastery(live.s as SimState, holder) >= MASTERY_ACTIVATION_THRESHOLD) {
+        const usable = portalMastery(live.s as SimState, holder) >= MASTERY_ACTIVATION_THRESHOLD;
+        if (usableAfter >= 0) {
+          held += 1;
+          if (!usable) slipped += 1;
+          if (held >= HOLD) break;
+        } else if (namedAt >= 0 && tick > namedAt && usable) {
           usableAfter = tick - namedAt;
-          break;
         }
-        if (namedAt >= 0 && tick - namedAt > N) break;
+        if (namedAt >= 0 && usableAfter < 0 && tick - namedAt > N) break;
         if (tick % 12 === 11) await new Promise((resolve) => setImmediate(resolve));
       }
       // Positive controls: somebody researched the node, and the god named her.
@@ -227,6 +236,14 @@ describe('a portal holder named raider', () => {
       expect(namedAt, 'the holder was never offered as a raider below usable mastery').toBeGreaterThanOrEqual(0);
       expect(usableAfter, `raider at ${String(portalMastery(live.s as SimState, holder))} after ${String(N)} ticks`).toBeGreaterThan(0);
       expect(usableAfter).toBeLessThanOrEqual(N);
+      // And she keeps it: a node that crossed once and decayed back would open
+      // a portal only by luck of timing. Without a raider's practice targets
+      // being her kit, the node sat below use on 23–96 of 121 ticks after
+      // naming; with them, 1–2.
+      expect(held, 'the run ended before the hold window closed').toBe(HOLD);
+      expect(slipped, `portal node below usable on ${String(slipped)} of ${String(HOLD)} ticks`).toBeLessThanOrEqual(
+        MAX_SLIPS,
+      );
     }, 600_000);
   }
 });
