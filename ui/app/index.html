@@ -90,6 +90,15 @@ html, body { height: 100%; overflow: hidden; }
   border-color: var(--ctl-charged-border);
 }
 .topbar .spacer { flex: 1; }
+.topbar .support {
+  font: 9.5px var(--mono);
+  letter-spacing: .06em;
+  color: var(--soft);
+  white-space: nowrap;
+}
+.topbar .support a { color: var(--god); text-decoration: none; }
+.topbar .support a:hover { text-decoration: underline; }
+.topbar .support .alt { color: var(--faint); }
 .topbar .tick-display {
   font: 400 1.05rem var(--serif);
   font-variant-numeric: tabular-nums;
@@ -1122,6 +1131,7 @@ body.edict-picking .grid70 .c { outline: 1px dashed var(--god); outline-offset: 
     <span class="tick-display" id="tick-val">--</span>
     <span class="status-badge" id="status-badge">--</span>
     <button type="button" class="help-btn" id="help-btn" title="How to play">?</button>
+    <span class="support"><a href="https://buy.stripe.com/aFaeVc2AG6Eb097f0B6c00t" target="_blank" rel="noopener">Support $20+</a> <a class="alt" href="https://www.patreon.com/lizthedeveloper" target="_blank" rel="noopener">or any amount on Patreon</a></span>
     <span id="theme-host"></span>
   </div>
 
