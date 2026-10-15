@@ -158,6 +158,8 @@ body { margin: 0; background: var(--ground); color: var(--ink); }
 .setup-legacy { margin: 1rem 0 0; font: italic 14px var(--serif); color: var(--god); text-align: center; max-width: 40rem; }
 .setup-error { min-height: 1.2rem; margin: .8rem 0 0; font: 12px var(--mono); color: var(--loss); text-align: center; max-width: 40rem; }
 .setup-note { margin: .4rem 0 0; font: italic 12px var(--serif); color: var(--soft); text-align: center; max-width: 40rem; }
+.setup-support a { color: var(--god); }
+.setup-support a.alt { color: var(--soft); }
 .name-row { max-width: 56rem; width: 100%; display: flex; flex-direction: column; gap: .3rem; }
 .name-row input { font: 1rem var(--serif); color: var(--ink); background: var(--panel); border: 1px solid var(--edge); border-radius: 4px; padding: .45rem .7rem; max-width: 24rem; }
 .name-row input:focus-visible { outline: 2px solid var(--god); outline-offset: 1px; }
@@ -201,6 +203,7 @@ body { margin: 0; background: var(--ground); color: var(--ink); }
   <button class="begin-btn" id="begin-btn" disabled>Begin</button>
   <p class="setup-error" id="setup-error" role="alert"></p>
   <p class="setup-note">The server keeps time: your universe runs from the moment you begin — <span id="setup-pace">at the pace this server sets</span> — whether or not this tab is open.</p>
+  <p class="setup-note setup-support"><a href="https://buy.stripe.com/aFaeVc2AG6Eb097f0B6c00t" target="_blank" rel="noopener">Support $20+</a> · <a class="alt" href="https://www.patreon.com/lizthedeveloper" target="_blank" rel="noopener">or any amount on Patreon</a></p>
 </div>
 
 <div class="toast-container" id="toast-container"></div>
